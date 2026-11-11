@@ -5,7 +5,7 @@ namespace Modules\Accounting\Services;
 use App\Models\Tenant\User;
 use Carbon\CarbonImmutable;
 use Modules\Accounting\Domain\{ApiProblem, CompanyContext, Permissions};
-use Modules\Accounting\Models\{Device, Account, ThirdParty, Period, JournalEntry, SourceDocument, ExchangeRate, TaxProfile, RuleSet};
+use Modules\Accounting\Models\{Device, Account, ThirdParty, Period, JournalEntry, SourceDocument, ExchangeRate, TaxProfile, RuleSet, OpenItem};
 use Modules\Accounting\Support\TenantDB as DB;
 final class WorkspaceService
 {
@@ -45,8 +45,16 @@ final class WorkspaceService
             if ($entries->count() > 2000 || $documents->count() > 2000) {
                 throw new ApiProblem('WORKSPACE_TOO_LARGE', 'El intervalo supera los 2.000 comprobantes o documentos de la copia. Reduce sus fechas antes de prepararla.', 413);
             }
+            // Older outstanding debts remain part of the current auxiliary.
+            // Restricting them to the journal range would hide part of its balance.
+            $openItems = OpenItem::orderBy('due_date')->orderBy('issue_date')->orderBy('id')->limit(2001)->get();
+            if ($openItems->count() > 2000) {
+                throw new ApiProblem('WORKSPACE_AUXILIARY_TOO_LARGE', 'El auxiliar supera las 2.000 partidas de esta copia. La consulta completa permanece disponible en PRO9; no se prepara un saldo parcial.', 413);
+            }
             $membership = app(Permissions::class)->membership($user, $context->id());
             $package = ['schema' => 1, 'device_id' => $input['device_id'], 'issued_at' => now()->toIso8601String(), 'expires_at' => $until->toIso8601String(), 'period' => $input['period'], 'scope' => ['from' => $from, 'to' => $to, 'maximum_days' => $maximum, 'entries_limit' => 2000, 'documents_limit' => 2000, 'complete_within_scope' => true], 'company' => [...$company->toArray(), 'role' => $membership->role, 'roles' => app(Permissions::class)->roles($membership), 'permissions' => app(Permissions::class)->forMembership($membership)], 'user' => $user->only(['id', 'name', 'email']), 'accounts' => $this->bounded(Account::class, 'cuentas'), 'parties' => $this->bounded(ThirdParty::class, 'terceros'), 'periods' => $this->bounded(Period::class, 'períodos'), 'entries' => $entries->map(fn($entry) => app(EntryService::class)->resource($entry))->all(), 'documents' => $documents->map(fn($document) => app(DocumentService::class)->resource($document))->all(), 'tax_configuration' => ['profiles' => $this->bounded(TaxProfile::class, 'perfiles fiscales'), 'rules' => $this->bounded(RuleSet::class, 'reglas fiscales')], 'exchange_rates' => $this->bounded(ExchangeRate::class, 'tasas de cambio'), 'reports' => [], 'report_snapshots' => [], 'report_ranges' => [], 'demo' => (bool) config('accounting.demo')];
+            $package['open_items'] = app(OpenItemReader::class)->many($openItems, true)->values()->all();
+            $package['scope'] += ['open_items_limit' => 2000, 'open_items_allocations_limit' => 10000, 'open_items_as_of' => $package['issued_at'], 'open_items_complete' => true, 'open_items_basis' => 'current_balances_all_statuses'];
             $ranges = [[$from, $to]];
             for ($month = $start->startOfMonth(); !$month->isAfter($end); $month = $month->addMonth()) {
                 $monthFrom = max($from, $month->format('Y-m-d'));

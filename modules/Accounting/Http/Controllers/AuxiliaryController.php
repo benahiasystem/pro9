@@ -4,8 +4,8 @@ namespace Modules\Accounting\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Modules\Accounting\Domain\{ApiProblem, CompanyContext};
-use Modules\Accounting\Models\{OpenItem, ThirdParty, Account, OpeningBatch, Settlement, SettlementAllocation, JournalEntry};
-use Modules\Accounting\Services\{OpeningService, SettlementService, OperationService, EntryService};
+use Modules\Accounting\Models\{OpenItem, OpeningBatch, Settlement, JournalEntry};
+use Modules\Accounting\Services\{OpeningService, SettlementService, OperationService, EntryService, OpenItemReader};
 final class AuxiliaryController extends \App\Http\Controllers\Controller
 {
     private function version(Request $request): ?int
@@ -21,7 +21,7 @@ final class AuxiliaryController extends \App\Http\Controllers\Controller
     }
     private function resource(OpenItem $item): array
     {
-        return [...$item->toArray(), 'party' => ThirdParty::find($item->third_party_id)?->only(['id', 'name', 'tax_id']), 'account' => Account::find($item->account_id)?->only(['id', 'code', 'name'])];
+        return app(OpenItemReader::class)->one($item);
     }
     public function index(Request $request): mixed
     {
@@ -36,14 +36,13 @@ final class AuxiliaryController extends \App\Http\Controllers\Controller
             $query->where('reference', 'like', '%' . $input['q'] . '%');
         }
         $page = $query->orderBy('due_date')->orderBy('issue_date')->orderBy('id')->paginate(25);
-        $page->setCollection($page->getCollection()->map(fn($item) => $this->resource($item)));
+        $page->setCollection(app(OpenItemReader::class)->many($page->getCollection()));
         return $page;
     }
     public function show(Request $request, string $company, string $id): array
     {
         $item = OpenItem::findOrFail($id);
-        $allocations = SettlementAllocation::where('open_item_id', $id)->orderBy('settlement_date')->get();
-        return ['data' => [...$this->resource($item), 'allocations' => $allocations->map(fn($a) => [...$a->toArray(), 'entry' => JournalEntry::find($a->journal_entry_id)?->only(['id', 'reference', 'status', 'posted_at'])])]];
+        return ['data' => app(OpenItemReader::class)->one($item, true)];
     }
     public function opening(): array
     {

@@ -244,6 +244,37 @@ final class CoreIntegrationTest extends TestCase
         $this->assertSame([], $other['documents']);
         $this->assertCount(0, $other['tax_configuration']['profiles']);
     }
+    public function test_prepared_auxiliary_preserves_older_debt_and_partial_history_in_its_company_snapshot(): void
+    {
+        $fixture = $this->initialBalance();
+        $this->postPrepared($fixture['entry'], 'offline-opening');
+        $item = OpenItem::firstOrFail();
+        $first = app(\Modules\Accounting\Services\SettlementService::class)->prepare($this->settlementInput($item, '40', 'OFFLINE-RECEIPT-1'), $this->admin->id);
+        $this->postPrepared($first, 'offline-first-receipt');
+        $date = now('America/Caracas')->format('Y-m-d');
+        $input = ['device_id' => (string) Str::uuid(), 'name' => 'Auxiliar ficticio sin conexión', 'period' => substr($date, 0, 7), 'from' => $date, 'to' => $date];
+        $workspace = app(\Modules\Accounting\Services\WorkspaceService::class);
+        $package = $workspace->prepare($this->admin, $input);
+        $this->assertSame([], $package['documents']);
+        $this->assertTrue($package['scope']['open_items_complete']);
+        $this->assertSame($package['issued_at'], $package['scope']['open_items_as_of']);
+        $this->assertCount(1, $package['open_items']);
+        $copy = $package['open_items'][0];
+        $this->assertSame('60.000000000000', $copy['remaining_original']);
+        $this->assertSame('2400.00000000', $copy['remaining_book']);
+        $this->assertSame($fixture['party']->id, $copy['party']['id']);
+        $this->assertSame('80.00000000', $copy['allocations'][0]['exchange_difference']);
+        $this->assertSame($first->id, $copy['allocations'][0]['entry']['id']);
+        $second = app(\Modules\Accounting\Services\SettlementService::class)->prepare($this->settlementInput($item->fresh(), '60', 'OFFLINE-RECEIPT-2'), $this->admin->id);
+        $this->postPrepared($second, 'offline-second-receipt');
+        $this->assertSame('60.000000000000', $package['open_items'][0]['remaining_original']);
+        $fresh = $workspace->prepare($this->admin, $input);
+        $this->assertSame('settled', $fresh['open_items'][0]['status']);
+        $this->assertSame('0.000000000000', $fresh['open_items'][0]['remaining_original']);
+        app(CompanyContext::class)->set($this->b);
+        $other = $workspace->prepare($this->admin, $input);
+        $this->assertSame([], $other['open_items']);
+    }
     public function test_local_preparation_rejects_a_range_larger_than_the_company_setting(): void
     {
         $this->a->workspace_days = 7;

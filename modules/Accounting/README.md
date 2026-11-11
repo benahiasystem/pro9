@@ -96,7 +96,11 @@ compensan automáticamente contra el banco ni se presume una exención.
 La preparación autoriza un dispositivo por empresa y usuario durante un máximo
 de 72 horas. Incluye un intervalo configurable de hasta 90 días por defecto,
 con comprobantes, documentos, catálogos, perfiles, reglas, tasas e informes
-preparados para fechas explícitas. Las consultas fuera del alcance requieren
+preparados para fechas explícitas. También incorpora el auxiliar actual, incluidas
+deudas anteriores al intervalo, con su fecha de preparación e historia de
+aplicaciones. El paquete admite hasta 2.000 partidas y 10.000 aplicaciones;
+si excede estos límites se rechaza completo, sin presentar un saldo truncado.
+Las consultas fuera del alcance requieren
 PRO9 y no sustituyen el intervalo solicitado por otro informe en caché. El navegador cifra la copia y los borradores con
 AES-GCM; deriva la clave de una frase local mediante PBKDF2. El Bearer y la
 verificación adicional permanecen en memoria. La sincronización vuelve a
@@ -134,6 +138,9 @@ alternativas, rechazo de propietario distinto e integridad, y recuperación en
 un navegador limpio seguida de un reinicio sin conexión.
 `auxiliary_http_smoke.py` y `auxiliary_browser_smoke.cjs` verifican apertura,
 antecedentes y cobro parcial con diferencia de cambio y revisión independiente.
+`auxiliary_offline_browser_smoke.cjs` comprueba lectura cifrada del auxiliar,
+identificación inmediata de una respuesta local, recarga sin servidor y límites
+documentales del paquete.
 Las suites que consumen las identidades ficticias serializan su acceso mediante
 el archivo de bloqueo del directorio privado.
 

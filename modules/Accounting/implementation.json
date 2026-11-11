@@ -6,7 +6,7 @@
   "database": "tenant existente; tablas accounting_*",
   "frontend": "TypeScript Vue actual; compilación en AWS",
   "tests": "Solo entornos aislados; pruebas previas del prototipo independiente no acreditan este módulo",
-  "state": "development; PRO9 module, initial opening and partial settlements with exact balances and independent review verified",
+  "state": "development; PRO9 module, opening, partial settlements and encrypted auxiliary snapshots verified",
   "isolation": {
     "databaseContainer": "contabilidad-api-v1-db",
     "network": "contabilidad-api-v1-tests",
@@ -15,8 +15,8 @@
   },
   "verification": {
     "core": {
-      "tests": 39,
-      "assertions": 118,
+      "tests": 40,
+      "assertions": 131,
       "result": "passed"
     },
     "http": {
@@ -24,7 +24,7 @@
       "result": "passed"
     },
     "frontendUnit": {
-      "tests": 14,
+      "tests": 20,
       "result": "passed"
     },
     "browser": {
@@ -67,7 +67,11 @@
       "defaultDays": 90,
       "companyConfigurable": true,
       "documentsAndFiscalConfigurationCached": true,
-      "reportDatesChecked": true
+      "reportDatesChecked": true,
+      "auxiliarySnapshotCached": true,
+      "auxiliaryIncludesPriorDebt": true,
+      "auxiliaryLimit": 2000,
+      "allocationLimit": 10000
     },
     "localRestoreBrowser": {
       "checks": 7,
@@ -94,8 +98,14 @@
     "auxiliaryLayout": {
       "desktopPaginationOverlap": false,
       "mobilePageOverflow": false
+    },
+    "auxiliaryOfflineBrowser": {
+      "checks": 6,
+      "result": "passed",
+      "pageErrors": 0,
+      "suite": "Tests/auxiliary_offline_browser_smoke.cjs"
     }
   },
-  "pending": "Complete credit/advance opening items and migration corrections, notes/refunds and retention/IGTF workflows, source reconciliation across PRO9 connections, imports/exports, close/reopen, attachments and server backup/restore, automatic offline preservation, inactivity locking and conflict resolution. Auxiliary queries need prepared offline snapshots. Fiscal registers remain preliminary; full V1 acceptance is pending.",
-  "verifiedAt": "2026-11-11T21:32:34.410930+00:00"
+  "pending": "Complete credit/advance opening items and migration corrections, notes/refunds and retention/IGTF workflows, source reconciliation across PRO9 connections, imports/exports, close/reopen, attachments and server backup/restore, automatic offline preservation, inactivity locking and conflict resolution. Fiscal registers remain preliminary; full V1 acceptance is pending.",
+  "verifiedAt": "2026-11-11T21:57:48.641569+00:00"
 }
