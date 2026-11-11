@@ -539,7 +539,8 @@ trait PaymentClassificationPersistenceCases
         self::assertSame('3', \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::sum($db->table('payment_commissions')->pluck('amount'))));
     }
 
-    public function test_bank_commission_includes_real_igtf_receipt_mysql(): void
+    // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+    public function test_bank_commission_uses_automatic_financial_intermediation_without_igtf_mysql(): void
     {
         [$db, $app, $input] = $this->bootHkaFixture(false);
         $db->table('configurations')->update(['auto_send_hka'=>false]);
@@ -554,8 +555,7 @@ trait PaymentClassificationPersistenceCases
         $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument();
         $row = [
             'date_of_payment'=>'2026-09-10', 'payment_method_type_id'=>'13', 'currency_type_id'=>'USD',
-            'payment'=>'50', 'original_amount'=>'5', 'exchange_rate'=>'10', 'igtf_status'=>'subject',
-            'financial_intermediation'=>'none', 'operation_key'=>(string)\Illuminate\Support\Str::uuid(),
+            'payment'=>'50', 'original_amount'=>'5', 'exchange_rate'=>'10', 'igtf_status'=>'not_applicable', 'operation_key'=>(string)\Illuminate\Support\Str::uuid(),
         ];
         if (!\Illuminate\Http\Request::hasMacro('validate')) {
             \Illuminate\Http\Request::macro('validate', function (array $rules) { return validator($this->all(), $rules)->validate(); });
@@ -563,8 +563,8 @@ trait PaymentClassificationPersistenceCases
         $quoteController = new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController();
         $quoteRequest = \Illuminate\Http\Request::create('/documents/payment-quote', 'POST', ['document_id'=>$document->id,'payments'=>[$row]]);
         $quote = $quoteController($quoteRequest)['data'];
-        self::assertSame('0.15', $quote['payments'][0]['tax_amount']);
-        self::assertSame('5.15', $quote['received_by_currency']['USD']);
+        self::assertSame('0.00', $quote['payments'][0]['tax_amount']);
+        self::assertSame('5.00', $quote['received_by_currency']['USD']);
         $account->update(['status'=>0]);
         try { $quoteController($quoteRequest); self::fail('La cotización debe rechazar una cuenta inactiva.'); }
         catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('payment_method_type_id', $error->errors()); }
@@ -576,13 +576,16 @@ trait PaymentClassificationPersistenceCases
         self::assertSame(0, $db->table('global_payments')->count());
         self::assertSame(0, $db->table('payment_commissions')->count());
         $payment = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row + ['quoted_tax_amount'=>$quote['payments'][0]['tax_amount']]);
-        self::assertSame('0.15', $payment->tax_amount);
-        self::assertSame('5.15', Movement::row($payment->global_payment)['amount']);
-        self::assertSame('0.520000000000', $db->table('payment_commissions')->value('amount'));
+        self::assertSame('0', $payment->tax_amount);
+        self::assertSame('financial_institution', $payment->fiscal_context['decision']['financial_intermediation']);
+        self::assertSame('5', Movement::row($payment->global_payment)['amount']);
+        self::assertSame('0.500000000000', $db->table('payment_commissions')->value('amount'));
         self::assertSame(2, $db->table('global_payments')->count());
-        self::assertSame($payment->id, \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row + ['quoted_tax_amount'=>'0.15'])->id);
+        self::assertSame($payment->id, \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row + ['quoted_tax_amount'=>'0.00'])->id);
         self::assertSame(1, $db->table('payment_commissions')->count());
     }
+
+    // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
 
     public function test_bank_commission_hotel_receipt_and_retry_mysql(): void
     {

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="/home/benahia/benahia/pro/Pro9/tests/Browser" tests="2" assertions="0" errors="2" warnings="0" failures="0" skipped="0" time="0.000000">
+    <testsuite name="Tests\Browser\DocumentTest" file="/home/benahia/benahia/pro/Pro9/tests/Browser/DocumentTest.php" tests="1" assertions="0" errors="1" warnings="0" failures="0" skipped="0" time="0.000000">
+      <testcase name="testDocument" class="Tests\Browser\DocumentTest" classname="Tests.Browser.DocumentTest" file="/home/benahia/benahia/pro/Pro9/tests/Browser/DocumentTest.php" line="19" assertions="0" time="0.000000">
+        <error type="RuntimeException">Tests\Browser\DocumentTest::testDocument
+RuntimeException: Invalid path to Chromedriver [/home/benahia/benahia/pro/Pro9/vendor/laravel/dusk/src/Chrome/../../bin/chromedriver-linux]. Make sure to install the Chromedriver first by running the dusk:chrome-driver command.
+
+/home/benahia/benahia/pro/Pro9/vendor/laravel/dusk/src/Chrome/ChromeProcess.php:56
+/home/benahia/benahia/pro/Pro9/vendor/laravel/dusk/src/Chrome/SupportsChrome.php:62
+/home/benahia/benahia/pro/Pro9/vendor/laravel/dusk/src/Chrome/SupportsChrome.php:31
+/home/benahia/benahia/pro/Pro9/tests/DuskTestCase.php:21</error>
+      </testcase>
+    </testsuite>
+    <testsuite name="Tests\Browser\ExampleTest" file="/home/benahia/benahia/pro/Pro9/tests/Browser/ExampleTest.php" tests="1" assertions="0" errors="1" warnings="0" failures="0" skipped="0" time="0.000000">
+      <testcase name="testBasicExample" class="Tests\Browser\ExampleTest" classname="Tests.Browser.ExampleTest" file="/home/benahia/benahia/pro/Pro9/tests/Browser/ExampleTest.php" line="19" assertions="0" time="0.000000">
+        <error type="RuntimeException">Tests\Browser\ExampleTest::testBasicExample
+RuntimeException: Invalid path to Chromedriver [/home/benahia/benahia/pro/Pro9/vendor/laravel/dusk/src/Chrome/../../bin/chromedriver-linux]. Make sure to install the Chromedriver first by running the dusk:chrome-driver command.
+
+/home/benahia/benahia/pro/Pro9/vendor/laravel/dusk/src/Chrome/ChromeProcess.php:56
+/home/benahia/benahia/pro/Pro9/vendor/laravel/dusk/src/Chrome/SupportsChrome.php:62
+/home/benahia/benahia/pro/Pro9/vendor/laravel/dusk/src/Chrome/SupportsChrome.php:31
+/home/benahia/benahia/pro/Pro9/tests/DuskTestCase.php:21</error>
+      </testcase>
+    </testsuite>
+  </testsuite>
+</testsuites>

@@ -31,8 +31,14 @@ class FiscalProfileController extends Controller
 
     public function evaluate(Request $request)
     {
+        // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+        \App\Services\Fiscal\RetiredIgtfException::assertNew($request->all());
+        // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         $data = $request->validate(['customer_id'=>'nullable|integer', 'document_id'=>'nullable|integer',
             'date'=>'required|date_format:Y-m-d', 'currency_type_id'=>'required|in:VES,USD',
+            // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+            'payment_method_type_id'=>'nullable|string',
+            // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
             'financial_intermediation'=>'nullable|in:none,financial_institution', 'original_amount'=>'nullable|numeric|min:0',
             'fiscal_context'=>'nullable|array']);
         $document = !empty($data['document_id']) ? Document::findOrFail($data['document_id']) : null;
@@ -42,6 +48,13 @@ class FiscalProfileController extends Controller
         $buyer = $customerId ? FiscalProfileService::at(Person::whereType('customers')->findOrFail($customerId), $data['date']) : [];
         // A proposal is informational. Every collection and voucher is revalidated under locks.
         $input = ['financial_intermediation'=>$data['financial_intermediation'] ?? null];
+        // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+        if (isset($data['payment_method_type_id'])) {
+            $method = \App\Models\Tenant\PaymentMethodType::find($data['payment_method_type_id']);
+            $input = \App\Services\Payments\Classification::withFinancialIntermediation($data, $method);
+            \App\Services\Payments\MethodCurrency::assertMatches((string)$method->currency_type_id, $data['currency_type_id']);
+        }
+        // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
         $needsIntermediation = $data['currency_type_id'] === 'USD' && SpecialTaxpayerPolicy::spe($issuer, $data['date']) && empty($input['financial_intermediation']);
         $decision = $needsIntermediation ? null : SpecialTaxpayerPolicy::payment($issuer, $input, $data['currency_type_id'], $data['date']);
         $company = Company::firstOrFail();
@@ -50,7 +63,6 @@ class FiscalProfileController extends Controller
         return ['data'=>['issuer'=>$issuer, 'buyer'=>$buyer, 'payment'=>$decision, 'tax_amount'=>$tax,
             'issuer_spe'=>SpecialTaxpayerPolicy::spe($issuer, $data['date']), 'buyer_spe'=>SpecialTaxpayerPolicy::spe($buyer, $data['date']),
             'igtf_enabled'=>(bool)$company->igtf_enabled, 'igtf_rate'=>$company->igtf_rate,
-            'can_authorize_exemption'=>auth()->user() instanceof User && auth()->user()->type === 'admin',
             'needs_intermediation'=>$needsIntermediation, 'retention'=>SpecialTaxpayerPolicy::retention($issuer, $buyer, $data['date'], $data['fiscal_context'] ?? [])]];
     }
 }

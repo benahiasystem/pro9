@@ -1,0 +1,19 @@
+{
+  "expected_tests": 1748,
+  "recorded_tests": 1748,
+  "missing": [],
+  "extra": [],
+  "results": {
+    "passed": 1647,
+    "error": 78,
+    "failure": 20,
+    "skipped": 3
+  },
+  "exits": {
+    "principal-2": 2,
+    "principal-1": 2,
+    "http": 0
+  },
+  "http_executed_without_other_test_workers": true,
+  "completed_utc": "2026-11-09T06:59:34.788277+00:00"
+}

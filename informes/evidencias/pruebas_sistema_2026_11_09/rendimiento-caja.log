@@ -1,0 +1,19 @@
+MySQL 5.7 temporal aislado; sin cambios en la instancia de la aplicación.
+PHPUnit 9.6.34 by Sebastian Bergmann and contributors.
+
+Warning:       Your XML configuration validates against a deprecated schema.
+Suggestion:    Migrate your XML configuration using "--migrate-configuration"!
+
+
+INICIO 1/2 Tests\Unit\BankPaymentMysqlTest::test_classified_cash_report_performance_against_legacy_at_1000_and_10000_receipts
+.
+1/2 (50.0%) 44.509 s Tests\Unit\BankPaymentMysqlTest::test_classified_cash_report_performance_against_legacy_at_1000_and_10000_receipts
+
+INICIO 2/2 Tests\Unit\FiscalEmissionSchemaTest::test_classified_cash_report_performance_against_legacy_at_1000_and_10000_receipts
+.                                                                  2 / 2 (100%)
+2/2 (100.0%) 40.859 s Tests\Unit\FiscalEmissionSchemaTest::test_classified_cash_report_performance_against_legacy_at_1000_and_10000_receipts
+
+
+Time: 01:25.440, Memory: 234.51 MB
+
+OK (2 tests, 32 assertions)

@@ -19,6 +19,9 @@ final class ReceiptAmounts
 
     public static function prepare(PaymentMethodType $method, string $documentCurrency, $documentRate, array $input): array
     {
+        // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+        \App\Services\Fiscal\RetiredIgtfException::assertNew($input);
+        // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         if (!$method->is_active) Classification::error('payment_method_type_id', 'La forma de pago seleccionada no está disponible.');
         validator($input, ['exchange_rate_source'=>'nullable|string|max:255', 'exchange_rate_date'=>'nullable|date'])->validate();
         MethodCurrency::resolve((string) $method->currency_type_id, $documentCurrency, $input);

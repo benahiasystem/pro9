@@ -1,0 +1,114 @@
+MySQL 5.7 temporal aislado; sin cambios en la instancia de la aplicación.
+PHPUnit 9.6.34 by Sebastian Bergmann and contributors.
+
+Warning:       Your XML configuration validates against a deprecated schema.
+Suggestion:    Migrate your XML configuration using "--migrate-configuration"!
+
+
+INICIO 1/22 Tests\Unit\FiscalEmissionSchemaTest::test_delivery_order_reports_keep_fractional_quantities_and_frozen_units
+.
+1/22 (4.5%) 6.566 s Tests\Unit\FiscalEmissionSchemaTest::test_delivery_order_reports_keep_fractional_quantities_and_frozen_units
+
+INICIO 2/22 Tests\Unit\FiscalEmissionSchemaTest::test_free_form_full_credit_restores_fractional_invoice_lots
+.
+2/22 (9.1%) 3.063 s Tests\Unit\FiscalEmissionSchemaTest::test_free_form_full_credit_restores_fractional_invoice_lots
+
+INICIO 3/22 Tests\Unit\FiscalEmissionSchemaTest::test_free_form_note_pdf_formats_show_frozen_lots_and_amounts
+.
+3/22 (13.6%) 8.563 s Tests\Unit\FiscalEmissionSchemaTest::test_free_form_note_pdf_formats_show_frozen_lots_and_amounts
+
+INICIO 4/22 Tests\Unit\FiscalEmissionSchemaTest::test_contingency_listing_matches_series_branch_type_and_user_scope
+.
+4/22 (18.2%) 1.445 s Tests\Unit\FiscalEmissionSchemaTest::test_contingency_listing_matches_series_branch_type_and_user_scope
+
+INICIO 5/22 Tests\Unit\FiscalEmissionSchemaTest::test_invoice_rejects_unavailable_or_foreign_lot_and_preserves_stock
+.
+5/22 (22.7%) 2.340 s Tests\Unit\FiscalEmissionSchemaTest::test_invoice_rejects_unavailable_or_foreign_lot_and_preserves_stock
+
+INICIO 6/22 Tests\Unit\FiscalEmissionSchemaTest::test_hotel_occupancy_report_preserves_dates_people_and_recorded_prices
+.
+6/22 (27.3%) 1.032 s Tests\Unit\FiscalEmissionSchemaTest::test_hotel_occupancy_report_preserves_dates_people_and_recorded_prices
+
+INICIO 7/22 Tests\Unit\FiscalEmissionSchemaTest::test_hotel_guest_report_scopes_users_and_preserves_original_document_amounts
+.
+7/22 (31.8%) 1.872 s Tests\Unit\FiscalEmissionSchemaTest::test_hotel_guest_report_scopes_users_and_preserves_original_document_amounts
+
+INICIO 8/22 Tests\Unit\FiscalEmissionSchemaTest::test_fixed_asset_purchase_report_matches_fractional_rows_in_all_outputs
+.
+8/22 (36.4%) 0.987 s Tests\Unit\FiscalEmissionSchemaTest::test_fixed_asset_purchase_report_matches_fractional_rows_in_all_outputs
+
+INICIO 9/22 Tests\Unit\FiscalEmissionSchemaTest::test_sales_report_listing_uses_one_consistent_read_when_items_change
+.
+9/22 (40.9%) 1.326 s Tests\Unit\FiscalEmissionSchemaTest::test_sales_report_listing_uses_one_consistent_read_when_items_change
+
+INICIO 10/22 Tests\Unit\FiscalEmissionSchemaTest::test_document_list_and_totals_share_one_uncached_snapshot
+.
+10/22 (45.5%) 1.170 s Tests\Unit\FiscalEmissionSchemaTest::test_document_list_and_totals_share_one_uncached_snapshot
+
+INICIO 11/22 Tests\Unit\FiscalEmissionSchemaTest::test_customer_report_keeps_notes_currencies_and_filters_in_list_and_excel
+.
+11/22 (50.0%) 3.283 s Tests\Unit\FiscalEmissionSchemaTest::test_customer_report_keeps_notes_currencies_and_filters_in_list_and_excel
+
+INICIO 12/22 Tests\Unit\FiscalEmissionSchemaTest::test_sale_note_report_projects_fractional_amounts_in_pages_pdf_and_excel
+.
+12/22 (54.5%) 1.259 s Tests\Unit\FiscalEmissionSchemaTest::test_sale_note_report_projects_fractional_amounts_in_pages_pdf_and_excel
+
+INICIO 13/22 Tests\Unit\FiscalEmissionSchemaTest::test_quotation_report_uses_exact_snapshot_and_zeroes_voids_in_all_outputs
+.
+13/22 (59.1%) 0.847 s Tests\Unit\FiscalEmissionSchemaTest::test_quotation_report_uses_exact_snapshot_and_zeroes_voids_in_all_outputs
+
+INICIO 14/22 Tests\Unit\FiscalEmissionSchemaTest::test_order_consolidated_allocates_header_and_keeps_exact_usd_prices
+.
+14/22 (63.6%) 1.985 s Tests\Unit\FiscalEmissionSchemaTest::test_order_consolidated_allocates_header_and_keeps_exact_usd_prices
+
+INICIO 15/22 Tests\Unit\FiscalEmissionSchemaTest::test_user_commission_uses_exact_profit_and_marks_cost_as_estimated
+.
+15/22 (68.2%) 2.032 s Tests\Unit\FiscalEmissionSchemaTest::test_user_commission_uses_exact_profit_and_marks_cost_as_estimated
+
+INICIO 16/22 Tests\Unit\FiscalEmissionSchemaTest::test_purchase_update_preserves_recorded_payment_after_reclassification_mysql
+E
+ERROR Tests\Unit\FiscalEmissionSchemaTest::test_purchase_update_preserves_recorded_payment_after_reclassification_mysql (0.909 s): Indique un valor decimal válido.
+
+16/22 (72.7%) 0.909 s Tests\Unit\FiscalEmissionSchemaTest::test_purchase_update_preserves_recorded_payment_after_reclassification_mysql
+
+INICIO 17/22 Tests\Unit\FiscalEmissionSchemaTest::test_sales_commission_separates_currencies_exactly_and_never_invents_fixed_currency
+.
+17/22 (77.3%) 2.118 s Tests\Unit\FiscalEmissionSchemaTest::test_sales_commission_separates_currencies_exactly_and_never_invents_fixed_currency
+
+INICIO 18/22 Tests\Unit\FiscalEmissionSchemaTest::test_pending_commission_keeps_currency_period_reversals_and_unknown_fixed_amount
+.
+18/22 (81.8%) 3.037 s Tests\Unit\FiscalEmissionSchemaTest::test_pending_commission_keeps_currency_period_reversals_and_unknown_fixed_amount
+
+INICIO 19/22 Tests\Unit\FiscalEmissionSchemaTest::test_purchase_report_preserves_customer_and_exact_totals_in_pdf_and_excel
+.
+19/22 (86.4%) 1.451 s Tests\Unit\FiscalEmissionSchemaTest::test_purchase_report_preserves_customer_and_exact_totals_in_pdf_and_excel
+
+INICIO 20/22 Tests\Unit\FiscalEmissionSchemaTest::test_purchase_items_api_reports_document_currency_and_exact_fractions
+.
+20/22 (90.9%) 1.632 s Tests\Unit\FiscalEmissionSchemaTest::test_purchase_items_api_reports_document_currency_and_exact_fractions
+
+INICIO 21/22 Tests\Unit\FiscalEmissionSchemaTest::test_classified_cash_mysql_open_close_and_reports_share_the_same_native_balances
+.
+21/22 (95.5%) 1.831 s Tests\Unit\FiscalEmissionSchemaTest::test_classified_cash_mysql_open_close_and_reports_share_the_same_native_balances
+
+INICIO 22/22 Tests\Unit\FiscalEmissionSchemaTest::test_opened_cash_is_returned_by_the_paginated_cash_listing
+.                                            22 / 22 (100%)
+22/22 (100.0%) 0.840 s Tests\Unit\FiscalEmissionSchemaTest::test_opened_cash_is_returned_by_the_paginated_cash_listing
+
+
+Time: 00:50.205, Memory: 139.00 MB
+
+There was 1 error:
+
+1) Tests\Unit\FiscalEmissionSchemaTest::test_purchase_update_preserves_recorded_payment_after_reclassification_mysql
+Illuminate\Validation\ValidationException: Indique un valor decimal válido.
+
+/home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Validation/ValidationException.php:71
+/home/benahia/benahia/pro/Pro9/app/Support/Exact/Decimal.php:34
+/home/benahia/benahia/pro/Pro9/app/Http/Controllers/Tenant/PurchaseController.php:685
+/home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php:30
+/home/benahia/benahia/pro/Pro9/app/Http/Controllers/Tenant/PurchaseController.php:660
+/home/benahia/benahia/pro/Pro9/tests/Support/PaymentClassificationPersistenceCases.php:9256
+
+ERRORS!
+Tests: 22, Assertions: 866, Errors: 1.

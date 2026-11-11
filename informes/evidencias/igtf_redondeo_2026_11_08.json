@@ -1,0 +1,229 @@
+{
+    "date": "2026-11-08",
+    "tenant": "bbc",
+    "route": "\/documents\/create",
+    "rate": "897.53830000",
+    "mode": "free_form",
+    "environment": "demo",
+    "documents": [
+        {
+            "document": 19,
+            "subtotal": {
+                "n": "5000",
+                "d": "1"
+            },
+            "total": {
+                "n": "5152581511",
+                "d": "1000000"
+            },
+            "payable": {
+                "n": "257629",
+                "d": "50"
+            },
+            "balance": {
+                "n": "0",
+                "d": "1"
+            },
+            "paid": 1,
+            "emission": "not_requested",
+            "payments": [
+                {
+                    "id": 34,
+                    "currency": "USD",
+                    "received": "5.57",
+                    "applied": {
+                        "n": "5000",
+                        "d": "1"
+                    },
+                    "igtf": "0.17",
+                    "adjustment": {
+                        "n": "711669",
+                        "d": "1000000"
+                    },
+                    "movement_id": 25,
+                    "movement_amount": "5.74",
+                    "method": "06",
+                    "method_igtf": "IGTF",
+                    "method_igtf_rate": "3.000000000000"
+                }
+            ],
+            "items": [
+                {
+                    "item_id": 4,
+                    "quantity": {
+                        "n": "1",
+                        "d": "1"
+                    }
+                }
+            ],
+            "kardex": [
+                {
+                    "item_id": 4,
+                    "quantity": "-1.000000000000",
+                    "warehouse_id": 1
+                }
+            ]
+        },
+        {
+            "document": 20,
+            "subtotal": {
+                "n": "5000",
+                "d": "1"
+            },
+            "total": {
+                "n": "5116679979",
+                "d": "1000000"
+            },
+            "payable": {
+                "n": "127917",
+                "d": "25"
+            },
+            "balance": {
+                "n": "0",
+                "d": "1"
+            },
+            "paid": 1,
+            "emission": "not_requested",
+            "payments": [
+                {
+                    "id": 36,
+                    "currency": "VES",
+                    "received": "1000",
+                    "applied": {
+                        "n": "1000",
+                        "d": "1"
+                    },
+                    "igtf": "0",
+                    "adjustment": {
+                        "n": "0",
+                        "d": "1"
+                    },
+                    "movement_id": 26,
+                    "movement_amount": "1000",
+                    "method": "01",
+                    "method_igtf": null,
+                    "method_igtf_rate": null
+                },
+                {
+                    "id": 37,
+                    "currency": "USD",
+                    "received": "4.46",
+                    "applied": {
+                        "n": "4000",
+                        "d": "1"
+                    },
+                    "igtf": "0.13",
+                    "adjustment": {
+                        "n": "-1510409",
+                        "d": "500000"
+                    },
+                    "movement_id": 27,
+                    "movement_amount": "4.59",
+                    "method": "06",
+                    "method_igtf": "IGTF",
+                    "method_igtf_rate": "3.000000000000"
+                }
+            ],
+            "items": [
+                {
+                    "item_id": 4,
+                    "quantity": {
+                        "n": "1",
+                        "d": "1"
+                    }
+                }
+            ],
+            "kardex": [
+                {
+                    "item_id": 4,
+                    "quantity": "-1.000000000000",
+                    "warehouse_id": 1
+                }
+            ]
+        },
+        {
+            "document": 21,
+            "subtotal": {
+                "n": "5000",
+                "d": "1"
+            },
+            "total": {
+                "n": "5116679979",
+                "d": "1000000"
+            },
+            "payable": {
+                "n": "127917",
+                "d": "25"
+            },
+            "balance": {
+                "n": "0",
+                "d": "1"
+            },
+            "paid": 1,
+            "emission": "not_requested",
+            "payments": [
+                {
+                    "id": 39,
+                    "currency": "USD",
+                    "received": "4.46",
+                    "applied": {
+                        "n": "4000",
+                        "d": "1"
+                    },
+                    "igtf": "0.13",
+                    "adjustment": {
+                        "n": "-1510409",
+                        "d": "500000"
+                    },
+                    "movement_id": 28,
+                    "movement_amount": "4.59",
+                    "method": "06",
+                    "method_igtf": "IGTF",
+                    "method_igtf_rate": "3.000000000000"
+                },
+                {
+                    "id": 41,
+                    "currency": "VES",
+                    "received": "1000",
+                    "applied": {
+                        "n": "1000",
+                        "d": "1"
+                    },
+                    "igtf": "0",
+                    "adjustment": {
+                        "n": "0",
+                        "d": "1"
+                    },
+                    "movement_id": 29,
+                    "movement_amount": "1000",
+                    "method": "01",
+                    "method_igtf": null,
+                    "method_igtf_rate": null
+                }
+            ],
+            "items": [
+                {
+                    "item_id": 4,
+                    "quantity": {
+                        "n": "1",
+                        "d": "1"
+                    }
+                }
+            ],
+            "kardex": [
+                {
+                    "item_id": 4,
+                    "quantity": "-1.000000000000",
+                    "warehouse_id": 1
+                }
+            ]
+        }
+    ],
+    "final_stock": "962.500000000000",
+    "global_stock": "962.500000000000",
+    "counts": {
+        "documents": 21,
+        "payments": 39,
+        "movements": 28
+    }
+}

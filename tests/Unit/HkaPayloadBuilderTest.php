@@ -79,10 +79,8 @@ class HkaPayloadBuilderTest extends TestCase
         self::assertSame('10.12340000',$p['exchange_rate']);self::assertSame('1012.34',$p['payment']);self::assertSame('3.00',$p['tax_amount']);
         self::assertSame('100.00',$p['original_amount']);
     }
-    public function test_exempt_and_not_applicable_payments_do_not_collect_igtf(): void
+    public function test_not_applicable_payments_do_not_collect_igtf(): void
     {
-        $exempt=FiscalAmounts::payment(['payment'=>100,'igtf_status'=>'exempt','exemption_reason'=>'Comprobante de exención'], 'USD',10,false,null);
-        self::assertSame('0.00',$exempt['tax_amount']);self::assertSame('Comprobante de exención',$exempt['exemption_reason']);
         $local=FiscalAmounts::payment(['payment'=>100],'VES',1,false,null);self::assertSame('not_applicable',$local['igtf_status']);self::assertSame('0.00',$local['tax_amount']);
     }
     public function test_rates_needing_more_than_eight_decimals_cannot_be_used_for_conversion(): void
@@ -94,9 +92,9 @@ class HkaPayloadBuilderTest extends TestCase
         $this->expectException(ValidationException::class);
         FiscalAmounts::payment(['payment'=>100,'igtf_status'=>'subject'],'USD',10,false,null);
     }
-    public function test_exempt_payment_requires_reason(): void
+    public function test_retired_exception_is_rejected_even_with_its_reason(): void
     {
-        $this->expectException(ValidationException::class);FiscalAmounts::payment(['payment'=>100,'igtf_status'=>'exempt'],'USD',10,true,3);
+        $this->expectException(ValidationException::class);FiscalAmounts::payment(['payment'=>100,'igtf_status'=>'exempt','exemption_reason'=>'Anterior'],'USD',10,true,3);
     }
     public function test_unverified_hka_net_retention_blocks_emission_without_fabricating_payments(): void
     {

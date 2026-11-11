@@ -467,7 +467,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                     reference: null,
                     filename: null,
                     temp_path: null,
-                    igtf_status: 'not_applicable', exemption_reason: null,
+                    igtf_status: 'not_applicable',
                     operation_key: (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : undefined,
                     payment: this.document.amount_payable || this.document.total_difference,
                     // payment: 0,
@@ -515,8 +515,6 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                     igtf_status: row.igtf_status,
                     quoted_tax_amount: row.quoted_tax_amount,
                     financial_intermediation: row.financial_intermediation,
-                    exemption_reason: row.exemption_reason,
-                    exception_basis: row.exception_basis,
                 };
 
                 row.loading = true

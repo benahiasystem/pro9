@@ -108,5 +108,6 @@ test('suggestion tracking is private, updates matching-currency original amount 
     form.payments[0].payment='50'; form.total='200'; creation.suggestRemainingPayment(form,form.payments,{refreshSuggested:true});
     assert.equal(form.payments[0].payment,'50');
     assert.deepEqual(compiler.compile(componentSource.template.content).errors,[]);
-    assert.match(componentSource.template.content, /@input="markPaymentEdited\(row\)"/);
+    assert.match(componentSource.template.content, /@input="updatePaymentPrincipal\(row, \$event\)"/);
+    assert.match(componentSource.script.content, /updatePaymentPrincipal\(row, value\)\s*\{[\s\S]*?this\.markPaymentEdited\(row\)/);
 });

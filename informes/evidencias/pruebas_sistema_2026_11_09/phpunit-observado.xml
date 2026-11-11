@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<phpunit backupGlobals="false" backupStaticAttributes="false" bootstrap="/home/benahia/benahia/pro/Pro9/vendor/autoload.php" colors="true" convertErrorsToExceptions="true" convertNoticesToExceptions="true" convertWarningsToExceptions="true" processIsolation="false" stopOnFailure="false">
+    <testsuites>
+        <testsuite name="Unit">
+            <directory suffix="Test.php">/home/benahia/benahia/pro/Pro9/tests/Unit</directory>
+            <file>/home/benahia/benahia/pro/Pro9/modules/Item/Services/tests/ProductVariableCatalogParserTest.php</file>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory suffix="Test.php">/home/benahia/benahia/pro/Pro9/tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">/home/benahia/benahia/pro/Pro9/app</directory>
+        </whitelist>
+    </filter>
+    <php>
+        <env name="APP_ENV" value="testing" />
+        <env name="BCRYPT_ROUNDS" value="4" />
+        <env name="CACHE_DRIVER" value="array" />
+        <env name="SESSION_DRIVER" value="array" />
+        <env name="QUEUE_DRIVER" value="sync" />
+        <env name="MAIL_DRIVER" value="array" />
+        <env name="DB_DATABASE" value="multifacturalo_dusk" />
+    </php>
+    <listeners>
+        <listener class="Pro9SystemTestAuditRecorder20261109" file="/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/Pro9SystemTestAuditRecorder.php" />
+    </listeners>
+</phpunit>

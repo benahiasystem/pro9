@@ -2,7 +2,7 @@ import {igtfSettings, loadIgtfSettings, fiscalPaymentProblem} from '../helpers/i
 import IgtfSettingsStatus from '../components/IgtfSettingsStatus.vue'
 import IgtfQuoteSummary from '../components/IgtfQuoteSummary.vue'
 import {exactAmount} from '../helpers/exchange-rate-math'
-import {isRecordedReceipt} from '../helpers/payment-classification'
+import {isRecordedReceipt, paymentMethodIntermediation, retireDraftIgtfException} from '../helpers/payment-classification'
 
 // ######## INICIO CONFIGURACION COMPARTIDA IGTF ########
 export default {
@@ -30,11 +30,22 @@ export default {
     },
     created() {
         if (this.fiscalPaymentsApplicable) {
+            (this.fiscalQuoteRows || []).forEach(row => retireDraftIgtfException(row, this.$set, this.$delete))
             this.refreshIgtfSettings()
             if (typeof this.refreshFiscalQuote === 'function') this.refreshFiscalQuote()
         }
     },
     watch: {
+        // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+        fiscalQuoteRows: {deep: true, handler(rows) {
+            const retired = (rows || []).map(row => retireDraftIgtfException(row, this.$set, this.$delete)).some(Boolean)
+            if (retired) {
+                this.igtfQuoteSequence++
+                this.igtfQuote = null; this.igtfQuoteKey = null; this.igtfQuoteError = ''; this.igtfQuoteLoading = false
+                this.refreshFiscalQuote()
+            }
+        }},
+        // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         fiscalPaymentsApplicable(value) { if (value) this.refreshIgtfSettings() },
         showDialog(value) { if (value && this.fiscalPaymentsApplicable) this.refreshIgtfSettings() },
         is_payment(value) { if (value && this.fiscalPaymentsApplicable) this.refreshIgtfSettings() },
@@ -66,17 +77,29 @@ export default {
                     date_of_payment: row.date_of_payment,
                     payment_method_type_id: row.payment_method_type_id, payment: row.payment,
                     currency_type_id: money, original_amount: row.original_amount ?? (money === currency ? row.payment : null),
-                    exchange_rate: row.exchange_rate ?? (money === currency ? rate : null), financial_intermediation: row.financial_intermediation,
-                    igtf_status: row.igtf_status === 'exempt' ? 'exempt' : undefined,
-                    exemption_reason: row.exemption_reason, exception_basis: row.exception_basis,
+                    // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+                    exchange_rate: row.exchange_rate ?? (money === currency ? rate : null),
+                    financial_intermediation: isRecordedReceipt(row) ? row.financial_intermediation
+                        : paymentMethodIntermediation(this.payment_method_types || [], row.payment_method_type_id),
+                    // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
                 }
             })
             return {document_id: documentId || undefined, customer_id: this.form?.customer_id || this.customerId || this.document?.customer_id || undefined,
                 currency_type_id: currency, exchange_rate_sale: rate, principal_due: due, payments: payloadRows}
         },
         fiscalQuotePresentation(quote) {
-            return JSON.stringify([quote?.payments?.map(row => [row.igtf_status, row.tax_amount, row.reason, row.change]),
+            return JSON.stringify([quote?.payments?.map(row => [row.igtf_status, row.tax_amount, row.reason, row.change, row.payment,
+                row.settlement_adjustment, row.settlement_adjustment_exact]), quote?.principal_applied, quote?.balance,
                 quote?.igtf_enabled, quote?.igtf_rate, quote?.total_with_tax, quote?.received_by_currency, quote?.tendered_by_currency])
+        },
+        fiscalAppliedPayment(row) {
+            // A quote is presentation only; writing it into the draft would propose
+            // different received dollars through the payment conversion watchers.
+            if (!this.igtfQuote || this.igtfQuoteLoading || this.igtfQuoteError || this.igtfQuoteKey !== this.fiscalQuoteKey) return row.payment
+            const rows = this.fiscalQuoteRows.filter(value => {
+                try { return exactAmount(value.payment || '0').compare(0) > 0 } catch (_) { return false }
+            })
+            return this.igtfQuote.payments[rows.indexOf(row)]?.payment ?? row.payment
         },
         async refreshFiscalQuote(payments = this.fiscalQuoteRows) {
             const request = this.fiscalQuoteRequest(payments)
@@ -114,7 +137,12 @@ export default {
             } catch (error) {
                 if (isCurrent()) {
                     const data = error.response?.data || {}
-                    const first = Object.values(data.errors || {}).flat().find(value => typeof value === 'string')
+                    const errors = data.errors || (data.message && typeof data.message === 'object' ? data.message : data)
+                    const first = error.response?.status === 422 && errors && typeof errors === 'object'
+                        ? Object.entries(errors).filter(([key]) => !['message', 'file', 'line'].includes(key))
+                            .flatMap(([, value]) => Array.isArray(value) ? value : [value])
+                            .find(value => typeof value === 'string' && value.trim())
+                        : null
                     this.igtfQuoteError = first || 'No se pudo evaluar el cobro. Revise los datos y reintente.'
                 }
                 return null
@@ -124,6 +152,7 @@ export default {
         },
         async ensureFiscalPaymentsReady(payments) {
             if (!this.fiscalPaymentsApplicable) return true
+            for (const row of payments || []) retireDraftIgtfException(row, this.$set, this.$delete)
             if (this.igtfPreparingSubmission || this.loading_submit) return false
             this.igtfPreparingSubmission = true
             const form = this.form

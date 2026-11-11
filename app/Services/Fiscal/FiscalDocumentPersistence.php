@@ -234,34 +234,48 @@ final class FiscalDocumentPersistence
             $lockedMethod = null;
             if (!$existing && !$receiptOrigin) {
                 $lockedMethod = \App\Services\Payments\MethodCurrency::validateNew($input['payment_method_type_id'] ?? null, (string)$document->currency_type_id, $input, $document->getConnection());
+                // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+                $input = \App\Services\Payments\Classification::withFinancialIntermediation($input, $lockedMethod);
+                // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
             }
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $date = \Carbon\Carbon::parse($input['date_of_payment'] ?? now())->format('Y-m-d');
             $issuer = $existing->fiscal_context['issuer'] ?? FiscalProfileService::at($company, $date);
             $buyer = $existing->fiscal_context['buyer'] ?? FiscalProfileService::at(Person::findOrFail($document->customer_id), $date);
             if ($existing) {
+                // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+                $input = RecordedPaymentAmounts::context($existing, $input);
+                // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
                 $decision = $existing->fiscal_context['decision'] ?? [];
+                // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+                // An omitted value on a retry comes from its frozen decision, never today's method.
+                $input['financial_intermediation'] = $input['financial_intermediation'] ?? ($decision['financial_intermediation'] ?? null);
+                // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
                 if (($input['financial_intermediation'] ?? null) !== ($decision['financial_intermediation'] ?? null)
                     || ($input['exception_basis'] ?? null) !== ($decision['exception_basis'] ?? null)) FiscalAmounts::error('operation_key', 'La operación ya existe con otro contexto fiscal.');
             } elseif ($receiptOrigin) {
                 // The commercial source already owns this real receipt; conversion cannot perceive it again.
-                $decision = ['igtf_status'=>'not_applicable', 'financial_intermediation'=>$input['financial_intermediation'] ?? null,
-                    'exception_basis'=>null, 'authorized_by'=>null, 'reason'=>'reused_receipt'];
+                $decision = ['igtf_status'=>'not_applicable', 'financial_intermediation'=>$input['financial_intermediation'] ?? null, 'reason'=>'reused_receipt'];
                 $input['igtf_status'] = 'not_applicable';
+                unset($input['exemption_reason'], $input['exception_basis']);
             } else {
                 $decision = SpecialTaxpayerPolicy::payment($issuer, $input, $input['currency_type_id'] ?? $document->currency_type_id, $date);
             }
             $input['igtf_status'] = $input['igtf_status'] ?? ($decision['igtf_status'] ?? 'not_applicable');
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
-            $storedRate = $existing ? \App\Models\Tenant\DocumentTax::where('document_payment_id',$existing->id)->lockForUpdate()->value('percentage') : null;
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
-            $values = FiscalAmounts::payment($input, $document->currency_type_id, $document->exchange_rate_sale,
-                $existing ? $existing->igtf_status === 'subject' : (bool)$company->igtf_enabled, $existing ? $storedRate : $company->igtf_rate);
+            // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+            $values = $existing ? RecordedPaymentAmounts::forRetry($existing, $input, $document->currency_type_id, $document->exchange_rate_sale)
+                : FiscalAmounts::payment($input, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate);
+            // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
             if (isset($input['quoted_tax_amount']) && !D::of(D::input($input['quoted_tax_amount'], 'quoted_tax_amount'))->isEqualTo(D::of($values['tax_amount']))) {
                 FiscalAmounts::error('quoted_tax_amount', 'El IGTF cambió desde la evaluación. Revise el cobro y vuelva a confirmarlo.');
             }
             // Only the internal initial-invoice caller supplies the independently calculated gross input.
             if ($initial && !$existing && !$receiptOrigin && $initialAmounts !== null) {
+                if (isset($initialAmounts['settlement_payment'])) {
+                    $values = \App\Services\Payments\ReceiptChange::withSettlement($values, $initialAmounts['settlement_payment']);
+                }
                 foreach (['requested_amount', 'cash_adjustment'] as $field) {
                     $values['calculation_snapshot']['values'][$field] = $initialAmounts[$field];
                 }

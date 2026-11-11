@@ -25,7 +25,7 @@ Rutas de código relativas a Pro9. Describir lo implementado no amplía autoriza
 
 - `companies.fiscal_profile`/`persons.fiscal_profile`: JSON nullable para versión actual y recursos; no mass fillable.
 - `fiscal_profile_versions`: creadora `2026_08_17_000336`, ID, empresa/persona, vigencia, JSON validado, actor y fecha. El servicio escribe una entidad por fila. Índices entidad/fecha; FKs restrictivas empresa/persona/actor en `000999`, retiradas al revertir.
-- `document_payments.fiscal_context`: `issuer/buyer`, `decision`, `date`; decisión conserva clasificación/intermediación/fundamento/actor.
+- `document_payments.fiscal_context`: `issuer/buyer`, `decision`, `date`; decisiones nuevas conservan clasificación/intermediación. Los fundamentos y actores de excepciones anteriores se conservan sólo como historia inmutable.
 - `document_received_retentions.fiscal_context`: perfiles, propuesta, operación, concepto ISLR congelado, control/número de factura y actor.
 - `documents.issuer/customer.fiscal_profile`: versiones por fecha de emisión con `version_id`. ND limpia perfil doméstico antes de resolver identidad HKA.
 - DDL sólo inicial, sin backfill/conversión de tenants existentes. Los conteos del informe son evidencia de su fecha, no constantes para futuros cambios.
@@ -36,9 +36,11 @@ Rutas de código relativas a Pro9. Describir lo implementado no amplía autoriza
 |---|---|
 | `GET fiscal-profiles/{kind}/{id}` | `kind=company/customer`: perfil vigente, historial y `can_edit`; escritura sólo con tabla de versiones y administrador. |
 | `POST fiscal-profiles/{kind}/{id}` | Nueva versión validada; cliente sólo `type=customers` y empresa con RIF propio coherente. |
-| `POST fiscal-profiles/evaluate` | Cliente/documento, fecha, moneda/intermediación recibidas, importe y contexto. Publica perfiles, banderas SPE, decisión/impuesto, configuración IGTF, intermediación pendiente y propuesta IVA/ISLR. Con documento, autoriza sucursal y resuelve su cliente en servidor. |
+| `POST fiscal-profiles/evaluate` | Cliente/documento, fecha, moneda recibida, `payment_method_type_id` opcional, importe y contexto. Con método, deriva intermediación y rechaza contradicciones; sin método conserva la consulta general de perfiles. Publica perfiles, banderas SPE, decisión/impuesto, configuración IGTF, intermediación pendiente y propuesta IVA/ISLR. Con documento, autoriza sucursal y resuelve su cliente en servidor. |
 
 Propuesta informativa sin efectos comerciales. Cobro/retención se revalida bajo bloqueo. `CompanyController`/`PersonController` rechazan perfil fiscal directo; Vue lo elimina del envío genérico. No sustituir historial/autoridad por un booleano comercial o mass assignment.
+
+Desde el 09/11/2026 no existe autorización administrativa para exceptuar IGTF. Evaluación, cotización, vista previa, captura móvil y guardado rechazan `igtf_status=exempt` y motivo/fundamento no vacíos en nuevas recepciones con 422. Se toleran los campos retirados vacíos/nulos. La evaluación ya no publica `can_authorize_exemption`. El guardado conserva una compatibilidad interna para reintentos del cobro histórico auténtico, bajo bloqueo y sin modificar su impuesto, decisión, actor o snapshot; no se activa mediante banderas del cliente. No se purgan datos ni se requieren migraciones.
 
 ## Retenciones recibidas
 

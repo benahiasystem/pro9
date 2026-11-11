@@ -22,8 +22,8 @@ final class FiscalProfileService
             Company::query()->lockForUpdate()->firstOrFail();
             $entity = $entity->newQuery()->lockForUpdate()->findOrFail($entity->id);
             if ($entity instanceof Person && $entity->type !== 'customers') FiscalAmounts::error('person_id', 'El perfil corresponde a un cliente.');
-            if ($entity instanceof Company && !$profile['commercial_activity']) FiscalAmounts::error('commercial_activity', 'El emisor requiere actividad comercial habilitada.');
-            if ($entity instanceof Company && preg_replace('/[^A-Z0-9]/', '', $profile['rif']) !== preg_replace('/[^A-Z0-9]/', '', strtoupper($entity->number))) FiscalAmounts::error('rif', 'El RIF del perfil debe corresponder a la empresa.');
+            if ($entity instanceof Company && !$profile['commercial_activity']) FiscalAmounts::error('commercial_activity', 'Marque «Actividad comercial habilitada» para guardar el perfil de la empresa emisora, si corresponde a su situación real.');
+            if ($entity instanceof Company && preg_replace('/[^A-Z0-9]/', '', $profile['rif']) !== preg_replace('/[^A-Z0-9]/', '', strtoupper($entity->number))) FiscalAmounts::error('rif', 'El RIF del perfil no coincide con el registrado en los datos de la empresa. Revise ambos valores y corrija el que no corresponda al RIF real.');
             $key = $entity instanceof Company ? 'company_id' : 'person_id';
             $id = $entity->getConnection()->table('fiscal_profile_versions')->insertGetId([
                 $key=>$entity->id, 'profile'=>json_encode($profile, JSON_THROW_ON_ERROR),

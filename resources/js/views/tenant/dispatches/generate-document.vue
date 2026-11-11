@@ -581,7 +581,7 @@ export default {
                     && row.payment_destination_id === destination && !row.reference
                     && (!row.currency_type_id || row.currency_type_id === this.document.currency_type_id)
                     && (row.original_amount == null || sameAmount(row.original_amount, payment))
-                    && !row.financial_intermediation && !['subject', 'exempt'].includes(row.igtf_status)
+                    && !row.financial_intermediation && row.igtf_status !== 'subject'
                     && (!row.tax_amount || sameAmount(row.tax_amount, 0))
                     && (!row.exchange_rate || sameAmount(row.exchange_rate, this.document.exchange_rate_sale));
                 if (unchanged) this.document.payments = this.document.payments.filter(paymentRow => paymentRow !== row);

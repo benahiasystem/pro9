@@ -12,6 +12,16 @@ const methods=[{id:'01',collection_kind:'cash',cash_currency_type_id:'VES'},{id:
 const destinations=[{id:'cash',report_version:2},{id:1,currency_type_id:'VES',report_version:2},{id:2,currency_type_id:'USD',report_version:2}];
 const ids=(rows)=>Array.from(rows,row=>row.id);
 
+// ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+test('intermediation follows the method classification including custom and reclassified IDs',()=>{
+    assert.equal(exported.paymentMethodIntermediation(methods,'01'),'none')
+    assert.equal(exported.paymentMethodIntermediation(methods,'04'),'financial_institution')
+    assert.equal(exported.paymentMethodIntermediation(methods,'09'),null)
+    assert.equal(exported.paymentMethodIntermediation(methods,'missing'),null)
+    assert.equal(exported.paymentMethodIntermediation([{id:'custom',collection_kind:'account'}],'custom'),'financial_institution')
+    assert.equal(exported.paymentMethodIntermediation([{id:'01',collection_kind:'account'}],'01'),'financial_institution')
+})
+// ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
 test('default cash sorts custom IDs by Unicode code point rather than locale',()=>{
     const rows=['^','!','01','𐀀','\uE000'].map(id=>({id,collection_kind:'cash',currency_type_id:'VES',is_active:true}))
     assert.equal(exported.defaultCashForCurrency(rows,'VES').id,'!')

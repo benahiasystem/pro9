@@ -7,6 +7,36 @@ use Tests\TestCase;
 
 class SpecialTaxpayerPolicyTest extends TestCase
 {
+    public function test_profile_errors_identify_each_missing_conditional_field(): void
+    {
+        try {
+            Policy::validate(SpeProfiles::profile([
+                'notification_reference'=>null, 'notification_date'=>null,
+                'islr_agent'=>true, 'islr_basis'=>null,
+                'iva_retention_rate'=>100, 'iva_100_basis'=>null, 'evidence_reference'=>null,
+            ]));
+            self::fail('An incomplete profile must not be accepted.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = $e->errors();
+            foreach (['notification_reference','notification_date','islr_basis','iva_100_basis','evidence_reference'] as $field) {
+                self::assertArrayHasKey($field, $errors);
+            }
+            self::assertStringContainsString('desmarque', $errors['islr_basis'][0]);
+        }
+    }
+
+    public function test_profile_format_errors_use_readable_spanish_field_names(): void
+    {
+        try {
+            Policy::validate(SpeProfiles::profile(['rif'=>'J12345678-9', 'effective_from'=>'invalid']));
+            self::fail('Invalid formats must not be accepted.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            self::assertStringContainsString('J-12345678-9', $e->errors()['rif'][0]);
+            self::assertStringContainsString('Vigencia desde', $e->errors()['effective_from'][0]);
+            self::assertStringNotContainsString('effective_from', $e->errors()['effective_from'][0]);
+        }
+    }
+
     public function test_spe_is_not_an_identity_type_or_a_special_regime(): void
     {
         foreach (['natural','legal','public'] as $nature) {
@@ -64,7 +94,7 @@ class SpecialTaxpayerPolicyTest extends TestCase
     public function test_a_non_admin_cannot_authorize_an_exception(): void
     {
         $this->actingAs(new \App\Models\Tenant\User(['id'=>1,'type'=>'seller']));
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
         Policy::payment(SpeProfiles::profile(),['financial_intermediation'=>'none','igtf_status'=>'exempt','exemption_reason'=>'Test','exception_basis'=>'Norma demostrativa'],'USD','2026-09-10');
     }
     public function test_islr_authority_is_independent_of_spe(): void

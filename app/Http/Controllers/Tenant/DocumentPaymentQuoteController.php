@@ -32,9 +32,11 @@ final class DocumentPaymentQuoteController extends Controller
             'payments.*.source_technical_service_payment_id'=>'nullable|integer', 'payments.*._reused_receipt'=>'nullable|boolean',
             'payments.*.receipt_origin'=>'nullable|array', 'payments.*.payment_method_snapshot'=>'nullable|array',
             'payments.*.financial_intermediation'=>'nullable|in:none,financial_institution',
-            'payments.*.igtf_status'=>'nullable|in:subject,exempt,not_applicable',
-            'payments.*.exemption_reason'=>'nullable|string|max:255',
-            'payments.*.exception_basis'=>'nullable|string|max:255',
+            // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+            'payments.*.igtf_status'=>'nullable|in:subject,not_applicable',
+            'payments.*.exemption_reason'=>'prohibited',
+            'payments.*.exception_basis'=>'prohibited',
+            // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         ]);
         $document = !empty($data['document_id']) ? Document::findOrFail($data['document_id']) : null;
         if ($document) {

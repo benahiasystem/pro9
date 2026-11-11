@@ -324,7 +324,8 @@ class DocumentWebTransform
                         'referencia' => Functions::valueKeyInArray($row, 'reference'),
                         'monto' => Functions::valueKeyInArray($row, 'payment', 0),
                     ];
-                    // Keep the actual receipt currency and rate in offline payloads.
+                    // Keep receipt currency/rate and legacy context for exact replay;
+                    // retired exception values on new payments are rejected downstream.
                     foreach (['currency_type_id', 'original_amount', 'exchange_rate', 'exchange_rate_source', 'exchange_rate_date',
                         'operation_key', 'igtf_status', 'exemption_reason', 'exception_basis', 'financial_intermediation', 'quoted_tax_amount'] as $field) {
                         if (array_key_exists($field, $row)) $payment[$field] = $row[$field];

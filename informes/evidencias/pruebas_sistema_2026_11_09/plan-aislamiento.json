@@ -1,0 +1,28 @@
+{
+  "ids_principales": [
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_delivery_order_reports_keep_fractional_quantities_and_frozen_units",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_free_form_full_credit_restores_fractional_invoice_lots",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_free_form_note_pdf_formats_show_frozen_lots_and_amounts",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_contingency_listing_matches_series_branch_type_and_user_scope",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_invoice_rejects_unavailable_or_foreign_lot_and_preserves_stock",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_hotel_occupancy_report_preserves_dates_people_and_recorded_prices",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_hotel_guest_report_scopes_users_and_preserves_original_document_amounts",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_fixed_asset_purchase_report_matches_fractional_rows_in_all_outputs",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_sales_report_listing_uses_one_consistent_read_when_items_change",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_document_list_and_totals_share_one_uncached_snapshot",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_customer_report_keeps_notes_currencies_and_filters_in_list_and_excel",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_sale_note_report_projects_fractional_amounts_in_pages_pdf_and_excel",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_quotation_report_uses_exact_snapshot_and_zeroes_voids_in_all_outputs",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_order_consolidated_allocates_header_and_keeps_exact_usd_prices",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_user_commission_uses_exact_profit_and_marks_cost_as_estimated",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_purchase_update_preserves_recorded_payment_after_reclassification_mysql",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_sales_commission_separates_currencies_exactly_and_never_invents_fixed_currency",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_pending_commission_keeps_currency_period_reversals_and_unknown_fixed_amount",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_purchase_report_preserves_customer_and_exact_totals_in_pdf_and_excel",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_purchase_items_api_reports_document_currency_and_exact_fractions",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_classified_cash_mysql_open_close_and_reports_share_the_same_native_balances",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_opened_cash_is_returned_by_the_paginated_cash_listing"
+  ],
+  "filter": "/(?:^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_classified_cash_mysql_open_close_and_reports_share_the_same_native_balances(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_contingency_listing_matches_series_branch_type_and_user_scope(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_customer_report_keeps_notes_currencies_and_filters_in_list_and_excel(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_delivery_order_reports_keep_fractional_quantities_and_frozen_units(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_document_list_and_totals_share_one_uncached_snapshot(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_fixed_asset_purchase_report_matches_fractional_rows_in_all_outputs(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_free_form_full_credit_restores_fractional_invoice_lots(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_free_form_note_pdf_formats_show_frozen_lots_and_amounts(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_hotel_guest_report_scopes_users_and_preserves_original_document_amounts(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_hotel_occupancy_report_preserves_dates_people_and_recorded_prices(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_invoice_rejects_unavailable_or_foreign_lot_and_preserves_stock(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_opened_cash_is_returned_by_the_paginated_cash_listing(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_order_consolidated_allocates_header_and_keeps_exact_usd_prices(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_pending_commission_keeps_currency_period_reversals_and_unknown_fixed_amount(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_purchase_items_api_reports_document_currency_and_exact_fractions(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_purchase_report_preserves_customer_and_exact_totals_in_pdf_and_excel(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_purchase_update_preserves_recorded_payment_after_reclassification_mysql(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_quotation_report_uses_exact_snapshot_and_zeroes_voids_in_all_outputs(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_sale_note_report_projects_fractional_amounts_in_pages_pdf_and_excel(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_sales_commission_separates_currencies_exactly_and_never_invents_fixed_currency(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_sales_report_listing_uses_one_consistent_read_when_items_change(?: with data set .*)?$|^Tests\\\\Unit\\\\FiscalEmissionSchemaTest::test_user_commission_uses_exact_profit_and_marks_cost_as_estimated(?: with data set .*)?$)/",
+  "expected_tests": 22
+}

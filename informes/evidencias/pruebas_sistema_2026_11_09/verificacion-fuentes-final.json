@@ -1,0 +1,15 @@
+{
+  "archivos_preexistentes": 8915,
+  "archivos_preexistentes_modificados": [],
+  "nuevos_fuera_del_informe": [
+    "informes/evidencias/postgresql_17_2026_11_09/estado_inicial.json",
+    "informes/evidencias/postgresql_17_2026_11_09/inventario_cambios.json",
+    "informes/evidencias/postgresql_17_2026_11_09/sondeos_planificacion.json",
+    "informes/evidencias/postgresql_17_2026_11_09/validacion_plan.json",
+    "informes/plan_implementacion_postgresql_17.md"
+  ],
+  "inventario_php_final": 1748,
+  "inventario_php_identico": true,
+  "archivos_js_finales": 91,
+  "inventario_js_identico": true
+}

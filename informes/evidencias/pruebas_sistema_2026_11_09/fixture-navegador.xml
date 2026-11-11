@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="" tests="1" assertions="17" errors="0" warnings="0" failures="0" skipped="0" time="21.173218">
+    <testsuite name="Unit" tests="1" assertions="17" errors="0" warnings="0" failures="0" skipped="0" time="21.173218">
+      <testsuite name="Tests\Unit\BrowserFreeFormFixtureTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/BrowserFreeFormFixtureTest.php" tests="1" assertions="17" errors="0" warnings="0" failures="0" skipped="0" time="21.173218">
+        <testcase name="test_serve_temporary_free_form_tenant_until_released" class="Tests\Unit\BrowserFreeFormFixtureTest" classname="Tests.Unit.BrowserFreeFormFixtureTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/BrowserFreeFormFixtureTest.php" line="10" assertions="17" time="21.173218"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

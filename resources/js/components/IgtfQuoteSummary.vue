@@ -14,9 +14,24 @@
             </template>
             <small class="d-block">Saldo comercial pendiente: {{ quote.balance }} {{ currency }}</small>
             <small v-for="(row, index) in quote.payments" :key="index" class="d-block">{{ row.reason }} IGTF: {{ row.tax_amount }} {{ row.currency_type_id }}<template v-if="row.change !== '0.00'">; vuelto: {{ row.change }} {{ row.currency_type_id }}</template></small>
+            <small v-for="(row, index) in quote.payments" v-if="row.settlement_adjustment !== null && row.settlement_adjustment !== undefined" :key="'adjustment-'+index" class="d-block">Ajuste por liquidación en centavos: {{ row.settlement_adjustment }} {{ currency }}<template v-if="adjustmentDetail(row)"> (detalle exacto: {{ adjustmentDetail(row) }} {{ currency }})</template>.</small>
         </template>
     </div>
 </template>
 <script>
-export default {props: {quote: {default: null}, loading: Boolean, error: {default: ''}, currency: {default: ''}}}
+import {exactAmount} from '../helpers/exchange-rate-math'
+export default {
+    props: {quote: {default: null}, loading: Boolean, error: {default: ''}, currency: {default: ''}},
+    methods: {
+        adjustmentDetail(row) {
+            if (!row.settlement_adjustment_exact) return null
+            const value = exactAmount(row.settlement_adjustment_exact)
+            if (value.compare(row.settlement_adjustment) === 0) return null
+            const text = value.decimal()
+            if (value.compare(text) === 0) return text
+            const {n, d} = value.fraction()
+            return `${n}/${d}`
+        },
+    },
+}
 </script>

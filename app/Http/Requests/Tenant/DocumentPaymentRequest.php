@@ -23,7 +23,11 @@ class DocumentPaymentRequest extends FormRequest
             'exchange_rate_date' => ['nullable','date'],
             'exchange_rate_source' => ['nullable','string','max:255'],
             'operation_key' => ['required_with:currency_type_id','uuid'],
+            // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+            // Legacy syntax is accepted only for a genuine replay, resolved and
+            // checked under lock by FiscalDocumentPersistence. New receipts reject it.
             'igtf_status' => ['sometimes', Rule::in(['subject','exempt','not_applicable'])],
+            // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
             'quoted_tax_amount' => ['sometimes', 'numeric', 'min:0'],
             'exemption_reason' => ['nullable','string','max:255'],
             'exception_basis' => ['nullable','string','max:255'],

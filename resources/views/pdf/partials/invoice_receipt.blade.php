@@ -9,6 +9,12 @@
     $methodSnapshot = $row->payment_method_snapshot ?? [];
     $isPriorReceipt = !empty($methodSnapshot['receipt_origin']);
     $methodName = $methodSnapshot['description'] ?? $row->payment_method_type?->description ?? 'No disponible';
+    $adjustment = \App\Support\Exact\Decimal::read($row, 'payment_adjustment');
+    $adjustmentText = \App\Support\Exact\Decimal::represent($adjustment);
+    if (!\App\Support\Exact\Decimal::of($adjustmentText)->isEqualTo($adjustment)) {
+        $fraction = \App\Support\Exact\Decimal::fraction($adjustment);
+        $adjustmentText = $fraction['n'].'/'.$fraction['d'];
+    }
 @endphp
 @if ($isPriorReceipt) Cobro previo — @elseif ($row->receipt_parent_id) Aplicación de IGTF — @endif{{ $methodName }}{{ $row->reference ? ' - '.$row->reference : '' }} —
 @if ($hasReceivedAmount)
@@ -22,4 +28,5 @@
 @endif
 @if ($hasReceivedAmount && $change->isPositive()) — Vuelto {{ $receiptCurrency }} {{ \App\Support\Exact\Decimal::format($change) }} @endif
 @if ($tax->isPositive()) — IGTF {{ $receiptCurrency }} {{ \App\Support\Exact\Decimal::format($tax) }} @endif
+@if (!$adjustment->isZero()) — Ajuste de liquidación {{ $document->currency_type_id }} {{ \App\Support\Exact\Decimal::format($adjustment) }}@if (!\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::represent($adjustment, 2))->isEqualTo($adjustment)) (exacto: {{ $adjustmentText }})@endif @endif
 {{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}

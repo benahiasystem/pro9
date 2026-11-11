@@ -105,7 +105,7 @@ test('technical service conversion submits an existing receipt without changing 
     assert.deepEqual(compiler.compile(source.template.content).errors,[])
     assert.match(source.template.content,/<igtf-payment-fields/)
     assert.match(source.template.content,/<receipt-currency-fields/)
-    assert.match(source.template.content,/Intermediación del cobro original/)
+    assert.doesNotMatch(source.template.content,/Intermediación del cobro original/)
 })
 
 test('technical service sends credit installments and keeps them in the draft when switching to cash', async () => {

@@ -1,0 +1,92 @@
+<?php
+$run=__DIR__;
+$plan=json_decode(file_get_contents($run.'/plan-paralelo.json'),true,512,JSON_THROW_ON_ERROR);
+$root=$plan['root'];
+require $root.'/vendor/autoload.php';
+$rows=array_values(array_filter(explode("\n",file_get_contents($run.'/inventario-php.txt')),fn($s)=>str_starts_with($s,' - ')));
+foreach ($rows as $row) {
+    $row=substr($row,3);
+    preg_match('/^(.*::[A-Za-z0-9_]+)(.*)$/',$row,$m);
+    $actual=$m[1].($m[2]!==''?' with data set '.$m[2]:'');
+    $hits=0;
+    foreach (array_merge($plan['groups'],[$plan['solo']]) as $g) {
+        $match=preg_match($g['filter'],$actual);
+        if ($match===false) throw new RuntimeException('Filtro inválido: '.preg_last_error_msg());
+        $hits+=$match;
+    }
+    if ($hits!==1) throw new RuntimeException('Cobertura incorrecta para '.$actual.': '.$hits);
+}
+fwrite(STDERR,'Inventario verificado: '.count($rows).' casos asignados una sola vez.'.PHP_EOL);
+if (in_array('--validate',$argv,true)) exit(0);
+$environment=Dotenv\Dotenv::parse(file_get_contents($root.'/.env'));
+$username=$environment['DB_USERNAME'] ?? 'root';
+$password=$environment['DB_PASSWORD'] ?? '';
+$name='pro9-suite-test-'.bin2hex(random_bytes(6));
+$execute=static function(array $cmd,?array $env=null) use ($root): array {
+    $proc=proc_open($cmd,[0=>['file','/dev/null','r'],1=>['pipe','w'],2=>['pipe','w']],$pipes,$root,$env);
+    if (!is_resource($proc)) throw new RuntimeException('No se pudo iniciar proceso.');
+    $out=stream_get_contents($pipes[1]);$err=stream_get_contents($pipes[2]);
+    fclose($pipes[1]);fclose($pipes[2]);return [proc_close($proc),$out,$err];
+};
+$started=false;$processes=[];
+$cleanup=static function() use (&$processes,&$started,$name,$execute): void {
+    foreach ($processes as $process) if (is_resource($process)) { proc_terminate($process); proc_close($process); }
+    if ($started) { $execute(['docker','rm','-f',$name]);$started=false; }
+};
+if (function_exists('pcntl_async_signals')) {
+    pcntl_async_signals(true);
+    foreach ([SIGINT,SIGTERM] as $signal) pcntl_signal($signal,static function() use ($cleanup){$cleanup();exit(143);});
+}
+try {
+    $env=getenv();
+    if ($password==='') $env['MYSQL_ALLOW_EMPTY_PASSWORD']='yes'; else $env['MYSQL_ROOT_PASSWORD']=$password;
+    if ($username!=='root') { $env['MYSQL_USER']=$username;$env['MYSQL_PASSWORD']=$password;$env['MYSQL_DATABASE']='pro9_test_control'; }
+    $cmd=['docker','run','--pull=never','--detach','--name',$name,'--publish','127.0.0.1::3306','--tmpfs','/var/lib/mysql:rw,nosuid,size=1024m','--memory','1536m','--env','MYSQL_ROOT_HOST=%'];
+    foreach (['MYSQL_ROOT_PASSWORD','MYSQL_ALLOW_EMPTY_PASSWORD','MYSQL_USER','MYSQL_PASSWORD','MYSQL_DATABASE'] as $key) if (isset($env[$key])) { $cmd[]='--env';$cmd[]=$key; }
+    array_push($cmd,'mysql:5.7.33','--innodb-flush-log-at-trx-commit=2','--sync-binlog=0','--skip-log-bin');
+    [$status,$out,$err]=$execute($cmd,$env);
+    if ($status!==0) throw new RuntimeException('MySQL temporal no pudo iniciarse: '.$err);
+    $started=true;
+    [$status,$port]=$execute(['docker','port',$name,'3306/tcp']);
+    if ($status!==0 || !preg_match('/127\.0\.0\.1:(\d+)/',$port,$m)) throw new RuntimeException('Puerto no disponible.');
+    $port=$m[1];$ready=false;
+    for ($i=0;$i<90;$i++) {
+        try { $pdo=new PDO('mysql:host=127.0.0.1;port='.$port.';dbname=information_schema','root',$password);$ready=true;break; }
+        catch (PDOException $e) { usleep(500000); }
+    }
+    if (!$ready) throw new RuntimeException('MySQL temporal no respondió.');
+    if ($username!=='root') $pdo->exec('GRANT ALL PRIVILEGES ON *.* TO '.$pdo->quote($username)."@'%' WITH GRANT OPTION");
+    unset($pdo);
+    $testEnv=getenv();$testEnv['DB_HOST']='127.0.0.1';$testEnv['DB_PORT']=$port;$testEnv['PRO9_FISCAL_MYSQL_TESTS']='1';
+    $start=static function(array $group,string $id) use ($root,$run,$testEnv,&$processes): void {
+        $log=$run.'/phpunit-'.$id.'.log';file_put_contents($log,'');
+        $cmd=[PHP_BINARY,$root.'/vendor/bin/phpunit','--colors=never','--do-not-cache-result','--printer','Tests\\Support\\FiscalProgressPrinter','--log-junit',$run.'/phpunit-'.$id.'.xml','--filter',$group['filter']];
+        $process=proc_open($cmd,[0=>['file','/dev/null','r'],1=>['file',$log,'a'],2=>['file',$log,'a']],$pipes,$root,$testEnv);
+        if (!is_resource($process)) throw new RuntimeException('No se pudo iniciar '.$id);
+        $processes[$id]=$process;
+        fwrite(STDERR,$id.': '.$group['expected_tests'].' casos.'.PHP_EOL);
+    };
+    $wait=static function() use (&$processes,$run): array {
+        $results=[];
+        while ($processes) {
+            foreach ($processes as $id=>$process) {
+                $state=proc_get_status($process);
+                if (!$state['running']) {
+                    $code=$state['exitcode'];proc_close($process);unset($processes[$id]);
+                    $results[$id]=$code;file_put_contents($run.'/phpunit-'.$id.'.exit',$code."\n");
+                    fwrite(STDERR,$id.' finalizado: '.$code.PHP_EOL);
+                }
+            }
+            if ($processes) usleep(250000);
+        }
+        return $results;
+    };
+    foreach ($plan['groups'] as $index=>$group) $start($group,'grupo-'.($index+1));
+    $results=$wait();
+    $start($plan['solo'],'http');
+    $results=array_merge($results,$wait());
+    file_put_contents($run.'/resultados-paralelos.json',json_encode(['container'=>$name,'expected_tests'=>$plan['expected_tests'],'exits'=>$results,'http_performance_run_without_other_test_workers'=>true],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE)."\n");
+    $exit=array_filter($results,fn($x)=>$x!==0)?1:0;
+} catch (Throwable $e) { fwrite(STDERR,get_class($e).': '.$e->getMessage().PHP_EOL);$exit=2; }
+finally { $cleanup(); }
+exit($exit);

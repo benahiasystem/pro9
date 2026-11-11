@@ -44,11 +44,38 @@
   "_index-e849b4f5.js": {
     "file": "assets/index-e849b4f5.js"
   },
-  "_vue-clipboard-7e61df22.js": {
+  "_index-f428bc3c.js": {
+    "assets": [
+      "assets/element-icons-ab40a589.woff",
+      "assets/element-icons-a30f5b3b.ttf"
+    ],
+    "css": [
+      "assets/index-fd3e0cf7.css"
+    ],
+    "file": "assets/index-f428bc3c.js",
+    "imports": [
+      "_index-e849b4f5.js",
+      "_vue.esm-340a2d96.js"
+    ]
+  },
+  "_vue-clipboard-38f580af.js": {
     "css": [
       "assets/vue-clipboard-a067d18e.css"
     ],
-    "file": "assets/vue-clipboard-7e61df22.js",
+    "file": "assets/vue-clipboard-38f580af.js",
+    "imports": [
+      "_vue.esm-340a2d96.js",
+      "_index-f428bc3c.js",
+      "_index-e849b4f5.js",
+      "__plugin-vue2_normalizer-2bbd088e.js",
+      "_exchange-rate-math-3f317c0a.js"
+    ]
+  },
+  "_vue-clipboard-912bc5e9.js": {
+    "css": [
+      "assets/vue-clipboard-a067d18e.css"
+    ],
+    "file": "assets/vue-clipboard-912bc5e9.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
@@ -64,16 +91,48 @@
     "file": "assets/claim_form-934f24c8.css",
     "src": "claim_form.css"
   },
+  "element-icons.ttf": {
+    "file": "assets/element-icons-a30f5b3b.ttf",
+    "src": "element-icons.ttf"
+  },
+  "element-icons.woff": {
+    "file": "assets/element-icons-ab40a589.woff",
+    "src": "element-icons.woff"
+  },
+  "figtree-italic-latin-ext.woff2": {
+    "file": "assets/figtree-italic-latin-ext-a0cc105b.woff2",
+    "src": "figtree-italic-latin-ext.woff2"
+  },
+  "figtree-italic-latin.woff2": {
+    "file": "assets/figtree-italic-latin-7242fa62.woff2",
+    "src": "figtree-italic-latin.woff2"
+  },
+  "figtree-latin-ext.woff2": {
+    "file": "assets/figtree-latin-ext-bf7828e2.woff2",
+    "src": "figtree-latin-ext.woff2"
+  },
+  "figtree-latin.woff2": {
+    "file": "assets/figtree-latin-4ba7d3d0.woff2",
+    "src": "figtree-latin.woff2"
+  },
   "index.css": {
     "file": "assets/index-fd3e0cf7.css",
     "src": "index.css"
   },
+  "jetbrains-mono-latin-ext.woff2": {
+    "file": "assets/jetbrains-mono-latin-ext-db5ff4db.woff2",
+    "src": "jetbrains-mono-latin-ext.woff2"
+  },
+  "jetbrains-mono-latin.woff2": {
+    "file": "assets/jetbrains-mono-latin-83c005d4.woff2",
+    "src": "jetbrains-mono-latin.woff2"
+  },
   "modules/ClaimsBook/Resources/assets/js/app.js": {
-    "file": "assets/app-018e713d.js",
+    "file": "assets/app-53bade9b.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-e849b4f5.js",
-      "_index-3744837a.js",
+      "_index-f428bc3c.js",
       "_claim_form-e14cd897.js",
       "__plugin-vue2_normalizer-2bbd088e.js"
     ],
@@ -175,7 +234,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-732739ca.css",
+    "file": "assets/app-ad52e984.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -185,13 +244,13 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-732739ca.css"
+      "assets/app-ad52e984.css"
     ],
-    "file": "assets/app-9b6b3519.js",
+    "file": "assets/app-1f7de19d.js",
     "imports": [
-      "_vue-clipboard-7e61df22.js",
+      "_vue-clipboard-38f580af.js",
       "_vue.esm-340a2d96.js",
-      "_index-3744837a.js",
+      "_index-f428bc3c.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
       "_exchange-rate-math-3f317c0a.js",
       "_index-e849b4f5.js",
@@ -201,24 +260,36 @@
     "src": "resources/js/app.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-2371f470.css",
+    "file": "assets/system-d1646df0.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-2371f470.css"
+      "assets/system-d1646df0.css"
     ],
-    "file": "assets/system-423660aa.js",
+    "file": "assets/system-638c8f9d.js",
     "imports": [
-      "_vue-clipboard-7e61df22.js",
+      "_vue-clipboard-38f580af.js",
       "_vue.esm-340a2d96.js",
-      "_index-3744837a.js",
+      "_index-f428bc3c.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
       "_exchange-rate-math-3f317c0a.js",
       "_index-e849b4f5.js"
     ],
     "isEntry": true,
     "src": "resources/js/system.js"
+  },
+  "tabler-icons.ttf": {
+    "file": "assets/tabler-icons-9920d986.ttf",
+    "src": "tabler-icons.ttf"
+  },
+  "tabler-icons.woff": {
+    "file": "assets/tabler-icons-ed0c7bc9.woff",
+    "src": "tabler-icons.woff"
+  },
+  "tabler-icons.woff2": {
+    "file": "assets/tabler-icons-c9df3377.woff2",
+    "src": "tabler-icons.woff2"
   },
   "vue-clipboard.css": {
     "file": "assets/vue-clipboard-a067d18e.css",

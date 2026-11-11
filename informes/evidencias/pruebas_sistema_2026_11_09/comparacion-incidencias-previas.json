@@ -1,0 +1,175 @@
+{
+  "fase": "Ejecución de cuatro procesos previa al reinicio del equipo",
+  "fuente": "Mensajes de FiscalProgressPrinter observados en las salidas de herramientas de este chat antes del reinicio.",
+  "limitacion": "Los registros de esa ejecución estaban en /tmp y se perdieron con el reinicio. Esta lista conserva los mensajes observados, pero no acredita una ejecución completa ni integra los totales definitivos.",
+  "incidencias": [
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_free_form_invoices_credit_and_debit_match_cash_products_and_local_pdfs",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_note_concurrent_retention_corrections_preserve_uncertain_effects",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_iva_net_forecast_idempotence_hka_and_audited_replacement",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_iva_two_processes_register_one_active_voucher",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_free_form_control_requires_admin_unique_real_reference_and_rolls_back",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_islr_pending_support_reference_rollback_and_recovery",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_islr_retention_rejects_paid_balance_after_prior_transaction_read",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_note_iva_replacement_preserves_real_vouchers_without_fake_cash",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_iva_voucher_staged_during_creation_consumes_upload_only_after_commit",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_iva_fiscal_ves_is_independent_from_usd_settlement_rate",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_free_form_wrong_control_invalidates_voucher_without_settling",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_islr_different_rates_declared_authority_and_net_capability",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_islr_concurrent_registration_collection_and_reversal",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_iva_retention_rejects_paid_balance_after_prior_transaction_read",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_iva_staged_reference_mismatch_permissions_and_expired_support",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_free_form_received_iva_and_islr_wait_for_verified_control_and_restore_balance",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_islr_coexists_with_iva_idempotence_replacement_cash_and_hka",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_islr_hka_rejection_foreign_conflict_and_adopted_reversal",
+      "tipo": "error",
+      "mensaje": "La intermediación debe coincidir con la naturaleza del método de pago seleccionado.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_fresh_tenant_migrations_seed_rollback_and_repeat",
+      "tipo": "error",
+      "mensaje": "No se pueden verificar los movimientos de inventario de la nota de venta.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_api_invoice_reuses_sale_note_receipt_and_links_source with data set \"digital\"",
+      "tipo": "error",
+      "mensaje": "No se pueden verificar los movimientos de inventario de la nota de venta.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_api_invoice_reuses_sale_note_receipt_and_links_source with data set \"forma libre\"",
+      "tipo": "error",
+      "mensaje": "No se pueden verificar los movimientos de inventario de la nota de venta.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\ExactMySqlContinuationTest::test_tender_credit_check_and_reversal_use_the_same_mysql_fractions",
+      "tipo": "error",
+      "mensaje": "La forma de pago seleccionada no está disponible.",
+      "resultado_principal": "error"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_sale_note_receipt_deletion_and_invoice_reuse_are_serialized",
+      "tipo": "failure",
+      "mensaje_resumido": "Failed asserting that 0 is identical to 1.",
+      "resultado_principal": "failure"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_storefront_order_receipt_is_generated_once_concurrently with data set \"factura\"",
+      "tipo": "failure",
+      "mensaje_resumido": "No inició la generación: ",
+      "resultado_principal": "passed"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_simultaneous_sale_note_receipts_keep_current_settlement_state",
+      "tipo": "failure",
+      "mensaje_resumido": "El texto del PDF no contiene \"OP. GRAVADA\"; la salida observada muestra \"IVA:\".",
+      "resultado_principal": "failure"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_receipt_reads_tax_percentage_after_concurrent_catalog_update",
+      "tipo": "failure",
+      "mensaje_resumido": "No inició el proceso: ",
+      "resultado_principal": "passed"
+    },
+    {
+      "id": "Tests\\Unit\\BankPaymentMysqlTest::test_mobile_update_does_not_remove_a_concurrently_recorded_receipt with data set \"digital\"",
+      "tipo": "error",
+      "mensaje_resumido": "El proceso fiscal_payment_concurrency_worker.php excedió el timeout de 30 segundos.",
+      "resultado_principal": "passed"
+    },
+    {
+      "id": "Tests\\Unit\\FiscalEmissionSchemaTest::test_special_tax_regimes_persist_settle_edit_freeze_and_emit_after_commit",
+      "tipo": "error",
+      "mensaje_resumido": "El proceso fiscal_payment_concurrency_worker.php excedió el timeout de 30 segundos.",
+      "resultado_principal": "passed"
+    }
+  ]
+}

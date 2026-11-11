@@ -1,0 +1,324 @@
+{
+  "version": 2,
+  "objetivo": "Ejecutar todas las pruebas del sistema e informar todos los errores encontrados, sin corregir errores.",
+  "fecha": "2026-11-09",
+  "zona_horaria": "America/Caracas",
+  "finalizado_local": "2026-11-09T03:26:05.094865-04:00",
+  "repositorio": "/home/benahia/benahia/pro/Pro9",
+  "commit": "f4179b3722a4bfebc62a8101ed5e53aa80e46c56",
+  "estado_evaluado": "Árbol de trabajo con cambios previos del usuario; conservados sin modificaciones de contenido.",
+  "runtime": {
+    "php": "8.2.35",
+    "phpunit": "9.6.34",
+    "node": "22.19.0",
+    "mysql": "5.7.33 en servidores Docker temporales"
+  },
+  "suite_principal": {
+    "resumen": {
+      "pruebas_inventariadas": 1748,
+      "pruebas_registradas": 1748,
+      "pruebas_junit": 1748,
+      "resultados": {
+        "passed": 1647,
+        "error": 78,
+        "failure": 20,
+        "skipped": 3
+      },
+      "aserciones": 39984,
+      "segundos_acumulados_casos": 3624.457005241,
+      "cobertura_completa": true,
+      "casos_fallidos": 98,
+      "capturas_por_prueba": 1748,
+      "consolidado_utc": "2026-11-09T07:02:33.377531+00:00"
+    },
+    "comando": [
+      "python3",
+      "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/ejecutar-persistente.py"
+    ],
+    "comandos_phpunit": [
+      {
+        "grupo": "principal-1",
+        "intento": 1,
+        "pid": 19686,
+        "casos_seleccionados": 874,
+        "comando": [
+          "php",
+          "scripts/test_exact_isolated_mysql.php",
+          "--configuration",
+          "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-observado.xml",
+          "--colors=never",
+          "--do-not-cache-result",
+          "--printer",
+          "Tests\\Support\\FiscalProgressPrinter",
+          "--log-junit",
+          "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-principal-1-intento-1.xml",
+          "--filter",
+          "/^(?:Tests\\\\Unit\\\\BankPaymentMysqlTest::.*|Tests\\\\Unit\\\\ExportInvoiceTest::.*|Tests\\\\Unit\\\\FiscalEmissionSettingsTest::.*|Tests\\\\Unit\\\\PersonRequestVenezuelaTest::.*|Tests\\\\Unit\\\\ItemImportContractTest::.*|Tests\\\\Unit\\\\ThirdPartyInvoiceTest::.*|Tests\\\\Unit\\\\FiscalControlNumberTest::.*|Tests\\\\Feature\\\\SystemConfigurationImageUploadTest::.*|Tests\\\\Unit\\\\CurrentPdfRenderingTest::.*|Tests\\\\Unit\\\\VenezuelaPersonLocationTest::.*|Tests\\\\Unit\\\\DocumentNumberDisplayTest::.*|Tests\\\\Unit\\\\SalesDocumentTypePolicyTest::.*|Tests\\\\Unit\\\\VenezuelaIvaContractTest::.*|Tests\\\\Unit\\\\ExactDateFormatProofTest::.*|Tests\\\\Unit\\\\ExactGuardProofTest::.*|Tests\\\\Unit\\\\ExactArrayUnionProofTest::.*|Tests\\\\Unit\\\\ExactCalculationTest::.*|Tests\\\\Unit\\\\SpecialTaxpayerPolicyTest::.*|Tests\\\\Unit\\\\HkaA5LayoutTest::.*|Tests\\\\Unit\\\\VenezuelaIdentityDocumentContractTest::.*|Tests\\\\Unit\\\\ExactHeaderAllocationTest::.*|Tests\\\\Unit\\\\ExactTenderConsumersTest::.*|Tests\\\\Unit\\\\VenezuelaCurrencyTest::.*|Tests\\\\Unit\\\\VenezuelaPhoneLocalizationTest::.*|Tests\\\\Unit\\\\FiscalApiPaymentTransformTest::.*|Tests\\\\Unit\\\\LocalFiscalDocumentPolicyTest::.*|Tests\\\\Unit\\\\SeriesMySqlConcurrencyTest::.*|Tests\\\\Unit\\\\VenezuelaGeopoliticalContractTest::.*|Tests\\\\Unit\\\\BcvExchangeRateTest::.*|Tests\\\\Unit\\\\ClassifiedCashWorkbookTest::.*|Tests\\\\Unit\\\\ExactCentralQuoteTest::.*|Tests\\\\Unit\\\\ExactSaleNoteGroupingTest::.*|Tests\\\\Unit\\\\HkaCreditInvoiceTest::.*|Tests\\\\Unit\\\\PdfPricePrecisionTest::.*|Tests\\\\Unit\\\\DocumentListColumnsTest::.*|Tests\\\\Unit\\\\HkaNotePaymentsTest::.*|Tests\\\\Unit\\\\SalesWithoutReceiptSourceContractTest::.*|Tests\\\\Unit\\\\SystemRifLookupServiceTest::.*|Tests\\\\Unit\\\\DocumentDeliveryOrderListTest::.*|Tests\\\\Unit\\\\DocumentFiscalAuthorizationTest::.*|Tests\\\\Unit\\\\FiscalFixtureSnapshotTest::.*|Tests\\\\Unit\\\\HkaCreditNumberingTest::.*|Tests\\\\Unit\\\\HkaMailTest::.*|Tests\\\\Unit\\\\MethodCurrencyTest::.*|Tests\\\\Unit\\\\QuotationPdfAmountsTest::.*|Tests\\\\Unit\\\\RetiredBagTaxExportTest::.*|Tests\\\\Unit\\\\CurrentLocalDocumentReferenceTest::.*|Tests\\\\Unit\\\\ExactFinanceCalculationTest::.*|Tests\\\\Unit\\\\ExactLateCalculationTest::.*|Tests\\\\Unit\\\\ExactReportDatasetTest::.*|Tests\\\\Unit\\\\HkaIvaRateCatalogContractTest::.*|Tests\\\\Unit\\\\HotelRentProductsTemplateContractTest::.*|Tests\\\\Unit\\\\Pro8SkillContractParityTest::.*|Tests\\\\Unit\\\\ReceiptPresentationTest::.*|Tests\\\\Unit\\\\SystemClientRifRequestTest::.*|Tests\\\\Unit\\\\TenantConnectionBootstrapContractTest::.*|Tests\\\\Unit\\\\TenantRouteRegistrationContractTest::.*|Tests\\\\Unit\\\\WhatsAppDraftPricingTest::.*|Tests\\\\Feature\\\\LoginSvgUploadTest::.*|Tests\\\\Unit\\\\CurrentPdfTemplateContractTest::.*|Tests\\\\Unit\\\\DocumentPaymentHistoricalReportTest::.*|Tests\\\\Unit\\\\ExactCommercialBatchTest::.*|Tests\\\\Unit\\\\ExactProductPricesTest::.*|Tests\\\\Unit\\\\ExactReportTicketRenderingTest::.*|Tests\\\\Unit\\\\ExchangeRateModelPrecisionTest::.*|Tests\\\\Unit\\\\FreshTenantInstallationContractTest::.*|Tests\\\\Unit\\\\HotelVenezuelanIdentificationContractTest::.*|Tests\\\\Unit\\\\ItemImportValidationWorkbookTest::.*|Tests\\\\Unit\\\\PurchaseDefaultWarehouseSourceContractTest::.*|Tests\\\\Unit\\\\SubscriptionSaleNoteFileTest::.*|Tests\\\\Unit\\\\BankCommissionTest::.*|Tests\\\\Unit\\\\BcvMySqlConcurrencyTest::.*|Tests\\\\Unit\\\\BrowserFreeFormFixtureTest::.*|Tests\\\\Unit\\\\CustomerReportAmountsTest::.*|Tests\\\\Unit\\\\DocumentCurrencyTotalsTest::.*|Tests\\\\Unit\\\\DocumentUpdateRequestTest::.*|Tests\\\\Unit\\\\ExactCalculationHttpBoundaryTest::.*|Tests\\\\Unit\\\\ExactMySqlContinuationTest::.*|Tests\\\\Unit\\\\ExactSourceCoverageTest::.*|Tests\\\\Unit\\\\ExactSupplyCostTest::.*|Tests\\\\Unit\\\\ExchangeRatePrecisionUpgradeTest::.*|Tests\\\\Unit\\\\IvaRetentionHttpContractTest::.*|Tests\\\\Unit\\\\PaymentWorkbookExportTest::.*|Tests\\\\Unit\\\\PendingCommissionRenderTest::.*|Tests\\\\Unit\\\\ProductFlowSchemaContractTest::.*|Tests\\\\Unit\\\\QuotationItemAttributesTest::.*|Tests\\\\Unit\\\\ReportApiExactTotalsTest::.*|Tests\\\\Unit\\\\RetentionCreationDisabledTest::.*|Tests\\\\Unit\\\\SeniatRetentionCatalogContractTest::.*|Tests\\\\Unit\\\\TenantMigrationOrderContractTest::.*|Tests\\\\Unit\\\\UnpaidPaymentMethodFilterTest::.*|Tests\\\\Feature\\\\ExampleTest::.*)$/"
+        ],
+        "log": "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-principal-1-intento-1.log",
+        "junit": "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-principal-1-intento-1.xml",
+        "checkpoint": "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-principal-1.jsonl"
+      },
+      {
+        "grupo": "principal-2",
+        "intento": 1,
+        "pid": 19687,
+        "casos_seleccionados": 873,
+        "comando": [
+          "php",
+          "scripts/test_exact_isolated_mysql.php",
+          "--configuration",
+          "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-observado.xml",
+          "--colors=never",
+          "--do-not-cache-result",
+          "--printer",
+          "Tests\\Support\\FiscalProgressPrinter",
+          "--log-junit",
+          "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-principal-2-intento-1.xml",
+          "--filter",
+          "/^(?:Tests\\\\Unit\\\\FiscalEmissionSchemaTest::.*|Tests\\\\Unit\\\\SeriesNumberingTest::.*|Tests\\\\Unit\\\\SpecialTaxRegimeTest::.*|Tests\\\\Unit\\\\HkaPdfTest::.*|Tests\\\\Unit\\\\PaymentQuoteTest::.*|Tests\\\\Feature\\\\PaymentClassificationTest::.*|Tests\\\\Unit\\\\MultiUserAccessSecurityTest::.*|Tests\\\\Unit\\\\FiscalIdentityTest::.*|Tests\\\\Unit\\\\HkaPayloadBuilderTest::.*|Tests\\\\Unit\\\\InvoicePaymentPreviewCurrencyTest::.*|Tests\\\\Unit\\\\DocumentFileNameTest::.*|Tests\\\\Unit\\\\ExactReceivablesTest::.*|Tests\\\\Unit\\\\VendeyaDocumentPayloadNormalizerTest::.*|Tests\\\\Feature\\\\PaymentMethodCreationTest::.*|Tests\\\\Unit\\\\ExactExtensionPersistenceTest::.*|Tests\\\\Unit\\\\ProductVariableCatalogParserTest::.*|Tests\\\\Unit\\\\IgtfExceptionRetirementTest::.*|Tests\\\\Unit\\\\VenezuelaSourceContractTest::.*|Tests\\\\Unit\\\\HkaCustomerIdentityTest::.*|Tests\\\\Unit\\\\VenezuelaLocalizationTest::.*|Tests\\\\Unit\\\\ExactJsonBoundaryTest::.*|Tests\\\\Unit\\\\ItemImportWorkbookValidatorTest::.*|Tests\\\\Unit\\\\VenezuelaInitialCatalogContractTest::.*|Tests\\\\Unit\\\\CatalogNamesMigrationContractTest::.*|Tests\\\\Unit\\\\ExactSalesConsolidatedTest::.*|Tests\\\\Unit\\\\HkaResponseTest::.*|Tests\\\\Unit\\\\SalesCustomerIdentityPolicyTest::.*|Tests\\\\Unit\\\\SunatSeniatMigrationContractTest::.*|Tests\\\\Unit\\\\VenezuelaUnitTypeContractTest::.*|Tests\\\\Unit\\\\CurrentDocumentResolutionTest::.*|Tests\\\\Unit\\\\ExactConsolidatedConsumersTest::.*|Tests\\\\Unit\\\\FiscalLineCalculationTest::.*|Tests\\\\Unit\\\\JiraInProgressMigrationContractTest::.*|Tests\\\\Unit\\\\DeliveryOrderNamingContractTest::.*|Tests\\\\Unit\\\\DetractionRemovalTest::.*|Tests\\\\Unit\\\\ExactExtensionBoundariesTest::.*|Tests\\\\Unit\\\\ProductModuleFlowContractTest::.*|Tests\\\\Unit\\\\SystemRifContractTest::.*|Tests\\\\Feature\\\\BankCommissionPersistenceTest::.*|Tests\\\\Unit\\\\ExactPayablesTest::.*|Tests\\\\Unit\\\\HkaAutoSendSettingCommandTest::.*|Tests\\\\Unit\\\\HkaIslrRetentionTest::.*|Tests\\\\Unit\\\\ItemImportPipelineSourceContractTest::.*|Tests\\\\Unit\\\\QuotationPdfAdjustmentsTest::.*|Tests\\\\Unit\\\\ReceiptAmountsTest::.*|Tests\\\\Unit\\\\SalesIdentityDocumentEmissionContractTest::.*|Tests\\\\Unit\\\\CurrentNoteInputTest::.*|Tests\\\\Unit\\\\ExactInputValidationTest::.*|Tests\\\\Unit\\\\ExactReadSnapshotTest::.*|Tests\\\\Unit\\\\HkaA5TextTest::.*|Tests\\\\Unit\\\\HkaTransportTest::.*|Tests\\\\Unit\\\\MovementBalancesTest::.*|Tests\\\\Unit\\\\QuotationStorefrontCorrelativeTest::.*|Tests\\\\Unit\\\\ReceivedPaymentCurrencyTest::.*|Tests\\\\Unit\\\\SystemRifTest::.*|Tests\\\\Unit\\\\TenantMigrationDataSeederTest::.*|Tests\\\\Unit\\\\TestDocumentsDeletionContractTest::.*|Tests\\\\Feature\\\\CompanyRifDocumentTest::.*|Tests\\\\Unit\\\\CashPaymentLinkTest::.*|Tests\\\\Unit\\\\CreditConditionTest::.*|Tests\\\\Unit\\\\DashboardTopKpiVisualContractTest::.*|Tests\\\\Unit\\\\DocumentReportLinesTest::.*|Tests\\\\Unit\\\\ExactDashboardConsumersTest::.*|Tests\\\\Unit\\\\ExactReportProjectionTest::.*|Tests\\\\Unit\\\\ExchangeRateMathTest::.*|Tests\\\\Unit\\\\FiscalPdfDataTest::.*|Tests\\\\Unit\\\\HkaIvaRetentionPayloadTest::.*|Tests\\\\Unit\\\\ItemImportDownloadResponseTest::.*|Tests\\\\Unit\\\\MobileMovementSummaryTest::.*|Tests\\\\Unit\\\\SaleNotesInvoiceCustomerContractTest::.*|Tests\\\\Unit\\\\TestDocumentsDeletionBehaviorTest::.*|Tests\\\\Unit\\\\BrandSalesAmountsTest::.*|Tests\\\\Unit\\\\CommercialAnalysisAmountsTest::.*|Tests\\\\Unit\\\\DefaultCashOrderingTest::.*|Tests\\\\Unit\\\\DocumentEditPolicyTest::.*|Tests\\\\Unit\\\\ExactAuditRegistryTest::.*|Tests\\\\Unit\\\\ExactCounterProofTest::.*|Tests\\\\Unit\\\\ExactOutstandingSummaryTest::.*|Tests\\\\Unit\\\\ExactStockWorkbookTest::.*|Tests\\\\Unit\\\\ExampleTest::.*|Tests\\\\Unit\\\\InvoiceTotalsPaymentsVisibilityContractTest::.*|Tests\\\\Unit\\\\KardexTransferIssueDateTest::.*|Tests\\\\Unit\\\\PdfQuantitiesTest::.*|Tests\\\\Unit\\\\PosCashDenominationsContractTest::.*|Tests\\\\Unit\\\\PurchaseSeriesValidationTest::.*|Tests\\\\Unit\\\\QuotationReceiptPdfTest::.*|Tests\\\\Unit\\\\ReportLocationTest::.*|Tests\\\\Unit\\\\SaleNoteReportAmountsTest::.*|Tests\\\\Unit\\\\SystemDashboardSalesTotalTest::.*|Tests\\\\Unit\\\\TransferAccountAmountTest::.*|Tests\\\\Unit\\\\VenezuelaRifPresentationContractTest::.*)$/"
+        ],
+        "log": "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-principal-2-intento-1.log",
+        "junit": "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-principal-2-intento-1.xml",
+        "checkpoint": "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-principal-2.jsonl"
+      },
+      {
+        "grupo": "http",
+        "intento": 1,
+        "pid": 85431,
+        "casos_seleccionados": 1,
+        "comando": [
+          "php",
+          "scripts/test_exact_isolated_mysql.php",
+          "--configuration",
+          "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-observado.xml",
+          "--colors=never",
+          "--do-not-cache-result",
+          "--printer",
+          "Tests\\Support\\FiscalProgressPrinter",
+          "--log-junit",
+          "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-http-intento-1.xml",
+          "--filter",
+          "/^(?:Tests\\\\Unit\\\\ExactHttpAcceptanceTest::.*)$/"
+        ],
+        "log": "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-http-intento-1.log",
+        "junit": "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-http-intento-1.xml",
+        "checkpoint": "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-http.jsonl"
+      }
+    ],
+    "configuracion_original": "/home/benahia/benahia/pro/Pro9/phpunit.xml",
+    "configuracion_observada": "/home/benahia/benahia/pro/Pro9/informes/evidencias/pruebas_sistema_2026_11_09/phpunit-observado.xml",
+    "instrumentacion": "TestListener pasivo para guardar resultado y aserciones de cada caso. Inventario original y observado idénticos.",
+    "maximo_procesos_paralelos": 2,
+    "cada_proceso_mysql_temporal_propio": true,
+    "aceptacion_http_sin_otros_tests_en_paralelo": true,
+    "junit": "phpunit-completo.xml",
+    "todos_los_resultados": "resultados-php.json",
+    "casos_con_incidencias": "errores-pruebas-php.json"
+  },
+  "javascript": {
+    "comando": "node --test --test-reporter=tap tests/js/*.test.cjs",
+    "archivos": 91,
+    "tests": 760,
+    "passed": 760,
+    "failed": 0,
+    "skipped": 0,
+    "exit": 0,
+    "evidencia": "javascript.tap"
+  },
+  "navegador": {
+    "resumen": {
+      "tests": 2,
+      "assertions": 0,
+      "errors": 2,
+      "failures": 0,
+      "warnings": 0,
+      "skipped": 0
+    },
+    "exit": 2,
+    "motivo": "Falta vendor/laravel/dusk/bin/chromedriver-linux. Errores antes de abrir Chrome.",
+    "junit": "browser.xml"
+  },
+  "omitidas_principales_ejecutadas_despues": {
+    "fixture_http": {
+      "resumen": {
+        "tests": 1,
+        "assertions": 17,
+        "errors": 0,
+        "failures": 0,
+        "warnings": 0,
+        "skipped": 0
+      },
+      "exit": 0,
+      "bandera": "PRO9_BROWSER_FIXTURE=1",
+      "junit": "fixture-navegador.xml",
+      "cierre": "Se eliminó el archivo temporal alive después de observar las comprobaciones HTTP."
+    },
+    "rendimiento_caja": {
+      "resumen": {
+        "tests": 2,
+        "assertions": 32,
+        "errors": 0,
+        "failures": 0,
+        "warnings": 0,
+        "skipped": 0
+      },
+      "exit": 0,
+      "bandera": "PRO9_PAYMENT_BENCHMARK=1",
+      "comando": "PRO9_PAYMENT_BENCHMARK=1 PRO9_AUDIT_CHECKPOINT=<evidencias>/rendimiento-caja.jsonl php scripts/test_exact_isolated_mysql.php --configuration <evidencias>/phpunit-observado.xml --do-not-cache-result --printer 'Tests\\Support\\FiscalProgressPrinter' --log-junit <evidencias>/rendimiento-caja.xml --filter '::test_classified_cash_report_performance_against_legacy_at_1000_and_10000_receipts$'",
+      "junit": "rendimiento-caja.xml",
+      "sin_otros_tests_en_paralelo": true,
+      "cobros_por_escenario": [
+        1000,
+        10000
+      ],
+      "metricas_ultimo_caso": "rendimiento-caja-metricas-ultimo.json"
+    }
+  },
+  "bcv": {
+    "comando": "node docker/test-api-bcv.cjs",
+    "ejecucion_inicial": {
+      "exit": 0,
+      "log": "bcv.log"
+    },
+    "tras_reinicio": {
+      "exit": 0,
+      "log": "bcv-reanudacion.log"
+    }
+  },
+  "auditorias": {
+    "comandos": [
+      "php scripts/audit_exact_calculations.php --check",
+      "node scripts/audit_exact_calculations.cjs --check"
+    ],
+    "exits": [
+      1,
+      1
+    ],
+    "resumen": {
+      "php": {
+        "pending": 20647,
+        "pending_files": 1577,
+        "registry_errors": 3739,
+        "registry_reasons": {
+          "invalid_or_stale_review": 3540,
+          "orphaned_review": 199
+        },
+        "parse_errors": 0,
+        "coverage_missing": 0
+      },
+      "js": {
+        "pending": 21231,
+        "pending_files": 920,
+        "registry_errors": 1992,
+        "registry_reasons": {
+          "invalid_or_stale_review": 1942,
+          "orphaned_review": 50
+        },
+        "parse_errors": 0,
+        "coverage_missing": 0
+      }
+    },
+    "hallazgos_completos": "hallazgos-auditorias.json"
+  },
+  "contrastes": {
+    "estado_y_orden": {
+      "resumen": {
+        "tests": 22,
+        "assertions": 866,
+        "errors": 1,
+        "failures": 0,
+        "warnings": 0,
+        "skipped": 0
+      },
+      "exit": 2,
+      "passed": 21,
+      "ids": [
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_delivery_order_reports_keep_fractional_quantities_and_frozen_units",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_free_form_full_credit_restores_fractional_invoice_lots",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_free_form_note_pdf_formats_show_frozen_lots_and_amounts",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_contingency_listing_matches_series_branch_type_and_user_scope",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_invoice_rejects_unavailable_or_foreign_lot_and_preserves_stock",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_hotel_occupancy_report_preserves_dates_people_and_recorded_prices",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_hotel_guest_report_scopes_users_and_preserves_original_document_amounts",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_fixed_asset_purchase_report_matches_fractional_rows_in_all_outputs",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_sales_report_listing_uses_one_consistent_read_when_items_change",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_document_list_and_totals_share_one_uncached_snapshot",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_customer_report_keeps_notes_currencies_and_filters_in_list_and_excel",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_sale_note_report_projects_fractional_amounts_in_pages_pdf_and_excel",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_quotation_report_uses_exact_snapshot_and_zeroes_voids_in_all_outputs",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_order_consolidated_allocates_header_and_keeps_exact_usd_prices",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_user_commission_uses_exact_profit_and_marks_cost_as_estimated",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_purchase_update_preserves_recorded_payment_after_reclassification_mysql",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_sales_commission_separates_currencies_exactly_and_never_invents_fixed_currency",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_pending_commission_keeps_currency_period_reversals_and_unknown_fixed_amount",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_purchase_report_preserves_customer_and_exact_totals_in_pdf_and_excel",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_purchase_items_api_reports_document_currency_and_exact_fractions",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_classified_cash_mysql_open_close_and_reports_share_the_same_native_balances",
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_opened_cash_is_returned_by_the_paginated_cash_listing"
+      ],
+      "comando": "comando-aislamiento.json",
+      "junit": "aislamiento-estado.xml",
+      "sin_otros_tests_en_paralelo": true
+    },
+    "migraciones_y_conversion": {
+      "resumen": {
+        "tests": 1,
+        "assertions": 839,
+        "errors": 1,
+        "failures": 0,
+        "warnings": 0,
+        "skipped": 0
+      },
+      "junit": "reproduccion-migraciones.xml"
+    },
+    "intermediacion": {
+      "resumen": {
+        "tests": 1,
+        "assertions": 74,
+        "errors": 1,
+        "failures": 0,
+        "warnings": 0,
+        "skipped": 0
+      },
+      "junit": "reproduccion-forma-libre.xml"
+    }
+  },
+  "fase_previa_interrumpida": {
+    "motivo": "Reinicio del equipo observado al reanudar: uptime de cuatro minutos; no había procesos de pruebas ni los archivos en /tmp. Causa del reinicio no establecida.",
+    "maximo_procesos_paralelos": 4,
+    "incidencias_observadas": 28,
+    "incidencias_que_no_se_reprodujeron_en_principal": 4,
+    "comparacion": "comparacion-incidencias-previas.json",
+    "excluida_de_los_totales_principales": true
+  },
+  "verificacion_fuentes": {
+    "archivos_preexistentes": 8915,
+    "archivos_preexistentes_modificados": [],
+    "nuevos_fuera_del_informe": [
+      "informes/evidencias/postgresql_17_2026_11_09/estado_inicial.json",
+      "informes/evidencias/postgresql_17_2026_11_09/inventario_cambios.json",
+      "informes/evidencias/postgresql_17_2026_11_09/sondeos_planificacion.json",
+      "informes/evidencias/postgresql_17_2026_11_09/validacion_plan.json",
+      "informes/plan_implementacion_postgresql_17.md"
+    ],
+    "inventario_php_final": 1748,
+    "inventario_php_identico": true,
+    "archivos_js_finales": 91,
+    "inventario_js_identico": true
+  },
+  "sin_correcciones_al_codigo_o_pruebas_originales": true,
+  "informe": "/home/benahia/benahia/pro/Pro9/informes/pruebas_sistema_2026_11_09.md",
+  "anexo_casos": "detalle-errores-php.md",
+  "alcance": "Suites Unit y Feature de phpunit.xml, módulo Item, tests/js, tests/Browser, fixture HTTP opcional, rendimiento opcional de caja, aceptación HTTP, API BCV y auditorías de cálculos exactos.",
+  "fuera_de_alcance": "Utilidades manuales de emisión real HKA DEMO y benchmarks comparativos históricos no registrados en la suite.",
+  "intento_secuencial_inicial": {
+    "estado": "Interrumpido por el agente para repartir la batería; excluido de los totales definitivos.",
+    "exit": 15,
+    "log": "phpunit-secuencial-inicial.log"
+  },
+  "archivos_preliminares_no_usados_en_la_ejecucion_definitiva": [
+    "plan-paralelo.json",
+    "preliminar-ejecutar-paralelo.php.txt"
+  ]
+}

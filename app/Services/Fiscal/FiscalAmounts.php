@@ -32,6 +32,9 @@ final class FiscalAmounts
 
     public static function payment(array $input, string $documentCurrency, $documentRate, bool $igtfEnabled, $igtfRate): array
     {
+        // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+        RetiredIgtfException::assertNew($input);
+        // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         $currency = $input['currency_type_id'] ?? $documentCurrency;
         $explicit = array_key_exists('currency_type_id', $input);
         $rate = $input['exchange_rate'] ?? ($explicit && $currency !== $documentCurrency ? null : $documentRate);
@@ -47,8 +50,7 @@ final class FiscalAmounts
         $original = \App\Support\Exact\Decimal::represent($requested, 2, true);
         if (\App\Support\Exact\Decimal::of($original)->isLessThanOrEqualTo(0)) self::error('original_amount', 'El importe liquidable debe ser positivo.');
         $status = $input['igtf_status'] ?? 'not_applicable';
-        if (!in_array($status, ['subject', 'exempt', 'not_applicable'], true)) self::error('igtf_status', 'Clasificación IGTF inválida.');
-        if ($status === 'exempt' && trim($input['exemption_reason'] ?? '') === '') self::error('exemption_reason', 'Indique el motivo de exención.');
+        if (!in_array($status, ['subject', 'not_applicable'], true)) self::error('igtf_status', 'Clasificación IGTF inválida.');
         if ($status === 'subject' && (!$igtfEnabled || !is_numeric($igtfRate) || $igtfRate <= 0)) {
             self::error('igtf_status', 'Configure y habilite el IGTF antes de registrar pagos sujetos.');
         }
@@ -68,7 +70,6 @@ final class FiscalAmounts
             'tax_amount' => $tax, 'igtf_status' => $status,
             'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot($values),
         // ######## FIN CALCULOS EXACTOS PRO9 ########
-            'exemption_reason' => $status === 'exempt' ? trim($input['exemption_reason']) : null,
             'exchange_rate_source' => $input['exchange_rate_source'] ?? 'manual',
             'exchange_rate_date' => $input['exchange_rate_date'] ?? ($input['date_of_payment'] ?? null),
         ];

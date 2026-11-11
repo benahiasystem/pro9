@@ -5,10 +5,28 @@ export function isRecordedReceipt(row) {
         row.source_sale_note_payment_id || row.source_quotation_payment_id || row.source_technical_service_payment_id || row._reused_receipt))
 }
 
+// ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+export function retireDraftIgtfException(row, set = (object, key, value) => { object[key] = value }, remove = (object, key) => { delete object[key] }) {
+    if (!row || isRecordedReceipt(row)) return false
+    const retired = row.igtf_status === 'exempt' || ['exemption_reason', 'exception_basis'].some(field => row[field] != null && String(row[field]).trim() !== '')
+    if (row.igtf_status === 'exempt') set(row, 'igtf_status', 'not_applicable')
+    for (const field of ['exemption_reason', 'exception_basis']) if (Object.prototype.hasOwnProperty.call(row, field)) remove(row, field)
+    if (retired) for (const field of ['quoted_tax_amount', 'tax_amount']) if (Object.prototype.hasOwnProperty.call(row, field)) remove(row, field)
+    return retired
+}
+// ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+
 export function paymentMethodCurrency(methods, methodId) {
     const method = methods.find(item => String(item.id) === String(methodId))
     return method?.currency_type_id || null
 }
+
+// ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+export function paymentMethodIntermediation(methods = [], methodId) {
+    const kind = methods.find(method => method && String(method.id) === String(methodId))?.collection_kind
+    return kind === 'cash' ? 'none' : (kind === 'account' ? 'financial_institution' : null)
+}
+// ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
 
 export function defaultCashForCurrency(methods = [], currency) {
     if (!currency) return null
@@ -52,7 +70,7 @@ export function paymentValidationMessage(data) {
     const errors = data?.errors || (data?.message && typeof data.message === 'object' ? data.message : data)
     if (!errors || typeof errors !== 'object' || Array.isArray(errors)) return null
     const fields = new Set(['payments', 'payment', 'payment_method_type_id', 'payment_destination_id',
-        'currency_type_id', 'original_amount', 'exchange_rate', 'financial_intermediation', 'igtf_status', 'exception_basis', 'quoted_tax_amount',
+        'currency_type_id', 'original_amount', 'exchange_rate', 'financial_intermediation', 'igtf_status', 'exemption_reason', 'exception_basis', 'quoted_tax_amount',
         'source_sale_note_payment_id', 'source_quotation_payment_id', 'source_technical_service_payment_id', 'total'])
     for (const [key, value] of Object.entries(errors)) {
         if (!fields.has(key.split('.').pop())) continue
@@ -132,6 +150,12 @@ export default {
                 if (isRecordedReceipt(row)) return
                 const method=(this.payment_method_types || this.$store?.state?.payment_method_types || []).find(method => method && String(method.id) === String(row.payment_method_type_id))
                 if (method?.collection_kind && row.collection_kind !== method.collection_kind) this.$set(row,'collection_kind',method.collection_kind)
+                // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+                if (!Object.prototype.hasOwnProperty.call(row, 'expense_method_type_id')) {
+                    const intermediation = paymentMethodIntermediation([method].filter(Boolean), row.payment_method_type_id)
+                    if (row.financial_intermediation !== intermediation) this.$set(row, 'financial_intermediation', intermediation)
+                }
+                // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
                 const available = this.classifiedPaymentDestinations(this.payment_destinations, row)
                 if (method?.collection_kind === 'account' && !Object.prototype.hasOwnProperty.call(row, 'expense_method_type_id')) {
                     const configured = available.find(destination => String(destination.id) === String(method.bank_account_id))

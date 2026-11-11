@@ -71,7 +71,7 @@ Ejemplo de pago en USD para una factura VES:
 }
 ```
 
-La configuración IGTF debe estar habilitada y tener una tasa positiva. La recepción total será principal más IGTF; la factura recibe sólo el principal y el cargo posterior queda en la nota vinculada. `exempt` exige `exemption_reason`; `not_applicable` mantiene el comportamiento sin IGTF.
+La configuración IGTF debe estar habilitada y tener una tasa positiva. La recepción total será principal más IGTF; la factura recibe sólo el principal y el cargo posterior queda en la nota vinculada. Desde el 09/11/2026, por decisión del usuario, la excepción administrativa IGTF está retirada: nuevos cobros `exempt` o con motivo/fundamento no vacíos se rechazan con 422. `not_applicable` mantiene el comportamiento sin IGTF. Los registros anteriores conservan sus datos y snapshots; sólo un reintento auténtico puede recuperar su contexto histórico.
 
 Si se omite moneda propia, se mantienen moneda y comportamiento del documento. En los `pagos` de la API de creación se conservan `monto`, `codigo_metodo_pago` y `codigo_destino_pago`, y se aceptan los campos nuevos del ejemplo. Una moneda propia exige UUID; una moneda distinta exige importe original y tasa explícitos. La fuente por defecto es `manual` y la fecha de tasa por defecto es la fecha de pago.
 

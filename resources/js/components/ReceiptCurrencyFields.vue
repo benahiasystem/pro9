@@ -1,6 +1,8 @@
 <template>
     <div v-if="!isRecordedReceipt(row) && (methodCurrency || serverErrors.length)" class="mt-2">
-        <small v-if="methodCurrency" class="d-block">Moneda recibida: {{ methodCurrency }}</small>
+        <!-- ######## INICIO CAMPOS DE COBRO SIMPLIFICADOS ######## -->
+        <!-- La moneda del cobro procede del método seleccionado. -->
+        <!-- ######## FIN CAMPOS DE COBRO SIMPLIFICADOS ######## -->
         <template v-if="methodCurrency && methodCurrency !== documentCurrency">
             <label>Importe recibido ({{ methodCurrency }})</label>
             <el-input :value="row.original_amount" @input="changeReceived" />
@@ -35,6 +37,12 @@ export default {
     },
     data: () => ({error: '', lastApplied: null}),
     computed: {
+        // ######## INICIO CAMPOS DE COBRO SIMPLIFICADOS ########
+        methodContext() {
+            const method = this.methods.find(method => String(method.id) === String(this.row.payment_method_type_id))
+            return JSON.stringify([method?.id, method?.currency_type_id, method?.collection_kind])
+        },
+        // ######## FIN CAMPOS DE COBRO SIMPLIFICADOS ########
         methodCurrency() {
             return this.methods.find(method => String(method.id) === String(this.row.payment_method_type_id))?.currency_type_id || null
         },
@@ -60,7 +68,9 @@ export default {
     },
     created() { this.syncMethod() },
     watch: {
-        methodCurrency() { if (!isRecordedReceipt(this.row)) { this.clearServerError('currency_type_id'); this.syncMethod() } },
+        // ######## INICIO CAMPOS DE COBRO SIMPLIFICADOS ########
+        methodContext() { if (!isRecordedReceipt(this.row)) { this.clearServerError('currency_type_id'); this.syncMethod() } },
+        // ######## FIN CAMPOS DE COBRO SIMPLIFICADOS ########
         documentCurrency() { this.syncMethod(true) },
         documentRate(value, previous) {
             if (isRecordedReceipt(this.row) || (this.row.exchange_rate && this.row.exchange_rate !== previous)) return

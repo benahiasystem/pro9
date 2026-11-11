@@ -18,6 +18,9 @@ class FiscalEmissionSchemaTest extends TestCase
     use \Tests\Support\CreditNumberingPersistenceCases;
     use \Tests\Support\CreditInvoicePersistenceCases;
     use \Tests\Support\SpePersistenceCases;
+    // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+    use \Tests\Support\IgtfRetirementPersistenceCases;
+    // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
     use \Tests\Support\IvaRetentionPersistenceCases;
     use \Tests\Support\IslrRetentionPersistenceCases;
     use \Tests\Support\HkaAutoSendPersistenceCases;

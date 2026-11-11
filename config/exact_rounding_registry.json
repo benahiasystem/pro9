@@ -219799,5 +219799,417 @@
             "operation": "native_===",
             "operation_language": "javascript"
         }
+    },
+    "1022aa329d4fd9a6821349a6": {
+        "category": "presentation",
+        "justification": "Representación a dos decimales del ajuste de liquidación para pantalla; settlement_adjustment_exact conserva la fracción y el cálculo definitivo no depende de este texto. Expresión: D::represent(D::readRequired($values, 'payment_adjustment'), 2, true)",
+        "evidence": [
+            "tests/Unit/PaymentQuoteTest.php"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/PaymentQuote.php",
+            "symbol": "PaymentQuote::calculate",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "ad7bdf57eb2f265e53d77f73": {
+        "category": "exact_arithmetic",
+        "justification": "Suma aplicaciones recuperadas de snapshots mediante Decimal::sum antes de calcular el remanente; no agrega proyecciones con aritmética nativa. Expresión: D::sum(array_map(fn($row) => D::readRequired($row, 'payment'), $rows))",
+        "evidence": [
+            "tests/Unit/PaymentQuoteTest.php",
+            "tests/Support/SpePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
+            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "sum",
+            "operation_language": "php"
+        }
+    },
+    "53bfef4e4229856714ff0fa3": {
+        "category": "technical",
+        "justification": "Selecciona moneda de factura, moneda recibida o presencia del índice de cierre; no compara ni adapta importes monetarios. Expresión: $documentCurrency === 'VES'",
+        "evidence": [
+            "tests/Unit/PaymentQuoteTest.php",
+            "tests/Support/SpePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
+            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "f08a4c10e8525d477e91534e": {
+        "category": "technical",
+        "justification": "Selecciona moneda de factura, moneda recibida o presencia del índice de cierre; no compara ni adapta importes monetarios. Expresión: ($row['currency_type_id'] ?? null) === 'USD'",
+        "evidence": [
+            "tests/Unit/PaymentQuoteTest.php",
+            "tests/Support/SpePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
+            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "a7d914ac4f03b31021eef700": {
+        "category": "technical",
+        "justification": "Selecciona moneda de factura, moneda recibida o presencia del índice de cierre; no compara ni adapta importes monetarios. Expresión: $closingIndex !== null",
+        "evidence": [
+            "tests/Unit/PaymentQuoteTest.php",
+            "tests/Support/SpePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
+            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "cb40cc233146d6812227c746": {
+        "category": "settlement",
+        "justification": "Única adaptación HALF_UP del remanente a centavos USD para compararlo con el efectivo real; los límites exactos de medio centavo están probados. Expresión: D::represent(D::convert($remaining, $documentCurrency, 'USD', $row['exchange_rate']), 2)",
+        "evidence": [
+            "tests/Unit/PaymentQuoteTest.php",
+            "tests/Support/SpePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
+            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "6606047d0a74fb79d989e26a": {
+        "category": "storage",
+        "justification": "Representa la aplicación calculada para su columna decimal; conserva la fracción autoritativa en el mismo snapshot y no reutiliza la representación como operando. Expresión: D::represent($applied)",
+        "evidence": [
+            "tests/Unit/PaymentQuoteTest.php",
+            "tests/Support/SpePersistenceCases.php"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
+            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::withSettlement",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "d18d676f85a477603ba42a30": {
+        "category": "presentation",
+        "justification": "Representa exclusivamente el ajuste al imprimir y detecta si necesita detalle exacto; si doce posiciones no reproducen la fracción, muestra numerador/denominador. Expresión: \\App\\Support\\Exact\\Decimal::represent($adjustment)",
+        "evidence": [
+            "tests/Unit/InvoicePaymentPreviewCurrencyTest.php"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaymentPreviewCurrencyTest.php": "95a78b77255bc4154ecc74c10096cf15b07d03e223617fead7576f5a0382c787"
+        },
+        "source": {
+            "file": "resources/views/pdf/partials/invoice_receipt.blade.php",
+            "symbol": "{blade}",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "41423626f4ebeb2abff9a1d1": {
+        "category": "presentation",
+        "justification": "Representa exclusivamente el ajuste al imprimir y detecta si necesita detalle exacto; si doce posiciones no reproducen la fracción, muestra numerador/denominador. Expresión: \\App\\Support\\Exact\\Decimal::format($adjustment)",
+        "evidence": [
+            "tests/Unit/InvoicePaymentPreviewCurrencyTest.php"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaymentPreviewCurrencyTest.php": "95a78b77255bc4154ecc74c10096cf15b07d03e223617fead7576f5a0382c787"
+        },
+        "source": {
+            "file": "resources/views/pdf/partials/invoice_receipt.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "cc198d7c4f0c181f1682146d": {
+        "category": "presentation",
+        "justification": "Representa exclusivamente el ajuste al imprimir y detecta si necesita detalle exacto; si doce posiciones no reproducen la fracción, muestra numerador/denominador. Expresión: \\App\\Support\\Exact\\Decimal::represent($adjustment, 2)",
+        "evidence": [
+            "tests/Unit/InvoicePaymentPreviewCurrencyTest.php"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaymentPreviewCurrencyTest.php": "95a78b77255bc4154ecc74c10096cf15b07d03e223617fead7576f5a0382c787"
+        },
+        "source": {
+            "file": "resources/views/pdf/partials/invoice_receipt.blade.php",
+            "symbol": "{blade}",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "20cf0b0bf5bb0c5db8158f67": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: \"Ajuste por liquidación en centavos: \"+_s(row.settlement_adjustment)+\" \"",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "2f655192e53dce9ddbc73051": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: row.settlement_adjustment !== undefined",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "{template}",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "3c6d35f645849db63f7fcc0e": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: \"Ajuste por liquidación en centavos: \"+_s(row.settlement_adjustment)",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "5d8c745182271bbbe72c4d08": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: 'adjustment-'+index",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "5fee81c9e756c4534b318fa6": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: \" (detalle exacto: \"+_s(adjustmentDetail(row))",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "68f081790b4ffe4f615f5776": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: \" (detalle exacto: \"+_s(adjustmentDetail(row))+\" \"+_s(currency)+\")\"",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "717c38a5aa7ccd726cb8b452": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: \" (detalle exacto: \"+_s(adjustmentDetail(row))+\" \"+_s(currency)",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "73fa150da5a307d89cc0c443": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: \"Ajuste por liquidación en centavos: \"+_s(row.settlement_adjustment)+\" \"+_s(currency)",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "904c43f8e1b582655bf66490": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: row.settlement_adjustment !== null",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "{template}",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "dd81e5f20779850355a84c0a": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: \" (detalle exacto: \"+_s(adjustmentDetail(row))+\" \"",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "45a7772e463b67e139bf764f": {
+        "category": "exact_arithmetic",
+        "justification": "Compara el signo entero devuelto por ExactAmount.compare para decidir si la representación conserva la fracción. Expresión: value.compare(row.settlement_adjustment) === 0",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "adjustmentDetail",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "db099ad38f0dd678eae18735": {
+        "category": "presentation",
+        "justification": "Construye etiquetas, claves y detalle visible del ajuste; los textos formateados no alimentan cálculos. Un ajuste no representable en doce posiciones se muestra como fracción. Expresión: value.decimal()",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "adjustmentDetail",
+            "operation": "decimal",
+            "operation_language": "javascript"
+        }
+    },
+    "1ffe13072a0933ae2ed18d11": {
+        "category": "exact_arithmetic",
+        "justification": "Compara el signo entero devuelto por ExactAmount.compare para decidir si la representación conserva la fracción. Expresión: value.compare(text) === 0",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/components/IgtfQuoteSummary.vue",
+            "symbol": "adjustmentDetail",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "0110895d3443f412b3c857d2": {
+        "category": "technical",
+        "justification": "Compara claves serializadas del contexto del cobro para impedir que una cotización obsoleta se presente como vigente; no compara importes. Expresión: this.igtfQuoteKey !== this.fiscalQuoteKey",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/mixins/fiscal-payment-settings.js",
+            "symbol": "fiscalAppliedPayment",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "01f80a2269709d6d67e60aa5": {
+        "category": "exact_arithmetic",
+        "justification": "Filtra importes positivos con ExactAmount.compare; la comparación nativa sólo recibe su signo entero. Expresión: exactAmount(value.payment || '0').compare(0) > 0",
+        "evidence": [
+            "tests/js/igtf-settings-ui.test.cjs"
+        ],
+        "evidence_sha256": {
+            "tests/js/igtf-settings-ui.test.cjs": "20376916d0c804ad64c7e3aa22375d428037f5bc292e3541396d9c72b1dcb1f1"
+        },
+        "source": {
+            "file": "resources/js/mixins/fiscal-payment-settings.js",
+            "symbol": "fiscalAppliedPayment",
+            "operation": "native_>",
+            "operation_language": "javascript"
+        }
     }
 }

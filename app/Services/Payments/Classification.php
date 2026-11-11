@@ -9,6 +9,33 @@ final class Classification
 {
     public const KINDS = ['cash', 'account', 'credit', 'unclassified'];
 
+    // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+    public static function financialIntermediation(?string $kind): string
+    {
+        if (!in_array($kind, ['cash', 'account'], true)) {
+            self::error('payment_method_type_id', 'Seleccione un método de efectivo, bancario o electrónico para registrar el cobro.');
+        }
+        return $kind === 'cash' ? 'none' : 'financial_institution';
+    }
+
+    /** Only new receipts use the current catalog; callers keep historical fiscal decisions. */
+    public static function withFinancialIntermediation(array $input, ?\App\Models\Tenant\PaymentMethodType $method = null): array
+    {
+        if ($method === null) {
+            $query = \App\Models\Tenant\PaymentMethodType::query();
+            if ($query->getModel()->getConnection()->transactionLevel() > 0) $query->lockForUpdate();
+            $method = $query->find($input['payment_method_type_id'] ?? null);
+        }
+        if (!$method || !$method->is_active) self::error('payment_method_type_id', 'La forma de pago seleccionada no está disponible.');
+        $intermediation = self::financialIntermediation($method->collection_kind);
+        if (isset($input['financial_intermediation']) && $input['financial_intermediation'] !== $intermediation) {
+            self::error('financial_intermediation', 'La intermediación debe coincidir con la naturaleza del método de pago seleccionado.');
+        }
+        $input['financial_intermediation'] = $intermediation;
+        return $input;
+    }
+    // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
+
     public static function kindLabel(?string $kind): string
     {
         return ['cash'=>'Efectivo', 'account'=>'Bancario / electrónico', 'credit'=>'Crédito'][$kind] ?? 'Sin clasificar';

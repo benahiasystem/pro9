@@ -112,7 +112,7 @@ test('quotation conversion sends a recorded receipt without changing its origina
     assert.match(paymentRow, /<igtf-payment-fields/)
     assert.match(paymentRow, /<receipt-currency-fields/)
     assert.match(paymentRow, /Cobro registrado:/)
-    assert.match(paymentRow, /Intermediación del cobro original/)
+    assert.doesNotMatch(paymentRow, /Intermediación del cobro original/)
     assert.match(paymentRow, /:disabled="isRecordedReceipt\(row\)"/)
 })
 
@@ -254,7 +254,7 @@ test('invoice creation keeps quotation receipts read-only and permits removing d
     const block=invoice.template.content.slice(invoice.template.content.indexOf('Cobro registrado:'),invoice.template.content.indexOf('@click.prevent="\n                                                                        clickCancel'))
     assert.match(block,/row\.original_amount/)
     assert.match(block,/row\.exchange_rate/)
-    assert.match(block,/row\.financial_intermediation/)
+    assert.doesNotMatch(block,/v-model="row\.financial_intermediation"/)
     assert.match(block,/row\.payment_destination_description/)
     assert.equal((block.match(/:disabled="isRecordedReceipt\(row\)"/g) || []).length,2)
     assert.match(block,/v-if="!isRecordedReceipt\(row\)"/)

@@ -2144,18 +2144,12 @@
                                                         <template v-if="isRecordedReceipt(row)">
                                                             <small class="d-block">Cobro registrado: {{ row.original_amount }} {{ row.currency_type_id }}; aplicado: {{ row.payment }} {{ form.currency_type_id }}.</small>
                                                             <small v-if="row.currency_type_id !== form.currency_type_id" class="d-block">Tasa VES por USD: {{ row.exchange_rate }}</small>
-                                                            <template v-if="fiscalPaymentsApplicable && row.currency_type_id === 'USD'">
-                                                                <label>Intermediación del cobro original</label>
-                                                                <el-select v-model="row.financial_intermediation" placeholder="Seleccione">
-                                                                    <el-option value="none" label="Sin institución financiera" />
-                                                                    <el-option value="financial_institution" label="Con institución financiera" />
-                                                                </el-select>
-                                                            </template>
+                                                            <!-- El cobro registrado conserva su contexto original. -->
                                                         </template>
                                                             <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
                                                         <small v-if="!row.payment_method_type_id" class="text-muted">{{ paymentMethodsLoaded ? "No hay efectivo activo para la moneda del documento; seleccione un método." : "Cargando métodos de pago…" }}</small>
 <igtf-settings-status v-if="fiscalPaymentsApplicable" />
-<igtf-payment-fields :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !isRecordedReceipt(row)" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+<igtf-payment-fields :use-document-rate="true" :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !isRecordedReceipt(row)" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
     :payment="row" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
                                                         </td>
                                                         <template
@@ -2197,10 +2191,8 @@
                                                             <td>
                                                                 <el-input
                                                                     :disabled="isRecordedReceipt(row)"
-                                                                    v-model="
-                                                                        row.payment
-                                                                    "
-                                                                    @input="markPaymentEdited(row)"
+                                                                    :value="fiscalAppliedPayment(row)"
+                                                                    @input="updatePaymentPrincipal(row, $event)"
                                                                 ></el-input>
                                                             </td>
                                                             <td
@@ -3456,6 +3448,10 @@ export default {
         }
     },
     methods: {
+        updatePaymentPrincipal(row, value) {
+            this.$set(row, 'payment', value);
+            this.markPaymentEdited(row);
+        },
         markPaymentEdited(row) {
             markPaymentEdited(row);
             this.calculatePayments();

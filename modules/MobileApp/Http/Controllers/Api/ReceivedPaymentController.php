@@ -252,6 +252,9 @@ class ReceivedPaymentController extends Controller
      */
     private function runDocumentPaymentStore(ReceivedPayment $received, $request)
     {
+        // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+        \App\Services\Fiscal\RetiredIgtfException::assertNew($request->all());
+        // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         $currency = $received->currency_type_id;
         if (!in_array($currency, ['VES', 'USD'], true)) {
             \App\Services\Payments\Classification::error('currency_type_id', 'El pago capturado debe identificar su moneda.');
@@ -270,7 +273,7 @@ class ReceivedPaymentController extends Controller
             'reference' => trim($received->provider.' '.$received->sender_name),
         ];
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
-        foreach (['exchange_rate', 'exchange_rate_source', 'exchange_rate_date', 'financial_intermediation', 'igtf_status', 'exemption_reason', 'exception_basis'] as $field) {
+        foreach (['exchange_rate', 'exchange_rate_source', 'exchange_rate_date', 'financial_intermediation', 'igtf_status'] as $field) {
             if ($request->exists($field)) $payload[$field] = $request->input($field);
         }
         $payload['currency_type_id'] = $currency;

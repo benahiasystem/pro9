@@ -22,19 +22,59 @@ final class SpecialTaxpayerPolicy
             'islr_agent'=>'required|boolean', 'islr_basis'=>'nullable|string|max:255',
             'iva_retention_rate'=>'required|in:75,100', 'iva_100_basis'=>'nullable|in:'.implode(',', self::FULL_IVA),
             'iva_exclusion'=>'nullable|string|max:255', 'evidence_reference'=>'nullable|string|max:255',
+        ], [
+            'required'=>'Complete el campo «:attribute».',
+            'string'=>'El campo «:attribute» debe contener texto.',
+            'boolean'=>'Indique si corresponde «:attribute».',
+            'in'=>'Seleccione una opción válida para «:attribute».',
+            'max'=>'El campo «:attribute» admite hasta :max caracteres.',
+            'date_format'=>'Seleccione una fecha válida para «:attribute».',
+            'after_or_equal'=>'La fecha de «:attribute» debe ser igual o posterior a «Vigencia desde».',
+            'rif.regex'=>'Escriba el RIF con una letra, ocho dígitos y un dígito final, separados por guiones. Ejemplo: J-12345678-9.',
+        ], [
+            'rif'=>'RIF completo', 'nature'=>'Naturaleza jurídica', 'personal_firm'=>'Constituida como firma personal',
+            'public_kind'=>'Clase de ente público', 'commercial_activity'=>'Actividad comercial habilitada',
+            'iva_status'=>'Condición frente al IVA', 'spe'=>'Sujeto Pasivo Especial',
+            'notification_reference'=>'Referencia de notificación SENIAT', 'notification_date'=>'Fecha de notificación',
+            'effective_from'=>'Vigencia desde', 'effective_until'=>'Vigencia hasta', 'revoked_at'=>'Revocación SPE desde',
+            'iva_agent_basis'=>'Facultad de agente IVA', 'islr_agent'=>'Facultad ISLR acreditada', 'islr_basis'=>'Fundamento ISLR',
+            'iva_retention_rate'=>'Retención IVA aplicable al proveedor', 'iva_100_basis'=>'Fundamento del 100 %',
+            'iva_exclusion'=>'Exclusión IVA acreditada', 'evidence_reference'=>'Referencia de evidencia fiscal',
         ])->validate();
         foreach (['personal_firm','commercial_activity','spe','islr_agent'] as $key) $p[$key] = (bool)$p[$key];
+        $errors = [];
         $prefix = substr($p['rif'], 0, 1);
         if (($p['nature'] === 'natural' && !in_array($prefix, ['V','E','R'], true))
             || ($p['nature'] === 'legal' && !in_array($prefix, ['J','C'], true))
-            || ($p['nature'] === 'public' && !in_array($prefix, ['G','J'], true))) FiscalAmounts::error('rif', 'El RIF fiscal debe corresponder a la naturaleza declarada; la cédula permanece separada.');
-        if ($p['nature'] !== 'natural' && $p['personal_firm']) FiscalAmounts::error('personal_firm', 'La firma personal corresponde a una persona natural.');
-        if (($p['nature'] === 'public') !== !empty($p['public_kind'])) FiscalAmounts::error('public_kind', 'Indique la clase del ente público únicamente para esa naturaleza.');
-        if ($p['spe'] && (empty($p['notification_reference']) || empty($p['notification_date']) || $p['notification_date'] > $p['effective_from'])) FiscalAmounts::error('notification_reference', 'SPE requiere notificación expresa del SENIAT y fecha anterior o igual a su vigencia.');
-        if ($p['iva_agent_basis'] === 'SNAT/2025/000054' && (!$p['spe'] || ($p['nature'] === 'natural' && !$p['personal_firm']) || self::publicSpecific($p))) FiscalAmounts::error('iva_agent_basis', 'Este perfil no acredita la facultad de agente IVA bajo SNAT/2025/000054.');
-        if ($p['iva_agent_basis'] === 'SNAT/2013/0029' && ($p['nature'] !== 'public' || empty($p['evidence_reference']))) FiscalAmounts::error('iva_agent_basis', 'La facultad pública requiere naturaleza pública y referencia de su fundamento.');
-        if ($p['islr_agent'] && empty($p['islr_basis'])) FiscalAmounts::error('islr_basis', 'Indique el fundamento independiente de la facultad ISLR.');
-        if ((int)$p['iva_retention_rate'] === 100 && (empty($p['iva_100_basis']) || empty($p['evidence_reference']))) FiscalAmounts::error('iva_100_basis', 'El 100 % requiere fundamento y referencia de evidencia.');
+            || ($p['nature'] === 'public' && !in_array($prefix, ['G','J'], true))) {
+            $allowed = ['natural'=>'V, E o R', 'legal'=>'J o C', 'public'=>'G o J'];
+            $errors['rif'] = 'El RIF debe comenzar por '.$allowed[$p['nature']].' para la naturaleza seleccionada. Revise el RIF y la naturaleza jurídica.';
+        }
+        if ($p['nature'] !== 'natural' && $p['personal_firm']) $errors['nature'] = 'El perfil conserva una firma personal. Seleccione Persona natural o desmarque la firma personal antes de cambiar la naturaleza.';
+        if (($p['nature'] === 'public') !== !empty($p['public_kind'])) {
+            $errors[$p['nature'] === 'public' ? 'public_kind' : 'nature'] = $p['nature'] === 'public'
+                ? 'Seleccione la clase de órgano o ente público.' : 'El perfil conserva una clase de ente público. Revise la naturaleza jurídica y la clase seleccionada.';
+        }
+        if ($p['spe']) {
+            if (empty($p['notification_reference'])) $errors['notification_reference'] = 'Escriba la referencia de la notificación del SENIAT que acredita la condición SPE.';
+            if (empty($p['notification_date'])) $errors['notification_date'] = 'Seleccione la fecha de la notificación del SENIAT.';
+            elseif ($p['notification_date'] > $p['effective_from']) $errors['notification_date'] = 'La fecha de notificación no puede ser posterior a «Vigencia desde». Revise ambas fechas.';
+        }
+        if ($p['iva_agent_basis'] === 'SNAT/2025/000054') {
+            if (!$p['spe']) $errors['iva_agent_basis'] = 'Seleccionó SNAT/2025/000054, pero no está marcada la condición SPE. Seleccione «Sin facultad acreditada» si no dispone de esa facultad; si está acreditada, complete la condición SPE y su notificación.';
+            elseif ($p['nature'] === 'natural' && !$p['personal_firm']) $errors['iva_agent_basis'] = 'Esta facultad exige que la persona natural esté constituida como firma personal. Revise su documentación o seleccione «Sin facultad acreditada».';
+            elseif (self::publicSpecific($p)) $errors['iva_agent_basis'] = 'Esta facultad no corresponde a la clase de ente público seleccionada. Revise la facultad acreditada y la clase de ente público.';
+        }
+        if ($p['iva_agent_basis'] === 'SNAT/2013/0029') {
+            if ($p['nature'] !== 'public') $errors['iva_agent_basis'] = 'La opción SNAT/2013/0029 corresponde a órganos o entes públicos. Revise la naturaleza jurídica o seleccione otra facultad acreditada.';
+            if (empty($p['evidence_reference'])) $errors['evidence_reference'] = 'Escriba la referencia del documento que acredita la facultad de agente IVA del ente público.';
+        }
+        if ($p['islr_agent'] && empty($p['islr_basis'])) $errors['islr_basis'] = 'Escriba el fundamento que acredita la facultad ISLR. Si no está acreditada, desmarque «Facultad ISLR acreditada».';
+        if ((int)$p['iva_retention_rate'] === 100) {
+            if (empty($p['iva_100_basis'])) $errors['iva_100_basis'] = 'Seleccione la causal que justifica la retención del 100 %.';
+            if (empty($p['evidence_reference'])) $errors['evidence_reference'] = 'Escriba la referencia del documento que sustenta la retención del 100 %.';
+        }
+        if ($errors) throw \Illuminate\Validation\ValidationException::withMessages($errors);
         return $p;
     }
 
@@ -58,21 +98,18 @@ final class SpecialTaxpayerPolicy
 
     public static function payment(array $issuer, array $input, string $currency, string $date): array
     {
+        // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+        RetiredIgtfException::assertNew($input);
+        // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         $intermediation = $input['financial_intermediation'] ?? null;
         if (!in_array($intermediation, [null, 'none', 'financial_institution'], true)) FiscalAmounts::error('financial_intermediation', 'Seleccione la intermediación real del cobro.');
         if ($currency === 'USD' && self::spe($issuer, $date) && $intermediation === null) FiscalAmounts::error('financial_intermediation', 'Indique si el cobro en divisas tiene intermediación financiera.');
         $subject = self::spe($issuer, $date) && $currency === 'USD' && $intermediation === 'none';
         $status = $subject ? 'subject' : 'not_applicable';
-        if (($input['igtf_status'] ?? '') === 'exempt') {
-            if (empty($input['exemption_reason']) || empty($input['exception_basis'])) FiscalAmounts::error('exception_basis', 'Una excepción requiere motivo y fundamento.');
-            abort_unless(auth()->user() instanceof \App\Models\Tenant\User && auth()->user()->type === 'admin', 403);
-            $status = 'exempt';
-        } elseif (isset($input['igtf_status']) && $input['igtf_status'] !== $status) {
+        if (isset($input['igtf_status']) && $input['igtf_status'] !== $status) {
             FiscalAmounts::error('igtf_status', 'La clasificación IGTF no coincide con el perfil vigente y el cobro real.');
         }
-        return ['igtf_status'=>$status, 'financial_intermediation'=>$intermediation,
-            'exception_basis'=>$status === 'exempt' ? $input['exception_basis'] : null,
-            'authorized_by'=>$status === 'exempt' ? auth()->id() : null];
+        return ['igtf_status'=>$status, 'financial_intermediation'=>$intermediation];
     }
 
     public static function retention(array $issuer, array $buyer, string $date, array $context = []): array

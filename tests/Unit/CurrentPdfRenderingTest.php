@@ -335,6 +335,12 @@ class CurrentPdfRenderingTest extends TestCase
         $company->fiscal_emission_mode = 'digital';
         $document->setRelation('payments', new Collection());
         $document->exchange_rate_sale = '874.73210000';
+        // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+        Schema::connection('tenant')->create('payment_method_types', function ($table): void {
+            $table->string('id')->primary(); $table->string('collection_kind'); $table->boolean('is_active');
+        });
+        DB::connection('tenant')->table('payment_method_types')->insert(['id'=>'01','collection_kind'=>'cash','is_active'=>true]);
+        // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
         $engine->setPaymentsPreview($document, [['payment' => $document->total, 'payment_method_type_id' => '01']]);
         self::assertSame($document->currency_type_id, $document->payments->first()->currency_type_id);
         self::assertSame('874.73210000', $document->payments->first()->exchange_rate);

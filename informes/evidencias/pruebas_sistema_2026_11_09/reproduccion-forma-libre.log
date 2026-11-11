@@ -1,0 +1,25 @@
+MySQL 5.7 temporal aislado; sin cambios en la instancia de la aplicación.
+PHPUnit 9.6.34 by Sebastian Bergmann and contributors.
+
+Warning:       Your XML configuration validates against a deprecated schema.
+Suggestion:    Migrate your XML configuration using "--migrate-configuration"!
+
+E                                                                   1 / 1 (100%)
+
+Time: 00:57.284, Memory: 92.51 MB
+
+There was 1 error:
+
+1) Tests\Unit\FiscalEmissionSchemaTest::test_free_form_invoices_credit_and_debit_match_cash_products_and_local_pdfs
+Illuminate\Validation\ValidationException: La intermediación debe coincidir con la naturaleza del método de pago seleccionado.
+
+/home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Validation/ValidationException.php:71
+/home/benahia/benahia/pro/Pro9/app/Services/Payments/Classification.php:123
+/home/benahia/benahia/pro/Pro9/app/Services/Payments/Classification.php:32
+/home/benahia/benahia/pro/Pro9/app/Services/Fiscal/FiscalDocumentPersistence.php:238
+/home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php:30
+/home/benahia/benahia/pro/Pro9/app/Services/Fiscal/FiscalDocumentPersistence.php:215
+/home/benahia/benahia/pro/Pro9/tests/Support/NotePersistenceCases.php:599
+
+ERRORS!
+Tests: 1, Assertions: 74, Errors: 1.

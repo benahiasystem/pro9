@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="" tests="22" assertions="866" errors="1" warnings="0" failures="0" skipped="0" time="49.588087">
+    <testsuite name="Unit" tests="22" assertions="866" errors="1" warnings="0" failures="0" skipped="0" time="49.588087">
+      <testsuite name="Tests\Unit\FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" tests="22" assertions="866" errors="1" warnings="0" failures="0" skipped="0" time="49.588087">
+        <testcase name="test_delivery_order_reports_keep_fractional_quantities_and_frozen_units" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="173" assertions="28" time="6.565981"/>
+        <testcase name="test_free_form_full_credit_restores_fractional_invoice_lots" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="129" assertions="16" time="3.062908"/>
+        <testcase name="test_free_form_note_pdf_formats_show_frozen_lots_and_amounts" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="235" assertions="154" time="8.562715"/>
+        <testcase name="test_contingency_listing_matches_series_branch_type_and_user_scope" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="363" assertions="9" time="1.444509"/>
+        <testcase name="test_invoice_rejects_unavailable_or_foreign_lot_and_preserves_stock" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="3301" assertions="22" time="2.340253"/>
+        <testcase name="test_hotel_occupancy_report_preserves_dates_people_and_recorded_prices" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="3795" assertions="24" time="1.032451"/>
+        <testcase name="test_hotel_guest_report_scopes_users_and_preserves_original_document_amounts" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="3863" assertions="19" time="1.871738"/>
+        <testcase name="test_fixed_asset_purchase_report_matches_fractional_rows_in_all_outputs" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="4021" assertions="16" time="0.986735"/>
+        <testcase name="test_sales_report_listing_uses_one_consistent_read_when_items_change" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="4146" assertions="4" time="1.326161"/>
+        <testcase name="test_document_list_and_totals_share_one_uncached_snapshot" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="4577" assertions="6" time="1.170141"/>
+        <testcase name="test_customer_report_keeps_notes_currencies_and_filters_in_list_and_excel" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="4797" assertions="38" time="3.282753"/>
+        <testcase name="test_sale_note_report_projects_fractional_amounts_in_pages_pdf_and_excel" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="4900" assertions="24" time="1.259394"/>
+        <testcase name="test_quotation_report_uses_exact_snapshot_and_zeroes_voids_in_all_outputs" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="4971" assertions="11" time="0.846641"/>
+        <testcase name="test_order_consolidated_allocates_header_and_keeps_exact_usd_prices" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="6774" assertions="54" time="1.984563"/>
+        <testcase name="test_user_commission_uses_exact_profit_and_marks_cost_as_estimated" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="6962" assertions="26" time="2.032061"/>
+        <testcase name="test_purchase_update_preserves_recorded_payment_after_reclassification_mysql" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="9231" assertions="0" time="0.909082">
+          <error type="Illuminate\Validation\ValidationException">Tests\Unit\FiscalEmissionSchemaTest::test_purchase_update_preserves_recorded_payment_after_reclassification_mysql
+Illuminate\Validation\ValidationException: Indique un valor decimal válido.
+
+/home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Validation/ValidationException.php:71
+/home/benahia/benahia/pro/Pro9/app/Support/Exact/Decimal.php:34
+/home/benahia/benahia/pro/Pro9/app/Http/Controllers/Tenant/PurchaseController.php:685
+/home/benahia/benahia/pro/Pro9/vendor/laravel/framework/src/Illuminate/Database/Concerns/ManagesTransactions.php:30
+/home/benahia/benahia/pro/Pro9/app/Http/Controllers/Tenant/PurchaseController.php:660
+/home/benahia/benahia/pro/Pro9/tests/Support/PaymentClassificationPersistenceCases.php:9256</error>
+        </testcase>
+        <testcase name="test_sales_commission_separates_currencies_exactly_and_never_invents_fixed_currency" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="9361" assertions="23" time="2.118115"/>
+        <testcase name="test_pending_commission_keeps_currency_period_reversals_and_unknown_fixed_amount" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="9499" assertions="43" time="3.037480"/>
+        <testcase name="test_purchase_report_preserves_customer_and_exact_totals_in_pdf_and_excel" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="9621" assertions="48" time="1.451356"/>
+        <testcase name="test_purchase_items_api_reports_document_currency_and_exact_fractions" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="9734" assertions="71" time="1.632427"/>
+        <testcase name="test_classified_cash_mysql_open_close_and_reports_share_the_same_native_balances" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="10237" assertions="212" time="1.830726"/>
+        <testcase name="test_opened_cash_is_returned_by_the_paginated_cash_listing" class="Tests\Unit\FiscalEmissionSchemaTest" classname="Tests.Unit.FiscalEmissionSchemaTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php" line="10705" assertions="18" time="0.839897"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

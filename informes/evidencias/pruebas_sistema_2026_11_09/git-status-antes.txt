@@ -1,0 +1,95 @@
+ M .codex/skills/mantener-persistencia-fiscal-venezuela-pro9/SKILL.md
+ M .codex/skills/mantener-persistencia-fiscal-venezuela-pro9/references/contratos.md
+ M .codex/skills/mantener-sujetos-pasivos-especiales-pro9/SKILL.md
+ M .codex/skills/mantener-sujetos-pasivos-especiales-pro9/references/contratos.md
+ M .codex/skills/migrar-venezuela-moneda/SKILL.md
+ M app/CoreFacturalo/Facturalo.php
+ M app/CoreFacturalo/Requests/Api/Transform/DocumentTransform.php
+ M app/CoreFacturalo/Requests/Inputs/Transform/DocumentWebTransform.php
+ M app/Http/Controllers/Tenant/DocumentPaymentQuoteController.php
+ M app/Http/Controllers/Tenant/FiscalProfileController.php
+ M app/Http/Requests/Tenant/DocumentPaymentRequest.php
+ M app/Services/Fiscal/FiscalAmounts.php
+ M app/Services/Fiscal/FiscalDocumentPersistence.php
+ M app/Services/Fiscal/FiscalProfileService.php
+ M app/Services/Fiscal/PaymentQuote.php
+ M app/Services/Fiscal/SpecialTaxpayerPolicy.php
+ M app/Services/Payments/Classification.php
+ M app/Services/Payments/ReceiptAmounts.php
+ M app/Services/Payments/ReceiptChange.php
+ M config/exact_rounding_registry.json
+ M informes/clasificacion_medios_pago_caja.md
+ M informes/facturas_sujetos_pasivos_especiales_hka.md
+ M informes/persistencia_fiscal_venezuela_hka.md
+ M modules/FullSuscription/Resources/assets/js/payment_receipt/partials/option_documents.vue
+ M modules/MobileApp/Http/Controllers/Api/ReceivedPaymentController.php
+ M modules/MobileApp/Http/Requests/Api/ReceivedPaymentClaimRequest.php
+ M modules/Order/Resources/assets/js/views/order_notes/partials/options.vue
+ M modules/Sale/Resources/assets/js/views/technical-services/partials/options.vue
+ M modules/Suscription/Resources/assets/js/payment_receipt/partials/option_documents.vue
+ D public/build/assets/app-018e713d.js
+ D public/build/assets/app-732739ca.css
+ D public/build/assets/app-9b6b3519.js
+ D public/build/assets/index-3744837a.js
+ D public/build/assets/system-2371f470.css
+ D public/build/assets/system-423660aa.js
+ D public/build/assets/vue-clipboard-7e61df22.js
+ M public/build/manifest.json
+ M resources/js/components/IgtfQuoteSummary.vue
+ M resources/js/components/ReceiptCurrencyFields.vue
+ M resources/js/helpers/igtf-settings.js
+ M resources/js/helpers/payment-classification.js
+ M resources/js/mixins/fiscal-payment-settings.js
+ M resources/js/views/tenant/configurations/form.vue
+ M resources/js/views/tenant/dispatches/generate-document.vue
+ M resources/js/views/tenant/documents/invoice_generate.vue
+ M resources/js/views/tenant/documents/partials/igtf_fields.vue
+ M resources/js/views/tenant/documents/partials/payments.vue
+ M resources/js/views/tenant/fiscal_profiles/editor.vue
+ M resources/js/views/tenant/quotations/partials/options.vue
+ M resources/js/views/tenant/sale_notes/partials/option_documents.vue
+ M resources/views/pdf/partials/invoice_receipt.blade.php
+ M tests/Support/PaymentClassificationPersistenceCases.php
+ M tests/Support/SpePersistenceCases.php
+ M tests/Unit/CurrentPdfRenderingTest.php
+ M tests/Unit/FiscalEmissionSchemaTest.php
+ M tests/Unit/HkaPayloadBuilderTest.php
+ M tests/Unit/InvoicePaymentPreviewCurrencyTest.php
+ M tests/Unit/MethodCurrencyTest.php
+ M tests/Unit/PaymentQuoteTest.php
+ M tests/Unit/SpecialTaxpayerPolicyTest.php
+ M tests/js/fiscal-payment-ui.test.cjs
+ M tests/js/igtf-settings-ui.test.cjs
+ M tests/js/invoice-cash-total.test.cjs
+ M tests/js/payment-classification.test.cjs
+ M tests/js/quotation-conversion-receipts.test.cjs
+ M tests/js/technical-service-invoice-receipts.test.cjs
+?? app/Services/Fiscal/RecordedPaymentAmounts.php
+?? app/Services/Fiscal/RetiredIgtfException.php
+?? informes/eliminacion_excepcion_igtf.md
+?? informes/evidencias/igtf_redondeo_2026_11_08.json
+?? informes/evidencias/igtf_redondeo_factura_00000019.png
+?? informes/evidencias/igtf_redondeo_mixto.png
+?? informes/evidencias/igtf_redondeo_principal.png
+?? informes/evidencias/importe_recibido_derecha_2026_11_08.jpg
+?? informes/evidencias/maqueta_cobro_facturas_2026_11_08.json
+?? informes/evidencias/maqueta_cobro_facturas_escritorio_2026_11_08.jpg
+?? informes/evidencias/maqueta_cobro_facturas_movil_2026_11_08.jpg
+?? informes/evidencias/sin_excepcion_igtf_2026_11_09.json
+?? informes/evidencias/sin_excepcion_igtf_escritorio_2026_11_09.jpg
+?? informes/evidencias/sin_excepcion_igtf_movil_2026_11_09.jpg
+?? informes/maqueta_cobro_facturas_2026_11_08.md
+?? informes/pruebas_factura_web_igtf.md
+?? public/build/assets/app-53bade9b.js
+?? public/build/assets/app-983e696d.js
+?? public/build/assets/app-a9bcc413.css
+?? public/build/assets/index-f428bc3c.js
+?? public/build/assets/system-638c8f9d.js
+?? public/build/assets/system-d1646df0.css
+?? public/build/assets/vue-clipboard-38f580af.js
+?? resources/js/helpers/invoice-collection-presentation.js
+?? resources/js/views/tenant/documents/partials/invoice_collection_section.vue
+?? tests/Support/IgtfRetirementPersistenceCases.php
+?? tests/Unit/IgtfExceptionRetirementTest.php
+?? tests/js/fiscal-profile-validation.test.cjs
+?? tests/js/invoice-collection-layout.test.cjs

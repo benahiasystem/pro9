@@ -35,8 +35,11 @@ export function fiscalPaymentProblem(payments, settings = igtfSettings) {
     try { rows = (payments || []).filter(row => !isRecordedReceipt(row) && exactAmount(row.payment || '0').compare(0) > 0) }
     catch (_) { return 'Indique un monto válido antes de registrar el cobro.' }
     if (!rows.length) return ''
+    // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+    if (rows.some(row => row.igtf_status === 'exempt')) return 'El cobro conserva una excepción de IGTF retirada. Actualice su evaluación antes de guardar.'
+    // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
     if (!settings.loaded || settings.loading) return settings.error || 'Espere la configuración IGTF antes de registrar el cobro.'
-    if (!settings.enabled && rows.some(row => ['subject', 'exempt'].includes(row.igtf_status) || exactAmount(row.tax_amount || '0').compare(0) > 0)) {
+    if (!settings.enabled && rows.some(row => row.igtf_status === 'subject' || exactAmount(row.tax_amount || '0').compare(0) > 0)) {
         return 'IGTF está deshabilitado y el borrador conserva datos IGTF. Revise el cobro o habilite IGTF en Configuración avanzada; el borrador se conserva.'
     }
     return ''

@@ -20,6 +20,9 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
         Schema::connection('tenant')->create('payment_method_types', function ($table) {
             $table->string('id')->primary();
             $table->string('collection_kind');
+            // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+            $table->boolean('is_active')->default(true);
+            // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
         });
         DB::connection('tenant')->table('payment_method_types')->insert([
             ['id'=>'01', 'collection_kind'=>'account'],
@@ -36,6 +39,24 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
         };
         $engine->setPaymentsPreview($document, $rows);
         return $document;
+    }
+
+    public function test_preview_closes_dollar_rounding_in_single_and_mixed_cash_and_prints_the_exact_adjustment(): void
+    {
+        $usd = ['payment_method_type_id'=>'10','currency_type_id'=>'USD','original_amount'=>'5.57',
+            'exchange_rate'=>'897.53830000','payment'=>'4999.29'];
+        $ves = ['payment_method_type_id'=>'10','currency_type_id'=>'VES','original_amount'=>'1000',
+            'exchange_rate'=>'897.53830000','payment'=>'1000'];
+        foreach ([[$usd],[$ves,array_replace($usd,['original_amount'=>'4.46','payment'=>'4003.02'])],
+            [array_replace($usd,['original_amount'=>'4.46','payment'=>'4003.02']),$ves]] as $rows) {
+            $document = $this->preview($rows, '5000');
+            $applied = \App\Support\Exact\Decimal::sum($document->payments->map(fn($p)=>$p->exactValue('payment')));
+            self::assertTrue($applied->isEqualTo('5000'));
+            $payment = $document->payments->firstWhere('currency_type_id','USD');
+            $html = view('pdf.partials.invoice_receipt',['row'=>$payment,'document'=>$document])->render();
+            self::assertStringContainsString('Ajuste de liquidación VES', $html);
+            self::assertStringContainsString(count($rows) === 1 ? '0.711669' : '-3.020818', $html);
+        }
     }
 
     public function test_preview_converts_cash_change_in_the_received_currency(): void
@@ -134,11 +155,29 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
         self::assertSame('10',$result[0]['original_amount']);
     }
 
+    public function test_preview_shows_subcent_settlement_adjustment_without_inventing_change(): void
+    {
+        $document = $this->preview([['payment_method_type_id'=>'10', 'currency_type_id'=>'USD',
+            'original_amount'=>'1', 'exchange_rate'=>'3', 'payment'=>'3']], '2.99');
+        $payment=$document->payments->first();
+        self::assertSame('2.99', \App\Support\Exact\Decimal::represent($payment->exactValue('payment')));
+        self::assertSame('1', \App\Support\Exact\Decimal::represent($payment->exactValue('original_amount')));
+        self::assertSame('-0.01', \App\Support\Exact\Decimal::represent($payment->exactValue('payment_adjustment')));
+        self::assertEmpty($payment->change);
+    }
+
+    public function test_preview_ignores_client_supplied_settlement_adjustment(): void
+    {
+        $document = $this->preview([['payment_method_type_id'=>'10', 'currency_type_id'=>'USD',
+            'original_amount'=>'10', 'exchange_rate'=>'10', 'payment'=>'100', '_settlement_payment'=>'1']]);
+        self::assertSame('100', \App\Support\Exact\Decimal::represent($document->payments->first()->exactValue('payment')));
+    }
+
     public function test_preview_rejects_change_not_representable_in_received_cents(): void
     {
         $this->expectException(ValidationException::class);
         $this->preview([['payment_method_type_id'=>'10', 'currency_type_id'=>'USD',
-            'original_amount'=>'1', 'exchange_rate'=>'3', 'payment'=>'3']], '2.99');
+            'original_amount'=>'1', 'exchange_rate'=>'3', 'payment'=>'3']], '2.98');
     }
 
     public function test_sale_note_detail_uses_the_received_change_fraction_and_frozen_method(): void

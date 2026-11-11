@@ -9,6 +9,184 @@ use Illuminate\Validation\ValidationException;
 
 trait SpePersistenceCases
 {
+    // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+    public function test_automatic_intermediation_matches_evaluation_quote_preview_and_initial_persistence(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company=Company::firstOrFail();
+        $company->forceFill(['fiscal_emission_mode'=>'free_form','igtf_enabled'=>true,'igtf_rate'=>3])->save();
+        FiscalProfileService::store($company,SpeProfiles::profile());
+        $account=\App\Models\Tenant\BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),
+            'description'=>'Cobros USD','number'=>'AUTOMATIC-USD','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','13')->update(['bank_account_id'=>$account->id,'is_active'=>1]);
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) { return validator($this->all(), $rules)->validate(); });
+        }
+        $input['currency_type_id']='USD';$input['exchange_rate_sale']='10';
+        foreach (['10'=>['none','subject','6.96','cash'], '13'=>['financial_institution','not_applicable','0.00',$account->id]] as $method=>$expected) {
+            [$intermediation,$status,$tax,$destination]=$expected;
+            $row=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>(string)$method,'payment'=>'232',
+                'currency_type_id'=>'USD','original_amount'=>'232','exchange_rate'=>'10','payment_destination_id'=>$destination,
+                'operation_key'=>(string)Str::uuid()];
+            $evaluation=(new \App\Http\Controllers\Tenant\FiscalProfileController())->evaluate(\Illuminate\Http\Request::create('/', 'POST',
+                ['customer_id'=>$input['customer_id'],'date'=>'2026-09-10','currency_type_id'=>'USD','original_amount'=>'232','payment_method_type_id'=>(string)$method]))['data'];
+            self::assertSame($intermediation,$evaluation['payment']['financial_intermediation']);
+            self::assertSame($status,$evaluation['payment']['igtf_status']);self::assertFalse($evaluation['needs_intermediation']);
+            $quote=(new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController())(\Illuminate\Http\Request::create('/', 'POST',
+                ['currency_type_id'=>'USD','exchange_rate_sale'=>'10','principal_due'=>'232','payments'=>[$row]]))['data'];
+            self::assertSame($tax,$quote['payments'][0]['tax_amount']);
+            $preview=new Document(['currency_type_id'=>'USD','exchange_rate_sale'=>'10','total'=>'232','date_of_issue'=>'2026-09-10']);
+            $preview->setRelation('payments',new \Illuminate\Database\Eloquent\Collection());
+            (new \App\CoreFacturalo\Facturalo())->setPaymentsPreview($preview,[$row]);
+            self::assertTrue(\App\Support\Exact\Decimal::of($tax)->isEqualTo($preview->payments->first()->tax_amount));
+            $before=$db->table('global_payments')->count();
+            $input['external_id']=(string)Str::uuid();$input['payments']=[$row];
+            $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+            $receipt=$document->payments()->whereNull('receipt_parent_id')->firstOrFail();
+            self::assertSame($intermediation,$receipt->fiscal_context['decision']['financial_intermediation']);
+            self::assertSame($status,$receipt->igtf_status);self::assertTrue($document->exactBalance()->isZero());
+            self::assertSame($before+1,$db->table('global_payments')->count());
+            self::assertTrue(\App\Support\Exact\Decimal::of($tax)->isEqualTo($receipt->tax_amount));
+            $frozen=$receipt->fiscal_context;
+            $db->table('payment_method_types')->where('id',$method)->update(['is_active'=>0,'collection_kind'=>$method===10 ? 'account' : 'cash']);
+            self::assertSame($receipt->id,FiscalDocumentPersistence::payment($document,$row)->id);
+            $repeat=new \ReflectionMethod(\App\CoreFacturalo\Facturalo::class,'savePayments');$repeat->setAccessible(true);
+            $db->transaction(fn()=>$repeat->invoke(new \App\CoreFacturalo\Facturalo(),$document,[$row]));
+            self::assertSame($frozen,$receipt->fresh()->fiscal_context);self::assertSame($before+1,$db->table('global_payments')->count());
+            $db->table('payment_method_types')->where('id',$method)->update(['is_active'=>1,'collection_kind'=>$method===10 ? 'cash' : 'account']);
+        }
+        // Generic profile/retention proposals still accept requests without a payment method.
+        $general=(new \App\Http\Controllers\Tenant\FiscalProfileController())->evaluate(\Illuminate\Http\Request::create('/', 'POST',
+            ['customer_id'=>$input['customer_id'],'date'=>'2026-09-10','currency_type_id'=>'VES']))['data'];
+        self::assertArrayHasKey('retention',$general);
+    }
+
+    public function test_automatic_intermediation_rejects_contradictions_without_effects_and_freezes_later_retries(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company=Company::firstOrFail();$company->forceFill(['fiscal_emission_mode'=>'free_form','igtf_enabled'=>true,'igtf_rate'=>3])->save();
+        FiscalProfileService::store($company,SpeProfiles::profile());
+        $input['payments']=[];$input['payment_condition_id']='02';$input['exchange_rate_sale']='10';
+        $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        self::assertSame(0,$document->payments()->count());self::assertSame(0,$db->table('global_payments')->count());
+        $row=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD',
+            'original_amount'=>'5','payment'=>'50','exchange_rate'=>'10','payment_destination_id'=>'cash','operation_key'=>(string)Str::uuid()];
+        $before=[$db->table('documents')->count(),$db->table('document_payments')->count(),$db->table('global_payments')->count()];
+        try {
+            FiscalDocumentPersistence::payment($document,$row+['financial_intermediation'=>'financial_institution']);
+            self::fail('El efectivo no admite intermediación bancaria.');
+        } catch (ValidationException $error) { self::assertArrayHasKey('financial_intermediation',$error->errors()); }
+        self::assertSame($before,[$db->table('documents')->count(),$db->table('document_payments')->count(),$db->table('global_payments')->count()]);
+        $invalid=array_replace($input,['external_id'=>(string)Str::uuid(),'payment_condition_id'=>'01',
+            'payments'=>[$row+['financial_intermediation'=>'financial_institution']]]);
+        $stock=$db->table('item_warehouse')->value('stock');
+        try {
+            (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($invalid);
+            self::fail('La factura no puede guardarse con intermediación contradictoria.');
+        } catch (ValidationException $error) { self::assertArrayHasKey('financial_intermediation',$error->errors()); }
+        self::assertSame($before,[$db->table('documents')->count(),$db->table('document_payments')->count(),$db->table('global_payments')->count()]);
+        self::assertSame($stock,$db->table('item_warehouse')->value('stock'));
+        $payment=FiscalDocumentPersistence::payment($document,$row);
+        self::assertSame('none',$payment->fiscal_context['decision']['financial_intermediation']);
+        self::assertSame('subject',$payment->igtf_status);self::assertEquals('0.15',$payment->tax_amount);
+        $snapshot=$payment->fresh()->fiscal_context;$count=$db->table('global_payments')->count();
+        $db->table('payment_method_types')->where('id','10')->update(['collection_kind'=>'account','is_active'=>0]);
+        $company->forceFill(['igtf_enabled'=>false,'igtf_rate'=>4])->save();
+        self::assertSame($payment->id,FiscalDocumentPersistence::payment($document,$row)->id);
+        self::assertSame($snapshot,$payment->fresh()->fiscal_context);self::assertSame($count,$db->table('global_payments')->count());
+        self::assertEquals('182',$document->fresh()->balance);
+    }
+    // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
+
+    public function test_web_invoice_dollar_rounding_closes_single_and_mixed_cash_with_one_real_movement_per_receipt(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company=Company::firstOrFail();
+        $company->forceFill(['fiscal_emission_mode'=>'free_form','igtf_enabled'=>true,'igtf_rate'=>'3'])->save();
+        FiscalProfileService::store($company,SpeProfiles::profile());
+        $db->table('payment_method_types')->where('id','10')->update(['iva_rate_type_id'=>'IGTF']);
+        $input['currency_type_id']='VES';$input['exchange_rate_sale']='897.53830000';
+        $input['items'][0]['quantity']='1';$input['items'][0]['unit_price']='5000';
+        $usd=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD',
+            'original_amount'=>'5.57','payment'=>'4999.29','exchange_rate'=>'897.53830000',
+            'financial_intermediation'=>'none','payment_destination_id'=>'cash','igtf_status'=>'subject','quoted_tax_amount'=>'0.17'];
+        $ves=array_replace($usd,['payment_method_type_id'=>'01','currency_type_id'=>'VES','original_amount'=>'1000',
+            'payment'=>'1000','igtf_status'=>'not_applicable','quoted_tax_amount'=>'0.00']);
+        $mixed=array_replace($usd,['original_amount'=>'4.46','payment'=>'4003.02','quoted_tax_amount'=>'0.13']);
+        $stock=\App\Support\Exact\Decimal::of($db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock'));
+        foreach ([[$usd],[$ves,$mixed],[$mixed,$ves]] as $index=>$rows) {
+            $input['external_id']=(string)Str::uuid();
+            $input['payments']=array_map(fn($row)=>$row+['operation_key'=>(string)Str::uuid()],$rows);
+            $before=$db->table('global_payments')->count();
+            $document=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+            $receipt=$document->payments->whereNull('receipt_parent_id')->firstWhere('currency_type_id','USD');
+            $expected=$index===0 ? '5000' : '4000';
+            self::assertTrue($receipt->exactValue('payment')->isEqualTo($expected));
+            self::assertTrue($document->exactBalance()->isZero());
+            self::assertTrue((bool)$document->total_canceled);
+            self::assertSame($index===0 ? '0.711669' : '-3.020818',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($receipt,'payment_adjustment')));
+            self::assertSame($index===0 ? '5.74' : '4.59',\App\Services\Payments\Movement::row($receipt->global_payment)['amount']);
+            self::assertSame($before+count($rows),$db->table('global_payments')->count());
+            self::assertSame('IGTF',$receipt->payment_method_snapshot['iva_rate_type_id']);
+            self::assertTrue(\App\Support\Exact\Decimal::of($receipt->payment_method_snapshot['iva_rate_percentage'])->isEqualTo('3'));
+            self::assertSame('not_requested',$document->emission->status);
+            self::assertTrue(\App\Support\Exact\Decimal::of($db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock'))->isEqualTo($stock->minus((string)($index+1))));
+            $count=$db->table('document_payments')->count();
+            $savedRow=collect($input['payments'])->firstWhere('currency_type_id','USD');
+            self::assertSame($receipt->id,FiscalDocumentPersistence::payment($document,$savedRow)->id);
+            self::assertSame($count,$db->table('document_payments')->count());
+            self::assertSame($before+count($rows),$db->table('global_payments')->count());
+        }
+        $before=[$db->table('documents')->count(),$db->table('document_payments')->count(),$db->table('global_payments')->count(),
+            $db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock')];
+        $input['external_id']=(string)Str::uuid();
+        $partial=array_replace($usd,['original_amount'=>'5.56','payment'=>'4990.31','_settlement_payment'=>'5000','operation_key'=>(string)Str::uuid()]);
+        $input['payments']=[$partial];
+        try {
+            (new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($input);
+            self::fail('El abono insuficiente no puede cerrar una factura al contado.');
+        } catch (ValidationException $exception) { self::assertArrayHasKey('payments',$exception->errors()); }
+        self::assertSame($before,[$db->table('documents')->count(),$db->table('document_payments')->count(),$db->table('global_payments')->count(),
+            $db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock')]);
+        $input['external_id']=(string)Str::uuid();$input['payment_condition_id']='02';
+        $input['fee']=[['date'=>'2026-11-26','currency_type_id'=>'VES','amount'=>'9.69']];
+        $input['payments'][0]['operation_key']=(string)Str::uuid();
+        $credit=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        self::assertSame('9.69',\App\Support\Exact\Decimal::represent($credit->exactBalance()));
+        self::assertSame('9.69',\App\Support\Exact\Decimal::represent($credit->fee->first()->exactValue('amount')));
+    }
+
+    public function test_invoice_settles_single_cross_currency_cash_subcent_remainder(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();$sent=[];$mode='confirmed';$this->fakeSpeHka($db,$app,$sent,$mode);
+        $company=Company::firstOrFail();$company->forceFill(['igtf_enabled'=>true,'igtf_rate'=>3])->save();
+        FiscalProfileService::store($company,SpeProfiles::profile());
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) { return validator($this->all(), $rules)->validate(); });
+        }
+        $row=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','payment'=>'233.36',
+            'currency_type_id'=>'USD','original_amount'=>'0.26','exchange_rate'=>'897.53830000',
+            'financial_intermediation'=>'none','operation_key'=>(string)Str::uuid()];
+        $quoteInput=['currency_type_id'=>'VES','exchange_rate_sale'=>'897.53830000','principal_due'=>'232','payments'=>[$row]];
+        $quote=(new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController())(\Illuminate\Http\Request::create('/documents/payment-quote','POST',$quoteInput))['data'];
+        self::assertSame('232.00',$quote['principal_applied']);
+        self::assertSame('0.00',$quote['payments'][0]['change']);
+        self::assertSame('0.01',$quote['payments'][0]['tax_amount']);
+        $input['currency_type_id']='VES';$input['exchange_rate_sale']='897.53830000';
+        $input['payments']=[array_replace($row,['igtf_status'=>'subject','quoted_tax_amount'=>'0.01'])];
+        $document=$db->transaction(fn()=>(new \App\CoreFacturalo\Facturalo)->save($input)->getDocument())->fresh();
+        $receipt=$document->payments->whereNull('receipt_parent_id')->first();
+        self::assertEquals('0',$document->balance);
+        self::assertEquals('232',$receipt->payment);
+        self::assertEquals('0.26',$receipt->original_amount);
+        self::assertEquals('0.01',$receipt->tax_amount);
+        self::assertFalse(\App\Support\Exact\Decimal::readRequired($receipt,'payment_adjustment')->isZero());
+        self::assertSame('0.27',\App\Services\Payments\Movement::row($receipt->global_payment)['amount']);
+    }
+
     public function test_payment_quote_matches_persisted_invoice_and_rejects_stale_tax(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture();$sent=[];$mode='confirmed';$this->fakeSpeHka($db,$app,$sent,$mode);
@@ -109,7 +287,16 @@ trait SpePersistenceCases
         $input['exchange_rate_sale']='10';
         $saleInput=array_replace($input,['id'=>null,'series'=>'NV01','document_type_id'=>'80','prefix'=>'NV','payments'=>[]]);
         $note=\App\Models\Tenant\SaleNote::create($controller->mergeData($saleInput));
-        foreach ($input['items'] as $line) $note->items()->create($line);
+        // This fixture boots warehouse observers but not the global Kardex provider.
+        // Supply both movements of the original sale before testing receipt reuse.
+        $ledger=new class { use \App\Traits\KardexTrait; };
+        $db->transaction(function () use ($input,$note,$ledger) {
+            foreach ($input['items'] as $line) {
+                $note->items()->create($line);
+                $ledger->saveKardex('sale',$line['item_id'],$note->id,$line['quantity'],'sale_note');
+                $ledger->updateStock($line['item_id'],$line['quantity'],true);
+            }
+        });
         $controller->savePayments($note,[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10',
             'payment_destination_id'=>'cash','currency_type_id'=>'USD','original_amount'=>'5',
             'exchange_rate'=>'10','payment'=>'50']]);
@@ -291,9 +478,18 @@ trait SpePersistenceCases
         try{FiscalDocumentPersistence::reverse($payment,'Must require fiscal adjustment');self::fail('Confirmed note was reversed');}catch(ValidationException $e){self::assertArrayHasKey('document',$e->errors());}
         self::assertNull($payment->fresh()->reversed_at);
         $noTax=FiscalDocumentPersistence::payment($doc,array_replace($pay,['operation_key'=>(string)Str::uuid(),'date_of_payment'=>'2026-09-11','original_amount'=>1]));self::assertEquals(0,$noTax->tax_amount);
-        $bank=FiscalDocumentPersistence::payment($doc,array_replace($pay,['operation_key'=>(string)Str::uuid(),'original_amount'=>1,'financial_intermediation'=>'financial_institution']));self::assertEquals(0,$bank->tax_amount);
+        // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+        $account=\App\Models\Tenant\BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'USD','number'=>'SPE-BANK','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1,'bank_account_id'=>$account->id]);
+        $bank=FiscalDocumentPersistence::payment($doc,array_replace($pay,['operation_key'=>(string)Str::uuid(),'payment_method_type_id'=>'13','payment_destination_id'=>$account->id,'original_amount'=>1,'financial_intermediation'=>'financial_institution']));self::assertEquals(0,$bank->tax_amount);
+        // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
         $ves=FiscalDocumentPersistence::payment($doc,['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','payment'=>10]);self::assertEquals(0,$ves->tax_amount);
-        $exception=FiscalDocumentPersistence::payment($doc,array_replace($pay,['operation_key'=>(string)Str::uuid(),'original_amount'=>1,'igtf_status'=>'exempt','exception_basis'=>'DEMO reviewed provision','exemption_reason'=>'DEMO exemption evidence']));self::assertEquals(0,$exception->tax_amount);self::assertSame(auth()->id(),$exception->fiscal_context['decision']['authorized_by']);
+        // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+        $beforeException=$db->table('document_payments')->count();
+        try { FiscalDocumentPersistence::payment($doc,array_replace($pay,['operation_key'=>(string)Str::uuid(),'original_amount'=>1,'igtf_status'=>'exempt','exception_basis'=>'DEMO reviewed provision','exemption_reason'=>'DEMO exemption evidence']));self::fail('La excepción retirada fue aceptada.'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('igtf_status',$error->errors()); }
+        self::assertSame($beforeException,$db->table('document_payments')->count());
+        // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         $company->fiscal_emission_mode='free_form';$company->save();
         $modePayment=FiscalDocumentPersistence::payment($doc,array_replace($pay,['operation_key'=>(string)Str::uuid(),'original_amount'=>1]));
         $modeTax=\App\Models\Tenant\DocumentTax::where('document_payment_id',$modePayment->id)->firstOrFail();$modeNote=Document::findOrFail($modeTax->document_id);

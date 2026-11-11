@@ -30,9 +30,11 @@ class ReceivedPaymentClaimRequest extends FormRequest
             'exchange_rate_source' => ['nullable', 'string', 'max:255'],
             'exchange_rate_date' => ['nullable', 'date'],
             'financial_intermediation' => ['nullable', Rule::in(['none', 'financial_institution'])],
-            'igtf_status' => ['sometimes', Rule::in(['subject', 'exempt', 'not_applicable'])],
-            'exemption_reason' => ['nullable', 'string', 'max:255'],
-            'exception_basis' => ['nullable', 'string', 'max:255'],
+            // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+            'igtf_status' => ['sometimes', Rule::in(['subject', 'not_applicable'])],
+            'exemption_reason' => ['prohibited'],
+            'exception_basis' => ['prohibited'],
+            // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         ];
     }
 }

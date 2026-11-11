@@ -3387,7 +3387,7 @@ export default {
             loading_submit: false,
             loading_test: false,
             // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
-            igtf: { enabled: false, rate: null },
+            igtf: { enabled: false, rate: 3 },
             igtfLoaded: false,
             igtfLoading: false,
             igtfSaving: false,
@@ -3463,7 +3463,7 @@ export default {
                 const settings = response.data.data
                 this.igtf = {
                     enabled: settings.enabled,
-                    rate: settings.rate == null ? undefined : Number(settings.rate),
+                    rate: settings.rate == null ? 3 : Number(settings.rate),
                 }
                 setIgtfSettings(settings)
                 this.igtfLoaded = true

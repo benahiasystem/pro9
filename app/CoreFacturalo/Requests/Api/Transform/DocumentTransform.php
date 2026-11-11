@@ -375,6 +375,8 @@ class DocumentTransform
                         'exchange_rate_source' => $row['exchange_rate_source'] ?? 'manual',
                         'exchange_rate_date' => $row['exchange_rate_date'] ?? $inputs['fecha_de_emision'],
                         'igtf_status' => $row['igtf_status'] ?? null,
+                        // Retired metadata is forwarded only so the locked receipt
+                        // path can validate a historical replay or reject a new use.
                         'exemption_reason' => $row['exemption_reason'] ?? null,
                         'exception_basis' => $row['exception_basis'] ?? null,
                         'financial_intermediation' => $row['financial_intermediation'] ?? null,

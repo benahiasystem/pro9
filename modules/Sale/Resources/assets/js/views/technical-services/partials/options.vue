@@ -203,13 +203,9 @@
                                 <template v-if="isRecordedReceipt(row)">
                                     <small class="d-block">Cobro registrado: {{ row.original_amount || row.payment }} {{ row.currency_type_id || form.currency_type_id }}; aplicado: {{ row.payment }} {{ form.currency_type_id }}.</small>
                                     <small v-if="row.currency_type_id && row.currency_type_id !== form.currency_type_id" class="d-block">Tasa VES por USD: {{ row.exchange_rate }}</small>
-                                    <template v-if="fiscalPaymentsApplicable && row.currency_type_id === 'USD'">
-                                        <label>Intermediación del cobro original</label>
-                                        <el-select v-model="row.financial_intermediation" placeholder="Seleccione">
-                                            <el-option value="none" label="Sin institución financiera" />
-                                            <el-option value="financial_institution" label="Con institución financiera" />
-                                        </el-select>
-                                    </template>
+                                    <!-- ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ######## -->
+                                    <!-- El cobro registrado conserva su contexto original. -->
+                                    <!-- ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ######## -->
                                 </template>
                                 <template v-else>
                                     <igtf-settings-status v-if="fiscalPaymentsApplicable" />

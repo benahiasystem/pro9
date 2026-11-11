@@ -1032,7 +1032,11 @@ class Facturalo
         foreach ($payments as $row) {
             validator($row, ['date_of_payment'=>'required|date_format:Y-m-d'])->validate();
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
-            $alreadyRecorded = !empty($row['operation_key']) && \App\Models\Tenant\DocumentPayment::where('operation_key', $row['operation_key'])->exists();
+            // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+            $existingReceipt = !empty($row['operation_key'])
+                ? \App\Models\Tenant\DocumentPayment::where('operation_key', $row['operation_key'])->lockForUpdate()->first() : null;
+            $alreadyRecorded = (bool) $existingReceipt;
+            // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
             $origin = !$alreadyRecorded ? \App\Services\Payments\ConvertedReceipt::resolve($document, $row) : null;
             $row['_reused_receipt'] = $alreadyRecorded || (bool) $origin;
             if (!$alreadyRecorded && !$origin && !empty($row['document_id'])) {
@@ -1044,17 +1048,33 @@ class Facturalo
                 $row['exchange_rate_date'] = $origin['exchange_rate_date'];
             }
             if (!$alreadyRecorded && !$origin) {
-                \App\Services\Payments\MethodCurrency::validateNew($row['payment_method_type_id'] ?? null, (string)$document->currency_type_id, $row, $document->getConnection());
+                // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+                $method = \App\Services\Payments\MethodCurrency::validateNew($row['payment_method_type_id'] ?? null, (string)$document->currency_type_id, $row, $document->getConnection());
+                $row = \App\Services\Payments\Classification::withFinancialIntermediation($row, $method);
+                // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
             }
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $profile = \App\Services\Fiscal\FiscalProfileService::at($company, $row['date_of_payment']);
-            $decision = $origin
+            // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+            if ($existingReceipt) {
+                $row = \App\Services\Fiscal\RecordedPaymentAmounts::context($existingReceipt, $row);
+                $row['financial_intermediation'] = $row['financial_intermediation'] ?? ($existingReceipt->fiscal_context['decision']['financial_intermediation'] ?? null);
+            }
+            $decision = $existingReceipt ? ['igtf_status'=>$existingReceipt->igtf_status] : ($origin
                 ? ['igtf_status'=>'not_applicable']
-                : \App\Services\Fiscal\SpecialTaxpayerPolicy::payment($profile, $row, $row['currency_type_id'] ?? $document->currency_type_id, $row['date_of_payment']);
+                : \App\Services\Fiscal\SpecialTaxpayerPolicy::payment($profile, $row, $row['currency_type_id'] ?? $document->currency_type_id, $row['date_of_payment']));
+            // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
             $row['igtf_status'] = $decision['igtf_status'];
+            // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+            if ($origin) unset($row['exemption_reason'], $row['exception_basis']);
+            // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
             // Change is derived from the complete set of receipts, never accepted from a client.
-            unset($row['change']);
-            $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate);
+            unset($row['change'], $row['_settlement_payment']);
+            // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+            $values = $existingReceipt
+                ? \App\Services\Fiscal\RecordedPaymentAmounts::forRetry($existingReceipt, $row, $document->currency_type_id, $document->exchange_rate_sale)
+                : \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate);
+            // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
             $normalized[] = array_merge($row, $values);
             $receiptContexts[] = !$alreadyRecorded && !$origin ? $values['calculation_snapshot']['values'] : null;
         }
@@ -1066,6 +1086,7 @@ class Facturalo
         foreach ($normalized as $index => $row) {
             $context = $receiptContexts[$index];
             if ($context !== null && !empty($row['change'])) $context['received_change'] = \App\Support\Exact\Decimal::fraction($row['change']);
+            if ($context !== null && isset($row['_settlement_payment'])) $context['settlement_payment'] = $row['_settlement_payment'];
             $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row, true, $context);
             $this->saveFilesFromPayments($row, $record, 'documents');
             if (isset($row['payment_destination_id']) && !$record->global_payment) {
@@ -1649,13 +1670,21 @@ class Facturalo
         $existingOther = \App\Support\Exact\Decimal::sum($previewTaxes->whereNotIn('tax_kind',['IVA','IGTF'])->map(fn ($tax)=>$tax->exactValue('amount')));
         $normalized = [];
         foreach ($payments as $row) {
-            unset($row['change']);
+            unset($row['change'], $row['_settlement_payment']);
             if ($existingDocument && !empty($row['id'])) {
                 $stored = $historical->get($row['id']);
                 if (!$stored || $stored->reversed_at) \App\Services\Fiscal\FiscalAmounts::error('payments', 'El cobro no pertenece al comprobante vigente.');
                 $normalized[] = array_merge($row, $stored->getAttributes(), ['_reused_receipt'=>true, '_preview_existing'=>$stored]);
                 continue;
             }
+            // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+            \App\Services\Fiscal\RetiredIgtfException::assertNew($row);
+            // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+            // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
+            if (!\App\Services\Fiscal\PaymentQuote::reused($row)) {
+                $row = \App\Services\Payments\Classification::withFinancialIntermediation($row);
+            }
+            // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
             if ($this->company instanceof Company) {
                 if (\App\Services\Fiscal\PaymentQuote::reused($row)) {
                     $row['igtf_status'] = 'not_applicable';
@@ -1663,7 +1692,7 @@ class Facturalo
                     $date = $row['date_of_payment'] ?? $document->date_of_issue->format('Y-m-d');
                     $profile = \App\Services\Fiscal\FiscalProfileService::at($this->company, $date);
                     $decisionInput = $row;
-                    if (($decisionInput['igtf_status'] ?? null) !== 'exempt') unset($decisionInput['igtf_status']);
+                    unset($decisionInput['igtf_status']);
                     $row['igtf_status'] = \App\Services\Fiscal\SpecialTaxpayerPolicy::payment($profile, $decisionInput,
                         $row['currency_type_id'] ?? $document->currency_type_id, $date)['igtf_status'];
                 }
@@ -1688,8 +1717,12 @@ class Facturalo
                 continue;
             }
             // Recalculate the net snapshot and tax after any cash change, as persistence does.
-            $row = array_merge($row, \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id,
-                $document->exchange_rate_sale, (bool) ($this->company->igtf_enabled ?? false), $this->company->igtf_rate ?? null));
+            $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id,
+                $document->exchange_rate_sale, (bool) ($this->company->igtf_enabled ?? false), $this->company->igtf_rate ?? null);
+            if (isset($row['_settlement_payment'])) {
+                $values = \App\Services\Payments\ReceiptChange::withSettlement($values, $row['_settlement_payment']);
+            }
+            $row = array_merge($row, $values);
             $payment = new \App\Models\Tenant\DocumentPayment($row);
             $document->payments[] = $payment;
             $tax = \App\Support\Exact\Decimal::of($row['tax_amount']);

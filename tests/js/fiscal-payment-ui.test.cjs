@@ -10,21 +10,137 @@ const mathExports = {};
 vm.runInNewContext(babel.transformSync(fs.readFileSync('resources/js/helpers/exchange-rate-math.js','utf8'),{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,{exports:mathExports});
 vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,{exports:exportsObject, require:name => name.includes('payment-classification') ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/helpers/payment-classification.js')) : mathExports, crypto:{randomUUID:()=> 'operation-uuid'}});
 const component = exportsObject.default;
+// ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+test('old exception drafts are reevaluated automatically while their receipt identity stays unchanged', async () => {
+    const Vue = require('vue');
+    const payment = Vue.observable({payment:'10.00', original_amount:'10.00', currency_type_id:'USD', exchange_rate:'40',
+        operation_key:'old-key', igtf_status:'exempt', exemption_reason:'Motivo', exception_basis:'Fundamento', quoted_tax_amount:'0.00'});
+    const instance = new Vue({...component, propsData:{payment, igtfEnabled:true, documentCurrency:'USD'},
+        beforeCreate() { this.$http = {post:async () => ({data:{data:{payment:{igtf_status:'subject'}}}})}; }});
+    await Promise.resolve(); await Vue.nextTick();
+    assert.equal(payment.igtf_status, 'subject');
+    assert.equal(payment.exception_basis, undefined); assert.equal(payment.exemption_reason, undefined);
+    assert.equal(payment.quoted_tax_amount, undefined); assert.equal(payment.operation_key, 'old-key');
+    assert.equal(payment.original_amount, '10.00'); assert.equal(payment.payment, '10.00');
+    assert.equal(instance.setExemption, undefined);
+    instance.$destroy();
+});
+
+test('destroying a fiscal controller prevents its pending response from changing the receipt', async () => {
+    const Vue = require('vue');
+    let resolve;
+    const pending = new Promise(done => { resolve = done; });
+    const payment = Vue.observable({payment:'10', original_amount:'10', currency_type_id:'USD', exchange_rate:'40', igtf_status:'not_applicable'});
+    const instance = new Vue({...component, propsData:{payment, igtfEnabled:true, documentCurrency:'USD'},
+        beforeCreate() { this.$http = {post:() => pending}; }});
+    instance.$destroy();
+    resolve({data:{data:{issuer_spe:true, payment:{igtf_status:'subject'}}}});
+    await Promise.resolve(); await Vue.nextTick();
+    assert.equal(payment.igtf_status, 'not_applicable'); assert.equal(instance.proposal, null);
+});
+// ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+// ######## INICIO CAMPOS DE COBRO SIMPLIFICADOS ########
+test('method changes in the same currency update intermediation without replacing received money', async () => {
+    const Vue=require('vue')
+    const payment=Vue.observable({payment:'100',payment_method_type_id:'cash-usd',currency_type_id:'USD',original_amount:'10',exchange_rate:'10'})
+    const methods=[{id:'cash-usd',collection_kind:'cash',currency_type_id:'USD'},{id:'bank-usd',collection_kind:'account',currency_type_id:'USD'}]
+    const instance=new Vue({...component,propsData:{payment,paymentMethods:methods,documentCurrency:'VES',documentRate:'10'}})
+    assert.equal(payment.financial_intermediation,'none')
+    payment.payment_method_type_id='bank-usd'; await Vue.nextTick()
+    assert.equal(payment.financial_intermediation,'financial_institution')
+    assert.equal(payment.original_amount,'10');assert.equal(payment.payment,'100.00')
+    payment.payment_method_type_id='cash-usd'; await Vue.nextTick()
+    assert.equal(payment.financial_intermediation,'none')
+    instance.$destroy()
+})
+
+test('late method catalogs determine receipt currency and intermediation', async () => {
+    const Vue=require('vue'),payment={payment:'100',payment_method_type_id:'custom-usd'}
+    const instance=new Vue({...component,propsData:{payment,paymentMethods:[],documentCurrency:'VES',documentRate:'10'}})
+    instance.paymentMethods=[{id:'custom-usd',collection_kind:'account',currency_type_id:'USD'}]
+    await Vue.nextTick()
+    assert.equal(payment.currency_type_id,'USD');assert.equal(payment.original_amount,'10.00')
+    assert.equal(payment.financial_intermediation,'financial_institution')
+    instance.$destroy()
+})
+
+test('invoice receipts follow the header rate while retaining the received amount', async () => {
+    const Vue=require('vue'),payment={payment:'50',payment_method_type_id:'cash',currency_type_id:'USD',original_amount:'10',exchange_rate:'5'}
+    const instance=new Vue({...component,propsData:{payment,useDocumentRate:true,
+        paymentMethods:[{id:'cash',collection_kind:'cash',currency_type_id:'USD'}],documentCurrency:'VES',documentRate:'10'}})
+    await Vue.nextTick()
+    assert.equal(payment.exchange_rate,'10');assert.equal(payment.original_amount,'10');assert.equal(payment.payment,'100.00')
+    instance.documentRate='20'; await Vue.nextTick()
+    assert.equal(payment.exchange_rate,'20');assert.equal(payment.original_amount,'10');assert.equal(payment.payment,'200.00')
+    instance.documentRate='0';await Vue.nextTick()
+    assert.match(instance.error,/tasa VES por USD válida/)
+    assert.equal(payment.exchange_rate,'0');assert.equal(payment.original_amount,'10')
+    assert.match(parsed.template.content,/v-if="!useDocumentRate/)
+    assert.match(fs.readFileSync('resources/js/views/tenant/documents/invoice_generate.vue','utf8'),/:use-document-rate="true"/)
+    instance.$destroy()
+})
+
+test('a proposal includes the method and cannot overwrite a different same-currency method', async () => {
+    let resolve,payload
+    const payment={payment:'10',currency_type_id:'USD',original_amount:'10',exchange_rate:'10',payment_method_type_id:'cash',financial_intermediation:'none'}
+    const ctx={payment,sequence:0,documentCurrency:'USD',igtfEnabled:true,$set:(o,k,v)=>o[k]=v,
+        $http:{post:(_url,body)=>{payload=body;return new Promise(done=>{resolve=done})}}}
+    const pending=component.methods.evaluate.call(ctx)
+    assert.equal(payload.payment_method_type_id,'cash')
+    payment.payment_method_type_id='bank'
+    resolve({data:{data:{payment:{igtf_status:'subject'}}}});await pending
+    assert.equal(payment.igtf_status,undefined)
+})
+
+test('an invalid header rate cannot be cleared by a successful profile proposal', async () => {
+    let requests=0
+    const ctx={payment:{payment:'10'},useDocumentRate:true,hasDocumentRate:false,sequence:0,
+        $http:{post:async()=>{requests++;return {data:{data:{}}}}}}
+    await component.methods.evaluate.call(ctx)
+    assert.equal(requests,0);assert.match(ctx.error,/tasa VES por USD válida/)
+})
+
+test('the rate input is hidden only when the receipt follows the invoice header', () => {
+    const Vue=require('vue'),render=compiler.compileToFunctions(parsed.template.content)
+    const text=node=>(node.text || '')+(node.children || []).map(text).join('')
+    for (const useDocumentRate of [false,true]) {
+        const instance=new Vue({...component,...render,propsData:{useDocumentRate,documentCurrency:'VES',documentRate:'10',
+            payment:{payment:'100',currency_type_id:'USD',original_amount:'10',exchange_rate:'10'}}})
+        const visible=text(instance._render())
+        assert.equal(visible.includes('Tasa VES por USD'),!useDocumentRate)
+        assert.match(visible,/sin IGTF \(USD\)/)
+        assert.doesNotMatch(visible,/Moneda efectivamente recibida|Intermediación del cobro/)
+        instance.$destroy()
+    }
+})
+
+test('all original-receipt conversion forms compile without an intermediation selector', () => {
+    for (const path of ['resources/js/views/tenant/documents/invoice_generate.vue',
+        'resources/js/views/tenant/sale_notes/partials/option_documents.vue','resources/js/views/tenant/quotations/partials/options.vue',
+        'modules/Sale/Resources/assets/js/views/technical-services/partials/options.vue',
+        'modules/Suscription/Resources/assets/js/payment_receipt/partials/option_documents.vue',
+        'modules/FullSuscription/Resources/assets/js/payment_receipt/partials/option_documents.vue']) {
+        const view=compiler.parseComponent(fs.readFileSync(path,'utf8'))
+        assert.deepEqual(compiler.compile(view.template.content).errors,[],path)
+        assert.doesNotMatch(view.template.content,/Intermediación del cobro original|v-model="row.financial_intermediation"/,path)
+    }
+})
+// ######## FIN CAMPOS DE COBRO SIMPLIFICADOS ########
 test('fiscal payment exposes a rate when the document lacks one',()=>{
     assert.equal(component.computed.hasDocumentRate.call({documentRate:null}),false);
     assert.equal(component.computed.hasDocumentRate.call({documentRate:'0'}),false);
     assert.equal(component.computed.hasDocumentRate.call({documentRate:'400'}),true);
     assert.match(parsed.template.content,/payment.currency_type_id !== documentCurrency \|\| !hasDocumentRate/);
 });
-function initialize(payment) {component.created.call({payment,$set:(obj,key,value)=>{obj[key]=value}});return payment;}
+function initialize(payment) {const ctx={...component.methods,payment,paymentMethods:[],$set:(obj,key,value)=>{obj[key]=value}};component.created.call(ctx);return payment;}
 test('legacy payment rows default to no IGTF without adding a currency selector',()=>{
     const payment = initialize({payment:100});
-    assert.equal(payment.igtf_status,'not_applicable');assert.equal(payment.exemption_reason,null);
+    assert.equal(payment.igtf_status,'not_applicable');assert.equal(payment.exemption_reason,undefined);
     assert.equal(Object.hasOwn(payment,'currency_type_id'),false);
 });
-test('an explicitly exempt payment retains its classification and stated reason',()=>{
+test('an unregistered old exception is retired before automatic evaluation',()=>{
     const payment = initialize({payment:100,igtf_status:'exempt',exemption_reason:'Comprobante aportado'});
-    assert.equal(payment.igtf_status,'exempt');assert.equal(payment.exemption_reason,'Comprobante aportado');
+    assert.equal(payment.igtf_status,'not_applicable');assert.equal(payment.exemption_reason,undefined);
 });
 
 test('payment currency conversions preserve eight-decimal rates and separate IGTF',()=>{
