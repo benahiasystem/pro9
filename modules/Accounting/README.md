@@ -111,10 +111,22 @@ contabilización, reverso y cierre requieren PRO9. Un conflicto conserva el
 borrador local. La copia preparada tiene límites explícitos de fechas,
 comprobantes y tamaño; no representa una réplica completa del servidor.
 
+Los editores de comprobantes y documentos manuales conservan automáticamente
+capturas cifradas, incluidos campos incompletos, cuando está desbloqueada la
+copia del mismo usuario y empresa. Estas capturas todavía no son documentos
+validados ni comprobantes guardados en PRO9. Al recuperarlas se conserva la
+versión de partida y la identidad del intento de creación. Si otra pestaña
+cambia la captura, ambas alternativas permanecen disponibles; el agotamiento de
+espacio se informa sin anunciar un guardado ni borrar la versión anterior.
+Un documento preparado sin conexión se completa y guarda explícitamente en
+PRO9 después de reconectar.
+
 La recuperación de un respaldo local exige sesión activa en PRO9 y coincidencia
 de empresa y usuario. Renueva la copia de consulta con datos y permisos del
 servidor, verifica los datos cifrados y conserva las versiones diferentes de
-los borradores existentes. Reimportar la misma alternativa no la duplica. Este
+los borradores existentes. El respaldo versión 2 incluye también las capturas
+incompletas y sigue admitiendo la versión 1. Reimportar la misma alternativa no
+la duplica ni elimina las capturas posteriores. Este
 respaldo corresponde al trabajo del navegador; la recuperación integral de base
 de datos y adjuntos del servidor sigue pendiente.
 
@@ -141,6 +153,11 @@ antecedentes y cobro parcial con diferencia de cambio y revisión independiente.
 `auxiliary_offline_browser_smoke.cjs` comprueba lectura cifrada del auxiliar,
 identificación inmediata de una respuesta local, recarga sin servidor y límites
 documentales del paquete.
+`editor_recovery_browser_smoke.cjs` comprueba recuperación tras cerrar el
+navegador, separación por empresa, documentos incompletos, cuota agotada,
+edición concurrente, compatibilidad de respaldos y conservación de la versión
+original ante cambios de otro usuario. También retiene la captura hasta que
+se confirma el guardado y bloquea cambios de empresa durante ese envío.
 Las suites que consumen las identidades ficticias serializan su acceso mediante
 el archivo de bloqueo del directorio privado.
 
@@ -153,4 +170,6 @@ La implementación sigue en desarrollo. Los comprobantes, catálogos, informes
 básicos, apertura, liquidaciones parciales, segundo factor y trabajo local tienen
 verificaciones iniciales; los
 flujos fiscales completos, cierres, conciliaciones, importación y exportaciones
-definitivas aún deben completar sus criterios de aceptación.
+definitivas aún deben completar sus criterios de aceptación. El bloqueo local
+por inactividad y la resolución explícita de conflictos con comparación y
+nueva revisión también siguen pendientes.
