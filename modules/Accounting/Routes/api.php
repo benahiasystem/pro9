@@ -1,19 +1,29 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Accounting\Http\Controllers\{SessionController, CompanyController, CatalogController, EntryController, ReportController, OfflineController, Pro9Controller};
-use Modules\Accounting\Http\Middleware\{CompanyAccess, RequirePermission};
+use Modules\Accounting\Http\Controllers\{SessionController, CompanyController, CatalogController, EntryController, ReportController, OfflineController, Pro9Controller, MembershipController};
+use Modules\Accounting\Http\Middleware\{CompanyAccess, RequirePermission, SessionVerification};
 Route::get('auth/me', [SessionController::class, 'me']);
 Route::post('auth/logout', [SessionController::class, 'logout']);
 Route::post('auth/mfa/verify', [SessionController::class, 'verify'])->middleware('throttle:accounting-mfa');
 Route::post('auth/mfa/enroll', [SessionController::class, 'enroll'])->middleware('throttle:accounting-mfa');
 Route::post('auth/mfa/confirm', [SessionController::class, 'confirm'])->middleware('throttle:accounting-mfa');
 Route::get('health', fn() => ['status' => 'ok', 'release' => config('accounting.release'), 'server_time' => now()->toIso8601String()]);
-Route::get('companies', [CompanyController::class, 'index']);
-Route::post('companies', [CompanyController::class, 'store']);
-Route::prefix('companies/{company}')->whereUuid('company')->middleware(CompanyAccess::class)->group(function () {
+Route::get('companies', [CompanyController::class, 'index'])->middleware(SessionVerification::class);
+Route::post('companies', [CompanyController::class, 'store'])->middleware(SessionVerification::class);
+Route::get('organizations', [CompanyController::class, 'organizations'])->middleware(SessionVerification::class);
+Route::prefix('companies/{company}')->whereUuid('company')->middleware([SessionVerification::class, CompanyAccess::class])->group(function () {
     Route::get('/', [CompanyController::class, 'show']);
     Route::patch('/', [CompanyController::class, 'update'])->middleware(RequirePermission::class . ':company');
+    Route::post('years', [CompanyController::class, 'createYear'])->middleware(RequirePermission::class . ':catalogs');
+    Route::get('tax/configuration', [\Modules\Accounting\Http\Controllers\TaxConfigurationController::class, 'index'])->middleware(RequirePermission::class . ':read');
+    Route::get('tax/registers', [\Modules\Accounting\Http\Controllers\FiscalRegisterController::class, 'index'])->middleware(RequirePermission::class . ':reports');
+    Route::post('tax/profiles', [\Modules\Accounting\Http\Controllers\TaxConfigurationController::class, 'profile'])->middleware(RequirePermission::class . ':rules');
+    Route::post('tax/rules', [\Modules\Accounting\Http\Controllers\TaxConfigurationController::class, 'rule'])->middleware(RequirePermission::class . ':rules');
+    Route::post('tax/rules/{id}/approve', [\Modules\Accounting\Http\Controllers\TaxConfigurationController::class, 'approve'])->middleware(RequirePermission::class . ':rules')->whereUuid('id');
+    Route::get('users', [MembershipController::class, 'index'])->middleware(RequirePermission::class . ':users');
+    Route::get('users/candidates', [MembershipController::class, 'candidates'])->middleware(RequirePermission::class . ':users');
+    Route::post('users', [MembershipController::class, 'save'])->middleware(RequirePermission::class . ':users');
     Route::get('catalogs/{kind}', [CatalogController::class, 'index'])->middleware(RequirePermission::class . ':read');
     Route::post('catalogs/{kind}', [CatalogController::class, 'store'])->middleware(RequirePermission::class . ':catalogs');
     Route::patch('catalogs/{kind}/{id}', [CatalogController::class, 'update'])->middleware(RequirePermission::class . ':catalogs')->whereUuid('id');
@@ -29,7 +39,12 @@ Route::prefix('companies/{company}')->whereUuid('company')->middleware(CompanyAc
     Route::get('pro9/sources/{kind}', [Pro9Controller::class, 'index'])->middleware(RequirePermission::class . ':integration');
     Route::get('pro9/sources/{kind}/{id}', [Pro9Controller::class, 'show'])->middleware(RequirePermission::class . ':integration')->whereNumber('id');
     Route::post('pro9/sources/{kind}/{id}/receive', [Pro9Controller::class, 'receive'])->middleware(RequirePermission::class . ':integration')->whereNumber('id');
-    Route::get('documents', [Pro9Controller::class, 'documents'])->middleware(RequirePermission::class . ':read');
+    Route::get('documents', [\Modules\Accounting\Http\Controllers\DocumentController::class, 'index'])->middleware(RequirePermission::class . ':read');
+    Route::post('documents', [\Modules\Accounting\Http\Controllers\DocumentController::class, 'store'])->middleware(RequirePermission::class . ':documents');
+    Route::get('documents/{id}', [\Modules\Accounting\Http\Controllers\DocumentController::class, 'show'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
+    Route::patch('documents/{id}', [\Modules\Accounting\Http\Controllers\DocumentController::class, 'update'])->middleware(RequirePermission::class . ':documents')->whereUuid('id');
+    Route::post('documents/{id}/validate', [\Modules\Accounting\Http\Controllers\DocumentController::class, 'validateDocument'])->middleware(RequirePermission::class . ':review')->whereUuid('id');
+    Route::post('documents/{id}/propose', [\Modules\Accounting\Http\Controllers\DocumentController::class, 'propose'])->middleware(RequirePermission::class . ':draft')->whereUuid('id');
     Route::post('offline/prepare', [OfflineController::class, 'prepare'])->middleware(RequirePermission::class . ':local');
     Route::post('offline/sync', [OfflineController::class, 'sync'])->middleware(RequirePermission::class . ':local');
     Route::get('offline/devices', [OfflineController::class, 'devices'])->middleware(RequirePermission::class . ':local');

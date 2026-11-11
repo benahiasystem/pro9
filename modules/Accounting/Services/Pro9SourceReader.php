@@ -52,14 +52,45 @@ final class Pro9SourceReader
         $page->setCollection($page->getCollection()->map(fn($row) => $this->normalize($kind, $row)));
         return $page->toArray();
     }
-    public function snapshot(string $kind, int $id): array
+    public function snapshot(string $kind, int $id, bool $lock = false): array
     {
         $this->requireLink();
-        $row = $this->query($kind)->where('id', $id)->first();
+        $query = $this->query($kind)->where('id', $id);
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+        $row = $query->first();
         if (!$row) {
             throw new ApiProblem('SOURCE_NOT_FOUND', 'El documento no está disponible en PRO9.', 404);
         }
         return $this->normalize($kind, $row);
+    }
+    public function assertCurrent(SourceDocument $document): void
+    {
+        if ($document->origin !== 'pro9') {
+            return;
+        }
+        $kind = $document->metadata['source_kind'] ?? '';
+        $id = $document->metadata['source_record_id'] ?? 0;
+        $snapshot = $this->snapshot($kind, (int) $id, true);
+        if (!hash_equals($document->metadata['source_hash'] ?? '', $snapshot['hash'])) {
+            throw new ApiProblem('PRO9_SOURCE_CHANGED', 'El documento cambió en PRO9. Recibe su versión actual y resuelve las observaciones antes de continuar.', 409);
+        }
+        if (in_array($snapshot['state'], \App\Models\Tenant\ModelTenant::VOIDED_REJECTED_IDS, true)) {
+            throw new ApiProblem('PRO9_SOURCE_NOT_ACTIVE', 'El documento está rechazado o anulado en PRO9. Conserva su historial y revisa la corrección correspondiente.');
+        }
+        if (!in_array($snapshot['state'], \App\Models\Tenant\ModelTenant::STATE_TYPES_ACCEPTED, true)) {
+            throw new ApiProblem('PRO9_SOURCE_STATE_UNSUPPORTED', 'El estado del documento de PRO9 requiere revisión antes de preparar el efecto contable.');
+        }
+        if ($kind === 'sales') {
+            $row = DB::table('documents')->where('id', $id)->lockForUpdate()->first();
+            if (($row->fiscal_emission_mode ?? '') === 'digital') {
+                $emission = DB::table('document_emissions')->where('document_id', $id)->lockForUpdate()->first();
+                if (!$emission || $emission->status !== 'confirmed') {
+                    throw new ApiProblem('PRO9_SOURCE_NOT_FINAL', 'La emisión digital en PRO9 todavía no está confirmada. Conserva el documento recibido pendiente de validación.');
+                }
+            }
+        }
     }
     private function normalize(string $kind, object $row): array
     {
@@ -86,6 +117,7 @@ final class Pro9SourceReader
     public function receive(string $kind, int $id, int $user): array
     {
         return DB::transaction(function () use ($kind, $id, $user) {
+            DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
             $source = $this->requireLink();
             $snapshot = $this->snapshot($kind, $id);
             if (str_ends_with($snapshot['kind'], '_unsupported')) {
@@ -102,19 +134,32 @@ final class Pro9SourceReader
             if ($doc && ($doc->metadata['source_hash'] ?? null) === $snapshot['hash']) {
                 return ['data' => $doc, 'unchanged' => true];
             }
+            $naturalKey = app(DocumentService::class)->identity($snapshot['kind'], $snapshot['number'], $tax, $snapshot['control_number'], $snapshot['issue_date']);
+            app(DocumentService::class)->ensureIdentity($naturalKey, $doc?->id);
             $party = ThirdParty::firstOrCreate(['tax_id' => $tax], ['name' => $snapshot['party']['name'], 'kind' => $kind === 'sales' ? 'customer' : 'supplier']);
             $changed = (bool) $doc;
             $revision = $doc ? $doc->source_revision + 1 : 1;
             $values = ['origin' => 'pro9', 'source_instance_id' => 'pro9', 'source_company_id' => (string) $source->id, 'source_id' => $snapshot['source_id'], 'kind' => $snapshot['kind'], 'number' => $snapshot['number'], 'fiscal_control' => $snapshot['control_number'], 'issue_date' => $snapshot['issue_date'], 'fiscal_date' => $snapshot['issue_date'], 'third_party_id' => $party->id, 'currency' => $snapshot['currency'], 'exchange_rate' => $snapshot['currency'] === 'VES' ? '1' : $snapshot['amounts']['exchange_rate_sale'], 'exchange_source' => $snapshot['exchange_source'] ?? 'PRO9 · pendiente de verificar', 'exchange_date' => $snapshot['exchange_date'] ?? $snapshot['issue_date'], 'amounts' => ['total' => $snapshot['amounts']['total'], 'base' => $snapshot['amounts']['total_value'], 'vat' => $snapshot['amounts']['total_igv'], 'taxes' => $snapshot['amounts']['total_taxes']], 'fiscal_amounts' => [], 'status' => $changed ? 'changed' : 'received', 'source_revision' => $revision, 'metadata' => ['source_hash' => $snapshot['hash'], 'source_kind' => $kind, 'source_record_id' => $id, 'source_state' => $snapshot['state'], 'exact' => $snapshot['exact']], 'issues' => ['Requiere validación contable y fiscal antes de preparar el asiento.']];
             if ($doc) {
+                $values['validated_by'] = null;
+                $values['validated_at'] = null;
+                $values['validated_version'] = null;
                 $doc->fill($values);
                 $doc->version++;
                 $doc->save();
             } else {
+                $values['created_by'] = $user;
                 $doc = SourceDocument::create($values);
             }
+            $doc->natural_key = $naturalKey;
+            $doc->save();
             SourceVersion::create(['source_document_id' => $doc->id, 'revision' => $revision, 'snapshot' => $snapshot, 'hash' => $snapshot['hash']]);
             if ($changed) {
+                \Modules\Accounting\Models\FiscalRecord::where('source_document_id', $doc->id)->where('status', 'validated')->update(['status' => 'source_changed']);
+                foreach (JournalEntry::where('source_document_id', $doc->id)->whereNull('posted_at')->lockForUpdate()->get() as $entry) {
+                    $entry->fill(['status' => 'observed', 'approved_by' => null, 'approved_at' => null, 'approved_version' => null, 'approval_reason' => null, 'version' => $entry->version + 1]);
+                    $entry->save();
+                }
                 Incident::create(['kind' => 'source_changed', 'resource_type' => 'source_document', 'resource_id' => $doc->id, 'title' => 'El documento de PRO9 cambió', 'details' => ['revision' => $revision, 'has_posted_entry' => JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists()]]);
             }
             app(AuditService::class)->record($user, $changed ? 'pro9.source_changed' : 'pro9.received', 'source_document', $doc->id, ['source_id' => $snapshot['source_id'], 'revision' => $revision, 'hash' => $snapshot['hash']]);

@@ -13,7 +13,7 @@ use Modules\Accounting\Models\Company;
 use Modules\Accounting\Services\CompanyService;
 final class InstallAccounting extends Command
 {
-    protected $signature = 'accounting:install {--hostname= : Dominio exacto del tenant} {--owner-user= : ID del administrador de PRO9} {--demo : Crear dos libros de datos ficticios}';
+    protected $signature = 'accounting:install {--hostname= : Dominio exacto del tenant} {--owner-user= : ID del administrador de PRO9} {--demo : Crear dos libros de datos ficticios} {--accountant : Asignar explícitamente el rol de contador al propietario}';
     protected $description = 'Instala las tablas del módulo contable dentro de un tenant de PRO9.';
     public function handle(): int
     {
@@ -49,14 +49,23 @@ final class InstallAccounting extends Command
                 DB::table('accounting_organizations')->insert(['id' => $id, 'name' => 'Organización contable de PRO9', 'created_at' => now(), 'updated_at' => now()]);
                 $org = DB::table('accounting_organizations')->where('id', $id)->first();
             }
+            DB::table('accounting_organization_memberships')->updateOrInsert(['organization_id' => $org->id, 'user_id' => $owner->id], ['id' => (string) Str::uuid(), 'role' => 'admin', 'active' => true, 'created_at' => now(), 'updated_at' => now()]);
             $source = DB::table('companies')->first();
             $books = $this->option('demo') ? [['Empresa de muestra A, C.A.', 'J-00000000-0'], ['Empresa de muestra B, C.A.', 'J-00000000-1']] : [[$source->name ?? 'Empresa de PRO9', $source->number ?? 'POR-DEFINIR']];
             foreach ($books as [$name, $tax]) {
                 $company = Company::where('organization_id', $org->id)->where('tax_id', $tax)->first();
                 if (!$company) {
                     $company = app(CompanyService::class)->create(['name' => $name, 'tax_id' => $tax, 'approval_mode' => 'separate', 'settings' => ['source' => $this->option('demo') ? 'fictitious' : 'pro9', 'source_company_id' => $this->option('demo') ? null : $source->id ?? null]], $org->id, $owner->id);
-                } else {
-                    DB::table('accounting_memberships')->updateOrInsert(['company_id' => $company->id, 'user_id' => $owner->id], ['id' => (string) Str::uuid(), 'organization_id' => $org->id, 'role' => 'admin', 'active' => true, 'created_at' => now(), 'updated_at' => now()]);
+                }
+                $membership = DB::table('accounting_memberships')->where('company_id', $company->id)->where('user_id', $owner->id)->first();
+                if (!$membership) {
+                    DB::table('accounting_memberships')->insert(['id' => (string) Str::uuid(), 'organization_id' => $org->id, 'company_id' => $company->id, 'user_id' => $owner->id, 'role' => 'admin', 'roles' => json_encode(['admin']), 'active' => true, 'created_at' => now(), 'updated_at' => now()]);
+                    $membership = DB::table('accounting_memberships')->where('company_id', $company->id)->where('user_id', $owner->id)->first();
+                }
+                if ($this->option('accountant') && !in_array('accountant', app(\Modules\Accounting\Domain\Permissions::class)->roles($membership), true)) {
+                    $roles = array_values(array_unique(array_merge(app(\Modules\Accounting\Domain\Permissions::class)->roles($membership), ['accountant'])));
+                    DB::table('accounting_memberships')->where('id', $membership->id)->update(['roles' => json_encode($roles), 'version' => $membership->version + 1, 'updated_at' => now()]);
+                    app(CompanyContext::class)->run($company, fn() => app(\Modules\Accounting\Services\AuditService::class)->record($owner->id, 'access.bootstrap_accountant', 'user', (string) $owner->id, ['roles' => $roles, 'explicit_cli_option' => true]));
                 }
                 app(CompanyContext::class)->run($company, fn() => app(CompanyService::class)->defaultChart());
             }

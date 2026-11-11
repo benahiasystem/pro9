@@ -27,7 +27,7 @@ final class EntryService
         return DB::transaction(function () use ($data, $user) {
             $period = $this->period($data['accounting_date']);
             $lines = $this->normalize($data['lines']);
-            $entry = JournalEntry::create(['period_id' => $period->id, 'accounting_date' => $data['accounting_date'], 'concept' => $data['concept'], 'entry_type' => $data['entry_type'] ?? 'regular', 'created_by' => $user, 'source_document_id' => $data['source_document_id'] ?? null, 'source_revision' => $data['source_revision'] ?? null, 'effect_type' => $data['effect_type'] ?? 'document', 'local_id' => $data['local_id'] ?? null, 'metadata' => $data['metadata'] ?? null, 'reason' => $data['reason'] ?? null, 'reversal_of' => $data['reversal_of'] ?? null, 'total_debit' => Exact::total(array_column($lines, 'debit'), 8), 'total_credit' => Exact::total(array_column($lines, 'credit'), 8), 'status' => $period->status === 'closed' ? 'observed' : 'draft']);
+            $entry = JournalEntry::create(['period_id' => $period->id, 'accounting_date' => $data['accounting_date'], 'concept' => $data['concept'], 'entry_type' => $data['entry_type'] ?? 'regular', 'created_by' => $user, 'source_document_id' => $data['source_document_id'] ?? null, 'source_revision' => $data['source_revision'] ?? null, 'effect_type' => $data['effect_type'] ?? 'document', 'local_id' => $data['local_id'] ?? null, 'metadata' => [...$data['metadata'] ?? [], 'prepared_by' => $user], 'rule_snapshot' => $data['rule_snapshot'] ?? null, 'reason' => $data['reason'] ?? null, 'reversal_of' => $data['reversal_of'] ?? null, 'total_debit' => Exact::total(array_column($lines, 'debit'), 8), 'total_credit' => Exact::total(array_column($lines, 'credit'), 8), 'status' => $period->status === 'closed' ? 'observed' : 'draft']);
             foreach ($lines as $i => $line) {
                 JournalLine::create([...$line, 'journal_entry_id' => $entry->id, 'position' => $i + 1]);
             }
@@ -44,7 +44,7 @@ final class EntryService
             $lines = $this->normalize($data['lines']);
             $period = $this->period($data['accounting_date']);
             $before = $entry->version;
-            $entry->fill(['period_id' => $period->id, 'accounting_date' => $data['accounting_date'], 'concept' => $data['concept'], 'version' => $before + 1, 'status' => $period->status === 'closed' ? 'observed' : 'draft', 'approved_by' => null, 'approved_at' => null, 'approved_version' => null, 'approval_reason' => null, 'total_debit' => Exact::total(array_column($lines, 'debit'), 8), 'total_credit' => Exact::total(array_column($lines, 'credit'), 8)]);
+            $entry->fill(['period_id' => $period->id, 'accounting_date' => $data['accounting_date'], 'concept' => $data['concept'], 'version' => $before + 1, 'status' => $period->status === 'closed' ? 'observed' : 'draft', 'approved_by' => null, 'approved_at' => null, 'approved_version' => null, 'approval_reason' => null, 'metadata' => [...$entry->metadata ?? [], 'prepared_by' => $user], 'total_debit' => Exact::total(array_column($lines, 'debit'), 8), 'total_credit' => Exact::total(array_column($lines, 'credit'), 8)]);
             $entry->save();
             JournalLine::where('journal_entry_id', $id)->delete();
             foreach ($lines as $i => $line) {
@@ -57,6 +57,10 @@ final class EntryService
     public function transition(string $id, int $version, int $user, string $action, string $comment = ''): JournalEntry
     {
         return DB::transaction(function () use ($id, $version, $user, $action, $comment) {
+            $sourceId = JournalEntry::whereKey($id)->value('source_document_id');
+            if ($sourceId) {
+                SourceDocument::whereKey($sourceId)->lockForUpdate()->firstOrFail();
+            }
             $e = JournalEntry::whereKey($id)->lockForUpdate()->firstOrFail();
             $this->editable($e);
             $this->version($e, $version);
@@ -82,7 +86,7 @@ final class EntryService
                     throw new ApiProblem('REVIEW_REQUIRED', 'Envía el comprobante a revisión antes de aprobarlo.');
                 }
                 $this->validatePosting($e, true);
-                if ($e->created_by === $user) {
+                if ((int) ($e->metadata['prepared_by'] ?? $e->created_by) === $user) {
                     if (app(CompanyContext::class)->company()->approval_mode !== 'self_control') {
                         throw new ApiProblem('SEPARATE_APPROVAL_REQUIRED', 'Otra persona autorizada debe aprobar este comprobante.');
                     }
@@ -109,6 +113,9 @@ final class EntryService
     {
         return $this->operations->execute($user, 'entry.post', $key, ['id' => $id, 'version' => $version], function () use ($id, $version, $user) {
             $hint = JournalEntry::findOrFail($id);
+            if ($hint->source_document_id) {
+                SourceDocument::whereKey($hint->source_document_id)->lockForUpdate()->firstOrFail();
+            }
             $period = Period::whereKey($hint->period_id)->lockForUpdate()->firstOrFail();
             $e = JournalEntry::whereKey($id)->lockForUpdate()->firstOrFail();
             if ($e->period_id !== $period->id) {
@@ -141,6 +148,12 @@ final class EntryService
                 $this->reverseEffects($e);
             } else {
                 $this->createOpenItem($e);
+            }
+            if ($e->source_document_id) {
+                $source = SourceDocument::findOrFail($e->source_document_id);
+                $source->status = 'posted';
+                $source->version++;
+                $source->save();
             }
             $this->audit->record($user, 'entry.posted', 'journal_entry', $id, ['reference' => $e->reference, 'version' => $e->version, 'approved_version' => $e->approved_version, 'debit' => $e->total_debit, 'credit' => $e->total_credit, 'period_version' => $period->version]);
             return $this->resource($e);
@@ -200,19 +213,27 @@ final class EntryService
             if ($debit->isNegative() || $credit->isNegative() || $debit->isPositive() && $credit->isPositive()) {
                 throw new ApiProblem('INVALID_LINE', 'Cada línea debe tener un importe positivo en Debe o Haber.');
             }
-            $out[] = ['account_id' => $account->id, 'third_party_id' => $l['third_party_id'] ?? null, 'cost_center_id' => $l['cost_center_id'] ?? null, 'description' => $l['description'] ?? null, 'document_reference' => $l['document_reference'] ?? null, 'debit' => (string) $debit, 'credit' => (string) $credit, 'original_currency' => $l['original_currency'] ?? 'VES', 'original_amount' => isset($l['original_amount']) ? (string) Exact::of($l['original_amount']) : null, 'exchange_rate' => isset($l['exchange_rate']) ? (string) Exact::of($l['exchange_rate'], 12) : null];
+            $out[] = ['account_id' => $account->id, 'third_party_id' => $l['third_party_id'] ?? null, 'cost_center_id' => $l['cost_center_id'] ?? null, 'description' => $l['description'] ?? null, 'document_reference' => $l['document_reference'] ?? null, 'debit' => (string) $debit, 'credit' => (string) $credit, 'original_currency' => $l['original_currency'] ?? 'VES', 'original_amount' => isset($l['original_amount']) ? (string) Exact::of($l['original_amount'], 12) : null, 'exchange_rate' => isset($l['exchange_rate']) ? (string) Exact::of($l['exchange_rate'], 12) : null];
         }
         return $out;
     }
     public function validatePosting(JournalEntry $e, bool $requireOpenPeriod): void
     {
         if ($e->source_document_id) {
-            $source = SourceDocument::findOrFail($e->source_document_id);
-            if ($source->status !== 'validated' || $source->source_revision !== $e->source_revision) {
+            $source = SourceDocument::whereKey($e->source_document_id)->lockForUpdate()->firstOrFail();
+            app(Pro9SourceReader::class)->assertCurrent($source);
+            if (!in_array($source->status, ['validated', 'proposed'], true) || $source->source_revision !== $e->source_revision) {
                 throw new ApiProblem('SOURCE_REVALIDATION_REQUIRED', 'El documento de origen requiere validar su versión actual antes de contabilizar.');
+            }
+            $validation = $source->metadata['validation'] ?? null;
+            if (!$validation || !$e->rule_snapshot || $validation != $e->rule_snapshot) {
+                throw new ApiProblem('SOURCE_SNAPSHOT_MISMATCH', 'El asiento debe conservar la validación fiscal de esta versión del documento. Prepara nuevamente su propuesta.');
             }
         }
         $lines = $e->lines()->get();
+        if (isset($source) && in_array($source->kind, ['sale_invoice', 'purchase_invoice'], true)) {
+            $this->validateInvoiceAuxiliary($source, $lines);
+        }
         if ($lines->count() < 2) {
             throw new ApiProblem('LINES_REQUIRED', 'El comprobante necesita al menos dos líneas.');
         }
@@ -240,7 +261,7 @@ final class EntryService
                 throw new ApiProblem('BOOK_SCALE_REQUIRED', 'Los importes del libro VES deben expresarse a dos decimales; documenta cualquier diferencia de redondeo.');
             }
             if ($l->original_currency !== 'VES') {
-                if ($l->original_amount === null || $l->exchange_rate === null || !Exact::of($l->original_amount)->isPositive() || !Exact::of($l->exchange_rate, 12)->isPositive()) {
+                if ($l->original_amount === null || $l->exchange_rate === null || !Exact::of($l->original_amount, 12)->isPositive() || !Exact::of($l->exchange_rate, 12)->isPositive()) {
                     throw new ApiProblem('EXCHANGE_RATE_REQUIRED', 'Conserva el importe original y una tasa positiva en cada línea en divisas.');
                 }
                 $converted = Exact::convert($l->original_amount, $l->exchange_rate);
@@ -254,6 +275,15 @@ final class EntryService
         }
         if (Exact::of($e->total_debit)->isZero()) {
             throw new ApiProblem('ZERO_ENTRY', 'El comprobante debe contener un importe mayor que cero.');
+        }
+    }
+    private function validateInvoiceAuxiliary(SourceDocument $document, mixed $lines): void
+    {
+        $side = $document->kind === 'sale_invoice' ? 'receivable' : 'payable';
+        $auxiliary = $lines->filter(fn($line) => in_array(Account::findOrFail($line->account_id)->auxiliary, ['receivable', 'payable'], true));
+        $line = $auxiliary->first();
+        if ($auxiliary->count() !== 1 || Account::findOrFail($line->account_id)->auxiliary !== $side || $line->third_party_id !== $document->third_party_id || !Exact::of($side === 'receivable' ? $line->debit : $line->credit)->isEqualTo($document->fiscal_amounts['total']) || !Exact::of($side === 'receivable' ? $line->credit : $line->debit)->isZero() || $line->original_currency !== $document->currency || $line->original_amount === null || $line->exchange_rate === null || !Exact::of($line->original_amount, 12)->isEqualTo($document->amounts['total']) || !Exact::of($line->exchange_rate, 12)->isEqualTo($document->exchange_rate)) {
+            throw new ApiProblem('INVOICE_AUXILIARY_MISMATCH', 'La factura requiere una sola partida de cliente o proveedor por su total, tercero, moneda y tasa validados. Revisa la propuesta antes de aprobarla.');
         }
     }
     private function createOpenItem(JournalEntry $e): void
@@ -286,7 +316,7 @@ final class EntryService
         $allocations = \Modules\Accounting\Models\SettlementAllocation::where('journal_entry_id', $reverse->reversal_of)->whereNull('reversal_entry_id')->lockForUpdate()->get();
         foreach ($allocations as $a) {
             $item = OpenItem::whereKey($a->open_item_id)->lockForUpdate()->firstOrFail();
-            $item->remaining_original = (string) Exact::of($item->remaining_original)->plus($a->original_amount);
+            $item->remaining_original = (string) Exact::of($item->remaining_original, 12)->plus($a->original_amount);
             $item->remaining_book = (string) Exact::of($item->remaining_book)->plus($a->book_amount);
             $item->status = 'open';
             $item->save();
@@ -296,7 +326,7 @@ final class EntryService
         $source = JournalEntry::findOrFail($reverse->reversal_of);
         if ($source->source_document_id) {
             foreach (OpenItem::where('source_document_id', $source->source_document_id)->lockForUpdate()->get() as $item) {
-                if (Exact::of($item->remaining_original)->compareTo(Exact::of($item->original_amount)) !== 0) {
+                if (Exact::of($item->remaining_original, 12)->compareTo(Exact::of($item->original_amount, 12)) !== 0) {
                     throw new ApiProblem('SETTLED_SOURCE', 'Primero resuelve o reversa las aplicaciones de cobro o pago de este documento.');
                 }
                 $item->remaining_original = '0';

@@ -13,17 +13,17 @@ final class SecurityService
     {
         return DB::table('accounting_user_security')->where('user_id', $user)->whereNotNull('totp_secret')->exists();
     }
-    public function verified(Request $r): bool
+    public function verified(Request $r, bool $critical = true): bool
     {
         $token = (string) $r->header('X-Accounting-Verification');
-        return strlen($token) >= 32 && DB::table('accounting_auth_grants')->where('user_id', $r->user()->id)->where('pro9_token_hash', hash('sha256', (string) $r->bearerToken()))->where('verification_hash', hash('sha256', $token))->where('expires_at', '>', now())->exists();
+        return strlen($token) >= 32 && DB::table('accounting_auth_grants')->where('user_id', $r->user()->id)->where('pro9_token_hash', hash('sha256', (string) $r->bearerToken()))->where('verification_hash', hash('sha256', $token))->where($critical ? 'expires_at' : 'session_until', '>', now())->exists();
     }
-    public function requireVerified(Request $r): void
+    public function requireVerified(Request $r, bool $critical = true): void
     {
         if (!$this->enabled($r->user()->id)) {
             throw new ApiProblem('MFA_ENROLLMENT_REQUIRED', 'Activa la verificación en dos pasos en Mi cuenta antes de realizar operaciones definitivas.', 403);
         }
-        if (!$this->verified($r)) {
+        if (!$this->verified($r, $critical)) {
             throw new ApiProblem('MFA_REQUIRED', 'Confirma la verificación en dos pasos para continuar.', 403);
         }
     }
@@ -87,7 +87,7 @@ final class SecurityService
     private function grant(Request $r): string
     {
         $token = bin2hex(random_bytes(32));
-        DB::table('accounting_auth_grants')->insert(['id' => (string) Str::uuid(), 'user_id' => $r->user()->id, 'pro9_token_hash' => hash('sha256', (string) $r->bearerToken()), 'verification_hash' => hash('sha256', $token), 'expires_at' => now()->addMinutes((int) config('accounting.mfa_minutes', 15)), 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('accounting_auth_grants')->insert(['id' => (string) Str::uuid(), 'user_id' => $r->user()->id, 'pro9_token_hash' => hash('sha256', (string) $r->bearerToken()), 'verification_hash' => hash('sha256', $token), 'expires_at' => now()->addMinutes((int) config('accounting.mfa_minutes', 15)), 'session_until' => now()->addHours(8), 'created_at' => now(), 'updated_at' => now()]);
         return $token;
     }
     public function logout(Request $r): void

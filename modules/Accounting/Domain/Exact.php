@@ -31,6 +31,6 @@ final class Exact
     }
     public static function convert(string $amount, string $rate): string
     {
-        return (string) self::of($amount)->multipliedBy(self::of($rate, 12))->toScale(2, RoundingMode::HALF_UP);
+        return (string) self::of($amount, 12)->multipliedBy(self::of($rate, 12))->toScale(2, RoundingMode::HALF_UP);
     }
 }

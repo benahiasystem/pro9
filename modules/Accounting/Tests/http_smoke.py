@@ -1,13 +1,17 @@
+import fcntl
 import json,urllib.request,urllib.error,base64,time,hmac,hashlib,struct,uuid,subprocess
 from pathlib import Path
 import sys
 root=Path(sys.argv[1] if len(sys.argv)>1 else '.accounting-isolated').resolve()
 assert root.name=='.accounting-isolated', 'Usa el directorio privado del entorno aislado.'
 assert subprocess.check_output(['docker','inspect','--format','{{index .Config.Labels "contabilidad.goal"}}','contabilidad-api-v1-web'],text=True).strip()=='api-v1'
+fixture_lock=(root/'fixture.lock').open('a');fcntl.flock(fixture_lock,fcntl.LOCK_EX)
 accounts=json.loads((root/'clone-access.json').read_text());checks=[]
 def call(path,body=None,token=None,verification=None,headers=None,host='contabilidad.localhost',expected=200):
  h={'Host':host+':9080','Accept':'application/json'}
  if token:h['Authorization']='Bearer '+token
+ if verification is None and token:
+  verification=next((a.get('verification') for a in accounts.values() if a.get('token')==token),None)
  if verification:h['X-Accounting-Verification']=verification
  if body is not None:h['Content-Type']='application/json'
  h.update(headers or {})
@@ -46,7 +50,7 @@ local_id=str(uuid.uuid4());key=str(uuid.uuid4());payload={'accounting_date':'202
 entry=call(base+'/entries',payload,token=a['token'],headers={'Idempotency-Key':key})['data'];same=call(base+'/entries',payload,token=a['token'],headers={'Idempotency-Key':key})['data'];assert same['id']==entry['id'];checks.append('creación idempotente de borrador')
 missing=call('/api/accounting/v1/companies/'+other['id']+'/entries/'+entry['id'],token=a['token'],expected=404);assert missing['code']=='NOT_FOUND';checks.append('aislamiento de comprobantes entre empresas')
 entry=call(base+'/entries/'+entry['id']+'/submit',{},token=a['token'],headers={'If-Match':str(entry['version'])})['data']
-blocked=call(base+'/entries/'+entry['id']+'/approve',{},token=r['token'],expected=403);assert blocked['code']=='MFA_REQUIRED';checks.append('operación definitiva bloqueada sin verificación adicional')
+blocked=call(base+'/entries/'+entry['id']+'/approve',{},token=r['token'],verification=False,expected=403);assert blocked['code']=='MFA_REQUIRED';checks.append('operación definitiva bloqueada sin verificación adicional')
 entry=call(base+'/entries/'+entry['id']+'/approve',{'comment':'Revisión independiente'},token=r['token'],verification=r['verification'],headers={'If-Match':str(entry['version'])})['data']
 headers={'If-Match':str(entry['version']),'Idempotency-Key':str(uuid.uuid4())};posted=call(base+'/entries/'+entry['id']+'/post',{},token=r['token'],verification=r['verification'],headers=headers)['data'];retry=call(base+'/entries/'+entry['id']+'/post',{},token=r['token'],verification=r['verification'],headers=headers)['data'];assert retry['reference']==posted['reference'];assert posted['status']=='posted';checks.append('revisión separada y contabilización idempotente')
 device=str(uuid.uuid4());package=call(base+'/offline/prepare',{'device_id':device,'name':'Prueba HTTP aislada','period':'2026-11'},token=a['token'])['data'];assert package['user']['id']==a['id'] and package['company']['id']==book['id'];assert 'token' not in package;checks.append('paquete local acotado a empresa, usuario y período')

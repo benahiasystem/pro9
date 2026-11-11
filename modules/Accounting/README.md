@@ -18,6 +18,13 @@ libro; las tablas `accounting_*` incluyen organización, empresa y relaciones
 compuestas. El segundo factor autoriza operaciones críticas por un plazo
 limitado y no sustituye la identidad de PRO9.
 
+Los roles son explícitos por empresa. Administrar usuarios y configuración no
+concede aprobación ni contabilización. Para asumir también esas funciones hay
+que asignar el rol de contador. Los administradores y contadores verifican el
+segundo factor antes de consultar datos; las operaciones críticas exigen una
+verificación reciente. La revisión separada considera a quien preparó la última
+versión, aunque otra persona haya creado el primer borrador.
+
 `Pro9SourceReader` consulta los documentos del mismo tenant. Reutiliza los
 valores exactos de PRO9, conserva versiones de origen y detecta recepciones
 repetidas. Recibir un documento no lo contabiliza. Las empresas ficticias no
@@ -39,6 +46,27 @@ El comando exige un tenant existente y un administrador activo de PRO9; ejecuta
 solo las migraciones de este módulo sobre la conexión `tenant` indicada. No
 registra sus migraciones como migraciones globales del sistema. `--demo` exige
 un entorno local o de pruebas y `ACCOUNTING_DEMO_MODE=true`.
+La opción `--accountant` asigna expresamente la responsabilidad de contador al
+propietario. Sin esa opción el propietario conserva las funciones administrativas.
+
+## Documentos y configuración fiscal
+
+El módulo permite registrar borradores manuales, recibir versiones de documentos
+de PRO9 y validarlos con perfiles y reglas aprobadas por fecha. Conserva la
+identidad del tercero, los importes originales, la tasa histórica y sus soportes
+en una copia de la validación. No instala alícuotas tributarias predeterminadas.
+
+Las facturas validadas generan propuestas con cuentas elegidas por el contador
+y una explicación por línea. Al enviarlas a revisión se comprueba que la partida
+por cobrar o pagar coincida con el total, tercero, moneda y tasa validados.
+Revalidar retira las aprobaciones pendientes; regenerar una propuesta exige
+motivo y conserva la evidencia anterior en auditoría. La contabilización vuelve
+a comprobar el estado y la versión del documento de PRO9.
+
+Los registros fiscales disponibles son consultas preliminares separadas por
+perfil e incluyen los documentos validados del intervalo. Los formatos fiscales
+definitivos, aplicaciones de notas, retenciones, cobros y pagos aún deben completar
+su implementación y conciliaciones; recibir o validar no equivale a contabilizar.
 
 ## Trabajo local
 
@@ -60,6 +88,9 @@ crear o limpiar tablas. No ejecutar esta suite contra una instalación activa.
 `http_smoke.py` usa las credenciales ficticias del directorio privado
 `.accounting-isolated` y comprueba el contenedor y la marca del servidor de
 pruebas antes de escribir.
+`documents_http_smoke.py` verifica el flujo de factura con el enrutamiento y
+autenticación reales de PRO9. `documents_browser_smoke.cjs` lo recorre desde la
+PWA compilada en AWS, incluyendo configuración fiscal y adaptación a móvil.
 
 El worktree autorizado es `codex/contabilidad-api-v1`, basado en
 `861228462e208d2060c9148b87fd7d7d3f354da5`. Las bases reales se copian para

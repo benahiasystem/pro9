@@ -9,10 +9,11 @@ abstract class OwnedModel extends Model
 {
     use HasUuids;
     use \Hyn\Tenancy\Traits\UsesTenantConnection;
-    public function getTable()
+    public function __construct(array $attributes = [])
     {
-        $table = parent::getTable();
-        return str_starts_with($table, 'accounting_') ? $table : 'accounting_' . $table;
+        // Set the physical name once; Eloquent may later set a query alias.
+        $this->table ??= 'accounting_' . \Illuminate\Support\Str::snake(\Illuminate\Support\Str::pluralStudly(class_basename($this)));
+        parent::__construct($attributes);
     }
     protected $guarded = ['organization_id', 'company_id'];
     protected static function booted(): void

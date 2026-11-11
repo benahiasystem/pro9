@@ -41,6 +41,10 @@ final class CatalogController extends \App\Http\Controllers\Controller
     }
     public function store(Request $r, string $company, string $kind): array
     {
+        if ($kind === 'exchange-rates') {
+            app(\Modules\Accounting\Domain\Permissions::class)->require($r->user(), 'rates');
+            app(\Modules\Accounting\Services\SecurityService::class)->requireVerified($r);
+        }
         $v = $this->fields($r, $kind);
         $model = $this->model($kind);
         return DB::transaction(function () use ($r, $v, $model, $kind) {

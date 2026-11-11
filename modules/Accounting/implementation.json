@@ -6,7 +6,7 @@
   "database": "tenant existente; tablas accounting_*",
   "frontend": "TypeScript Vue actual; compilación en AWS",
   "tests": "Solo entornos aislados; pruebas previas del prototipo independiente no acreditan este módulo",
-  "state": "development; module core and initial PWA workflows verified",
+  "state": "development; module roles, manual invoices, dated fiscal configuration and initial PWA workflows verified",
   "isolation": {
     "databaseContainer": "contabilidad-api-v1-db",
     "network": "contabilidad-api-v1-tests",
@@ -15,8 +15,8 @@
   },
   "verification": {
     "core": {
-      "tests": 16,
-      "assertions": 31,
+      "tests": 28,
+      "assertions": 67,
       "result": "passed"
     },
     "http": {
@@ -42,8 +42,28 @@
       "purchases": 0,
       "decimalStrings": true,
       "duplicateReception": "same record, unchanged"
+    },
+    "documentsHttp": {
+      "checks": 5,
+      "result": "passed",
+      "suite": "Tests/documents_http_smoke.py"
+    },
+    "documentsBrowser": {
+      "checks": 6,
+      "result": "passed",
+      "pageErrors": 0,
+      "suite": "Tests/documents_browser_smoke.cjs"
+    },
+    "memberships": {
+      "checks": 7,
+      "result": "passed"
+    },
+    "usersBrowser": {
+      "checks": 4,
+      "result": "passed",
+      "pageErrors": 0
     }
   },
-  "pending": "Complete the remaining functional and acceptance criteria before declaring V1 finished.",
-  "verifiedAt": "2026-11-11T18:11:46.313086+00:00"
+  "pending": "Complete notes and source reconciliation, opening balances and settlements, retention workflows, imports/exports, close/reopen, backup/restore and all remaining offline and acceptance criteria. Fiscal registers remain preliminary.",
+  "verifiedAt": "2026-11-11T19:39:18.990185+00:00"
 }

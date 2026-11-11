@@ -12,8 +12,8 @@ use Illuminate\Support\DateFactory;
 use Illuminate\Support\Str;
 use Hyn\Tenancy\Database\Connection as TenancyConnection;
 use Modules\Accounting\Domain\{CompanyContext, ApiProblem, Exact};
-use Modules\Accounting\Models\{Company, Account, JournalEntry, JournalLine, Period, SourceDocument, SourceVersion};
-use Modules\Accounting\Services\{CompanyService, EntryService, ReportService};
+use Modules\Accounting\Models\{Company, Account, JournalEntry, JournalLine, Period, SourceDocument, SourceVersion, ThirdParty, OpenItem, FiscalRecord};
+use Modules\Accounting\Services\{CompanyService, EntryService, ReportService, DocumentService, TaxConfigurationService};
 use Modules\Accounting\Support\TenantDB as DB;
 use App\Models\Tenant\User;
 final class CoreIntegrationTest extends TestCase
@@ -79,10 +79,9 @@ final class CoreIntegrationTest extends TestCase
             }
         }
         $schema->enableForeignKeyConstraints();
-        $migration = require dirname(__DIR__) . '/Database/Migrations/2026_11_11_000100_create_accounting_module.php';
-        $migration->up();
-        $security = require dirname(__DIR__) . '/Database/Migrations/2026_11_11_000200_create_accounting_step_up_auth.php';
-        $security->up();
+        foreach (glob(dirname(__DIR__) . '/Database/Migrations/*.php') as $file) {
+            (require $file)->up();
+        }
         if (!DB::table('users')->where('email', 'contabilidad-test@example.invalid')->exists()) {
             DB::table('users')->insert(['name' => 'Contador de prueba aislada', 'email' => 'contabilidad-test@example.invalid', 'password' => password_hash('Fictitious-Accounting-Test-Only', PASSWORD_BCRYPT), 'type' => 'admin', 'active' => true, 'locked' => false, 'api_token' => str_repeat('t', 60), 'created_at' => now(), 'updated_at' => now()]);
         }
@@ -125,6 +124,22 @@ final class CoreIntegrationTest extends TestCase
         $this->assertSame('0.30', Exact::total(['0.10', '0.20']));
         $this->expectException(ApiProblem::class);
         Exact::of(0.1);
+    }
+    public function test_administration_does_not_implicitly_authorize_posting(): void
+    {
+        $permissions = app(\Modules\Accounting\Domain\Permissions::class);
+        $this->assertContains('users', $permissions->forMembership((object) ['role' => 'admin', 'roles' => null]));
+        $this->assertNotContains('post', $permissions->forMembership((object) ['role' => 'admin', 'roles' => null]));
+        $this->assertNotContains('approve', $permissions->forRole('admin'));
+        $this->assertContains('post', $permissions->forMembership((object) ['role' => 'admin', 'roles' => '["admin","accountant"]']));
+    }
+    public function test_live_permissions_are_scoped_to_the_active_company(): void
+    {
+        DB::table('accounting_memberships')->where('company_id', $this->a->id)->where('user_id', $this->admin->id)->update(['roles' => json_encode(['accountant'])]);
+        app(\Modules\Accounting\Domain\Permissions::class)->require($this->admin, 'post');
+        app(CompanyContext::class)->set($this->b);
+        $this->expectException(ApiProblem::class);
+        app(\Modules\Accounting\Domain\Permissions::class)->require($this->admin, 'post');
     }
     public function test_company_scope_prevents_reading_another_book(): void
     {
@@ -201,6 +216,9 @@ final class CoreIntegrationTest extends TestCase
         $report = app(ReportService::class)->build('ledger', ['account_id' => Account::where('code', '3.1')->firstOrFail()->id]);
         $this->assertSame('0.00', $report['totals']['balance']);
         $this->assertNotNull(JournalEntry::findOrFail($e->id)->posted_at);
+        $this->assertSame(1, JournalEntry::whereHas('reversal', fn($query) => $query->whereNotNull('posted_at'))->count());
+        app(CompanyContext::class)->set($this->b);
+        $this->assertSame(0, JournalEntry::whereHas('reversal', fn($query) => $query->whereNotNull('posted_at'))->count());
     }
     public function test_stale_version_is_rejected_without_modification(): void
     {
@@ -223,14 +241,189 @@ final class CoreIntegrationTest extends TestCase
         $date = now('America/Caracas')->format('Y-m-d');
         return SourceDocument::create(['kind' => 'sale_invoice', 'number' => 'FV-PRUEBA', 'issue_date' => $date, 'fiscal_date' => $date, 'currency' => 'VES', 'exchange_rate' => '1', 'exchange_source' => 'Prueba aislada', 'exchange_date' => $date, 'amounts' => ['total' => '100.00'], 'fiscal_amounts' => [], 'status' => 'validated']);
     }
+    private function invoiceConfiguration(): array
+    {
+        $service = app(TaxConfigurationService::class);
+        $year = now('America/Caracas')->format('Y');
+        $profile = $service->addProfile(['profile' => 'ordinary', 'effective_from' => $year . '-01-01', 'source_reference' => 'Supuesto didáctico aislado; no configura una norma real.', 'details' => ['input_tax_treatment' => 'deductible', 'spe' => false]], $this->admin->id);
+        $rule = $service->createRule(['code' => 'IVA-FICTICIO', 'name' => 'IVA de caso didáctico', 'tax' => 'IVA', 'scenario' => 'invoice', 'rate_percent' => '16.00', 'effective_from' => $year . '-01-01', 'source_reference' => 'Caso de prueba ficticio, no alícuota predeterminada del producto.'], $this->admin->id);
+        $rule = $service->approveRule($rule->id, $rule->version, $this->admin->id);
+        $party = ThirdParty::create(['tax_id' => 'J-11111111-1', 'name' => 'Contraparte ficticia', 'kind' => 'both']);
+        $date = now('America/Caracas')->format('Y-m-d');
+        return ['profile' => $profile, 'rule' => $rule, 'party' => $party, 'input' => ['kind' => 'sale_invoice', 'number' => 'FV-000001', 'issue_date' => $date, 'fiscal_date' => $date, 'third_party_id' => $party->id, 'currency' => 'VES', 'exchange_rate' => '1', 'exchange_source' => 'Moneda del libro', 'exchange_date' => $date, 'amounts' => ['base' => '1000.00', 'vat' => '160.00', 'other_taxes' => '0.00', 'total' => '1160.00'], 'tax_components' => [['tax' => 'IVA', 'rule_id' => $rule->id, 'base' => '1000.00', 'amount' => '160.00']]]];
+    }
+    private function invoiceAccounts(): array
+    {
+        return ['counterparty' => Account::where('code', '1.1.03')->firstOrFail()->id, 'base' => Account::where('code', '4.1')->firstOrFail()->id, 'vat' => Account::where('code', '2.1.02')->firstOrFail()->id, 'rounding' => Account::where('code', '6.4')->firstOrFail()->id];
+    }
+    public function test_manual_invoice_preserves_tax_snapshot_and_creates_one_receivable(): void
+    {
+        $configuration = $this->invoiceConfiguration();
+        $service = app(DocumentService::class);
+        $entryService = app(EntryService::class);
+        $document = $service->create($configuration['input'], $this->admin->id);
+        $document = $service->validate($document->id, $document->version, [], $this->admin->id);
+        $entry = $service->propose($document->id, $document->version, now('America/Caracas')->format('Y-m-d'), $this->invoiceAccounts(), $this->admin->id);
+        $this->assertSame('1160.00000000', $entry->total_debit);
+        $this->assertSame($entry->total_debit, $entry->total_credit);
+        $this->assertSame($configuration['profile']->id, $entry->rule_snapshot['profile']['id']);
+        $entry = $entryService->transition($entry->id, $entry->version, $this->admin->id, 'submit');
+        $entry = $entryService->transition($entry->id, $entry->version, $this->admin->id, 'approve', 'Autocontrol explícito del caso de factura ficticia.');
+        $entryService->post($entry->id, $entry->version, $this->admin->id, 'posted-document-test');
+        $this->assertSame('posted', SourceDocument::findOrFail($document->id)->status);
+        $this->assertSame('1160.000000000000', OpenItem::where('source_document_id', $document->id)->firstOrFail()->remaining_original);
+        $this->assertSame(1, FiscalRecord::where('source_document_id', $document->id)->where('status', 'validated')->count());
+    }
+    public function test_duplicate_invoice_number_is_detected_before_it_is_posted(): void
+    {
+        $configuration = $this->invoiceConfiguration();
+        $service = app(DocumentService::class);
+        $service->create($configuration['input'], $this->admin->id);
+        $input = $configuration['input'];
+        $input['number'] = '  fv-1 ';
+        try {
+            $service->create($input, $this->admin->id);
+            $this->fail('Debe detectar la identidad repetida.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('POSSIBLE_DUPLICATE_DOCUMENT', $problem->errorCode);
+        }
+        $this->assertSame(1, SourceDocument::count());
+    }
+    public function test_editing_a_balanced_proposal_cannot_change_the_invoice_receivable(): void
+    {
+        $configuration = $this->invoiceConfiguration();
+        $documents = app(DocumentService::class);
+        $entries = app(EntryService::class);
+        $document = $documents->create($configuration['input'], $this->admin->id);
+        $document = $documents->validate($document->id, $document->version, [], $this->admin->id);
+        $entry = $documents->propose($document->id, $document->version, now('America/Caracas')->format('Y-m-d'), $this->invoiceAccounts(), $this->admin->id);
+        $data = $entries->resource($entry);
+        $data['lines'][0]['debit'] = '1150.00';
+        $data['lines'][1]['credit'] = '990.00';
+        $entry = $entries->edit($entry->id, $data, $entry->version, $this->admin->id);
+        try {
+            $entries->transition($entry->id, $entry->version, $this->admin->id, 'submit');
+            $this->fail('Una propuesta balanceada no puede alterar el auxiliar de la factura.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('INVOICE_AUXILIARY_MISMATCH', $problem->errorCode);
+        }
+        $this->assertSame(0, OpenItem::count());
+    }
+    public function test_a_fiscal_record_keeps_the_original_identity_after_the_party_changes(): void
+    {
+        $configuration = $this->invoiceConfiguration();
+        $documents = app(DocumentService::class);
+        $document = $documents->create($configuration['input'], $this->admin->id);
+        $documents->validate($document->id, $document->version, [], $this->admin->id);
+        $configuration['party']->name = 'Nombre actualizado después de la validación';
+        $configuration['party']->save();
+        $record = FiscalRecord::where('source_document_id', $document->id)->firstOrFail();
+        $this->assertSame('Contraparte ficticia', $record->rule_snapshot['document']['party']['name']);
+        $this->assertSame('FV-000001', $record->rule_snapshot['document']['number']);
+    }
+    public function test_revalidation_revokes_approval_and_regeneration_keeps_the_prior_evidence(): void
+    {
+        $configuration = $this->invoiceConfiguration();
+        $documents = app(DocumentService::class);
+        $entries = app(EntryService::class);
+        $document = $documents->create($configuration['input'], $this->admin->id);
+        $document = $documents->validate($document->id, $document->version, [], $this->admin->id);
+        $entry = $documents->propose($document->id, $document->version, now('America/Caracas')->format('Y-m-d'), $this->invoiceAccounts(), $this->admin->id);
+        $entry = $entries->transition($entry->id, $entry->version, $this->admin->id, 'submit');
+        $entry = $entries->transition($entry->id, $entry->version, $this->admin->id, 'approve', 'Autocontrol del caso de regeneración.');
+        $document = $documents->validate($document->id, $document->fresh()->version, ['tax_explanation' => 'Aclaración posterior de la clasificación del caso.'], $this->admin->id);
+        $this->assertNull($entry->fresh()->approved_version);
+        $this->assertSame('observed', $entry->fresh()->status);
+        try {
+            $documents->propose($document->id, $document->version, now('America/Caracas')->format('Y-m-d'), $this->invoiceAccounts(), $this->admin->id);
+            $this->fail('No debe descartar silenciosamente la propuesta anterior.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('PROPOSAL_REPLACEMENT_REQUIRED', $problem->errorCode);
+        }
+        $replacement = $documents->propose($document->id, $document->version, now('America/Caracas')->format('Y-m-d'), $this->invoiceAccounts(), $this->admin->id, ['replace_existing' => true, 'reason' => 'Regeneración explícita por aclaración de la revisión fiscal.']);
+        $this->assertSame($entry->id, $replacement->id);
+        $this->assertSame('draft', $replacement->status);
+        $this->assertEquals($document->metadata['validation'], $replacement->rule_snapshot);
+        $this->assertSame(1, FiscalRecord::where('status', 'validated')->count());
+        $this->assertSame(1, FiscalRecord::where('status', 'superseded')->count());
+        $this->assertSame(1, \Modules\Accounting\Models\AuditEvent::where('action', 'entry.proposal_regenerated')->count());
+    }
+    public function test_a_later_editor_cannot_approve_their_own_preparation_in_separate_mode(): void
+    {
+        $this->a->approval_mode = 'separate';
+        $this->a->save();
+        $editor = DB::table('users')->insertGetId(['name' => 'Editor ficticio', 'email' => Str::uuid() . '@example.invalid', 'password' => password_hash('Prueba aislada', PASSWORD_BCRYPT), 'created_at' => now(), 'updated_at' => now()]);
+        $entries = app(EntryService::class);
+        $entry = $this->draft();
+        $entry = $entries->edit($entry->id, $entries->resource($entry), $entry->version, $editor);
+        $entry = $entries->transition($entry->id, $entry->version, $editor, 'submit');
+        try {
+            $entries->transition($entry->id, $entry->version, $editor, 'approve', 'La versión fue preparada por este editor.');
+            $this->fail('La separación debe considerar al último preparador.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('SEPARATE_APPROVAL_REQUIRED', $problem->errorCode);
+        }
+        $this->assertSame('review', $entry->fresh()->status);
+    }
+    public function test_a_sales_note_cannot_be_applied_to_a_purchase_invoice(): void
+    {
+        $configuration = $this->invoiceConfiguration();
+        $documents = app(DocumentService::class);
+        $invoice = $documents->create([...$configuration['input'], 'kind' => 'purchase_invoice'], $this->admin->id);
+        $note = $documents->create([...$configuration['input'], 'kind' => 'sale_credit_note', 'number' => 'NC-1', 'related_document_id' => $invoice->id], $this->admin->id);
+        try {
+            $documents->validate($note->id, $note->version, [], $this->admin->id);
+            $this->fail('Debe respetar el tipo de factura afectada.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('RELATED_DOCUMENT_REQUIRED', $problem->errorCode);
+        }
+    }
+    public function test_future_tax_rule_cannot_validate_a_current_document(): void
+    {
+        $configuration = $this->invoiceConfiguration();
+        $service = app(TaxConfigurationService::class);
+        $future = $service->createRule(['code' => 'IVA-FUTURO', 'name' => 'Supuesto futuro ficticio', 'tax' => 'IVA', 'scenario' => 'invoice', 'rate_percent' => '16.00', 'effective_from' => now()->addYear()->format('Y-m-d'), 'source_reference' => 'Caso futuro de pruebas aisladas.'], $this->admin->id);
+        $future = $service->approveRule($future->id, $future->version, $this->admin->id);
+        $input = $configuration['input'];
+        $input['tax_components'][0]['rule_id'] = $future->id;
+        $document = app(DocumentService::class)->create($input, $this->admin->id);
+        try {
+            app(DocumentService::class)->validate($document->id, $document->version, [], $this->admin->id);
+            $this->fail('La regla no tiene vigencia actual.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('RULE_NOT_EFFECTIVE', $problem->errorCode);
+        }
+        $this->assertSame(0, FiscalRecord::count());
+    }
+    public function test_future_profile_does_not_rewrite_a_validated_document(): void
+    {
+        $configuration = $this->invoiceConfiguration();
+        $service = app(DocumentService::class);
+        $document = $service->create($configuration['input'], $this->admin->id);
+        $document = $service->validate($document->id, $document->version, [], $this->admin->id);
+        app(TaxConfigurationService::class)->addProfile(['profile' => 'formal', 'effective_from' => now()->addYear()->startOfYear()->format('Y-m-d'), 'source_reference' => 'Notificación ficticia futura de pruebas.', 'details' => ['input_tax_treatment' => 'cost', 'spe' => false]], $this->admin->id);
+        $this->assertSame('ordinary', $document->fresh()->metadata['validation']['profile']['profile']);
+        $this->assertSame($configuration['profile']->id, $document->fresh()->metadata['validation']['profile']['id']);
+    }
+    public function test_global_zero_igtf_rule_requires_explicit_conditions(): void
+    {
+        $service = app(TaxConfigurationService::class);
+        $rule = $service->createRule(['code' => 'IGTF-CERO', 'name' => 'Regla insuficiente de prueba', 'tax' => 'IGTF', 'scenario' => 'general', 'rate_percent' => '0.00', 'effective_from' => now()->startOfYear()->format('Y-m-d'), 'source_reference' => 'Caso de rechazo, no configuración tributaria.'], $this->admin->id);
+        try {
+            $service->approveRule($rule->id, $rule->version, $this->admin->id);
+            $this->fail('Debe delimitar el supuesto.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('CONDITIONAL_IGTF_REQUIRED', $problem->errorCode);
+        }
+    }
     public function test_changed_source_blocks_posting_of_an_approved_version(): void
     {
-        $source = $this->source();
+        $configuration = $this->invoiceConfiguration();
+        $documents = app(DocumentService::class);
+        $source = $documents->create($configuration['input'], $this->admin->id);
+        $source = $documents->validate($source->id, $source->version, [], $this->admin->id);
         $s = app(EntryService::class);
-        $e = $this->draft();
-        $e->source_document_id = $source->id;
-        $e->source_revision = 1;
-        $e->save();
+        $e = $documents->propose($source->id, $source->version, now('America/Caracas')->format('Y-m-d'), $this->invoiceAccounts(), $this->admin->id);
         $e = $s->transition($e->id, $e->version, $this->admin->id, 'submit');
         $e = $s->transition($e->id, $e->version, $this->admin->id, 'approve', 'Autocontrol del caso de prueba.');
         $source->source_revision = 2;
