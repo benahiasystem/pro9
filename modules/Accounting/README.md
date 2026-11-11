@@ -157,7 +157,8 @@ documentales del paquete.
 navegador, separación por empresa, documentos incompletos, cuota agotada,
 edición concurrente, compatibilidad de respaldos y conservación de la versión
 original ante cambios de otro usuario. También retiene la captura hasta que
-se confirma el guardado y bloquea cambios de empresa durante ese envío.
+se confirma el guardado, bloquea cambios de empresa durante ese envío y
+comprueba que el editor móvil desplace solo su tabla de líneas.
 Las suites que consumen las identidades ficticias serializan su acceso mediante
 el archivo de bloqueo del directorio privado.
 

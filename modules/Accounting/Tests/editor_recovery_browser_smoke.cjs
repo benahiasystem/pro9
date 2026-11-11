@@ -111,11 +111,9 @@ async function work(p) {
     .waitFor();
 }
 async function openCapture(p, text) {
-  const section = p
-    .locator('section')
-    .filter({
-      has: p.getByRole('heading', { name: 'Capturas conservadas automáticamente', exact: true }),
-    });
+  const section = p.locator('section').filter({
+    has: p.getByRole('heading', { name: 'Capturas conservadas automáticamente', exact: true }),
+  });
   await section
     .getByRole('row')
     .filter({ hasText: text })
@@ -224,6 +222,22 @@ async function upload(p, file) {
   checks.push(
     'cierre completo del navegador y reapertura sin red recuperan los campos a medio llenar',
   );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForFunction(
+    () => document.querySelector('.sidebar').getBoundingClientRect().right <= 1,
+  );
+  assert.equal(
+    await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth),
+    false,
+  );
+  await page.getByLabel('Haber de línea 2', { exact: true }).scrollIntoViewIfNeeded();
+  assert.equal(await page.evaluate(() => window.scrollX), 0);
+  assert.equal(await page.locator('.editor-lines').evaluate((el) => el.scrollLeft > 0), true);
+  assert.equal(await page.getByLabel('Debe de línea 1', { exact: true }).inputValue(), '12,');
+  await page.screenshot({ path: root + '/editor-recovery-form-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1600, height: 1050 });
+  await page.locator('.editor-lines').evaluate((el) => (el.scrollLeft = 0));
+  checks.push('el editor móvil desplaza solo las líneas contables sin desbordar la página');
   await page.getByRole('link', { name: 'Documentos', exact: true }).click();
   await page.getByRole('link', { name: 'Nuevo documento', exact: true }).click();
   await page.getByLabel('Número del documento', { exact: true }).fill(number);
