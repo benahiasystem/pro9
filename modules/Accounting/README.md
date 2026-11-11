@@ -91,6 +91,11 @@ los borradores existentes. Reimportar la misma alternativa no la duplica. Este
 respaldo corresponde al trabajo del navegador; la recuperación integral de base
 de datos y adjuntos del servidor sigue pendiente.
 
+Las operaciones de cifrado y las respuestas de autorización pendientes conservan
+la identidad de la sesión que las inició. Un cierre o cambio de sesión impide
+que una preparación, recuperación o desbloqueo anterior publique su clave local
+en la sesión siguiente.
+
 ## Verificación aislada
 
 `phpunit.xml` exige una base MySQL y un host de pruebas específicos antes de
