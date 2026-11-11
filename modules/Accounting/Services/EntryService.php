@@ -112,6 +112,9 @@ final class EntryService
     public function post(string $id, int $version, int $user, ?string $key): array
     {
         return $this->operations->execute($user, 'entry.post', $key, ['id' => $id, 'version' => $version], function () use ($id, $version, $user) {
+            $context = app(CompanyContext::class);
+            $company = DB::table('accounting_companies')->where('id', $context->id())->lockForUpdate()->first();
+            $context->company()->setRawAttributes((array) $company, true);
             $hint = JournalEntry::findOrFail($id);
             if ($hint->source_document_id) {
                 SourceDocument::whereKey($hint->source_document_id)->lockForUpdate()->firstOrFail();
@@ -148,6 +151,7 @@ final class EntryService
                 $this->reverseEffects($e);
             } else {
                 $this->createOpenItem($e);
+                app(FinancialEffects::class)->apply($e);
             }
             if ($e->source_document_id) {
                 $source = SourceDocument::findOrFail($e->source_document_id);
@@ -163,6 +167,9 @@ final class EntryService
     {
         return DB::transaction(function () use ($id, $date, $reason, $user) {
             $e = JournalEntry::whereKey($id)->lockForUpdate()->firstOrFail();
+            if ($e->reversal_of) {
+                throw new ApiProblem('REVERSAL_OF_REVERSAL', 'Conserva el reverso. La corrección requiere un reemplazo vinculado al comprobante original.');
+            }
             if (!$e->posted_at) {
                 throw new ApiProblem('NOT_POSTED', 'Solo se puede reversar un comprobante contabilizado.');
             }
@@ -230,6 +237,13 @@ final class EntryService
                 throw new ApiProblem('SOURCE_SNAPSHOT_MISMATCH', 'El asiento debe conservar la validación fiscal de esta versión del documento. Prepara nuevamente su propuesta.');
             }
         }
+        $cutoff = app(CompanyContext::class)->company()->migration_date;
+        if ($cutoff && $e->entry_type !== 'opening' && $e->accounting_date->format('Y-m-d') < substr((string) $cutoff, 0, 10)) {
+            throw new ApiProblem('BEFORE_MIGRATION_DATE', 'La contabilización requiere una fecha desde el inicio del libro. Conserva los documentos anteriores como antecedentes de apertura.');
+        }
+        if ($cutoff && isset($source) && $source->issue_date->format('Y-m-d') < substr((string) $cutoff, 0, 10)) {
+            throw new ApiProblem('OPENING_ANTECEDENT', 'El documento anterior al inicio se enlaza con la partida inicial y no genera otra venta o compra.');
+        }
         $lines = $e->lines()->get();
         if (isset($source) && in_array($source->kind, ['sale_invoice', 'purchase_invoice'], true)) {
             $this->validateInvoiceAuxiliary($source, $lines);
@@ -276,6 +290,7 @@ final class EntryService
         if (Exact::of($e->total_debit)->isZero()) {
             throw new ApiProblem('ZERO_ENTRY', 'El comprobante debe contener un importe mayor que cero.');
         }
+        app(FinancialEffects::class)->validate($e, $lines);
     }
     private function validateInvoiceAuxiliary(SourceDocument $document, mixed $lines): void
     {
@@ -305,10 +320,10 @@ final class EntryService
             if (Exact::of($book)->isZero()) {
                 continue;
             }
-            if (OpenItem::where('source_document_id', $doc->id)->where('account_id', $a->id)->exists()) {
+            if (OpenItem::where('source_document_id', $doc->id)->where('account_id', $a->id)->where('status', '!=', 'reversed')->exists()) {
                 return;
             }
-            OpenItem::create(['third_party_id' => $l->third_party_id, 'account_id' => $a->id, 'source_document_id' => $doc->id, 'side' => $side, 'reference' => $doc->number, 'issue_date' => $doc->issue_date->format('Y-m-d'), 'due_date' => $doc->due_date, 'currency' => $doc->currency, 'original_amount' => $doc->amounts['total'], 'book_amount' => $book, 'remaining_original' => $doc->amounts['total'], 'remaining_book' => $book]);
+            OpenItem::create(['third_party_id' => $l->third_party_id, 'account_id' => $a->id, 'source_document_id' => $doc->id, 'origin_entry_id' => $e->id, 'side' => $side, 'reference' => $doc->number, 'issue_date' => $doc->issue_date->format('Y-m-d'), 'due_date' => $doc->due_date, 'currency' => $doc->currency, 'original_amount' => $doc->amounts['total'], 'book_amount' => $book, 'remaining_original' => $doc->amounts['total'], 'remaining_book' => $book]);
         }
     }
     private function reverseEffects(JournalEntry $reverse): void
@@ -319,20 +334,30 @@ final class EntryService
             $item->remaining_original = (string) Exact::of($item->remaining_original, 12)->plus($a->original_amount);
             $item->remaining_book = (string) Exact::of($item->remaining_book)->plus($a->book_amount);
             $item->status = 'open';
+            $item->version++;
             $item->save();
             $a->reversal_entry_id = $reverse->id;
             $a->save();
         }
         $source = JournalEntry::findOrFail($reverse->reversal_of);
-        if ($source->source_document_id) {
-            foreach (OpenItem::where('source_document_id', $source->source_document_id)->lockForUpdate()->get() as $item) {
-                if (Exact::of($item->remaining_original, 12)->compareTo(Exact::of($item->original_amount, 12)) !== 0) {
-                    throw new ApiProblem('SETTLED_SOURCE', 'Primero resuelve o reversa las aplicaciones de cobro o pago de este documento.');
-                }
-                $item->remaining_original = '0';
-                $item->remaining_book = '0';
-                $item->status = 'reversed';
-                $item->save();
+        $items = OpenItem::where('origin_entry_id', $source->id)->lockForUpdate()->get();
+        foreach ($items as $item) {
+            if (!Exact::of($item->remaining_original, 12)->isEqualTo($item->original_amount) || !Exact::of($item->remaining_book)->isEqualTo($item->book_amount)) {
+                throw new ApiProblem('SETTLED_SOURCE', 'Resuelve primero las aplicaciones de cobro o pago de la partida.');
+            }
+            $item->remaining_original = '0';
+            $item->remaining_book = '0';
+            $item->status = 'reversed';
+            $item->version++;
+            $item->save();
+        }
+        foreach ([\Modules\Accounting\Models\OpeningBatch::class, \Modules\Accounting\Models\Settlement::class] as $model) {
+            $record = $model::where('journal_entry_id', $source->id)->lockForUpdate()->first();
+            if ($record) {
+                $record->status = 'reversed';
+                $record->active_key = null;
+                $record->version++;
+                $record->save();
             }
         }
     }

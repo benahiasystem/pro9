@@ -271,6 +271,190 @@ final class CoreIntegrationTest extends TestCase
         $date = now('America/Caracas')->format('Y-m-d');
         return SourceDocument::create(['kind' => 'sale_invoice', 'number' => 'FV-PRUEBA', 'issue_date' => $date, 'fiscal_date' => $date, 'currency' => 'VES', 'exchange_rate' => '1', 'exchange_source' => 'Prueba aislada', 'exchange_date' => $date, 'amounts' => ['total' => '100.00'], 'fiscal_amounts' => [], 'status' => 'validated']);
     }
+    private function initialBalance(string $side = 'receivable'): array
+    {
+        $date = now('America/Caracas')->format('Y-m-d');
+        $before = now('America/Caracas')->subDay()->format('Y-m-d');
+        $accounts = Account::get()->keyBy('code');
+        $party = ThirdParty::create(['name' => 'Tercero ficticio de apertura', 'tax_id' => 'J-11111111-1', 'kind' => 'both']);
+        $receivable = $side === 'receivable';
+        $document = app(DocumentService::class)->create(['kind' => $receivable ? 'sale_invoice' : 'purchase_invoice', 'number' => 'INICIAL-1', 'issue_date' => $before, 'fiscal_date' => $before, 'third_party_id' => $party->id, 'currency' => 'USD', 'exchange_rate' => '40', 'exchange_source' => 'Tasa ficticia histórica', 'exchange_date' => $before, 'amounts' => ['base' => '100', 'vat' => '0', 'other_taxes' => '0', 'total' => '100']], $this->admin->id);
+        $account = $accounts[$receivable ? '1.1.03' : '2.1.01'];
+        $input = ['cutoff_date' => $date, 'reason' => 'Arranque ficticio a partir del saldo conciliado.', 'evidence_reference' => 'Estado anterior ficticio verificado', 'balances' => [['account_id' => $account->id, 'debit' => $receivable ? '4000.00' : '0.00', 'credit' => $receivable ? '0.00' : '4000.00'], ['account_id' => $accounts['3.1']->id, 'debit' => $receivable ? '0.00' : '4000.00', 'credit' => $receivable ? '4000.00' : '0.00']], 'open_items' => [['account_id' => $account->id, 'third_party_id' => $party->id, 'source_document_id' => $document->id, 'reference' => 'INICIAL-1', 'issue_date' => $before, 'currency' => 'USD', 'original_amount' => '100', 'book_amount' => '4000.00', 'exchange_rate' => '40', 'exchange_date' => $before, 'exchange_source' => 'Tasa ficticia histórica', 'evidence_reference' => 'Saldo anterior ficticio conciliado']]];
+        $entry = app(\Modules\Accounting\Services\OpeningService::class)->prepare($input, $this->admin->id);
+        return compact('entry', 'input', 'party', 'document', 'accounts');
+    }
+    private function postPrepared(JournalEntry $entry, string $key): JournalEntry
+    {
+        $service = app(EntryService::class);
+        $entry = $service->transition($entry->id, $entry->version, $this->admin->id, 'submit');
+        $entry = $service->transition($entry->id, $entry->version, $this->admin->id, 'approve', 'Autocontrol explícito del caso aislado de auxiliares.');
+        $service->post($entry->id, $entry->version, $this->admin->id, $key);
+        return $entry->fresh();
+    }
+    private function settlementInput(OpenItem $item, string $original, string $reference, string $direction = 'receipt', bool $bankVes = false): array
+    {
+        $accounts = Account::get()->keyBy('code');
+        return ['direction' => $direction, 'accounting_date' => now('America/Caracas')->format('Y-m-d'), 'reference' => $reference, 'third_party_id' => $item->third_party_id, 'cash_account_id' => $accounts['1.1.02']->id, 'currency' => $bankVes ? 'VES' : 'USD', 'amount' => $bankVes ? (string) \Brick\Math\BigDecimal::of($original)->multipliedBy('42') : $original, 'exchange_rate' => $bankVes ? '1' : '42', 'exchange_date' => now('America/Caracas')->format('Y-m-d'), 'exchange_source' => 'Medición didáctica de liquidación', 'evidence_reference' => 'Comprobante ficticio de banco', 'rate_reason' => 'Tasa histórica del caso didáctico de liquidación.', 'tax_review_reference' => 'Tributos del caso didáctico revisados por separado; sin inferir una exención.', 'gain_account_id' => $accounts['4.2']->id, 'loss_account_id' => $accounts['6.2']->id, 'applications' => [['open_item_id' => $item->id, 'original_amount' => $original, 'measurement_rate' => '42']]];
+    }
+    public function test_opening_and_partial_receipts_reconcile_without_repeating_historical_revenue(): void
+    {
+        $fixture = $this->initialBalance();
+        $this->assertSame(0, OpenItem::count());
+        $this->postPrepared($fixture['entry'], 'opening-ar-test');
+        $item = OpenItem::firstOrFail();
+        $this->assertTrue($item->is_opening);
+        $this->assertSame('opening_antecedent', $fixture['document']->fresh()->status);
+        $same = app(\Modules\Accounting\Services\OpeningService::class)->prepare($fixture['input'], $this->admin->id);
+        $this->assertSame($fixture['entry']->id, $same->id);
+        $this->assertSame(1, OpenItem::count());
+        $service = app(\Modules\Accounting\Services\SettlementService::class);
+        foreach ([['40', 'RC-PARCIAL', '60.000000000000', '2400.00000000'], ['60', 'RC-FINAL', '0.000000000000', '0.00000000']] as [$amount, $reference, $remaining, $book]) {
+            $entry = $service->prepare($this->settlementInput($item, $amount, $reference), $this->admin->id);
+            $this->postPrepared($entry, 'post-' . $reference);
+            $item = $item->fresh();
+            $this->assertSame($remaining, $item->remaining_original);
+            $this->assertSame($book, $item->remaining_book);
+        }
+        $this->assertSame('settled', $item->status);
+        $this->assertSame(2, \Modules\Accounting\Models\SettlementAllocation::count());
+        $report = app(ReportService::class);
+        $this->assertSame('0.00', $report->build('ledger', ['account_id' => $fixture['accounts']['1.1.03']->id])['totals']['balance']);
+        $this->assertSame('0.00', $report->build('ledger', ['account_id' => $fixture['accounts']['4.1']->id])['totals']['balance']);
+        $this->assertSame('-200.00', $report->build('ledger', ['account_id' => $fixture['accounts']['4.2']->id])['totals']['balance']);
+        try {
+            app(DocumentService::class)->propose($fixture['document']->id, $fixture['document']->fresh()->version, now()->format('Y-m-d'), [], $this->admin->id);
+            $this->fail('No debe generar otra venta histórica.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('OPENING_ANTECEDENT', $problem->errorCode);
+        }
+    }
+    public function test_a_payable_can_be_paid_in_ves_with_an_explicit_exchange_loss(): void
+    {
+        $fixture = $this->initialBalance('payable');
+        $this->postPrepared($fixture['entry'], 'opening-ap-test');
+        $item = OpenItem::firstOrFail();
+        $entry = app(\Modules\Accounting\Services\SettlementService::class)->prepare($this->settlementInput($item, '100', 'PAGO-1', 'payment', true), $this->admin->id);
+        $this->postPrepared($entry, 'payment-ap-test');
+        $this->assertSame('settled', $item->fresh()->status);
+        $report = app(ReportService::class);
+        $this->assertSame('200.00', $report->build('ledger', ['account_id' => $fixture['accounts']['6.2']->id])['totals']['balance']);
+        $this->assertSame('0.00', $report->build('ledger', ['account_id' => $fixture['accounts']['2.1.01']->id])['totals']['balance']);
+        $this->assertSame('0.00', $report->build('ledger', ['account_id' => $fixture['accounts']['5.1']->id])['totals']['balance']);
+    }
+    public function test_a_later_settlement_cannot_use_a_stale_approved_open_balance(): void
+    {
+        $fixture = $this->initialBalance();
+        $this->postPrepared($fixture['entry'], 'opening-stale-test');
+        $item = OpenItem::firstOrFail();
+        $service = app(\Modules\Accounting\Services\SettlementService::class);
+        $first = $service->prepare($this->settlementInput($item, '60', 'RC-PRIMERO'), $this->admin->id);
+        $second = $service->prepare($this->settlementInput($item, '60', 'RC-SEGUNDO'), $this->admin->id);
+        $entries = app(EntryService::class);
+        $second = $entries->transition($second->id, $second->version, $this->admin->id, 'submit');
+        $second = $entries->transition($second->id, $second->version, $this->admin->id, 'approve', 'Autocontrol antes del cambio de saldo.');
+        $this->postPrepared($first, 'post-first-stale-test');
+        try {
+            $entries->post($second->id, $second->version, $this->admin->id, 'post-second-stale-test');
+            $this->fail('El saldo aprobado ya cambió.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('OPEN_ITEM_CHANGED', $problem->errorCode);
+        }
+        $this->assertNull($second->fresh()->posted_at);
+        $this->assertSame('40.000000000000', $item->fresh()->remaining_original);
+        $this->assertSame(1, \Modules\Accounting\Models\SettlementAllocation::count());
+    }
+    public function test_reversing_a_receipt_restores_the_original_and_book_balances(): void
+    {
+        $fixture = $this->initialBalance();
+        $this->postPrepared($fixture['entry'], 'opening-receipt-reversal');
+        $item = OpenItem::firstOrFail();
+        $receipt = app(\Modules\Accounting\Services\SettlementService::class)->prepare($this->settlementInput($item, '40', 'RC-REVERSAR'), $this->admin->id);
+        $receipt = $this->postPrepared($receipt, 'receipt-to-reverse');
+        $reverse = app(EntryService::class)->prepareReversal($receipt->id, now()->format('Y-m-d'), 'Reverso ficticio del cobro para corregir su soporte.', $this->admin->id);
+        $this->postPrepared($reverse, 'reverse-receipt-test');
+        $this->assertSame('100.000000000000', $item->fresh()->remaining_original);
+        $this->assertSame('4000.00000000', $item->fresh()->remaining_book);
+        $this->assertSame('reversed', \Modules\Accounting\Models\Settlement::where('journal_entry_id', $receipt->id)->firstOrFail()->status);
+        $this->assertNotNull(\Modules\Accounting\Models\SettlementAllocation::firstOrFail()->reversal_entry_id);
+    }
+    public function test_a_balanced_but_reduced_reversal_cannot_cancel_a_full_open_item(): void
+    {
+        $fixture = $this->initialBalance();
+        $original = $this->postPrepared($fixture['entry'], 'opening-reversal-integrity');
+        $entries = app(EntryService::class);
+        $reverse = $entries->prepareReversal($original->id, now()->format('Y-m-d'), 'Reverso ficticio que debe conservar sus importes.', $this->admin->id);
+        $data = $entries->resource($reverse);
+        foreach ($data['lines'] as &$line) {
+            $line['debit'] = (string) \Brick\Math\BigDecimal::of($line['debit'])->dividedBy('2');
+            $line['credit'] = (string) \Brick\Math\BigDecimal::of($line['credit'])->dividedBy('2');
+            if ($line['original_amount'] !== null) {
+                $line['original_amount'] = (string) \Brick\Math\BigDecimal::of($line['original_amount'])->dividedBy('2');
+            }
+        }
+        unset($line);
+        $reverse = $entries->edit($reverse->id, $data, $reverse->version, $this->admin->id);
+        try {
+            $entries->transition($reverse->id, $reverse->version, $this->admin->id, 'submit');
+            $this->fail('El reverso reducido no coincide con su efecto.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('REVERSAL_LINES_CHANGED', $problem->errorCode);
+        }
+        $this->assertSame('100.000000000000', OpenItem::firstOrFail()->remaining_original);
+    }
+    public function test_opening_income_balances_do_not_become_new_period_revenue(): void
+    {
+        $accounts = Account::get()->keyBy('code');
+        $input = ['cutoff_date' => now()->format('Y-m-d'), 'reason' => 'Migración ficticia de saldos acumulados anteriores.', 'evidence_reference' => 'Balance anterior ficticio', 'balances' => [['account_id' => $accounts['1.1.02']->id, 'debit' => '100.00', 'credit' => '0.00'], ['account_id' => $accounts['4.1']->id, 'debit' => '0.00', 'credit' => '100.00']], 'open_items' => []];
+        $entry = app(\Modules\Accounting\Services\OpeningService::class)->prepare($input, $this->admin->id);
+        $this->postPrepared($entry, 'opening-income-test');
+        $report = app(ReportService::class);
+        $this->assertSame('0.00', $report->build('income-statement')['totals']['result']);
+        $this->assertSame('100.00', $report->build('income-statement')['totals']['opening_carry_forward']);
+        $this->assertSame('0.00', $report->build('balance-sheet')['totals']['difference']);
+        $reverse = app(EntryService::class)->prepareReversal($entry->id, now()->format('Y-m-d'), 'Reverso ficticio de los saldos iniciales de resultados.', $this->admin->id);
+        $this->postPrepared($reverse, 'reverse-opening-income-test');
+        $this->assertSame('0.00', $report->build('income-statement')['totals']['result']);
+        $this->assertSame('0.00', $report->build('income-statement')['totals']['opening_carry_forward']);
+    }
+    public function test_a_changed_opening_antecedent_requires_a_new_review(): void
+    {
+        $fixture = $this->initialBalance();
+        $document = $fixture['document'];
+        $document->version++;
+        $document->save();
+        try {
+            app(EntryService::class)->transition($fixture['entry']->id, $fixture['entry']->version, $this->admin->id, 'submit');
+            $this->fail('El antecedente cambió después de preparar la apertura.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('OPENING_ANTECEDENT_CHANGED', $problem->errorCode);
+        }
+        $this->assertSame(0, OpenItem::count());
+    }
+    public function test_a_historical_invoice_can_receive_fiscal_review_without_a_second_sale(): void
+    {
+        $fixture = $this->initialBalance();
+        $this->postPrepared($fixture['entry'], 'opening-fiscal-review');
+        app(TaxConfigurationService::class)->addProfile(['profile' => 'ordinary', 'effective_from' => now()->startOfYear()->format('Y-m-d'), 'source_reference' => 'Configuración fiscal ficticia del caso de pruebas.', 'details' => ['input_tax_treatment' => 'deductible', 'spe' => false]], $this->admin->id);
+        $document = $fixture['document']->fresh();
+        $document = app(DocumentService::class)->validate($document->id, $document->version, ['fiscal_date' => now()->format('Y-m-d'), 'rate_evidence_reference' => 'Medición histórica ficticia respaldada.', 'rate_reason' => 'Tasa didáctica histórica del saldo inicial.', 'tax_explanation' => 'Supuesto ficticio de revisión fiscal independiente; no configura una exención real.'], $this->admin->id);
+        $this->assertSame('opening_antecedent', $document->status);
+        $this->assertSame(1, FiscalRecord::where('status', 'validated')->count());
+        $this->assertSame(1, JournalEntry::whereNotNull('posted_at')->count());
+    }
+    public function test_a_manual_invoice_linked_to_a_posted_opening_keeps_its_identity(): void
+    {
+        $fixture = $this->initialBalance();
+        $this->postPrepared($fixture['entry'], 'opening-document-immutable');
+        $document = $fixture['document']->fresh();
+        try {
+            app(DocumentService::class)->edit($document->id, [], $document->version, $this->admin->id);
+            $this->fail('El antecedente ya respalda una partida contabilizada.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('OPENING_SOURCE_IMMUTABLE', $problem->errorCode);
+        }
+        $this->assertSame(1, $document->fresh()->source_revision);
+    }
     private function invoiceConfiguration(): array
     {
         $service = app(TaxConfigurationService::class);

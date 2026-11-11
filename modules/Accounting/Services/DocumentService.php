@@ -86,6 +86,9 @@ final class DocumentService
             DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
             $document = SourceDocument::whereKey($id)->lockForUpdate()->firstOrFail();
             $this->version($document, $version);
+            if (\Modules\Accounting\Models\OpenItem::where('source_document_id', $id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists()) {
+                throw new ApiProblem('OPENING_SOURCE_IMMUTABLE', 'Este documento respalda una partida inicial contabilizada. Conserva su identidad y revisa su corrección mediante la apertura y sus auxiliares.', 409);
+            }
             if ($document->origin !== 'manual') {
                 throw new ApiProblem('SOURCE_READ_ONLY', 'La información original se corrige en PRO9. Su clasificación fiscal se revisa al validar.');
             }
@@ -105,6 +108,13 @@ final class DocumentService
             app(AuditService::class)->record($user, 'document.updated', 'source_document', $id, ['version' => $document->version, 'source_revision' => $document->source_revision, 'prior_approval_invalidated' => true]);
             return $document;
         }, 5);
+    }
+    private function guardAntecedent(SourceDocument $document): void
+    {
+        $cutoff = app(CompanyContext::class)->company()->migration_date;
+        if ($document->status === 'opening_antecedent' || $cutoff && $document->issue_date->format('Y-m-d') < substr((string) $cutoff, 0, 10) || \Modules\Accounting\Models\OpenItem::where('source_document_id', $document->id)->where('is_opening', true)->exists()) {
+            throw new ApiProblem('OPENING_ANTECEDENT', 'El documento anterior al inicio se enlaza como antecedente de la apertura; no genera otra venta o compra.');
+        }
     }
     public function validate(string $id, int $version, array $review, int $user): SourceDocument
     {
@@ -209,7 +219,8 @@ final class DocumentService
             }
             $validation = ['profile' => $profile->toArray(), 'rules' => $rules, 'reviewer_id' => $user, 'reviewed_at' => now()->toIso8601String(), 'source_revision' => $document->source_revision, 'tax_context' => $review['tax_context'] ?? $document->metadata['tax_context'] ?? [], 'source_confirmed' => $document->origin === 'manual' || !empty($review['source_confirmed']), 'tax_explanation' => $review['tax_explanation'] ?? $document->metadata['tax_explanation'] ?? '', 'rate' => ['value' => $document->exchange_rate, 'source' => $document->exchange_source, 'date' => $document->exchange_date, 'evidence' => $document->rate_evidence_reference, 'reason' => $review['rate_reason'] ?? $document->metadata['rate_reason'] ?? '']];
             $validation['document'] = ['id' => $document->id, 'kind' => $document->kind, 'number' => $document->number, 'fiscal_control' => $document->fiscal_control, 'issue_date' => $document->issue_date->format('Y-m-d'), 'currency' => $document->currency, 'original_amounts' => $document->amounts, 'related_document_id' => $document->related_document_id, 'party' => $party->only(['id', 'name', 'tax_id']), 'issuer' => app(CompanyContext::class)->company()->only(['name', 'tax_id'])];
-            $document->fill(['status' => 'validated', 'version' => $document->version + 1, 'validated_version' => $document->version + 1, 'validated_by' => $user, 'validated_at' => now(), 'natural_key' => $key, 'fiscal_amounts' => $fiscal, 'tax_components' => $components, 'issues' => [], 'metadata' => [...$document->metadata ?? [], 'validation' => $validation, 'party_snapshot' => $party->only(['id', 'tax_id', 'name']), 'issuer_snapshot' => app(CompanyContext::class)->company()->only(['name', 'tax_id'])]]);
+            $isOpeningAntecedent = \Modules\Accounting\Models\OpenItem::where('source_document_id', $id)->where('is_opening', true)->exists();
+            $document->fill(['status' => $isOpeningAntecedent ? 'opening_antecedent' : 'validated', 'version' => $document->version + 1, 'validated_version' => $document->version + 1, 'validated_by' => $user, 'validated_at' => now(), 'natural_key' => $key, 'fiscal_amounts' => $fiscal, 'tax_components' => $components, 'issues' => [], 'metadata' => [...$document->metadata ?? [], 'validation' => $validation, 'party_snapshot' => $party->only(['id', 'tax_id', 'name']), 'issuer_snapshot' => app(CompanyContext::class)->company()->only(['name', 'tax_id'])]]);
             $document->save();
             $fiscalVersion = (int) FiscalRecord::where('source_document_id', $id)->max('version') + 1;
             FiscalRecord::where('source_document_id', $id)->whereIn('status', ['validated', 'source_changed'])->update(['status' => 'superseded']);
@@ -227,6 +238,7 @@ final class DocumentService
         return DB::transaction(function () use ($id, $version, $date, $selected, $user, $options) {
             $document = SourceDocument::whereKey($id)->lockForUpdate()->firstOrFail();
             $this->version($document, $version);
+            $this->guardAntecedent($document);
             if (!in_array($document->status, ['validated', 'proposed'], true) || empty($document->metadata['validation'])) {
                 throw new ApiProblem('DOCUMENT_VALIDATION_REQUIRED', 'Valida el documento y su configuración fiscal antes de preparar el asiento.');
             }

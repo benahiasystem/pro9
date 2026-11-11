@@ -65,8 +65,31 @@ a comprobar el estado y la versión del documento de PRO9.
 
 Los registros fiscales disponibles son consultas preliminares separadas por
 perfil e incluyen los documentos validados del intervalo. Los formatos fiscales
-definitivos, aplicaciones de notas, retenciones, cobros y pagos aún deben completar
+definitivos, aplicaciones de notas y retenciones aún deben completar
 su implementación y conciliaciones; recibir o validar no equivale a contabilizar.
+
+## Apertura y auxiliares
+
+La apertura concilia los saldos por cuenta con el detalle de clientes y
+proveedores. Conserva el importe original, su valor en VES y el antecedente
+documental. Prepararla no mueve saldos: se somete al mismo circuito de revisión,
+aprobación y contabilización de los comprobantes. Una factura anterior al corte
+puede identificar una deuda inicial; no vuelve a reconocer su ingreso o gasto.
+Los saldos iniciales de resultados se presentan por separado del resultado del
+intervalo consultado.
+
+Los cobros y pagos parciales distribuyen el valor contable pendiente y separan
+la diferencia de cambio. La última aplicación toma el remanente contable exacto.
+Cada propuesta conserva la versión del saldo que revisó: si otra operación lo
+modifica, debe regenerarse y aprobarse de nuevo. El reverso íntegro restaura los
+saldos aplicados y conserva su historia. Las cuentas de clientes y proveedores
+requieren estos flujos o una factura; un asiento manual sin detalle no puede
+descuadrar el auxiliar.
+
+Esta primera liquidación exige soporte bancario, tasas y revisión tributaria
+documentada. Todavía no integra retenciones, IGTF, notas, anticipos ni devoluciones
+en sus aplicaciones. Esos casos siguen pendientes del flujo específico; no se
+compensan automáticamente contra el banco ni se presume una exención.
 
 ## Trabajo local
 
@@ -109,6 +132,10 @@ PWA compilada en AWS, incluyendo configuración fiscal y adaptación a móvil.
 `restore_browser_smoke.cjs` verifica exportación cifrada, conservación de
 alternativas, rechazo de propietario distinto e integridad, y recuperación en
 un navegador limpio seguida de un reinicio sin conexión.
+`auxiliary_http_smoke.py` y `auxiliary_browser_smoke.cjs` verifican apertura,
+antecedentes y cobro parcial con diferencia de cambio y revisión independiente.
+Las suites que consumen las identidades ficticias serializan su acceso mediante
+el archivo de bloqueo del directorio privado.
 
 El worktree autorizado es `codex/contabilidad-api-v1`, basado en
 `861228462e208d2060c9148b87fd7d7d3f354da5`. Las bases reales se copian para
@@ -116,6 +143,7 @@ probar en esta PC y no se transfieren a AWS. El directorio privado, los volcados
 las credenciales y los compilados están excluidos de Git.
 
 La implementación sigue en desarrollo. Los comprobantes, catálogos, informes
-básicos, segundo factor y trabajo local tienen verificaciones iniciales; los
+básicos, apertura, liquidaciones parciales, segundo factor y trabajo local tienen
+verificaciones iniciales; los
 flujos fiscales completos, cierres, conciliaciones, importación y exportaciones
 definitivas aún deben completar sus criterios de aceptación.

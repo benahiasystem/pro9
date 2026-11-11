@@ -160,7 +160,7 @@ final class Pro9SourceReader
                     $entry->fill(['status' => 'observed', 'approved_by' => null, 'approved_at' => null, 'approved_version' => null, 'approval_reason' => null, 'version' => $entry->version + 1]);
                     $entry->save();
                 }
-                Incident::create(['kind' => 'source_changed', 'resource_type' => 'source_document', 'resource_id' => $doc->id, 'title' => 'El documento de PRO9 cambió', 'details' => ['revision' => $revision, 'has_posted_entry' => JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists()]]);
+                Incident::create(['kind' => 'source_changed', 'resource_type' => 'source_document', 'resource_id' => $doc->id, 'title' => 'El documento de PRO9 cambió', 'details' => ['revision' => $revision, 'has_posted_entry' => JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists(), 'has_opening_item' => \Modules\Accounting\Models\OpenItem::where('source_document_id', $doc->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists()]]);
             }
             app(AuditService::class)->record($user, $changed ? 'pro9.source_changed' : 'pro9.received', 'source_document', $doc->id, ['source_id' => $snapshot['source_id'], 'revision' => $revision, 'hash' => $snapshot['hash']]);
             return ['data' => $doc, 'unchanged' => false];

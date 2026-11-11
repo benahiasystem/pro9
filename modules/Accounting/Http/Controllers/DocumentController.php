@@ -29,7 +29,7 @@ final class DocumentController extends \App\Http\Controllers\Controller
     }
     public function index(Request $request): mixed
     {
-        $input = $request->validate(['q' => 'nullable|string|max:100', 'status' => 'nullable|in:draft,received,validated,proposed,posted,changed,observed,excluded', 'kind' => 'nullable|string|max:40', 'from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d']);
+        $input = $request->validate(['q' => 'nullable|string|max:100', 'status' => 'nullable|in:draft,received,validated,proposed,posted,changed,observed,excluded,opening_antecedent', 'kind' => 'nullable|string|max:40', 'from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d']);
         $query = SourceDocument::query();
         foreach (['status', 'kind'] as $field) {
             if (!empty($input[$field])) {

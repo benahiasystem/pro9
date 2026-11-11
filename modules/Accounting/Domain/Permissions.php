@@ -6,7 +6,7 @@ use App\Models\Tenant\User;
 use Modules\Accounting\Support\TenantDB as DB;
 final class Permissions
 {
-    private const ROLES = ['viewer' => ['read', 'reports', 'local'], 'auditor' => ['read', 'reports', 'local', 'audit'], 'auxiliary' => ['read', 'draft', 'documents', 'attachments', 'import', 'local', 'reports'], 'accountant' => ['read', 'draft', 'documents', 'attachments', 'import', 'local', 'reports', 'audit', 'review', 'approve', 'post', 'reverse', 'close', 'reopen', 'catalogs', 'rules', 'rates', 'settlements'], 'admin' => ['read', 'reports', 'audit', 'local', 'catalogs', 'users', 'company', 'integration', 'backup']];
+    private const ROLES = ['viewer' => ['read', 'reports', 'local'], 'auditor' => ['read', 'reports', 'local', 'audit'], 'auxiliary' => ['read', 'draft', 'settlements', 'documents', 'attachments', 'import', 'local', 'reports'], 'accountant' => ['read', 'draft', 'opening', 'documents', 'attachments', 'import', 'local', 'reports', 'audit', 'review', 'approve', 'post', 'reverse', 'close', 'reopen', 'catalogs', 'rules', 'rates', 'settlements'], 'admin' => ['read', 'reports', 'audit', 'local', 'catalogs', 'users', 'company', 'integration', 'backup']];
     public function roles(object $membership): array
     {
         $roles = $membership->roles ?? null;

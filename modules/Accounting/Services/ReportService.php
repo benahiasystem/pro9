@@ -119,14 +119,21 @@ final class ReportService
     }
     private function income(string $from, string $to): array
     {
-        $rows = $this->lines()->whereBetween('e.accounting_date', [$from, $to])->where('e.entry_type', '!=', 'closing')->whereIn('a.kind', ['income', 'cost', 'expense'])->select('a.code', 'a.name', 'a.kind')->selectRaw('SUM(l.credit-l.debit) as effect')->groupBy('a.code', 'a.name', 'a.kind')->orderBy('a.code')->get();
+        $rows = $this->lines()->whereBetween('e.accounting_date', [$from, $to])->whereNotIn('e.entry_type', ['closing', 'opening'])->whereNotExists(function ($q) {
+            $q->selectRaw('1')->from('accounting_journal_entries as original')->whereColumn('original.id', 'e.reversal_of')->whereColumn('original.company_id', 'e.company_id')->whereIn('original.entry_type', ['opening', 'closing']);
+        })->whereIn('a.kind', ['income', 'cost', 'expense'])->select('a.code', 'a.name', 'a.kind')->selectRaw('SUM(l.credit-l.debit) as effect')->groupBy('a.code', 'a.name', 'a.kind')->orderBy('a.code')->get();
         $result = BigDecimal::zero();
         $out = [];
         foreach ($rows as $r) {
             $result = $result->plus($r->effect);
             $out[] = [...(array) $r, 'amount' => $this->money($r->kind === 'income' ? $r->effect : BigDecimal::of($r->effect)->negated())];
         }
-        return ['rows' => $out, 'totals' => ['result' => $this->money($result)], 'preliminary' => true];
+        $carry = $this->lines()->where('e.accounting_date', '<=', $to)->where(function ($q) {
+            $q->where('e.entry_type', 'opening')->orWhereExists(function ($sub) {
+                $sub->selectRaw('1')->from('accounting_journal_entries as original')->whereColumn('original.id', 'e.reversal_of')->whereColumn('original.company_id', 'e.company_id')->where('original.entry_type', 'opening');
+            });
+        })->whereIn('a.kind', ['income', 'cost', 'expense'])->selectRaw('COALESCE(SUM(l.credit-l.debit),0) AS amount')->value('amount');
+        return ['rows' => $out, 'totals' => ['result' => $this->money($result), 'opening_carry_forward' => $this->money($carry)], 'preliminary' => true, 'opening_note' => 'Los saldos iniciales de resultados se conservan por separado; no son ingresos o gastos nuevos del intervalo.'];
     }
     private function balance(string $to): array
     {

@@ -6,7 +6,7 @@
   "database": "tenant existente; tablas accounting_*",
   "frontend": "TypeScript Vue actual; compilación en AWS",
   "tests": "Solo entornos aislados; pruebas previas del prototipo independiente no acreditan este módulo",
-  "state": "development; module roles, manual invoices, dated fiscal configuration and initial PWA workflows verified",
+  "state": "development; PRO9 module, initial opening and partial settlements with exact balances and independent review verified",
   "isolation": {
     "databaseContainer": "contabilidad-api-v1-db",
     "network": "contabilidad-api-v1-tests",
@@ -15,8 +15,8 @@
   },
   "verification": {
     "core": {
-      "tests": 30,
-      "assertions": 77,
+      "tests": 39,
+      "assertions": 118,
       "result": "passed"
     },
     "http": {
@@ -79,8 +79,23 @@
       "checks": 3,
       "result": "passed",
       "suite": "src/__tests__/offline-session.spec.ts in AWS frontend"
+    },
+    "auxiliaryHttp": {
+      "checks": 5,
+      "result": "passed",
+      "suite": "Tests/auxiliary_http_smoke.py"
+    },
+    "auxiliaryBrowser": {
+      "checks": 6,
+      "result": "passed",
+      "pageErrors": 0,
+      "suite": "Tests/auxiliary_browser_smoke.cjs"
+    },
+    "auxiliaryLayout": {
+      "desktopPaginationOverlap": false,
+      "mobilePageOverflow": false
     }
   },
-  "pending": "Complete opening balances, settlements, notes and source reconciliation, retention workflows, imports/exports, close/reopen, server backup/restore, automatic offline draft preservation, inactivity locking and explicit conflict resolution. Fiscal registers remain preliminary; full V1 acceptance is pending.",
-  "verifiedAt": "2026-11-11T20:20:45.150965+00:00"
+  "pending": "Complete credit/advance opening items and migration corrections, notes/refunds and retention/IGTF workflows, source reconciliation across PRO9 connections, imports/exports, close/reopen, attachments and server backup/restore, automatic offline preservation, inactivity locking and conflict resolution. Auxiliary queries need prepared offline snapshots. Fiscal registers remain preliminary; full V1 acceptance is pending.",
+  "verifiedAt": "2026-11-11T21:32:34.410930+00:00"
 }

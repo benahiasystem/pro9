@@ -88,6 +88,9 @@ final class CatalogController extends \App\Http\Controllers\Controller
         if (isset($v[$key]) && $model::where($key, $v[$key])->when($old, fn($q) => $q->where('id', '!=', $old->id))->exists()) {
             throw new ApiProblem('DUPLICATE_CODE', 'El código o identificación ya existe en esta empresa.');
         }
+        if ($kind === 'third-parties' && $old && $v['tax_id'] !== $old->tax_id && DB::table('accounting_journal_lines as l')->join('accounting_journal_entries as e', 'e.id', '=', 'l.journal_entry_id')->where('l.company_id', app(CompanyContext::class)->id())->where('l.organization_id', app(CompanyContext::class)->organizationId())->where('l.third_party_id', $old->id)->whereNotNull('e.posted_at')->exists()) {
+            throw new ApiProblem('PARTY_IDENTITY_USED', 'El tercero con movimientos contabilizados conserva su identificación. Registra otra ficha para una entidad distinta.');
+        }
         if ($kind === 'accounts') {
             if (!empty($v['parent_id'])) {
                 $parent = Account::whereKey($v['parent_id'])->lockForUpdate()->first();
@@ -110,8 +113,8 @@ final class CatalogController extends \App\Http\Controllers\Controller
                 }
             }
             if ($old && JournalLine::where('account_id', $old->id)->exists()) {
-                foreach (['code', 'kind', 'nature', 'parent_id', 'posting'] as $field) {
-                    if (($v[$field] ?? null) !== $old->{$field}) {
+                foreach (['code', 'kind', 'nature', 'parent_id', 'posting', 'auxiliary', 'requires_party'] as $field) {
+                    if (array_key_exists($field, $v) && $v[$field] !== $old->{$field}) {
                         throw new ApiProblem('ACCOUNT_USED', 'Una cuenta con movimientos conserva su código, naturaleza y clasificación.');
                     }
                 }

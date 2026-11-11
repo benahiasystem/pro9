@@ -27,6 +27,13 @@ Route::prefix('companies/{company}')->whereUuid('company')->middleware([SessionV
     Route::get('catalogs/{kind}', [CatalogController::class, 'index'])->middleware(RequirePermission::class . ':read');
     Route::post('catalogs/{kind}', [CatalogController::class, 'store'])->middleware(RequirePermission::class . ':catalogs');
     Route::patch('catalogs/{kind}/{id}', [CatalogController::class, 'update'])->middleware(RequirePermission::class . ':catalogs')->whereUuid('id');
+    Route::get('open-items', [\Modules\Accounting\Http\Controllers\AuxiliaryController::class, 'index'])->middleware(RequirePermission::class . ':read');
+    Route::get('open-items/{id}', [\Modules\Accounting\Http\Controllers\AuxiliaryController::class, 'show'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
+    Route::post('open-items/{id}/antecedent', [\Modules\Accounting\Http\Controllers\AuxiliaryController::class, 'link'])->middleware(RequirePermission::class . ':opening')->whereUuid('id');
+    Route::get('opening', [\Modules\Accounting\Http\Controllers\AuxiliaryController::class, 'opening'])->middleware(RequirePermission::class . ':read');
+    Route::post('opening/propose', [\Modules\Accounting\Http\Controllers\AuxiliaryController::class, 'proposeOpening'])->middleware(RequirePermission::class . ':opening');
+    Route::get('settlements', [\Modules\Accounting\Http\Controllers\AuxiliaryController::class, 'settlements'])->middleware(RequirePermission::class . ':read');
+    Route::post('settlements/propose', [\Modules\Accounting\Http\Controllers\AuxiliaryController::class, 'proposeSettlement'])->middleware(RequirePermission::class . ':settlements');
     Route::get('entries', [EntryController::class, 'index'])->middleware(RequirePermission::class . ':read');
     Route::post('entries', [EntryController::class, 'store'])->middleware(RequirePermission::class . ':draft');
     Route::get('entries/{id}', [EntryController::class, 'show'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
