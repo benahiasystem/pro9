@@ -4,42 +4,15 @@ namespace Modules\Accounting\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Modules\Accounting\Domain\{ApiProblem, CompanyContext, Permissions};
-use Modules\Accounting\Models\{Device, Account, ThirdParty, Period, JournalEntry};
-use Modules\Accounting\Services\{AuditService, EntryService, OperationService, ReportService};
+use Modules\Accounting\Models\{Device};
+use Modules\Accounting\Services\{AuditService, EntryService, OperationService};
 use Modules\Accounting\Support\TenantDB as DB;
 final class OfflineController extends \App\Http\Controllers\Controller
 {
     public function prepare(Request $r): array
     {
-        $v = $r->validate(['device_id' => 'required|uuid', 'name' => 'required|string|max:100', 'period' => 'required|date_format:Y-m']);
-        return DB::transaction(function () use ($r, $v) {
-            $device = Device::where('user_id', $r->user()->id)->where('device_id', $v['device_id'])->lockForUpdate()->first();
-            if ($device?->revoked_at) {
-                throw new ApiProblem('DEVICE_REVOKED', 'Este equipo fue revocado. Solicita su habilitación al administrador.', 403);
-            }
-            $hours = min(72, max(1, (int) app(CompanyContext::class)->company()->offline_hours));
-            $until = now()->addHours($hours);
-            if (!$device) {
-                $device = new Device(['user_id' => $r->user()->id, 'device_id' => $v['device_id']]);
-            }
-            $device->fill(['name' => $v['name'], 'authorized_until' => $until, 'last_seen_at' => now()])->save();
-            $entries = JournalEntry::whereBetween('accounting_date', [$v['period'] . '-01', \Carbon\Carbon::parse($v['period'] . '-01')->endOfMonth()->toDateString()])->orderBy('accounting_date')->limit(2001)->get();
-            if ($entries->count() > 2000) {
-                throw new ApiProblem('WORKSPACE_TOO_LARGE', 'Este período supera los 2.000 comprobantes de la copia local. Reduce el alcance antes de prepararla.', 413);
-            }
-            $context = app(CompanyContext::class);
-            $membership = app(Permissions::class)->membership($r->user(), $context->id());
-            $package = ['schema' => 1, 'device_id' => $v['device_id'], 'issued_at' => now()->toIso8601String(), 'expires_at' => $until->toIso8601String(), 'period' => $v['period'], 'company' => [...$context->company()->toArray(), 'role' => $membership->role, 'roles' => app(Permissions::class)->roles($membership), 'permissions' => app(Permissions::class)->forMembership($membership)], 'user' => $r->user()->only(['id', 'name', 'email']), 'accounts' => Account::orderBy('code')->get(), 'parties' => ThirdParty::orderBy('name')->get(), 'periods' => Period::orderBy('year')->orderBy('month')->get(), 'entries' => $entries->map(fn($entry) => app(EntryService::class)->resource($entry))->all(), 'demo' => (bool) config('accounting.demo')];
-            $filters = ['from' => $v['period'] . '-01', 'to' => \Carbon\Carbon::parse($v['period'] . '-01')->endOfMonth()->toDateString()];
-            foreach (['dashboard', 'trial-balance', 'balance-sheet', 'income-statement'] as $kind) {
-                $package['reports'][$kind] = app(ReportService::class)->build($kind, $filters);
-            }
-            if (strlen(json_encode($package, JSON_THROW_ON_ERROR)) > (int) config('accounting.workspace_max_bytes')) {
-                throw new ApiProblem('WORKSPACE_TOO_LARGE', 'La copia supera el tamaño permitido para este equipo.', 413);
-            }
-            app(AuditService::class)->record($r->user()->id, 'offline.prepared', 'device', $device->id, ['period' => $v['period'], 'entries' => $entries->count(), 'authorized_until' => $until->toIso8601String()]);
-            return ['data' => $package];
-        }, 5);
+        $input = $r->validate(['device_id' => 'required|uuid', 'name' => 'required|string|max:100', 'period' => 'required|date_format:Y-m', 'from' => 'required_with:to|date_format:Y-m-d', 'to' => 'required_with:from|date_format:Y-m-d']);
+        return ['data' => app(\Modules\Accounting\Services\WorkspaceService::class)->prepare($r->user(), $input)];
     }
     public function sync(Request $r): array
     {

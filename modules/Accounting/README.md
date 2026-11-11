@@ -70,15 +70,18 @@ su implementación y conciliaciones; recibir o validar no equivale a contabiliza
 
 ## Trabajo local
 
-La preparación autoriza un dispositivo por empresa, usuario y período durante
-un máximo de 72 horas. El navegador cifra la copia y los borradores con
+La preparación autoriza un dispositivo por empresa y usuario durante un máximo
+de 72 horas. Incluye un intervalo configurable de hasta 90 días por defecto,
+con comprobantes, documentos, catálogos, perfiles, reglas, tasas e informes
+preparados para fechas explícitas. Las consultas fuera del alcance requieren
+PRO9 y no sustituyen el intervalo solicitado por otro informe en caché. El navegador cifra la copia y los borradores con
 AES-GCM; deriva la clave de una frase local mediante PBKDF2. El Bearer y la
 verificación adicional permanecen en memoria. La sincronización vuelve a
 comprobar permisos, autorización del dispositivo y versión del borrador.
 
 Sin conexión se permiten consultas preparadas y borradores. La aprobación,
 contabilización, reverso y cierre requieren PRO9. Un conflicto conserva el
-borrador local. La copia preparada tiene límites explícitos de período,
+borrador local. La copia preparada tiene límites explícitos de fechas,
 comprobantes y tamaño; no representa una réplica completa del servidor.
 
 ## Verificación aislada

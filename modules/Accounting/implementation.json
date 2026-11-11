@@ -15,8 +15,8 @@
   },
   "verification": {
     "core": {
-      "tests": 28,
-      "assertions": 67,
+      "tests": 30,
+      "assertions": 77,
       "result": "passed"
     },
     "http": {
@@ -49,7 +49,7 @@
       "suite": "Tests/documents_http_smoke.py"
     },
     "documentsBrowser": {
-      "checks": 6,
+      "checks": 8,
       "result": "passed",
       "pageErrors": 0,
       "suite": "Tests/documents_browser_smoke.cjs"
@@ -62,8 +62,14 @@
       "checks": 4,
       "result": "passed",
       "pageErrors": 0
+    },
+    "offlineScope": {
+      "defaultDays": 90,
+      "companyConfigurable": true,
+      "documentsAndFiscalConfigurationCached": true,
+      "reportDatesChecked": true
     }
   },
   "pending": "Complete notes and source reconciliation, opening balances and settlements, retention workflows, imports/exports, close/reopen, backup/restore and all remaining offline and acceptance criteria. Fiscal registers remain preliminary.",
-  "verifiedAt": "2026-11-11T19:39:18.990185+00:00"
+  "verifiedAt": "2026-11-11T19:48:33.447662+00:00"
 }

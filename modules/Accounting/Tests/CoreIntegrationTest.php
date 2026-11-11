@@ -226,6 +226,36 @@ final class CoreIntegrationTest extends TestCase
         $this->expectException(ApiProblem::class);
         app(EntryService::class)->version($e, $e->version + 1);
     }
+    public function test_local_preparation_has_a_complete_configurable_range_and_fiscal_catalogs(): void
+    {
+        $configuration = $this->invoiceConfiguration();
+        $documents = app(DocumentService::class);
+        $included = $documents->create([...$configuration['input'], 'issue_date' => now()->subDays(40)->format('Y-m-d'), 'fiscal_date' => now()->subDays(40)->format('Y-m-d')], $this->admin->id);
+        $documents->create([...$configuration['input'], 'number' => 'FV-FUERA', 'issue_date' => now()->subDays(150)->format('Y-m-d'), 'fiscal_date' => now()->subDays(150)->format('Y-m-d')], $this->admin->id);
+        $package = app(\Modules\Accounting\Services\WorkspaceService::class)->prepare($this->admin, ['device_id' => (string) Str::uuid(), 'name' => 'Equipo ficticio del caso', 'period' => now()->format('Y-m')]);
+        $this->assertSame(90, $package['scope']['maximum_days']);
+        $this->assertSame(89, \Carbon\CarbonImmutable::parse($package['scope']['from'])->diffInDays($package['scope']['to']));
+        $this->assertSame([$included->id], array_column($package['documents'], 'id'));
+        $this->assertSame($configuration['profile']->id, $package['tax_configuration']['profiles']->first()->id);
+        $this->assertArrayHasKey('trial-balance|' . now()->startOfMonth()->format('Y-m-d') . '|' . now()->endOfMonth()->format('Y-m-d'), $package['report_snapshots']);
+        $this->assertArrayNotHasKey('token', $package);
+        app(CompanyContext::class)->set($this->b);
+        $other = app(\Modules\Accounting\Services\WorkspaceService::class)->prepare($this->admin, ['device_id' => (string) Str::uuid(), 'name' => 'Otro equipo ficticio', 'period' => now()->format('Y-m')]);
+        $this->assertSame([], $other['documents']);
+        $this->assertCount(0, $other['tax_configuration']['profiles']);
+    }
+    public function test_local_preparation_rejects_a_range_larger_than_the_company_setting(): void
+    {
+        $this->a->workspace_days = 7;
+        $this->a->save();
+        try {
+            app(\Modules\Accounting\Services\WorkspaceService::class)->prepare($this->admin, ['device_id' => (string) Str::uuid(), 'name' => 'Equipo ficticio', 'period' => now()->format('Y-m'), 'from' => now()->startOfMonth()->format('Y-m-d'), 'to' => now()->endOfMonth()->format('Y-m-d')]);
+            $this->fail('El equipo no puede ampliar el alcance autorizado por la empresa.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('WORKSPACE_DATE_RANGE', $problem->errorCode);
+        }
+        $this->assertSame(0, \Modules\Accounting\Models\Device::count());
+    }
     public function test_approval_is_invalidated_after_editing(): void
     {
         $e = $this->approved();
