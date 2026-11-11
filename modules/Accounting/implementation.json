@@ -1,0 +1,49 @@
+{
+  "baseCommit": "861228462e208d2060c9148b87fd7d7d3f354da5",
+  "branch": "codex/contabilidad-api-v1",
+  "api": "/api/accounting/v1",
+  "authentication": "PRO9 auth:api Bearer",
+  "database": "tenant existente; tablas accounting_*",
+  "frontend": "TypeScript Vue actual; compilación en AWS",
+  "tests": "Solo entornos aislados; pruebas previas del prototipo independiente no acreditan este módulo",
+  "state": "development; module core and initial PWA workflows verified",
+  "isolation": {
+    "databaseContainer": "contabilidad-api-v1-db",
+    "network": "contabilidad-api-v1-tests",
+    "publicDatabasePorts": false,
+    "data": "Fictitious books and a private local snapshot of PRO9; no real data uploaded to AWS"
+  },
+  "verification": {
+    "core": {
+      "tests": 16,
+      "assertions": 31,
+      "result": "passed"
+    },
+    "http": {
+      "checks": 8,
+      "result": "passed"
+    },
+    "frontendUnit": {
+      "tests": 8,
+      "result": "passed"
+    },
+    "browser": {
+      "checks": 9,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "typescript": "7.0.2 primary; Vue SFC checker uses the classic 6.0.3 API in isolated tooling",
+    "frontendLint": {
+      "warnings": 0,
+      "errors": 0
+    },
+    "pro9Snapshot": {
+      "sales": 24,
+      "purchases": 0,
+      "decimalStrings": true,
+      "duplicateReception": "same record, unchanged"
+    }
+  },
+  "pending": "Complete the remaining functional and acceptance criteria before declaring V1 finished.",
+  "verifiedAt": "2026-11-11T18:11:46.313086+00:00"
+}

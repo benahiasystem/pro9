@@ -48,3 +48,8 @@ public/porto-light/js/bloquear_cliente.js
 
 .antigravitycli
 /storage/framework/views/*
+
+# Compilados y pruebas aisladas del sistema contable
+/.accounting-staging/
+/.accounting-isolated/
+/public/contabilidad/
