@@ -84,6 +84,13 @@ contabilización, reverso y cierre requieren PRO9. Un conflicto conserva el
 borrador local. La copia preparada tiene límites explícitos de fechas,
 comprobantes y tamaño; no representa una réplica completa del servidor.
 
+La recuperación de un respaldo local exige sesión activa en PRO9 y coincidencia
+de empresa y usuario. Renueva la copia de consulta con datos y permisos del
+servidor, verifica los datos cifrados y conserva las versiones diferentes de
+los borradores existentes. Reimportar la misma alternativa no la duplica. Este
+respaldo corresponde al trabajo del navegador; la recuperación integral de base
+de datos y adjuntos del servidor sigue pendiente.
+
 ## Verificación aislada
 
 `phpunit.xml` exige una base MySQL y un host de pruebas específicos antes de
@@ -94,6 +101,9 @@ pruebas antes de escribir.
 `documents_http_smoke.py` verifica el flujo de factura con el enrutamiento y
 autenticación reales de PRO9. `documents_browser_smoke.cjs` lo recorre desde la
 PWA compilada en AWS, incluyendo configuración fiscal y adaptación a móvil.
+`restore_browser_smoke.cjs` verifica exportación cifrada, conservación de
+alternativas, rechazo de propietario distinto e integridad, y recuperación en
+un navegador limpio seguida de un reinicio sin conexión.
 
 El worktree autorizado es `codex/contabilidad-api-v1`, basado en
 `861228462e208d2060c9148b87fd7d7d3f354da5`. Las bases reales se copian para

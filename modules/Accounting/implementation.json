@@ -24,7 +24,7 @@
       "result": "passed"
     },
     "frontendUnit": {
-      "tests": 8,
+      "tests": 11,
       "result": "passed"
     },
     "browser": {
@@ -68,8 +68,14 @@
       "companyConfigurable": true,
       "documentsAndFiscalConfigurationCached": true,
       "reportDatesChecked": true
+    },
+    "localRestoreBrowser": {
+      "checks": 7,
+      "result": "passed",
+      "pageErrors": 0,
+      "suite": "Tests/restore_browser_smoke.cjs"
     }
   },
-  "pending": "Complete notes and source reconciliation, opening balances and settlements, retention workflows, imports/exports, close/reopen, backup/restore and all remaining offline and acceptance criteria. Fiscal registers remain preliminary.",
-  "verifiedAt": "2026-11-11T19:48:33.447662+00:00"
+  "pending": "Complete opening balances, settlements, notes and source reconciliation, retention workflows, imports/exports, close/reopen, server backup/restore, automatic offline draft preservation, inactivity locking and explicit conflict resolution. Fiscal registers remain preliminary; full V1 acceptance is pending.",
+  "verifiedAt": "2026-11-11T20:07:31.823079+00:00"
 }
