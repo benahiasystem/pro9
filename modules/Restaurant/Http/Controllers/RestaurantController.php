@@ -134,8 +134,7 @@ class RestaurantController extends Controller
             $firstDot = strpos($fqdn, '.');
             $baseDomain = $firstDot !== false ? substr($fqdn, $firstDot + 1) : $fqdn;
             $wsScheme = config('tenant.force_https') ? 'wss' : 'ws';
-            $wsUrl = "{$wsScheme}://ws.{$baseDomain}";
-            // $wsUrl = "ws://localhost:8000"; // temporal para desarrollo local, reemplazar por la línea anterior en producción
+            $wsUrl = config('centrifugo.ws_url') ?: "{$wsScheme}://ws.{$baseDomain}";
 
             return response()->json(array_merge([
                 'apiSsl' => $protocol,

@@ -22,6 +22,8 @@ if ($hostname) {
 
             Route::prefix('restaurant')->group(function () {
 
+                Route::get('/realtime/token', 'RealtimeController@token');
+
                 Route::get('/initial-data', 'RestaurantController@initialData');
                 Route::get('/items', 'RestaurantController@items');
                 Route::post('/items/price', 'RestaurantController@savePrice');

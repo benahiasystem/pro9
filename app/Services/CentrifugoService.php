@@ -10,13 +10,22 @@ class CentrifugoService
     public function publish(string $channel, array $data): void
     {
         try {
-            Http::withHeaders(['X-API-Key' => config('centrifugo.api_key')])
+            $response = Http::withHeaders(['X-API-Key' => config('centrifugo.api_key')])
+                ->acceptJson()
                 ->timeout(2)
-                ->post(config('centrifugo.url') . '/api/publish', compact('channel', 'data'));
+                ->post(rtrim(config('centrifugo.url'), '/') . '/api/publish', compact('channel', 'data'));
+            $body = $response->json();
+            if (!$response->successful() || !is_array($body) || !array_key_exists('result', $body) || isset($body['error'])) {
+                Log::warning('Centrifugo publish rejected', [
+                    'channel' => $channel,
+                    'status' => $response->status(),
+                    'code' => $response->json('error.code'),
+                ]);
+            }
         } catch (\Exception $e) {
             Log::warning('Centrifugo publish failed', [
                 'channel' => $channel,
-                'error'   => $e->getMessage(),
+                'exception' => get_class($e),
             ]);
         }
     }

@@ -1,0 +1,9 @@
+{
+  "client": {
+    "allowed_origins": ["http://*.localhost"]
+  },
+  "channel": {
+    "namespaces": [{"name": "restaurant"}]
+  },
+  "health": {"enabled": true}
+}

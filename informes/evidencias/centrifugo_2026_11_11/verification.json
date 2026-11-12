@@ -1,0 +1,27 @@
+{
+  "guest_http": 401,
+  "authenticated_http": 200,
+  "channel_cannot_be_overridden": true,
+  "anonymous_denied": true,
+  "expired_jwt_denied": true,
+  "tampered_jwt_denied": true,
+  "valid_subscription": true,
+  "cross_company_same_local_user_denied": true,
+  "subscription_without_token_denied": true,
+  "client_publish_denied": true,
+  "public_http_api_blocked": true,
+  "mozo_connected": true,
+  "before": {
+    "state": "connected",
+    "tables": 0
+  },
+  "real_table_controller_event_received": true,
+  "table_change_visible_in_mozo": true,
+  "stock_event_applied": true,
+  "command_event_applied": true,
+  "reconnect_and_resync_after_server_restart": true,
+  "page_errors": [],
+  "logout_disconnects": true,
+  "expiring_jwt_renewed_by_real_authenticated_endpoint": true,
+  "temporary_table_removed": true
+}
