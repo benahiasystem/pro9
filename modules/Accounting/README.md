@@ -91,6 +91,51 @@ documentada. Todavía no integra retenciones, IGTF, notas, anticipos ni devoluci
 en sus aplicaciones. Esos casos siguen pendientes del flujo específico; no se
 compensan automáticamente contra el banco ni se presume una exención.
 
+## Cierre mensual y reapertura
+
+`GET companies/{company}/periods?year=AAAA` lista los períodos. La revisión en
+`periods/{id}/review` reconstruye el balance y los auxiliares a la fecha de
+corte, considerando las fechas contables de aplicaciones y reversos. Los
+controles comparan importes DECIMAL exactos del libro, sin reutilizar los
+totales redondeados de presentación. Una diferencia menor que un céntimo
+también bloquea el cierre.
+
+No se cierra un mes futuro, un mes con períodos anteriores abiertos desde el
+inicio del libro, diferencias de balance o auxiliares, incidencias de origen
+abiertas ni comprobantes aprobados pendientes de contabilizar. Los restantes
+borradores, documentos pendientes, observaciones fiscales y comprobantes
+manuales requieren explicar su tratamiento. Se documentan además la
+conciliación de origen, los papeles de trabajo de cajas y bancos y la revisión
+fiscal. Esta constancia del contador no certifica por sí sola la integridad de
+las integraciones o formatos fiscales aún pendientes.
+
+`POST periods/{id}/close` exige permiso `close`, segundo factor reciente,
+`If-Match`, `Idempotency-Key`, `review_token`, motivo, `attestations` y
+`exceptions`. La transacción vuelve a calcular la revisión y rechaza un token
+anterior a cambios de los datos. El cierre y los flujos del comprobante
+comparten el bloqueo de la empresa; la contabilización bloquea además el
+período y vuelve a comprobar que está abierto.
+
+Cada cierre conserva en `accounting_period_reviews` el balance de
+comprobación, la situación financiera, los resultados, los controles exactos,
+las explicaciones y su hash canónico SHA-256. MySQL impide modificar o eliminar
+estas revisiones. `periods/{id}/history` lista la historia;
+`periods/{id}/history/{review}` devuelve la revisión y su hash para consulta y
+descarga JSON. Los informes nuevos identifican las versiones de los períodos
+que contribuyen a sus saldos.
+
+`GET periods/{id}/reopening` presenta el alcance antes de confirmar.
+`POST periods/{id}/reopen` exige permiso `reopen`, segundo factor, versión,
+token, motivo e identidad de operación. Reabre también los cierres mensuales
+posteriores, incrementa sus versiones y conserva cada cierre anterior. La PWA
+muestra ese alcance y exige su revisión expresa. Los recibos `period.close` y
+`period.reopen` permiten resolver una respuesta perdida; estas operaciones no
+se incorporan a los envíos locales importables ni se ejecutan sin servidor.
+
+El traslado de resultados y saldos mediante comprobantes controlados y la
+reapertura de un ejercicio cerrado siguen pendientes. Los períodos de un
+ejercicio con cierre anual no se reabren mediante el flujo mensual.
+
 ## Trabajo local
 
 La preparación autoriza un dispositivo por empresa y usuario durante un máximo
@@ -180,6 +225,8 @@ los borradores existentes. El respaldo versión 4 incluye capturas incompletas,
 envíos, elecciones y antecedentes cifrados, y admite las versiones 1, 2 y 3.
 Reimportar la misma alternativa no
 la duplica ni elimina las capturas posteriores. Este
+respaldo conserva cada identidad física del resultado elegido y de sus
+antecedentes, aunque el contenido coincida o cambie el orden del archivo. El
 respaldo corresponde al trabajo del navegador; la recuperación integral de base
 de datos y adjuntos del servidor sigue pendiente.
 
@@ -229,6 +276,11 @@ antecedentes, restauración, reutilización, solicitudes inciertas, dos pestaña
 agotamiento de espacio y migración de IndexedDB desde la versión anterior.
 Las suites que consumen las identidades ficticias serializan su acceso mediante
 el archivo de bloqueo del directorio privado.
+`closings_http_smoke.py` comprueba permisos, MFA, revisión, idempotencia,
+concurrencia y reapertura de meses posteriores. `closings_browser_smoke.cjs`
+recorre los controles y la recuperación de una respuesta perdida desde el
+compilado de AWS; contrasta el informe conservado con los movimientos de una
+versión posterior y verifica las restricciones sin conexión y el diseño móvil.
 
 El worktree autorizado es `codex/contabilidad-api-v1`, basado en
 `861228462e208d2060c9148b87fd7d7d3f354da5`. Las bases reales se copian para
@@ -238,7 +290,7 @@ las credenciales y los compilados están excluidos de Git.
 La implementación sigue en desarrollo. Los comprobantes, catálogos, informes
 básicos, apertura, liquidaciones parciales, segundo factor y trabajo local tienen
 verificaciones iniciales; los
-flujos fiscales completos, cierres, conciliaciones, importación y exportaciones
-definitivas aún deben completar sus criterios de aceptación. La resolución
-explícita de conflictos con comparación y nueva revisión, y la protección de
-la autorización local frente a cambios del reloj, también siguen pendientes.
+flujos fiscales completos, cierre anual, conciliaciones, importación y exportaciones
+definitivas aún deben completar sus criterios de aceptación. Restan la elección
+conjunta de formularios todavía incompletos y casos adicionales de documentos
+manuales y autorización local frente a cambios del reloj.

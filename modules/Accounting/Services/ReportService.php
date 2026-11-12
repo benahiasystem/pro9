@@ -41,7 +41,8 @@ final class ReportService
                 'open-items' => $this->openItems($filters),
                 default => throw new ApiProblem('REPORT_NOT_FOUND', 'El informe no está disponible.', 404),
             };
-            return [...$result, 'kind' => $kind, 'from' => $from, 'to' => $to, 'company' => ['id' => $c->id(), 'name' => $c->company()->name, 'tax_id' => $c->company()->tax_id], 'data_version' => (int) (DB::table('accounting_audit_heads')->where('company_id', $c->id())->value('last_sequence') ?? 0), 'generated_at' => now()->toIso8601String(), 'format_version' => '1.0'];
+            $versions = Period::where(fn($q) => $q->where('year', '<', (int) substr($to, 0, 4))->orWhere(fn($q) => $q->where('year', (int) substr($to, 0, 4))->where('month', '<=', (int) substr($to, 5, 2))))->orderBy('year')->orderBy('month')->get(['id', 'year', 'month', 'status', 'version', 'close_snapshot'])->toArray();
+            return [...$result, 'kind' => $kind, 'from' => $from, 'to' => $to, 'company' => ['id' => $c->id(), 'name' => $c->company()->name, 'tax_id' => $c->company()->tax_id], 'data_version' => (int) (DB::table('accounting_audit_heads')->where('company_id', $c->id())->value('last_sequence') ?? 0), 'period_versions' => $versions, 'generated_at' => now()->toIso8601String(), 'format_version' => '1.0'];
         });
     }
     private function dashboard(string $from, string $to): array

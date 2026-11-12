@@ -946,4 +946,187 @@ final class CoreIntegrationTest extends TestCase
         $this->assertSame(1, DB::table('accounting_audit_events')->where('company_id', $this->a->id)->where('action', 'offline.alternative_selected')->count());
     }
 
+    private function closeInput(array $preview): array
+    {
+        return ['review_token' => $preview['review_token'], 'reason' => 'Cierre ficticio con papeles de trabajo revisados.', 'attestations' => array_fill_keys(\Modules\Accounting\Services\ClosingService::ATTESTATIONS, 'Papel de trabajo ficticio conciliado y revisado.'), 'exceptions' => array_fill_keys(array_keys($preview['pending']), 'Pendiente ficticio identificado y con tratamiento documentado.')];
+    }
+
+    private function januaryEntry(): JournalEntry
+    {
+        $accounts = Account::get()->keyBy('code');
+        return app(EntryService::class)->create(['accounting_date' => now()->year . '-01-15', 'concept' => 'Movimiento ficticio para revisión de cierre', 'lines' => [['account_id' => $accounts['1.1.02']->id, 'debit' => '100.25', 'credit' => '0'], ['account_id' => $accounts['3.1']->id, 'debit' => '0', 'credit' => '100.25']]], $this->admin->id);
+    }
+
+    public function test_monthly_close_preserves_reports_and_replays_the_same_operation(): void
+    {
+        $entry = $this->postPrepared($this->januaryEntry(), 'close-january-post');
+        $service = app(\Modules\Accounting\Services\ClosingService::class);
+        $period = Period::where('month', 1)->firstOrFail();
+        $preview = $service->preview($period->id);
+        $this->assertSame([], $preview['blockers']);
+        $this->assertTrue(\Brick\Math\BigDecimal::of($preview['trial']['totals']['debit'])->isEqualTo('100.25'));
+        $input = $this->closeInput($preview);
+        $closed = $service->close($period->id, 1, $input, $this->admin->id, 'monthly-close-001');
+        $this->assertSame('closed', $closed['period']['status']);
+        $this->assertSame(2, $closed['period']['version']);
+        $this->assertEquals($closed, $service->close($period->id, 1, $input, $this->admin->id, 'monthly-close-001'));
+        $snapshot = $service->snapshot($period->id, $closed['review_id']);
+        $this->assertSame($closed['snapshot_sha256'], $snapshot['snapshot_sha256']);
+        $this->assertSame('100.25', $snapshot['snapshot']['reports']['trial-balance']['totals']['debit']);
+        $this->assertCount(1, $service->history($period->id));
+        $entry->refresh();
+        $this->assertSame('posted', $entry->status);
+        $this->assertSame('100.25000000', $entry->total_debit);
+    }
+
+    public function test_monthly_close_rechecks_changes_after_the_review(): void
+    {
+        $service = app(\Modules\Accounting\Services\ClosingService::class);
+        $period = Period::where('month', 1)->firstOrFail();
+        $preview = $service->preview($period->id);
+        $this->januaryEntry();
+        try {
+            $service->close($period->id, 1, $this->closeInput($preview), $this->admin->id, 'monthly-stale-001');
+            $this->fail('El cierre no puede utilizar una revisión anterior a nuevos pendientes.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('CLOSE_REVIEW_CHANGED', $problem->errorCode);
+        }
+        $this->assertSame('open', $period->fresh()->status);
+        $this->assertCount(0, $service->history($period->id));
+    }
+
+    public function test_monthly_close_requires_reconciliations_and_pending_explanations(): void
+    {
+        $this->januaryEntry();
+        $service = app(\Modules\Accounting\Services\ClosingService::class);
+        $period = Period::where('month', 1)->firstOrFail();
+        $preview = $service->preview($period->id);
+        $input = $this->closeInput($preview);
+        $input['attestations']['cash_bank_reconciliation'] = ' ';
+        try {
+            $service->close($period->id, 1, $input, $this->admin->id, 'monthly-notes-001');
+            $this->fail('Debe exigir la conciliación de cajas y bancos.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('CLOSE_ATTESTATION_REQUIRED', $problem->errorCode);
+        }
+        $input = $this->closeInput($preview);
+        $input['exceptions'] = [];
+        try {
+            $service->close($period->id, 1, $input, $this->admin->id, 'monthly-notes-002');
+            $this->fail('Debe exigir una explicación de los borradores pendientes.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('CLOSE_EXCEPTION_REQUIRED', $problem->errorCode);
+        }
+        $this->assertSame('open', $period->fresh()->status);
+    }
+
+    public function test_approved_pending_entries_block_a_close_until_posted_or_observed(): void
+    {
+        $entries = app(EntryService::class);
+        $entry = $this->januaryEntry();
+        $entry = $entries->transition($entry->id, $entry->version, $this->admin->id, 'submit');
+        $entry = $entries->transition($entry->id, $entry->version, $this->admin->id, 'approve', 'Autocontrol ficticio del comprobante aprobado.');
+        $service = app(\Modules\Accounting\Services\ClosingService::class);
+        $period = Period::where('month', 1)->firstOrFail();
+        $preview = $service->preview($period->id);
+        $this->assertContains('APPROVED_ENTRIES_PENDING', array_column($preview['blockers'], 'code'));
+        try {
+            $service->close($period->id, 1, $this->closeInput($preview), $this->admin->id, 'monthly-approved-001');
+            $this->fail('Un aprobado pendiente no se omite justificándolo.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('CLOSE_BLOCKED', $problem->errorCode);
+        }
+        $entries->post($entry->id, $entry->version, $this->admin->id, 'monthly-approved-post');
+        $this->assertSame([], $service->preview($period->id)['blockers']);
+    }
+
+    public function test_reopening_invalidates_later_closes_and_preserves_the_original_snapshots(): void
+    {
+        $service = app(\Modules\Accounting\Services\ClosingService::class);
+        $january = Period::where('month', 1)->firstOrFail();
+        $february = Period::where('month', 2)->firstOrFail();
+        $closed = $service->close($january->id, 1, $this->closeInput($service->preview($january->id)), $this->admin->id, 'cascade-january-001');
+        $service->close($february->id, 1, $this->closeInput($service->preview($february->id)), $this->admin->id, 'cascade-february-001');
+        $review = $service->reopening($january->id);
+        $this->assertCount(2, $review['affected_periods']);
+        $result = $service->reopen($january->id, 2, ['review_token' => $review['review_token'], 'reason' => 'Reapertura ficticia para corregir un papel de trabajo.'], $this->admin->id, 'cascade-reopen-001');
+        $this->assertCount(2, $result['periods']);
+        $this->assertSame(['open', 'open'], array_column($result['periods'], 'status'));
+        $this->assertSame([3, 3], array_column($result['periods'], 'version'));
+        $this->assertCount(2, $service->history($january->id));
+        $this->assertCount(2, $service->history($february->id));
+        $this->assertSame($closed['snapshot_sha256'], $service->snapshot($january->id, $closed['review_id'])['snapshot_sha256']);
+        $report = app(ReportService::class)->build('trial-balance', ['from' => now()->year . '-01-01', 'to' => now()->year . '-02-28']);
+        $this->assertSame([3, 3], array_column($report['period_versions'], 'version'));
+    }
+
+    public function test_a_close_revision_cannot_be_rewritten_or_deleted_in_mysql(): void
+    {
+        $service = app(\Modules\Accounting\Services\ClosingService::class);
+        $period = Period::where('month', 1)->firstOrFail();
+        $closed = $service->close($period->id, 1, $this->closeInput($service->preview($period->id)), $this->admin->id, 'immutable-close-001');
+        foreach (['update', 'delete'] as $action) {
+            try {
+                $query = DB::table('accounting_period_reviews')->where('id', $closed['review_id']);
+                $action === 'update' ? $query->update(['reason' => 'Cambio no autorizado']) : $query->delete();
+                $this->fail('La revisión conservada no permite ' . $action . '.');
+            } catch (\Illuminate\Database\QueryException $error) {
+                $this->assertSame('45000', $error->errorInfo[0]);
+            }
+        }
+        $this->assertSame(1, DB::table('accounting_period_reviews')->where('id', $closed['review_id'])->count());
+    }
+
+    public function test_close_reconstructs_auxiliaries_at_the_cutoff_instead_of_using_current_balances(): void
+    {
+        try {
+            \Illuminate\Support\Facades\Date::setTestNow(now()->year . '-01-15 10:00:00');
+            $fixture = $this->initialBalance();
+            $this->postPrepared($fixture['entry'], 'close-aux-opening');
+        } finally {
+            \Illuminate\Support\Facades\Date::setTestNow();
+        }
+        $item = OpenItem::firstOrFail();
+        $input = $this->settlementInput($item, '40', 'COBRO-CIERRE-1');
+        $input['accounting_date'] = now()->year . '-02-05';
+        $input['exchange_date'] = $input['accounting_date'];
+        $entry = app(\Modules\Accounting\Services\SettlementService::class)->prepare($input, $this->admin->id);
+        $entry = $this->postPrepared($entry, 'close-aux-receipt');
+        $reverse = app(EntryService::class)->prepareReversal($entry->id, now()->year . '-03-05', 'Reverso ficticio posterior al corte de febrero.', $this->admin->id);
+        $this->postPrepared($reverse, 'close-aux-reversal');
+        $service = app(\Modules\Accounting\Services\ClosingService::class);
+        foreach ([1 => '4000', 2 => '2400', 3 => '4000'] as $month => $expected) {
+            $review = $service->preview(Period::where('month', $month)->firstOrFail()->id);
+            $control = collect($review['auxiliaries'])->firstWhere('account_id', $item->account_id);
+            $this->assertTrue(\Brick\Math\BigDecimal::of($control['auxiliary'])->isEqualTo($expected));
+            $this->assertTrue(\Brick\Math\BigDecimal::of($control['difference'])->isZero());
+        }
+    }
+
+    public function test_a_period_review_cannot_be_read_from_another_company(): void
+    {
+        $service = app(\Modules\Accounting\Services\ClosingService::class);
+        $period = Period::where('month', 1)->firstOrFail();
+        $closed = $service->close($period->id, 1, $this->closeInput($service->preview($period->id)), $this->admin->id, 'scope-close-001');
+        app(CompanyContext::class)->set($this->b);
+        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $service->snapshot($period->id, $closed['review_id']);
+    }
+
+    public function test_monthly_close_blocks_an_exact_difference_that_displays_as_zero_cents(): void
+    {
+        $entry = $this->januaryEntry();
+        $credit = $entry->lines()->where('credit', '>', '0')->firstOrFail();
+        $credit->credit = '100.24999999';
+        $credit->save();
+        $entry->total_credit = '100.24999999';
+        $entry->posted_at = now();
+        $entry->status = 'posted';
+        $entry->save();
+        $service = app(\Modules\Accounting\Services\ClosingService::class);
+        $preview = $service->preview(Period::where('month', 1)->firstOrFail()->id);
+        $this->assertTrue(\Brick\Math\BigDecimal::of($preview['trial']['totals']['balance'])->isEqualTo('0.00000001'));
+        $this->assertSame('0.00', $preview['reports']['trial-balance']['totals']['balance']);
+        $this->assertContains('UNBALANCED_LEDGER', array_column($preview['blockers'], 'code'));
+    }
 }

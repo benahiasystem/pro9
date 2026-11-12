@@ -13,6 +13,10 @@ final class EntryService
     public function __construct(private AuditService $audit, private OperationService $operations)
     {
     }
+    private function lockBook(): void
+    {
+        DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
+    }
     public function period(string $date): Period
     {
         $d = \Carbon\CarbonImmutable::parse($date, 'America/Caracas');
@@ -25,8 +29,8 @@ final class EntryService
     public function create(array $data, int $user): JournalEntry
     {
         return DB::transaction(function () use ($data, $user) {
+            $this->lockBook();
             if (!empty($data['local_id'])) {
-                DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
                 $existing = JournalEntry::where('created_by', $user)->where('local_id', $data['local_id'])->lockForUpdate()->first();
                 if ($existing) {
                     throw new ApiProblem('LOCAL_ENTRY_EXISTS', 'PRO9 ya conserva un comprobante con esta identidad local. Compara sus versiones antes de continuar.', 409, ['current' => $this->resource($existing)]);
@@ -45,6 +49,7 @@ final class EntryService
     public function edit(string $id, array $data, int $version, int $user): JournalEntry
     {
         return DB::transaction(function () use ($id, $data, $version, $user) {
+            $this->lockBook();
             $entry = JournalEntry::whereKey($id)->lockForUpdate()->firstOrFail();
             $this->editable($entry);
             $this->version($entry, $version);
@@ -64,6 +69,7 @@ final class EntryService
     public function transition(string $id, int $version, int $user, string $action, string $comment = ''): JournalEntry
     {
         return DB::transaction(function () use ($id, $version, $user, $action, $comment) {
+            $this->lockBook();
             $sourceId = JournalEntry::whereKey($id)->value('source_document_id');
             if ($sourceId) {
                 SourceDocument::whereKey($sourceId)->lockForUpdate()->firstOrFail();
@@ -173,6 +179,7 @@ final class EntryService
     public function prepareReversal(string $id, string $date, string $reason, int $user): JournalEntry
     {
         return DB::transaction(function () use ($id, $date, $reason, $user) {
+            $this->lockBook();
             $e = JournalEntry::whereKey($id)->lockForUpdate()->firstOrFail();
             if ($e->reversal_of) {
                 throw new ApiProblem('REVERSAL_OF_REVERSAL', 'Conserva el reverso. La corrección requiere un reemplazo vinculado al comprobante original.');

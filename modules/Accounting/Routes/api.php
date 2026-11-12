@@ -22,6 +22,13 @@ Route::prefix('companies/{company}')->whereUuid('company')->middleware([SessionV
     Route::get('/', [CompanyController::class, 'show']);
     Route::patch('/', [CompanyController::class, 'update'])->middleware(RequirePermission::class . ':company');
     Route::post('years', [CompanyController::class, 'createYear'])->middleware(RequirePermission::class . ':catalogs');
+    Route::get('periods', [\Modules\Accounting\Http\Controllers\ClosingController::class, 'index'])->middleware(RequirePermission::class . ':read');
+    Route::get('periods/{id}/review', [\Modules\Accounting\Http\Controllers\ClosingController::class, 'preview'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
+    Route::post('periods/{id}/close', [\Modules\Accounting\Http\Controllers\ClosingController::class, 'close'])->middleware(RequirePermission::class . ':close')->whereUuid('id');
+    Route::get('periods/{id}/reopening', [\Modules\Accounting\Http\Controllers\ClosingController::class, 'reopening'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
+    Route::post('periods/{id}/reopen', [\Modules\Accounting\Http\Controllers\ClosingController::class, 'reopen'])->middleware(RequirePermission::class . ':reopen')->whereUuid('id');
+    Route::get('periods/{id}/history', [\Modules\Accounting\Http\Controllers\ClosingController::class, 'history'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
+    Route::get('periods/{id}/history/{review}', [\Modules\Accounting\Http\Controllers\ClosingController::class, 'snapshot'])->middleware(RequirePermission::class . ':read')->whereUuid('id')->whereUuid('review');
     Route::get('tax/configuration', [\Modules\Accounting\Http\Controllers\TaxConfigurationController::class, 'index'])->middleware(RequirePermission::class . ':read');
     Route::get('tax/registers', [\Modules\Accounting\Http\Controllers\FiscalRegisterController::class, 'index'])->middleware(RequirePermission::class . ':reports');
     Route::post('tax/profiles', [\Modules\Accounting\Http\Controllers\TaxConfigurationController::class, 'profile'])->middleware(RequirePermission::class . ':rules');
