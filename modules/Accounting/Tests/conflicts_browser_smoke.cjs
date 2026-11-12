@@ -246,6 +246,7 @@ async function localWork() {
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
   await context.setOffline(true);
   await route('/comprobantes');
+  await page.getByLabel('Buscar', {exact: true}).fill('Edición posterior a sincronizar ' + stamp);
   await page.getByText('Edición posterior a sincronizar ' + stamp, {exact: true}).first().waitFor();
   await route(new URL(localUrl).pathname.replace('/contabilidad', ''));
   await page.getByText('Edición posterior a sincronizar ' + stamp, {exact: true}).first().waitFor();
