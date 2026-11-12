@@ -25,6 +25,13 @@ final class EntryService
     public function create(array $data, int $user): JournalEntry
     {
         return DB::transaction(function () use ($data, $user) {
+            if (!empty($data['local_id'])) {
+                DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
+                $existing = JournalEntry::where('created_by', $user)->where('local_id', $data['local_id'])->lockForUpdate()->first();
+                if ($existing) {
+                    throw new ApiProblem('LOCAL_ENTRY_EXISTS', 'PRO9 ya conserva un comprobante con esta identidad local. Compara sus versiones antes de continuar.', 409, ['current' => $this->resource($existing)]);
+                }
+            }
             $period = $this->period($data['accounting_date']);
             $lines = $this->normalize($data['lines']);
             $entry = JournalEntry::create(['period_id' => $period->id, 'accounting_date' => $data['accounting_date'], 'concept' => $data['concept'], 'entry_type' => $data['entry_type'] ?? 'regular', 'created_by' => $user, 'source_document_id' => $data['source_document_id'] ?? null, 'source_revision' => $data['source_revision'] ?? null, 'effect_type' => $data['effect_type'] ?? 'document', 'local_id' => $data['local_id'] ?? null, 'metadata' => [...$data['metadata'] ?? [], 'prepared_by' => $user], 'rule_snapshot' => $data['rule_snapshot'] ?? null, 'reason' => $data['reason'] ?? null, 'reversal_of' => $data['reversal_of'] ?? null, 'total_debit' => Exact::total(array_column($lines, 'debit'), 8), 'total_credit' => Exact::total(array_column($lines, 'credit'), 8), 'status' => $period->status === 'closed' ? 'observed' : 'draft']);

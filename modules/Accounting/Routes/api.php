@@ -13,6 +13,12 @@ Route::get('companies', [CompanyController::class, 'index'])->middleware(Session
 Route::post('companies', [CompanyController::class, 'store'])->middleware(SessionVerification::class);
 Route::get('organizations', [CompanyController::class, 'organizations'])->middleware(SessionVerification::class);
 Route::prefix('companies/{company}')->whereUuid('company')->middleware([SessionVerification::class, CompanyAccess::class])->group(function () {
+    Route::get('operations/{action}/{key}', [\Modules\Accounting\Http\Controllers\OperationController::class, 'show'])->middleware(RequirePermission::class . ':read');
+    Route::post('operations/{action}/{key}/cancel', [\Modules\Accounting\Http\Controllers\OperationController::class, 'cancel'])->middleware(RequirePermission::class . ':read');
+    Route::get('entries/{id}/comparison', [\Modules\Accounting\Http\Controllers\ConflictController::class, 'showEntry'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
+    Route::post('entries/{id}/resolve', [\Modules\Accounting\Http\Controllers\ConflictController::class, 'entry'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
+    Route::get('documents/{id}/comparison', [\Modules\Accounting\Http\Controllers\ConflictController::class, 'showDocument'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
+    Route::post('documents/{id}/resolve', [\Modules\Accounting\Http\Controllers\ConflictController::class, 'document'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
     Route::get('/', [CompanyController::class, 'show']);
     Route::patch('/', [CompanyController::class, 'update'])->middleware(RequirePermission::class . ':company');
     Route::post('years', [CompanyController::class, 'createYear'])->middleware(RequirePermission::class . ':catalogs');

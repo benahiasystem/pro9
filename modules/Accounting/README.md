@@ -111,6 +111,23 @@ contabilización, reverso y cierre requieren PRO9. Un conflicto conserva el
 borrador local. La copia preparada tiene límites explícitos de fechas,
 comprobantes y tamaño; no representa una réplica completa del servidor.
 
+Las confirmaciones de los envíos se consultan en
+`GET companies/{company}/operations/{action}/{key}`. Solo el usuario de esa
+empresa que realizó el envío puede recuperarlas. Cancelar con
+`POST .../cancel` exige un motivo y conserva una decisión que impide ejecutar
+una solicitud tardía con esa identidad. Si PRO9 ya la confirmó, devuelve su
+resultado; no elimina ni revierte la operación recibida.
+
+Los comprobantes y documentos manuales tienen rutas `.../{id}/comparison` y
+`.../{id}/resolve`. La decisión exige la versión de PRO9 revisada en `If-Match`,
+una identidad idempotente y un motivo. Conservar PRO9 archiva la alternativa
+local en auditoría sin modificar el registro. Aplicar la alternativa local usa
+las validaciones y permisos habituales, crea una versión para revisión y retira
+su aprobación. Un cambio posterior a la comparación vuelve a impedir el guardado.
+La auditoría conserva la alternativa informada por el cliente y las versiones
+autorizadas anteriores y posteriores de PRO9. Los asientos definitivos y las
+propuestas de apertura y liquidación conservan sus flujos específicos.
+
 Los editores de comprobantes y documentos manuales conservan automáticamente
 capturas cifradas, incluidos campos incompletos, cuando está desbloqueada la
 copia del mismo usuario y empresa. Estas capturas todavía no son documentos
@@ -139,8 +156,8 @@ pendientes de mostrar hasta desbloquear; el bloqueo no repite su envío.
 La recuperación de un respaldo local exige sesión activa en PRO9 y coincidencia
 de empresa y usuario. Renueva la copia de consulta con datos y permisos del
 servidor, verifica los datos cifrados y conserva las versiones diferentes de
-los borradores existentes. El respaldo versión 2 incluye también las capturas
-incompletas y sigue admitiendo la versión 1. Reimportar la misma alternativa no
+los borradores existentes. El respaldo versión 3 incluye las capturas incompletas
+y los envíos conservados, y sigue admitiendo las versiones 1 y 2. Reimportar la misma alternativa no
 la duplica ni elimina las capturas posteriores. Este
 respaldo corresponde al trabajo del navegador; la recuperación integral de base
 de datos y adjuntos del servidor sigue pendiente.
@@ -179,6 +196,11 @@ manual y entre pestañas, campos conservados ante falta de espacio, diálogos
 ocultos, reapertura de la copia y una respuesta de PRO9 confirmada durante el
 bloqueo. `users_browser_smoke.cjs` verifica creación de empresa y asignación
 explícita del rol contable desde la PWA.
+`conflicts_http_smoke.py` comprueba confirmaciones y cancelaciones propias,
+identidades lógicas, permisos de resolución y comparación versionada en PRO9.
+`conflicts_browser_smoke.cjs` recorre la decisión con ambas alternativas,
+respuestas perdidas, conservación de cambios posteriores y recuperación de los
+envíos cifrados desde otro navegador sin repetir operaciones.
 Las suites que consumen las identidades ficticias serializan su acceso mediante
 el archivo de bloqueo del directorio privado.
 

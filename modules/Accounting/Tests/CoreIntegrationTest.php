@@ -19,15 +19,18 @@ use App\Models\Tenant\User;
 final class CoreIntegrationTest extends TestCase
 {
     private static Application $application;
+    private static string $originalTimezone;
     private User $admin;
     private Company $a;
     private Company $b;
     public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
+        self::$originalTimezone = date_default_timezone_get();
         if (getenv('ACCOUNTING_ISOLATED_TESTS') !== '1' || getenv('ACCOUNTING_TEST_DATABASE') !== 'accounting_module_test' || getenv('ACCOUNTING_TEST_HOST') !== 'accounting-db') {
             throw new \RuntimeException('Esta suite exige la base y red aisladas del módulo.');
         }
+        date_default_timezone_set('America/Caracas');
         $root = dirname(__DIR__, 3);
         $app = new Application($root);
         $config = new Repository(['app' => ['env' => 'testing', 'timezone' => 'America/Caracas'], 'accounting' => ['demo' => true], 'database' => ['default' => 'tenant']]);
@@ -35,6 +38,7 @@ final class CoreIntegrationTest extends TestCase
         $app->instance('date', new DateFactory());
         $events = new Dispatcher($app);
         $app->instance('events', $events);
+        $app->instance('validator', new \Illuminate\Validation\Factory(new \Illuminate\Translation\Translator(new \Illuminate\Translation\ArrayLoader(), 'es'), $app));
         $manager = new Manager($app);
         $manager->addConnection(['driver' => 'mysql', 'host' => 'accounting-db', 'port' => 3306, 'database' => 'accounting_module_test', 'username' => getenv('ACCOUNTING_TEST_USERNAME'), 'password' => getenv('ACCOUNTING_TEST_PASSWORD'), 'charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'prefix' => '', 'strict' => true], 'tenant');
         $manager->getDatabaseManager()->setDefaultConnection('tenant');
@@ -100,6 +104,11 @@ final class CoreIntegrationTest extends TestCase
             app(CompanyContext::class)->run($co, fn() => $service->defaultChart());
         }
         app(CompanyContext::class)->set($this->a);
+    }
+    public static function tearDownAfterClass(): void
+    {
+        date_default_timezone_set(self::$originalTimezone);
+        parent::tearDownAfterClass();
     }
     protected function tearDown(): void
     {
@@ -700,4 +709,142 @@ final class CoreIntegrationTest extends TestCase
             $this->assertSame('CONVERSION_MISMATCH', $problem->errorCode);
         }
     }
+    private function allowConflictEditing(): void
+    {
+        DB::table('accounting_memberships')->where('company_id', $this->a->id)->where('user_id', $this->admin->id)->update(['roles' => json_encode(['accountant'])]);
+    }
+    public function test_operation_receipts_preserve_decimal_text_and_scope(): void
+    {
+        $service = app(\Modules\Accounting\Services\OperationService::class);
+        $payload = ['amount' => '9007199254740993.120000000001'];
+        $service->execute($this->admin->id, 'offline.sync', 'receipt-decimal-001', $payload, fn() => ['amount' => $payload['amount']]);
+        $receipt = $service->status($this->admin->id, 'offline.sync', 'receipt-decimal-001');
+        $this->assertSame('confirmed', $receipt['status']);
+        $this->assertSame($payload, $receipt['request']);
+        $this->assertSame($payload, $receipt['result']);
+        $this->assertSame('not_found', $service->status($this->admin->id + 1000, 'offline.sync', 'receipt-decimal-001')['status']);
+        app(CompanyContext::class)->set($this->b);
+        $this->assertSame('not_found', $service->status($this->admin->id, 'offline.sync', 'receipt-decimal-001')['status']);
+    }
+    public function test_cancelled_identity_rejects_a_late_execution(): void
+    {
+        $service = app(\Modules\Accounting\Services\OperationService::class);
+        $one = $service->cancel($this->admin->id, 'offline.sync', 'cancel-before-send-001', 'Se revisará otra versión antes de enviar.');
+        $two = $service->cancel($this->admin->id, 'offline.sync', 'cancel-before-send-001', 'Segundo intento de la misma cancelación.');
+        $this->assertSame('cancelled', $one['status']);
+        $this->assertSame($one, $two);
+        $this->assertSame(1, DB::table('accounting_audit_events')->where('company_id', $this->a->id)->where('action', 'operation.cancelled')->count());
+        try {
+            $service->execute($this->admin->id, 'offline.sync', 'cancel-before-send-001', ['amount' => '1.00'], function () { $this->fail('Un envío cancelado no debe ejecutarse.'); });
+            $this->fail('Se esperaba una identidad cancelada.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('OPERATION_CANCELLED', $problem->errorCode);
+        }
+    }
+    public function test_cancelling_an_already_confirmed_operation_returns_its_receipt(): void
+    {
+        $service = app(\Modules\Accounting\Services\OperationService::class);
+        $result = $service->execute($this->admin->id, 'offline.sync', 'confirmed-before-cancel-001', ['amount' => '0.30'], fn() => ['id' => 'fictitious-result']);
+        $receipt = $service->cancel($this->admin->id, 'offline.sync', 'confirmed-before-cancel-001', 'El cliente perdió la respuesta del envío.');
+        $this->assertSame('confirmed', $receipt['status']);
+        $this->assertSame($result, $receipt['result']);
+        $this->assertSame(0, DB::table('accounting_audit_events')->where('company_id', $this->a->id)->where('action', 'operation.cancelled')->count());
+    }
+    public function test_legacy_operation_hashes_continue_to_replay(): void
+    {
+        $payload = ['amount' => '0.100000000000', 'version' => 1];
+        \Modules\Accounting\Models\OperationResult::create(['user_id' => $this->admin->id, 'action' => 'offline.sync', 'operation_key' => 'legacy-replay-001', 'state' => 'confirmed', 'content_hash' => hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)), 'result' => ['legacy' => true]]);
+        $result = app(\Modules\Accounting\Services\OperationService::class)->execute($this->admin->id, 'offline.sync', 'legacy-replay-001', $payload, function () { $this->fail('Una confirmación anterior no debe ejecutarse de nuevo.'); });
+        $this->assertSame(['legacy' => true], $result);
+    }
+    public function test_operation_cancellation_cannot_be_reopened_in_the_database(): void
+    {
+        app(\Modules\Accounting\Services\OperationService::class)->cancel($this->admin->id, 'offline.sync', 'immutable-cancel-001', 'Conservar la decisión y bloquear el envío anterior.');
+        $this->expectException(\Illuminate\Database\QueryException::class);
+        DB::table('accounting_operation_results')->where('company_id', $this->a->id)->where('operation_key', 'immutable-cancel-001')->update(['state' => 'pending']);
+    }
+    public function test_a_local_identity_cannot_create_two_journal_entries(): void
+    {
+        $source = $this->draft();
+        $service = app(EntryService::class);
+        $data = ['accounting_date' => $source->accounting_date->format('Y-m-d'), 'concept' => 'Identidad local de prueba', 'local_id' => (string) Str::uuid(), 'lines' => $service->resource($source)['lines']];
+        $first = $service->create($data, $this->admin->id);
+        try {
+            $service->create($data, $this->admin->id);
+            $this->fail('Una identidad local repetida debe exigir comparación.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('LOCAL_ENTRY_EXISTS', $problem->errorCode);
+            $this->assertSame($first->id, $problem->details['current']['id']);
+        }
+        $this->assertSame(1, JournalEntry::where('local_id', $data['local_id'])->count());
+    }
+    public function test_entry_conflict_resolution_keeps_alternatives_and_invalidates_approval(): void
+    {
+        $this->allowConflictEditing();
+        $entry = $this->approved();
+        $original = app(EntryService::class)->resource($entry);
+        $local = ['accounting_date' => $entry->accounting_date->format('Y-m-d'), 'concept' => 'Versión local revisada expresamente', 'lines' => $original['lines']];
+        $local['lines'][0]['debit'] = '9007199254740993.12';
+        $local['lines'][1]['credit'] = '9007199254740993.12';
+        $input = ['base_version' => 1, 'decision' => 'apply_local', 'reason' => 'El contador contrastó los soportes de ambas versiones.', 'local' => $local];
+        $service = app(\Modules\Accounting\Services\ConflictService::class);
+        $result = $service->entry($this->admin->id, $entry->id, $entry->version, $input, 'entry-resolution-001');
+        $replay = $service->entry($this->admin->id, $entry->id, $entry->version, $input, 'entry-resolution-001');
+        $this->assertEquals($result, $replay);
+        $this->assertSame($result['entity']['total_debit'], $replay['entity']['total_debit']);
+        $this->assertSame('draft', $result['entity']['status']);
+        $this->assertNull($result['entity']['approved_by']);
+        $this->assertSame($entry->version + 1, $result['entity']['version']);
+        $this->assertSame('9007199254740993.12000000', $result['entity']['total_debit']);
+        $audit = json_decode(DB::table('accounting_audit_events')->where('id', $result['resolution']['id'])->value('payload'), true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame('100.00000000', $audit['server_before']['total_debit']);
+        $this->assertSame('9007199254740993.12', $audit['local_reported']['lines'][0]['debit']);
+        $this->assertSame('9007199254740993.12000000', $audit['server_after']['total_debit']);
+        $this->assertSame(1, DB::table('accounting_audit_events')->where('company_id', $this->a->id)->where('action', 'entry.conflict_resolved')->count());
+    }
+    public function test_resolution_does_not_overwrite_a_new_change_after_comparison(): void
+    {
+        $this->allowConflictEditing();
+        $entry = $this->draft();
+        $service = app(EntryService::class);
+        $local = ['accounting_date' => $entry->accounting_date->format('Y-m-d'), 'concept' => 'Alternativa local conservada', 'lines' => $service->resource($entry)['lines']];
+        $remote = $service->edit($entry->id, [...$local, 'concept' => 'Cambio remoto posterior'], 1, $this->admin->id);
+        try {
+            app(\Modules\Accounting\Services\ConflictService::class)->entry($this->admin->id, $entry->id, 1, ['base_version' => 1, 'decision' => 'apply_local', 'reason' => 'Decisión basada en una versión que ya cambió.', 'local' => $local], 'stale-resolution-001');
+            $this->fail('Una decisión desactualizada debe rechazarse.');
+        } catch (ApiProblem $problem) {
+            $this->assertSame('VERSION_CONFLICT', $problem->errorCode);
+            $this->assertSame(412, $problem->status);
+        }
+        $this->assertSame('Cambio remoto posterior', JournalEntry::findOrFail($entry->id)->concept);
+        $this->assertSame($remote->version, JournalEntry::findOrFail($entry->id)->version);
+        $this->assertSame(0, \Modules\Accounting\Models\OperationResult::where('operation_key', 'stale-resolution-001')->count());
+    }
+    public function test_read_only_user_can_preserve_the_server_version_without_editing_a_posted_entry(): void
+    {
+        $entry = $this->approved();
+        app(EntryService::class)->post($entry->id, $entry->version, $this->admin->id, 'posted-before-resolution-001');
+        $entry = $entry->fresh();
+        DB::table('accounting_memberships')->where('company_id', $this->a->id)->where('user_id', $this->admin->id)->update(['roles' => json_encode(['viewer'])]);
+        $result = app(\Modules\Accounting\Services\ConflictService::class)->entry($this->admin->id, $entry->id, $entry->version, ['base_version' => 1, 'decision' => 'keep_server', 'reason' => 'Se conserva el asiento ya contabilizado en PRO9.', 'local' => ['concept' => 'Captura incompleta', 'lines' => []]], 'keep-posted-version-001');
+        $this->assertSame($entry->version, $result['entity']['version']);
+        $this->assertNotNull($result['entity']['posted_at']);
+        $this->assertSame('keep_server', $result['resolution']['decision']);
+    }
+    public function test_document_resolution_preserves_twelve_decimal_places(): void
+    {
+        $this->allowConflictEditing();
+        $date = now('America/Caracas')->format('Y-m-d');
+        $input = ['kind' => 'sale_invoice', 'number' => 'DOC-ORIGINAL', 'issue_date' => $date, 'fiscal_date' => $date, 'currency' => 'VES', 'exchange_rate' => '1', 'exchange_date' => $date, 'amounts' => ['base' => '100', 'vat' => '0', 'other_taxes' => '0', 'total' => '100']];
+        $service = app(DocumentService::class);
+        $document = $service->create($input, $this->admin->id);
+        $document = $service->edit($document->id, [...$input, 'number' => 'DOC-REMOTO'], 1, $this->admin->id);
+        $local = [...$input, 'number' => 'DOC-LOCAL', 'amounts' => ['base' => '9007199254740993.120000000001', 'vat' => '0', 'other_taxes' => '0', 'total' => '9007199254740993.120000000001']];
+        $result = app(\Modules\Accounting\Services\ConflictService::class)->document($this->admin->id, $document->id, 2, ['base_version' => 1, 'decision' => 'apply_local', 'reason' => 'Se contrastó la captura local con el soporte manual.', 'local' => $local], 'document-resolution-001');
+        $this->assertSame(3, $result['entity']['version']);
+        $this->assertSame('DOC-LOCAL', $result['entity']['number']);
+        $this->assertSame('9007199254740993.120000000001', $result['entity']['amounts']['total']);
+        $this->assertSame(3, SourceVersion::where('source_document_id', $document->id)->count());
+    }
+
 }

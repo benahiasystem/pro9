@@ -314,12 +314,13 @@ async function upload(p, file) {
   fs.chmodSync(backup, 0o600);
   const backupText = fs.readFileSync(backup, 'utf8'),
     parsed = JSON.parse(backupText);
-  assert.equal(parsed.version, 2);
+  assert.equal(parsed.version, 3);
+  assert(Array.isArray(parsed.outbox));
   assert.equal(parsed.recoveries.length, 3);
   assert(
     !backupText.includes(concept) && !backupText.includes(number) && !backupText.includes(phrase),
   );
-  checks.push('respaldo cifrado versión dos incluye capturas y alternativas sin texto privado');
+  checks.push('respaldo cifrado versión tres incluye capturas, alternativas y envíos sin texto privado');
   await close(c);
   const target = await context(root + '/editor-recovery-restore-' + stamp);
   page = observe(target.pages()[0]);
@@ -345,8 +346,16 @@ async function upload(p, file) {
     1,
   );
   checks.push('restauración en otro navegador conserva capturas y reimportar no las duplica');
+  const previous = { ...parsed, version: 2 };
+  delete previous.outbox;
+  const previousFile = root + '/editor-recovery-v2-backup.json';
+  fs.writeFileSync(previousFile, JSON.stringify(previous), { mode: 0o600 });
+  await upload(page, previousFile);
+  await page.getByText('Recuperación completada: 3 borradores conservados.', { exact: true }).waitFor();
+  checks.push('compatibilidad del respaldo versión dos sin una lista de envíos');
   const legacy = { ...parsed, version: 1 };
   delete legacy.recoveries;
+  delete legacy.outbox;
   const legacyFile = root + '/editor-recovery-legacy-backup.json';
   fs.writeFileSync(legacyFile, JSON.stringify(legacy), { mode: 0o600 });
   await upload(page, legacyFile);
@@ -460,6 +469,8 @@ async function upload(p, file) {
     { headers: headers() },
   );
   assert.equal((await unchanged.json()).data.concept, remoteConcept);
+  await page.getByRole('dialog', { name: 'Comparar versiones', exact: true })
+    .getByRole('button', { name: 'Volver a editar mi alternativa', exact: true }).click();
   await work(page);
   checks.push(
     'recuperar conserva la versión de partida y rechaza sobrescribir el cambio de otro usuario',
