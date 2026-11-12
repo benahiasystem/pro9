@@ -94,6 +94,7 @@ class SaleNoteController extends Controller
 
     public function store(Request $request)
     {
+        $deferEffects = $request->attributes->get('pro9.defer_sale_effects') === true;
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         $currency = $request->input('currency_type_id');
         if (!in_array($currency, ['VES', 'USD'], true)
@@ -128,7 +129,7 @@ class SaleNoteController extends Controller
 
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         // Cliente, productos y nota deben revertirse juntos si falla el cobro.
-        DB::connection('tenant')->transaction(function () use ($request, $actions, &$print_result) {
+        DB::connection('tenant')->transaction(function () use ($request, $actions, &$print_result, $deferEffects) {
             if (!$request->input('id')) {
                 \App\Services\Payments\QuotationReceiptsRequired::assertPresent($request->input('quotation_id'), $request->input('payments', []));
             }
@@ -179,9 +180,13 @@ class SaleNoteController extends Controller
 
             $this->setFilename();
             // El formato lo decide el cliente desde el payload (default a4).
-            $this->createPdf($this->sale_note, $actions['format_pdf'], $this->sale_note->filename);
-            // Impresión directa: reutiliza el PDF recién generado, sin regenerar.
-            $print_result = $this->generatePrintOrder($actions);
+            if (!$deferEffects) {
+                $this->createPdf($this->sale_note, $actions['format_pdf'], $this->sale_note->filename);
+                // Impresión directa: reutiliza el PDF recién generado, sin regenerar.
+                $print_result = $this->generatePrintOrder($actions);
+            } else {
+                $print_result = ['auto_printed'=>false,'print_order_id'=>null,'reason'=>'pending'];
+            }
         });
 
         return [
@@ -393,6 +398,12 @@ class SaleNoteController extends Controller
      * @param  array $actions
      * @return array{auto_printed: bool, print_order_id: int|null, reason: string|null}
      */
+    public function printStoredSale(SaleNote $saleNote, array $actions): array
+    {
+        $this->sale_note = $saleNote;
+        return $this->generatePrintOrder($actions);
+    }
+
     private function generatePrintOrder($actions)
     {
         $result = ['auto_printed' => false, 'print_order_id' => null, 'reason' => null];

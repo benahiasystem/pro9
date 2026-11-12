@@ -183,7 +183,7 @@ final class Movement
             $classification['bank_account_number'] = $account->number;
             $classification['bank_name'] = $account->bank_id === null ? null : $db->table('banks')->where('id', $account->bank_id)->value('description');
             $user = $global->user_id ?? $parent->user_id;
-            $cash = Cash::query()->where('user_id', $user)->where('state', true)->lockForUpdate()->first();
+            $cash = \App\Services\Sellnow\CashContext::current() ?? Cash::query()->where('user_id', $user)->where('state', true)->lockForUpdate()->first();
         }
         if ($cash && (!(bool)$cash->state)) Classification::error('cash', 'El turno no está abierto con la nueva clasificación.');
         if ($kind === 'cash' && !$cash) Classification::error('cash', 'Abra una caja antes de registrar efectivo.');

@@ -91,7 +91,7 @@ class DocumentObserver
         app(WebhookDispatcher::class)->dispatch(WebhookEvents::DOCUMENT_CREATED, $document);
 
         // Emisi├│n desde tienda / API sin caja abierta: emitir igual, sin asociar caja.
-        $cash = Cash::where([
+        $cash = \App\Services\Sellnow\CashContext::current() ?? Cash::where([
             ['user_id', auth()->id() ?: $document->user_id],
             ['state', true],
         ])->first();

@@ -1,0 +1,164 @@
+{
+    "checkedAt": "2026-11-12T03:28:17+00:00",
+    "tenant": "bbc.localhost",
+    "website_id": 26,
+    "schema": "tenancy_bbc",
+    "table": "sellnow_sales",
+    "rowCount": 0,
+    "columns": [
+        {
+            "COLUMN_NAME": "id",
+            "COLUMN_TYPE": "bigint(20) unsigned",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": "PRI"
+        },
+        {
+            "COLUMN_NAME": "client_sale_id",
+            "COLUMN_TYPE": "char(36)",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": "UNI"
+        },
+        {
+            "COLUMN_NAME": "device_id",
+            "COLUMN_TYPE": "char(36)",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "user_id",
+            "COLUMN_TYPE": "int(10) unsigned",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": "MUL"
+        },
+        {
+            "COLUMN_NAME": "establishment_id",
+            "COLUMN_TYPE": "int(10) unsigned",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "kind",
+            "COLUMN_TYPE": "varchar(20)",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "payload_hash",
+            "COLUMN_TYPE": "char(64)",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "original_cash_id",
+            "COLUMN_TYPE": "int(10) unsigned",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "cash_id",
+            "COLUMN_TYPE": "int(10) unsigned",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "recorded_at",
+            "COLUMN_TYPE": "datetime",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "status",
+            "COLUMN_TYPE": "varchar(24)",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "document_id",
+            "COLUMN_TYPE": "int(10) unsigned",
+            "IS_NULLABLE": "YES",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "sale_note_id",
+            "COLUMN_TYPE": "int(10) unsigned",
+            "IS_NULLABLE": "YES",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "envelope",
+            "COLUMN_TYPE": "longtext",
+            "IS_NULLABLE": "NO",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "result",
+            "COLUMN_TYPE": "longtext",
+            "IS_NULLABLE": "YES",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "error",
+            "COLUMN_TYPE": "longtext",
+            "IS_NULLABLE": "YES",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "effects",
+            "COLUMN_TYPE": "longtext",
+            "IS_NULLABLE": "YES",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "cash_history",
+            "COLUMN_TYPE": "longtext",
+            "IS_NULLABLE": "YES",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "created_at",
+            "COLUMN_TYPE": "timestamp",
+            "IS_NULLABLE": "YES",
+            "COLUMN_KEY": ""
+        },
+        {
+            "COLUMN_NAME": "updated_at",
+            "COLUMN_TYPE": "timestamp",
+            "IS_NULLABLE": "YES",
+            "COLUMN_KEY": ""
+        }
+    ],
+    "indexes": [
+        {
+            "INDEX_NAME": "PRIMARY",
+            "NON_UNIQUE": 0,
+            "SEQ_IN_INDEX": 1,
+            "COLUMN_NAME": "id"
+        },
+        {
+            "INDEX_NAME": "sellnow_sales_client_sale_id_unique",
+            "NON_UNIQUE": 0,
+            "SEQ_IN_INDEX": 1,
+            "COLUMN_NAME": "client_sale_id"
+        },
+        {
+            "INDEX_NAME": "sellnow_sales_user_id_status_index",
+            "NON_UNIQUE": 1,
+            "SEQ_IN_INDEX": 1,
+            "COLUMN_NAME": "user_id"
+        },
+        {
+            "INDEX_NAME": "sellnow_sales_user_id_status_index",
+            "NON_UNIQUE": 1,
+            "SEQ_IN_INDEX": 2,
+            "COLUMN_NAME": "status"
+        }
+    ],
+    "temporarySchemasRemaining": [
+        "pro9_fiscal_test_729c1fca019b",
+        "pro9_fiscal_test_762b5f513853",
+        "pro9_fiscal_test_f3bfb9a42dad",
+        "pro9_fiscal_test_fb7d24904576",
+        "pro9_fiscal_test_fc1d9e596f7e"
+    ],
+    "method": "Read-only information_schema and COUNT SELECT; migration applied separately by parent agent."
+}

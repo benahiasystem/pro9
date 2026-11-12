@@ -38,7 +38,7 @@ final class ReceiptDestination
             $destination = $method->bank_account_id;
         }
         if ($destination === 'cash' || ($destination === null && $kind === 'cash')) {
-            $cash=Cash::where('user_id',$user)->where('state',true)->lockForUpdate()->first();
+            $cash=\App\Services\Sellnow\CashContext::current() ?? Cash::where('user_id',$user)->where('state',true)->lockForUpdate()->first();
             if (!$cash) Classification::error('payment_destination_id','Abra una caja antes de registrar efectivo.');
             $type=Cash::class; $id=$cash->id;
         } else {

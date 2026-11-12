@@ -125,6 +125,10 @@ if ($hostname) {
 
             //Vendeya
             Route::prefix('sellnow')->group(function () {
+                Route::get('/offline-context', 'Tenant\Api\SellnowSaleController@context');
+                Route::post('/sales', 'Tenant\Api\SellnowSaleController@store');
+                Route::get('/sales/{uuid}', 'Tenant\Api\SellnowSaleController@show')->whereUuid('uuid');
+                Route::patch('/sales/{uuid}/cash', 'Tenant\Api\SellnowSaleController@cash')->whereUuid('uuid');
                 Route::get('/items', 'Tenant\Api\SellnowController@items');
                 Route::get('/categories', 'Tenant\Api\SellnowController@categories');
                 Route::post('/favoriteitem', 'Tenant\Api\SellnowController@setFavoriteItem');

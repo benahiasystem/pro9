@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="/home/benahia/benahia/pro/Pro9/vendor/autoload.php" colors="false"><testsuites><testsuite name="VendeYa offline and legacy API"><file>/home/benahia/benahia/pro/Pro9/tests/Unit/SellnowSalePersistenceTest.php</file><file>/home/benahia/benahia/pro/Pro9/tests/Unit/FiscalEmissionSchemaTest.php</file></testsuite></testsuites></phpunit>

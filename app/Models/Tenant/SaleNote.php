@@ -296,7 +296,7 @@ use Modules\Sale\Models\Agent;
 
 
             static::created(function (self $model) {
-                $cash = Cash::where([
+                $cash = \App\Services\Sellnow\CashContext::current() ?? Cash::where([
                     ['user_id', auth()->id()],
                     ['state', true],
                 ])->lockForUpdate()->first();

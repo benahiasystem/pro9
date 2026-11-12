@@ -1,0 +1,106 @@
+{
+  "checkedAt": "2026-11-12T03:28:18.713020+00:00",
+  "phpSyntax": "passed",
+  "files": [
+    {
+      "path": "app/Console/Commands/SellnowRecoverCommand.php",
+      "sha256": "4f560975e65d0f43216c2db2bb1ce134db8f0ac62b888c63355df6efab7ff5c5"
+    },
+    {
+      "path": "app/Console/Kernel.php",
+      "sha256": "d3b72e82e14031ff5bea38b25463f1e91ec1c65296dee6daebe65ac114327df8"
+    },
+    {
+      "path": "app/CoreFacturalo/InputRequest.php",
+      "sha256": "b98d5b5a59e799c5198a04873bffa2f272f6d4a9bf270947f6649984d6d65dbb"
+    },
+    {
+      "path": "app/Http/Controllers/Tenant/Api/DocumentController.php",
+      "sha256": "4af59341e8bd5cd47edcf8f94371c9dcf98718ed5297cca7794a582afe7fa24a"
+    },
+    {
+      "path": "app/Http/Controllers/Tenant/Api/SaleNoteController.php",
+      "sha256": "afb9b8f8c4f80548d4ea0f8e5290da94f5c78dc2d334714807d2d05a564bc2e6"
+    },
+    {
+      "path": "app/Http/Controllers/Tenant/Api/SellnowSaleController.php",
+      "sha256": "108358fbce225f9a189e70c32cbff917e6e28eb675ae1d179fc31d1140830485"
+    },
+    {
+      "path": "app/Models/Tenant/SaleNote.php",
+      "sha256": "978639315062dbf5ce38e362f2d3d46aede1405e9908fc8a518438899c97f0b6"
+    },
+    {
+      "path": "app/Models/Tenant/SellnowSale.php",
+      "sha256": "df19b00c18d0202053d3b41a65d2dee5d50467fb1d666969392338c20c4086eb"
+    },
+    {
+      "path": "app/Observers/DocumentObserver.php",
+      "sha256": "d2353a389f175ae4e398e221b70dae1988a3c7fcdb5997eed81fbc8e03a70999"
+    },
+    {
+      "path": "app/Services/Payments/Movement.php",
+      "sha256": "e3de175c31112c153c7eae16b877237a965c9dfd05d9f8b3a9c48c7db7b64a0e"
+    },
+    {
+      "path": "app/Services/Payments/ReceiptDestination.php",
+      "sha256": "a1441e083b521708f1e6cee1d2465b3be6a7510ccd2463fa3a4f74955f0706ce"
+    },
+    {
+      "path": "app/Services/Sellnow/ApiSaleCreation.php",
+      "sha256": "39f15881b40ce9de2d96d1ecbb1cf9b26de2f4631b0eb461d892b95208107355"
+    },
+    {
+      "path": "app/Services/Sellnow/CashContext.php",
+      "sha256": "e1cd65233872026444c6ff9beeab1f60a29a443555ad1d042a5bef4af1bcd58e"
+    },
+    {
+      "path": "app/Services/Sellnow/CashDocumentLinks.php",
+      "sha256": "f236449b850aeff28c843fba48f9f79eaca9505c47a30a577db0c55b5989be41"
+    },
+    {
+      "path": "app/Services/Sellnow/SaleBlocked.php",
+      "sha256": "36d10226981f87b249db81bd42ae16bf3bdd502426380c6093d9e8093b87bc1e"
+    },
+    {
+      "path": "app/Services/Sellnow/SaleEffects.php",
+      "sha256": "4a83b1e7c4ec5bf9587e2bc52dfda6795474b23fc92b1874a249382b9bd62091"
+    },
+    {
+      "path": "app/Services/Sellnow/SaleOperations.php",
+      "sha256": "5109b9a44b1137ccb6578bedb6b6dbe1b0ee2add32080fe3bf62018e3b83a2d1"
+    },
+    {
+      "path": "database/migrations/tenant/2026_11_12_000001_create_sellnow_sales_table.php",
+      "sha256": "a3f4113f615a4016d9c9817b48a88a6a0ebb37730e51bf27dd1c3fe06516c087"
+    },
+    {
+      "path": "modules/Finance/Traits/FinanceTrait.php",
+      "sha256": "0b9f669c38eac67f0ba7de83e60d9098af6a07c29c299879ca2f7ebfd3b98285"
+    },
+    {
+      "path": "modules/Restaurant/Observers/PrintOrderObserver.php",
+      "sha256": "447745506a98d6e432d73ea369615d6960e28d2537b8ded4e6e7679475fecbf7"
+    },
+    {
+      "path": "routes/api.php",
+      "sha256": "baae4684621a917ef0ac6bc571aca82fc1da7718615497ca1a6ecff226c92029"
+    },
+    {
+      "path": "tests/Support/sellnow_concurrency_worker.php",
+      "sha256": "fc3a026881b683cd93b1140a56b74d1eaaa7f82ff5a7fd1d5be43a54b62bbbc6"
+    },
+    {
+      "path": "tests/Unit/SellnowSalePersistenceTest.php",
+      "sha256": "11ad07827b2112a3a5d028b794f4886ff05d8b718d4b48fa4b621164e86bd6eb"
+    }
+  ],
+  "bbc": {
+    "hostname_id": 26,
+    "website_id": 26,
+    "uuid": "tenancy_bbc",
+    "unauthenticatedContextStatus": 401,
+    "migrationAppliedByBackendAgent": false,
+    "migrationAppliedByParentAgent": true
+  }
+}

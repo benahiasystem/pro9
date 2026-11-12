@@ -18,21 +18,22 @@ class DocumentController extends Controller
 
     public function store(Request $request)
     {
+        $deferEffects = $request->attributes->get('pro9.defer_sale_effects') === true;
         $request->validate(['control_number'=>'prohibited','numero_control'=>'prohibited','issuer'=>'prohibited']);
         // dd($request->all());
         $print_result = ['auto_printed' => false, 'print_order_id' => null, 'reason' => null];
 
-        $fact = DB::connection('tenant')->transaction(function () use ($request, &$print_result) {
-            $facturalo = new Facturalo();
-            $facturalo->save($request->all());
-            $facturalo->createPdf();
-
-            $facturalo->sendEmail();
+        $fact = DB::connection('tenant')->transaction(function () use ($request, &$print_result, $deferEffects) {
+            $facturalo = app(\App\Services\Sellnow\ApiSaleCreation::class)->persistDocument($request->all());
+            if (!$deferEffects) {
+                $facturalo->createPdf();
+                $facturalo->sendEmail();
+            }
 
             return $facturalo;
         });
 
-        $print_result = $fact->generatePrintOrder();
+        $print_result = $deferEffects ? ['auto_printed'=>false,'print_order_id'=>null,'reason'=>'pending'] : $fact->generatePrintOrder();
         $document = $fact->getDocument();
         $response = $fact->getResponse();
 

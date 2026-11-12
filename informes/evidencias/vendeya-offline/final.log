@@ -1,0 +1,20 @@
+PHPUnit 9.6.34 by Sebastian Bergmann and contributors.
+
+fixture migraciones 147.012 s; semillas 0.570 s; captura 0.603 s
+.fixture restaurado: 38.739 s
+.fixture restaurado: 19.655 s
+.fixture restaurado: 24.280 s
+.fixture restaurado: 11.184 s
+.fixture restaurado: 10.820 s
+.fixture restaurado: 11.031 s
+.fixture restaurado: 16.107 s
+.fixture restaurado: 11.393 s
+.fixture restaurado: 16.621 s
+.fixture restaurado: 11.075 s
+.fixture restaurado: 9.869 s
+.fixture restaurado: 10.999 s
+.                                                     13 / 13 (100%)
+
+Time: 07:39.773, Memory: 116.50 MB
+
+OK (13 tests, 235 assertions)

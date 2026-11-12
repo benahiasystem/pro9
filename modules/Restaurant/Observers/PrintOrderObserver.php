@@ -12,11 +12,18 @@ class PrintOrderObserver
     ) {}
 
     /**
-     * Al crear una PrintOrder, publica inmediatamente en Redis.
-     * No hay polling ni SSE — BuhoPrinter escucha el canal.
+     * Publica únicamente órdenes persistidas. Los consumidores Redis no deben
+     * imprimir una orden que una transacción aún puede revertir.
      */
     public function created(PrintOrder $order): void
     {
+        if ($order->getConnection()->transactionLevel() > 0) {
+            $order->getConnection()->afterCommit(function () use ($order) {
+                $saved = $order->newQuery()->find($order->id);
+                if ($saved) $this->publisher->publish($saved);
+            });
+            return;
+        }
         $this->publisher->publish($order);
     }
 }

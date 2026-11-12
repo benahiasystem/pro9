@@ -112,9 +112,9 @@
             // Tienda / API sin sesión de admin: usar el emisor del comprobante.
             // Si no hay caja abierta, no bloquear la emisión del documento.
             $userId = auth()->id() ?: ($document->user_id ?? null);
-            $cash = $userId
+            $cash = \App\Services\Sellnow\CashContext::current() ?? ($userId
                 ? Cash::where([['user_id', $userId], ['state', true]])->first()
-                : null;
+                : null);
 
             if (! $cash) {
                 return;

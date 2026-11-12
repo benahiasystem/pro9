@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Unit\SellnowSalePersistenceTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/SellnowSalePersistenceTest.php" tests="7" assertions="103" errors="0" warnings="0" failures="0" skipped="0" time="191.567557">
+    <testcase name="test_native_invoice_and_note_replays_do_not_duplicate_document_payments_stock_or_cash" class="Tests\Unit\SellnowSalePersistenceTest" classname="Tests.Unit.SellnowSalePersistenceTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/SellnowSalePersistenceTest.php" line="76" assertions="22" time="69.360008"/>
+    <testcase name="test_rejected_payload_rolls_back_all_business_writes_and_keeps_the_intent" class="Tests\Unit\SellnowSalePersistenceTest" classname="Tests.Unit.SellnowSalePersistenceTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/SellnowSalePersistenceTest.php" line="102" assertions="5" time="20.818133"/>
+    <testcase name="test_closed_cash_requires_an_explicit_authorized_override_and_retains_original_hash" class="Tests\Unit\SellnowSalePersistenceTest" classname="Tests.Unit.SellnowSalePersistenceTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/SellnowSalePersistenceTest.php" line="115" assertions="10" time="18.619844"/>
+    <testcase name="test_admin_selected_cash_is_used_for_cash_and_bank_receipts_without_actor_cash_leaks" class="Tests\Unit\SellnowSalePersistenceTest" classname="Tests.Unit.SellnowSalePersistenceTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/SellnowSalePersistenceTest.php" line="139" assertions="9" time="18.389651"/>
+    <testcase name="test_two_processes_and_a_crash_after_commit_reuse_the_same_business_sale" class="Tests\Unit\SellnowSalePersistenceTest" classname="Tests.Unit.SellnowSalePersistenceTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/SellnowSalePersistenceTest.php" line="168" assertions="15" time="25.940944"/>
+    <testcase name="test_effect_journal_recovers_pdf_without_repeating_sales_or_uncertain_deliveries" class="Tests\Unit\SellnowSalePersistenceTest" classname="Tests.Unit.SellnowSalePersistenceTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/SellnowSalePersistenceTest.php" line="220" assertions="13" time="16.803239"/>
+    <testcase name="test_production_http_routes_authentication_replay_reassignment_and_pdf" class="Tests\Unit\SellnowSalePersistenceTest" classname="Tests.Unit.SellnowSalePersistenceTest" file="/home/benahia/benahia/pro/Pro9/tests/Unit/SellnowSalePersistenceTest.php" line="264" assertions="29" time="21.635739"/>
+  </testsuite>
+</testsuites>
