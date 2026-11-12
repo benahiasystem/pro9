@@ -128,6 +128,15 @@ async function navigateReports() {
   checks.push('Móvil de 390 px sin desbordamiento de página y controles de al menos 44 px');
   await page.setViewportSize({ width: 1600, height: 1100 });
 
+  const listResponse = await context.request.get('http://127.0.0.1:9080/api/accounting/v1/companies/' + fixture.company_id + '/report-exports', { headers: { Host: 'contabilidad.localhost:9080', Accept: 'application/json', Authorization: 'Bearer ' + actor.token, 'X-Accounting-Verification': actor.verification } });
+  assert.equal(listResponse.status(), 200); const linkedJob = (await listResponse.json()).data[0]; assert(linkedJob.id);
+  await page.evaluate((id) => { history.pushState({}, '', '/contabilidad/auditoria?tipo=report_job&recurso=' + id); window.dispatchEvent(new PopStateEvent('popstate')); }, linkedJob.id);
+  await page.getByRole('button', { name: /^Ver evento / }).first().click();
+  const savedLink = page.locator('.audit-detail a[href*="/informes?version="]'); await savedLink.waitFor(); await savedLink.click();
+  await page.getByRole('region', { name: 'Versión conservada', exact: true }).waitFor();
+  await expect(page.locator('.report-data-table tbody tr')).toHaveCount(linkedJob.row_count);
+  checks.push('Un evento de auditoría abre la versión exacta conservada del informe, con sus filas originales');
+
   await page.getByRole('link', { name: 'Preparar trabajo local', exact: true }).click();
   const phrase = 'Copia de informes ficticios 2026';
   await page.getByLabel('Frase local de cifrado', { exact: true }).fill(phrase); await page.getByLabel('Repetir frase local').fill(phrase);

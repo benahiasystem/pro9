@@ -63,7 +63,7 @@ final class ReportService
             $maxTo = max($to, $f['compare_to'] ?? $to);
             $versions = Period::where(fn($q) => $q->where('year', '<', (int) substr($maxTo, 0, 4))->orWhere(fn($q) => $q->where('year', (int) substr($maxTo, 0, 4))->where('month', '<=', (int) substr($maxTo, 5, 2))))->orderBy('year')->orderBy('month')->get(['id', 'year', 'month', 'status', 'version', 'close_snapshot'])->toArray();
             $presentationHash = hash('sha256', json_encode($this->presentation(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
-            $dataVersion = (int) (DB::table('accounting_audit_events')->where('organization_id', $c->organizationId())->where('company_id', $c->id())->where('action', 'not like', 'report.%')->whereNotIn('action', ['offline.prepared', 'import.previewed', 'import.revalidated'])->max('sequence') ?? 0);
+            $dataVersion = (int) (DB::table('accounting_audit_events')->where('organization_id', $c->organizationId())->where('company_id', $c->id())->where('action', 'not like', 'report.%')->whereNotIn('action', ['offline.prepared', 'import.previewed', 'import.revalidated', 'attachment.downloaded'])->max('sequence') ?? 0);
             $scope = $kind === 'documents' ? (!empty($f['include_pending']) ? 'control_with_pending' : 'source_control') : ($kind === 'incidents' || $kind === 'dashboard' ? 'operational_control' : 'posted_only');
             $out = [...$result, 'kind' => $kind, 'title' => $kind === 'dashboard' ? 'Inicio' : ReportSchema::title($kind), 'from' => $from, 'to' => $to,
                 'filters' => $f, 'data_scope' => $scope, 'date_basis' => $kind === 'open-items' ? 'cutoff' : 'interval',

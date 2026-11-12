@@ -115,6 +115,7 @@ final class EntryService
                 $e->approved_at = now();
                 $e->approved_version = $e->version + 1;
                 $e->approval_reason = $comment;
+                $e->metadata = [...$e->metadata ?? [], 'support_manifest' => app(EvidenceManifest::class)->entry($e)];
             } else {
                 throw new ApiProblem('UNKNOWN_TRANSITION', 'La acción no está disponible.');
             }
@@ -246,6 +247,7 @@ final class EntryService
     }
     public function validatePosting(JournalEntry $e, bool $requireOpenPeriod, ?YearClosingPermit $permit = null): void
     {
+        app(EvidenceManifest::class)->posting($e);
         if ($e->source_document_id) {
             $source = SourceDocument::whereKey($e->source_document_id)->lockForUpdate()->firstOrFail();
             app(Pro9SourceReader::class)->assertCurrent($source);

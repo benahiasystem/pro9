@@ -314,14 +314,14 @@ async function upload(p, file) {
   fs.chmodSync(backup, 0o600);
   const backupText = fs.readFileSync(backup, 'utf8'),
     parsed = JSON.parse(backupText);
-  assert.equal(parsed.version, 4);
+  assert.equal(parsed.version, 5);
   assert(Array.isArray(parsed.outbox));
   assert(Array.isArray(parsed.selections));
   assert.equal(parsed.recoveries.length, 3);
   assert(
     !backupText.includes(concept) && !backupText.includes(number) && !backupText.includes(phrase),
   );
-  checks.push('respaldo cifrado versión cuatro incluye capturas, alternativas, decisiones y envíos sin texto privado');
+  checks.push('respaldo cifrado versión cinco incluye capturas, alternativas, decisiones y envíos sin texto privado');
   await close(c);
   const target = await context(root + '/editor-recovery-restore-' + stamp);
   page = observe(target.pages()[0]);
@@ -347,6 +347,11 @@ async function upload(p, file) {
     1,
   );
   checks.push('restauración en otro navegador conserva capturas y reimportar no las duplica');
+  const versionFourFile = root + '/editor-recovery-v4-backup.json';
+  fs.writeFileSync(versionFourFile, JSON.stringify({ ...parsed, version: 4 }), { mode: 0o600 });
+  await upload(page, versionFourFile);
+  await page.getByText('Recuperación completada: 3 borradores conservados.', { exact: true }).waitFor();
+  checks.push('compatibilidad del respaldo versión cuatro con decisiones y capturas conservadas');
   const versionThree = { ...parsed, version: 3 };
   delete versionThree.selections;
   const versionThreeFile = root + '/editor-recovery-v3-backup.json';

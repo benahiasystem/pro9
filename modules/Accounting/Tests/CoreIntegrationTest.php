@@ -20,6 +20,8 @@ final class CoreIntegrationTest extends TestCase
 {
     use ImportIntegrationAssertions;
     use ReportIntegrationAssertions;
+    use AuditIntegrationAssertions;
+    use AttachmentIntegrationAssertions;
     private static Application $application;
     private static string $originalTimezone;
     private User $admin;

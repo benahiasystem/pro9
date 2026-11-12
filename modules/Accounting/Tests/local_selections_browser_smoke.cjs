@@ -137,7 +137,7 @@ async function encryptedSnapshot(p=page) {
   checks.push('los antecedentes son de consulta; abrir su enlace de edición conserva la alternativa sin modificarla');
   const selectedId=(await section('Borradores del equipo').getByRole('link',{name:original,exact:true}).getAttribute('href')).split('/local-')[1];
   const backup=await download('local-choices-selected-backup.json'), backupText=fs.readFileSync(backup,'utf8'), parsed=JSON.parse(backupText);
-  assert.equal(parsed.version,4);assert.equal(parsed.selections.length,1);assert.equal(parsed.drafts.length,3);
+  assert.equal(parsed.version,5);assert.equal(parsed.selections.length,1);assert.equal(parsed.drafts.length,3);
   assert(!backupText.includes(original)&&!backupText.includes(edited)&&!backupText.includes(phrase));
   assert(parsed.drafts.some(row=>row.id===selectedId));
   const reordered=root+'/local-choices-result-first-backup.json';

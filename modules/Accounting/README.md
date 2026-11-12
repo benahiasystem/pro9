@@ -429,6 +429,61 @@ guardarlo. Editar el libro, catálogos o empresa después no reemplaza una copia
 ya conservada. Los eventos de consulta/descarga no invalidan la revisión
 financiera de cierres.
 
+## Soportes privados y auditoría (RF24, entrega incremental)
+
+Todo este flujo pertenece a `Modules\Accounting` y usa el usuario y la conexión
+tenant de PRO9. No requiere una API contable independiente.
+
+- `GET evidence/journal_entry|source_document/{id}` consulta el caso, sus
+  archivos, versiones anteriores, registros relacionados y manifiesto de la
+  revisión. `POST .../attachments` requiere permiso `attachments`, multipart
+  `file`, descripción `title`, motivo `reason`, `If-Match` e `Idempotency-Key`.
+  `supersedes_id` añade una versión y conserva íntegra la anterior.
+- `GET attachments/{id}/download|preview` exige acceso vigente a la empresa.
+  El original se descarga como adjunto; la vista solo admite una imagen PNG
+  recodificada. Se verifica SHA-256 en servidor y cliente y no hay URL pública.
+- V1 acepta PDF, PNG/JPG, XLSX, CSV, TXT y XML de hasta 5 MiB. El tipo real,
+  estructura y límites se comprueban; XML no resuelve entidades y XLSX rechaza
+  macros, objetos incrustados y vínculos de datos externos. No se ejecutan
+  fórmulas del soporte ni se presenta un PDF o XML arbitrario dentro del editor.
+- `ACCOUNTING_ATTACHMENT_SCANNER` configura un ClamD privado por INSTREAM.
+  El analizador debe confirmar el archivo y tener firmas de hasta 168 horas.
+  Sin análisis, con firmas vencidas o ante una respuesta incierta se rechaza
+  la carga; no se simula una verificación satisfactoria. El proceso de prueba
+  `Tests/prepare_attachment_scanner.py` solo configura la red aislada del clon.
+  [Operación oficial de ClamAV](https://docs.clamav.net/manual/Usage/Scanning.html).
+- Los originales se guardan fuera de la web y la base, con nombres generados,
+  permisos privados y ruta relativa bajo un identificador del tenant físico,
+  organización y empresa. Los metadatos y versiones tienen protección de
+  UPDATE/DELETE. No existe un borrado automático de evidencia confirmada.
+- Un soporte nuevo retira la aprobación de borradores dependientes y la
+  validación documental pendiente. No inventa una nueva revisión del origen ni
+  cambia importes. La aprobación conserva un manifiesto; la contabilización
+  comprueba nuevamente los archivos y sus huellas. Un asiento definitivo
+  conserva todos sus campos al recibir anexos posteriores.
+- `attachment.add` dispone de consulta/cancelación de recibos en `operations`.
+  Es una acción con servidor; nunca entra en la cola de operaciones offline.
+  La PWA puede conservar cifrados únicamente los metadatos del formulario y
+  su identidad de envío. No guarda bytes de archivos en IndexedDB ni en el
+  service worker. El respaldo cifrado de capturas pasa a formato 5 y mantiene
+  lectura de formatos 1–4; no cambia el esquema de IndexedDB.
+- `GET audit`, `audit/options`, `audit/{id}` y `audit/integrity` requieren
+  permiso `audit`. La paginación conserva la secuencia máxima consultada.
+  El detalle devuelve JSON como texto escapado, omitiendo credenciales y rutas
+  privadas; las cifras decimales textuales conservan todos sus dígitos.
+- Los eventos nuevos usan huella v2 con codificación tipada y orden canónico,
+  estable tras el almacenamiento JSON de MySQL, e identidad del actor al
+  producirse el evento. El verificador revisa contenido, secuencia, enlaces y
+  cabecera. Los eventos v1 permanecen intactos y se identifican como históricos
+  de verificación limitada; no se reescriben ni se certifican falsamente.
+
+Esta entrega no completa la V1. Continúan pendientes la consulta/reconciliación
+integral de antecedentes del origen y anexos fiscales, el respaldo y restauración
+completos del servidor (RF25), y los demás alcances de `implementation.json`.
+El tratamiento de rutas históricas de informes también debe endurecerse antes
+de validar una restauración integral entre tenants; no se reubican copias
+congeladas silenciosamente.
+
 PDF utiliza el mPDF instalado en PRO9; XLSX se escribe en flujo con XMLWriter
 y ZipArchive, con celdas de texto explícito, sin fórmulas ni conversión de
 importes a float. CSV UTF-8 usa punto decimal, separador de punto y coma y

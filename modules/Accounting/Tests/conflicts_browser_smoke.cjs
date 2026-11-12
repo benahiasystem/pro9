@@ -39,14 +39,30 @@ async function login() {
   await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   const response = page.waitForResponse(r => r.url().endsWith('/api/login') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  actor.token = (await (await response).json()).token;
+  let authResponse = await response;
+  if (authResponse.status() === 429) {
+    const delay = Number(authResponse.headers()['retry-after']); assert(delay > 0 && delay <= 60);
+    console.log('Se respeta Retry-After antes de volver a iniciar sesión en el clon.');
+    await page.waitForTimeout(delay * 1000);
+    const retry = page.waitForResponse(r => r.url().endsWith('/api/login') && r.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click(); authResponse = await retry;
+  }
+  assert.equal(authResponse.status(), 200); actor.token = (await authResponse.json()).token;
   await page.getByLabel('Código de verificación', { exact: true }).waitFor();
   const code = actor.recovery_codes.shift(); assert(code);
   fs.writeFileSync(root + '/clone-access.json', JSON.stringify(actors, null, 2));
   await page.getByLabel('Código de verificación', { exact: true }).fill(code);
   const mfa = page.waitForResponse(r => r.url().endsWith('/auth/mfa/verify'));
   await page.getByRole('button', { name: 'Verificar y continuar' }).click();
-  actor.verification = (await (await mfa).json()).verification_token;
+  let verificationResponse = await mfa;
+  if (verificationResponse.status() === 429) {
+    const delay = Number(verificationResponse.headers()['retry-after']); assert(delay > 0 && delay <= 60);
+    console.log('Se respeta Retry-After antes de repetir la verificación del clon.');
+    await page.waitForTimeout(delay * 1000);
+    const retry = page.waitForResponse(r => r.url().endsWith('/auth/mfa/verify') && r.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Verificar y continuar' }).click(); verificationResponse = await retry;
+  }
+  assert.equal(verificationResponse.status(), 200); actor.verification = (await verificationResponse.json()).verification_token;
   fs.writeFileSync(root + '/clone-access.json', JSON.stringify(actors, null, 2));
   await page.getByLabel('Empresa activa', { exact: true }).selectOption(fixture.company_id);
 }
@@ -193,7 +209,7 @@ async function localWork() {
   const backupPath = root + '/conflicts-encrypted-backup.json'; await (await download).saveAs(backupPath);
   fs.chmodSync(backupPath, 0o600);
   const backupText = fs.readFileSync(backupPath, 'utf8'), backup = JSON.parse(backupText);
-  assert.equal(backup.version, 4); assert(backup.outbox.length > 0); assert(Array.isArray(backup.selections));
+  assert.equal(backup.version, 5); assert(backup.outbox.length > 0); assert(Array.isArray(backup.selections));
   assert(!backupText.includes('Sincronización original ' + stamp)); assert(!backupText.includes(phrase));
   checks.push('el respaldo incluye el envío original cifrado sin revelar sus datos ni la frase');
   await page.getByRole('link', {name: 'Sincronización original ' + stamp, exact: true}).click();

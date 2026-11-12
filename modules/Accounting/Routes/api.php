@@ -70,6 +70,14 @@ Route::prefix('companies/{company}')->whereUuid('company')->middleware([SessionV
         Route::post('entries/{id}/' . $action, [EntryController::class, $action])->middleware(RequirePermission::class . ':' . $permission)->whereUuid('id');
     }
     Route::get('report-lookups/{kind}', [\Modules\Accounting\Http\Controllers\ReportLookupController::class, 'index'])->middleware(RequirePermission::class . ':reports')->where('kind', 'accounts|third-parties|cost-centers');
+    Route::get('audit', [\Modules\Accounting\Http\Controllers\AuditController::class, 'index'])->middleware(RequirePermission::class . ':audit');
+    Route::get('audit/options', [\Modules\Accounting\Http\Controllers\AuditController::class, 'options'])->middleware(RequirePermission::class . ':audit');
+    Route::get('audit/integrity', [\Modules\Accounting\Http\Controllers\AuditController::class, 'integrity'])->middleware(RequirePermission::class . ':audit');
+    Route::get('audit/{id}', [\Modules\Accounting\Http\Controllers\AuditController::class, 'show'])->middleware(RequirePermission::class . ':audit')->whereUuid('id');
+    Route::get('evidence/{type}/{id}', [\Modules\Accounting\Http\Controllers\AttachmentController::class, 'index'])->middleware(RequirePermission::class . ':read')->where('type', 'journal_entry|source_document')->whereUuid('id');
+    Route::post('evidence/{type}/{id}/attachments', [\Modules\Accounting\Http\Controllers\AttachmentController::class, 'store'])->middleware(RequirePermission::class . ':attachments')->where('type', 'journal_entry|source_document')->whereUuid('id');
+    Route::get('attachments/{id}/download', [\Modules\Accounting\Http\Controllers\AttachmentController::class, 'download'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
+    Route::get('attachments/{id}/preview', [\Modules\Accounting\Http\Controllers\AttachmentController::class, 'preview'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
     Route::get('report-exports', [\Modules\Accounting\Http\Controllers\ReportExportController::class, 'index'])->middleware(RequirePermission::class . ':reports');
     Route::post('report-exports', [\Modules\Accounting\Http\Controllers\ReportExportController::class, 'capture'])->middleware(RequirePermission::class . ':reports');
     Route::get('report-exports/{id}', [\Modules\Accounting\Http\Controllers\ReportExportController::class, 'show'])->middleware(RequirePermission::class . ':reports')->whereUuid('id');
