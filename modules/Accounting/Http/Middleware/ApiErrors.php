@@ -36,6 +36,7 @@ final class ApiErrors
     {
         $id = $r->attributes->get('accounting_request_id') ?? (string) Str::uuid();
         $status = 500;
+        $headers = [];
         $body = ['code' => 'INTERNAL_ERROR', 'message' => 'No se pudo completar la operación.'];
         if ($e instanceof ApiProblem) {
             $status = $e->status;
@@ -60,6 +61,11 @@ final class ApiErrors
             }
         } elseif ($e instanceof HttpExceptionInterface) {
             $status = $e->getStatusCode();
+            foreach ($e->getHeaders() as $name => $value) {
+                if (in_array(strtolower($name), ['retry-after', 'allow', 'x-ratelimit-limit', 'x-ratelimit-remaining', 'x-ratelimit-reset'], true)) {
+                    $headers[$name] = $value;
+                }
+            }
             $body = ['code' => 'HTTP_' . $status, 'message' => match ($status) {
                 403 => 'No tienes permiso para esta operación.',
                 404 => 'La dirección solicitada no está disponible.',
@@ -68,7 +74,7 @@ final class ApiErrors
                 default => 'No se pudo completar la solicitud.',
             }];
         }
-        return response()->json([...$body, 'request_id' => $id], $status, ['Cache-Control' => 'no-store, private', 'X-Request-Id' => $id, 'X-Content-Type-Options' => 'nosniff']);
+        return response()->json([...$body, 'request_id' => $id], $status, [...$headers, 'Cache-Control' => 'no-store, private', 'X-Request-Id' => $id, 'X-Content-Type-Options' => 'nosniff']);
     }
     public function report(Throwable $e): void
     {

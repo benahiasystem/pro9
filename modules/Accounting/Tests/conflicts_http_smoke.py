@@ -5,6 +5,8 @@ import datetime
 import json
 import time
 import uuid
+import urllib.request
+import urllib.error
 
 client = IsolatedClient()
 author, reviewer = client.actors['autor'], client.actors['revisor']
@@ -98,6 +100,25 @@ assert kept['entity']['version'] == entry['version'] and kept['entity']['concept
 viewer_decision['decision'] = 'apply_local'
 client.request(base + '/entries/' + entry['id'] + '/resolve', viewer_decision, author, headers={'If-Match': str(entry['version']), 'Idempotency-Key': str(uuid.uuid4())}, expected=403)
 checks.append('consulta permite conservar PRO9; aplicar la alternativa exige permiso de edición vigente')
+
+for _ in range(65):
+    req = urllib.request.Request('http://127.0.0.1:9080/api/accounting/v1/health', headers={
+        'Host': 'contabilidad.localhost:9080', 'Accept': 'application/json', 'Authorization': 'Bearer ' + author['token'],
+    })
+    try:
+        response = urllib.request.urlopen(req, timeout=30)
+    except urllib.error.HTTPError as error:
+        response = error
+    with response:
+        assert response.headers.get('X-Accounting-Isolated-Test') == '1'
+        if response.status == 429:
+            assert 0 <= int(response.headers['Retry-After']) <= 60
+            assert 'no-store' in response.headers['Cache-Control']
+            break
+        assert response.status == 200
+else:
+    raise AssertionError('No se alcanzó el límite de lectura del escenario aislado.')
+checks.append('el límite de solicitudes conserva Retry-After y las respuestas privadas sin caché')
 
 fixture = {'company_id': company['id'], 'company_name': company['name'], 'entry_id': entry['id'], 'document_id': document['id'], 'date': today}
 client.root.joinpath('conflicts-fixture.json').write_text(json.dumps(fixture, indent=2))
