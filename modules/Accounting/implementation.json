@@ -6,7 +6,7 @@
   "database": "tenant existente; tablas accounting_*",
   "frontend": "TypeScript Vue actual; compilación en AWS",
   "tests": "Solo entornos aislados; pruebas previas del prototipo independiente no acreditan este módulo",
-  "state": "development; PRO9 module with server-only atomic XLSX/CSV imports, drafts, catalogs, opening, fiscal review, closings and encrypted local work",
+  "state": "development; PRO9 module with complete report snapshots and PDF/XLSX/CSV downloads, server-only atomic imports, closings and encrypted local work",
   "isolation": {
     "databaseContainer": "contabilidad-api-v1-db",
     "network": "contabilidad-api-v1-tests",
@@ -15,8 +15,8 @@
   },
   "verification": {
     "core": {
-      "tests": 101,
-      "assertions": 471,
+      "tests": 116,
+      "assertions": 649,
       "result": "passed"
     },
     "http": {
@@ -24,7 +24,7 @@
       "result": "passed"
     },
     "frontendUnit": {
-      "tests": 49,
+      "tests": 63,
       "result": "passed"
     },
     "browser": {
@@ -119,8 +119,8 @@
     },
     "moduleCoreProcess": {
       "exitCode": 0,
-      "tests": 101,
-      "assertions": 471,
+      "tests": 116,
+      "assertions": 649,
       "completeReport": true
     },
     "imports": {
@@ -145,8 +145,69 @@
       "unexpectedInfrastructureFailureRollsBackWholeSelection": true,
       "rowsAndFieldsInErrorWorkbook": true,
       "automaticPosting": false
+    },
+    "reportsHttp": {
+      "checks": 8,
+      "formats": 30,
+      "result": "passed",
+      "suite": "Tests/reports_http_smoke.py"
+    },
+    "reportsBrowser": {
+      "checks": 9,
+      "result": "passed",
+      "pageErrors": 0,
+      "suite": "Tests/reports_browser_smoke.cjs"
+    },
+    "reports": {
+      "kinds": 9,
+      "formats": [
+        "pdf",
+        "xlsx",
+        "csv"
+      ],
+      "serverOnlyCaptureAndDownload": true,
+      "completeDatasetNotVisiblePage": true,
+      "sameImmutableSnapshot": true,
+      "exactDecimalsAndTextIdentifiers": true,
+      "consistentReadAcrossRetries": true,
+      "historicalOpenItemsCutoff": true,
+      "auxiliaryDormantOpeningGroups": true,
+      "comparativeFinancialStatements": "preliminary",
+      "freshAccessAndCompanyChecks": true,
+      "snapshotAndArtifactHashVerified": true,
+      "recoverableAction": "report.capture",
+      "offlineQueue": false,
+      "pdfVisualReview": "fake normal and large amounts, first and last journal pages, comparative and open items; no clipping observed",
+      "traceToAttachments": "pending RF24/support workflow"
+    },
+    "closingsHttp": {
+      "checks": 8,
+      "result": "passed"
+    },
+    "annualHttp": {
+      "checks": 7,
+      "result": "passed"
+    },
+    "sessionLockBrowser": {
+      "checks": 13,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "currentChangeProvenance": {
+      "core": 116,
+      "frontendUnit": 63,
+      "reportsHttp": 8,
+      "reportsBrowser": 9,
+      "browserRegression": 9,
+      "sessionLockBrowser": 13,
+      "closingsHttp": 8,
+      "annualHttp": 7,
+      "importsHttp": 9,
+      "allProcessesExitCode": 0,
+      "otherChecks": "cumulative previous releases; not rerun in this increment"
     }
   },
-  "pending": "Complete opening credits/advances and migration corrections, notes/refunds and retention/IGTF applications, PRO9 source incident reconciliation, definitive exports, attachments, audit UI and integral server backup/restore, unfinished forms and offline authorization against clock/expiry/revocation. Fiscal registers remain preliminary; full V1 acceptance is pending.",
-  "verifiedAt": "2026-11-12"
+  "pending": "Complete opening credits/advances and migration corrections, notes/refunds and retention/IGTF applications, PRO9 source incident reconciliation, complete trace to supporting files and fiscal/source annex reconciliation, attachments, audit UI and integral server backup/restore, unfinished forms and offline authorization against clock/expiry/revocation. Fiscal registers remain preliminary; full V1 acceptance is pending.",
+  "verifiedAt": "2026-11-12",
+  "fullV1Complete": false
 }

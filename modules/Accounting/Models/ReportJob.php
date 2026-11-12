@@ -4,5 +4,5 @@ namespace Modules\Accounting\Models;
 
 final class ReportJob extends OwnedModel
 {
-    protected $casts = ['filters' => 'array', 'snapshot' => 'array'];
+    protected $casts = ['filters' => 'array', 'snapshot' => 'array', 'row_count' => 'integer', 'schema_version' => 'integer'];
 }

@@ -388,9 +388,72 @@ cuatro plantillas y revisión reimportable. `imports_http_smoke.py` usa multipar
 real y roles retirados; `imports_browser_smoke.cjs` recorre el compilado de AWS,
 confirmación incierta, corrección, historial, aislamiento, descargas y móvil.
 
-La implementación sigue en desarrollo. Las importaciones no completan por sí
-solas los flujos fiscales, conciliaciones de origen, adjuntos, auditoría visible,
-respaldo integral y exportaciones definitivas. Restan créditos y anticipos de
+Los informes RF22 y sus descargas pertenecen al mismo módulo. La consulta
+`GET reports/{kind}` admite Diario, Mayor, balance de comprobación, auxiliar
+por cuenta/tercero, partidas al corte, controles de documentos e incidencias,
+situación financiera y resultados preliminares. El Mayor exige una cuenta;
+el auxiliar exige cuenta o tercero. Las búsquedas `report-lookups` usan el
+permiso de informes, delimitan la empresa y permiten consultar catálogos
+históricos inactivos. Los filtros admitidos afectan a filas y controles; los
+incompatibles se rechazan. Cada página utiliza las mismas consultas que la
+exportación completa, sin limitar el archivo a sus primeras 100 o 500 filas.
+
+Las partidas se reconstruyen desde su origen y aplicaciones con sus reversos
+según la fecha contable del corte; no se sustituyen por el saldo restante de
+hoy. Incluyen deudas anteriores al intervalo. Los saldos iniciales del auxiliar
+incluyen los grupos sin movimientos actuales. Los estados preliminares permiten
+un intervalo comparativo, identifican clasificación y presentación y distinguen
+resultados del período de saldos acumulados. Los libros incluyen solo lo
+contabilizado. El control de documentos identifica las versiones del origen
+que tienen asiento; incluir documentos pendientes es una elección explícita y
+rotulada. Este control no constituye un libro fiscal. El resumen de incidencias
+exporta campos seleccionados, sin su payload privado.
+
+`POST report-exports` requiere tipo, filtros, el `review_token` de la consulta
+e `Idempotency-Key`. Bajo bloqueo del libro se revisan nuevamente acceso y
+versión, y se conserva la lectura completa en JSONL privado con SHA-256,
+controles, número de filas, clasificación, versiones de períodos y creador.
+La lectura es repetible, incluso en reintentos por interbloqueo, sin cambiar el
+aislamiento predeterminado de la sesión de PRO9. Una transacción ajena al módulo
+debe iniciar la lectura consistente antes de consultar informes.
+La captura no contabiliza ni genera efectos financieros. `report.capture`
+permite recuperar su recibo; requiere servidor y no entra en la cola offline.
+
+`GET report-exports`, `/{id}` y `/{id}/rows` consultan el historial congelado.
+`/{id}/download/pdf|xlsx|csv` genera desde esos datos, conserva cada archivo y
+su huella y audita la descarga. Los registros listos y sus artefactos son
+inmutables en MySQL. Un archivo ausente o alterado se rechaza; no se reemplaza
+silenciosamente. Cada descarga exige acceso vigente, usa cabeceras privadas y
+carece de URL pública. El frontend verifica tamaño, tipo y SHA-256 antes de
+guardarlo. Editar el libro, catálogos o empresa después no reemplaza una copia
+ya conservada. Los eventos de consulta/descarga no invalidan la revisión
+financiera de cierres.
+
+PDF utiliza el mPDF instalado en PRO9; XLSX se escribe en flujo con XMLWriter
+y ZipArchive, con celdas de texto explícito, sin fórmulas ni conversión de
+importes a float. CSV UTF-8 usa punto decimal, separador de punto y coma y
+registros de identificación, detalle y control; requiere importar referencias
+e importes como texto en hojas de cálculo. Los textos con prefijos de fórmula
+reciben protección por apóstrofo ([referencia OWASP](https://owasp.org/www-community/attacks/CSV_Injection)).
+Se preservan todos los dígitos de importes grandes. Los tres formatos incluyen
+empresa/RIF, filtros, generación, versiones y controles. No se redondean
+movimientos contabilizados fuera de la precisión VES para ocultarlos: la
+exportación se bloquea. El límite explícito de datos/archivo es 100 MiB, con
+rechazo completo, sin truncamiento. XLSX divide hojas al alcanzar su máximo
+de filas y rechaza textos que no caben en una celda; CSV conserva esos textos.
+
+`ReportIntegrationAssertions.php` verifica reversos, históricos, comparativos,
+502 líneas, aperturas sin movimiento, precisión, fórmulas literales, integridad
+y los nueve tipos por tres formatos. `TenantDBIsolationTest.php` usa otra
+conexión a la base temporal para comprobar una lectura repetible tras un
+reintento. Las suites `reports_http_smoke.py` y `reports_browser_smoke.cjs`
+comprueban las descargas HTTP reales y la PWA compilada en AWS, con datos
+ficticios dentro de la copia privada. Sin conexión solo se consultan los
+estados incluidos en la copia preparada; no se conservan versiones definitivas.
+
+La implementación sigue en desarrollo. Las importaciones y estos informes no
+completan por sí solos los flujos fiscales, conciliaciones de origen, adjuntos,
+auditoría visible y respaldo integral. Restan créditos y anticipos de
 apertura, notas y tributos en liquidaciones, la elección conjunta de formularios
 todavía incompletos y casos adicionales de documentos manuales y autorización
 local frente a cambios del reloj.

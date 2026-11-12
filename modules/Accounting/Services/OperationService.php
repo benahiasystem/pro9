@@ -8,7 +8,7 @@ use Modules\Accounting\Support\TenantDB as DB;
 use Illuminate\Database\QueryException;
 final class OperationService
 {
-    private const RECOVERABLE = ['offline.sync', 'entry.create', 'entry.post', 'entry.resolve', 'document.create', 'document.resolve', 'opening.propose', 'settlement.propose', 'period.close', 'period.reopen', 'year.prepare', 'year.close', 'year.cancel', 'year.reopening.prepare', 'year.reopen', 'import.apply', 'import.revalidate'];
+    private const RECOVERABLE = ['offline.sync', 'entry.create', 'entry.post', 'entry.resolve', 'document.create', 'document.resolve', 'opening.propose', 'settlement.propose', 'period.close', 'period.reopen', 'year.prepare', 'year.close', 'year.cancel', 'year.reopening.prepare', 'year.reopen', 'import.apply', 'import.revalidate', 'report.capture'];
 
     private function key(?string $key): string
     {

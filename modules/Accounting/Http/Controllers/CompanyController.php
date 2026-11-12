@@ -54,11 +54,16 @@ final class CompanyController extends \App\Http\Controllers\Controller
     public function update(Request $r): array
     {
         $v = $r->validate(['name' => 'sometimes|required|string|max:255', 'activity' => 'nullable|string|max:255', 'address' => 'nullable|string|max:255', 'state' => 'nullable|string|max:255', 'municipality' => 'nullable|string|max:255', 'tax_profile' => 'sometimes|required|in:ordinary,formal,exempt', 'approval_mode' => 'sometimes|required|in:separate,self_control', 'offline_hours' => 'sometimes|integer|min:1|max:72', 'workspace_days' => 'sometimes|integer|min:1|max:365', 'settings' => 'sometimes|array']);
-        $c = app(CompanyContext::class)->company();
-        $before = $c->only(array_keys($v));
-        $c->fill($v);
-        $c->save();
-        app(AuditService::class)->record($r->user()->id, 'company.updated', 'company', $c->id, ['before' => $before, 'after' => $v]);
-        return ['data' => $c];
+        return DB::transaction(function () use ($r, $v) {
+            $context = app(CompanyContext::class);
+            DB::table('accounting_companies')->where('organization_id', $context->organizationId())->where('id', $context->id())->lockForUpdate()->first();
+            app(Permissions::class)->require($r->user(), 'company');
+            $c = Company::whereKey($context->id())->where('organization_id', $context->organizationId())->firstOrFail();
+            $before = $c->only(array_keys($v));
+            $c->fill($v);
+            $c->save();
+            app(AuditService::class)->record($r->user()->id, 'company.updated', 'company', $c->id, ['before' => $before, 'after' => $v]);
+            return ['data' => $c];
+        });
     }
 }

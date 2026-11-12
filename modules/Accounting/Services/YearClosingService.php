@@ -173,7 +173,9 @@ final class YearClosingService
     {
         unset($basis['basis_hash'], $basis['review']['review_token'], $basis['review']['generated_at']);
         foreach ($basis['review']['reports'] as &$report) {
-            unset($report['data_version']);
+            // The report's download token follows the audit cursor, including
+            // approvals and exports. It is not an economic change to this basis.
+            unset($report['data_version'], $report['review_token']);
         }
         unset($report);
         return $this->hash($basis);

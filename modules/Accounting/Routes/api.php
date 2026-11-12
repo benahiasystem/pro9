@@ -69,7 +69,13 @@ Route::prefix('companies/{company}')->whereUuid('company')->middleware([SessionV
     foreach (['submit' => 'draft', 'observe' => 'review', 'approve' => 'approve', 'post' => 'post', 'reverse' => 'reverse'] as $action => $permission) {
         Route::post('entries/{id}/' . $action, [EntryController::class, $action])->middleware(RequirePermission::class . ':' . $permission)->whereUuid('id');
     }
-    Route::get('reports/{kind}', [ReportController::class, 'show'])->middleware(RequirePermission::class . ':read');
+    Route::get('report-lookups/{kind}', [\Modules\Accounting\Http\Controllers\ReportLookupController::class, 'index'])->middleware(RequirePermission::class . ':reports')->where('kind', 'accounts|third-parties|cost-centers');
+    Route::get('report-exports', [\Modules\Accounting\Http\Controllers\ReportExportController::class, 'index'])->middleware(RequirePermission::class . ':reports');
+    Route::post('report-exports', [\Modules\Accounting\Http\Controllers\ReportExportController::class, 'capture'])->middleware(RequirePermission::class . ':reports');
+    Route::get('report-exports/{id}', [\Modules\Accounting\Http\Controllers\ReportExportController::class, 'show'])->middleware(RequirePermission::class . ':reports')->whereUuid('id');
+    Route::get('report-exports/{id}/rows', [\Modules\Accounting\Http\Controllers\ReportExportController::class, 'rows'])->middleware(RequirePermission::class . ':reports')->whereUuid('id');
+    Route::get('report-exports/{id}/download/{format}', [\Modules\Accounting\Http\Controllers\ReportExportController::class, 'download'])->middleware(RequirePermission::class . ':reports')->whereUuid('id')->where('format', 'pdf|xlsx|csv');
+    Route::get('reports/{kind}', [ReportController::class, 'show'])->middleware(RequirePermission::class . ':reports');
     Route::get('pro9/status', [Pro9Controller::class, 'status'])->middleware(RequirePermission::class . ':integration');
     Route::get('pro9/sources/{kind}', [Pro9Controller::class, 'index'])->middleware(RequirePermission::class . ':integration');
     Route::get('pro9/sources/{kind}/{id}', [Pro9Controller::class, 'show'])->middleware(RequirePermission::class . ':integration')->whereNumber('id');

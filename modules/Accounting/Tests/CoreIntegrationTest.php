@@ -19,11 +19,20 @@ use App\Models\Tenant\User;
 final class CoreIntegrationTest extends TestCase
 {
     use ImportIntegrationAssertions;
+    use ReportIntegrationAssertions;
     private static Application $application;
     private static string $originalTimezone;
     private User $admin;
     private Company $a;
     private Company $b;
+    public function runBare(): void
+    {
+        // Each case owns its consistent root; setUp/tearDown keep their rollback
+        // savepoint. Production reports still reject unrelated transactions.
+        DB::transaction(function () {
+            parent::runBare();
+        });
+    }
     public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
