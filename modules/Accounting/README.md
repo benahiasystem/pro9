@@ -121,6 +121,21 @@ espacio se informa sin anunciar un guardado ni borrar la versión anterior.
 Un documento preparado sin conexión se completa y guarda explícitamente en
 PRO9 después de reconectar.
 
+La interfaz se bloquea tras 15 minutos sin actividad y también admite bloqueo
+manual. Coordina la actividad y el bloqueo entre pestañas del mismo usuario.
+Oculta las vistas y los diálogos, intenta conservar la captura pendiente y
+retira la referencia activa a la clave local. Los campos que aún no pudieron
+guardarse permanecen en memoria, ocultos y sin interacción; se advierte de ello
+antes de cerrar. El respaldo cifrado sigue disponible desde la pantalla de
+bloqueo.
+
+La copia se reabre con su frase. Una sesión conectada vuelve a consultar su
+autorización; cuando necesita entrar de nuevo usa la cuenta original de PRO9 y
+su segundo factor. Si existía una copia cifrada, también exige su frase y renueva
+el mismo intervalo antes de reanudarla. Una contraseña válida de otro usuario no
+abre el trabajo anterior. Las respuestas de operaciones ya enviadas permanecen
+pendientes de mostrar hasta desbloquear; el bloqueo no repite su envío.
+
 La recuperación de un respaldo local exige sesión activa en PRO9 y coincidencia
 de empresa y usuario. Renueva la copia de consulta con datos y permisos del
 servidor, verifica los datos cifrados y conserva las versiones diferentes de
@@ -159,6 +174,11 @@ edición concurrente, compatibilidad de respaldos y conservación de la versión
 original ante cambios de otro usuario. También retiene la captura hasta que
 se confirma el guardado, bloquea cambios de empresa durante ese envío y
 comprueba que el editor móvil desplace solo su tabla de líneas.
+`session_lock_browser_smoke.cjs` verifica el plazo de inactividad, bloqueo
+manual y entre pestañas, campos conservados ante falta de espacio, diálogos
+ocultos, reapertura de la copia y una respuesta de PRO9 confirmada durante el
+bloqueo. `users_browser_smoke.cjs` verifica creación de empresa y asignación
+explícita del rol contable desde la PWA.
 Las suites que consumen las identidades ficticias serializan su acceso mediante
 el archivo de bloqueo del directorio privado.
 
@@ -171,6 +191,6 @@ La implementación sigue en desarrollo. Los comprobantes, catálogos, informes
 básicos, apertura, liquidaciones parciales, segundo factor y trabajo local tienen
 verificaciones iniciales; los
 flujos fiscales completos, cierres, conciliaciones, importación y exportaciones
-definitivas aún deben completar sus criterios de aceptación. El bloqueo local
-por inactividad y la resolución explícita de conflictos con comparación y
-nueva revisión también siguen pendientes.
+definitivas aún deben completar sus criterios de aceptación. La resolución
+explícita de conflictos con comparación y nueva revisión, y la protección de
+la autorización local frente a cambios del reloj, también siguen pendientes.
