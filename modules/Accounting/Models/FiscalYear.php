@@ -4,5 +4,5 @@ namespace Modules\Accounting\Models;
 
 final class FiscalYear extends OwnedModel
 {
-    protected $casts = ['year' => 'integer'];
+    protected $casts = ['year' => 'integer', 'version' => 'integer'];
 }

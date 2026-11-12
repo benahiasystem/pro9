@@ -4,8 +4,8 @@ namespace Modules\Accounting\Services;
 
 use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
-use Modules\Accounting\Domain\{ApiProblem, CompanyContext};
-use Modules\Accounting\Models\{Period, PeriodReview, FiscalYear, JournalEntry, SourceDocument, FiscalRecord, Incident};
+use Modules\Accounting\Domain\{ApiProblem, CompanyContext, YearClosingPermit};
+use Modules\Accounting\Models\{Period, PeriodReview, FiscalYear, JournalEntry, SourceDocument, FiscalRecord, Incident, YearClosing};
 use Modules\Accounting\Support\TenantDB as DB;
 
 final class ClosingService
@@ -53,10 +53,19 @@ final class ClosingService
         }, 5);
     }
 
-    /** SQL sums read the immutable, finite DECIMAL journal amounts, never formatted report figures. */
-    private function trial(string $from, string $to): array
+    public function annualPreview(string $id, array $excludedEntries = []): array
     {
-        $rows = $this->reports->lines()->where('e.accounting_date', '<=', $to)
+        return DB::transaction(function () use ($id, $excludedEntries) {
+            $this->lockCompany();
+            return $this->review(Period::whereKey($id)->lockForUpdate()->firstOrFail(), true, $excludedEntries);
+        }, 5);
+    }
+
+    /** SQL sums read the immutable, finite DECIMAL journal amounts, never formatted report figures. */
+    private function trial(string $from, string $to, bool $economic = false): array
+    {
+        $query = $economic ? $this->reports->economicLines() : $this->reports->lines();
+        $rows = $query->where('e.accounting_date', '<=', $to)
             ->select('a.id', 'a.code', 'a.name', 'a.kind', 'a.auxiliary')
             ->selectRaw('SUM(CASE WHEN e.accounting_date < ? THEN l.debit-l.credit ELSE 0 END) AS opening', [$from])
             ->selectRaw('SUM(CASE WHEN e.accounting_date >= ? THEN l.debit ELSE 0 END) AS debit', [$from])
@@ -119,10 +128,11 @@ final class ClosingService
         return $rows;
     }
 
-    private function review(Period $period): array
+    private function review(Period $period, bool $annual = false, array $excludedEntries = []): array
     {
-        $from = sprintf('%04d-%02d-01', $period->year, $period->month);
-        $to = CarbonImmutable::parse($from, 'America/Caracas')->endOfMonth()->format('Y-m-d');
+        $periodStart = sprintf('%04d-%02d-01', $period->year, $period->month);
+        $from = $annual ? $period->year . '-01-01' : $periodStart;
+        $to = CarbonImmutable::parse($periodStart, 'America/Caracas')->endOfMonth()->format('Y-m-d');
         $blockers = [];
         $company = app(CompanyContext::class)->company();
         $start = $company->migration_date ? substr((string) $company->migration_date, 0, 7) : '0000-01';
@@ -136,11 +146,14 @@ final class ClosingService
         if (FiscalYear::findOrFail($period->fiscal_year_id)->status !== 'open') {
             $blockers[] = ['code' => 'YEAR_CLOSED', 'message' => 'El ejercicio requiere su control de cierre o reapertura anual.'];
         }
+        if (!$annual && $period->month === 12 && YearClosing::where('active_key', $period->fiscal_year_id)->where('status', 'prepared')->exists()) {
+            $blockers[] = ['code' => 'ANNUAL_CLOSING_ACTIVE', 'message' => 'Completa el conjunto anual pendiente o retira su propuesta antes de cerrar diciembre por separado.'];
+        }
         $trial = $this->trial($from, $to);
         if (!BigDecimal::of($trial['totals']['balance'])->isZero() || !BigDecimal::of($trial['totals']['debit'])->isEqualTo($trial['totals']['credit'])) {
             $blockers[] = ['code' => 'UNBALANCED_LEDGER', 'message' => 'El libro presenta una diferencia exacta entre Debe y Haber.'];
         }
-        $auxiliaries = $this->auxiliaries($to, $trial);
+        $auxiliaries = $this->auxiliaries($to, $this->trial($from, $to, true));
         $different = array_filter($auxiliaries, fn($r) => !BigDecimal::of($r['difference'])->isZero());
         if ($different) {
             $blockers[] = ['code' => 'AUXILIARY_DIFFERENCE', 'message' => 'Los auxiliares no coinciden con sus cuentas de control a la fecha de corte.', 'count' => count($different)];
@@ -149,15 +162,16 @@ final class ClosingService
         if ($incidents) {
             $blockers[] = ['code' => 'UNRESOLVED_INCIDENTS', 'message' => 'Resuelve las incidencias de origen antes de cerrar el libro.', 'count' => $incidents];
         }
-        $approved = JournalEntry::where('period_id', $period->id)->whereNull('posted_at')->where('status', 'approved')->count();
+        $entries = JournalEntry::whereBetween('accounting_date', [$from, $to])->where('status', '!=', 'withdrawn')->whereNotIn('id', $excludedEntries);
+        $approved = (clone $entries)->whereNull('posted_at')->where('status', 'approved')->count();
         if ($approved) {
             $blockers[] = ['code' => 'APPROVED_ENTRIES_PENDING', 'message' => 'Contabiliza u observa los comprobantes aprobados pendientes.', 'count' => $approved];
         }
         $pending = [
-            'pending_entries' => ['label' => 'Comprobantes sin contabilizar', 'count' => JournalEntry::where('period_id', $period->id)->whereNull('posted_at')->count()],
+            'pending_entries' => ['label' => 'Comprobantes sin contabilizar', 'count' => (clone $entries)->whereNull('posted_at')->count()],
             'pending_documents' => ['label' => 'Documentos fiscales sin contabilizar', 'count' => SourceDocument::whereBetween('fiscal_date', [$from, $to])->whereNotIn('status', ['posted', 'opening_antecedent', 'excluded', 'cancelled'])->count()],
-            'fiscal_observations' => ['label' => 'Registros fiscales con observaciones', 'count' => FiscalRecord::where('fiscal_period', substr($from, 0, 7))->whereNotIn('status', ['validated', 'superseded'])->count()],
-            'manual_fiscal_links' => ['label' => 'Comprobantes manuales para revisar su soporte fiscal', 'count' => JournalEntry::where('period_id', $period->id)->whereNotNull('posted_at')->whereNull('source_document_id')->whereIn('entry_type', ['regular', 'adjustment'])->count()],
+            'fiscal_observations' => ['label' => 'Registros fiscales con observaciones', 'count' => FiscalRecord::whereBetween('fiscal_period', [substr($from, 0, 7), substr($to, 0, 7)])->whereNotIn('status', ['validated', 'superseded'])->count()],
+            'manual_fiscal_links' => ['label' => 'Comprobantes manuales para revisar su soporte fiscal', 'count' => (clone $entries)->whereNotNull('posted_at')->whereNull('source_document_id')->whereIn('entry_type', ['regular', 'adjustment'])->count()],
         ];
         $reports = [];
         foreach (['trial-balance', 'balance-sheet', 'income-statement'] as $kind) {
@@ -272,6 +286,33 @@ final class ClosingService
         if (mb_strlen(trim($reason)) < 10 || mb_strlen($reason) > 2000) {
             throw new ApiProblem('CLOSE_REASON_REQUIRED', 'Documenta el motivo, entre 10 y 2000 caracteres.');
         }
+    }
+
+    /** Called only inside the atomic posting of an approved annual bundle. */
+    public function completeAnnual(YearClosing $closing, array $review, int $user, YearClosingPermit $permit): array
+    {
+        if ($permit->closingId !== $closing->id || $permit->direction !== 'close' || !YearClosing::whereKey($closing->id)->where('status', 'finalizing')->exists()) {
+            throw new ApiProblem('YEAR_CLOSING_BATCH_REQUIRED', 'El cierre de diciembre requiere el conjunto anual autorizado.', 409);
+        }
+        $ids = array_values($closing->entries);
+        if (JournalEntry::whereIn('id', $ids)->whereNotNull('posted_at')->count() !== count($ids)) {
+            throw new ApiProblem('YEAR_CLOSING_INCOMPLETE', 'No se confirmó íntegramente el conjunto anual.', 409);
+        }
+        $period = Period::whereKey($review['period']['id'])->lockForUpdate()->firstOrFail();
+        $this->version($period, $review['period']['version']);
+        if ($period->month !== 12 || $period->fiscal_year_id !== $closing->fiscal_year_id || $period->status !== 'open' || $review['blockers']) {
+            throw new ApiProblem('YEAR_CLOSING_BLOCKED', 'Los controles del ejercicio no permiten cerrar diciembre.', 409);
+        }
+        $snapshot = [...$review, 'scope' => 'annual_before_transfer', 'annual_closing_id' => $closing->id, 'annual_entries' => $closing->entries,
+            'reason' => $closing->reason, 'attestations' => $closing->attestations, 'exceptions' => $closing->exceptions, 'closed_period_version' => $period->version + 1];
+        $sha = $this->token($snapshot);
+        $record = PeriodReview::create(['period_id' => $period->id, 'user_id' => $user, 'action' => 'close', 'reason' => $closing->reason, 'snapshot' => $snapshot]);
+        $period->status = 'closed';
+        $period->version++;
+        $period->close_snapshot = ['review_id' => $record->id, 'sha256' => $sha, 'closed_at' => $record->created_at->toIso8601String(), 'report_data_version' => $review['reports']['trial-balance']['data_version'], 'annual_closing_id' => $closing->id];
+        $period->save();
+        $this->audit->record($user, 'period.closed', 'period', $period->id, ['version' => $period->version, 'review_id' => $record->id, 'snapshot_sha256' => $sha, 'annual_closing_id' => $closing->id, 'reason' => $closing->reason]);
+        return $period->toArray();
     }
 
     public function snapshot(string $id, string $review): array

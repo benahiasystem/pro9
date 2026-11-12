@@ -4,7 +4,7 @@ namespace Modules\Accounting\Services;
 
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
-use Modules\Accounting\Domain\{ApiProblem, Exact};
+use Modules\Accounting\Domain\{ApiProblem, Exact, YearClosingPermit};
 use Modules\Accounting\Models\{Account, JournalEntry};
 final class FinancialEffects
 {
@@ -39,15 +39,19 @@ final class FinancialEffects
             throw new ApiProblem($code, 'Los importes y sus auxiliares deben coincidir con la operación revisada. Modifica su propuesta desde el flujo de origen y vuelve a aprobarla.');
         }
     }
-    public function validate(JournalEntry $entry, mixed $lines): void
+    public function validate(JournalEntry $entry, mixed $lines, ?YearClosingPermit $permit = null): void
     {
+        $effect = $entry->metadata['financial_effect'] ?? null;
+        if (in_array($effect['kind'] ?? null, ['year_close', 'year_reopen'], true)) {
+            app(YearClosingService::class)->validate($entry, $effect, $lines, $permit);
+            return;
+        }
         if ($entry->reversal_of) {
             $original = JournalEntry::findOrFail($entry->reversal_of);
             $expected = $original->lines()->get()->map(fn($l) => [...$l->toArray(), 'debit' => $l->credit, 'credit' => $l->debit])->all();
             self::sameLines($lines, $expected, 'REVERSAL_LINES_CHANGED');
             return;
         }
-        $effect = $entry->metadata['financial_effect'] ?? null;
         if ($effect) {
             self::sameLines($lines, $effect['lines']);
             if ($effect['kind'] === 'settlement') {

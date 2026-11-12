@@ -22,14 +22,17 @@ final class CompanyService
     }
     public function createYear(int $year): FiscalYear
     {
-        if ($old = FiscalYear::where('year', $year)->first()) {
-            return $old;
-        }
-        $f = FiscalYear::create(['year' => $year]);
-        for ($m = 1; $m <= 12; $m++) {
-            Period::create(['fiscal_year_id' => $f->id, 'year' => $year, 'month' => $m]);
-        }
-        return $f;
+        return DB::transaction(function () use ($year) {
+            DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
+            if ($old = FiscalYear::where('year', $year)->lockForUpdate()->first()) {
+                return $old;
+            }
+            $f = FiscalYear::create(['year' => $year]);
+            for ($m = 1; $m <= 12; $m++) {
+                Period::create(['fiscal_year_id' => $f->id, 'year' => $year, 'month' => $m]);
+            }
+            return $f;
+        }, 5);
     }
     public function defaultChart(): array
     {

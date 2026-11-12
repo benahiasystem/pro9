@@ -2,7 +2,7 @@
 
 namespace Modules\Accounting\Services;
 
-use Modules\Accounting\Domain\{ApiProblem, CompanyContext, Exact};
+use Modules\Accounting\Domain\{ApiProblem, CompanyContext, Exact, YearClosingPermit};
 use Modules\Accounting\Models\{Account, ThirdParty, CostCenter, Period, JournalEntry, JournalLine, EntryReview, SourceDocument, OpenItem};
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -52,6 +52,9 @@ final class EntryService
             $this->lockBook();
             $entry = JournalEntry::whereKey($id)->lockForUpdate()->firstOrFail();
             $this->editable($entry);
+            if (in_array($entry->metadata['financial_effect']['kind'] ?? null, ['year_close', 'year_reopen'], true)) {
+                throw new ApiProblem('YEAR_CLOSING_CONTROLLED', 'Revisa o retira la propuesta desde Cierre anual. Sus comprobantes se conservan como conjunto.', 409);
+            }
             $this->version($entry, $version);
             $lines = $this->normalize($data['lines']);
             $period = $this->period($data['accounting_date']);
@@ -122,9 +125,9 @@ final class EntryService
             return $e;
         }, 5);
     }
-    public function post(string $id, int $version, int $user, ?string $key): array
+    public function post(string $id, int $version, int $user, ?string $key, ?YearClosingPermit $permit = null): array
     {
-        return $this->operations->execute($user, 'entry.post', $key, ['id' => $id, 'version' => $version], function () use ($id, $version, $user) {
+        return $this->operations->execute($user, 'entry.post', $key, ['id' => $id, 'version' => $version], function () use ($id, $version, $user, $permit) {
             $context = app(CompanyContext::class);
             $company = DB::table('accounting_companies')->where('id', $context->id())->lockForUpdate()->first();
             $context->company()->setRawAttributes((array) $company, true);
@@ -147,7 +150,7 @@ final class EntryService
             if ($e->status !== 'approved' || $e->approved_version !== $e->version) {
                 throw new ApiProblem('APPROVAL_REQUIRED', 'Se requiere la aprobación de la versión actual.');
             }
-            $this->validatePosting($e, true);
+            $this->validatePosting($e, true, $permit);
             $c = app(CompanyContext::class);
             $now = now()->toDateTimeString();
             DB::table('accounting_journal_sequences')->insertOrIgnore(['id' => (string) Str::uuid(), 'organization_id' => $c->organizationId(), 'company_id' => $c->id(), 'year' => $period->year, 'series' => 'CG', 'last_number' => 0, 'created_at' => $now, 'updated_at' => $now]);
@@ -186,6 +189,9 @@ final class EntryService
             }
             if (!$e->posted_at) {
                 throw new ApiProblem('NOT_POSTED', 'Solo se puede reversar un comprobante contabilizado.');
+            }
+            if (in_array($e->metadata['financial_effect']['kind'] ?? null, ['year_close', 'year_reopen'], true)) {
+                throw new ApiProblem('YEAR_CLOSING_CONTROLLED', 'Prepara los reversos completos desde la reapertura anual.', 409);
             }
             if ($old = JournalEntry::where('reversal_of', $id)->first()) {
                 throw new ApiProblem('REVERSAL_EXISTS', 'Este comprobante ya tiene un reverso preparado o contabilizado.', 409, ['reversal_id' => $old->id]);
@@ -238,7 +244,7 @@ final class EntryService
         }
         return $out;
     }
-    public function validatePosting(JournalEntry $e, bool $requireOpenPeriod): void
+    public function validatePosting(JournalEntry $e, bool $requireOpenPeriod, ?YearClosingPermit $permit = null): void
     {
         if ($e->source_document_id) {
             $source = SourceDocument::whereKey($e->source_document_id)->lockForUpdate()->firstOrFail();
@@ -265,7 +271,7 @@ final class EntryService
         if ($lines->count() < 2) {
             throw new ApiProblem('LINES_REQUIRED', 'El comprobante necesita al menos dos líneas.');
         }
-        if ($requireOpenPeriod && Period::findOrFail($e->period_id)->status === 'closed') {
+        if ($requireOpenPeriod && Period::findOrFail($e->period_id)->status === 'closed' && !app(YearClosingService::class)->canReviewClosedReopening($e)) {
             throw new ApiProblem('PERIOD_CLOSED', 'El período está cerrado.');
         }
         foreach ($lines as $l) {
@@ -304,7 +310,7 @@ final class EntryService
         if (Exact::of($e->total_debit)->isZero()) {
             throw new ApiProblem('ZERO_ENTRY', 'El comprobante debe contener un importe mayor que cero.');
         }
-        app(FinancialEffects::class)->validate($e, $lines);
+        app(FinancialEffects::class)->validate($e, $lines, $permit);
     }
     private function validateInvoiceAuxiliary(SourceDocument $document, mixed $lines): void
     {

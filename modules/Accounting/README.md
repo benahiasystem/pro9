@@ -132,9 +132,63 @@ muestra ese alcance y exige su revisión expresa. Los recibos `period.close` y
 `period.reopen` permiten resolver una respuesta perdida; estas operaciones no
 se incorporan a los envíos locales importables ni se ejecutan sin servidor.
 
-El traslado de resultados y saldos mediante comprobantes controlados y la
-reapertura de un ejercicio cerrado siguen pendientes. Los períodos de un
-ejercicio con cierre anual no se reabren mediante el flujo mensual.
+Los períodos de un ejercicio con cierre anual se reabren mediante su conjunto
+anual, con reversos revisados; el flujo mensual no lo omite.
+
+## Cierre anual y traslado de saldos
+
+`GET years/{year}/closing` revisa el ejercicio completo. Comprueba los meses
+anteriores, las cuentas, terceros, centros de costo, auxiliares al corte,
+documentos e incidencias. Diciembre debe permanecer abierto y enero del
+siguiente ejercicio debe poder recibir su apertura. Si hay ejercicios
+anteriores con movimientos, su cierre anual se completa primero.
+
+El contador elige la cuenta de patrimonio para incorporar el resultado y
+documenta las conciliaciones y excepciones. `POST years/{year}/closing/prepare`
+exige versión e identidad de operación, congela la base y prepara comprobantes
+de resultado, cierre de saldos y apertura. Conserva cuenta, tercero y centro de
+costo; omite las fases sin movimiento y no crea comprobantes de importe cero.
+La apertura resume el libro en VES y conserva las partidas originales con su
+moneda, tasas e historia. No crea nuevas cuentas por cobrar o pagar. Una
+distribución o reclasificación posterior del resultado requiere su propio
+ajuste preparado por el contador.
+
+Cada comprobante recorre la revisión y aprobación habituales, con separación
+de personas o autocontrol expreso según la política de la empresa. Sus líneas
+no se editan individualmente y la API rechaza su contabilización aislada.
+`POST year-closings/{id}/post` vuelve a comprobar la base, las versiones y las
+aprobaciones. Contabiliza todas las fases dentro de la misma transacción,
+comprueba saldos contables nulos al final del ejercicio y cierra diciembre y el
+ejercicio. Si falla la apertura, se revierten también las fases anteriores,
+los correlativos, las confirmaciones y el cambio de estado del ejercicio.
+
+El Diario, el Mayor y el balance de comprobación incluyen los traslados
+controlados. La situación financiera excluye los movimientos de cierre de
+saldos y apertura que duplicarían su presentación económica, y lo identifica
+en su nota de base. El resultado operativo excluye cierres, aperturas y sus
+reversos. La revisión de diciembre conserva los tres informes anteriores al
+traslado anual para consultar la posición del ejercicio cerrado.
+
+Un ajuste o cambio de controles posterior a preparar el conjunto invalida su
+base. `POST year-closings/{id}/cancel` retira la propuesta con motivo, conserva
+sus comprobantes como `withdrawn` y permite preparar otra. No elimina los
+antecedentes ni altera comprobantes contabilizados. MySQL protege la base,
+propuesta, identidades y snapshots de `accounting_year_closings`.
+
+`POST year-closings/{id}/reopening` prepara reversos de todas las fases y
+presenta los períodos mensuales afectados. Si existe otro ejercicio posterior
+cerrado, exige reabrirlo primero. Los reversos pueden revisarse y aprobarse con
+el ejercicio cerrado; no pueden contabilizarse fuera del conjunto.
+`POST year-closings/{id}/reopen` comprueba las versiones y aprobaciones y, en
+una sola transacción, abre el ejercicio y sus períodos dependientes y
+contabiliza los reversos. Conserva los originales, las revisiones y sus
+huellas; no duplica deudas ni la actividad del ejercicio siguiente.
+
+Todas las acciones anuales requieren servidor, permiso y segundo factor
+reciente. Contabilizar exige además `post` y reabrir exige `reverse`. Las
+confirmaciones propias `year.*` permiten consultar una respuesta perdida;
+no forman parte de la cola local importable. `GET year-closings/{id}` consulta
+el conjunto, sus versiones, comprobantes y snapshots conservados.
 
 ## Trabajo local
 
@@ -281,6 +335,12 @@ concurrencia y reapertura de meses posteriores. `closings_browser_smoke.cjs`
 recorre los controles y la recuperación de una respuesta perdida desde el
 compilado de AWS; contrasta el informe conservado con los movimientos de una
 versión posterior y verifica las restricciones sin conexión y el diseño móvil.
+`annual_http_smoke.py` comprueba preparación, aprobación separada,
+contabilización y reapertura anual, recibos, permisos retirados y ámbito de
+empresa. `annual_browser_smoke.cjs` usa dos usuarios desde la PWA compilada y
+verifica confirmación incierta, controles individuales, saldos del siguiente
+ejercicio, revisiones descargables, reapertura y uso móvil. La fixture anual
+solo puede ejecutarse bajo los guardas del clon privado; no añade endpoints.
 
 El worktree autorizado es `codex/contabilidad-api-v1`, basado en
 `861228462e208d2060c9148b87fd7d7d3f354da5`. Las bases reales se copian para
@@ -290,7 +350,7 @@ las credenciales y los compilados están excluidos de Git.
 La implementación sigue en desarrollo. Los comprobantes, catálogos, informes
 básicos, apertura, liquidaciones parciales, segundo factor y trabajo local tienen
 verificaciones iniciales; los
-flujos fiscales completos, cierre anual, conciliaciones, importación y exportaciones
+flujos fiscales completos, conciliaciones de origen, importación y exportaciones
 definitivas aún deben completar sus criterios de aceptación. Restan la elección
 conjunta de formularios todavía incompletos y casos adicionales de documentos
 manuales y autorización local frente a cambios del reloj.

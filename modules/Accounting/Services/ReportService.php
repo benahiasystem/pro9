@@ -9,6 +9,7 @@ use Brick\Math\RoundingMode;
 use Modules\Accounting\Support\TenantDB as DB;
 final class ReportService
 {
+    public const ANNUAL_BALANCE_TRANSFERS = ['annual_balance', 'annual_opening', 'annual_reopen_balance', 'annual_reopen_opening'];
     private function money(mixed $v): string
     {
         return (string) BigDecimal::of((string) ($v ?? '0'))->toScale(2, RoundingMode::HALF_UP);
@@ -21,6 +22,10 @@ final class ReportService
         })->join('accounting_accounts as a', function ($j) {
             $j->on('l.account_id', '=', 'a.id')->on('l.company_id', '=', 'a.company_id')->on('l.organization_id', '=', 'a.organization_id');
         })->where('l.organization_id', $c->organizationId())->where('l.company_id', $c->id())->whereNotNull('e.posted_at');
+    }
+    public function economicLines(): \Illuminate\Database\Query\Builder
+    {
+        return $this->lines()->whereNotIn('e.effect_type', self::ANNUAL_BALANCE_TRANSFERS);
     }
     public function build(string $kind, array $filters = []): array
     {
@@ -138,7 +143,7 @@ final class ReportService
     }
     private function balance(string $to): array
     {
-        $rows = $this->lines()->where('e.accounting_date', '<=', $to)->select('a.code', 'a.name', 'a.kind')->selectRaw('SUM(l.debit-l.credit) as balance')->groupBy('a.code', 'a.name', 'a.kind')->orderBy('a.code')->get();
+        $rows = $this->economicLines()->where('e.accounting_date', '<=', $to)->select('a.code', 'a.name', 'a.kind')->selectRaw('SUM(l.debit-l.credit) as balance')->groupBy('a.code', 'a.name', 'a.kind')->orderBy('a.code')->get();
         $assets = BigDecimal::zero();
         $liabilities = BigDecimal::zero();
         $equity = BigDecimal::zero();
@@ -162,7 +167,9 @@ final class ReportService
             }
             $out[] = [...(array) $r, 'amount' => $this->money($r->kind === 'asset' ? $v : $v->negated())];
         }
-        return ['rows' => $out, 'totals' => ['assets' => $this->money($assets), 'liabilities' => $this->money($liabilities), 'equity' => $this->money($equity), 'unclosed_result' => $this->money($unclosed), 'difference' => $this->money($assets->minus($liabilities)->minus($equity)->minus($unclosed))], 'preliminary' => true];
+        $transfers = JournalEntry::whereNotNull('posted_at')->where('accounting_date', '<=', $to)->whereIn('effect_type', self::ANNUAL_BALANCE_TRANSFERS)->exists();
+        return ['rows' => $out, 'totals' => ['assets' => $this->money($assets), 'liabilities' => $this->money($liabilities), 'equity' => $this->money($equity), 'unclosed_result' => $this->money($unclosed), 'difference' => $this->money($assets->minus($liabilities)->minus($equity)->minus($unclosed))], 'preliminary' => true,
+            'basis_note' => $transfers ? 'La situación financiera conserva los saldos anteriores al traslado anual. El Diario y el Mayor incluyen los comprobantes de cierre y apertura; esos traslados no duplican activos, pasivos ni patrimonio en este informe.' : null];
     }
     private function openItems(array $f): array
     {

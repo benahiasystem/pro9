@@ -22,6 +22,13 @@ Route::prefix('companies/{company}')->whereUuid('company')->middleware([SessionV
     Route::get('/', [CompanyController::class, 'show']);
     Route::patch('/', [CompanyController::class, 'update'])->middleware(RequirePermission::class . ':company');
     Route::post('years', [CompanyController::class, 'createYear'])->middleware(RequirePermission::class . ':catalogs');
+    Route::get('years/{year}/closing', [\Modules\Accounting\Http\Controllers\YearClosingController::class, 'index'])->middleware(RequirePermission::class . ':read')->where('year', '(?:20[0-9]{2}|2100)');
+    Route::post('years/{year}/closing/prepare', [\Modules\Accounting\Http\Controllers\YearClosingController::class, 'prepare'])->middleware(RequirePermission::class . ':close')->where('year', '(?:20[0-9]{2}|2100)');
+    Route::get('year-closings/{id}', [\Modules\Accounting\Http\Controllers\YearClosingController::class, 'show'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
+    Route::post('year-closings/{id}/post', [\Modules\Accounting\Http\Controllers\YearClosingController::class, 'post'])->middleware(RequirePermission::class . ':close')->whereUuid('id');
+    Route::post('year-closings/{id}/cancel', [\Modules\Accounting\Http\Controllers\YearClosingController::class, 'cancel'])->middleware(RequirePermission::class . ':close')->whereUuid('id');
+    Route::post('year-closings/{id}/reopening', [\Modules\Accounting\Http\Controllers\YearClosingController::class, 'prepareReopening'])->middleware(RequirePermission::class . ':reopen')->whereUuid('id');
+    Route::post('year-closings/{id}/reopen', [\Modules\Accounting\Http\Controllers\YearClosingController::class, 'reopen'])->middleware(RequirePermission::class . ':reopen')->whereUuid('id');
     Route::get('periods', [\Modules\Accounting\Http\Controllers\ClosingController::class, 'index'])->middleware(RequirePermission::class . ':read');
     Route::get('periods/{id}/review', [\Modules\Accounting\Http\Controllers\ClosingController::class, 'preview'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
     Route::post('periods/{id}/close', [\Modules\Accounting\Http\Controllers\ClosingController::class, 'close'])->middleware(RequirePermission::class . ':close')->whereUuid('id');

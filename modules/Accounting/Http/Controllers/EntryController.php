@@ -13,7 +13,7 @@ final class EntryController extends \App\Http\Controllers\Controller
     }
     public function index(Request $r): mixed
     {
-        $v = $r->validate(['q' => 'nullable|string|max:100', 'status' => 'nullable|in:draft,review,observed,approved,posted,reversed', 'from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d', 'per_page' => 'nullable|integer|min:1|max:100']);
+        $v = $r->validate(['q' => 'nullable|string|max:100', 'status' => 'nullable|in:draft,review,observed,approved,posted,reversed,withdrawn', 'from' => 'nullable|date_format:Y-m-d', 'to' => 'nullable|date_format:Y-m-d', 'per_page' => 'nullable|integer|min:1|max:100']);
         $q = JournalEntry::query();
         if (!empty($v['q'])) {
             $q->where(fn($x) => $x->where('concept', 'like', '%' . $v['q'] . '%')->orWhere('reference', 'like', '%' . $v['q'] . '%'));
