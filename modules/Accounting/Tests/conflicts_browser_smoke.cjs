@@ -193,7 +193,7 @@ async function localWork() {
   const backupPath = root + '/conflicts-encrypted-backup.json'; await (await download).saveAs(backupPath);
   fs.chmodSync(backupPath, 0o600);
   const backupText = fs.readFileSync(backupPath, 'utf8'), backup = JSON.parse(backupText);
-  assert.equal(backup.version, 3); assert(backup.outbox.length > 0);
+  assert.equal(backup.version, 4); assert(backup.outbox.length > 0); assert(Array.isArray(backup.selections));
   assert(!backupText.includes('Sincronización original ' + stamp)); assert(!backupText.includes(phrase));
   checks.push('el respaldo incluye el envío original cifrado sin revelar sus datos ni la frase');
   await page.getByRole('link', {name: 'Sincronización original ' + stamp, exact: true}).click();

@@ -847,4 +847,103 @@ final class CoreIntegrationTest extends TestCase
         $this->assertSame(3, SourceVersion::where('source_document_id', $document->id)->count());
     }
 
+    private function localSelectionPacket(string $clientId): array
+    {
+        $selected = (string) Str::uuid();
+        $other = (string) Str::uuid();
+        $decision = (string) Str::uuid();
+        $result = (string) Str::uuid();
+        return ['schema' => 1, 'tip_id' => $decision, 'draft_id' => $result, 'decisions' => [[
+            'id' => $decision, 'kind' => 'entry', 'client_id' => $clientId, 'selected_id' => $selected, 'result_id' => $result,
+            'reason' => 'El contador revisó ambas alternativas locales antes de enviar.', 'reported_at' => now()->toIso8601String(), 'previous_ids' => [],
+            'variants' => [
+                ['id' => $selected, 'revision' => 2, 'base_version' => null, 'server_id' => null, 'entry' => ['concept' => 'Alternativa elegida', 'lines' => [['debit' => '9007199254740993.12345678', 'credit' => '0']]]],
+                ['id' => $other, 'revision' => 1, 'base_version' => null, 'server_id' => null, 'entry' => ['concept' => 'Alternativa conservada', 'lines' => [['debit' => '0.100000000000', 'credit' => '0']]]],
+            ],
+        ]]];
+    }
+    public function test_local_selection_audit_preserves_reported_alternatives_without_moving_balances(): void
+    {
+        $entry = $this->draft();
+        $client = (string) Str::uuid();
+        $service = app(\Modules\Accounting\Services\LocalSelectionService::class);
+        $packet = $service->validate($this->localSelectionPacket($client), 'entry', $client);
+        $first = $service->record($this->admin->id, $packet, 'entry', $entry->id);
+        $again = $service->record($this->admin->id, $service->validate($packet, 'entry', $client), 'entry', $entry->id);
+        $this->assertEquals($first, $again);
+        $this->assertSame(1, DB::table('accounting_audit_events')->where('action', 'offline.alternative_selected')->where('company_id', $this->a->id)->count());
+        $payload = json_decode(DB::table('accounting_audit_events')->where('id', $first[0]['audit_id'])->value('payload'), true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame('client_reported', $payload['evidence_origin']);
+        $this->assertSame('9007199254740993.12345678', $payload['reported_decision']['variants'][0]['entry']['lines'][0]['debit']);
+        $this->assertSame('0.100000000000', $payload['reported_decision']['variants'][1]['entry']['lines'][0]['debit']);
+        $this->assertSame('100.00000000', $entry->fresh()->total_debit);
+        $this->assertSame('draft', $entry->fresh()->status);
+    }
+    public function test_local_selection_identity_cannot_be_reused_for_changed_evidence_or_another_entry(): void
+    {
+        $one = $this->draft();
+        $two = $this->draft();
+        $client = (string) Str::uuid();
+        $service = app(\Modules\Accounting\Services\LocalSelectionService::class);
+        $packet = $service->validate($this->localSelectionPacket($client), 'entry', $client);
+        $service->record($this->admin->id, $packet, 'entry', $one->id);
+        foreach (['changed', 'other_entry'] as $scenario) {
+            $copy = $packet;
+            if ($scenario === 'changed') {
+                $copy['decisions'][0]['reason'] = 'Un motivo modificado con la misma identidad no reemplaza la evidencia.';
+            }
+            try {
+                $service->record($this->admin->id, $copy, 'entry', $scenario === 'changed' ? $one->id : $two->id);
+                $this->fail('La decisión anterior no debe reemplazarse ni aplicarse a otra identidad.');
+            } catch (ApiProblem $problem) {
+                $this->assertSame('IDEMPOTENCY_CONFLICT', $problem->errorCode);
+            }
+        }
+    }
+    public function test_local_selection_rejects_missing_or_circular_history_and_mixed_lineages(): void
+    {
+        $client = (string) Str::uuid();
+        $service = app(\Modules\Accounting\Services\LocalSelectionService::class);
+        foreach (['missing', 'cycle', 'lineage', 'selected', 'tip'] as $scenario) {
+            $packet = $this->localSelectionPacket($client);
+            $packet['decisions'][0]['previous_ids'] = match ($scenario) { 'missing' => [(string) Str::uuid()], 'cycle' => [$packet['tip_id']], default => [] };
+            if ($scenario === 'lineage') $packet['decisions'][0]['client_id'] = (string) Str::uuid();
+            if ($scenario === 'selected') $packet['decisions'][0]['selected_id'] = (string) Str::uuid();
+            if ($scenario === 'tip') $packet['draft_id'] = (string) Str::uuid();
+            try {
+                $service->validate($packet, 'entry', $client);
+                $this->fail('Un historial incompleto debe impedir la selección.');
+            } catch (ApiProblem $problem) {
+                $this->assertContains($problem->errorCode, ['INVALID_LOCAL_SELECTION_HISTORY', 'LOCAL_SELECTION_SCOPE', 'INVALID_LOCAL_SELECTION']);
+            }
+        }
+    }
+    public function test_a_chain_of_offline_selections_is_audited_in_dependency_order(): void
+    {
+        $client = (string) Str::uuid();
+        $one = $this->localSelectionPacket($client);
+        $two = $this->localSelectionPacket($client);
+        $two['decisions'][0]['previous_ids'] = [$one['tip_id']];
+        $two['decisions'][] = $one['decisions'][0];
+        $service = app(\Modules\Accounting\Services\LocalSelectionService::class);
+        $packet = $service->validate($two, 'entry', $client);
+        $this->assertSame($one['tip_id'], $packet['decisions'][0]['id']);
+        $this->assertSame($two['tip_id'], $packet['decisions'][1]['id']);
+        $entry = $this->draft();
+        $this->assertCount(2, $service->record($this->admin->id, $packet, 'entry', $entry->id));
+    }
+    public function test_explicit_server_comparison_preserves_local_selection_history(): void
+    {
+        $this->allowConflictEditing();
+        $entry = $this->draft();
+        $client = (string) Str::uuid();
+        $local = ['accounting_date' => $entry->accounting_date->format('Y-m-d'), 'concept' => 'Alternativa elegida y editada después', 'local_id' => $client,
+            'lines' => app(EntryService::class)->resource($entry)['lines'], 'local_selection' => $this->localSelectionPacket($client)];
+        $result = app(\Modules\Accounting\Services\ConflictService::class)->entry($this->admin->id, $entry->id, $entry->version,
+            ['base_version' => 1, 'decision' => 'apply_local', 'reason' => 'Revisión expresa de la alternativa local y la versión actual.', 'local' => $local], 'selection-comparison-001');
+        $this->assertSame(2, $result['entity']['version']);
+        $this->assertSame('draft', $result['entity']['status']);
+        $this->assertSame(1, DB::table('accounting_audit_events')->where('company_id', $this->a->id)->where('action', 'offline.alternative_selected')->count());
+    }
+
 }

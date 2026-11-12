@@ -18,13 +18,18 @@ final class OfflineController extends \App\Http\Controllers\Controller
     {
         $v = $r->validate(['device_id' => 'required|uuid', 'entity_id' => 'nullable|uuid', 'base_version' => 'nullable|integer|min:1', 'local_id' => 'required|uuid']);
         $draft = \Modules\Accounting\Support\EntryInput::validate($r);
-        return ['data' => DB::transaction(function () use ($r, $v, $draft) {
+        $selection = app(\Modules\Accounting\Services\LocalSelectionService::class)->validate($r->input('local_selection'), 'entry', $v['local_id']);
+        $payload = [...$draft, 'entity_id' => $v['entity_id'] ?? null, 'base_version' => $v['base_version'] ?? null, 'device_id' => $v['device_id']];
+        if ($selection !== null) {
+            $payload['local_selection'] = $selection;
+        }
+        return ['data' => DB::transaction(function () use ($r, $v, $draft, $selection, $payload) {
             $device = Device::where('user_id', $r->user()->id)->where('device_id', $v['device_id'])->lockForUpdate()->first();
             if (!$device || $device->revoked_at || !$device->authorized_until || $device->authorized_until->isPast()) {
                 throw new ApiProblem('OFFLINE_AUTHORIZATION_EXPIRED', 'Vuelve a autorizar este equipo en línea. Tus borradores locales se conservan.', 403);
             }
             app(Permissions::class)->require($r->user(), 'draft');
-            return app(OperationService::class)->execute($r->user()->id, 'offline.sync', $r->header('Idempotency-Key'), [...$draft, 'entity_id' => $v['entity_id'] ?? null, 'base_version' => $v['base_version'] ?? null, 'device_id' => $v['device_id']], function () use ($r, $v, $draft) {
+            return app(OperationService::class)->execute($r->user()->id, 'offline.sync', $r->header('Idempotency-Key'), $payload, function () use ($r, $v, $draft, $selection) {
                 $service = app(EntryService::class);
                 if (!empty($v['entity_id'])) {
                     if (empty($v['base_version'])) {
@@ -34,8 +39,9 @@ final class OfflineController extends \App\Http\Controllers\Controller
                 } else {
                     $entry = $service->create($draft, $r->user()->id);
                 }
-                app(AuditService::class)->record($r->user()->id, 'offline.draft_synchronized', 'journal_entry', $entry->id, ['device_id' => $v['device_id'], 'local_id' => $v['local_id']]);
-                return $service->resource($entry);
+                $receipts = app(\Modules\Accounting\Services\LocalSelectionService::class)->record($r->user()->id, $selection, 'entry', $entry->id);
+                app(AuditService::class)->record($r->user()->id, 'offline.draft_synchronized', 'journal_entry', $entry->id, ['device_id' => $v['device_id'], 'local_id' => $v['local_id'], ...($selection ? ['local_selection_tip' => $selection['tip_id'], 'selection_receipts' => $receipts] : [])]);
+                return [...$service->resource($entry), ...($selection ? ['local_selection_receipts' => $receipts] : [])];
             });
         }, 5)];
     }

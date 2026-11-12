@@ -128,6 +128,26 @@ La auditoría conserva la alternativa informada por el cliente y las versiones
 autorizadas anteriores y posteriores de PRO9. Los asientos definitivos y las
 propuestas de apertura y liquidación conservan sus flujos específicos.
 
+Los borradores contables recuperados con varias alternativas se comparan también
+antes de tener un registro en PRO9. Elegir exige un motivo y prepara otra copia
+del borrador con la misma identidad lógica. Las versiones anteriores quedan
+como antecedentes de consulta; reutilizarlas prepara otra elección y conserva
+la cadena anterior. Una elección local no mueve saldos ni envía operaciones.
+Un envío pendiente debe confirmarse o cancelarse antes de elegir otra versión.
+El guardado del nuevo borrador, los antecedentes y la decisión es una sola
+transacción de IndexedDB: ante falta de espacio o una edición concurrente no se
+sustituyen parcialmente las alternativas.
+
+Al sincronizar, el módulo conserva las decisiones informadas por el cliente en
+la auditoría de la misma empresa y usuario, con confirmaciones que no permiten
+reemplazar su contenido ni aplicarlas a otra entidad. Los importes de los
+antecedentes son evidencia informada; el servidor valida y calcula el borrador
+que realmente guarda. Si PRO9 ya conoce esa identidad, se exige comparar con su
+versión actual. Elegir no aprueba ni contabiliza. Cada decisión admite hasta
+20 alternativas y cada envío hasta 100 decisiones y 2 MB de historial; el límite
+se informa sin truncar ni borrar datos. La selección auditada de capturas
+incompletas de documentos manuales sigue pendiente de su interfaz específica.
+
 Los editores de comprobantes y documentos manuales conservan automáticamente
 capturas cifradas, incluidos campos incompletos, cuando está desbloqueada la
 copia del mismo usuario y empresa. Estas capturas todavía no son documentos
@@ -156,8 +176,9 @@ pendientes de mostrar hasta desbloquear; el bloqueo no repite su envío.
 La recuperación de un respaldo local exige sesión activa en PRO9 y coincidencia
 de empresa y usuario. Renueva la copia de consulta con datos y permisos del
 servidor, verifica los datos cifrados y conserva las versiones diferentes de
-los borradores existentes. El respaldo versión 3 incluye las capturas incompletas
-y los envíos conservados, y sigue admitiendo las versiones 1 y 2. Reimportar la misma alternativa no
+los borradores existentes. El respaldo versión 4 incluye capturas incompletas,
+envíos, elecciones y antecedentes cifrados, y admite las versiones 1, 2 y 3.
+Reimportar la misma alternativa no
 la duplica ni elimina las capturas posteriores. Este
 respaldo corresponde al trabajo del navegador; la recuperación integral de base
 de datos y adjuntos del servidor sigue pendiente.
@@ -201,6 +222,11 @@ identidades lógicas, permisos de resolución y comparación versionada en PRO9.
 `conflicts_browser_smoke.cjs` recorre la decisión con ambas alternativas,
 respuestas perdidas, conservación de cambios posteriores y recuperación de los
 envíos cifrados desde otro navegador sin repetir operaciones.
+`local_selections_http_smoke.py` comprueba la recepción del historial, su
+identidad inmutable y la reversión transaccional de una elección alterada.
+`local_selections_browser_smoke.cjs` verifica elección sin servidor, consulta de
+antecedentes, restauración, reutilización, solicitudes inciertas, dos pestañas,
+agotamiento de espacio y migración de IndexedDB desde la versión anterior.
 Las suites que consumen las identidades ficticias serializan su acceso mediante
 el archivo de bloqueo del directorio privado.
 

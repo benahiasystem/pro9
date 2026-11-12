@@ -314,13 +314,14 @@ async function upload(p, file) {
   fs.chmodSync(backup, 0o600);
   const backupText = fs.readFileSync(backup, 'utf8'),
     parsed = JSON.parse(backupText);
-  assert.equal(parsed.version, 3);
+  assert.equal(parsed.version, 4);
   assert(Array.isArray(parsed.outbox));
+  assert(Array.isArray(parsed.selections));
   assert.equal(parsed.recoveries.length, 3);
   assert(
     !backupText.includes(concept) && !backupText.includes(number) && !backupText.includes(phrase),
   );
-  checks.push('respaldo cifrado versión tres incluye capturas, alternativas y envíos sin texto privado');
+  checks.push('respaldo cifrado versión cuatro incluye capturas, alternativas, decisiones y envíos sin texto privado');
   await close(c);
   const target = await context(root + '/editor-recovery-restore-' + stamp);
   page = observe(target.pages()[0]);
@@ -346,8 +347,16 @@ async function upload(p, file) {
     1,
   );
   checks.push('restauración en otro navegador conserva capturas y reimportar no las duplica');
+  const versionThree = { ...parsed, version: 3 };
+  delete versionThree.selections;
+  const versionThreeFile = root + '/editor-recovery-v3-backup.json';
+  fs.writeFileSync(versionThreeFile, JSON.stringify(versionThree), { mode: 0o600 });
+  await upload(page, versionThreeFile);
+  await page.getByText('Recuperación completada: 3 borradores conservados.', { exact: true }).waitFor();
+  checks.push('compatibilidad del respaldo versión tres con sus envíos conservados');
   const previous = { ...parsed, version: 2 };
   delete previous.outbox;
+  delete previous.selections;
   const previousFile = root + '/editor-recovery-v2-backup.json';
   fs.writeFileSync(previousFile, JSON.stringify(previous), { mode: 0o600 });
   await upload(page, previousFile);
@@ -356,6 +365,7 @@ async function upload(p, file) {
   const legacy = { ...parsed, version: 1 };
   delete legacy.recoveries;
   delete legacy.outbox;
+  delete legacy.selections;
   const legacyFile = root + '/editor-recovery-legacy-backup.json';
   fs.writeFileSync(legacyFile, JSON.stringify(legacy), { mode: 0o600 });
   await upload(page, legacyFile);

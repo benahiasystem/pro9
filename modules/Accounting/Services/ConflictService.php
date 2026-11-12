@@ -23,7 +23,7 @@ final class ConflictService
         if ($base !== null && (!is_int($base) || $base < 1 || $base > $version)) {
             throw new ApiProblem('INVALID_BASE_VERSION', 'La versión de partida no puede ser posterior a la versión que revisaste.');
         }
-        if (!is_array($input['local'] ?? null) || strlen(json_encode($input['local'], JSON_THROW_ON_ERROR)) > 512 * 1024) {
+        if (!is_array($input['local'] ?? null) || strlen(json_encode($input['local'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)) > (isset($input['local']['local_selection']) ? 3 * 1024 * 1024 : 512 * 1024)) {
             throw new ApiProblem('LOCAL_EVIDENCE_REQUIRED', 'Conserva la alternativa local dentro del tamaño admitido antes de resolver.');
         }
         return ['base_version' => $base, 'decision' => $input['decision'], 'reason' => $reason, 'local' => $input['local']];
@@ -32,6 +32,10 @@ final class ConflictService
     public function entry(int $user, string $id, int $version, array $input, ?string $key): array
     {
         $input = $this->input($input, $version);
+        $selection = app(LocalSelectionService::class)->validate($input['local']['local_selection'] ?? null, 'entry', $input['local']['local_id'] ?? null);
+        if ($selection !== null) {
+            $input['local']['local_selection'] = $selection;
+        }
         if ($input['decision'] === 'apply_local') {
             app(Permissions::class)->require(User::without('establishment')->findOrFail($user), 'draft');
         }
@@ -54,6 +58,10 @@ final class ConflictService
     public function document(int $user, string $id, int $version, array $input, ?string $key): array
     {
         $input = $this->input($input, $version);
+        $selection = app(LocalSelectionService::class)->validate($input['local']['local_selection'] ?? null, 'document');
+        if ($selection !== null) {
+            $input['local']['local_selection'] = $selection;
+        }
         if ($input['decision'] === 'apply_local') {
             app(Permissions::class)->require(User::without('establishment')->findOrFail($user), 'documents');
         }
@@ -72,11 +80,12 @@ final class ConflictService
 
     private function record(int $user, string $kind, string $id, array $input, array $before, array $after, ?string $key): array
     {
+        $localReceipts = app(LocalSelectionService::class)->record($user, $input['local']['local_selection'] ?? null, $kind, $id);
         $event = $this->audit->record($user, $kind . '.conflict_resolved', $kind === 'entry' ? 'journal_entry' : 'source_document', $id, [
             'decision' => $input['decision'], 'reason' => $input['reason'], 'reported_base_version' => $input['base_version'],
             'local_reported' => $input['local'], 'server_before' => $before, 'server_after' => $after, 'operation_key' => $key,
         ]);
-        return ['entity' => $after, 'resolution' => ['id' => $event['id'], 'decision' => $input['decision'], 'reason' => $input['reason'], 'base_version' => $input['base_version'], 'reviewed_version' => $before['version'], 'resulting_version' => $after['version']]];
+        return ['entity' => $after, 'resolution' => ['id' => $event['id'], 'decision' => $input['decision'], 'reason' => $input['reason'], 'base_version' => $input['base_version'], 'reviewed_version' => $before['version'], 'resulting_version' => $after['version'], ...($localReceipts ? ['local_selection_receipts' => $localReceipts] : [])]];
     }
 
     public function currentEntry(string $id): array
