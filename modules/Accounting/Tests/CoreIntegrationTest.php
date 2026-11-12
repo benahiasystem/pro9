@@ -1130,9 +1130,9 @@ final class CoreIntegrationTest extends TestCase
         $this->assertContains('UNBALANCED_LEDGER', array_column($preview['blockers'], 'code'));
     }
 
-    private function annualFixture(bool $debt = false, bool $activity = true): array
+    private function annualFixture(bool $debt = false, bool $activity = true, ?int $yearOverride = null): array
     {
-        $year = now()->year - 1;
+        $year = $yearOverride ?? (now()->year - 1);
         app(CompanyService::class)->createYear($year);
         $accounts = Account::get()->keyBy('code');
         if ($debt) {
@@ -1140,19 +1140,19 @@ final class CoreIntegrationTest extends TestCase
             $opening = app(\Modules\Accounting\Services\OpeningService::class)->prepare(['cutoff_date' => $year . '-01-01', 'reason' => 'Saldo inicial ficticio del cierre anual con moneda histórica.', 'evidence_reference' => 'Papel de trabajo ficticio de arranque',
                 'balances' => [['account_id' => $accounts['1.1.03']->id, 'debit' => '4000.00', 'credit' => '0'], ['account_id' => $accounts['3.1']->id, 'debit' => '0', 'credit' => '4000.00']],
                 'open_items' => [['account_id' => $accounts['1.1.03']->id, 'third_party_id' => $party->id, 'reference' => 'DEUDA-ANUAL-1', 'issue_date' => ($year - 1) . '-12-31', 'currency' => 'USD', 'original_amount' => '100', 'book_amount' => '4000.00', 'exchange_rate' => '40', 'exchange_date' => ($year - 1) . '-12-31', 'exchange_source' => 'Tasa histórica ficticia de arranque', 'evidence_reference' => 'Saldo ficticio verificado']]], $this->admin->id);
-            $this->postPrepared($opening, 'annual-fixture-opening');
+            $this->postPrepared($opening, 'annual-fixture-opening-' . $year);
         }
         foreach ($activity ? [['01-15', '4.1', '500.00', false], ['02-15', '6.1', '200.00', true]] : [] as [$date, $code, $amount, $expense]) {
             $entry = app(EntryService::class)->create(['accounting_date' => $year . '-' . $date, 'concept' => 'Operación ficticia del ejercicio para cierre anual', 'lines' => [
                 ['account_id' => $accounts['1.1.02']->id, 'debit' => $expense ? '0' : $amount, 'credit' => $expense ? $amount : '0'],
                 ['account_id' => $accounts[$code]->id, 'debit' => $expense ? $amount : '0', 'credit' => $expense ? '0' : $amount],
             ]], $this->admin->id);
-            $this->postPrepared($entry, 'annual-fixture-' . $code);
+            $this->postPrepared($entry, 'annual-fixture-' . $year . '-' . $code);
         }
         $monthly = app(\Modules\Accounting\Services\ClosingService::class);
         for ($month = 1; $month < 12; $month++) {
             $period = Period::where('year', $year)->where('month', $month)->firstOrFail();
-            $monthly->close($period->id, $period->version, $this->closeInput($monthly->preview($period->id)), $this->admin->id, 'annual-month-' . $month);
+            $monthly->close($period->id, $period->version, $this->closeInput($monthly->preview($period->id)), $this->admin->id, 'annual-month-' . $year . '-' . $month);
         }
         return ['year' => $year, 'accounts' => $accounts];
     }
@@ -1165,7 +1165,7 @@ final class CoreIntegrationTest extends TestCase
         $this->assertSame([], $basis['review']['blockers']);
         $input = [...$this->closeInput($basis['review']), 'basis_hash' => $basis['basis_hash'], 'result_account_id' => $fixture['accounts']['3.3']->id];
         unset($input['review_token']);
-        return $service->prepare($fixture['year'], $screen['fiscal_year']['version'], $input, $this->admin->id, 'annual-prepare-fixture');
+        return $service->prepare($fixture['year'], $screen['fiscal_year']['version'], $input, $this->admin->id, 'annual-prepare-fixture-' . $fixture['year']);
     }
 
     private function approveAnnual(array $closing, bool $reopening = false, ?int $reviewer = null): array
@@ -1447,5 +1447,38 @@ final class CoreIntegrationTest extends TestCase
         $this->assertSame('posted', $posted['status']);
         $this->assertSame(1, OpenItem::count());
         $this->assertSame('100.000000000000', OpenItem::firstOrFail()->remaining_original);
+    }
+
+    public function test_two_closed_years_reopen_from_latest_to_oldest_without_repeating_their_balances(): void
+    {
+        $service = app(\Modules\Accounting\Services\YearClosingService::class);
+        $olderFixture = $this->annualFixture(false, true, now()->year - 2);
+        $older = $this->approveAnnual($this->annualPrepared($olderFixture));
+        $older = $service->post($older['id'], $older['version'], $older['review_token'], $this->admin->id, 'annual-chain-older-post');
+        $newerFixture = $this->annualFixture();
+        $newer = $this->approveAnnual($this->annualPrepared($newerFixture));
+        $this->assertSame('600.00000000', $newer['proposal']['phases']['opening']['total_debit']);
+        $newer = $service->post($newer['id'], $newer['version'], $newer['review_token'], $this->admin->id, 'annual-chain-newer-post');
+        try {
+            $service->prepareReopening($older['id'], $older['version'], 'Intento ficticio de reabrir antes del ejercicio posterior cerrado.', $this->admin->id, 'annual-chain-blocked');
+            $this->fail('Se debe reabrir primero el ejercicio más reciente.');
+        } catch (ApiProblem $error) {
+            $this->assertSame('LATER_YEAR_CLOSED', $error->errorCode);
+        }
+        $this->assertSame(0, JournalEntry::whereIn('reversal_of', array_column($older['entries'], 'id'))->count());
+        foreach ([$newer, $older] as $record) {
+            $prepared = $service->prepareReopening($record['id'], $record['version'], 'Reapertura ficticia de la cadena anual en el orden autorizado.', $this->admin->id, 'annual-chain-prepare-' . $record['id']);
+            $approved = $this->approveAnnual($prepared, true);
+            $reopened = $service->reopen($approved['id'], $approved['version'], $approved['review_token'], $this->admin->id, 'annual-chain-reopen-' . $record['id']);
+            $this->assertSame('reopened', $reopened['status']);
+            $this->assertSame($record['posted_snapshot_sha256'], $reopened['posted_snapshot_sha256']);
+        }
+        $this->assertSame('open', \Modules\Accounting\Models\FiscalYear::where('year', $olderFixture['year'])->firstOrFail()->status);
+        $this->assertSame('open', \Modules\Accounting\Models\FiscalYear::where('year', $newerFixture['year'])->firstOrFail()->status);
+        $balance = app(ReportService::class)->build('balance-sheet', ['from' => now()->year . '-01-01', 'to' => now()->year . '-01-31']);
+        $this->assertSame('600.00', $balance['totals']['assets']);
+        $this->assertSame('600.00', $balance['totals']['unclosed_result']);
+        $this->assertSame('0.00', $balance['totals']['equity']);
+        $this->assertSame('0.00', $balance['totals']['difference']);
     }
 }
