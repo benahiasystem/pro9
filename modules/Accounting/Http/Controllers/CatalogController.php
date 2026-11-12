@@ -33,7 +33,7 @@ final class CatalogController extends \App\Http\Controllers\Controller
     {
         return $r->validate(match ($kind) {
             'accounts' => ['code' => 'required|string|max:40|regex:/^[0-9A-Z.\-]+$/', 'name' => 'required|string|max:255', 'parent_id' => 'nullable|uuid', 'kind' => 'required|in:asset,liability,equity,income,cost,expense', 'nature' => 'required|in:debit,credit', 'posting' => 'required|boolean', 'active' => 'sometimes|boolean', 'requires_party' => 'sometimes|boolean', 'auxiliary' => 'nullable|in:cash,bank,receivable,payable,vat_credit,vat_debit,capital,retained_earnings,current_result,revenue,exchange_gain,exchange_loss,expense,inventory,cost_of_sales,other_tax,rounding,vat_withheld_receivable,vat_withheld_payable,islr_withheld_receivable,islr_withheld_payable', 'report_group' => 'nullable|string|max:80'],
-            'third-parties' => ['tax_id' => 'required|string|max:30', 'name' => 'required|string|max:255', 'kind' => 'required|in:customer,supplier,both,other', 'email' => 'nullable|email|max:255', 'phone' => 'nullable|string|max:40', 'address' => 'nullable|string|max:2000', 'active' => 'sometimes|boolean'],
+            'third-parties' => \Modules\Accounting\Support\ThirdPartyInput::rules(),
             'cost-centers', 'establishments' => ['code' => 'required|string|max:30', 'name' => 'required|string|max:255', 'active' => 'sometimes|boolean', 'address' => 'nullable|string|max:255'],
             'exchange-rates' => ['currency' => 'required|in:USD,EUR', 'effective_date' => 'required|date_format:Y-m-d', 'value' => 'required|string|max:40', 'source' => 'required|string|max:255', 'reason' => 'required|string|max:2000'],
             default => throw new ApiProblem('READ_ONLY_CATALOG', 'Este catálogo tiene un proceso de gestión específico.'),
@@ -48,6 +48,7 @@ final class CatalogController extends \App\Http\Controllers\Controller
         $v = $this->fields($r, $kind);
         $model = $this->model($kind);
         return DB::transaction(function () use ($r, $v, $model, $kind) {
+            DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
             $this->validateBusiness($kind, $v, null);
             if ($kind === 'exchange-rates') {
                 $v['value'] = (string) Exact::of($v['value'], 12);
@@ -69,6 +70,7 @@ final class CatalogController extends \App\Http\Controllers\Controller
             throw new ApiProblem('IMMUTABLE_RATE', 'Registra una nueva versión de la tasa para conservar el histórico.');
         }
         return DB::transaction(function () use ($r, $kind, $id, $v, $model) {
+            DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
             $m = $model::whereKey($id)->lockForUpdate()->firstOrFail();
             $this->validateBusiness($kind, $v, $m);
             $before = $m->toArray();
@@ -87,6 +89,9 @@ final class CatalogController extends \App\Http\Controllers\Controller
         $key = $kind === 'third-parties' ? 'tax_id' : 'code';
         if (isset($v[$key]) && $model::where($key, $v[$key])->when($old, fn($q) => $q->where('id', '!=', $old->id))->exists()) {
             throw new ApiProblem('DUPLICATE_CODE', 'El código o identificación ya existe en esta empresa.');
+        }
+        if ($kind === 'third-parties' && ThirdParty::when($old, fn($q) => $q->where('id', '!=', $old->id))->get()->contains(fn($party) => \Modules\Accounting\Support\ImportSchema::identity($party->tax_id) === \Modules\Accounting\Support\ImportSchema::identity($v['tax_id']))) {
+            throw new ApiProblem('DUPLICATE_CODE', 'El RIF ya identifica otro tercero de esta empresa. Revisa las fichas antes de continuar.');
         }
         if ($kind === 'third-parties' && $old && $v['tax_id'] !== $old->tax_id && DB::table('accounting_journal_lines as l')->join('accounting_journal_entries as e', 'e.id', '=', 'l.journal_entry_id')->where('l.company_id', app(CompanyContext::class)->id())->where('l.organization_id', app(CompanyContext::class)->organizationId())->where('l.third_party_id', $old->id)->whereNotNull('e.posted_at')->exists()) {
             throw new ApiProblem('PARTY_IDENTITY_USED', 'El tercero con movimientos contabilizados conserva su identificación. Registra otra ficha para una entidad distinta.');

@@ -18,6 +18,7 @@ use Modules\Accounting\Support\TenantDB as DB;
 use App\Models\Tenant\User;
 final class CoreIntegrationTest extends TestCase
 {
+    use ImportIntegrationAssertions;
     private static Application $application;
     private static string $originalTimezone;
     private User $admin;

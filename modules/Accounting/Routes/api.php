@@ -20,6 +20,14 @@ Route::prefix('companies/{company}')->whereUuid('company')->middleware([SessionV
     Route::get('documents/{id}/comparison', [\Modules\Accounting\Http\Controllers\ConflictController::class, 'showDocument'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
     Route::post('documents/{id}/resolve', [\Modules\Accounting\Http\Controllers\ConflictController::class, 'document'])->middleware(RequirePermission::class . ':read')->whereUuid('id');
     Route::get('/', [CompanyController::class, 'show']);
+    Route::get('imports', [\Modules\Accounting\Http\Controllers\ImportController::class, 'index'])->middleware(RequirePermission::class . ':import');
+    Route::get('imports/templates/{kind}/{format}', [\Modules\Accounting\Http\Controllers\ImportController::class, 'template'])->middleware(RequirePermission::class . ':import')->where('format', 'xlsx|csv');
+    Route::post('imports/preview', [\Modules\Accounting\Http\Controllers\ImportController::class, 'preview'])->middleware(RequirePermission::class . ':import');
+    Route::get('imports/{id}', [\Modules\Accounting\Http\Controllers\ImportController::class, 'show'])->middleware(RequirePermission::class . ':import')->whereUuid('id');
+    Route::get('imports/{id}/units/{unit}', [\Modules\Accounting\Http\Controllers\ImportController::class, 'unit'])->middleware(RequirePermission::class . ':import')->whereUuid('id')->whereUuid('unit');
+    Route::get('imports/{id}/errors', [\Modules\Accounting\Http\Controllers\ImportController::class, 'errors'])->middleware(RequirePermission::class . ':import')->whereUuid('id');
+    Route::post('imports/{id}/revalidate', [\Modules\Accounting\Http\Controllers\ImportController::class, 'revalidate'])->middleware(RequirePermission::class . ':import')->whereUuid('id');
+    Route::post('imports/{id}/apply', [\Modules\Accounting\Http\Controllers\ImportController::class, 'apply'])->middleware(RequirePermission::class . ':import')->whereUuid('id');
     Route::patch('/', [CompanyController::class, 'update'])->middleware(RequirePermission::class . ':company');
     Route::post('years', [CompanyController::class, 'createYear'])->middleware(RequirePermission::class . ':catalogs');
     Route::get('years/{year}/closing', [\Modules\Accounting\Http\Controllers\YearClosingController::class, 'index'])->middleware(RequirePermission::class . ':read')->where('year', '(?:20[0-9]{2}|2100)');

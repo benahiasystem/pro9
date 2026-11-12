@@ -6,7 +6,7 @@
   "database": "tenant existente; tablas accounting_*",
   "frontend": "TypeScript Vue actual; compilación en AWS",
   "tests": "Solo entornos aislados; pruebas previas del prototipo independiente no acreditan este módulo",
-  "state": "development; PRO9 module, opening, partial settlements and encrypted auxiliary snapshots verified",
+  "state": "development; PRO9 module with server-only atomic XLSX/CSV imports, drafts, catalogs, opening, fiscal review, closings and encrypted local work",
   "isolation": {
     "databaseContainer": "contabilidad-api-v1-db",
     "network": "contabilidad-api-v1-tests",
@@ -15,8 +15,8 @@
   },
   "verification": {
     "core": {
-      "tests": 40,
-      "assertions": 131,
+      "tests": 101,
+      "assertions": 471,
       "result": "passed"
     },
     "http": {
@@ -24,7 +24,7 @@
       "result": "passed"
     },
     "frontendUnit": {
-      "tests": 20,
+      "tests": 49,
       "result": "passed"
     },
     "browser": {
@@ -104,8 +104,49 @@
       "result": "passed",
       "pageErrors": 0,
       "suite": "Tests/auxiliary_offline_browser_smoke.cjs"
+    },
+    "importsHttp": {
+      "checks": 9,
+      "result": "passed",
+      "suite": "Tests/imports_http_smoke.py"
+    },
+    "importsBrowser": {
+      "checks": 9,
+      "result": "passed",
+      "suite": "Tests/imports_browser_smoke.cjs",
+      "pageErrors": 0,
+      "scope": "AWS build tested in private local clone; final delivery metadata in the release manifest"
+    },
+    "moduleCoreProcess": {
+      "exitCode": 0,
+      "tests": 101,
+      "assertions": 471,
+      "completeReport": true
+    },
+    "imports": {
+      "kinds": [
+        "third-parties",
+        "entries",
+        "opening",
+        "documents"
+      ],
+      "formats": [
+        "xlsx",
+        "csv"
+      ],
+      "serverOnly": true,
+      "partialAcceptanceByWholeUnit": true,
+      "immutableAcceptedReferences": true,
+      "preflightRollsBackDomainWrites": true,
+      "exactOoxmlDecimals": true,
+      "formulaAndExternalContentRejected": true,
+      "privateDataset": true,
+      "freshCatalogAndPermissionChecksUnderBookLock": true,
+      "unexpectedInfrastructureFailureRollsBackWholeSelection": true,
+      "rowsAndFieldsInErrorWorkbook": true,
+      "automaticPosting": false
     }
   },
-  "pending": "Complete credit/advance opening items and migration corrections, notes/refunds and retention/IGTF workflows, source reconciliation across PRO9 connections, imports/exports, close/reopen, attachments and server backup/restore, automatic offline preservation, inactivity locking and conflict resolution. Fiscal registers remain preliminary; full V1 acceptance is pending.",
-  "verifiedAt": "2026-11-11T21:57:48.641569+00:00"
+  "pending": "Complete opening credits/advances and migration corrections, notes/refunds and retention/IGTF applications, PRO9 source incident reconciliation, definitive exports, attachments, audit UI and integral server backup/restore, unfinished forms and offline authorization against clock/expiry/revocation. Fiscal registers remain preliminary; full V1 acceptance is pending.",
+  "verifiedAt": "2026-11-12"
 }

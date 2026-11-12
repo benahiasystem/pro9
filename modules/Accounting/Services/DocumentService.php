@@ -39,8 +39,15 @@ final class DocumentService
     }
     public function ensureIdentity(?string $key, ?string $except = null): void
     {
+        $candidate = $this->findIdentity($key, $except);
+        if ($candidate) {
+            throw new ApiProblem('POSSIBLE_DUPLICATE_DOCUMENT', 'Existe un documento con esta identidad. Revisa su procedencia y vincula el origen antes de crear otro registro.', 409, ['document_id' => $candidate->id, 'number' => $candidate->number, 'origin' => $candidate->origin]);
+        }
+    }
+    public function findIdentity(?string $key, ?string $except = null): ?SourceDocument
+    {
         if (!$key) {
-            return;
+            return null;
         }
         $candidate = SourceDocument::where('natural_key', $key)->when($except, fn($q) => $q->where('id', '!=', $except))->first();
         if (!$candidate) {
@@ -53,9 +60,7 @@ final class DocumentService
                 }
             }
         }
-        if ($candidate) {
-            throw new ApiProblem('POSSIBLE_DUPLICATE_DOCUMENT', 'Existe un documento con esta identidad. Revisa su procedencia y vincula el origen antes de crear otro registro.', 409, ['document_id' => $candidate->id, 'number' => $candidate->number, 'origin' => $candidate->origin]);
-        }
+        return $candidate;
     }
     private function evidence(SourceDocument $document, array $snapshot): void
     {

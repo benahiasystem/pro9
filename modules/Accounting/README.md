@@ -347,10 +347,50 @@ El worktree autorizado es `codex/contabilidad-api-v1`, basado en
 probar en esta PC y no se transfieren a AWS. El directorio privado, los volcados,
 las credenciales y los compilados están excluidos de Git.
 
-La implementación sigue en desarrollo. Los comprobantes, catálogos, informes
-básicos, apertura, liquidaciones parciales, segundo factor y trabajo local tienen
-verificaciones iniciales; los
-flujos fiscales completos, conciliaciones de origen, importación y exportaciones
-definitivas aún deben completar sus criterios de aceptación. Restan la elección
-conjunta de formularios todavía incompletos y casos adicionales de documentos
-manuales y autorización local frente a cambios del reloj.
+Las importaciones RF14 usan `POST /api/accounting/v1/companies/{company}/imports/preview`
+con un archivo multipart real y `kind=third-parties|entries|opening|documents`.
+Las rutas de plantillas, historial, filas, revisión XLSX, revalidación y confirmación
+pertenecen al mismo módulo y a la conexión tenant de PRO9. No hay otra API.
+La confirmación exige `If-Match`, `preview_hash`, selección de unidades completas
+e `Idempotency-Key`; su recibo se consulta como `operations/import.apply/{key}`.
+La revalidación usa `import.revalidate`. Estas acciones requieren servidor y no
+se incorporan a la cola sin conexión.
+
+Cada fila identifica el RIF de la empresa y una `referencia_importacion` estable.
+La huella de archivo y sus opciones recuperan una validación existente. La
+referencia y el contenido de cada unidad aceptada se conservan por empresa;
+reintentar o corregir otro comprobante no duplica ni sobrescribe el original.
+La vista previa ensaya los mismos servicios dentro de puntos de restauración y
+revierte sus registros y auditoría financiera. Al confirmar se revalidan permisos
+y catálogos bajo bloqueo del libro: un error funcional rechaza la unidad completa;
+un fallo de infraestructura revierte el lote seleccionado entero. Los registros
+contables y documentos se crean como borradores, sin aprobación ni contabilización.
+Las notas requieren una factura original ya registrada: primero se importa la
+factura y luego se revalida la nota. No se sustituye una apertura existente.
+
+El lector admite XLSX o CSV UTF-8 de hasta 2 MiB, 2.000 filas y 200 unidades.
+Lee los decimales numéricos desde OOXML mediante XMLReader/ZipArchive y
+Brick Math, sin el lector de PhpSpreadsheet ni conversiones a float. Bloquea
+fórmulas, DTD, entidades, macros, objetos y relaciones externas; no extrae ZIP ni
+acepta rutas o URLs del cliente. Las fechas numéricas respetan el sistema 1900 o
+1904 y rechazan el día ficticio 60 de 1900. Los identificadores se exigen como
+texto. Las plantillas y las revisiones utilizan el escritor instalado de
+PhpSpreadsheet con celdas de texto explícitas y sin evaluación de fórmulas.
+Referencias técnicas: [sistemas de fechas de Excel](https://support.microsoft.com/en-us/excel/date-systems-in-excel)
+y [texto explícito en PhpSpreadsheet](https://phpspreadsheet.readthedocs.io/en/1.30.5/topics/recipes/).
+La copia normalizada con su huella queda en el almacenamiento privado tenant;
+no se publica su ruta ni se sirve mediante enlaces públicos.
+
+`ImportFileReaderTest.php` cubre precisión original, fechas, texto identificador,
+CSV, contenido externo y fórmulas. Los casos de importación de la suite del
+módulo verifican atomicidad, auxiliares, datos cambiados, recibos, permisos,
+cuatro plantillas y revisión reimportable. `imports_http_smoke.py` usa multipart
+real y roles retirados; `imports_browser_smoke.cjs` recorre el compilado de AWS,
+confirmación incierta, corrección, historial, aislamiento, descargas y móvil.
+
+La implementación sigue en desarrollo. Las importaciones no completan por sí
+solas los flujos fiscales, conciliaciones de origen, adjuntos, auditoría visible,
+respaldo integral y exportaciones definitivas. Restan créditos y anticipos de
+apertura, notas y tributos en liquidaciones, la elección conjunta de formularios
+todavía incompletos y casos adicionales de documentos manuales y autorización
+local frente a cambios del reloj.
