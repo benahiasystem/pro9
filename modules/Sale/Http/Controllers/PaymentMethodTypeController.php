@@ -30,9 +30,17 @@ class PaymentMethodTypeController extends Controller
 
     private function methodInput(PaymentMethodTypeRequest $request, ?PaymentMethodType $record = null): array
     {
-        $fields=['id','description','number_days','is_active','hka_code'];
+        $fields=['id','description','number_days','is_active','hka_code','available_for_change'];
         $fields=array_merge($fields,['collection_kind','currency_type_id','iva_rate_type_id','bank_account_id','commission_percentage','minimum_commission']);
         $input = $request->only($fields);
+        // ######## INICIO DISPONIBILIDAD PARA VUELTOS ########
+        if (!\Illuminate\Support\Facades\Schema::connection('tenant')->hasColumn('payment_method_types', 'available_for_change')) {
+            if ($request->boolean('available_for_change')) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['available_for_change'=>'La instalación aún no dispone de la configuración de vueltos.']);
+            }
+            unset($input['available_for_change']);
+        }
+        // ######## FIN DISPONIBILIDAD PARA VUELTOS ########
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         if (\App\Services\Payments\HkaPaymentMethods::emissionMode() !== 'digital') {
             $code = $record->hka_code ?? null;

@@ -84,13 +84,15 @@
             'number_days',
             'is_credit',
             'is_cash',
-            'is_active'
+            'is_active',
+            'available_for_change'
         ];
 
         protected $casts = [
             'is_credit' => 'bool',
             'is_cash' => 'bool',
-            'is_active' => 'bool'
+            'is_active' => 'bool',
+            'available_for_change' => 'bool'
         ];
 
         // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########

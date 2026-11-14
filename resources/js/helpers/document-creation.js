@@ -14,6 +14,13 @@ export function paymentConditionPayload(form) {
     return {...form, payment_condition_id: condition === '03' ? '02' : condition,
         fee: condition === '01' ? [] : form.fee}
 }
+
+// New cash drafts remain editable when switching back, but credit may only
+// carry receipts that were already recorded by an earlier operation.
+export function invoicePaymentsForCondition(form) {
+    const payments = form.payments || []
+    return ['02', '03'].includes(form.payment_condition_id) ? payments.filter(isRecordedReceipt) : payments
+}
 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
 
 export function collectionTarget(form) {

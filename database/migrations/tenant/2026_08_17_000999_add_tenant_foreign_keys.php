@@ -27,6 +27,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `dispatch_emissions` ADD CONSTRAINT `dispatch_emissions_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)");
         // ######## FIN ORDENES HKA DEMO ########
         DB::unprepared("ALTER TABLE `document_items` ADD CONSTRAINT `document_items_affected_document_item_id_foreign` FOREIGN KEY (`affected_document_item_id`) REFERENCES `document_items` (`id`) ON DELETE RESTRICT");
+        DB::unprepared("ALTER TABLE `document_change_disbursements` ADD CONSTRAINT `document_change_document_fk` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE RESTRICT, ADD CONSTRAINT `document_change_payment_fk` FOREIGN KEY (`document_payment_id`) REFERENCES `document_payments` (`id`) ON DELETE RESTRICT, ADD CONSTRAINT `document_change_method_fk` FOREIGN KEY (`payment_method_type_id`) REFERENCES `payment_method_types` (`id`) ON DELETE RESTRICT, ADD CONSTRAINT `document_change_currency_fk` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_document_id_foreign` FOREIGN KEY (`document_id`) REFERENCES `documents` (`id`) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_affected_document_id_foreign` FOREIGN KEY (`affected_document_id`) REFERENCES `documents` (`id`) ON DELETE RESTRICT");
         DB::unprepared("ALTER TABLE `document_note_refunds` ADD CONSTRAINT `document_note_refunds_actor_id_foreign` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT");
@@ -601,6 +602,7 @@ return new class extends Migration
         DB::unprepared("ALTER TABLE `document_note_adjustments` DROP FOREIGN KEY `document_note_adjustments_guarantee_fund_id_foreign`");
         DB::unprepared("ALTER TABLE `document_note_adjustments` DROP FOREIGN KEY `document_note_adjustments_tax_id_foreign`");
         DB::unprepared("ALTER TABLE `document_note_adjustments` DROP FOREIGN KEY `document_note_adjustments_retention_id_foreign`");
+        DB::unprepared("ALTER TABLE `document_change_disbursements` DROP FOREIGN KEY `document_change_currency_fk`, DROP FOREIGN KEY `document_change_method_fk`, DROP FOREIGN KEY `document_change_payment_fk`, DROP FOREIGN KEY `document_change_document_fk`");
         DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_currency_type_id_foreign`");
         DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_payment_method_type_id_foreign`");
         DB::unprepared("ALTER TABLE `document_note_refunds` DROP FOREIGN KEY `document_note_refunds_reversed_by_foreign`");

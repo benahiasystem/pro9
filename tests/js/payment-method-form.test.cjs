@@ -115,6 +115,17 @@ test('editing preserves the availability loaded from the server', async () => {
 test('payment method form template compiles', () => {
     assert.deepEqual(compiler.compile(parsed.template.content).errors, []);
 });
+
+test('change availability is explicitly selected and cleared for credit', () => {
+    const ctx = {clearIncompatibleHka() {}};
+    component.methods.initForm.call(ctx);
+    assert.equal(ctx.form.available_for_change, false);
+    assert.match(parsed.template.content, /Disponible para vueltos/);
+    ctx.form.available_for_change = true;
+    ctx.form.collection_kind = 'credit';
+    component.methods.changeCollectionKind.call(ctx);
+    assert.equal(ctx.form.available_for_change, false);
+});
 // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
 test('catalogue displays condition and credit fields from classification, even with stale flags', () => {

@@ -54,6 +54,10 @@ class DocumentPayment extends ModelTenant
         return $this->belongsTo(Document::class, 'document_id');
     }
 
+    // ######## INICIO DESEMBOLSOS DE VUELTO ########
+    public function change_disbursements() { return $this->hasMany(DocumentChangeDisbursement::class); }
+    // ######## FIN DESEMBOLSOS DE VUELTO ########
+
 
     public function global_payment()
     {

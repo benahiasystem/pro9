@@ -156,6 +156,15 @@
             return $this->belongsTo(\App\Models\Tenant\DocumentNoteRefund::class,'payment_id')->wherePaymentType(\App\Models\Tenant\DocumentNoteRefund::class);
         }
 
+        // ######## INICIO DESEMBOLSOS DE VUELTO ########
+        private function includeCashChangeDisbursements($query)
+        {
+            if (!$query->getModel()->getConnection()->getSchemaBuilder()->hasTable('document_change_disbursements')) return $query;
+            return $query->orWhere(fn ($q) => $q->whereCashDestination()->whereHasMorph('payment', [\App\Models\Tenant\DocumentChangeDisbursement::class],
+                fn ($r) => $r->whereNull('reversed_at')->whereCashPaymentMethodType()));
+        }
+        // ######## FIN DESEMBOLSOS DE VUELTO ########
+
         /**
          * @return mixed
          */
@@ -357,6 +366,7 @@
                 PaymentCommission::class => 'bank_commission',
                 HotelRentItemPayment::class => 'hotel_rent_item_payment',
                 \App\Models\Tenant\DocumentNoteRefund::class => 'note_refund',
+                \App\Models\Tenant\DocumentChangeDisbursement::class => 'change_disbursement',
                 DocumentPayment::class => 'document',
                 SaleNotePayment::class => 'sale_note',
                 PurchasePayment::class => 'purchase',
@@ -389,6 +399,9 @@
                     break;
                 case 'note_refund':
                     $description = 'DEVOLUCIÓN POR NC';
+                    break;
+                case 'change_disbursement':
+                    $description = 'VUELTO';
                     break;
                 case 'document':
                     $description = 'CPE';
@@ -454,6 +467,7 @@
                 case 'bank_loan_payment':
                 case 'expense':
                 case 'note_refund':
+                case 'change_disbursement':
                 case 'bank_commission':
                     $type = 'output';
                     break;
@@ -483,6 +497,7 @@
                     break;
 
                 case 'note_refund':
+                case 'change_disbursement':
                 case 'document':
                 case 'sale_note':
                 case 'quotation':
@@ -555,6 +570,14 @@
                 if ($params->date_end) $q->where('date_of_payment','<=',$params->date_end);
                 $q->whereHas('document', fn ($d)=>$d->whereTypeUser((array)$params));
             });
+            if ($query->getModel()->getConnection()->getSchemaBuilder()->hasTable('document_change_disbursements')) {
+                $query->orWhereHasMorph('payment', [\App\Models\Tenant\DocumentChangeDisbursement::class], function ($q) use ($params) {
+                    $q->whereNull('reversed_at');
+                    if ($params->date_start) $q->where('date_of_payment','>=',$params->date_start);
+                    if ($params->date_end) $q->where('date_of_payment','<=',$params->date_end);
+                    $q->whereHas('document', fn ($d) => $d->whereTypeUser((array)$params));
+                });
+            }
             $query->OrWhereHas('exp_payment', function ($q) use ($params) {
                 if ($params->date_start) {
                     $q->where('date_of_payment', '>=', $params->date_start);
@@ -879,7 +902,8 @@
                     ->filterCashPaymentWithoutDestination();
                 });
 
-            return $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
+            $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
+            return $this->includeCashChangeDisbursements($query);
         }
 
         
@@ -964,7 +988,8 @@
                 // egresos
                 ->whereCashDestination();
 
-            return $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
+            $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
+            return $this->includeCashChangeDisbursements($query);
         }
 
 
@@ -1040,7 +1065,8 @@
                     });
                     // egresos
 
-            return $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
+            $query->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
+            return $this->includeCashChangeDisbursements($query);
         }
 
 
@@ -1054,13 +1080,14 @@
          */
         public function scopeGetDataIncomeSummaryPayment($query)
         {
-            return $query->applyFiltersPerformancePayments()
+            $query->applyFiltersPerformancePayments()
                         ->whereHas('doc_payments', function ($payment) {
                             $payment->destinationCashPaymentDocument();
                         })
                         ->orWhereHas('sln_payments', function ($payment) {
                             $payment->destinationCashPaymentDocument();
                         })->orWhere(fn ($q)=>$q->whereCashDestination()->whereHas('note_refund',fn ($r)=>$r->whereNull('reversed_at')->whereCashPaymentMethodType()));
+            return $this->includeCashChangeDisbursements($query);
         }
 
     }

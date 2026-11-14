@@ -483,6 +483,129 @@ trait NotePersistenceCases
         $http->assertNothingSent();
     }
 
+    public function test_full_credit_mobile_refund_preserves_gross_receipt_and_both_change_outflows(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $bank=\App\Models\Tenant\BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),
+            'description'=>'Pago Móvil devolución','number'=>'QA-mobile-refund','currency_type_id'=>'VES',
+            'initial_balance'=>'0','status'=>1,'establishment_id'=>null]);
+        $db->table('payment_method_types')->where('id','11')->update(['collection_kind'=>'account','currency_type_id'=>'VES',
+            'is_active'=>1,'available_for_change'=>1,'bank_account_id'=>$bank->id]);
+        $input['items'][0]['quantity']='1'; $input['items'][0]['unit_price']='250';
+        $input['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'VES',
+            'payment'=>'350','original_amount'=>'350','tendered_amount'=>'350','exchange_rate'=>'1','payment_destination_id'=>'cash',
+            'operation_key'=>(string)Str::uuid(),'change_disbursements'=>[
+                ['payment_method_type_id'=>'01','amount'=>'50'], ['payment_method_type_id'=>'11','amount'=>'50']]]];
+        $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        $receipt=$invoice->payments()->whereNull('receipt_parent_id')->firstOrFail();
+        $before=$receipt->getAttributes();
+        $changes=$receipt->change_disbursements()->orderBy('position')->get();
+        $beforeChanges=$changes->map->getAttributes()->all();
+        $note=(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','01',[]))->getDocument()->fresh();
+        \App\Services\Fiscal\FreeFormControl::register($note,['control_number'=>'99-1','evidence_reference'=>'Control sintético de prueba']);
+        $request=['operation_key'=>(string)Str::uuid(),'component'=>'principal','document_payment_id'=>$receipt->id,
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'11','payment_destination_id'=>$bank->id,
+            'currency_type_id'=>'VES','original_amount'=>'250','exchange_rate'=>'1','exchange_rate_source'=>'manual','reference'=>'QA-DEVOLUCION-MOVIL'];
+        $branch=(array)$db->table('establishments')->where('id',$input['establishment_id'])->first();
+        unset($branch['id']); $branch['description']='Otra sucursal de prueba'; $branch['code']='9999';
+        $other=$db->table('establishments')->insertGetId($branch);
+        $beforeGlobals=$db->table('global_payments')->count();
+        try { (new NoteRefund)->register($note->fresh(),$request); self::fail('Una cuenta sin sucursal es ambigua cuando existen varias.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('payment_destination_id',$error->errors()); }
+        self::assertSame($beforeGlobals,$db->table('global_payments')->count());
+        self::assertSame(0,$db->table('document_note_refunds')->count());
+        $db->table('establishments')->where('id',$other)->delete();
+        $bank->status=0; $bank->save();
+        try { (new NoteRefund)->register($note->fresh(),$request); self::fail('Una cuenta inactiva no puede devolver dinero.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('payment_destination_id',$error->errors()); }
+        $bank->status=1; $bank->save();
+        $refund=(new NoteRefund)->register($note->fresh(),$request);
+        $movement=\App\Services\Payments\Movement::row($refund->global_payment);
+        self::assertSame('egress',$movement['direction']);
+        self::assertSame('250',$movement['amount']);
+        self::assertSame(\App\Models\Tenant\BankAccount::class,$refund->global_payment->destination_type);
+        self::assertSame((int)$bank->id,(int)$refund->global_payment->destination_id);
+        self::assertSame($before,$receipt->fresh()->getAttributes());
+        self::assertSame($beforeChanges,$receipt->change_disbursements()->orderBy('position')->get()->map->getAttributes()->all());
+        self::assertSame('350',\App\Services\Payments\Movement::row($receipt->fresh()->global_payment)['amount']);
+        self::assertSame(['50','50'],$changes->map(fn($change)=>\App\Services\Payments\Movement::row($change->fresh()->global_payment)['amount'])->all());
+        $finance=new class { use \Modules\Finance\Traits\FinanceTrait; };
+        self::assertSame('-300',$finance->getBalanceByBankAcounts(collect([$bank->fresh()]),'VES')->first()['balance']);
+        $cash=\App\Models\Tenant\Cash::findOrFail($receipt->global_payment->destination_id);
+        self::assertSame('300',\App\Services\Payments\CashLedger::report($cash)['balances_by_currency']['VES']['final_balance']);
+        self::assertTrue($invoice->fresh()->exactBalance()->isZero());
+        self::assertSame('0.00',NoteRefund::available($note->fresh()));
+        self::assertSame($refund->id,(new NoteRefund)->register($note->fresh(),$request)->id);
+        self::assertSame($beforeGlobals+1,$db->table('global_payments')->count());
+    }
+
+    public function test_full_credit_split_mobile_and_cash_refunds_enforce_the_accumulated_limit(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $bank=\App\Models\Tenant\BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),
+            'description'=>'Pago Móvil devolución parcial','number'=>'QA-split-refund','currency_type_id'=>'VES',
+            'initial_balance'=>'0','status'=>1,'establishment_id'=>null]);
+        $db->table('payment_method_types')->where('id','11')->update(['collection_kind'=>'account','currency_type_id'=>'VES',
+            'is_active'=>1,'available_for_change'=>1,'bank_account_id'=>$bank->id]);
+        $input['items'][0]['quantity']='1'; $input['items'][0]['unit_price']='250';
+        $input['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'VES',
+            'payment'=>'350','original_amount'=>'350','tendered_amount'=>'350','exchange_rate'=>'1','payment_destination_id'=>'cash',
+            'operation_key'=>(string)Str::uuid(),'change_disbursements'=>[
+                ['payment_method_type_id'=>'01','amount'=>'50'], ['payment_method_type_id'=>'11','amount'=>'50']]]];
+        $invoice=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        $receipt=$invoice->payments()->whereNull('receipt_parent_id')->firstOrFail();
+        $before=$receipt->getAttributes();
+        $changes=$receipt->change_disbursements()->orderBy('position')->get();
+        $beforeChanges=$changes->map->getAttributes()->all();
+        $cash=\App\Models\Tenant\Cash::findOrFail($receipt->global_payment->destination_id);
+        $note=(new Facturalo)->forWebDocuments()->save($this->noteInput($input,$invoice,'07','01',[]))->getDocument()->fresh();
+        \App\Services\Fiscal\FreeFormControl::register($note,['control_number'=>'99-1','evidence_reference'=>'Control sintético de devolución parcial']);
+        $beforeGlobals=$db->table('global_payments')->count();
+        self::assertSame('250.00',NoteRefund::available($note->fresh()));
+        $mobileRequest=['operation_key'=>(string)Str::uuid(),'component'=>'principal','document_payment_id'=>$receipt->id,
+            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'11','payment_destination_id'=>$bank->id,
+            'currency_type_id'=>'VES','original_amount'=>'100','exchange_rate'=>'1','exchange_rate_source'=>'manual','reference'=>'QA-PARCIAL-MOVIL'];
+        $mobile=(new NoteRefund)->register($note->fresh(),$mobileRequest);
+        self::assertSame('150.00',NoteRefund::available($note->fresh()));
+        self::assertSame($mobile->id,(new NoteRefund)->register($note->fresh(),$mobileRequest)->id);
+        $cashRequest=array_replace($mobileRequest,['operation_key'=>(string)Str::uuid(),'payment_method_type_id'=>'01',
+            'payment_destination_id'=>'cash','original_amount'=>'150','reference'=>'QA-PARCIAL-CAJA']);
+        try { (new NoteRefund)->register($note->fresh(),array_replace($cashRequest,['original_amount'=>'151'])); self::fail('Los Bs. 100 ya devueltos deben contar para el límite acumulado.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('original_amount',$error->errors()); }
+        self::assertSame('150.00',NoteRefund::available($note->fresh()));
+        self::assertSame(1,$db->table('document_note_refunds')->count());
+        self::assertSame($beforeGlobals+1,$db->table('global_payments')->count());
+        $cashRefund=(new NoteRefund)->register($note->fresh(),$cashRequest);
+        self::assertSame('0.00',NoteRefund::available($note->fresh()));
+        self::assertFalse(NoteRefund::view($note->fresh())['can_create']);
+        self::assertSame($cashRefund->id,(new NoteRefund)->register($note->fresh(),$cashRequest)->id);
+        try { (new NoteRefund)->register($note->fresh(),array_replace($cashRequest,['operation_key'=>(string)Str::uuid(),'original_amount'=>'0.01'])); self::fail('No puede devolverse otro céntimo después de completar los Bs. 250.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('original_amount',$error->errors()); }
+        self::assertSame('0.00',NoteRefund::available($note->fresh()));
+        self::assertSame(2,$db->table('document_note_refunds')->whereNull('reversed_at')->count());
+        self::assertSame($beforeGlobals+2,$db->table('global_payments')->count());
+        foreach ([$mobile,$cashRefund] as $refund) {
+            self::assertSame('egress',\App\Services\Payments\Movement::row($refund->global_payment)['direction']);
+            self::assertSame(1,$refund->global_payment()->count());
+        }
+        self::assertSame(\App\Models\Tenant\BankAccount::class,$mobile->global_payment->destination_type);
+        self::assertSame((int)$bank->id,(int)$mobile->global_payment->destination_id);
+        self::assertSame(\App\Models\Tenant\Cash::class,$cashRefund->global_payment->destination_type);
+        self::assertSame((int)$cash->id,(int)$cashRefund->global_payment->destination_id);
+        self::assertSame($before,$receipt->fresh()->getAttributes());
+        self::assertSame($beforeChanges,$receipt->change_disbursements()->orderBy('position')->get()->map->getAttributes()->all());
+        self::assertSame('350',\App\Services\Payments\Movement::row($receipt->fresh()->global_payment)['amount']);
+        self::assertSame(['50','50'],$changes->map(fn($change)=>\App\Services\Payments\Movement::row($change->fresh()->global_payment)['amount'])->all());
+        $finance=new class { use \Modules\Finance\Traits\FinanceTrait; };
+        self::assertSame('-150',$finance->getBalanceByBankAcounts(collect([$bank->fresh()]),'VES')->first()['balance']);
+        self::assertSame('150',\App\Services\Payments\CashLedger::report($cash)['balances_by_currency']['VES']['final_balance']);
+        self::assertTrue($invoice->fresh()->exactBalance()->isZero());
+    }
+
     public function test_free_form_concurrent_refunds_preserve_limits_and_idempotency(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture();

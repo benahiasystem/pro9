@@ -25,6 +25,11 @@ class PaymentMethodTypeRequest extends FormRequest
             'currency_type_id'=>['required','string',Rule::exists('tenant.cat_currency_types','id')->where('active',1)],
             'iva_rate_type_id'=>['nullable',Rule::in(['IGTF']),Rule::exists('tenant.cat_iva_rate_types','id')->where('tax_kind','IGTF')],
             'is_active'=>['sometimes','boolean'],
+            'available_for_change'=>['sometimes','boolean', function ($attribute, $value, $fail) {
+                if (filter_var($value, FILTER_VALIDATE_BOOLEAN) && !in_array($this->input('collection_kind'), ['cash', 'account'], true)) {
+                    $fail('El vuelto requiere un medio de efectivo o cuenta.');
+                }
+            }],
             'bank_id'=>['required_if:collection_kind,account','nullable','integer'],
             'bank_account_id'=>['required_if:collection_kind,account','nullable','integer', function ($attribute, $value, $fail) {
                 if ($this->input('collection_kind') !== 'account') return;

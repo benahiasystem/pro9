@@ -30,19 +30,28 @@ final class ReceiptChange
             $remaining = $payable->minus($sum->minus($principal));
             if ($remaining->isPositive()) {
                 $receivedDue = D::of(D::represent(D::convert($remaining, $documentCurrency, 'USD', $row['exchange_rate']), 2));
-                // Equality to HALF_UP cents also defines the exact half-cent boundary.
-                if ($receivedDue->isEqualTo(D::readRequired($row, 'original_amount'))) {
-                    if (!$principal->isEqualTo($remaining)) {
-                        $row = self::withSettlement($row, $remaining);
-                        $row['_settlement_payment'] = D::fraction($remaining);
-                        $rows[$closingIndex] = $row;
+                // Settle the net USD cents before deriving change. Dividing a rounded
+                // VES excess back to USD can reject an otherwise exact cash change.
+                $received = D::readRequired($row, 'original_amount');
+                if ($receivedDue->isPositive() && !$receivedDue->isGreaterThan($received)) {
+                    $change = $received->minus($receivedDue);
+                    if ($change->isPositive()) {
+                        $row['original_amount'] = D::represent($receivedDue, 2, true);
+                        $row['change'] = D::represent($change, 2, true);
                     }
-                    return $rows;
+                    if ($change->isPositive() || !$principal->isEqualTo($remaining)) {
+                        // All callers rebuild the net snapshot and IGTF, then apply
+                        // this internal target and retain its exact rounding adjustment.
+                        $row['payment'] = D::represent($remaining);
+                        $row['_settlement_payment'] = D::fraction($remaining);
+                    }
+                    $rows[$closingIndex] = $row;
+                    return TenderedReceipt::finish($rows, $cashMethods, $payable);
                 }
             }
         }
         $excess = $sum->minus($payable);
-        if (!$excess->isPositive()) return $rows;
+        if (!$excess->isPositive()) return TenderedReceipt::finish($rows, $cashMethods, $payable);
 
         $remaining = $excess;
         foreach ($rows as $index => $row) {
@@ -71,7 +80,7 @@ final class ReceiptChange
             $remaining = $remaining->minus($applied);
         }
         if ($remaining->isPositive()) FiscalAmounts::error('payments', 'El exceso sólo puede devolverse desde el efectivo recibido.');
-        return $rows;
+        return TenderedReceipt::finish($rows, $cashMethods, $payable);
     }
 
     /** Update both representations from an internally computed exact application. */

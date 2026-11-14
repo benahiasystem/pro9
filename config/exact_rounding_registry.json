@@ -219818,14 +219818,17 @@
     },
     "ad7bdf57eb2f265e53d77f73": {
         "category": "exact_arithmetic",
-        "justification": "Suma aplicaciones recuperadas de snapshots mediante Decimal::sum antes de calcular el remanente; no agrega proyecciones con aritmética nativa. Expresión: D::sum(array_map(fn($row) => D::readRequired($row, 'payment'), $rows))",
+        "justification": "Suma aplicaciones autoritativas de los snapshots con Decimal::sum; el remanente usa resta racional y se contrasta con pagos mixtos en ambos órdenes. Expresión: D::sum(array_map(fn($row) => D::readRequired($row, 'payment'), $rows))",
         "evidence": [
-            "tests/Unit/PaymentQuoteTest.php",
-            "tests/Support/SpePersistenceCases.php"
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
         ],
         "evidence_sha256": {
-            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
-            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
         },
         "source": {
             "file": "app/Services/Payments/ReceiptChange.php",
@@ -219836,68 +219839,83 @@
     },
     "53bfef4e4229856714ff0fa3": {
         "category": "technical",
-        "justification": "Selecciona moneda de factura, moneda recibida o presencia del índice de cierre; no compara ni adapta importes monetarios. Expresión: $documentCurrency === 'VES'",
+        "justification": "Selecciona exclusivamente el cierre de facturas VES por el código de moneda; la igualdad estricta de texto no opera sobre importes. Expresión: $documentCurrency === 'VES'",
         "evidence": [
-            "tests/Unit/PaymentQuoteTest.php",
-            "tests/Support/SpePersistenceCases.php"
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
         ],
         "evidence_sha256": {
-            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
-            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
         },
         "source": {
             "file": "app/Services/Payments/ReceiptChange.php",
             "symbol": "ReceiptChange::apply",
             "operation": "native_Identical",
             "operation_language": "php"
-        }
+        },
+        "proof": "nonnumeric_string_equality"
     },
     "f08a4c10e8525d477e91534e": {
         "category": "technical",
-        "justification": "Selecciona moneda de factura, moneda recibida o presencia del índice de cierre; no compara ni adapta importes monetarios. Expresión: ($row['currency_type_id'] ?? null) === 'USD'",
+        "justification": "Selecciona cobros USD mediante su código de moneda antes de adaptar el principal a centavos recibidos; no compara valores monetarios. Expresión: ($row['currency_type_id'] ?? null) === 'USD'",
         "evidence": [
-            "tests/Unit/PaymentQuoteTest.php",
-            "tests/Support/SpePersistenceCases.php"
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
         ],
         "evidence_sha256": {
-            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
-            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
         },
         "source": {
             "file": "app/Services/Payments/ReceiptChange.php",
             "symbol": "ReceiptChange::apply",
             "operation": "native_Identical",
             "operation_language": "php"
-        }
+        },
+        "proof": "nonnumeric_string_equality"
     },
     "a7d914ac4f03b31021eef700": {
         "category": "technical",
-        "justification": "Selecciona moneda de factura, moneda recibida o presencia del índice de cierre; no compara ni adapta importes monetarios. Expresión: $closingIndex !== null",
+        "justification": "Comprueba la presencia del índice del último efectivo nuevo elegible; excluye históricos y cobros bancarios sin aritmética de dinero. Expresión: $closingIndex !== null",
         "evidence": [
-            "tests/Unit/PaymentQuoteTest.php",
-            "tests/Support/SpePersistenceCases.php"
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
         ],
         "evidence_sha256": {
-            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
-            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
         },
         "source": {
             "file": "app/Services/Payments/ReceiptChange.php",
             "symbol": "ReceiptChange::apply",
             "operation": "native_NotIdentical",
             "operation_language": "php"
-        }
+        },
+        "proof": "strict_type_guard"
     },
     "cb40cc233146d6812227c746": {
         "category": "settlement",
-        "justification": "Única adaptación HALF_UP del remanente a centavos USD para compararlo con el efectivo real; los límites exactos de medio centavo están probados. Expresión: D::represent(D::convert($remaining, $documentCurrency, 'USD', $row['exchange_rate']), 2)",
+        "justification": "Convierte el remanente exacto a USD y lo adapta una sola vez HALF_UP a centavos recibidos. El vuelto resta ese neto al efectivo recibido; el ajuste documental queda conservado como fracción interna. Expresión: D::represent(D::convert($remaining, $documentCurrency, 'USD', $row['exchange_rate']), 2)",
         "evidence": [
-            "tests/Unit/PaymentQuoteTest.php",
-            "tests/Support/SpePersistenceCases.php"
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
         ],
         "evidence_sha256": {
-            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
-            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
         },
         "source": {
             "file": "app/Services/Payments/ReceiptChange.php",
@@ -219908,14 +219926,17 @@
     },
     "6606047d0a74fb79d989e26a": {
         "category": "storage",
-        "justification": "Representa la aplicación calculada para su columna decimal; conserva la fracción autoritativa en el mismo snapshot y no reutiliza la representación como operando. Expresión: D::represent($applied)",
+        "justification": "Proyecta la aplicación para su columna decimal y conserva su fracción autoritativa y su diferencia con el principal convertido en el mismo snapshot. El ajuste no altera el efectivo recibido ni el IGTF. Expresión: D::represent($applied)",
         "evidence": [
-            "tests/Unit/PaymentQuoteTest.php",
-            "tests/Support/SpePersistenceCases.php"
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
         ],
         "evidence_sha256": {
-            "tests/Unit/PaymentQuoteTest.php": "05d20cecb0b266160cbfc0d69c38f145056b25db60a4308ff5b716ec8b9deaa8",
-            "tests/Support/SpePersistenceCases.php": "3fe8e6c03bf4f757347db773710e7ebf662196674d6871348da9932c891e2055"
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
         },
         "source": {
             "file": "app/Services/Payments/ReceiptChange.php",
@@ -220209,6 +220230,1462 @@
             "file": "resources/js/mixins/fiscal-payment-settings.js",
             "symbol": "fiscalAppliedPayment",
             "operation": "native_>",
+            "operation_language": "javascript"
+        }
+    },
+    "c452a357c14681cbf57ffb55": {
+        "category": "technical",
+        "justification": "Compara las claves JSON de la solicitud fiscal vigente y de su respuesta para excluir una evaluación de otro borrador; no compara importes. Expresión: igtfQuoteKey === fiscalQuoteKey",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/invoice-tax-summary.test.cjs#the actual form binding immediately withholds a quote belonging to an earlier draft"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "1759dd63200f136049c3060032f0692f2c393ecf350d932bef2cf435d4304af3",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "6cb6b7cf8c24dfa85a7d9623": {
+        "category": "technical",
+        "justification": "Compara las claves de solicitud/respuesta para presentar la evaluación pendiente en vez de cifras de otro borrador; no adapta valores monetarios. Expresión: igtfQuoteKey !== fiscalQuoteKey",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/invoice-tax-summary.test.cjs#the actual form binding immediately withholds a quote belonging to an earlier draft"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "1759dd63200f136049c3060032f0692f2c393ecf350d932bef2cf435d4304af3",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "7eacc32b9a194aa2b674c6b0": {
+        "category": "technical",
+        "justification": "Selecciona el símbolo del catálogo para el código VES; la comparación sólo identifica una moneda. Expresión: currency.id === 'VES'",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "tests/js/invoice-tax-summary.test.cjs#the approved table renders the voucher IVA and formats bolívares only at presentation"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/tax_summary.vue": "e6b3c8c7a7128d23187f32f78460d623a27eb080c2230821e9a2370ff7671b47",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "symbol": "currencySymbol",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "4b4a2ad5135ff708b8945479": {
+        "category": "presentation",
+        "justification": "Representa exclusivamente el porcentaje IVA del encabezado tras multiplicar la tasa con ExactAmount; la cadena visible no alimenta cálculos. Expresión: exactAmount(this.ivaRate).times(100).decimal()",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "tests/js/invoice-tax-summary.test.cjs#invalid conversion data stays unavailable and configured tax rates remain reactive"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/tax_summary.vue": "e6b3c8c7a7128d23187f32f78460d623a27eb080c2230821e9a2370ff7671b47",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "symbol": "ivaLabel",
+            "operation": "decimal",
+            "operation_language": "javascript"
+        }
+    },
+    "03e4e20168e1f595cca260ee": {
+        "category": "presentation",
+        "justification": "Representa exclusivamente la tasa IGTF del encabezado; conserva la tasa original y no utiliza el texto formateado para calcular la base ni el impuesto cobrado. Expresión: exactAmount(rate).decimal()",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "tests/js/invoice-tax-summary.test.cjs#invalid conversion data stays unavailable and configured tax rates remain reactive"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/tax_summary.vue": "e6b3c8c7a7128d23187f32f78460d623a27eb080c2230821e9a2370ff7671b47",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "symbol": "igtfLabel",
+            "operation": "decimal",
+            "operation_language": "javascript"
+        }
+    },
+    "4e02ef51369b2d45ba747426": {
+        "category": "technical",
+        "justification": "Comprueba si todavía falta la tasa para evitar mostrar un porcentaje inventado; no compara su magnitud. Expresión: rate == null",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "tests/js/invoice-tax-summary.test.cjs#invalid conversion data stays unavailable and configured tax rates remain reactive"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/tax_summary.vue": "e6b3c8c7a7128d23187f32f78460d623a27eb080c2230821e9a2370ff7671b47",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "symbol": "igtfLabel",
+            "operation": "native_==",
+            "operation_language": "javascript"
+        },
+        "proof": "nullish_presence_guard"
+    },
+    "7374cc0f3d5bc438966e64d3": {
+        "category": "technical",
+        "justification": "Identifica VES como moneda documental para conservar el importe fiscal ya expresado en bolívares. Expresión: this.document.currency_type_id === 'VES'",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "tests/js/invoice-tax-summary.test.cjs#real form initialization and total calculation update IVA after quantity, discounts, currency, rate and item removal"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/tax_summary.vue": "e6b3c8c7a7128d23187f32f78460d623a27eb080c2230821e9a2370ff7671b47",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "symbol": "ivaSummary",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "f7e3df9b1dfc6159cc6d1c18": {
+        "category": "technical",
+        "justification": "Rechaza un código documental distinto de VES/USD antes de la conversión exacta; sólo compara códigos de moneda. Expresión: this.document.currency_type_id !== 'USD'",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "tests/js/invoice-tax-summary.test.cjs#invalid conversion data stays unavailable and configured tax rates remain reactive"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/tax_summary.vue": "e6b3c8c7a7128d23187f32f78460d623a27eb080c2230821e9a2370ff7671b47",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "symbol": "ivaSummary",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "1b68d40300c6af9f370afa14": {
+        "category": "technical",
+        "justification": "Selecciona exclusivamente los cobros clasificados como sujetos en la respuesta fiscal vigente; no vuelve a clasificar ni calcular su impuesto. Expresión: row.igtf_status !== 'subject'",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "tests/js/invoice-tax-summary.test.cjs#IGTF uses only net subject dollars at each receipt rate and the tax actually collected"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/tax_summary.vue": "e6b3c8c7a7128d23187f32f78460d623a27eb080c2230821e9a2370ff7671b47",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "symbol": "igtfSummary",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "294aa5610c3db770efeb4393": {
+        "category": "technical",
+        "justification": "Selecciona la moneda USD de la recepción sujeta antes de convertir principal e impuesto a bolívares con su propia tasa. Expresión: row.currency_type_id !== 'USD'",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "tests/js/invoice-tax-summary.test.cjs#IGTF uses only net subject dollars at each receipt rate and the tax actually collected"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/tax_summary.vue": "e6b3c8c7a7128d23187f32f78460d623a27eb080c2230821e9a2370ff7671b47",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "symbol": "igtfSummary",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "fda8ef0d29b96f3b798a59f4": {
+        "category": "technical",
+        "justification": "Distingue un importe no disponible de cero para ocultar cifras pendientes o inválidas; no compara importes entre sí. Expresión: amount === null",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "tests/js/invoice-tax-summary.test.cjs#pending or failed quotes hide stale IGTF and a valid retry updates the same component"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/tax_summary.vue": "e6b3c8c7a7128d23187f32f78460d623a27eb080c2230821e9a2370ff7671b47",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "symbol": "money",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "strict_type_guard"
+    },
+    "c2f3d91f20662004f138bc65": {
+        "category": "presentation",
+        "justification": "Redondeo HALF_UP final a dos decimales sólo para mostrar las celdas de la tabla después de sumar y convertir fracciones exactas; no muta el comprobante ni los cobros. Expresión: amount.final(2)",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "tests/js/invoice-tax-summary.test.cjs#IVA converts the snapshot fraction before rounding and preserves amounts above the JavaScript safe integer"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/tax_summary.vue": "e6b3c8c7a7128d23187f32f78460d623a27eb080c2230821e9a2370ff7671b47",
+            "tests/js/invoice-tax-summary.test.cjs": "77a3a2502eecfcf546d0e68c616c64376cc41e336974e175d88df2a67fd455c5"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/tax_summary.vue",
+            "symbol": "money",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "414e75a2ee5fdd4a96af4299": {
+        "category": "technical",
+        "justification": "Compara las claves JSON de evaluación y cobro para identificar importes pendientes; no compara magnitudes monetarias. Expresión: igtfQuoteKey !== fiscalQuoteKey",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/invoice-payment-progress.test.cjs#pending evaluations retain labelled amounts without a blank flash and failures stay unavailable"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "743400860c0cbf07a61018c7f9927cde0af8984d2fb6456bbf2c6db518e0adc8",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "2eec1d74016d80d696587c93": {
+        "category": "technical",
+        "justification": "Selecciona el símbolo del catálogo para el código VES, sin adaptar importes. Expresión: currency.id === 'VES'",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#empty and zero payment rows show zero paid and the full outstanding amount"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "currencySymbol",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "02e9868f740c460145c60375": {
+        "category": "technical",
+        "justification": "Detecta un campo de pago ausente antes de leer su operando; no compara su magnitud. Expresión: row.payment == null",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#empty and zero payment rows show zero paid and the full outstanding amount"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "calculatedSummary",
+            "operation": "native_==",
+            "operation_language": "javascript"
+        },
+        "proof": "nullish_presence_guard"
+    },
+    "c382f2164404151c344c4736": {
+        "category": "technical",
+        "justification": "Identifica el texto vacío del campo de pago y lo representa como ausencia de abono; no convierte decimales a números binarios. Expresión: row.payment === ''",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#empty and zero payment rows show zero paid and the full outstanding amount"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "calculatedSummary",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "e37cd3bf064d1a1367df0868": {
+        "category": "validation",
+        "justification": "Comprueba el signo devuelto por ExactAmount.compare y rechaza un recibo negativo sin transformar el importe racional. Expresión: amount.compare(0) < 0",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#invalid receipts stay unavailable and an existing excess never creates a negative outstanding amount"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "calculatedSummary",
+            "operation": "native_<",
+            "operation_language": "javascript"
+        }
+    },
+    "25106a522dc383525647d015": {
+        "category": "exact_arithmetic",
+        "justification": "Compara el resultado entero de ExactAmount.compare para omitir pagos exactamente cero; el operando de negocio permanece racional. Expresión: amount.compare(0) === 0",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#empty and zero payment rows show zero paid and the full outstanding amount"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "calculatedSummary",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "ddf8e49f1b93ecbb96833ef3": {
+        "category": "technical",
+        "justification": "Distingue la ausencia del importe liquidable para recuperar la fracción del total conservado; no elige por magnitud. Expresión: this.document.total_payable == null",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#large exact amounts and a fractional conversion keep their cents"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "calculatedSummary",
+            "operation": "native_==",
+            "operation_language": "javascript"
+        },
+        "proof": "nullish_presence_guard"
+    },
+    "555139bda952457feca824fa": {
+        "category": "validation",
+        "justification": "Comprueba el signo del saldo racional mediante ExactAmount.compare y presenta cero pendiente ante un exceso, sin fabricar vuelto ni modificar el cobro. Expresión: missing.compare(0) < 0",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#invalid receipts stay unavailable and an existing excess never creates a negative outstanding amount"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "calculatedSummary",
+            "operation": "native_<",
+            "operation_language": "javascript"
+        }
+    },
+    "cd161fba8999332bba112acf": {
+        "category": "technical",
+        "justification": "Identifica la moneda VES de los importes documentales; sólo compara códigos. Expresión: this.document.currency_type_id === 'VES'",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#mixed subject dollar payments include collected IGTF and close after the remaining bolívares"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "calculatedSummary",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "d8436b6728be90e7602ad063": {
+        "category": "technical",
+        "justification": "Valida el código USD antes de convertir a bolívares usando la tasa documental explícita; no acepta monedas retiradas. Expresión: this.document.currency_type_id !== 'USD'",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#USD document amounts convert to bolívares using the document rate before presentation"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "calculatedSummary",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "6f44ca6623e8253d93c39de0": {
+        "category": "presentation",
+        "justification": "Representación HALF_UP a dos decimales exclusivamente para la etiqueta Falta, después de recuperar fracciones y convertir a bolívares. No alimenta otra operación ni modifica el documento. Expresión: convert(missing).final(2)",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#large exact amounts and a fractional conversion keep their cents"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "calculatedSummary",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "b845ef04743c1bff116e05a3": {
+        "category": "presentation",
+        "justification": "Representación HALF_UP a dos decimales exclusivamente para la etiqueta Pagado, después de sumar principal e IGTF liquidado y convertir con la tasa documental. No modifica pagos ni saldos. Expresión: convert(paid).final(2)",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#mixed subject dollar payments include collected IGTF and close after the remaining bolívares"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "calculatedSummary",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "6071ed80be63ddc504f14706": {
+        "category": "technical",
+        "justification": "Distingue un importe disponible de null para conservar sólo una presentación evaluada mientras llega la siguiente respuesta. Expresión: value.paid !== null",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#pending evaluations retain labelled amounts without a blank flash and failures stay unavailable"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "handler",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        },
+        "proof": "strict_type_guard"
+    },
+    "14207dc615c6eeddcb3ba028": {
+        "category": "technical",
+        "justification": "Distingue un importe no disponible de cero para mostrar un guion en caso de error; no compara importes entre sí. Expresión: amount === null",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "tests/js/invoice-payment-progress.test.cjs#pending evaluations retain labelled amounts without a blank flash and failures stay unavailable"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/payment_progress.vue": "322fd29e9d779d5657d471ef08ca4492d03168a7c8a3fcef55c6a8141b1128df",
+            "tests/js/invoice-payment-progress.test.cjs": "593ecd40f6ab387b5de3b3ed9e229e912e9a77b3bc14e52e1a624d21214c9099"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/payment_progress.vue",
+            "symbol": "money",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "strict_type_guard"
+    },
+    "99dd1bc5b84e391776e0a9b3": {
+        "category": "storage",
+        "justification": "Representa el neto USD ya liquidado a centavos, sin una nueva decisión de redondeo. Los consumidores reconstruyen su snapshot y calculan IGTF exclusivamente sobre este neto. Expresión: D::represent($receivedDue, 2, true)",
+        "evidence": [
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "6dca10699ebe99269cc9f406": {
+        "category": "storage",
+        "justification": "Representa el vuelto USD como diferencia racional entre dos importes recibidos en centavos. Conserva el efectivo entregado y no deriva el vuelto desde el exceso VES redondeado. Expresión: D::represent($change, 2, true)",
+        "evidence": [
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "e9fae4138a7574d763ccaa79": {
+        "category": "storage",
+        "justification": "Proyecta el remanente aplicado para el transporte interno; conserva a la vez su fracción en _settlement_payment. Vista previa, evaluación y guardado reconstruyen el snapshot neto antes de aplicar esa fracción. Expresión: D::represent($remaining)",
+        "evidence": [
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "73cc6eccb980ded9e5950c5d": {
+        "category": "technical",
+        "justification": "Cuenta filas para restringir el caso de remanente menor a un centavo de efectivo a un solo recibo. No usa importes ni suma monedas. Expresión: count($rows) === 1",
+        "evidence": [
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "a95800e406d491589585cbfa": {
+        "category": "settlement",
+        "justification": "Comprueba si un vuelto convertido de una única recepción se liquida a cero centavos. La diferencia permanece como ajuste documental racional y no se inventa efectivo. Expresión: D::represent($change, 2)",
+        "evidence": [
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "5fec42d851481d81667123e5": {
+        "category": "settlement",
+        "justification": "Adapta el vuelto general a centavos y exige inmediatamente igualdad con su valor exacto; rechaza diferencias no liquidables y excesos sin suficiente efectivo nuevo. Expresión: D::represent($change, 2)",
+        "evidence": [
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "3235ef7c58cddf525feb5510": {
+        "category": "storage",
+        "justification": "Representa el principal neto después de restar vuelto exacto en la moneda recibida; los consumidores recalculan IGTF y snapshots desde ese neto. Expresión: D::represent($net)",
+        "evidence": [
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "76d2dfb25d9502e50acfabff": {
+        "category": "storage",
+        "justification": "Representa la aplicación neta después de devolver el exceso, calculada mediante resta Decimal. Los casos de igual moneda y mixtos verifican conservación y saldo cero. Expresión: D::represent($netApplied)",
+        "evidence": [
+            "app/Services/Payments/ReceiptChange.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+            "tests/Unit/PaymentQuoteTest.php#test_dollar_cash_change_uses_received_cents_and_taxes_only_the_net_receipt"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/ReceiptChange.php": "602c4c1b73749a6892cb49803b843c5f91a461c8386e32c1862c17b150f8d0ea",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/ReceiptChange.php",
+            "symbol": "ReceiptChange::apply",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "6279582b0170fb80b15c11db": {
+        "category": "technical",
+        "justification": "Comprueba presencia del contexto interno del recibo antes de adjuntar las fracciones del total entregado; no compara importes. Expresión: $context !== null",
+        "evidence": [
+            "app/CoreFacturalo/Facturalo.php",
+            "tests/Unit/PaymentQuoteTest.php#test_total_tendered_includes_igtf_and_returns_eight_twenty_from_seventy",
+            "tests/Unit/PaymentQuoteTest.php#test_partial_total_tendered_splits_net_and_tax_without_adding_tax_again",
+            "tests/Support/SpePersistenceCases.php#test_invoice_total_tendered_includes_igtf_and_preserves_the_actual_eight_twenty_change"
+        ],
+        "evidence_sha256": {
+            "app/CoreFacturalo/Facturalo.php": "8c87fdac04349a773ac17a54566df0e1a353a5255ebeed24cd0080c421bda2ed",
+            "tests/Unit/PaymentQuoteTest.php": "9b2582ad3a68673b9f84c130e57110e27b1a9a85d765d3b4ddd42fd614a42504",
+            "tests/Support/SpePersistenceCases.php": "27550fb651a4d08c37b9e1f662cecd1e847f4adebf3822e5477928b0c42a0503"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Facturalo.php",
+            "symbol": "Facturalo::savePayments",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "9e2992de0df1feecdb3a6f42": {
+        "category": "validation",
+        "justification": "Distingue ausencia de la fracción histórica del total entregado para rechazar un reintento incompatible. La igualdad del dinero se comprueba aparte mediante Decimal. Expresión: $requested === null",
+        "evidence": [
+            "app/Services/Fiscal/RecordedPaymentAmounts.php",
+            "tests/Unit/PaymentQuoteTest.php#test_total_tendered_includes_igtf_and_returns_eight_twenty_from_seventy",
+            "tests/Unit/PaymentQuoteTest.php#test_partial_total_tendered_splits_net_and_tax_without_adding_tax_again",
+            "tests/Support/SpePersistenceCases.php#test_invoice_total_tendered_includes_igtf_and_preserves_the_actual_eight_twenty_change"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/RecordedPaymentAmounts.php": "211cb9c8fdd083bc34768ba2cf3cbc819a078dcfec8b58a35c14cc4c5cb92109",
+            "tests/Unit/PaymentQuoteTest.php": "9b2582ad3a68673b9f84c130e57110e27b1a9a85d765d3b4ddd42fd614a42504",
+            "tests/Support/SpePersistenceCases.php": "27550fb651a4d08c37b9e1f662cecd1e847f4adebf3822e5477928b0c42a0503"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/RecordedPaymentAmounts.php",
+            "symbol": "RecordedPaymentAmounts::forRetry",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "c216c0f1b7a57705857ae468": {
+        "category": "settlement",
+        "justification": "Liquida el total físico entregado a centavos HALF_UP y conserva su entrada original. La separación posterior usa fracciones exactas y reparto por mayores residuos, sin redondear el principal antes del IGTF. Expresión: D::represent($requested, 2, true)",
+        "evidence": [
+            "app/Services/Payments/TenderedReceipt.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/TenderedReceipt.php": "3a795541368cff88454031833088fb863eaa3c2ee649e17ddf3abbb692a592b8",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/TenderedReceipt.php",
+            "symbol": "TenderedReceipt::prepare",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "836b6f50dd1d61cc98d473da": {
+        "category": "technical",
+        "justification": "Selecciona el código fiscal subject resuelto por el servidor; la igualdad estricta opera sobre texto y no sobre importes. Expresión: ($row['igtf_status'] ?? 'not_applicable') === 'subject'",
+        "evidence": [
+            "app/Services/Payments/TenderedReceipt.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/TenderedReceipt.php": "3a795541368cff88454031833088fb863eaa3c2ee649e17ddf3abbb692a592b8",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/TenderedReceipt.php",
+            "symbol": "TenderedReceipt::prepare",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "1b1c80c1d67ba85e67bb81ee": {
+        "category": "storage",
+        "justification": "Representa el principal ya asignado por Decimal::allocate al repartir el total incluido con pesos IGTF/100. El principal y el impuesto asignados suman exactamente el efectivo liquidado; sus fracciones y ajustes quedan conservados. Expresión: D::represent($principal, 2, true)",
+        "evidence": [
+            "app/Services/Payments/TenderedReceipt.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/TenderedReceipt.php": "3a795541368cff88454031833088fb863eaa3c2ee649e17ddf3abbb692a592b8",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/TenderedReceipt.php",
+            "symbol": "TenderedReceipt::prepare",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "87af95299416bb0ff4ff7e21": {
+        "category": "storage",
+        "justification": "Representa el vuelto después de descontar del total los componentes asignados o el neto limitado por la venta. Conservar USD 40 no produce vuelto ficticio; un exceso real sobre venta e IGTF sí se devuelve. Expresión: D::represent($change, 2, true)",
+        "evidence": [
+            "app/Services/Payments/TenderedReceipt.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/TenderedReceipt.php": "3a795541368cff88454031833088fb863eaa3c2ee649e17ddf3abbb692a592b8",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/TenderedReceipt.php",
+            "symbol": "TenderedReceipt::finish",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "fa734b43bc129599d69f9be7": {
+        "category": "settlement",
+        "justification": "Liquida el IGTF del principal conocido cuando la venta limita el cobro o hay vuelto real. No se usa para recalcular el IGTF incluido sobre el principal previamente redondeado del reparto. Expresión: D::represent(D::of($principal)->multipliedBy($rate)->dividedBy(100), 2, true)",
+        "evidence": [
+            "app/Services/Payments/TenderedReceipt.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/TenderedReceipt.php": "3a795541368cff88454031833088fb863eaa3c2ee649e17ddf3abbb692a592b8",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/TenderedReceipt.php",
+            "symbol": "TenderedReceipt::tax",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "db9b4c5be9e09bd2a4acb29d": {
+        "category": "settlement",
+        "justification": "Previsualiza el impuesto de un principal de cobro sugerido ya liquidable. Para separar una entrada con impuesto incluido se usa splitTendered y allocateExact, sin encadenar este redondeo como base fiscal. Expresión: exactAmount(principal).times(rate).dividedBy('100').final(2)",
+        "evidence": [
+            "resources/js/helpers/tendered-receipt.js",
+            "tests/js/fiscal-payment-ui.test.cjs#inclusive cash allocates exact tax and principal once without losing a delivered cent"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/tendered-receipt.js": "b810ecd24be0c384d02d8ecb24649c5f5866c5a6b90686050c71452fbd8a308c",
+            "tests/js/fiscal-payment-ui.test.cjs": "f4988ce047ff007db0f62cd6d1a022ae95f3ef13487c1cc067922d54f0a544db"
+        },
+        "source": {
+            "file": "resources/js/helpers/tendered-receipt.js",
+            "symbol": "tax",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "3c80388440ad3fc53a57c6d0": {
+        "category": "settlement",
+        "justification": "Adapta a centavos el principal físico sugerido antes de proponer un total; esta propuesta no reemplaza la fracción de una entrada incluida ni los cálculos del servidor. Expresión: exactAmount(principal).final(2)",
+        "evidence": [
+            "resources/js/helpers/tendered-receipt.js",
+            "tests/js/fiscal-payment-ui.test.cjs#inclusive cash allocates exact tax and principal once without losing a delivered cent"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/tendered-receipt.js": "b810ecd24be0c384d02d8ecb24649c5f5866c5a6b90686050c71452fbd8a308c",
+            "tests/js/fiscal-payment-ui.test.cjs": "f4988ce047ff007db0f62cd6d1a022ae95f3ef13487c1cc067922d54f0a544db"
+        },
+        "source": {
+            "file": "resources/js/helpers/tendered-receipt.js",
+            "symbol": "totalTendered",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "b19248eb48c1cf02f93845f7": {
+        "category": "presentation",
+        "justification": "Presenta la suma exacta de los componentes en centavos de una propuesta de cobro. La entrada posterior se separa con reparto conservativo del total. Expresión: net.plus(tax(net, rate)).final(2)",
+        "evidence": [
+            "resources/js/helpers/tendered-receipt.js",
+            "tests/js/fiscal-payment-ui.test.cjs#inclusive cash allocates exact tax and principal once without losing a delivered cent"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/tendered-receipt.js": "b810ecd24be0c384d02d8ecb24649c5f5866c5a6b90686050c71452fbd8a308c",
+            "tests/js/fiscal-payment-ui.test.cjs": "f4988ce047ff007db0f62cd6d1a022ae95f3ef13487c1cc067922d54f0a544db"
+        },
+        "source": {
+            "file": "resources/js/helpers/tendered-receipt.js",
+            "symbol": "totalTendered",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "e8cda68e0b1e330dacca1c71": {
+        "category": "presentation",
+        "justification": "Formatea el vuelto confirmado por la evaluación vigente del servidor en la moneda recibida, tanto en USD con IGTF como en VES sin IGTF. No reconstruye el vuelto ni altera los importes de la evaluación. Expresión: exactAmount(quoted.change ?? '0').final(2)",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment",
+            "tests/js/invoice-tax-summary.test.cjs#the actual receipt template updates bolivar change without recreating the component"
+        ],
+        "evidence_sha256": {
+            "tests/js/fiscal-payment-ui.test.cjs": "f4988ce047ff007db0f62cd6d1a022ae95f3ef13487c1cc067922d54f0a544db",
+            "tests/js/invoice-tax-summary.test.cjs": "98f6a67504b4810b59b6884cd0ae51c19dfde001d4b7bb3958d3d7cae261f13b",
+            "resources/js/views/tenant/documents/invoice_generate.vue": "6fe607cadf2e8895aab3ef282bdc5b3966aaffafa6594ed48a60a37a8b982cda"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "fiscalReceiptBreakdown",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "98e541eafa22b1bd2356a792": {
+        "category": "technical",
+        "justification": "Compara la entrada textual con la última propuesta propia para evitar un ciclo del watcher; la igualdad financiera y los límites usan ExactAmount y el servidor. Expresión: value === this.lastTendered",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue": "eba5f76ed1d0dd1ff338b8ff02d8324325d9c21d45031d55dfc512b443c309ad",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "symbol": "{anonymous}",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "0db9e0eabcbe92213e13fe3c": {
+        "category": "technical",
+        "justification": "Selecciona la etiqueta fiscal subject por su código de texto al previsualizar el IGTF incluido. Expresión: this.payment.igtf_status === 'subject'",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue": "eba5f76ed1d0dd1ff338b8ff02d8324325d9c21d45031d55dfc512b443c309ad",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "symbol": "tenderedTaxRate",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "0ae06c773fbc42d32cbaa277": {
+        "category": "settlement",
+        "justification": "Previsualiza la aplicación documental desde el principal neto recibido liquidado, usando la conversión racional compartida. No reemplaza el resultado fiscal del servidor. Expresión: appliedReceiptAmount(p, this.documentCurrency).final(2)",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue": "eba5f76ed1d0dd1ff338b8ff02d8324325d9c21d45031d55dfc512b443c309ad",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "symbol": "convertTendered",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "65b2dc380e06774c12c4bf25": {
+        "category": "technical",
+        "justification": "Compara códigos de moneda para decidir si se conserva o convierte la entrada al cambiar el método; no compara importes. Expresión: priorCurrency === currency",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue": "eba5f76ed1d0dd1ff338b8ff02d8324325d9c21d45031d55dfc512b443c309ad",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "symbol": "syncMethodCurrency",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "f46786cc811fbc0ca1cba196": {
+        "category": "technical",
+        "justification": "Selecciona la dirección de conversión por el código USD, sin aritmética nativa sobre dinero. Expresión: priorCurrency === 'USD'",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue": "eba5f76ed1d0dd1ff338b8ff02d8324325d9c21d45031d55dfc512b443c309ad",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "symbol": "syncMethodCurrency",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "6acd81ad74d4b510d9eeff6a": {
+        "category": "exact_arithmetic",
+        "justification": "Convierte el total entregado VES a USD mediante la división racional compartida y la tasa del documento; conserva la entrada al cambiar el método. Expresión: rateDivide(priorTendered, this.documentRate)",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue": "eba5f76ed1d0dd1ff338b8ff02d8324325d9c21d45031d55dfc512b443c309ad",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "symbol": "syncMethodCurrency",
+            "operation": "rateDivide",
+            "operation_language": "javascript"
+        }
+    },
+    "7b8b6ed866a5918c3d09104d": {
+        "category": "exact_arithmetic",
+        "justification": "Convierte el total entregado USD a VES mediante multiplicación racional y la tasa del documento; no convierte sólo el principal ni agrega otra vez IGTF. Expresión: rateMultiply(priorTendered, this.documentRate)",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue": "eba5f76ed1d0dd1ff338b8ff02d8324325d9c21d45031d55dfc512b443c309ad",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "symbol": "syncMethodCurrency",
+            "operation": "rateMultiply",
+            "operation_language": "javascript"
+        }
+    },
+    "a13a71ca9bbb8dee12b066ed": {
+        "category": "settlement",
+        "justification": "Liquida a centavos la propuesta en la nueva moneda del método después de su conversión exacta; el servidor valida la nueva recepción y su impuesto. Expresión: exactAmount(gross).final(2)",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/igtf_fields.vue": "eba5f76ed1d0dd1ff338b8ff02d8324325d9c21d45031d55dfc512b443c309ad",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/igtf_fields.vue",
+            "symbol": "syncMethodCurrency",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "68dc6fc5566781fb2a7a7477": {
+        "category": "technical",
+        "justification": "Concatena texto generado por la plantilla Vue para rotular el total entregado, moneda, total cobrado o vuelto. Los valores vienen de la evaluación y no se suman con el operador nativo. Expresión: \"\\n \"+_s(fiscalPaymentsApplicable ? 'Total entregado' : 'Monto')+\"\\n \"",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "8ed22a49de5fa83ed69d4e75633d52174f5a76fe1e733d04f5377347ca0418e2",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "7528f7f6aaa614420f576ae8": {
+        "category": "technical",
+        "justification": "Concatena texto generado por la plantilla Vue para rotular el total entregado, moneda, total cobrado o vuelto. Los valores vienen de la evaluación y no se suman con el operador nativo. Expresión: \"\\n \"+_s(fiscalPaymentsApplicable ? 'Total entregado' : 'Monto')",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "8ed22a49de5fa83ed69d4e75633d52174f5a76fe1e733d04f5377347ca0418e2",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "32b390e069c70e552677f66f": {
+        "category": "technical",
+        "justification": "Concatena texto generado por la plantilla Vue para rotular el total entregado, moneda, total cobrado o vuelto. Los valores vienen de la evaluación y no se suman con el operador nativo. Expresión: _s(row.currency_type_id || form.currency_type_id)+\" · IGTF incluido\"",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "8ed22a49de5fa83ed69d4e75633d52174f5a76fe1e733d04f5377347ca0418e2",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "0743051374038df25de61348": {
+        "category": "technical",
+        "justification": "Concatena texto generado por la plantilla Vue para rotular el total entregado, moneda, total cobrado o vuelto. Los valores vienen de la evaluación y no se suman con el operador nativo. Expresión: \"Total cobrado: \"+_s(detail.total)",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "8ed22a49de5fa83ed69d4e75633d52174f5a76fe1e733d04f5377347ca0418e2",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "20f506965f8b570760c8c3ae": {
+        "category": "technical",
+        "justification": "Concatena texto generado por la plantilla Vue para rotular el total entregado, moneda, total cobrado o vuelto. Los valores vienen de la evaluación y no se suman con el operador nativo. Expresión: \"Total cobrado: \"+_s(detail.total)+\" \"",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "8ed22a49de5fa83ed69d4e75633d52174f5a76fe1e733d04f5377347ca0418e2",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "37a74fb4450f42c13450fc60": {
+        "category": "technical",
+        "justification": "Concatena texto generado por la plantilla Vue para rotular el total entregado, moneda, total cobrado o vuelto. Los valores vienen de la evaluación y no se suman con el operador nativo. Expresión: \"Total cobrado: \"+_s(detail.total)+\" \"+_s(detail.currency)",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "8ed22a49de5fa83ed69d4e75633d52174f5a76fe1e733d04f5377347ca0418e2",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "4083337ed1a51d315e00135e": {
+        "category": "technical",
+        "justification": "Concatena texto generado por la plantilla Vue para rotular el total entregado, moneda, total cobrado o vuelto. Los valores vienen de la evaluación y no se suman con el operador nativo. Expresión: \"Vuelto: \"+_s(detail.change)+\" \"+_s(detail.currency)",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "8ed22a49de5fa83ed69d4e75633d52174f5a76fe1e733d04f5377347ca0418e2",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "be32c98480454fa2e5091d17": {
+        "category": "technical",
+        "justification": "Concatena texto generado por la plantilla Vue para rotular el total entregado, moneda, total cobrado o vuelto. Los valores vienen de la evaluación y no se suman con el operador nativo. Expresión: \"Vuelto: \"+_s(detail.change)",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "8ed22a49de5fa83ed69d4e75633d52174f5a76fe1e733d04f5377347ca0418e2",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "eaea3101ecc6bb997fb9b4ef": {
+        "category": "technical",
+        "justification": "Concatena texto generado por la plantilla Vue para rotular el total entregado, moneda, total cobrado o vuelto. Los valores vienen de la evaluación y no se suman con el operador nativo. Expresión: \"Vuelto: \"+_s(detail.change)+\" \"",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/fiscal-payment-ui.test.cjs#total tendered includes IGTF and preserves the customer entry through reactive recalculations",
+            "tests/js/fiscal-payment-ui.test.cjs#changing the payment currency converts the delivered total and reevaluates its included IGTF",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "8ed22a49de5fa83ed69d4e75633d52174f5a76fe1e733d04f5377347ca0418e2",
+            "tests/js/fiscal-payment-ui.test.cjs": "c2d105617e8a5fdbe5ae875edde3b9900a789bf8a8ea913d5fd78f9f41708865",
+            "tests/js/invoice-tax-summary.test.cjs": "741f1eaa18cff40f5f2a9919ed5b2d3faffcaa10850b31f3a413e91d50380a7c"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "a703c6c7ba9867023ebfc9a9": {
+        "category": "technical",
+        "justification": "Cuenta recibos para distinguir la liquidación de una venta cubierta por un solo cobro; conserva vuelto real cuando el total conocido ya está pagado. El límite monetario se compara mediante BigRational. Expresión: count($rows) === 1",
+        "evidence": [
+            "app/Services/Payments/TenderedReceipt.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/TenderedReceipt.php": "3a795541368cff88454031833088fb863eaa3c2ee649e17ddf3abbb692a592b8",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/TenderedReceipt.php",
+            "symbol": "TenderedReceipt::finish",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "5399a68046e0fc2c89fa6b79": {
+        "category": "technical",
+        "justification": "Comprueba ausencia del contexto interno de reparto; los cobros anteriores o de principal sin IGTF conservan su comportamiento sin leer datos del snapshot del navegador. Expresión: $input === null",
+        "evidence": [
+            "app/Services/Payments/TenderedReceipt.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/TenderedReceipt.php": "3a795541368cff88454031833088fb863eaa3c2ee649e17ddf3abbb692a592b8",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/TenderedReceipt.php",
+            "symbol": "TenderedReceipt::withAllocation",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "14f7ad2e19020f29f6f4acc7": {
+        "category": "storage",
+        "justification": "Representa el IGTF ya liquidado por mayores residuos desde la base fraccionaria del total incluido. El desempate prioriza el impuesto para mantener HALF_UP y se conserva tax_exact, base exacta y ajuste de ambos componentes. Expresión: D::represent(D::of($input['tax']), 2, true)",
+        "evidence": [
+            "app/Services/Payments/TenderedReceipt.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice"
+        ],
+        "evidence_sha256": {
+            "app/Services/Payments/TenderedReceipt.php": "3a795541368cff88454031833088fb863eaa3c2ee649e17ddf3abbb692a592b8",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Payments/TenderedReceipt.php",
+            "symbol": "TenderedReceipt::withAllocation",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "d4ddb15095731b9c88af12d1": {
+        "category": "technical",
+        "justification": "Distingue el contexto interno de un recibo inicial autorizado para aplicar el reparto recalculado en servidor antes de comprobar la evaluación; un reintento conserva sus valores congelados. Expresión: $initialAmounts !== null",
+        "evidence": [
+            "app/Services/Fiscal/FiscalDocumentPersistence.php",
+            "tests/Unit/PaymentQuoteTest.php#test_forty_inclusive_dollars_are_collected_in_full_with_exact_tax_allocation",
+            "tests/Support/SpePersistenceCases.php#test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice"
+        ],
+        "evidence_sha256": {
+            "app/Services/Fiscal/FiscalDocumentPersistence.php": "c6807ff712bc3c2ec29d3f5e617dcaa6ab17b70b977fc6c41497468272502c58",
+            "tests/Unit/PaymentQuoteTest.php": "21f3dcd0884327fe049338b095970d0f641d26cced1312ad6417375518bc02e2",
+            "tests/Support/SpePersistenceCases.php": "66129656b87ecc38f12ce0bcfec79554d70b070dec708f64e6e30f303e108df0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/FiscalDocumentPersistence.php",
+            "symbol": "FiscalDocumentPersistence::payment",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "3fa483792b232070413ec74c": {
+        "category": "validation",
+        "justification": "Rechaza una entrada negativa mediante el signo entero de ExactAmount.compare antes de adaptarla a centavos, evitando ocultar un negativo subcentavo. Expresión: requested.compare(0) < 0",
+        "evidence": [
+            "resources/js/helpers/tendered-receipt.js",
+            "tests/js/fiscal-payment-ui.test.cjs#inclusive cash allocates exact tax and principal once without losing a delivered cent"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/tendered-receipt.js": "b810ecd24be0c384d02d8ecb24649c5f5866c5a6b90686050c71452fbd8a308c",
+            "tests/js/fiscal-payment-ui.test.cjs": "f4988ce047ff007db0f62cd6d1a022ae95f3ef13487c1cc067922d54f0a544db"
+        },
+        "source": {
+            "file": "resources/js/helpers/tendered-receipt.js",
+            "symbol": "splitTendered",
+            "operation": "native_<",
+            "operation_language": "javascript"
+        }
+    },
+    "f90e23e6bcea5c2fdddd7abd": {
+        "category": "validation",
+        "justification": "Comprueba el signo de la tasa con comparación racional antes de construir los pesos del reparto. Expresión: percentage.compare(0) < 0",
+        "evidence": [
+            "resources/js/helpers/tendered-receipt.js",
+            "tests/js/fiscal-payment-ui.test.cjs#inclusive cash allocates exact tax and principal once without losing a delivered cent"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/tendered-receipt.js": "b810ecd24be0c384d02d8ecb24649c5f5866c5a6b90686050c71452fbd8a308c",
+            "tests/js/fiscal-payment-ui.test.cjs": "f4988ce047ff007db0f62cd6d1a022ae95f3ef13487c1cc067922d54f0a544db"
+        },
+        "source": {
+            "file": "resources/js/helpers/tendered-receipt.js",
+            "symbol": "splitTendered",
+            "operation": "native_<",
+            "operation_language": "javascript"
+        }
+    },
+    "5acb7acba7af09d0ad6b23ab": {
+        "category": "settlement",
+        "justification": "Liquida el total físico a centavos una sola vez; luego calcula base e IGTF exactos y asigna los centavos por mayores residuos. No deriva el impuesto desde un principal redondeado. Expresión: requested.final(2)",
+        "evidence": [
+            "resources/js/helpers/tendered-receipt.js",
+            "tests/js/fiscal-payment-ui.test.cjs#inclusive cash allocates exact tax and principal once without losing a delivered cent"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/tendered-receipt.js": "b810ecd24be0c384d02d8ecb24649c5f5866c5a6b90686050c71452fbd8a308c",
+            "tests/js/fiscal-payment-ui.test.cjs": "f4988ce047ff007db0f62cd6d1a022ae95f3ef13487c1cc067922d54f0a544db"
+        },
+        "source": {
+            "file": "resources/js/helpers/tendered-receipt.js",
+            "symbol": "splitTendered",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "a7303e8429d6359739a28d6e": {
+        "category": "presentation",
+        "justification": "Selecciona la moneda del recibo o presenta el total cobrado y su equivalente en VES desde importes y tasa de la evaluación, con decimal exacto y redondeo final a dos posiciones. Expresión: total.final(2)",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "6fe607cadf2e8895aab3ef282bdc5b3966aaffafa6594ed48a60a37a8b982cda",
+            "tests/js/invoice-tax-summary.test.cjs": "98f6a67504b4810b59b6884cd0ae51c19dfde001d4b7bb3958d3d7cae261f13b"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "fiscalReceiptBreakdown",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "642bba485f29cbc992bd4a22": {
+        "category": "validation",
+        "justification": "Selecciona la moneda de origen o presenta su equivalencia usando tasa VES por USD, aritmética exacta y redondeo final a dos decimales: (payment.currency_type_id || payment.currency) === 'USD'",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "6fe607cadf2e8895aab3ef282bdc5b3966aaffafa6594ed48a60a37a8b982cda",
+            "tests/js/invoice-tax-summary.test.cjs": "98f6a67504b4810b59b6884cd0ae51c19dfde001d4b7bb3958d3d7cae261f13b"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "fiscalEquivalent",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "fc77bc1a8b187dcb816a6a83": {
+        "category": "presentation",
+        "justification": "Selecciona la moneda de origen o presenta su equivalencia usando tasa VES por USD, aritmética exacta y redondeo final a dos decimales: value.times(rate).final(2)",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "6fe607cadf2e8895aab3ef282bdc5b3966aaffafa6594ed48a60a37a8b982cda",
+            "tests/js/invoice-tax-summary.test.cjs": "98f6a67504b4810b59b6884cd0ae51c19dfde001d4b7bb3958d3d7cae261f13b"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "fiscalEquivalent",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "e38a4e2a70327c2008d4a383": {
+        "category": "validation",
+        "justification": "Selecciona la moneda de origen o presenta su equivalencia usando tasa VES por USD, aritmética exacta y redondeo final a dos decimales: (payment.currency_type_id || payment.currency) === 'VES'",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "6fe607cadf2e8895aab3ef282bdc5b3966aaffafa6594ed48a60a37a8b982cda",
+            "tests/js/invoice-tax-summary.test.cjs": "98f6a67504b4810b59b6884cd0ae51c19dfde001d4b7bb3958d3d7cae261f13b"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "fiscalEquivalent",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "fef8419abb96cf236b6b17f9": {
+        "category": "presentation",
+        "justification": "Selecciona la moneda de origen o presenta su equivalencia usando tasa VES por USD, aritmética exacta y redondeo final a dos decimales: value.dividedBy(rate).final(2)",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoice_generate.vue",
+            "tests/js/invoice-tax-summary.test.cjs#receipt breakdown uses the server net receipt and collected tax for each subject payment"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoice_generate.vue": "6fe607cadf2e8895aab3ef282bdc5b3966aaffafa6594ed48a60a37a8b982cda",
+            "tests/js/invoice-tax-summary.test.cjs": "98f6a67504b4810b59b6884cd0ae51c19dfde001d4b7bb3958d3d7cae261f13b"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoice_generate.vue",
+            "symbol": "fiscalEquivalent",
+            "operation": "final",
             "operation_language": "javascript"
         }
     }

@@ -117,6 +117,7 @@ return [
     'document_guarantee_funds' => ['amount', 'base', 'percentage'],
     'ecommerce_campaigns' => ['discount_value'],
     'document_note_refunds' => ['original_amount', 'amount'],
+    'document_change_disbursements' => ['original_amount'],
     'document_note_adjustments' => ['amount'],
     'hotel_room_rates' => ['price'],
     'accounting_ledger' => ['last_month_total', 'credits', 'debs', 'final_total'],

@@ -225,6 +225,9 @@ final class FiscalDocumentPersistence
             if (!Str::isUuid($key)) FiscalAmounts::error('operation_key', 'Use un UUID válido.');
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             $existing = DocumentPayment::where('operation_key', $key)->lockForUpdate()->first();
+            if (!$initial && !$existing && array_key_exists('tendered_amount', $input)) {
+                FiscalAmounts::error('tendered_amount', 'El total entregado se utiliza al crear el comprobante.');
+            }
             $receiptOrigin = !$existing && $initial ? \App\Services\Payments\ConvertedReceipt::resolve($document, $input) : null;
             if ($receiptOrigin) {
                 $input['reference'] = $receiptOrigin['reference'];
@@ -265,8 +268,18 @@ final class FiscalDocumentPersistence
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
+            // ######## INICIO NETO CERO TRAS VUELTO ########
+            // This context is built by the initial-invoice server allocation, not the request.
+            $fullyReturned = $initial && !$existing && !$receiptOrigin && $initialAmounts !== null
+                && isset($initialAmounts['received_change'], $initialAmounts['original_amount'])
+                && D::of($initialAmounts['received_change'])->isPositive()
+                && D::of($initialAmounts['received_change'])->isEqualTo(D::of($initialAmounts['original_amount']));
             $values = $existing ? RecordedPaymentAmounts::forRetry($existing, $input, $document->currency_type_id, $document->exchange_rate_sale)
-                : FiscalAmounts::payment($input, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate);
+                : FiscalAmounts::payment($input, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate, $fullyReturned);
+            // ######## FIN NETO CERO TRAS VUELTO ########
+            if ($initial && !$existing && !$receiptOrigin && $initialAmounts !== null) {
+                $values = \App\Services\Payments\TenderedReceipt::withAllocation($values, $initialAmounts['inclusive_input'] ?? null);
+            }
             // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
             if (isset($input['quoted_tax_amount']) && !D::of(D::input($input['quoted_tax_amount'], 'quoted_tax_amount'))->isEqualTo(D::of($values['tax_amount']))) {
                 FiscalAmounts::error('quoted_tax_amount', 'El IGTF cambió desde la evaluación. Revise el cobro y vuelva a confirmarlo.');
@@ -278,6 +291,9 @@ final class FiscalDocumentPersistence
                 }
                 foreach (['requested_amount', 'cash_adjustment'] as $field) {
                     $values['calculation_snapshot']['values'][$field] = $initialAmounts[$field];
+                }
+                foreach (['requested_total_tendered', 'total_tendered'] as $field) {
+                    if (isset($initialAmounts[$field])) $values['calculation_snapshot']['values'][$field] = $initialAmounts[$field];
                 }
                 if (isset($initialAmounts['received_change'])) {
                     $values['calculation_snapshot']['values']['tendered_original_amount'] = $initialAmounts['original_amount'];
@@ -301,6 +317,10 @@ final class FiscalDocumentPersistence
                 if ($destination) {
                     $cash = $destination->destination_type === \App\Models\Tenant\Cash::class;
                     if (($input['payment_destination_id']==='cash') !== $cash || (!$cash && (string)$destination->destination_id !== (string)$input['payment_destination_id'])) FiscalAmounts::error('operation_key','La operación ya existe con otro destino.');
+                }
+                if (array_key_exists('change_disbursements', $input)) {
+                    if (!is_array($input['change_disbursements'])) FiscalAmounts::error('change_disbursements', 'Indique la distribución del vuelto.');
+                    \App\Services\Payments\ChangeDisbursement::register($existing, $input['change_disbursements']);
                 }
                 return $existing;
             }
@@ -350,11 +370,13 @@ final class FiscalDocumentPersistence
             }
             if (D::readRequired($values, 'tax_amount')->isPositive()) {
                 $target = $initial ? $document : self::igtfNote($document, $payment);
-                $base = D::convert($values['original_amount'], $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
+                $taxBase = isset($values['calculation_snapshot']['values']['tax_base_exact'])
+                    ? D::readRequired($values, 'tax_base_exact') : D::readRequired($values, 'original_amount');
+                $base = D::convert($taxBase, $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
                 $tax = D::convert($values['tax_amount'], $values['currency_type_id'], $target->currency_type_id, $values['exchange_rate']);
                 $target->taxes()->create(['document_payment_id' => $payment->id, 'tax_kind' => 'IGTF', 'code' => 'IGTF',
                     'percentage' => $company->igtf_rate, 'base' => $base, 'amount' => $tax,
-                    'base_ves' => D::convert($values['original_amount'], $values['currency_type_id'], 'VES', $values['exchange_rate']),
+                    'base_ves' => D::convert($taxBase, $values['currency_type_id'], 'VES', $values['exchange_rate']),
                     'amount_ves' => D::convert($values['tax_amount'], $values['currency_type_id'], 'VES', $values['exchange_rate'])]);
                 self::summarize($target);
                 // ######## INICIO CALCULOS EXACTOS PRO9 ########
@@ -371,6 +393,14 @@ final class FiscalDocumentPersistence
                 if (!$initial && HkaIgtfNote::applies($target)) HkaIgtfNote::afterCommit($target);
             }
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+            // ######## INICIO DESEMBOLSOS DE VUELTO ########
+            if (array_key_exists('change_disbursements', $input)) {
+                if (!$initial || $receiptOrigin || !is_array($input['change_disbursements'])) {
+                    FiscalAmounts::error('change_disbursements', 'El reparto del vuelto corresponde a un cobro nuevo al crear el comprobante.');
+                }
+                \App\Services\Payments\ChangeDisbursement::register($payment, $input['change_disbursements']);
+            }
+            // ######## FIN DESEMBOLSOS DE VUELTO ########
             \App\Services\Payments\ReceiptDestination::attach($payment,$input);
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
             self::updateSettlementState($document);
@@ -515,6 +545,13 @@ final class FiscalDocumentPersistence
             if ($payment->receipt_parent_id) FiscalAmounts::error('payment','Revierta el pago que originó este cargo IGTF.');
             if ($payment->reversed_at) return;
             if (trim($reason)==='') FiscalAmounts::error('reason','Indique el motivo de reversión.');
+            // ######## INICIO DESEMBOLSOS DE VUELTO ########
+            if ($payment->getConnection()->getSchemaBuilder()->hasTable('document_change_disbursements')) {
+                foreach ($payment->change_disbursements()->lockForUpdate()->get() as $disbursement) {
+                    if (!$disbursement->reversed_at) $disbursement->forceFill(['reversed_at'=>now()])->save();
+                }
+            }
+            // ######## FIN DESEMBOLSOS DE VUELTO ########
             $payment->cashDocumentPayments()->delete();
             $payment->forceFill(['reversed_at'=>now(),'reversal_reason'=>$reason,'reversed_by'=>auth()->id()])->save();
             DocumentPayment::where('receipt_parent_id',$payment->id)->update(['reversed_at'=>now(),'reversal_reason'=>$reason,'reversed_by'=>auth()->id()]);

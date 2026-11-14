@@ -2,7 +2,7 @@
 
 namespace App\Services\Payments;
 
-use App\Models\Tenant\{Cash, BankAccount, DocumentPayment, DocumentNoteRefund, PaymentMethodType};
+use App\Models\Tenant\{Cash, BankAccount, DocumentPayment, DocumentNoteRefund, DocumentChangeDisbursement, PaymentMethodType};
 use App\Support\Exact\Decimal as D;
 use Modules\Expense\Models\ExpensePayment;
 use Modules\Finance\Models\GlobalPayment;
@@ -60,6 +60,7 @@ final class Movement
                 $models->loadMissing('sourceMovement.payment');
                 return;
             }
+            if ($first instanceof DocumentChangeDisbursement) $models->loadMissing('document_payment');
             $relation=$first instanceof CashTransaction ? 'cash' : 'associated_record_payment';
             if ($first instanceof \Modules\Hotel\Models\HotelRentItemPayment) $relation.='.hotel_rent';
             if (method_exists($first,explode('.',$relation)[0])) $models->loadMissing($relation);
@@ -190,7 +191,7 @@ final class Movement
         $person=$parent->customer ?? $parent->supplier ?? null;
         $party=is_string($person) ? $person : (string)data_get($person,'name','');
         $global->cash_session_id = $cash?->id;
-        $direction = in_array($source->getTable(), ['purchase_payments','purchase_settlement_payments','expense_payments','bank_loan_payments','document_note_refunds'], true) ? 'egress' : 'income';
+        $direction = in_array($source->getTable(), ['purchase_payments','purchase_settlement_payments','expense_payments','bank_loan_payments','document_note_refunds','document_change_disbursements'], true) ? 'egress' : 'income';
         $global->report_context = ['version'=>2, 'method'=>$classification, 'currency_type_id'=>$currency,
             'destination_label'=>$kind === 'cash' ? 'Caja' : trim((string)$account->description).' · '.$currency,
             'exchange_rate'=>(string)($source->exchange_rate ?? $parent->exchange_rate_sale ?? '1.00000000'),
@@ -228,6 +229,7 @@ final class Movement
         $source = $global->payment;
         if (!$source) throw new \RuntimeException('Falta el origen del movimiento '.$global->id);
         if ($source instanceof PaymentCommission && (!$source->sourceMovement || !self::row($source->sourceMovement))) return null;
+        if ($source instanceof DocumentChangeDisbursement && (!$source->document_payment || $source->document_payment->reversed_at)) return null;
         if ($source->reversed_at || ($source instanceof DocumentPayment && $source->receipt_parent_id)) return null;
         $parent = $source instanceof CashTransaction ? $source->cash : ($source->associated_record_payment ?? $source);
         if ($source instanceof \Modules\Hotel\Models\HotelRentItemPayment) $parent=$parent->hotel_rent;
@@ -238,6 +240,7 @@ final class Movement
             $principal=D::readRequired($source,'amount')->abs();$tax=D::of(0);
         } elseif ($source instanceof DocumentPayment) {
             $principal = D::readRequired($source, 'original_amount');
+            if (($source->fiscal_context['change_disbursement']['version'] ?? null) === 1) $principal = $principal->plus(D::readRequired($source, 'change'));
             $tax = D::readRequired($source, 'tax_amount');
         } elseif ($source instanceof DocumentNoteRefund) {
             $principal = D::readRequired($source, 'original_amount'); $tax = D::of(0);

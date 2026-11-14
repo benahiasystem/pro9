@@ -23,6 +23,7 @@ function runtime() {
             if (name === '@mixins/fiscal-payment-settings') return load('resources/js/mixins/fiscal-payment-settings.js');
             if (name.includes('exchange-rate-math')) return load('resources/js/helpers/exchange-rate-math.js');
             if (name.includes('payment-classification')) return load('resources/js/helpers/payment-classification.js');
+            if (name.includes('tendered-receipt')) return load('resources/js/helpers/tendered-receipt.js');
             if (name.startsWith('.') && /igtf-settings|IgtfSettingsStatus/.test(name)) {
                 return load(path.resolve(path.dirname(file), /\.(vue|js)$/.test(name) ? name : name + '.js'));
             }
@@ -33,6 +34,35 @@ function runtime() {
     return {load, settings:load('resources/js/helpers/igtf-settings.js')};
 }
 const deferred = () => {let resolve, reject; const promise = new Promise((yes,no) => {resolve=yes;reject=no}); return {promise,resolve,reject}};
+
+test('a positive draft waits for a payment method before requesting a fiscal quote', async () => {
+    const {load,settings}=runtime(), mixin=load('resources/js/mixins/fiscal-payment-settings.js').default;
+    settings.setIgtfSettings({enabled:true,rate:'3.00'});
+    const row={date_of_payment:'2026-11-14',payment_method_type_id:null,payment:'250',currency_type_id:'VES',original_amount:'250',exchange_rate:'10',errors:{}};
+    let calls=0;
+    const ctx={...mixin.data(),fiscalPaymentsApplicable:true,showDialog:true,documentId:31,records:[row],
+        document:{currency_type_id:'VES',exchange_rate_sale:'10',total_difference:'250'},$set:(o,k,v)=>o[k]=v,
+        $http:{post:async()=>{calls++;return {data:{data:{payments:[{igtf_status:'not_applicable',tax_amount:'0.00'}]}}}}}};
+    for(const [key,fn] of Object.entries(mixin.methods))ctx[key]=fn.bind(ctx);
+    assert.equal(ctx.fiscalQuoteRequest([row]),null);
+    assert.equal(await ctx.refreshFiscalQuote([row]),null);
+    assert.equal(calls,0); assert.equal(ctx.igtfQuoteError,'');
+    const complete={...row,payment_method_type_id:'01'};
+    assert.equal(ctx.fiscalQuoteRequest([complete,row]),null,'do not quote only the completed part of a mixed group');
+    row.payment_method_type_id='01';
+    assert.ok(await ctx.refreshFiscalQuote([row]));
+    assert.equal(calls,1); assert.equal(row.quoted_tax_amount,'0.00');
+});
+
+test('document payment without a method prompts for selection without sending a request', async () => {
+    const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/payments.vue').default;
+    const row={payment_method_type_id:null,payment:'250',errors:{},loading:false};
+    const ctx={records:[row],documentId:31,$set:(o,k,v)=>o[k]=v,
+        ensureFiscalPaymentsReady:()=>assert.fail('must not evaluate without a method')};
+    await component.methods.clickSubmit.call(ctx,0);
+    assert.equal(row.errors.payment_method_type_id[0],'Seleccione un método de pago.');
+    assert.equal(row.loading,false);
+});
 
 test('order conversion quotes the actual customer, invoice total and draft receipts', () => {
     const {load}=runtime();
@@ -165,8 +195,8 @@ test('applied payment uses only a current quote and never replaces the received-
     ctx.fiscalQuoteKey='current';ctx.igtfQuoteLoading=true;
     assert.equal(mixin.methods.fiscalAppliedPayment.call(ctx,row),'4999.29');
     const source=fs.readFileSync('resources/js/views/tenant/documents/invoice_generate.vue','utf8');
-    assert.match(source,/:value="fiscalAppliedPayment\(row\)"/);
-    assert.match(source,/@input="updatePaymentPrincipal\(row, \$event\)"/);
+    assert.match(source,/:value="fiscalPaymentsApplicable && !isRecordedReceipt\(row\) \? row.tendered_amount : fiscalAppliedPayment\(row\)"/);
+    assert.match(source,/@input="fiscalPaymentsApplicable \? updateTenderedPayment\(row, \$event\) : updatePaymentPrincipal\(row, \$event\)"/);
 });
 
 test('the rendered editor keeps automatic classification without administrative exception controls', () => {
@@ -345,7 +375,7 @@ test('a preflight completing after closing or replacing the checkout cannot subm
 
 test('later collections submit the entered fiscal context and preserve their draft on preflight failure', async () => {
     const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/payments.vue').default;
-    const row={payment:'100',currency_type_id:'USD',original_amount:'10',exchange_rate:'10.00000000',exchange_rate_source:'manual',
+    const row={payment_method_type_id:'10',payment:'100',currency_type_id:'USD',original_amount:'10',exchange_rate:'10.00000000',exchange_rate_source:'manual',
         operation_key:'00000000-0000-4000-8000-000000000001',igtf_status:'subject',financial_intermediation:'none'};
     let sent,allow=false;
     const ctx={records:[row],document:{amount_payable:'100'},documentId:44,resource:'document_payments',

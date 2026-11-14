@@ -120,7 +120,7 @@
                                             <igtf-payment-fields :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !row.id" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
                                                 :payment="row" :document-currency="document.currency_type_id" :document-rate="document.exchange_rate_sale" :document-id="documentId" />
                                             <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
-                                            <el-select v-model="row.payment_method_type_id">
+                                            <el-select v-model="row.payment_method_type_id" @change="$delete(row.errors, 'payment_method_type_id')">
                                                 <el-option v-for="option in payment_method_types" v-show="['cash', 'account'].includes(option.collection_kind)" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                             </el-select>
                                             <small class="form-control-feedback" v-if="row.errors.payment_method_type_id" v-text="row.errors.payment_method_type_id[0]"></small>
@@ -486,6 +486,11 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                 const row = this.records[index]
                 const documentId = this.documentId
                 if (row.loading) return
+
+                if (!row.payment_method_type_id) {
+                    this.$set(row.errors, 'payment_method_type_id', ['Seleccione un método de pago.'])
+                    return
+                }
 
                 if(exactAmount(row.payment).compare(this.document.amount_payable || this.document.total_difference) > 0) {
                     this.$message.error('El monto ingresado supera al monto pendiente de pago, verifique.');

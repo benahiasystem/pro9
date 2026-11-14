@@ -12321,6 +12321,196 @@ trait PaymentClassificationPersistenceCases
     }
     // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
+    public function test_invoice_fully_returned_cash_keeps_gross_receipt_and_change_movements(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $db->table('payment_method_types')->where('id', '01')->update(['available_for_change'=>1]);
+        $cash = Cash::where('user_id', $input['user_id'])->where('state', true)->firstOrFail();
+        $input['exchange_rate_sale'] = '100';
+        $input['payments'] = [];
+        foreach ([['100','100'], ['300','168'], ['100','0']] as [$gross, $change]) {
+            $row = ['date_of_payment'=>'2026-09-10', 'payment_method_type_id'=>'01',
+                'currency_type_id'=>'VES', 'exchange_rate'=>'100', 'payment'=>$gross, 'original_amount'=>$gross,
+                'tendered_amount'=>$gross, 'payment_destination_id'=>'cash',
+                'operation_key'=>(string)\Illuminate\Support\Str::uuid()];
+            if ($change !== '0') $row['change_disbursements'] = [['payment_method_type_id'=>'01','amount'=>$change]];
+            $input['payments'][] = $row;
+        }
+        $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $receipts = $document->payments()->whereNull('receipt_parent_id')->orderBy('id')->get();
+        self::assertCount(3, $receipts);
+        self::assertSame(['0','132','100'], $receipts->pluck('original_amount')->all());
+        self::assertSame(['100','168','0'], $receipts->pluck('change')->all());
+        self::assertSame(['100','300','100'], $receipts->map(fn ($row)=>Movement::row($row->global_payment)['amount'])->all());
+        self::assertSame('100', Movement::row($receipts[0]->change_disbursements()->firstOrFail()->global_payment)['amount']);
+        self::assertSame('168', Movement::row($receipts[1]->change_disbursements()->firstOrFail()->global_payment)['amount']);
+        self::assertSame('232', CashLedger::report($cash)['balances_by_currency']['VES']['final_balance']);
+        self::assertSame('0', \App\Support\Exact\Decimal::represent($document->exactBalance()));
+    }
+
+    public function test_invoice_change_disbursements_record_gross_income_and_split_outflows(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $db->table('payment_method_types')->whereIn('id', ['01','10'])->update(['available_for_change'=>1]);
+        $cash = Cash::where('user_id', $input['user_id'])->where('state', true)->firstOrFail();
+        $input['exchange_rate_sale']='100';
+        $lines=[['payment_method_type_id'=>'01','amount'=>'168.00'], ['payment_method_type_id'=>'10','amount'=>'1.00']];
+        $input['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01',
+            'currency_type_id'=>'VES','exchange_rate'=>'100','payment'=>'500','original_amount'=>'500',
+            'tendered_amount'=>'500','payment_destination_id'=>'cash','change_disbursements'=>$lines,
+            'operation_key'=>(string)\Illuminate\Support\Str::uuid()]];
+        $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $receipt=$document->payments()->whereNull('receipt_parent_id')->firstOrFail();
+        self::assertSame('268', \App\Support\Exact\Decimal::represent($receipt->change));
+        self::assertSame('500', Movement::row($receipt->global_payment)['amount']);
+        $outflows=$receipt->change_disbursements()->orderBy('position')->get();
+        self::assertCount(2,$outflows);
+        self::assertSame(['168','1'], $outflows->map(fn ($row)=>Movement::row($row->global_payment)['amount'])->all());
+        self::assertSame(['egress','egress'], $outflows->map(fn ($row)=>Movement::row($row->global_payment)['direction'])->all());
+        $balances=CashLedger::report($cash)['balances_by_currency'];
+        self::assertSame('332',$balances['VES']['final_balance']);
+        self::assertSame('-1',$balances['USD']['final_balance']);
+        $finance = new class { use \Modules\Finance\Traits\FinanceTrait; };
+        $methods = \App\Models\Tenant\PaymentMethodType::whereIn('id', ['01', '10'])->get();
+        $methodBalances = $finance->getRecordsByPaymentMethodTypes($methods)->keyBy('id');
+        self::assertSame('332', $methodBalances['01']['balance']);
+        self::assertSame('-100', $methodBalances['10']['balance']);
+        $count=$db->table('global_payments')->count();
+        $db->transaction(fn () => \App\Services\Payments\ChangeDisbursement::register($receipt, $lines));
+        self::assertSame($count,$db->table('global_payments')->count());
+        try {
+            $db->transaction(fn () => \App\Services\Payments\ChangeDisbursement::register($receipt, [['payment_method_type_id'=>'01','amount'=>'268']]));
+            self::fail('El reintento no puede sustituir el reparto.');
+        } catch (\Illuminate\Validation\ValidationException $exception) { self::assertArrayHasKey('operation_key', $exception->errors()); }
+        $beforeDocuments=$db->table('documents')->count();
+        $db->table('payment_method_types')->where('id','01')->update(['is_active'=>0]);
+        $another=$input;
+        $another['external_id']=(string)\Illuminate\Support\Str::uuid();
+        $another['payments'][0]['operation_key']=(string)\Illuminate\Support\Str::uuid();
+        try {
+            (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($another);
+            self::fail('Un método deshabilitado debe rechazar la factura completa.');
+        } catch (\Illuminate\Validation\ValidationException $exception) { self::assertNotEmpty($exception->errors()); }
+        self::assertSame($beforeDocuments,$db->table('documents')->count());
+        self::assertSame($count,$db->table('global_payments')->count());
+        \App\Services\Fiscal\FiscalDocumentPersistence::reverse($receipt, 'Reversión de prueba');
+        self::assertTrue($receipt->change_disbursements()->whereNotNull('reversed_at')->count() === 2);
+        self::assertNull(Movement::row($outflows[0]->fresh()->global_payment));
+        self::assertSame('0', CashLedger::report($cash)['balances_by_currency']['VES']['final_balance']);
+        self::assertSame('0', CashLedger::report($cash)['balances_by_currency']['USD']['final_balance']);
+    }
+
+    public function test_invoice_dollar_change_can_leave_cash_and_a_bolivar_bank_account(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company=\App\Models\Tenant\Company::firstOrFail();
+        $company->forceFill(['fiscal_emission_mode'=>'free_form','igtf_enabled'=>true,'igtf_rate'=>'3'])->save();
+        \App\Services\Fiscal\FiscalProfileService::store($company, \Tests\Support\SpeProfiles::profile());
+        $cash=Cash::where('user_id',$input['user_id'])->where('state',true)->firstOrFail();
+        $account=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'), 'description'=>'Cuenta para vuelto',
+            'number'=>'VES-vuelto', 'currency_type_id'=>'VES', 'initial_balance'=>'0', 'status'=>1, 'establishment_id'=>null]);
+        $db->table('payment_method_types')->where('id','10')->update(['available_for_change'=>1]);
+        $db->table('payment_method_types')->where('id','11')->update(['collection_kind'=>'account', 'currency_type_id'=>'VES',
+            'is_active'=>1, 'available_for_change'=>1, 'bank_account_id'=>$account->id]);
+        $input['currency_type_id']='USD'; $input['exchange_rate_sale']='100';
+        $input['items'][0]['quantity']='1'; $input['items'][0]['unit_price']='60';
+        $input['payments']=[['date_of_payment'=>'2026-09-10', 'payment_method_type_id'=>'10', 'currency_type_id'=>'USD',
+            'exchange_rate'=>'100', 'payment'=>'70', 'original_amount'=>'70', 'tendered_amount'=>'70', 'payment_destination_id'=>'cash',
+            'operation_key'=>(string)\Illuminate\Support\Str::uuid(), 'change_disbursements'=>[
+                ['payment_method_type_id'=>'10','amount'=>'3.00'], ['payment_method_type_id'=>'11','amount'=>'520.00','reference'=>'AB-1'],
+            ]]];
+        $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $receipt=$document->payments()->whereNull('receipt_parent_id')->firstOrFail();
+        self::assertSame('8.2', \App\Support\Exact\Decimal::represent($receipt->change));
+        self::assertSame('1.8', \App\Support\Exact\Decimal::represent($receipt->exactValue('tax_amount')));
+        self::assertSame('70', Movement::row($receipt->global_payment)['amount']);
+        $outflows=$receipt->change_disbursements()->orderBy('position')->get();
+        self::assertSame(['3','520'], $outflows->map(fn ($row)=>Movement::row($row->global_payment)['amount'])->all());
+        self::assertSame(Cash::class, $outflows[0]->global_payment->destination_type);
+        self::assertSame((int)$cash->id, (int)$outflows[0]->global_payment->destination_id);
+        self::assertSame('account', Movement::row($outflows[1]->global_payment)['method']['collection_kind']);
+        self::assertSame('egress', Movement::row($outflows[1]->global_payment)['direction']);
+        self::assertSame(BankAccount::class, $outflows[1]->global_payment->destination_type);
+        self::assertSame((int)$account->id, (int)$outflows[1]->global_payment->destination_id);
+        self::assertSame('AB-1', $outflows[1]->reference);
+        $finance = new class { use \Modules\Finance\Traits\FinanceTrait; };
+        $bankBalance = $finance->getBalanceByBankAcounts(collect([$account->fresh()]), 'VES')->first();
+        self::assertSame('-520', $bankBalance['balance']);
+        self::assertSame('67', CashLedger::report($cash)['balances_by_currency']['USD']['final_balance']);
+        self::assertTrue($document->fresh()->exactBalance()->isZero());
+    }
+
+    public function test_invoice_mobile_payment_change_is_an_outflow_of_its_bank_account(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company=\App\Models\Tenant\Company::firstOrFail();
+        $company->forceFill(['fiscal_emission_mode'=>'free_form','igtf_enabled'=>true,'igtf_rate'=>'3'])->save();
+        \App\Services\Fiscal\FiscalProfileService::store($company, \Tests\Support\SpeProfiles::profile());
+        $cash=Cash::where('user_id',$input['user_id'])->where('state',true)->firstOrFail();
+        $account=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'Pago Móvil de prueba',
+            'number'=>'VES-mobile-test','currency_type_id'=>'VES','initial_balance'=>'0','status'=>1,'establishment_id'=>null]);
+        $db->table('payment_method_types')->where('id','11')->update(['collection_kind'=>'account','currency_type_id'=>'VES',
+            'is_active'=>1,'available_for_change'=>1,'bank_account_id'=>$account->id]);
+        $input['currency_type_id']='USD'; $input['exchange_rate_sale']='100';
+        $input['items'][0]['quantity']='1'; $input['items'][0]['unit_price']='60';
+        $input['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD',
+            'exchange_rate'=>'100','payment'=>'70','original_amount'=>'70','tendered_amount'=>'70','payment_destination_id'=>'cash',
+            'operation_key'=>(string)\Illuminate\Support\Str::uuid(),
+            'change_disbursements'=>[['payment_method_type_id'=>'11','amount'=>'820.00','reference'=>'MOVIL-123']]]];
+        $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $receipt=$document->payments()->whereNull('receipt_parent_id')->firstOrFail();
+        $change=$receipt->change_disbursements()->sole();
+        $movement=Movement::row($change->global_payment);
+        self::assertSame('8.2', \App\Support\Exact\Decimal::represent($receipt->change));
+        self::assertSame('egress',$movement['direction']);
+        self::assertSame('820',$movement['amount']);
+        self::assertSame('VES',$movement['currency_type_id']);
+        self::assertSame(BankAccount::class,$change->global_payment->destination_type);
+        self::assertSame((int)$account->id,(int)$change->global_payment->destination_id);
+        self::assertSame('MOVIL-123',$change->reference);
+        self::assertSame('70',CashLedger::report($cash)['balances_by_currency']['USD']['final_balance']);
+        $finance=new class { use \Modules\Finance\Traits\FinanceTrait; };
+        self::assertSame('-820',$finance->getBalanceByBankAcounts(collect([$account->fresh()]),'VES')->first()['balance']);
+        \App\Services\Fiscal\FiscalDocumentPersistence::reverse($receipt, 'Reversión de prueba');
+        self::assertNull(Movement::row($change->fresh()->global_payment));
+        self::assertSame('0',$finance->getBalanceByBankAcounts(collect([$account->fresh()]),'VES')->first()['balance']);
+    }
+
+    public function test_invoice_default_cash_change_leaves_the_open_general_cash_register(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company=\App\Models\Tenant\Company::firstOrFail();
+        $company->forceFill(['fiscal_emission_mode'=>'free_form','igtf_enabled'=>true,'igtf_rate'=>'3'])->save();
+        \App\Services\Fiscal\FiscalProfileService::store($company, \Tests\Support\SpeProfiles::profile());
+        $cash=Cash::where('user_id',$input['user_id'])->where('state',true)->firstOrFail();
+        $db->table('payment_method_types')->where('id','10')->update(['is_active'=>1,'available_for_change'=>0]);
+        $input['currency_type_id']='USD'; $input['exchange_rate_sale']='100';
+        $input['items'][0]['quantity']='1'; $input['items'][0]['unit_price']='60';
+        // This is the default distribution produced by validateChangeSelections in the invoice form.
+        $input['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD',
+            'exchange_rate'=>'100','payment'=>'70','original_amount'=>'70','tendered_amount'=>'70','payment_destination_id'=>'cash',
+            'operation_key'=>(string)\Illuminate\Support\Str::uuid(),
+            'change_disbursements'=>[['payment_method_type_id'=>'10','amount'=>'8.20','reference'=>'']]]];
+        $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $receipt=$document->payments()->whereNull('receipt_parent_id')->firstOrFail();
+        $change=$receipt->change_disbursements()->sole();
+        $movement=Movement::row($change->global_payment);
+        self::assertSame('8.2', \App\Support\Exact\Decimal::represent($receipt->change));
+        self::assertSame('egress', $movement['direction']);
+        self::assertSame('8.2', $movement['amount']);
+        self::assertSame('USD', $movement['currency_type_id']);
+        self::assertSame(Cash::class, $change->global_payment->destination_type);
+        self::assertSame((int)$cash->id, (int)$change->global_payment->destination_id);
+        self::assertSame((int)$cash->id, (int)$receipt->global_payment->destination_id);
+        self::assertSame('61.8', CashLedger::report($cash)['balances_by_currency']['USD']['final_balance']);
+        self::assertTrue($document->exactBalance()->isZero());
+    }
+
     public function test_classified_invoice_change_only_reduces_cash_and_rejects_electronic_excess(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);

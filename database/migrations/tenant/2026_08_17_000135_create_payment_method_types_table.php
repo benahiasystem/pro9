@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
  * - `is_credit` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es tipo credito'
  * - `is_cash` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es es efectivo'
  * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
+ * - `available_for_change` tinyint(1) NOT NULL DEFAULT '0'
  * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
  */
 return new class extends Migration
@@ -43,6 +44,7 @@ CREATE TABLE `payment_method_types` (
   `is_credit` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es tipo credito',
   `is_cash` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es es efectivo',
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `available_for_change` tinyint(1) NOT NULL DEFAULT '0',
   `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
   KEY `payment_method_types_id_index` (`id`),
   KEY `payment_method_bank_account_fk` (`bank_account_id`),

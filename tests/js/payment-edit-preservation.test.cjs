@@ -6,7 +6,7 @@ const compiler = require('vue-template-compiler')
 const parser = require('@babel/parser')
 const generate = require('@babel/generator').default
 const t = require('@babel/types')
-const {paymentConditionPayload, withoutDraftRetentions} = require('./helpers/load-module.cjs')('resources/js/helpers/document-creation.js')
+const {paymentConditionPayload, withoutDraftRetentions, invoicePaymentsForCondition, suggestInstallments} = require('./helpers/load-module.cjs')('resources/js/helpers/document-creation.js')
 
 test('payment submission preserves draft installments and receipts while normalizing the sent condition', () => {
     const receipt={id:4,payment:'1'}, fee={date:'2026-12-15',amount:'99'}
@@ -51,6 +51,8 @@ test('invoice creation and preview normalize a copy without losing draft install
     const posts=[], fee={date:'2026-12-15',amount:'99'}, receipt={id:4,payment:'1'}
     const ctx={isUpdateDocument:false,resource:'documents',form:{payment_condition_id:'03',fee:[fee],payments:[receipt],actions:{format_pdf:'a4'}},
         $http:{post:async(url,data)=>{posts.push(data);return {headers:{'content-type':'application/pdf'},data:{size:1}}}}}
+    Object.defineProperty(ctx,'activeInvoicePayments',{get(){return invoicePaymentsForCondition(this.form)}})
+    ctx.documentSubmission=()=>submission.call(ctx)
     assert.equal(submission.call(ctx).payment_condition_id,'02')
     await preview.call(ctx,'ticket')
     assert.equal(posts[0].payment_condition_id,'02')
@@ -63,6 +65,25 @@ test('invoice creation and preview normalize a copy without losing draft install
     assert.equal(posts[1].fee.length,0)
     assert.equal(ctx.form.fee[0],fee)
     assert.equal(ctx.form.payments[0],receipt)
+})
+
+test('credit hides new cash drafts from settlement and submission while retaining recorded receipts and draft values', () => {
+    const path='resources/js/views/tenant/documents/invoice_generate.vue'
+    const submission=method(path,'documentSubmission',{paymentConditionPayload,withoutDraftRetentions})
+    const recorded={id:4,payment:'50'}, draft={payment:'250',tendered_amount:'350'}, fee={amount:'0'}
+    const form={payment_condition_id:'02',total:'250',currency_type_id:'VES',payments:[recorded,draft],fee:[fee]}
+    const ctx={form,isUpdateDocument:false}
+    Object.defineProperty(ctx,'activeInvoicePayments',{get(){return invoicePaymentsForCondition(this.form)}})
+    suggestInstallments({...form,payments:ctx.activeInvoicePayments})
+    assert.equal(fee.amount,'200.00')
+    assert.deepEqual(Array.from(submission.call(ctx).payments),[recorded])
+    assert.equal(form.payments[1],draft)
+    assert.equal(draft.tendered_amount,'350')
+    form.payment_condition_id='03'
+    assert.deepEqual(Array.from(submission.call(ctx).payments),[recorded])
+    form.payment_condition_id='01'
+    assert.deepEqual(Array.from(submission.call(ctx).payments),[recorded,draft])
+    assert.equal(submission.call(ctx).fee.length,0)
 })
 
 function method(path, name, scope = {}) {

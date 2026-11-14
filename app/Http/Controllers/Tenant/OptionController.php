@@ -156,6 +156,11 @@ class OptionController extends Controller
     private function deleteDocumentRelations($documents): void
     {
         $documentIds = $documents->pluck('id');
+        if (\Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('document_change_disbursements')) {
+            $changeIds = \DB::connection('tenant')->table('document_change_disbursements')->whereIn('document_id', $documentIds)->pluck('id');
+            \Modules\Finance\Models\GlobalPayment::where('payment_type', \App\Models\Tenant\DocumentChangeDisbursement::class)->whereIn('payment_id', $changeIds)->delete();
+            \DB::connection('tenant')->table('document_change_disbursements')->whereIn('document_id', $documentIds)->delete();
+        }
         // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
         if (\App\Services\Fiscal\IslrRetentionService::available()) \DB::connection('tenant')->table('document_islr_retention_operations')->whereIn('document_id',$documentIds)->delete();
         if (\App\Services\Fiscal\IvaRetentionService::available()) {

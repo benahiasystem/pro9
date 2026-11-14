@@ -431,7 +431,7 @@
                                 </el-tooltip>
                                 <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                             </label>
-                            <el-input v-model="form.exchange_rate_sale"></el-input>
+                            <el-input v-model="form.exchange_rate_sale" @input="recalculateItemsForExchangeRate"></el-input>
                             <small
                                 v-if="errors.exchange_rate_sale"
                                 class="form-control-feedback"
@@ -1411,7 +1411,7 @@
                                     </td>
                                     <td class="text-end">
                                         <div v-if="showEditableItems" class="input-with-currency">
-                                            <span class="currency-symbol">{{ currency_type.symbol }}</span>
+                                            <span class="currency-symbol">{{ documentCurrencySymbol }}</span>
                                             <el-input-number
                                                 v-model="row.unit_price"
                                                 :min="0.01"
@@ -1424,13 +1424,13 @@
                                             ></el-input-number>
                                         </div>
                                         <template v-else>
-                                            {{ currency_type.symbol }}
+                                            {{ documentCurrencySymbol }}
                                             {{ getFormatUnitPriceRow(row.item.unit_price, row) }}
                                         </template>
                                     </td>
                                     <td class="text-end">
                                         <div v-if="showEditableItems" class="input-with-currency">
-                                            <span class="currency-symbol">{{ currency_type.symbol }}</span>
+                                            <span class="currency-symbol">{{ documentCurrencySymbol }}</span>
                                             <el-input-number
                                                 :value="rowDiscountValue(row)"
                                                 :min="0"
@@ -1444,12 +1444,12 @@
                                             ></el-input-number>
                                         </div>
                                         <template v-else>
-                                            {{ currency_type.symbol }} {{ setTextDiscountItem(row) }}
+                                            {{ documentCurrencySymbol }} {{ setTextDiscountItem(row) }}
                                         </template>
                                     </td>
                                     <td class="text-end">
                                         <div v-if="showEditableItems" class="input-with-currency">
-                                            <span class="currency-symbol">{{ currency_type.symbol }}</span>
+                                            <span class="currency-symbol">{{ documentCurrencySymbol }}</span>
                                             <el-input-number
                                                 v-model="row.total"
                                                 :min="0"
@@ -1462,7 +1462,7 @@
                                             ></el-input-number>
                                         </div>
                                         <template v-else>
-                                            {{ currency_type.symbol }} {{ row.total }}
+                                            {{ documentCurrencySymbol }} {{ row.total }}
                                         </template>
                                     </td>
                                 </tr>
@@ -1491,10 +1491,22 @@
                         class="row justify-content-end mt-3"
                         data-testid="invoice-totals-payments"
                     >
+                        <!-- ######## INICIO RESUMEN REACTIVO IVA E IGTF ######## -->
+                        <div v-if="!isUpdateDocument" class="col-12 col-lg-5 mb-3 mb-lg-0" data-testid="invoice-tax-summary-column">
+                            <document-tax-summary
+                                :document="form"
+                                :iva-rate="percentage_igv"
+                                :currency-types="currency_types"
+                                :settings="igtfSettings"
+                                :quote="displayFiscalQuote"
+                                :quote-pending="igtfQuoteLoading || (!!fiscalQuoteKey && igtfQuoteKey !== fiscalQuoteKey)"
+                                :quote-error="igtfQuoteError"
+                            />
+                        </div>
+                        <!-- ######## FIN RESUMEN REACTIVO IVA E IGTF ######## -->
                         <div class="col-12 col-lg-7 text-center table-responsive">
                             <table
-                                class="table table-sm text-end"
-                                style="width: 100%;"
+                                class="table table-sm text-end invoice-totals"
                             >
 
                                 <tr v-if="is_restaurant_active">
@@ -1509,7 +1521,7 @@
                                         :
                                     </td>
                                         <td>
-                                            {{ currency_type.symbol }}
+                                            {{ documentCurrencySymbol }}
                                             {{ total_consumption_charge }}
                                         </td>
                                 </tr>
@@ -1574,7 +1586,7 @@
                                 <tr v-if="form.total_exportation > 0 && !isNrus">
                                     <td>EXPORTACIÓN (IVA 0 %):</td>
                                     <td>
-                                        {{ currency_type.symbol }}
+                                        {{ documentCurrencySymbol }}
                                         {{ form.total_exportation }}
                                     </td>
                                 </tr>
@@ -1583,21 +1595,21 @@
                                 <tr v-if="form.total_exonerated > 0">
                                     <td>OP.EXONERADAS:</td>
                                     <td>
-                                        {{ currency_type.symbol }}
+                                        {{ documentCurrencySymbol }}
                                         {{ form.total_exonerated }}
                                     </td>
                                 </tr>
                                 <tr v-if="form.total_taxed > 0 && !isNrus">
-                                    <td>OP.GRAVADA:</td>
+                                    <td>Op. gravada:</td>
                                     <td>
-                                        {{ currency_type.symbol }}
+                                        {{ documentCurrencySymbol }}
                                         {{ form.total_taxed }}
                                     </td>
                                 </tr>
                                 <tr v-if="form.total_prepayment > 0">
                                     <td>ANTICIPOS:</td>
                                     <td>
-                                        {{ currency_type.symbol }}
+                                        {{ documentCurrencySymbol }}
                                         {{ form.total_discount }}
                                     </td>
                                 </tr>
@@ -1606,7 +1618,7 @@
                                     <td>IVA:</td>
                                     <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                                     <td>
-                                        {{ currency_type.symbol }}
+                                        {{ documentCurrencySymbol }}
                                         {{ form.total_igv }}
                                     </td>
                                 </tr>
@@ -1622,7 +1634,7 @@
                                 >
                                     <td>SUBTOTAL:</td>
                                     <td>
-                                        {{ currency_type.symbol }}
+                                        {{ documentCurrencySymbol }}
                                         {{ displaySubtotalBeforeDiscount }}
                                     </td>
                                 </tr>
@@ -1630,15 +1642,15 @@
                                 <tr v-if="totalDiscount > 0">
                                     <td>DESCUENTOS TOTALES:</td>
                                     <td>
-                                        {{ currency_type.symbol }}
+                                        {{ documentCurrencySymbol }}
                                         {{ totalDiscount }}
                                     </td>
                                 </tr>
 
                                 <tr v-if="form.total > 0">
-                                    <td>OTROS CARGOS:</td>
+                                    <td>Otros cargos:</td>
                                     <td>
-                                        {{ currency_type.symbol }}
+                                        {{ documentCurrencySymbol }}
                                         <el-input-number
                                             v-model="total_global_charge"
                                             :disabled="
@@ -1655,27 +1667,54 @@
                                     </td>
                                 </tr>
 
-                                <tr v-if="form.total > 0">
-                                    <td><strong v-if="fiscalPaymentsApplicable && !isUpdateDocument">TOTAL DE LA VENTA (SIN IGTF)</strong><template v-else><strong>TOTAL A PAGAR</strong></template>:</td>
+                                <tr v-if="form.total > 0" :class="{'invoice-total-due': !fiscalPaymentsApplicable || isUpdateDocument}">
+                                    <td><strong v-if="fiscalPaymentsApplicable && !isUpdateDocument">Total de la venta</strong><template v-else><strong>Total a pagar</strong></template>:</td>
                                     <td>
-                                        {{ currency_type.symbol }}
+                                        {{ documentCurrencySymbol }}
                                         {{ form.total }}
                                     </td>
                                 </tr>
-                                <tr v-if="fiscalPaymentsApplicable"><td colspan="2"><igtf-quote-summary v-if="fiscalPaymentsApplicable" :quote="igtfQuote" :loading="igtfQuoteLoading" :error="igtfQuoteError" :currency="fiscalQuoteCurrency" /></td></tr>
-
                                 <tr v-if="form.settlement_adjustment && form.settlement_adjustment != 0">
                                     <td>Ajuste de liquidación:</td>
-                                    <td>{{ currency_type.symbol }} {{ form.settlement_adjustment }}</td>
+                                    <td>{{ documentCurrencySymbol }} {{ form.settlement_adjustment }}</td>
                                 </tr>
-                                <tr v-if="form.settlement_adjustment && form.settlement_adjustment != 0">
-                                    <td>Importe cobrable:</td>
-                                    <td>{{ currency_type.symbol }} {{ form.total_payable }}</td>
-                                </tr>
-
-                                <tr v-if="form.total > 0">
-                                    <td>CONDICIÓN DE PAGO:</td>
+                                <!-- ######## INICIO TOTAL A PAGAR CON IGTF ######## -->
+                                <tr v-if="form.total > 0 && fiscalPaymentsApplicable && !isUpdateDocument" class="invoice-total-due" data-testid="invoice-total-with-igtf">
+                                    <td><strong>Total a pagar:</strong></td>
                                     <td>
+                                        <template v-if="invoiceTotalWithIgtf !== null">{{ documentCurrencySymbol }} {{ invoiceTotalWithIgtf }}</template>
+                                        <template v-else>—</template>
+                                        <small v-if="igtfQuoteLoading || (!!fiscalQuoteKey && igtfQuoteKey !== fiscalQuoteKey)" class="text-muted">Evaluando…</small>
+                                    </td>
+                                </tr>
+                                <!-- ######## FIN TOTAL A PAGAR CON IGTF ######## -->
+                                <tr v-if="form.total > 0 && fiscalPaymentsApplicable && !isUpdateDocument" data-testid="invoice-change">
+                                    <td><strong>Vuelto:</strong></td>
+                                    <td>
+                                        <template v-if="displayFiscalQuote && displayFiscalQuote.payments.length">
+                                            <span v-if="fiscalChangeTotal !== null">{{ fiscalChangeTotal }} {{ form.currency_type_id }} ⇄ {{ fiscalEquivalent(fiscalChangeTotal, {currency_type_id: form.currency_type_id, exchange_rate: form.exchange_rate_sale}) }}</span>
+                                            <span v-else>—</span>
+                                            <span v-for="entry in fiscalChangeReceipts" :key="entry.index" :class="{'d-block': fiscalChangeReceipts.length > 1}">
+                                                <small v-if="fiscalChangeReceipts.length > 1">Pago {{ entry.index + 1 }}: {{ entry.payment.change }} {{ entry.payment.currency_type_id }}</small>
+                                                <change-disbursement-selector v-if="fiscalSourceForQuote(entry.index)" :receipt="entry.payment"
+                                                    :lines="fiscalSourceForQuote(entry.index).change_disbursements || null" :methods="payment_method_types" :destinations="payment_destinations" :establishment-id="form.establishment_id"
+                                                    :disabled="igtfQuoteLoading || igtfQuoteKey !== fiscalQuoteKey"
+                                                    @apply="$set(fiscalSourceForQuote(entry.index), 'change_disbursements', $event)"
+                                                    @clear="$delete(fiscalSourceForQuote(entry.index), 'change_disbursements')" />
+                                            </span>
+                                        </template>
+                                        <template v-else>—</template>
+                                        <small v-if="igtfQuoteLoading || (!!fiscalQuoteKey && igtfQuoteKey !== fiscalQuoteKey)" class="text-muted">Evaluando…</small>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table class="table table-sm text-end" style="width: 100%;">
+                                <tr v-if="form.total > 0">
+                                    <!-- Metodos de pago -->
+                                    <td class="p-0" colspan="2">
+                                      <div class="payment-section">
+                                        <div class="payment-section__condition">
+                                        <span>CONDICIÓN DE PAGO:</span>
                                         <el-select
                                             v-model="
                                                 form.payment_condition_id
@@ -1701,22 +1740,12 @@
                                                 value="01"
                                             ></el-option>
                                         </el-select>
-                                    </td>
-                                </tr>
-                                <tr v-if="form.total > 0 && customer_has_expired">
-                                    <td colspan="2">
+                                        </div>
+                                    <div v-if="customer_has_expired">
                                         <div class="alert alert-danger mt-2 mb-0 text-center">
                                             El cliente excede los {{ config.finances.max_expired_days }} días de vencimiento de crédito. Solo puede emitir comprobantes al contado.
                                         </div>
-                                    </td>
-                                </tr>
-
-
-
-
-                                <tr v-if="form.total > 0">
-                                    <!-- Metodos de pago -->
-                                    <td class="p-0" colspan="2">
+                                    </div>
                                         <!-- Crédito con cuotas -->
                                         <div
                                             v-if="
@@ -1937,13 +1966,23 @@
                                         <!-- Contado -->
                                         <div
                                             v-if="
-                                                !isUpdateDocument && !is_receivable
+                                                !isUpdateDocument && !is_receivable && form.payment_condition_id === '01'
                                             "
                                             class="table-responsive payment mt-4"
                                         >
                                             <table
                                                 class="text-start table payment-method"
                                             >
+                                                <!-- ######## INICIO ANCHO DEL METODO DE PAGO ######## -->
+                                                <colgroup>
+                                                    <col v-if="showLoadVoucher" style="width: 55px">
+                                                    <col class="payment-method-column">
+                                                    <col v-if="enabled_payments">
+                                                    <col v-if="enabled_payments">
+                                                    <col v-if="enabled_payments">
+                                                    <col v-if="enabled_payments" style="width: 40px">
+                                                </colgroup>
+                                                <!-- ######## FIN ANCHO DEL METODO DE PAGO ######## -->
                                                 <thead>
                                                     <tr>
                                                         <template
@@ -1962,6 +2001,7 @@
                                                             </th>
                                                         </template>
 
+                                                        <!-- ######## INICIO ANCHO DEL METODO DE PAGO ######## -->
                                                         <th
                                                             v-if="
                                                                 form
@@ -1969,10 +2009,11 @@
                                                                     .length >
                                                                     0
                                                             "
-                                                            style="min-width: 140px"
+                                                            class="payment-method-column"
                                                         >
                                                             Método de pago
                                                         </th>
+                                                        <!-- ######## FIN ANCHO DEL METODO DE PAGO ######## -->
                                                         <template
                                                             v-if="
                                                                 enabled_payments
@@ -2019,7 +2060,7 @@
                                                                 "
                                                                 style="min-width: 90px"
                                                             >
-                                                                Monto
+                                                                {{ fiscalPaymentsApplicable ? 'Total entregado' : 'Monto' }}
                                                             </th>
                                                             <th
                                                                 style="min-width: 40px"
@@ -2114,7 +2155,8 @@
                                                             </td>
                                                         </template>
 
-                                                        <td>
+                                                        <!-- ######## INICIO ANCHO DEL METODO DE PAGO ######## -->
+                                                        <td class="payment-method-column">
                                                             <!-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## -->
                                                             <span v-if="isRecordedReceipt(row)">{{ (row.payment_method_snapshot || {}).description || (row.payment_method_type || {}).description || row.payment_method_type_id }}</span>
                                                             <el-select
@@ -2149,9 +2191,10 @@
                                                             <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
                                                         <small v-if="!row.payment_method_type_id" class="text-muted">{{ paymentMethodsLoaded ? "No hay efectivo activo para la moneda del documento; seleccione un método." : "Cargando métodos de pago…" }}</small>
 <igtf-settings-status v-if="fiscalPaymentsApplicable" />
-<igtf-payment-fields :use-document-rate="true" :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !isRecordedReceipt(row)" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+<igtf-payment-fields :hide-classification="true" :total-tendered="true" :igtf-rate="igtfSettings.rate" :use-document-rate="true" :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !isRecordedReceipt(row)" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
     :payment="row" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
                                                         </td>
+                                                        <!-- ######## FIN ANCHO DEL METODO DE PAGO ######## -->
                                                         <template
                                                             v-if="
                                                                 enabled_payments
@@ -2189,11 +2232,23 @@
                                                                 ></el-input>
                                                             </td>
                                                             <td>
-                                                                <el-input
-                                                                    :disabled="isRecordedReceipt(row)"
-                                                                    :value="fiscalAppliedPayment(row)"
-                                                                    @input="updatePaymentPrincipal(row, $event)"
-                                                                ></el-input>
+                                                                <el-popover placement="top" trigger="hover" :disabled="!fiscalPaymentsApplicable || isRecordedReceipt(row)">
+                                                                    <div class="text-start" data-testid="fiscal-receipt-popover">
+                                                                        <small class="d-block">{{ row.currency_type_id || form.currency_type_id }} · IGTF incluido</small>
+                                                                        <template v-for="detail in [fiscalReceiptBreakdown(row)]">
+                                                                        <div v-if="detail" :key="'receipt-' + index" data-testid="fiscal-receipt-breakdown">
+                                                                        <small class="d-block">Principal recibido: {{ detail.principal }} {{ detail.currency }}</small>
+                                                                        <small class="d-block">IGTF: {{ detail.tax }} {{ detail.currency }}</small>
+                                                                        <small class="d-block"><strong>Total cobrado: {{ detail.total }} {{ detail.currency }} ⇄ {{ fiscalEquivalent(detail.total, detail) }}</strong></small>
+                                                                        </div>
+                                                                        </template>
+                                                                    </div>
+                                                                    <el-input slot="reference"
+                                                                        :disabled="isRecordedReceipt(row)"
+                                                                        :value="fiscalPaymentsApplicable && !isRecordedReceipt(row) ? row.tendered_amount : fiscalAppliedPayment(row)"
+                                                                        @input="fiscalPaymentsApplicable ? updateTenderedPayment(row, $event) : updatePaymentPrincipal(row, $event)"
+                                                                    ></el-input>
+                                                                </el-popover>
                                                             </td>
                                                             <td
                                                                 class="text-center"
@@ -2216,31 +2271,30 @@
                                                         </template>
                                                     </tr>
                                                     <tr>
-                                                        <td colspan="5">
-                                                            <label
-                                                                class="control-label"
-                                                            >
-                                                                <a
-                                                                    class=""
-                                                                    href="#"
-                                                                    @click.prevent="
-                                                                        clickAddPayment
-                                                                    "
-                                                                    ><i
-                                                                        class="fa fa-plus font-weight-bold text-info"
-                                                                    ></i>
-                                                                    <span
-                                                                        style="color: #777777"
-                                                                        >Agregar
-                                                                        pago</span
-                                                                    ></a
-                                                                >
-                                                            </label>
+                                                        <!-- ######## INICIO RESUMEN PAGADO Y FALTA ######## -->
+                                                        <td :colspan="showLoadVoucher ? 6 : 5">
+                                                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                                                <label class="control-label">
+                                                                    <a href="#" @click.prevent="clickAddPayment">
+                                                                        <i class="fa fa-plus font-weight-bold text-info"></i>
+                                                                        <span style="color: #777777">Agregar pago</span>
+                                                                    </a>
+                                                                </label>
+                                                                <document-payment-progress
+                                                                    :document="form"
+                                                                    :quote="displayFiscalQuote"
+                                                                    :pending="igtfQuoteLoading || igtfSettings.loading || (!!fiscalQuoteKey && igtfQuoteKey !== fiscalQuoteKey)"
+                                                                    :error="igtfQuoteError || igtfSettings.error"
+                                                                    :currency-types="currency_types"
+                                                                />
+                                                            </div>
                                                         </td>
+                                                        <!-- ######## FIN RESUMEN PAGADO Y FALTA ######## -->
                                                     </tr>
                                                 </tbody>
                                             </table>
                                         </div>
+                                      </div>
                                     </td>
                                 </tr>
                             </table>
@@ -2442,6 +2496,37 @@
 </template>
 
 <style scoped>
+.invoice table.invoice-totals {
+    width: 55%;
+    margin-left: auto;
+}
+.invoice .invoice-totals tr > td:first-child:not([colspan]) {
+    text-align: left;
+}
+@media (max-width: 767px) {
+    .invoice table.invoice-totals { width: 100%; }
+}
+.invoice table.table tr.invoice-total-due > td {
+    border-top: 1px solid #e5e5e5 !important;
+    font-size: 20px;
+    font-weight: 700;
+}
+.invoice-total-due > td:first-child { white-space: nowrap; }
+.invoice-total-due small { font-size: 12px; font-weight: 400; }
+.payment-section {
+    border: 1px solid #dedede;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: left;
+}
+.payment-section__condition {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e5e5;
+}
 .input-with-currency {
     display: flex;
     align-items: center;
@@ -2567,6 +2652,22 @@
 .invoice table.table {
     table-layout: auto !important;
 }
+/* ######## INICIO ANCHO DEL METODO DE PAGO ######## */
+.invoice table.payment-method {
+    width: 100%;
+    table-layout: fixed !important;
+}
+.payment-method .payment-method-column {
+    width: 180px;
+    min-width: 160px;
+    max-width: 180px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.payment-method .payment-method-column > .el-select {
+    max-width: 180px;
+}
+/* ######## FIN ANCHO DEL METODO DE PAGO ######## */
 .input-custom.el-input-number{
     padding: 0px;
 }
@@ -2639,7 +2740,7 @@ import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {validateInvoicePayments} from "@helpers/invoice-payment-validation"
 import {restoreSaleNoteContext, documentRateRequest, mayApplyDocumentRate} from "../../../helpers/sale-note-conversion"
 
-import {withoutDraftRetentions, suggestRemainingPayment, markPaymentEdited, suggestInstallments, paymentConditionPayload} from "@helpers/document-creation"
+import {withoutDraftRetentions, suggestRemainingPayment, markPaymentEdited, suggestInstallments, paymentConditionPayload, invoicePaymentsForCondition} from "@helpers/document-creation"
 import documentCreationMixin from "@mixins/document-creation"
 // ######## INICIO TASAS OCHO DECIMALES ########
 import { exactAmount, normalizeExchangeRate, exactValue, exactSum } from "../../../helpers/exchange-rate-math"
@@ -2647,6 +2748,14 @@ import { documentTotals } from "../../../helpers/exact-document"
 // ######## FIN TASAS OCHO DECIMALES ########
 
 import IgtfPaymentFields from "./partials/igtf_fields.vue"
+// ######## INICIO RESUMEN REACTIVO IVA E IGTF ########
+import DocumentTaxSummary from "./partials/tax_summary.vue"
+// ######## FIN RESUMEN REACTIVO IVA E IGTF ########
+// ######## INICIO RESUMEN PAGADO Y FALTA ########
+import DocumentPaymentProgress from "./partials/payment_progress.vue"
+import ChangeDisbursementSelector from "./partials/change_disbursement.vue"
+import {defaultChangeDisbursements, validateChangeDisbursements} from "../../../helpers/change-disbursements"
+// ######## FIN RESUMEN PAGADO Y FALTA ########
 
 // ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import DocumentFormItem from "./partials/item.vue";
@@ -2730,6 +2839,13 @@ export default {
         "authUser"
     ],
     components: { IgtfPaymentFields,
+        // ######## INICIO RESUMEN REACTIVO IVA E IGTF ########
+        DocumentTaxSummary,
+        // ######## FIN RESUMEN REACTIVO IVA E IGTF ########
+        // ######## INICIO RESUMEN PAGADO Y FALTA ########
+        DocumentPaymentProgress,
+        ChangeDisbursementSelector,
+        // ######## FIN RESUMEN PAGADO Y FALTA ########
         StoreItemSeriesIndex,
         DocumentFormItem,
         PersonForm,
@@ -2765,6 +2881,9 @@ export default {
     ],
     data() {
         return {
+            // ######## INICIO ESTABILIDAD DE EVALUACION FISCAL ########
+            lastDisplayedFiscalQuote: null,
+            // ######## FIN ESTABILIDAD DE EVALUACION FISCAL ########
             miniTourSteps: [
                 {
                     target: ".edit-layout-btn",
@@ -2942,8 +3061,52 @@ export default {
         };
     },
     computed: {
+        // ######## INICIO TOTAL UNICO DE VUELTO ########
+        fiscalChangeReceipts() {
+            return (this.displayFiscalQuote?.payments || []).map((payment, index) => ({payment, index}))
+                .filter(({payment}) => !payment.reused && this.hasFiscalChange(payment));
+        },
+        fiscalChangeTotal() {
+            const currency = this.form.currency_type_id;
+            if (!['VES', 'USD'].includes(currency)) return null;
+            try {
+                let total = exactAmount('0');
+                for (const {payment} of this.fiscalChangeReceipts) {
+                    let amount = exactAmount(payment.change);
+                    if (!['VES', 'USD'].includes(payment.currency_type_id)) return null;
+                    if (payment.currency_type_id !== currency) {
+                        const rate = normalizeExchangeRate(payment.exchange_rate);
+                        amount = currency === 'VES' ? amount.times(rate) : amount.dividedBy(rate);
+                    }
+                    total = total.plus(amount);
+                }
+                return total.final(2);
+            } catch (_) { return null; }
+        },
+        // ######## FIN TOTAL UNICO DE VUELTO ########
+        // ######## INICIO SIMBOLO DE MONEDA DOCUMENTAL ########
+        documentCurrencySymbol() {
+            const id = this.form?.currency_type_id;
+            return this.currency_types.find(currency => currency.id === id)?.symbol || (id === 'VES' ? 'Bs.' : id === 'USD' ? '$' : '');
+        },
+        // ######## FIN SIMBOLO DE MONEDA DOCUMENTAL ########
+        activeInvoicePayments() { return invoicePaymentsForCondition(this.form || {}); },
+        fiscalQuoteRows() { return this.activeInvoicePayments; },
+        // ######## INICIO TOTAL A PAGAR CON IGTF ########
+        invoiceTotalWithIgtf() {
+            if (this.igtfQuoteError || (this.fiscalQuoteKey && !this.displayFiscalQuote)) return null;
+            if (this.displayFiscalQuote) return this.displayFiscalQuote.total_with_tax;
+            return exactAmount(this.form.total_payable ?? this.form.total ?? '0').final(2);
+        },
+        // ######## FIN TOTAL A PAGAR CON IGTF ########
+        // ######## INICIO ESTABILIDAD DE EVALUACION FISCAL ########
+        displayFiscalQuote() {
+            if (this.igtfQuoteError || !this.fiscalQuoteKey) return null;
+            return this.igtfQuoteKey === this.fiscalQuoteKey && this.igtfQuote ? this.igtfQuote : this.lastDisplayedFiscalQuote;
+        },
+        // ######## FIN ESTABILIDAD DE EVALUACION FISCAL ########
         receiptAppliedAmounts() {
-            return JSON.stringify((this.form?.payments || []).map(row => row.payment));
+            return JSON.stringify(this.activeInvoicePayments.map(row => row.payment));
         },
         // La personalización de campos se opera pasando el cursor sobre el
         // título, gesto que no existe en celular: allí el botón se oculta
@@ -3428,6 +3591,10 @@ export default {
 
     },
     watch: {
+        // ######## INICIO ESTABILIDAD DE EVALUACION FISCAL ########
+        igtfQuote(value) { if (value) this.lastDisplayedFiscalQuote = value; },
+        form() { this.lastDisplayedFiscalQuote = null; },
+        // ######## FIN ESTABILIDAD DE EVALUACION FISCAL ########
         receiptAppliedAmounts() {
             if (['02', '03'].includes(this.form?.payment_condition_id) && this.form?.fee?.length) this.calculateFee();
         },
@@ -3448,6 +3615,60 @@ export default {
         }
     },
     methods: {
+        // ######## INICIO REPARTO DE VUELTO ########
+        fiscalSourceForQuote(index) {
+            return this.fiscalQuoteRows.filter(row => {
+                try { return exactAmount(row.payment || '0').compare(0) > 0; } catch (_) { return false; }
+            })[index] || null;
+        },
+        hasFiscalChange(payment) {
+            try { return exactAmount(payment.change || '0').compare(0) > 0; } catch (_) { return false; }
+        },
+        validateChangeSelections() {
+            if (!this.fiscalPaymentsApplicable || !this.igtfQuote) return true;
+            for (let index = 0; index < this.igtfQuote.payments.length; index++) {
+                const payment = this.igtfQuote.payments[index], row = this.fiscalSourceForQuote(index);
+                if (!row || payment.reused) continue;
+                if (row.change_disbursements == null) {
+                    const defaults = defaultChangeDisbursements(payment, this.payment_method_types, this.payment_destinations, this.form.establishment_id);
+                    if (defaults) this.$set(row, 'change_disbursements', defaults);
+                }
+                const result = validateChangeDisbursements(row.change_disbursements, payment, this.payment_method_types, this.payment_destinations, this.form.establishment_id);
+                if (!result.valid) { this.$message.error(result.message); return false; }
+            }
+            return true;
+        },
+        // ######## FIN REPARTO DE VUELTO ########
+        // ######## INICIO EQUIVALENCIA DEL COBRO Y VUELTO ########
+        fiscalEquivalent(amount, payment) {
+            try {
+                const value = exactAmount(amount), rate = normalizeExchangeRate(payment.exchange_rate);
+                if ((payment.currency_type_id || payment.currency) === 'USD') return `Bs. ${value.times(rate).final(2)}`;
+                if ((payment.currency_type_id || payment.currency) === 'VES') return `$ ${value.dividedBy(rate).final(2)}`;
+            } catch (_) { /* Sin tasa válida no se presenta una equivalencia inventada. */ }
+            return '—';
+        },
+        // ######## FIN EQUIVALENCIA DEL COBRO Y VUELTO ########
+        // ######## INICIO DETALLE DEL COBRO IGTF ########
+        fiscalReceiptBreakdown(row) {
+            if (!this.igtfQuote || this.igtfQuoteLoading || this.igtfQuoteError || this.igtfQuoteKey !== this.fiscalQuoteKey) return null;
+            const rows = this.fiscalQuoteRows.filter(value => {
+                try { return exactAmount(value.payment || '0').compare(0) > 0; } catch (_) { return false; }
+            });
+            const quoted = this.igtfQuote.payments[rows.indexOf(row)];
+            if (!quoted || quoted.reused) return null;
+            try {
+                const principal = exactAmount(quoted.original_amount), tax = exactAmount(quoted.tax_amount);
+                const total = principal.plus(tax);
+                return {principal: principal.final(2), tax: tax.final(2), total: total.final(2), change: exactAmount(quoted.change ?? '0').final(2), currency: quoted.currency_type_id, exchange_rate: quoted.exchange_rate};
+            } catch (_) { return null; }
+        },
+        // ######## FIN DETALLE DEL COBRO IGTF ########
+        updateTenderedPayment(row, value) {
+            this.$set(row, '_tendered_edited', true);
+            this.$set(row, 'tendered_amount', value);
+            this.markPaymentEdited(row);
+        },
         updatePaymentPrincipal(row, value) {
             this.$set(row, 'payment', value);
             this.markPaymentEdited(row);
@@ -3951,6 +4172,9 @@ export default {
                 total_exportation: 0,
 
                 total_taxed: 0,
+                // ######## INICIO RESUMEN REACTIVO IVA E IGTF ########
+                calculation_snapshot: null,
+                // ######## FIN RESUMEN REACTIVO IVA E IGTF ########
 
                 total_exonerated: 0,
                 total_igv: 0,
@@ -5344,6 +5568,16 @@ export default {
 
             if (this.config.enabled_point_system) this.setTotalExchangePoints();
         },
+        // ######## INICIO RECALCULO REACTIVO DE TASA ########
+        recalculateItemsForExchangeRate(value) {
+            let rate;
+            try { rate = normalizeExchangeRate(value); } catch (_) { return; }
+            if (!this.form.items?.length) return;
+            if (this.enabled_discount_global) this.clearGlobalDistributionDiscounts();
+            this.form.items = this.form.items.map(row => calculateRowItem(row, this.form.currency_type_id, rate, this.percentage_igv, this.isExportInvoice));
+            this.calculateTotal();
+        },
+        // ######## FIN RECALCULO REACTIVO DE TASA ########
         changeCurrencyType() {
             this.currency_type = _.find(this.currency_types, {
                 id: this.form.currency_type_id
@@ -5738,7 +5972,7 @@ export default {
         validatePaymentDestination() {
             let error_by_item = 0;
 
-            this.form.payments.forEach(item => {
+            this.activeInvoicePayments.forEach(item => {
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 const method = (this.payment_method_types || []).find(value => String(value.id) === String(item.payment_method_type_id));
                 const credit = method?.collection_kind === 'credit';
@@ -5752,7 +5986,7 @@ export default {
         },
         documentSubmission() {
             const form = paymentConditionPayload(withoutDraftRetentions(this.form));
-            return this.isUpdateDocument ? {...form, payments: [], received_retentions: [], guarantee_fund: null} : form;
+            return this.isUpdateDocument ? {...form, payments: [], received_retentions: [], guarantee_fund: null} : {...form, payments: this.activeInvoicePayments};
         },
         async submit() {
             if (this.editBlocked) return this.$message.error(this.form.edit_block_reason);
@@ -5885,6 +6119,7 @@ export default {
             this.customerCurrent = this.getCustomer;
 
             if (!await this.ensureFiscalPaymentsReady(this.documentSubmission().payments)) return
+            if (!this.validateChangeSelections()) return
 
             this.loading_submit = true;
             this.is_consumption_charge = false;
@@ -5923,9 +6158,12 @@ export default {
                             this.errors,
                             "IdLoteSelected"
                         );
+                        const firstChangeError = this.firstValidationError(this.errors, 'change_disbursements');
                         if (this.errors.quoted_tax_amount) {
                             this.$message.error(this.errors.quoted_tax_amount[0]);
-                            this.refreshFiscalQuote(this.form.payments);
+                            this.refreshFiscalQuote(this.activeInvoicePayments);
+                        } else if (firstChangeError) {
+                            this.$message.error(firstChangeError);
                         } else if (firstLotError) {
                             this.$message.error(firstLotError);
                         } else if (this.errors.customer_id) {
@@ -6005,8 +6243,8 @@ export default {
                 .catch(error => console.log(error));
         },
         validate_payments() {
-            const result = validateInvoicePayments(this.form.payments, this.form.total, this.payment_method_types);
-            if (!result.error_by_item) this.form.payments = result.inputs;
+            const result = validateInvoicePayments(this.activeInvoicePayments, this.form.total, this.payment_method_types);
+            if (!result.error_by_item && !this.isCreditPaymentCondition) this.form.payments = result.inputs;
             return result;
         },
         close() {
@@ -6137,6 +6375,7 @@ export default {
             if (this.form.payment_condition_id === "03") {
                 if (!this.form.fee.length) this.clickAddFee();
             }
+            if (this.isCreditPaymentCondition) this.calculateFee();
 
             // if(this.isCreditPaymentCondition){
             // this.changeRetention()
@@ -6216,7 +6455,7 @@ export default {
             suggestRemainingPayment(this.form, this.form.payments, {refreshSuggested: this.form.payment_condition_id === '01'});
         },
         calculateFee() {
-            suggestInstallments(this.form, this.getTotal());
+            suggestInstallments({...this.form, payments: this.activeInvoicePayments}, this.getTotal());
         },
         // ######## FIN CALCULOS EXACTOS PRO9 ########
         getTotal() {
@@ -6494,7 +6733,7 @@ export default {
             this.form.actions.format_pdf = format;
 
             try {
-                let response = await this.$http.post(path, paymentConditionPayload(withoutDraftRetentions(this.form)), {
+                let response = await this.$http.post(path, paymentConditionPayload({...withoutDraftRetentions(this.form), payments: this.activeInvoicePayments}), {
                     responseType: "blob"
                 });
                 if (!response.headers?.['content-type']?.includes('application/pdf') || !response.data?.size) {

@@ -60,6 +60,9 @@ export default {
                 try { return exactAmount(row.payment || '0').compare(0) > 0 } catch (_) { return false }
             })
             if (!rows.length) return null
+            // Wait for every new receipt's method before quoting the group.
+            // A partial quote could otherwise misstate the remaining balance.
+            if (rows.some(row => !isRecordedReceipt(row) && !row.payment_method_type_id)) return null
             if (!rows.some(row => !isRecordedReceipt(row))) return null
             const documentId = Array.isArray(this.records) ? this.documentId : null
             const currency = this.form?.currency_type_id || this.currencyTypeId || this.document?.currency_type_id
@@ -77,6 +80,7 @@ export default {
                     date_of_payment: row.date_of_payment,
                     payment_method_type_id: row.payment_method_type_id, payment: row.payment,
                     currency_type_id: money, original_amount: row.original_amount ?? (money === currency ? row.payment : null),
+                    ...(Object.prototype.hasOwnProperty.call(row, 'tendered_amount') && !isRecordedReceipt(row) ? {tendered_amount: row.tendered_amount} : {}),
                     // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
                     exchange_rate: row.exchange_rate ?? (money === currency ? rate : null),
                     financial_intermediation: isRecordedReceipt(row) ? row.financial_intermediation

@@ -8,8 +8,72 @@ const parsed = compiler.parseComponent(fs.readFileSync('resources/js/views/tenan
 const exportsObject = {};
 const mathExports = {};
 vm.runInNewContext(babel.transformSync(fs.readFileSync('resources/js/helpers/exchange-rate-math.js','utf8'),{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,{exports:mathExports});
-vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,{exports:exportsObject, require:name => name.includes('payment-classification') ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/helpers/payment-classification.js')) : mathExports, crypto:{randomUUID:()=> 'operation-uuid'}});
+vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,{exports:exportsObject, require:name => name.includes('payment-classification') || name.includes('tendered-receipt') ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/helpers/'+(name.includes('tendered-receipt') ? 'tendered-receipt' : 'payment-classification')+'.js')) : mathExports, crypto:{randomUUID:()=> 'operation-uuid'}});
 const component = exportsObject.default;
+test('total tendered includes IGTF and preserves the customer entry through reactive recalculations', async () => {
+    const Vue=require('vue');
+    for (const documentCurrency of ['USD','VES']) {
+        const payment=Vue.observable({payment:documentCurrency==='USD' ? '60' : '600',original_amount:'60',
+            currency_type_id:'USD',payment_method_type_id:'usd',exchange_rate:'10',igtf_status:'subject'});
+        const view=new Vue({...component,propsData:{payment,documentCurrency,documentRate:'10',useDocumentRate:true,
+            totalTendered:true,igtfEnabled:true,igtfRate:'3',paymentMethods:[{id:'usd',collection_kind:'cash',currency_type_id:'USD'}]}});
+        const uid=view._uid;
+        await Vue.nextTick();assert.equal(payment.tendered_amount,'61.80');
+        Vue.set(payment,'_tendered_edited',true);payment.tendered_amount='70';
+        await Vue.nextTick();await Vue.nextTick();
+        assert.equal(payment.original_amount,'67.96');
+        assert.equal(payment.payment,documentCurrency==='USD' ? '67.96' : '679.60');
+        assert.equal(payment.tendered_amount,'70');
+        payment.tendered_amount='61.80';await Vue.nextTick();await Vue.nextTick();
+        assert.equal(payment.original_amount,'60.00');
+        payment.tendered_amount='30.90';await Vue.nextTick();await Vue.nextTick();
+        assert.equal(payment.original_amount,'30.00');
+        payment.igtf_status='not_applicable';await Vue.nextTick();await Vue.nextTick();
+        assert.equal(payment.original_amount,'30.90');assert.equal(payment.tendered_amount,'30.90');
+        payment.igtf_status='subject';view.igtfRate='4';await Vue.nextTick();await Vue.nextTick();
+        assert.equal(payment.original_amount,'29.71');assert.equal(payment.tendered_amount,'30.90');
+        assert.equal(view._uid,uid);view.$destroy();
+    }
+});
+
+test('inclusive cash allocates exact tax and principal once without losing a delivered cent', () => {
+    const {principalFromTendered,splitTendered}=require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/helpers/tendered-receipt.js'));
+    for (const [gross,net,tax] of [['40','38.83','1.17'],['70','67.96','2.04'],['61.80','60.00','1.80'],['30.90','30.00','0.90'],['0.17','0.17','0.00'],['0.10','0.10','0.00']]) {
+        assert.equal(principalFromTendered(gross,'3'),net);
+        const split=splitTendered(gross,'3');
+        assert.equal(split.tax,tax);
+        assert.equal(mathExports.exactAmount(split.principal).plus(split.tax).compare(gross),0);
+        assert.equal(mathExports.exactAmount(split.principalExact).times('3').dividedBy('100').compare(split.taxExact),0);
+    }
+    for (const rate of ['3','4','100']) {
+        for (let cents=1;cents<=206;cents++) {
+            const gross=mathExports.exactAmount(String(cents)).dividedBy('100').final(2), split=splitTendered(gross,rate);
+            assert.equal(mathExports.exactAmount(split.principal).plus(split.tax).compare(gross),0);
+            assert.equal(split.tax,mathExports.exactAmount(split.taxExact).final(2),'tax half-cent ties remain HALF_UP');
+        }
+    }
+    assert.throws(()=>principalFromTendered('-1','3'));
+});
+
+test('changing the payment currency converts the delivered total and reevaluates its included IGTF', async () => {
+    const Vue=require('vue');
+    const payment=Vue.observable({payment:'60',original_amount:'60',currency_type_id:'USD',exchange_rate:'10',
+        payment_method_type_id:'usd',igtf_status:'subject'});
+    const view=new Vue({...component,propsData:{payment,documentCurrency:'USD',documentRate:'10',useDocumentRate:true,
+        totalTendered:true,igtfEnabled:true,igtfRate:'3',paymentMethods:[
+            {id:'usd',collection_kind:'cash',currency_type_id:'USD'}, {id:'ves',collection_kind:'cash',currency_type_id:'VES'}]},
+        beforeCreate() { this.$http={post:async (_,input)=>({data:{data:{payment:{igtf_status:input.currency_type_id==='USD' ? 'subject' : 'not_applicable'}}}})}; }});
+    Vue.set(payment,'_tendered_edited',true);payment.tendered_amount='70';
+    for (let n=0;n<4;n++) await Vue.nextTick();
+    payment.payment_method_type_id='ves';
+    for (let n=0;n<6;n++) await Vue.nextTick();
+    assert.equal(payment.tendered_amount,'700.00');assert.equal(payment.original_amount,'700.00');
+    assert.equal(payment.igtf_status,'not_applicable');assert.equal(payment.payment,'70.00');
+    payment.payment_method_type_id='usd';
+    for (let n=0;n<6;n++) await Vue.nextTick();
+    assert.equal(payment.tendered_amount,'70.00');assert.equal(payment.original_amount,'67.96');
+    assert.equal(payment.igtf_status,'subject');view.$destroy();
+});
 // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
 test('old exception drafts are reevaluated automatically while their receipt identity stays unchanged', async () => {
     const Vue = require('vue');
@@ -243,7 +307,7 @@ test('document payment submission keeps wrapped currency errors on the payment r
     const view={}
     vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,
         {exports:view,require:()=>mathExports})
-    const row={payment:'10',original_amount:'1',currency_type_id:'USD',exchange_rate:'10',errors:{}}
+    const row={payment_method_type_id:'10',payment:'10',original_amount:'1',currency_type_id:'USD',exchange_rate:'10',errors:{}}
     const response={status:422,data:{message:'Error de validación',errors:{currency_type_id:['La moneda del método cambió']}}}
     const ctx={records:[row],documentId:4,showDialog:true,document:{currency_type_id:'VES',total_difference:'100'},resource:'document_payments',
         ensureFiscalPaymentsReady:async()=>true,$http:{post:()=>Promise.reject({response})},$message:{error:()=>{}},getRequestErrorMessage:()=> 'error'}
@@ -264,7 +328,7 @@ test('same-currency submission sends the received amount before rounding',async(
     const view={}
     vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,
         {exports:view,require:()=>mathExports})
-    const row={payment:'10.01',original_amount:'10.006',currency_type_id:'VES',exchange_rate:'1',errors:{}}
+    const row={payment_method_type_id:'14',payment:'10.01',original_amount:'10.006',currency_type_id:'VES',exchange_rate:'1',errors:{}}
     let payload
     const ctx={records:[row],documentId:4,showDialog:true,document:{currency_type_id:'VES',total_difference:'100'},resource:'document_payments',
         ensureFiscalPaymentsReady:async()=>true,$http:{post:(_url,body)=>{payload=body;return Promise.resolve({data:{success:false}})}},$message:{error:()=>{}}}

@@ -43,7 +43,10 @@ final class PaymentQuote
                 $decision = SpecialTaxpayerPolicy::payment($issuer, $decisionInput, $row['currency_type_id'] ?? $currency, $row['date_of_payment']);
                 $row['igtf_status'] = $decision['igtf_status'];
             }
+            if ($later && array_key_exists('tendered_amount', $row)) FiscalAmounts::error('tendered_amount', 'El total entregado se utiliza al crear el comprobante.');
+            $row = \App\Services\Payments\TenderedReceipt::prepare($row, $enabled, $rate);
             $values = FiscalAmounts::payment($row, $currency, $documentRate, $reused ? false : $enabled, $rate);
+            $values = \App\Services\Payments\TenderedReceipt::withAllocation($values, $row['_tendered_input'] ?? null);
             $normalized[] = array_merge($row, $values);
         }
 
@@ -60,7 +63,9 @@ final class PaymentQuote
         $applied = D::of(0);
         foreach ($normalized as $row) {
             $reused = $row['_reused_receipt'];
-            $values = FiscalAmounts::payment($row, $currency, $documentRate, $reused ? false : $enabled, $rate);
+            $values = FiscalAmounts::payment($row, $currency, $documentRate, $reused ? false : $enabled, $rate,
+                !$reused && D::of($row['change'] ?? 0)->isPositive());
+            $values = \App\Services\Payments\TenderedReceipt::withAllocation($values, $row['_tendered_input'] ?? null);
             if (isset($row['_settlement_payment'])) $values = ReceiptChange::withSettlement($values, $row['_settlement_payment']);
             $row = array_merge($row, $values);
             $applied = $applied->plus(D::readRequired($values, 'payment'));

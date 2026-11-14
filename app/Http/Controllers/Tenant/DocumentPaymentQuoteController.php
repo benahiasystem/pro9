@@ -24,6 +24,7 @@ final class DocumentPaymentQuoteController extends Controller
             'payments.*.payment'=>'required|numeric|gt:0',
             'payments.*.currency_type_id'=>'nullable|in:VES,USD',
             'payments.*.original_amount'=>'nullable|numeric|gt:0',
+            'payments.*.tendered_amount'=>'sometimes|required|numeric|gt:0',
             'payments.*.exchange_rate'=>'nullable|numeric|gt:0',
             'payments.*.id'=>'nullable|integer', 'payments.*.document_id'=>'nullable|integer',
             'payments.*.sale_note_id'=>'nullable|integer', 'payments.*.quotation_id'=>'nullable|integer',

@@ -90,6 +90,15 @@
                         <small class="text-danger" v-if="errors.iva_rate_type_id">{{ errors.iva_rate_type_id[0] }}</small>
                         </div>
                     </div>
+                    <!-- ######## INICIO DISPONIBILIDAD PARA VUELTOS ######## -->
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="control-label d-block">Disponible para vueltos</label>
+                            <el-switch v-model="form.available_for_change" :disabled="!['cash', 'account'].includes(form.collection_kind)" />
+                            <small class="text-danger d-block" v-if="errors.available_for_change">{{ errors.available_for_change[0] }}</small>
+                        </div>
+                    </div>
+                    <!-- ######## FIN DISPONIBILIDAD PARA VUELTOS ######## -->
                     <!-- ######## FIN MONEDA E IMPUESTO DE MEDIOS ######## -->
                     <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
                     <div class="col-md-3" v-show="form.collection_kind === 'credit'">
@@ -159,6 +168,7 @@
             },
             removeTax() { this.showTax = false; this.form.iva_rate_type_id = null },
             changeCollectionKind() {
+                if (!['cash', 'account'].includes(this.form.collection_kind)) this.form.available_for_change = false
                 if (this.form.collection_kind !== 'account') {
                     this.form.bank_id = this.form.bank_account_id = this.form.commission_percentage = this.form.minimum_commission = null
                 }
@@ -181,6 +191,7 @@
                     hka_code: null,
                     iva_rate_type_id: null,
                     is_active: true,
+                    available_for_change: false,
                     is_credit: 0,
                     number_days: 0,
                 }
@@ -203,7 +214,7 @@
                     this.fiscalEmissionMode = data.fiscal_emission_mode
                     if (response) {
                         this.showTax = !!response.data.iva_rate_type_id
-                        this.form = {...response.data, is_active: !!response.data.is_active}
+                        this.form = {...response.data, is_active: !!response.data.is_active, available_for_change: !!response.data.available_for_change}
                     }
                     this.formReady = true
                 }).catch(() => {

@@ -159,6 +159,162 @@ trait SpePersistenceCases
         self::assertSame('9.69',\App\Support\Exact\Decimal::represent($credit->fee->first()->exactValue('amount')));
     }
 
+    public function test_web_invoice_dollar_change_preserves_net_igtf_and_one_cash_movement(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company=Company::firstOrFail();
+        $company->forceFill(['fiscal_emission_mode'=>'free_form','igtf_enabled'=>true,'igtf_rate'=>'3'])->save();
+        FiscalProfileService::store($company,SpeProfiles::profile());
+        $input['currency_type_id']='VES';$input['items'][0]['quantity']='1';
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) { return validator($this->all(), $rules)->validate(); });
+        }
+        $usd=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD',
+            'financial_intermediation'=>'none','payment_destination_id'=>'cash'];
+        $ves=array_replace($usd,['payment_method_type_id'=>'01','currency_type_id'=>'VES',
+            'original_amount'=>'1000','payment'=>'1000','exchange_rate'=>'897.53830000']);
+        foreach ([
+            ['54266.91','904.44850000','70','60','10','1.80','54266.91','0',[]],
+            ['500','897.53830000','0.57','0.56','0.01','0.02','500','-2.621448',[]],
+            ['5000','897.53830000','6','4.46','1.54','0.13','4000','-3.020818',[$ves]],
+        ] as [$due,$rate,$gross,$net,$change,$tax,$applied,$adjustment,$otherRows]) {
+            $input['exchange_rate_sale']=$rate;$input['items'][0]['unit_price']=$due;
+            $row=$usd+['original_amount'=>$gross,'payment'=>$gross,'exchange_rate'=>$rate];
+            $rows=array_merge($otherRows,[$row]);
+            $quote=(new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController())(\Illuminate\Http\Request::create('/', 'POST',
+                ['currency_type_id'=>'VES','exchange_rate_sale'=>$rate,'principal_due'=>$due,'payments'=>$rows]))['data'];
+            $quoted=collect($quote['payments'])->firstWhere('currency_type_id','USD');
+            self::assertTrue(\App\Support\Exact\Decimal::of($net)->isEqualTo($quoted['original_amount']));
+            self::assertTrue(\App\Support\Exact\Decimal::of($change)->isEqualTo($quoted['change']));
+            self::assertSame($tax,$quoted['tax_amount']);
+            $preview=new Document(['currency_type_id'=>'VES','exchange_rate_sale'=>$rate,'total'=>$due,'date_of_issue'=>'2026-09-10']);
+            $preview->setRelation('payments',new \Illuminate\Database\Eloquent\Collection());
+            (new \App\CoreFacturalo\Facturalo())->setPaymentsPreview($preview,$rows);
+            self::assertTrue(\App\Support\Exact\Decimal::of($net)->isEqualTo($preview->payments->firstWhere('currency_type_id','USD')->original_amount));
+            $input['external_id']=(string)Str::uuid();
+            $input['payments']=array_map(function($payment) use ($tax) {
+                return $payment+['operation_key'=>(string)Str::uuid(),
+                    'quoted_tax_amount'=>$payment['currency_type_id']==='USD' ? $tax : '0.00'];
+            },$rows);
+            $before=$db->table('global_payments')->count();
+            $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+            $receipt=$document->payments->whereNull('receipt_parent_id')->firstWhere('currency_type_id','USD');
+            self::assertTrue($receipt->exactValue('original_amount')->isEqualTo($net));
+            self::assertTrue($receipt->exactValue('payment')->isEqualTo($applied));
+            self::assertTrue($receipt->exactValue('tax_amount')->isEqualTo($tax));
+            self::assertTrue(\App\Support\Exact\Decimal::of($receipt->change)->isEqualTo($change));
+            self::assertTrue(\App\Support\Exact\Decimal::readRequired($receipt,'tendered_original_amount')->isEqualTo($gross));
+            self::assertTrue(\App\Support\Exact\Decimal::readRequired($receipt,'received_change')->isEqualTo($change));
+            self::assertTrue(\App\Support\Exact\Decimal::readRequired($receipt,'payment_adjustment')->isEqualTo($adjustment));
+            self::assertSame($quote['total_with_tax'],\App\Support\Exact\Decimal::represent($document->exactValue('total_payable'),2,true));
+            self::assertTrue($document->exactBalance()->isZero());
+            $movement=\App\Services\Payments\Movement::row($receipt->global_payment);
+            self::assertTrue(\App\Support\Exact\Decimal::of($quote['received_by_currency']['USD'])->isEqualTo($movement['amount']));
+            self::assertTrue(\App\Support\Exact\Decimal::of($movement['principal'])->isEqualTo($net));
+            self::assertTrue(\App\Support\Exact\Decimal::of($tax)->isEqualTo($movement['tax']));
+            self::assertSame($before+count($rows),$db->table('global_payments')->count());
+            self::assertSame('not_requested',$document->emission->status);
+        }
+    }
+
+    public function test_invoice_total_tendered_includes_igtf_and_preserves_the_actual_eight_twenty_change(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company=Company::firstOrFail();
+        $company->forceFill(['fiscal_emission_mode'=>'free_form','igtf_enabled'=>true,'igtf_rate'=>'3'])->save();
+        FiscalProfileService::store($company,SpeProfiles::profile());
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) { return validator($this->all(), $rules)->validate(); });
+        }
+        foreach (['USD'=>'60','VES'=>'54266.91'] as $currency=>$due) {
+            $input['currency_type_id']=$currency;$input['exchange_rate_sale']='904.44850000';
+            $input['items'][0]['quantity']='1';$input['items'][0]['unit_price']=$due;
+            $row=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD',
+                'exchange_rate'=>'904.44850000','original_amount'=>'999','payment'=>'999','tendered_amount'=>'70',
+                'payment_destination_id'=>'cash','operation_key'=>(string)Str::uuid()];
+            $quote=(new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController())(\Illuminate\Http\Request::create('/', 'POST',
+                ['currency_type_id'=>$currency,'exchange_rate_sale'=>'904.44850000','principal_due'=>$due,'payments'=>[$row]]))['data'];
+            self::assertSame('8.20',$quote['payments'][0]['change']);
+            self::assertSame('61.80',$quote['received_by_currency']['USD']);
+            self::assertSame('70.00',$quote['tendered_by_currency']['USD']);
+            $preview=new Document(['currency_type_id'=>$currency,'exchange_rate_sale'=>'904.44850000','total'=>$due,'date_of_issue'=>'2026-09-10']);
+            $preview->setRelation('payments',new \Illuminate\Database\Eloquent\Collection());
+            (new \App\CoreFacturalo\Facturalo())->setPaymentsPreview($preview,[$row]);
+            self::assertTrue(\App\Support\Exact\Decimal::of($preview->payments->first()->change)->isEqualTo('8.20'));
+            $input['external_id']=(string)Str::uuid();$input['payments']=[$row+['quoted_tax_amount'=>'1.80']];
+            $before=$db->table('global_payments')->count();
+            $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+            $receipt=$document->payments->whereNull('receipt_parent_id')->first();
+            self::assertTrue($receipt->exactValue('original_amount')->isEqualTo('60'));
+            self::assertTrue($receipt->exactValue('tax_amount')->isEqualTo('1.80'));
+            self::assertTrue(\App\Support\Exact\Decimal::of($receipt->change)->isEqualTo('8.20'));
+            foreach (['total_tendered'=>'70','requested_total_tendered'=>'70','tendered_original_amount'=>'68.20','received_change'=>'8.20'] as $key=>$amount) {
+                self::assertTrue(\App\Support\Exact\Decimal::readRequired($receipt,$key)->isEqualTo($amount));
+            }
+            self::assertTrue($document->exactBalance()->isZero());
+            self::assertTrue(\App\Support\Exact\Decimal::of(\App\Services\Payments\Movement::row($receipt->global_payment)['amount'])->isEqualTo('61.80'));
+            self::assertSame($before+1,$db->table('global_payments')->count());
+            self::assertSame($receipt->id,FiscalDocumentPersistence::payment($document,$row)->id);
+            try {
+                FiscalDocumentPersistence::payment($document,array_replace($row,['tendered_amount'=>'70.01']));
+                self::fail('El mismo UUID no permite otro total entregado.');
+            } catch (ValidationException $exception) { self::assertArrayHasKey('operation_key',$exception->errors()); }
+            self::assertSame($before+1,$db->table('global_payments')->count());
+        }
+    }
+
+    public function test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();$D=\App\Support\Exact\Decimal::class;
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $company=Company::firstOrFail();
+        $company->forceFill(['fiscal_emission_mode'=>'free_form','igtf_enabled'=>true,'igtf_rate'=>'3'])->save();
+        FiscalProfileService::store($company,SpeProfiles::profile());
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) { return validator($this->all(), $rules)->validate(); });
+        }
+        $input['currency_type_id']='USD';$input['exchange_rate_sale']='904.44850000';
+        $input['items'][0]['quantity']='1';$input['items'][0]['unit_price']='60';
+        $usd=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD',
+            'exchange_rate'=>'904.44850000','original_amount'=>'999','payment'=>'999','tendered_amount'=>'40',
+            'payment_destination_id'=>'cash','quoted_tax_amount'=>'1.17'];
+        $ves=array_replace($usd,['payment_method_type_id'=>'01','currency_type_id'=>'VES',
+            'original_amount'=>'19147.17','payment'=>'19147.17','tendered_amount'=>'19147.17','quoted_tax_amount'=>'0.00']);
+        foreach ([[$usd,$ves],[$ves,$usd]] as $rows) {
+            $rows=array_map(fn($row)=>$row+['operation_key'=>(string)Str::uuid()],$rows);
+            $quote=(new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController())(\Illuminate\Http\Request::create('/', 'POST',
+                ['currency_type_id'=>'USD','exchange_rate_sale'=>'904.44850000','principal_due'=>'60','payments'=>$rows]))['data'];
+            self::assertSame('40.00',$quote['received_by_currency']['USD']);
+            self::assertSame('19147.17',$quote['received_by_currency']['VES']);
+            self::assertSame('61.17',$quote['total_with_tax']);self::assertSame('0.00',$quote['balance']);
+            $preview=new Document(['currency_type_id'=>'USD','exchange_rate_sale'=>'904.44850000','total'=>'60','date_of_issue'=>'2026-09-10']);
+            $preview->setRelation('payments',new \Illuminate\Database\Eloquent\Collection());
+            (new \App\CoreFacturalo\Facturalo())->setPaymentsPreview($preview,$rows);
+            self::assertTrue($D::of($preview->payments->firstWhere('currency_type_id','USD')->tax_amount)->isEqualTo('1.17'));
+            $input['external_id']=(string)Str::uuid();$input['payments']=$rows;
+            $before=$db->table('global_payments')->count();
+            $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+            $receipt=$document->payments->whereNull('receipt_parent_id')->firstWhere('currency_type_id','USD');
+            self::assertTrue($receipt->exactValue('original_amount')->isEqualTo('38.83'));
+            self::assertTrue($receipt->exactValue('tax_amount')->isEqualTo('1.17'));
+            self::assertTrue($D::of($receipt->change)->isZero());
+            self::assertTrue($D::readRequired($receipt,'total_tendered')->isEqualTo('40'));
+            self::assertTrue($D::readRequired($receipt,'tax_base_exact')->isEqualTo($D::of('4000')->dividedBy('103')));
+            self::assertTrue($D::readRequired($receipt,'tax_exact')->isEqualTo($D::of('120')->dividedBy('103')));
+            self::assertTrue($D::readRequired($receipt,'principal_settlement_adjustment')->plus($D::readRequired($receipt,'tax_settlement_adjustment'))->isZero());
+            $tax=$document->taxes()->where('document_payment_id',$receipt->id)->where('tax_kind','IGTF')->firstOrFail();
+            self::assertTrue($D::readRequired($tax,'base')->isEqualTo($D::of('4000')->dividedBy('103')));
+            self::assertTrue($D::readRequired($tax,'amount')->isEqualTo('1.17'));
+            self::assertTrue($document->exactBalance()->isZero());
+            self::assertTrue($D::of(\App\Services\Payments\Movement::row($receipt->global_payment)['amount'])->isEqualTo('40'));
+            self::assertSame($before+2,$db->table('global_payments')->count());
+            self::assertSame($receipt->id,FiscalDocumentPersistence::payment($document,collect($rows)->firstWhere('currency_type_id','USD'))->id);
+            self::assertSame($before+2,$db->table('global_payments')->count());
+        }
+    }
+
     public function test_invoice_settles_single_cross_currency_cash_subcent_remainder(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture();$sent=[];$mode='confirmed';$this->fakeSpeHka($db,$app,$sent,$mode);

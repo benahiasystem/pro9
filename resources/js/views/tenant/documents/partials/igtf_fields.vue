@@ -1,11 +1,11 @@
 <template>
     <div v-if="!isRecordedReceipt(payment)" class="mt-2">
-        <small v-if="proposal && proposal.issuer_spe" class="d-block">Emisor: Sujeto Pasivo Especial vigente.</small>
+        <small v-if="!hideClassification && proposal && proposal.issuer_spe" class="d-block">Emisor: Sujeto Pasivo Especial vigente.</small>
         <small v-if="proposal && proposal.buyer_spe" class="d-block">Comprador: Sujeto Pasivo Especial vigente. RIF fiscal: {{ proposal.buyer.rif }}</small>
         <!-- ######## INICIO CAMPOS DE COBRO SIMPLIFICADOS ######## -->
         <!-- Moneda e intermediación proceden del método seleccionado. -->
         <!-- ######## FIN CAMPOS DE COBRO SIMPLIFICADOS ######## -->
-        <template v-if="payment.currency_type_id && payment.currency_type_id !== documentCurrency">
+        <template v-if="!totalTendered && payment.currency_type_id && payment.currency_type_id !== documentCurrency">
             <label>Importe recibido para la venta, sin IGTF ({{ payment.currency_type_id }})</label>
             <el-input v-model="payment.original_amount" @input="clearServerError('original_amount'); convertPrincipal()"/>
             <small v-if="!documentId" class="d-block">Si hay exceso en efectivo, el vuelto se calcula antes del IGTF.</small>
@@ -22,10 +22,10 @@
         <!-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## -->
         <small v-if="payment.currency_type_id === documentCurrency && settledReceived" class="d-block">Se liquidará {{ settledReceived }} {{ payment.currency_type_id }}.</small>
         <!-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## -->
-        <template v-if="igtfEnabled">
+        <template v-if="igtfEnabled && !hideClassification">
             <label>Clasificación IGTF</label>
             <small class="d-block">{{ payment.igtf_status === 'subject' ? 'Sujeto' : 'No aplica' }}</small>
-            <small v-if="payment.igtf_status === 'subject'">El IGTF se cobra adicional al importe neto aplicado.</small>
+            <small v-if="payment.igtf_status === 'subject'">{{ totalTendered ? 'El total entregado incluye el IGTF.' : 'El IGTF se cobra adicional al importe neto aplicado.' }}</small>
         </template>
         <small v-if="proposal && proposal.retention && proposal.retention.eligible">Retención IVA prevista: {{ proposal.retention.percentage }} %. El saldo se aplica al registrar el comprobante.</small>
         <small v-if="error" class="text-danger">{{ error }}</small>
@@ -37,10 +37,11 @@
 <script>
 import {rateMultiply, rateDivide, appliedReceiptAmount, exactAmount} from '../../../../helpers/exchange-rate-math'
 import {isRecordedReceipt, paymentMethodIntermediation, retireDraftIgtfException} from '../../../../helpers/payment-classification'
+import {totalTendered as tenderedForPrincipal, principalFromTendered} from '../../../../helpers/tendered-receipt'
 // ######## INICIO CAMPOS DE COBRO SIMPLIFICADOS ########
 export default {
-    props: {settingsVersion: {type: Number, default: 0}, igtfEnabled: {type: Boolean, default: false}, payment: {type: Object, required: true}, paymentMethods: {type: Array, default: () => []}, documentCurrency: {default: 'VES'}, documentRate: {default: null}, useDocumentRate: {type: Boolean, default: false}, customerId: {default: null}, documentId: {default: null}},
-    data: () => ({proposal: null, error: '', sequence: 0, lastApplied: null}),
+    props: {hideClassification: {type: Boolean, default: false}, totalTendered: {type: Boolean, default: false}, igtfRate: {default: '0'}, settingsVersion: {type: Number, default: 0}, igtfEnabled: {type: Boolean, default: false}, payment: {type: Object, required: true}, paymentMethods: {type: Array, default: () => []}, documentCurrency: {default: 'VES'}, documentRate: {default: null}, useDocumentRate: {type: Boolean, default: false}, customerId: {default: null}, documentId: {default: null}},
+    data: () => ({proposal: null, error: '', sequence: 0, lastApplied: null, lastTendered: null}),
     created() {
         if (isRecordedReceipt(this.payment)) return
         if (!this.payment.igtf_status) this.$set(this.payment, 'igtf_status', 'not_applicable')
@@ -59,7 +60,7 @@ export default {
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         serverErrors() {
             const errors = this.payment.errors || {}
-            return ['currency_type_id', 'original_amount', 'exchange_rate', 'financial_intermediation', 'igtf_status', 'exemption_reason', 'exception_basis', 'quoted_tax_amount'].flatMap(field => {
+            return ['currency_type_id', 'original_amount', 'tendered_amount', 'exchange_rate', 'financial_intermediation', 'igtf_status', 'exemption_reason', 'exception_basis', 'quoted_tax_amount'].flatMap(field => {
                 const messages = errors[field]
                 return (Array.isArray(messages) ? messages : [messages]).filter(message => typeof message === 'string' && message.trim())
             })
@@ -76,6 +77,11 @@ export default {
     beforeDestroy() { this.sequence++ },
     watch: {
         payment: 'syncMethodCurrency', methodContext: 'syncMethodCurrency',
+        'payment.tendered_amount'(value) {
+            if (!this.totalTendered || value === this.lastTendered) { this.lastTendered = null; return }
+            this.convertTendered()
+        },
+        'payment.igtf_status': 'refreshTendered', igtfRate: 'refreshTendered', igtfEnabled: 'refreshTendered',
         'payment.payment'(value) {
             if (this.lastApplied !== null && String(value) === String(this.lastApplied)) this.lastApplied = null
             else { this.lastApplied = null; this.proposeReceived() }
@@ -94,6 +100,33 @@ export default {
     },
     methods: {
         isRecordedReceipt,
+        tenderedTaxRate() { return this.igtfEnabled && this.payment.igtf_status === 'subject' ? this.igtfRate : '0' },
+        refreshTendered() {
+            if (!this.totalTendered || isRecordedReceipt(this.payment)) return
+            if (this.payment._tendered_edited) { this.convertTendered(); return }
+            try {
+                const gross = tenderedForPrincipal(this.payment.original_amount ?? '0', this.tenderedTaxRate())
+                this.lastTendered = gross
+                this.$set(this.payment, 'tendered_amount', gross)
+            } catch (_) { this.error = 'No se pudo calcular el total con IGTF.' }
+        },
+        convertTendered() {
+            if (!this.totalTendered || isRecordedReceipt(this.payment)) return
+            try {
+                const p = this.payment
+                const net = principalFromTendered(p.tendered_amount, this.tenderedTaxRate())
+                this.$set(p, 'original_amount', net)
+                const applied = appliedReceiptAmount(p, this.documentCurrency).final(2)
+                this.lastApplied = applied
+                this.$set(p, 'payment', applied)
+                this.clearServerError('tendered_amount')
+                this.error = ''; this.evaluate()
+            } catch (_) {
+                this.lastApplied = ''
+                this.$set(this.payment, 'payment', '')
+                this.error = 'Indique un total entregado válido y una tasa positiva.'
+            }
+        },
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         clearServerError(field) {
             if (this.payment.errors && Object.prototype.hasOwnProperty.call(this.payment.errors, field)) this.$delete(this.payment.errors, field)
@@ -102,8 +135,10 @@ export default {
         proposeReceived() {
             const p = this.payment
             if (isRecordedReceipt(p) || !p.currency_type_id) return
+            if (this.totalTendered && p._tendered_edited) { this.convertTendered(); return }
             if (p.payment === null || p.payment === undefined || p.payment === '') {
                 this.$set(p, 'original_amount', null)
+                if (this.totalTendered) this.refreshTendered()
                 return
             }
             try {
@@ -117,6 +152,7 @@ export default {
                 }
                 // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                 this.error = ''
+                if (this.totalTendered) this.refreshTendered()
             } catch (e) {
                 this.$set(p, 'original_amount', null)
                 this.error = 'Indique una tasa válida para calcular el importe recibido.'
@@ -140,11 +176,21 @@ export default {
             }
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             const currency = this.methodCurrency
+            const priorCurrency = this.payment.currency_type_id
+            const priorTendered = this.payment.tendered_amount
             this.$set(this.payment, 'currency_type_id', currency)
             this.$set(this.payment, 'exchange_rate', this.documentRate)
             this.$set(this.payment, 'operation_key', this.payment.operation_key || crypto.randomUUID())
             this.$set(this.payment, 'original_amount', null)
             try {
+                if (this.totalTendered && this.payment._tendered_edited && priorCurrency) {
+                    const gross = priorCurrency === currency ? priorTendered : (priorCurrency === 'USD'
+                        ? rateMultiply(priorTendered, this.documentRate) : rateDivide(priorTendered, this.documentRate))
+                    this.lastTendered = exactAmount(gross).final(2)
+                    this.$set(this.payment, 'tendered_amount', this.lastTendered)
+                    this.convertTendered()
+                    return
+                }
                 if (this.payment.payment !== null && this.payment.payment !== undefined && this.payment.payment !== '') {
                     const received = currency === this.documentCurrency ? this.payment.payment
                         : (currency === 'USD' ? rateDivide(this.payment.payment, this.documentRate) : rateMultiply(this.payment.payment, this.documentRate))
@@ -157,11 +203,13 @@ export default {
                     // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                 }
                 this.error = ''
+                if (this.totalTendered) this.refreshTendered()
                 this.evaluate()
             } catch (e) { this.error = 'Indique una tasa válida para calcular el importe recibido.' }
         },
         convertPrincipal() {
             if (isRecordedReceipt(this.payment)) return
+            if (this.totalTendered && this.payment._tendered_edited) { this.convertTendered(); return }
             if (this.useDocumentRate || this.payment.currency_type_id !== this.documentCurrency) {
                 try {
                     if (exactAmount(this.payment.exchange_rate).compare(0) <= 0) throw new Error('invalid rate')
@@ -179,7 +227,7 @@ export default {
                 // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                 this.lastApplied = applied
                 p.payment = applied
-                this.error = ''; this.evaluate()
+                this.error = ''; if (this.totalTendered) this.refreshTendered(); this.evaluate()
             } catch (e) { this.error = 'Indique un importe recibido válido para calcular el cobro.' }
         },
         async evaluate() {

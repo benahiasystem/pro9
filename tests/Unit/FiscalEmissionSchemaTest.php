@@ -250,6 +250,24 @@ PHP;
     }
     // ######## FIN CALCULOS EXACTOS PRO9 ########
 
+    public function test_change_disbursement_schema_is_created_and_reversible(): void
+    {
+        $db = $this->capsule->getConnection('tenant');
+        $migrations = $this->migrations('migrations/tenant/*.php');
+        for ($cycle = 0; $cycle < 2; $cycle++) {
+            foreach ($migrations as $migration) $migration->up();
+            self::assertTrue($db->getSchemaBuilder()->hasColumn('payment_method_types', 'available_for_change'));
+            self::assertTrue($db->getSchemaBuilder()->hasTable('document_change_disbursements'));
+            foreach (['document_change_document_fk', 'document_change_payment_fk', 'document_change_method_fk', 'document_change_currency_fk'] as $constraint) {
+                self::assertCount(1, $db->select('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?',
+                    [$this->database, 'document_change_disbursements', $constraint]));
+            }
+            self::assertSame(0, (int) $db->select("SHOW INDEX FROM document_change_disbursements WHERE Key_name = 'document_change_payment_position_unique'")[0]->Non_unique);
+            foreach (array_reverse($migrations) as $migration) $migration->down();
+            self::assertFalse($db->getSchemaBuilder()->hasTable('document_change_disbursements'));
+        }
+    }
+
     public function test_fresh_tenant_migrations_seed_rollback_and_repeat(): void
     {
         $db = $this->capsule->getConnection('tenant');
@@ -609,6 +627,7 @@ PHP;
             \App\Models\Tenant\Document::observe(\App\Observers\DocumentObserver::class);
             (new \Modules\Inventory\Providers\InventoryKardexServiceProvider($app))->boot();
             (new \Modules\Inventory\Providers\InventoryVoidedServiceProvider($app))->boot();
+            (new \App\Providers\KardexServiceProvider($app))->boot();
             $cash=\App\Models\Tenant\Cash::create(['user_id'=>$userId,'state'=>true,'date_opening'=>'2026-09-10','time_opening'=>'12:00:00','beginning_balance'=>'0']);
             $db->transaction(fn()=>\App\Services\Payments\CashLedger::open($cash,[]));
             $first = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument();
@@ -647,6 +666,11 @@ PHP;
             $saleNote = \App\Models\Tenant\SaleNote::create($saleController->mergeData($saleInput));
             self::assertSame('NV01-00000100', $saleNote->number_full);
             foreach ($input['items'] as $row) $saleNote->items()->create($row);
+            $globalMovement = \App\Models\Tenant\Kardex::where('sale_note_id', $saleNote->id)->sole();
+            $warehouseMovement = $saleNote->inventory_kardex()->sole();
+            self::assertTrue($globalMovement->exactValue('quantity')->isEqualTo('2'));
+            self::assertTrue($warehouseMovement->exactValue('quantity')->isEqualTo('-2'));
+            self::assertSame((int) $warehouse, (int) $warehouseMovement->warehouse_id);
             $saleNext = \App\Models\Tenant\SaleNote::create($saleController->mergeData($saleInput));
             self::assertSame('NV01-00000101', $saleNext->number_full);
             $stock = $db->table('item_warehouse')->where('item_id', $item->id)->where('warehouse_id', $warehouse)->value('stock');

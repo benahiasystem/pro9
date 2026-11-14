@@ -30,7 +30,7 @@ final class FiscalAmounts
     }
     // ######## FIN CALCULOS EXACTOS PRO9 ########
 
-    public static function payment(array $input, string $documentCurrency, $documentRate, bool $igtfEnabled, $igtfRate): array
+    public static function payment(array $input, string $documentCurrency, $documentRate, bool $igtfEnabled, $igtfRate, bool $allowZeroNetAfterChange = false): array
     {
         // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         RetiredIgtfException::assertNew($input);
@@ -45,10 +45,14 @@ final class FiscalAmounts
             self::error('original_amount', 'Indique el importe en la moneda recibida.');
         }
         $original = $input['original_amount'] ?? $input['payment'] ?? null;
-        if (!is_numeric($original) || $original <= 0) self::error('original_amount', 'El importe debe ser positivo.');
+        // ######## INICIO NETO CERO TRAS VUELTO ########
+        // Only a caller that already validated the delivered receipt and allocated
+        // change on the server may recalculate a fully returned cash receipt.
+        if (!is_numeric($original) || $original < 0 || (!$allowZeroNetAfterChange && $original == 0)) self::error('original_amount', 'El importe debe ser positivo.');
         $requested = \App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($original, 'original_amount'));
         $original = \App\Support\Exact\Decimal::represent($requested, 2, true);
-        if (\App\Support\Exact\Decimal::of($original)->isLessThanOrEqualTo(0)) self::error('original_amount', 'El importe liquidable debe ser positivo.');
+        if (\App\Support\Exact\Decimal::of($original)->isLessThanOrEqualTo(0) && (!$allowZeroNetAfterChange || !$requested->isZero())) self::error('original_amount', 'El importe liquidable debe ser positivo.');
+        // ######## FIN NETO CERO TRAS VUELTO ########
         $status = $input['igtf_status'] ?? 'not_applicable';
         if (!in_array($status, ['subject', 'not_applicable'], true)) self::error('igtf_status', 'Clasificación IGTF inválida.');
         if ($status === 'subject' && (!$igtfEnabled || !is_numeric($igtfRate) || $igtfRate <= 0)) {

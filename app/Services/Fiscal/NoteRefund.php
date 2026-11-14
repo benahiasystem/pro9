@@ -132,7 +132,12 @@ final class NoteRefund
             $destination=$this->getDestinationRecord($data);
             if ($destination['destination_type'] === BankAccount::class) {
                 $bank=BankAccount::query()->lockForUpdate()->findOrFail($destination['destination_id']);
-                if ($bank->currency_type_id !== $data['currency_type_id'] || $bank->establishment_id != $note->establishment_id) FiscalAmounts::error('payment_destination_id','La cuenta debe corresponder a la moneda y sucursal de la devolución.');
+                $branchMatches=$bank->establishment_id !== null && (int)$bank->establishment_id === (int)$note->establishment_id;
+                if ($bank->establishment_id === null) {
+                    $branches=\App\Models\Tenant\Establishment::query()->limit(2)->pluck('id');
+                    $branchMatches=$branches->count() === 1 && (int)$branches->first() === (int)$note->establishment_id;
+                }
+                if (!$bank->status || $bank->currency_type_id !== $data['currency_type_id'] || !$branchMatches) FiscalAmounts::error('payment_destination_id','La cuenta debe estar activa y corresponder a la moneda y sucursal de la devolución.');
             } else {
                 $cash=Cash::query()->lockForUpdate()->findOrFail($destination['destination_id']);
                 if (!$cash->state || $cash->user->establishment_id != $note->establishment_id) FiscalAmounts::error('payment_destination_id','Seleccione una caja abierta de la sucursal de la nota.');

@@ -1070,10 +1070,13 @@ class Facturalo
             // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
             // Change is derived from the complete set of receipts, never accepted from a client.
             unset($row['change'], $row['_settlement_payment']);
+            if (!$existingReceipt) $row = \App\Services\Payments\TenderedReceipt::prepare($row, (bool)$company->igtf_enabled, $company->igtf_rate);
+            else unset($row['_tendered_input']);
             // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
             $values = $existingReceipt
                 ? \App\Services\Fiscal\RecordedPaymentAmounts::forRetry($existingReceipt, $row, $document->currency_type_id, $document->exchange_rate_sale)
                 : \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id, $document->exchange_rate_sale, (bool)$company->igtf_enabled, $company->igtf_rate);
+            if (!$existingReceipt) $values = \App\Services\Payments\TenderedReceipt::withAllocation($values, $row['_tendered_input'] ?? null);
             // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
             $normalized[] = array_merge($row, $values);
             $receiptContexts[] = !$alreadyRecorded && !$origin ? $values['calculation_snapshot']['values'] : null;
@@ -1085,6 +1088,7 @@ class Facturalo
         // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         foreach ($normalized as $index => $row) {
             $context = $receiptContexts[$index];
+            if ($context !== null) $context = array_replace($context, \App\Services\Payments\TenderedReceipt::context($row));
             if ($context !== null && !empty($row['change'])) $context['received_change'] = \App\Support\Exact\Decimal::fraction($row['change']);
             if ($context !== null && isset($row['_settlement_payment'])) $context['settlement_payment'] = $row['_settlement_payment'];
             $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row, true, $context);
@@ -1697,8 +1701,10 @@ class Facturalo
                         $row['currency_type_id'] ?? $document->currency_type_id, $date)['igtf_status'];
                 }
             }
+            $row = \App\Services\Payments\TenderedReceipt::prepare($row, (bool)($this->company->igtf_enabled ?? false), $this->company->igtf_rate ?? null);
             $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id,
                 $document->exchange_rate_sale, (bool) ($this->company->igtf_enabled ?? false), $this->company->igtf_rate ?? null);
+            $values = \App\Services\Payments\TenderedReceipt::withAllocation($values, $row['_tendered_input'] ?? null);
             $normalized[] = array_merge($row, $values);
         }
         if ($existingDocument) {
@@ -1718,7 +1724,9 @@ class Facturalo
             }
             // Recalculate the net snapshot and tax after any cash change, as persistence does.
             $values = \App\Services\Fiscal\FiscalAmounts::payment($row, $document->currency_type_id,
-                $document->exchange_rate_sale, (bool) ($this->company->igtf_enabled ?? false), $this->company->igtf_rate ?? null);
+                $document->exchange_rate_sale, (bool) ($this->company->igtf_enabled ?? false), $this->company->igtf_rate ?? null,
+                !\App\Services\Fiscal\PaymentQuote::reused($row) && \App\Support\Exact\Decimal::of($row['change'] ?? 0)->isPositive());
+            $values = \App\Services\Payments\TenderedReceipt::withAllocation($values, $row['_tendered_input'] ?? null);
             if (isset($row['_settlement_payment'])) {
                 $values = \App\Services\Payments\ReceiptChange::withSettlement($values, $row['_settlement_payment']);
             }

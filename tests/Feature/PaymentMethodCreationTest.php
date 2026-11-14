@@ -61,6 +61,7 @@ class PaymentMethodCreationTest extends TestCase
             $table->string('commission_percentage')->nullable();
             $table->string('minimum_commission')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->boolean('available_for_change')->default(false);
         });
         $this->actingAs((new \App\Models\Tenant\User())->forceFill(['id'=>1,'type'=>'admin']));
         Route::get('/test-payment-tables', [PaymentMethodTypeController::class, 'tables']);
@@ -160,6 +161,19 @@ class PaymentMethodCreationTest extends TestCase
         self::assertSame('27', $rows[0]->id);
         self::assertSame('Editado', $rows[0]->description);
         self::assertSame('99', $rows[0]->hka_code);
+    }
+
+    public function test_change_availability_is_saved_edited_and_rejected_for_credit(): void
+    {
+        $this->postJson('/test-payment-methods', ['id'=>'27', 'description'=>'Caja', 'collection_kind'=>'cash',
+            'currency_type_id'=>'VES', 'hka_code'=>'08', 'available_for_change'=>true])->assertOk();
+        $this->getJson('/test-payment-methods/27')->assertOk()->assertJsonPath('available_for_change', true);
+        $this->putJson('/test-payment-methods/27', ['id'=>'27', 'description'=>'Caja', 'collection_kind'=>'cash',
+            'currency_type_id'=>'VES', 'hka_code'=>'08', 'available_for_change'=>false])->assertOk();
+        $this->getJson('/test-payment-methods/27')->assertOk()->assertJsonPath('available_for_change', false);
+        $this->postJson('/test-payment-methods', ['id'=>'28', 'description'=>'Crédito', 'collection_kind'=>'credit',
+            'currency_type_id'=>'VES', 'hka_code'=>'99', 'available_for_change'=>true])->assertStatus(422);
+        self::assertFalse(DB::connection('tenant')->table('payment_method_types')->where('id', '28')->exists());
     }
 
     public function test_new_methods_are_available_even_if_client_requests_inactive(): void
