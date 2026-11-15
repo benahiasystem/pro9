@@ -69778,27 +69778,6 @@
             "operation_language": "php"
         }
     },
-    "4eaca814cbdffc6f0d3b815f": {
-        "category": "technical",
-        "justification": "Igualdad abstracta JavaScript con literal null: comprueba presencia sin convertir el otro operando a número. No acredita una comparación monetaria ni sus cálculos anidados: item.payment == null",
-        "evidence": [
-            "resources/js/views/tenant/quotations/form.vue",
-            "scripts/exact_guard_proof.cjs",
-            "tests/js/exact-vue-audit.test.cjs#nullish guards prove presence only and retain nested monetary candidates"
-        ],
-        "evidence_sha256": {
-            "resources/js/views/tenant/quotations/form.vue": "470ca7454f97c21bb4802771ed9062c483a863fb9a08130a61ae82b40c37dad8",
-            "scripts/exact_guard_proof.cjs": "e150c4928619d94afdccac7ddf54a1664f26b7e00267ef7a4d5a414d9a75ec4b",
-            "tests/js/exact-vue-audit.test.cjs": "b8649eb7374ae7f81219f6b2a5147b0031aa65e4c14e3d024b8137a72f1196f4"
-        },
-        "proof": "nullish_presence_guard",
-        "source": {
-            "file": "resources/js/views/tenant/quotations/form.vue",
-            "symbol": "validate_payments",
-            "operation": "native_==",
-            "operation_language": "javascript"
-        }
-    },
     "4eb05595538df457c04f2f25": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: form.period === 'date'",
@@ -74663,7 +74642,7 @@
             "tests/js/exact-vue-audit.test.cjs#loose nonnumeric guards exclude numeric coercions and nested money"
         ],
         "evidence_sha256": {
-            "resources/js/views/tenant/documents/invoicetensu.vue": "a9514c576b31588da6ba18adaf5d9b360b12d4c4d398b6e2f69a5d53b493a830",
+            "resources/js/views/tenant/documents/invoicetensu.vue": "e6f3144876db98ff0f0dd2c0a02f273d32c933f7be8d51942834099c6cd64fce",
             "scripts/exact_guard_proof.cjs": "e150c4928619d94afdccac7ddf54a1664f26b7e00267ef7a4d5a414d9a75ec4b",
             "tests/js/exact-vue-audit.test.cjs": "b8649eb7374ae7f81219f6b2a5147b0031aa65e4c14e3d024b8137a72f1196f4"
         },
@@ -81503,27 +81482,6 @@
             "file": "modules/Production/Resources/assets/js/view/production/index.vue",
             "symbol": "changePeriod",
             "operation": "native_===",
-            "operation_language": "javascript"
-        }
-    },
-    "5cc9693149caa10046adaf29": {
-        "category": "technical",
-        "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: rawItem.has_igv !== false",
-        "evidence": [
-            "resources/js/views/tenant/quotations/form_edit.vue",
-            "scripts/exact_guard_proof.cjs",
-            "tests/js/exact-vue-audit.test.cjs#classification proof never exempts"
-        ],
-        "evidence_sha256": {
-            "resources/js/views/tenant/quotations/form_edit.vue": "a98a16a94da9d0ff7a9732e43b0ac0e365b480503cf64879c30831ba34d139d5",
-            "scripts/exact_guard_proof.cjs": "e150c4928619d94afdccac7ddf54a1664f26b7e00267ef7a4d5a414d9a75ec4b",
-            "tests/js/exact-vue-audit.test.cjs": "b8649eb7374ae7f81219f6b2a5147b0031aa65e4c14e3d024b8137a72f1196f4"
-        },
-        "proof": "strict_type_guard",
-        "source": {
-            "file": "resources/js/views/tenant/quotations/form_edit.vue",
-            "symbol": "onPrepareItems",
-            "operation": "native_!==",
             "operation_language": "javascript"
         }
     },
@@ -130072,7 +130030,7 @@
             "tests/js/exact-vue-audit.test.cjs#loose nonnumeric guards exclude numeric coercions and nested money"
         ],
         "evidence_sha256": {
-            "resources/js/views/tenant/documents/invoicetensu.vue": "a9514c576b31588da6ba18adaf5d9b360b12d4c4d398b6e2f69a5d53b493a830",
+            "resources/js/views/tenant/documents/invoicetensu.vue": "e6f3144876db98ff0f0dd2c0a02f273d32c933f7be8d51942834099c6cd64fce",
             "scripts/exact_guard_proof.cjs": "e150c4928619d94afdccac7ddf54a1664f26b7e00267ef7a4d5a414d9a75ec4b",
             "tests/js/exact-vue-audit.test.cjs": "b8649eb7374ae7f81219f6b2a5147b0031aa65e4c14e3d024b8137a72f1196f4"
         },
@@ -186873,27 +186831,6 @@
             "operation_language": "javascript"
         }
     },
-    "d6d8b15a56dc6ed8afd7de19": {
-        "category": "technical",
-        "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: rawItem.has_igv !== false",
-        "evidence": [
-            "resources/js/views/tenant/quotations/form.vue",
-            "scripts/exact_guard_proof.cjs",
-            "tests/js/exact-vue-audit.test.cjs#classification proof never exempts"
-        ],
-        "evidence_sha256": {
-            "resources/js/views/tenant/quotations/form.vue": "470ca7454f97c21bb4802771ed9062c483a863fb9a08130a61ae82b40c37dad8",
-            "scripts/exact_guard_proof.cjs": "e150c4928619d94afdccac7ddf54a1664f26b7e00267ef7a4d5a414d9a75ec4b",
-            "tests/js/exact-vue-audit.test.cjs": "b8649eb7374ae7f81219f6b2a5147b0031aa65e4c14e3d024b8137a72f1196f4"
-        },
-        "proof": "strict_type_guard",
-        "source": {
-            "file": "resources/js/views/tenant/quotations/form.vue",
-            "symbol": "normalizeQuotationItem",
-            "operation": "native_!==",
-            "operation_language": "javascript"
-        }
-    },
     "d6e80c8979c9395931a2cca8": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: type === 'shipping'",
@@ -187244,27 +187181,6 @@
             "symbol": "{blade}",
             "operation": "native_Equal",
             "operation_language": "php"
-        }
-    },
-    "d77afbc1669e367aef699f09": {
-        "category": "technical",
-        "justification": "Igualdad abstracta JavaScript con literal null: comprueba presencia sin convertir el otro operando a número. No acredita una comparación monetaria ni sus cálculos anidados: item.payment == null",
-        "evidence": [
-            "resources/js/views/tenant/quotations/form_edit.vue",
-            "scripts/exact_guard_proof.cjs",
-            "tests/js/exact-vue-audit.test.cjs#nullish guards prove presence only and retain nested monetary candidates"
-        ],
-        "evidence_sha256": {
-            "resources/js/views/tenant/quotations/form_edit.vue": "a98a16a94da9d0ff7a9732e43b0ac0e365b480503cf64879c30831ba34d139d5",
-            "scripts/exact_guard_proof.cjs": "e150c4928619d94afdccac7ddf54a1664f26b7e00267ef7a4d5a414d9a75ec4b",
-            "tests/js/exact-vue-audit.test.cjs": "b8649eb7374ae7f81219f6b2a5147b0031aa65e4c14e3d024b8137a72f1196f4"
-        },
-        "proof": "nullish_presence_guard",
-        "source": {
-            "file": "resources/js/views/tenant/quotations/form_edit.vue",
-            "symbol": "validate_payments",
-            "operation": "native_==",
-            "operation_language": "javascript"
         }
     },
     "d78cfec3a9ea14f7d02b099f": {
@@ -193522,27 +193438,6 @@
             "symbol": "FeedController::stores",
             "operation": "native_Identical",
             "operation_language": "php"
-        }
-    },
-    "dfcb9d61512b51eb4d49cf44": {
-        "category": "technical",
-        "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: row.input_unit_price_value === null",
-        "evidence": [
-            "resources/js/views/tenant/quotations/form.vue",
-            "scripts/exact_guard_proof.cjs",
-            "tests/js/exact-vue-audit.test.cjs#classification proof never exempts"
-        ],
-        "evidence_sha256": {
-            "resources/js/views/tenant/quotations/form.vue": "470ca7454f97c21bb4802771ed9062c483a863fb9a08130a61ae82b40c37dad8",
-            "scripts/exact_guard_proof.cjs": "e150c4928619d94afdccac7ddf54a1664f26b7e00267ef7a4d5a414d9a75ec4b",
-            "tests/js/exact-vue-audit.test.cjs": "b8649eb7374ae7f81219f6b2a5147b0031aa65e4c14e3d024b8137a72f1196f4"
-        },
-        "proof": "strict_type_guard",
-        "source": {
-            "file": "resources/js/views/tenant/quotations/form.vue",
-            "symbol": "normalizeQuotationItem",
-            "operation": "native_===",
-            "operation_language": "javascript"
         }
     },
     "dfdfaa7c4a7162740d379550": {
@@ -204716,7 +204611,7 @@
             "tests/js/exact-vue-audit.test.cjs#nullish guards prove presence only and retain nested monetary candidates"
         ],
         "evidence_sha256": {
-            "resources/js/views/tenant/documents/invoicetensu.vue": "a9514c576b31588da6ba18adaf5d9b360b12d4c4d398b6e2f69a5d53b493a830",
+            "resources/js/views/tenant/documents/invoicetensu.vue": "e6f3144876db98ff0f0dd2c0a02f273d32c933f7be8d51942834099c6cd64fce",
             "scripts/exact_guard_proof.cjs": "e150c4928619d94afdccac7ddf54a1664f26b7e00267ef7a4d5a414d9a75ec4b",
             "tests/js/exact-vue-audit.test.cjs": "b8649eb7374ae7f81219f6b2a5147b0031aa65e4c14e3d024b8137a72f1196f4"
         },
@@ -211811,27 +211706,6 @@
             "symbol": "ItemController::exportExtraItem",
             "operation": "native_Equal",
             "operation_language": "php"
-        }
-    },
-    "f6600f2cf8d51595d66d8fcc": {
-        "category": "technical",
-        "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: row.input_unit_price_value === null",
-        "evidence": [
-            "resources/js/views/tenant/quotations/form_edit.vue",
-            "scripts/exact_guard_proof.cjs",
-            "tests/js/exact-vue-audit.test.cjs#classification proof never exempts"
-        ],
-        "evidence_sha256": {
-            "resources/js/views/tenant/quotations/form_edit.vue": "a98a16a94da9d0ff7a9732e43b0ac0e365b480503cf64879c30831ba34d139d5",
-            "scripts/exact_guard_proof.cjs": "e150c4928619d94afdccac7ddf54a1664f26b7e00267ef7a4d5a414d9a75ec4b",
-            "tests/js/exact-vue-audit.test.cjs": "b8649eb7374ae7f81219f6b2a5147b0031aa65e4c14e3d024b8137a72f1196f4"
-        },
-        "proof": "strict_type_guard",
-        "source": {
-            "file": "resources/js/views/tenant/quotations/form_edit.vue",
-            "symbol": "onPrepareItems",
-            "operation": "native_===",
-            "operation_language": "javascript"
         }
     },
     "f660a23479b778137f81f785": {
@@ -221688,5 +221562,770 @@
             "operation": "final",
             "operation_language": "javascript"
         }
+    },
+    "2998d7197added075208051c": {
+        "category": "validation",
+        "justification": "Rechaza un vuelto negativo comparando la fracción exacta con cero; no convierte importes a número binario. Expresión: remaining.compare(0) < 0",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_<",
+            "operation_language": "javascript"
+        }
+    },
+    "1d27ceda76e8c74f4fc63056": {
+        "category": "validation",
+        "justification": "Detecta la selección vacía para usar provisionalmente la moneda del cobro; no interpreta un importe. Expresión: row.payment_method_type_id === ''",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "3abf2b00e0773eb626698bf1": {
+        "category": "technical",
+        "justification": "Comprueba la presencia de la fila de destino antes de leer su método; no opera importes. Expresión: row == null",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_==",
+            "operation_language": "javascript"
+        },
+        "proof": "nullish_presence_guard"
+    },
+    "5f70c6acd37a9f7ec3e1ce30": {
+        "category": "technical",
+        "justification": "Comprueba la ausencia del identificador del método antes de resolver su moneda; no opera importes. Expresión: row.payment_method_type_id == null",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_==",
+            "operation_language": "javascript"
+        },
+        "proof": "nullish_presence_guard"
+    },
+    "2ce00ea2254d5318b4e238f9": {
+        "category": "technical",
+        "justification": "Compara identificadores del catálogo como texto para resolver la moneda del método. Expresión: String(item.id) === String(row.payment_method_type_id)",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "6c2c6480b0e294dd8bdaa8e3": {
+        "category": "validation",
+        "justification": "Detecta un campo de monto todavía vacío y lo excluye de la sugerencia, conservando la validación final del reparto. Expresión: other.amount === ''",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "8af3af670682bf95c56a7339": {
+        "category": "technical",
+        "justification": "Compara la identidad de objetos para excluir del cálculo la fila cuyo monto se está sugiriendo. Expresión: other === line",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "6e5ed9cb284826879feea1f4": {
+        "category": "validation",
+        "justification": "Rechaza importes negativos mediante el comparador racional exacto, sin aritmética binaria. Expresión: amount.compare(0) < 0",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_<",
+            "operation_language": "javascript"
+        }
+    },
+    "708c7aa83028d70bbd7908ea": {
+        "category": "validation",
+        "justification": "Compara el importe racional con su representación a céntimos sólo para rechazar entradas con precisión excesiva; la representación no alimenta la suma ni la conversión. Expresión: amount.compare(amount.final(2)) !== 0",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "f37cf74b07db448146f48940": {
+        "category": "validation",
+        "justification": "Produce exclusivamente la representación de validación de céntimos; el importe original conserva su fracción para restar y convertir. Expresión: amount.final(2)",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "4cff614439f0ccfa6ce0ef8f": {
+        "category": "technical",
+        "justification": "Compara códigos VES/USD para decidir si procede una conversión exacta; no compara valores monetarios. Expresión: currency === receipt.currency_type_id",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "3cc58b0db51c01b2b589cf02": {
+        "category": "technical",
+        "justification": "Compara el código de moneda para multiplicar USD a VES o dividir VES a USD con la tasa exacta del cobro. Expresión: currency === 'USD'",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "e9aeba72e515d41b71b22b84": {
+        "category": "validation",
+        "justification": "Detecta con comparación racional un vuelto ya cubierto o sobreasignado y propone cero, sin corregir ni redistribuir las filas existentes. Expresión: remaining.compare(0) <= 0",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_<=",
+            "operation_language": "javascript"
+        }
+    },
+    "53dac99e93c177ac356c0b69": {
+        "category": "technical",
+        "justification": "Compara códigos VES/USD para decidir si procede una conversión exacta; no compara valores monetarios. Expresión: currency === receipt.currency_type_id",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "195a86cf0ad4a9c74138a7eb": {
+        "category": "technical",
+        "justification": "Compara el código de moneda para multiplicar USD a VES o dividir VES a USD con la tasa exacta del cobro. Expresión: currency === 'USD'",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "7ff72b91aa272cf6c4781bda": {
+        "category": "presentation",
+        "justification": "Representa a dos decimales la sugerencia final después de descontar y convertir con fracciones exactas; no redondea las conversiones intermedias ni sustituye la validación al aplicar. Expresión: converted.final(2)",
+        "evidence": [
+            "resources/js/helpers/change-disbursements.js",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/change-disbursements.js": "b6daa147e9515b748b22accae2c0e4635d2db8fed4bb31059889f9d192f3b2fd",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/helpers/change-disbursements.js",
+            "symbol": "suggestChangeDisbursementAmount",
+            "operation": "final",
+            "operation_language": "javascript"
+        }
+    },
+    "b883dd561ea49703107cbab0": {
+        "category": "validation",
+        "justification": "Distingue el campo vacío del monto escrito antes de marcar o reemplazar una sugerencia automática; no interpreta su valor numérico. Expresión: line.amount !== ''",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/change_disbursement.vue",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/change_disbursement.vue": "f813fa398027ed64afac38cce4ce09ea96d352a824651f5a04176f98ec664bcb",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/change_disbursement.vue",
+            "symbol": "open",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "2a9b625224b466fedd468a56": {
+        "category": "technical",
+        "justification": "Compara el texto actual con la sugerencia guardada en un WeakMap local para preservar montos manuales; no realiza cálculos monetarios. Expresión: this.suggestedAmounts.get(line) !== line.amount",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/change_disbursement.vue",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/change_disbursement.vue": "f813fa398027ed64afac38cce4ce09ea96d352a824651f5a04176f98ec664bcb",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/change_disbursement.vue",
+            "symbol": "suggestAmount",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "ba6554a8d2ab3f236ad9c506": {
+        "category": "validation",
+        "justification": "Distingue el campo vacío del monto escrito antes de marcar o reemplazar una sugerencia automática; no interpreta su valor numérico. Expresión: line.amount !== ''",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/change_disbursement.vue",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/change_disbursement.vue": "f813fa398027ed64afac38cce4ce09ea96d352a824651f5a04176f98ec664bcb",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/change_disbursement.vue",
+            "symbol": "suggestAmount",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "7bf3f79cf1a67464fa4c5535": {
+        "category": "technical",
+        "justification": "Compara identidades de objetos al preparar las otras filas para calcular antes de confirmar el cambio de método. Expresión: other !== line",
+        "evidence": [
+            "resources/js/views/tenant/documents/partials/change_disbursement.vue",
+            "tests/js/change-disbursements.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/partials/change_disbursement.vue": "f813fa398027ed64afac38cce4ce09ea96d352a824651f5a04176f98ec664bcb",
+            "tests/js/change-disbursements.test.cjs": "f9c4435521f49ff289bf59ecf51ee79a07671fee4705f26fdcbaf63939215e4f"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/partials/change_disbursement.vue",
+            "symbol": "suggestAmount",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        }
+    },
+    "41af5fe05073940c08d60138": {
+        "category": "technical",
+        "justification": "Comprueba la presencia de una entrada sin convertirla ni operar su valor. Expresión: value === undefined",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "normalizeQuotationPrices",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "62fcec58464b470c76df9760": {
+        "category": "validation",
+        "justification": "Detecta una entrada vacía antes de validar el decimal exacto. Expresión: value === ''",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "normalizeQuotationPrices",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "85d486dc63f40f837496576e": {
+        "category": "technical",
+        "justification": "Comprueba la presencia de una entrada sin convertirla ni operar su valor. Expresión: value === null",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "normalizeQuotationPrices",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        },
+        "proof": "strict_type_guard"
+    },
+    "7ce566ee78f25ad496760eac": {
+        "category": "validation",
+        "justification": "Comprueba que el precio sea positivo mediante comparación racional exacta. Expresión: exactAmount(value).compare(0) > 0",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "normalizeQuotationPrices",
+            "operation": "native_>",
+            "operation_language": "javascript"
+        }
+    },
+    "7dc47107d4c39eb952c21b05": {
+        "category": "technical",
+        "justification": "Comprueba el indicador booleano de IVA para seleccionar el precio ingresado. Expresión: item.has_igv !== false",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "normalizeQuotationPrices",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        },
+        "proof": "strict_type_guard"
+    },
+    "3d8519e5c03f233173880da8": {
+        "category": "technical",
+        "justification": "Controla un índice entero de recorrido inverso de filas. Expresión: index >= 0",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "validateQuotationPayments",
+            "operation": "native_>=",
+            "operation_language": "javascript"
+        }
+    },
+    "d3a820b67a8c776d968416fd": {
+        "category": "technical",
+        "justification": "Inicializa un índice entero con la longitud del arreglo. Expresión: payments.length - 1",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "validateQuotationPayments",
+            "operation": "native_-",
+            "operation_language": "javascript"
+        }
+    },
+    "f63b50adaa85644ff5a27129": {
+        "category": "technical",
+        "justification": "Disminuye el índice entero de recorrido de filas. Expresión: index--",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "validateQuotationPayments",
+            "operation": "native_--",
+            "operation_language": "javascript"
+        }
+    },
+    "0a8ef8e5ae81c901291e6fca": {
+        "category": "validation",
+        "justification": "Compara el importe racional con cero para retirar sólo una fila nueva vacía. Expresión: amount.compare(0) === 0",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "validateQuotationPayments",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "6c8ce133c5732da7438e26e3": {
+        "category": "validation",
+        "justification": "Rechaza importes no positivos mediante comparación racional. Expresión: amount.compare(0) <= 0",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "validateQuotationPayments",
+            "operation": "native_<=",
+            "operation_language": "javascript"
+        }
+    },
+    "d1f69d0b5b5e8a28f63ac9e5": {
+        "category": "technical",
+        "justification": "Incrementa un contador entero de errores de validación. Expresión: errors++",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "validateQuotationPayments",
+            "operation": "native_++",
+            "operation_language": "javascript"
+        }
+    },
+    "5dc1872858c792bc382f1373": {
+        "category": "technical",
+        "justification": "Incrementa un contador entero de errores de validación. Expresión: errors++",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "validateQuotationPayments",
+            "operation": "native_++",
+            "operation_language": "javascript"
+        }
+    },
+    "3c40fef94de900130e26abb0": {
+        "category": "technical",
+        "justification": "Comprueba presencia del total antes de recuperar la fracción conservada. Expresión: form.total == null",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "validateQuotationPayments",
+            "operation": "native_==",
+            "operation_language": "javascript"
+        },
+        "proof": "nullish_presence_guard"
+    },
+    "2c2f6ee4a6fc312afac90812": {
+        "category": "validation",
+        "justification": "Compara la suma racional de pagos con la fracción exacta del total documental. Expresión: sum.compare(exactValue(form, 'total')) > 0",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "validateQuotationPayments",
+            "operation": "native_>",
+            "operation_language": "javascript"
+        }
+    },
+    "1a80fac9b435bacabd4d1607": {
+        "category": "technical",
+        "justification": "Incrementa un contador entero de errores de validación. Expresión: errors++",
+        "evidence": [
+            "resources/js/helpers/quotation-exact.js",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/helpers/quotation-exact.js": "1529cb1f46c8951cb66da26568b12565a6cb8f70c342a8b2afd69027d9a21c6e",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/helpers/quotation-exact.js",
+            "symbol": "validateQuotationPayments",
+            "operation": "native_++",
+            "operation_language": "javascript"
+        }
+    },
+    "5c0ccef9ad0e36f5986a0e3e": {
+        "category": "presentation",
+        "justification": "Concatena símbolo y representación liquidable ya calculada para mostrar el total. Expresión: _s(currency_type.symbol)+\" \"+_s(form.total_payable)",
+        "evidence": [
+            "resources/js/views/tenant/documents/invoicetensu.vue",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/documents/invoicetensu.vue": "e6f3144876db98ff0f0dd2c0a02f273d32c933f7be8d51942834099c6cd64fce",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/documents/invoicetensu.vue",
+            "symbol": "{template}",
+            "operation": "native_+",
+            "operation_language": "javascript"
+        }
+    },
+    "61954ce7ef2b48bc5139777c": {
+        "category": "validation",
+        "justification": "Compara racionalmente el precio editado con el original antes de reutilizar su entrada congelada. Expresión: exactAmount(this.form.unit_price).compare(this.resolveEditUnitPrice(original)) === 0",
+        "evidence": [
+            "resources/js/views/tenant/quotations/partials/item.vue",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/quotations/partials/item.vue": "e239867367d72895e3799ca99eccff7ec4b2a06f89718aab01950311501dbb56",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/quotations/partials/item.vue",
+            "symbol": "clickAddItem",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "69c2d2ee287c41ff5702931e": {
+        "category": "technical",
+        "justification": "Compara códigos de moneda para conservar una entrada original sólo en su contexto documental. Expresión: (original.currency_type_id || this.currencyTypeIdActive) === this.currencyTypeIdActive",
+        "evidence": [
+            "resources/js/views/tenant/quotations/partials/item.vue",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/quotations/partials/item.vue": "e239867367d72895e3799ca99eccff7ec4b2a06f89718aab01950311501dbb56",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/quotations/partials/item.vue",
+            "symbol": "clickAddItem",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "5cad73622e8ad63de992f4fb": {
+        "category": "technical",
+        "justification": "Comprueba el indicador booleano de inclusión de IVA del artículo original. Expresión: original.item?.has_igv !== false",
+        "evidence": [
+            "resources/js/views/tenant/quotations/partials/item.vue",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/quotations/partials/item.vue": "e239867367d72895e3799ca99eccff7ec4b2a06f89718aab01950311501dbb56",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/quotations/partials/item.vue",
+            "symbol": "clickAddItem",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        },
+        "proof": "strict_type_guard"
+    },
+    "d82112aab98dc140ce5831ee": {
+        "category": "technical",
+        "justification": "Compara indicadores booleanos de inclusión de IVA antes de reutilizar la entrada original. Expresión: (original.item?.has_igv !== false) === (this.form.has_igv !== false)",
+        "evidence": [
+            "resources/js/views/tenant/quotations/partials/item.vue",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/quotations/partials/item.vue": "e239867367d72895e3799ca99eccff7ec4b2a06f89718aab01950311501dbb56",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/quotations/partials/item.vue",
+            "symbol": "clickAddItem",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "ea99137d763b2a0b232239fa": {
+        "category": "validation",
+        "justification": "Compara racionalmente la cantidad con su representación original antes de recuperar la fracción guardada. Expresión: exactAmount(this.form.quantity).compare(original.quantity) === 0",
+        "evidence": [
+            "resources/js/views/tenant/quotations/partials/item.vue",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/quotations/partials/item.vue": "e239867367d72895e3799ca99eccff7ec4b2a06f89718aab01950311501dbb56",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/quotations/partials/item.vue",
+            "symbol": "clickAddItem",
+            "operation": "native_===",
+            "operation_language": "javascript"
+        }
+    },
+    "a971a89573b9e0fb23275773": {
+        "category": "technical",
+        "justification": "Comprueba el indicador booleano de inclusión de IVA de la entrada. Expresión: this.form.has_igv !== false",
+        "evidence": [
+            "resources/js/views/tenant/quotations/partials/item.vue",
+            "tests/js/quotation-tensu-exact.test.cjs"
+        ],
+        "evidence_sha256": {
+            "resources/js/views/tenant/quotations/partials/item.vue": "e239867367d72895e3799ca99eccff7ec4b2a06f89718aab01950311501dbb56",
+            "tests/js/quotation-tensu-exact.test.cjs": "c56d66d6a1a8877789170a1b50b650bf3c15a2f827c1593216aa066eb92bc7cc"
+        },
+        "source": {
+            "file": "resources/js/views/tenant/quotations/partials/item.vue",
+            "symbol": "clickAddItem",
+            "operation": "native_!==",
+            "operation_language": "javascript"
+        },
+        "proof": "strict_type_guard"
     }
 }

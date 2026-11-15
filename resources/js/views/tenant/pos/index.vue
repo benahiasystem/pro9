@@ -1,5 +1,6 @@
 <template>
 <div class="pos container-fluid p-0">
+        <pos-stock-status :retryable="posStockRetryable" :pending="posStockPending" :error="posStockError" @retry="retryPosStock" />
     <span class="module-title-marker" data-page-title="Punto de Venta"></span>
     <div class="row page-header pos-toolbar pe-0 no-gutters" style="min-height:48px">
         <Keypress
@@ -895,7 +896,7 @@
                                             inputmode="decimal"
                                             @focus="valueInputSelect"
                                             @click.native="valueInputSelect"
-                                            @blur="changeRowTotal(index)"
+                                            @input="updateLocalPosTotal(index)"
                                             :readonly="!edit_unit_price && !item.item.calculate_quantity"
                                         ></el-input>
                                     </span>
@@ -1053,6 +1054,7 @@
     </div>
     <template v-else>
         <payment-form
+            :stock-blocked="posStockBlocked"
             :is_payment.sync="is_payment"
             :form="form"
             :currency-type-id-active="form.currency_type_id"
@@ -1455,6 +1457,7 @@ import {isValidPosRate, restorePosDraftRate, refreshPosRate, ensurePosRate} from
 import {exactAmount, exactInput} from "../../../helpers/exchange-rate-math"
 
 import Keypress from "vue-keypress";
+import posLocalQuantity from "../../../mixins/pos-local-quantity"
 import { calculateRowItem } from "../../../helpers/functions";
 import PaymentForm from "./partials/payment.vue";
 import ItemForm from "./partials/form.vue";
@@ -1490,7 +1493,7 @@ export default {
         Keypress,
         TableItems
     },
-    mixins: [functions, exchangeRate],
+    mixins: [functions, exchangeRate, posLocalQuantity],
 
     data() {
         return {
@@ -2678,6 +2681,7 @@ export default {
         },
         async clickAddItem(item, index, input = false) {
             if (!ensurePosRate(this)) return;
+            if (input && this.form.items[index] === item && this.updateLocalPosQuantity) return this.updateLocalPosQuantity(item,index);
             // El padre con variaciones no es vendible: se elige una variación en el modal
             if (item.variations_count > 0) {
                 this.selectedVariationParent = item;

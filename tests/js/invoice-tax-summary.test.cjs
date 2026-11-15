@@ -197,6 +197,9 @@ test('pending quotes retain the previous IGTF with a status while errors hide it
     assert.equal(cell(view, 'igtf-taxable-base'), 'Bs. 0,00')
     assert.equal(cell(view, 'igtf-tax-amount'), 'Bs. 0,00')
     assert.equal(view._uid, id)
+    view.quote = {...view.quote,server_verified:true,igtf_enabled:true}
+    await Vue.nextTick()
+    assert.equal(cell(view, 'igtf-tax-amount'), 'Bs. 75,00')
     view.$destroy()
 })
 

@@ -47,7 +47,10 @@ final class QuotationPdfAmountsTest extends TestCase
     public function test_every_quotation_template_renders_exact_balance_and_rounding(): void
     {
         $blade=new \Illuminate\View\Compilers\BladeCompiler(new \Illuminate\Filesystem\Filesystem(),sys_get_temp_dir());
-        $paths=glob(dirname(__DIR__,2).'/app/CoreFacturalo/Templates/pdf/*/quotation*.blade.php');
+        $paths=array_values(array_filter(
+            glob(dirname(__DIR__,2).'/app/CoreFacturalo/Templates/pdf/*/quotation*.blade.php'),
+            static fn($path) => basename(dirname($path)) !== 'partials'
+        ));
         self::assertCount(12,$paths);
         $document=(object)['total'=>'1','currency_type'=>(object)['symbol'=>'Bs.'], 'payments'=>collect(array_map(fn()=> (object)[
             'payment'=>'0.333333333333','calculation_snapshot'=>Decimal::snapshot(['payment'=>['n'=>'1','d'=>'3']]),

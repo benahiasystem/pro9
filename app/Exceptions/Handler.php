@@ -61,6 +61,7 @@ class Handler extends ExceptionHandler
     */
     public function render($request, Throwable $exception)
     {
+        if ($exception instanceof \App\Services\Payments\CalculationChanged) return $exception->response();
         // ######## INICIO API BCV ########
         if ($request->is('services/exchange/*', 'services/exchange_rate', 'services/exchange_rate/*',
             'services/search_exchange_rate', 'service/exchange/*', 'exchange_rate/ecommence/*')) {

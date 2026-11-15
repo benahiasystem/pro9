@@ -42,12 +42,31 @@ export function previewSettlementDifference(difference, form, methods, symbol) {
 // Keep POS totals synchronized when a receipt field changes its applied amount.
 export default {
     computed: {
+        localTotalPayable() { return this.useLocalCalculations ? (this.igtfQuote && !this.igtfQuoteError ? this.igtfQuote.total_with_tax : null) : this.collectionTarget ?? this.form.total },
+        singleTenderedCurrency() { return this.useLocalCalculations && this.form?.payments?.length === 1 ? this.form.payments[0].currency_type_id || this.form.currency_type_id : this.form?.currency_type_id },
+        singleTenderedSymbol() { return this.singleTenderedCurrency === 'USD' ? '$' : this.singleTenderedCurrency === 'VES' ? 'Bs.' : this.currencyTypeActive?.symbol },
+        // ######## INICIO RESUMEN LOCAL DE LIQUIDACION ########
+        localSettlementDisplay() {
+            if (!this.useLocalCalculations) return null
+            if (!this.igtfQuote || this.igtfQuoteError) return {label:'Vuelto / faltante',text:'Pendiente de cálculo'}
+            const quote = this.igtfQuote
+            if (exactAmount(quote.balance).compare(0) > 0) return {label:'Faltante', text:`${this.currencyTypeActive?.symbol || this.form.currency_type_id} ${quote.balance}`}
+            const amounts = new Map()
+            for (const row of quote.payments) if (!row.reused && exactAmount(row.change).compare(0) > 0) {
+                amounts.set(row.currency_type_id,(amounts.get(row.currency_type_id) || exactAmount('0')).plus(row.change))
+            }
+            return {label:'Vuelto', text:amounts.size ? [...amounts].map(([currency, amount]) => `${currency === 'VES' ? 'Bs.' : '$'} ${amount.final(2)}`).join(' · ')
+                : `${this.currencyTypeActive?.symbol || this.form.currency_type_id} 0.00`}
+        },
+        // ######## FIN RESUMEN LOCAL DE LIQUIDACION ########
         settlementDifferenceLabel() {
+            if (this.localSettlementDisplay) return this.localSettlementDisplay.label
             try {
                 return previewSettlementDifference(this.difference, this.form, this.payment_method_types, this.currencyTypeActive?.symbol).label
             } catch (_) { return 'Exceso' }
         },
         settlementDifferenceDisplay() {
+            if (this.localSettlementDisplay) return this.localSettlementDisplay.text
             try { return previewSettlementDifference(this.difference, this.form, this.payment_method_types, this.currencyTypeActive?.symbol).text }
             catch (_) { return `${this.currencyTypeActive?.symbol || ''} 0.00`.trim() }
         },
@@ -69,10 +88,20 @@ export default {
         },
     },
     watch: {
+        localSettlementDisplay(value) {
+            if (!this.useLocalCalculations || !value) return
+            this.button_payment = !['02','03'].includes(this.form.payment_condition_id) && exactAmount(this.igtfQuote.balance).compare(0) > 0
+        },
         paymentAppliedTotal(total) {
             if (total === null) return
             this.amount = total
             this.inputAmount()
+        },
+    },
+    methods: {
+        enteredReceiptAmount(rows) {
+            return this.useLocalCalculations && rows.length === 1 && !isRecordedReceipt(rows[0]) && rows[0].tendered_amount != null
+                ? rows[0].tendered_amount : exactSum(rows.map(row=>row.payment || '0')).decimal()
         },
     },
 }

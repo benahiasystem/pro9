@@ -91,11 +91,11 @@
             </div>
 
             <div class="pos-checkout__grand-total">
-                <span>{{ fiscalPaymentsApplicable ? 'TOTAL VENTA (SIN IGTF)' : 'TOTAL' }}</span>
-                <span>{{ currencyTypeActive.symbol }} {{ money(getTotal()) }}</span>
+                <span>{{ fiscalPaymentsApplicable ? 'TOTAL A PAGAR' : 'TOTAL' }}</span>
+                <span>{{ currencyTypeActive.symbol }} {{ (localTotalPayable === null ? '—' : money(localTotalPayable)) }}</span>
             </div>
 
-            <button :disabled="singleAmountInvalid || button_payment"
+            <button :disabled="stockBlocked || singleAmountInvalid || button_payment"
                     class="pos-checkout__confirm"
                     type="button"
                     @click="clickPayment">
@@ -153,11 +153,11 @@
             </section>
 
             <!-- Monto a cobrar -->
-            <section class="pos-card pos-card--amount">
+            <section v-if="!['02','03'].includes(form.payment_condition_id)" class="pos-card pos-card--amount">
                 <div class="pos-amount">
                     <span class="pos-amount__label">Monto a cobrar</span>
                     <span class="pos-amount__value">
-                        {{ currencyTypeActive.symbol }} {{ money(getTotal()) }}
+                        {{ currencyTypeActive.symbol }} {{ (localTotalPayable === null ? '—' : money(localTotalPayable)) }}
                     </span>
                 </div>
 
@@ -275,8 +275,9 @@
                 </section>
             </div>
 
+            <calculation-review :context="localCalculationContext" v-if="useLocalCalculations" :summary="localCalculationReview && localCalculationReview.summary" :loading="igtfQuoteLoading" :error="igtfQuoteError" :retryable="!localCalculationContext" @retry="refreshLocalContext(true)" />
             <!-- Pagos agregados -->
-            <section class="pos-card">
+            <section v-if="!['02','03'].includes(form.payment_condition_id)" class="pos-card">
                 <div class="pos-card__head">
                     <div>
                         <h5 class="pos-card__title">Formas de pago</h5>
@@ -298,21 +299,21 @@
                             {{ getDescriptionPaymentMethodType(pay.payment_method_type_id) }}
                         </span>
                         <span class="pos-payments__amount">
-                            {{ currencyTypeActive.symbol }} {{ money(pay.payment) }}
+                            {{ currencyTypeActive.symbol }} {{ money(fiscalAppliedPayment(pay)) }}
                         </span>
                     </li>
                     <li v-if="form.payments.length === 0" class="pos-payments__empty">
                         Aún no se ha registrado ninguna forma de pago.
                     </li>
                 </ul>
-                <div v-if="fiscalPaymentsApplicable" class="mt-2">
-                    <igtf-settings-status />
+                <div v-if="fiscalPaymentsApplicable && !['02','03'].includes(form.payment_condition_id)" class="mt-2">
+                    <igtf-settings-status v-if="!useLocalCalculations" />
                     <igtf-quote-summary v-if="fiscalPaymentsApplicable" :quote="igtfQuote" :loading="igtfQuoteLoading" :error="igtfQuoteError" :currency="fiscalQuoteCurrency" />
-                    <igtf-payment-fields :payment-methods="payment_method_types" v-for="(row, fiscalIndex) in form.payments" v-if="!isRecordedReceipt(row)" :key="'fiscal-' + fiscalIndex"
+                    <igtf-payment-fields :total-tendered="true" :igtf-rate="igtfSettings.rate" :local-calculation="useLocalCalculations" :local-context="localCalculationContext" :payment-methods="payment_method_types" v-for="(row, fiscalIndex) in form.payments" v-if="!isRecordedReceipt(row)" :key="'fiscal-' + fiscalIndex"
                         :payment="row" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" :document-currency="form.currency_type_id"
                         :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
                 </div>
-                    <receipt-currency-fields v-for="(row, currencyIndex) in form.payments" v-if="form.document_type_id === '80' && !isRecordedReceipt(row)" :key="'currency-' + currencyIndex" :row="row" :methods="payment_method_types" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
+                    <receipt-currency-fields v-for="(row, currencyIndex) in form.payments" v-if="form.document_type_id === '80' && !['02','03'].includes(form.payment_condition_id) && !isRecordedReceipt(row)" :key="'currency-' + currencyIndex" :row="row" :methods="payment_method_types" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
             </section>
 
             <!-- Datos adicionales -->
@@ -355,7 +356,7 @@
         :isPrint="isPrint"
     ></options-form>
 
-    <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
+    <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito"/></el-select></div>
         <multiple-payment-form
         :payments="payments"
         :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id" :document-type-id="form.document_type_id"
@@ -402,10 +403,12 @@ import SearchAgent from '@components/SearchAgent.vue'
 
 
 export default {
+    localCalculations: true,
     components: {IgtfPaymentFields,ReceiptCurrencyFields,OptionsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, DiscountPermissionForm, SearchAgent},
     mixins: [paymentSettlementSummary, fiscalPaymentSettings, documentCreationMixin,pointSystemFunctions, buhoprinter],
 
     props: [
+        'stockBlocked',
         'form',
         'customer',
         'currencyTypeActive',
@@ -560,13 +563,13 @@ export default {
     {
         changeFiscalPaymentCondition(value) {
             this.$set(this.form, 'payment_condition_id', value)
-            if (value === '02') {
+            if (value === '02' && !this.useLocalCalculations) {
                 this.form.payments = []
                 this.payments = []
                 this.amount = 0
                 this.enter_amount = 0
             }
-            this.setDifference(this.amount - this.getTotal())
+            this.setDifference(exactAmount(this.amount || '0').minus(this.getTotal()).decimal())
             this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
         },
         setDefaultDocumentType(from_function) {
@@ -689,7 +692,7 @@ export default {
         },
         async setInitialAmount() {
             const rows = this.form.payments || []
-            this.enter_amount = rows.length ? exactSum(rows.map(row=>row.payment || '0')).decimal() : this.getTotal()
+            this.enter_amount = rows.length ? this.enteredReceiptAmount(rows) : this.getTotal()
             if (rows.length) this.amount = this.enter_amount
             // this.form.payments = this.payments
             // this.$eventHub.$emit('eventSetFormPosLocalStorage', this.form)
@@ -840,7 +843,7 @@ export default {
                 }
                 if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
                     this.amount = exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
-                    this.enter_amount = this.amount
+                    this.enter_amount = this.useLocalCalculations ? this.enteredReceiptAmount(this.form.payments || []) : this.amount
                     this.inputAmount()
                 }
             }
@@ -883,6 +886,10 @@ export default {
             const text = String(this.enter_amount ?? '').trim()
             if (text && !/^\d+(?:\.\d*)?$/.test(text)) return
             const entered = exactAmount(!text ? '0' : (text.endsWith('.') ? text.slice(0, -1) : text)).decimal()
+            if (this.useLocalCalculations && this.form.document_type_id === '01') {
+                this.$set(rows[0], 'tendered_amount', entered)
+                this.$set(rows[0], '_tendered_edited', true)
+            }
             rows[0].payment = entered
             this.payments = rows
             this.amount = entered
@@ -1091,6 +1098,7 @@ export default {
         },
         async clickPayment()
         {
+            if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             if (this.singleAmountInvalid) return this.$message.warning('Indique un monto válido.')
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
@@ -1150,11 +1158,12 @@ export default {
             ;
 
             if (!await this.ensureFiscalPaymentsReady(this.form.payments)) return
+            if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
 
             this.loading_submit = true
             this.locked_submit = true
 
-            await this.$http.post(`/${this.resource_documents}`, withoutDraftRetentions(this.form)).then(async (response) => {
+            await this.$http.post(`/${this.resource_documents}`, this.prepareCalculationSubmission(withoutDraftRetentions(this.form))).then(async (response) => {
                 if (response.data.success) {
                     let response_sent = null
                     this.responseForm = response.data
@@ -1192,6 +1201,7 @@ export default {
                     this.$message.error(response.data.message);
                 }
             }).catch(error => {
+                if (this.handleCalculationChanged(error, withoutDraftRetentions(this.form))) return;
                 console.log(error);
 
                 if (error.response && error.response.status === 422) {

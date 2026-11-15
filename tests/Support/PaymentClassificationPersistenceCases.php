@@ -10,6 +10,124 @@ use Modules\Expense\Models\ExpensePayment;
 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
 trait PaymentClassificationPersistenceCases
 {
+    // ######## INICIO ACEPTACION DE CALCULOS LOCALES ########
+    public function test_local_calculation_mismatch_rolls_back_invoice_and_reconfirmation_saves(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'VES',
+            'exchange_rate'=>'100','payment'=>'300','original_amount'=>'300','tendered_amount'=>'300','payment_destination_id'=>'cash',
+            'operation_key'=>(string)\Illuminate\Support\Str::uuid()]];
+        $input['expected_calculation']=['version'=>1,'revision'=>'draft-1','currency_type_id'=>'VES','exchange_rate_sale'=>'100',
+            'totals'=>['total'=>'1'],'items'=>[['total'=>'1']], 'payments'=>[], 'fee'=>[], 'total_with_tax'=>'1','balance'=>'0'];
+        $tables=['documents','document_items','document_payments','global_payments','inventory_kardex','document_change_disbursements'];
+        $before=[];foreach($tables as $table) $before[$table]=$db->table($table)->count();
+        $beforeFiles=\Illuminate\Support\Facades\Storage::disk('tenant')->allFiles();
+        try {
+            (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input);
+            self::fail('Debe pedir revisar la diferencia.');
+        } catch (\App\Services\Payments\CalculationChanged $e) { $corrected=$e->calculation; }
+        foreach($tables as $table) self::assertSame($before[$table],$db->table($table)->count(),$table);
+        self::assertSame($beforeFiles,\Illuminate\Support\Facades\Storage::disk('tenant')->allFiles());
+        self::assertSame('draft-1',$corrected['revision']);
+        self::assertSame('232.00',$corrected['total_with_tax']);
+        self::assertSame('68.00',$corrected['payments'][0]['change']);
+        $process=new \Symfony\Component\Process\Process(['node','tests/js/helpers/calculation-expectation-runner.cjs'],base_path());
+        $process->setInput(json_encode(['form'=>$input,'revision'=>'draft-1','context'=>['enabled'=>$corrected['igtf_enabled'],'rate'=>$corrected['igtf_rate'],
+            'dates'=>['2026-09-10'=>['issuer_spe'=>false]],'methods'=>\App\Models\Tenant\PaymentMethodType::getPaymentMethodTypes(),
+            'destinations'=>[['id'=>'cash','cash_id'=>$db->table('cash')->value('id')]]]]));
+        $process->mustRun();
+        $input['expected_calculation']=json_decode($process->getOutput(),true,512,JSON_THROW_ON_ERROR);
+        try { $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument(); }
+        catch (\App\Services\Payments\CalculationChanged $error) { self::fail(json_encode($error->differences)); }
+        self::assertSame('0',\App\Support\Exact\Decimal::represent($document->exactBalance()));
+        self::assertSame($before['documents']+1,$db->table('documents')->count());
+        // A note must also roll back before producing its PDF, then save on confirmation.
+        $url=$this->createMock(\Illuminate\Contracts\Routing\UrlGenerator::class);
+        $url->method('to')->willReturn('http://fiscal-schema.example.test');
+        $app->instance(\Illuminate\Contracts\Routing\UrlGenerator::class,$url);
+        $controller=$this->getMockBuilder(\App\Http\Controllers\Tenant\SaleNoteController::class)->onlyMethods(['createPdf'])->getMock();
+        $controller->expects(self::once())->method('createPdf');
+        $noteInput=array_replace($input,['id'=>null,'series'=>'NV01','document_type_id'=>'80','prefix'=>'NV','expected_calculation'=>array_replace($corrected,['totals'=>['total'=>'1']])]);
+        $noteInput['payments'][0]['operation_key']=(string)\Illuminate\Support\Str::uuid();
+        $beforeStock=$db->table('item_warehouse')->value('stock');
+        $beforeMovements=$db->table('global_payments')->count();
+        $beforeFiles=\Illuminate\Support\Facades\Storage::disk('tenant')->allFiles();
+        try { $controller->storeWithData($noteInput); self::fail('La nota debe pedir revisar los cálculos.'); }
+        catch (\App\Services\Payments\CalculationChanged $error) { $noteSummary=$error->calculation; }
+        self::assertSame(0,$db->table('sale_notes')->count());
+        self::assertSame(0,$db->table('sale_note_payments')->count());
+        self::assertSame($beforeStock,$db->table('item_warehouse')->value('stock'));
+        self::assertSame($beforeMovements,$db->table('global_payments')->count());
+        self::assertSame($beforeFiles,\Illuminate\Support\Facades\Storage::disk('tenant')->allFiles());
+        $noteInput['expected_calculation']=$noteSummary;
+        $created=$controller->storeWithData($noteInput);
+        self::assertTrue($created['success'],$created['message'] ?? 'No se pudo confirmar la nota.');
+        self::assertSame('68.00',$noteSummary['payments'][0]['change']);
+        self::assertSame(1,$db->table('sale_notes')->count());
+    }
+
+    public function test_local_calculation_detects_new_igtf_configuration_from_another_connection(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $db->table('companies')->update(['igtf_enabled'=>true,'igtf_rate'=>'3']);
+        \Tests\Support\SpeProfiles::versions($db,1,$input['customer_id']);
+        $input['currency_type_id']='USD';$input['exchange_rate_sale']='100';
+        $input['items'][0]['quantity']='1';$input['items'][0]['unit_price']='60';
+        $input['payments']=[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD',
+            'exchange_rate'=>'100','payment'=>'70','original_amount'=>'70','tendered_amount'=>'70','payment_destination_id'=>'cash',
+            'operation_key'=>(string)\Illuminate\Support\Str::uuid()]];
+        $input['expected_calculation']=['version'=>1,'revision'=>'concurrent-1','totals'=>['total'=>'1'],'items'=>[['total'=>'1']],'payments'=>[],'fee'=>[]];
+        try { (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input); self::fail('Debe devolver el cálculo inicial.'); }
+        catch (\App\Services\Payments\CalculationChanged $error) { $initial=$error->calculation; }
+        self::assertSame('61.80',$initial['total_with_tax']);
+        self::assertSame('8.20',$initial['payments'][0]['change']);
+        $this->capsule->addConnection($db->getConfig(),'calculation_concurrent');
+        try { $this->capsule->getConnection('calculation_concurrent')->table('companies')->update(['igtf_rate'=>'5']); }
+        finally { $this->capsule->getDatabaseManager()->purge('calculation_concurrent'); }
+        $input['expected_calculation']=$initial;
+        try { (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input); self::fail('La configuración nueva debe exigir otra confirmación.'); }
+        catch (\App\Services\Payments\CalculationChanged $error) { $current=$error->calculation;self::assertNotEmpty($error->differences); }
+        self::assertSame('63.00',$current['total_with_tax']);
+        self::assertSame('7.00',$current['payments'][0]['change']);
+        self::assertSame(0,$db->table('documents')->count());
+        self::assertSame(0,$db->table('document_payments')->count());
+        self::assertSame(0,$db->table('document_change_disbursements')->count());
+        self::assertSame(0,$db->table('global_payments')->count(),'No quedan movimientos del intento rechazado.');
+        $input['expected_calculation']=$current;
+        $document=(new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument();
+        self::assertSame('63',\App\Support\Exact\Decimal::represent($document->fresh()->exactValue('total')));
+        $oldCash=$current['payments'][0]['cash_id'];
+        $db->table('cash')->where('id',$oldCash)->update(['state'=>false]);
+        $newCash=Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-09-10','time_opening'=>'14:00:00','beginning_balance'=>'0']);
+        $db->transaction(fn()=>CashLedger::open($newCash,[]));
+        $input['external_id']=(string)\Illuminate\Support\Str::uuid();
+        $input['payments'][0]['operation_key']=(string)\Illuminate\Support\Str::uuid();
+        try { (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input);self::fail('El cambio de caja debe revisarse.'); }
+        catch (\App\Services\Payments\CalculationChanged $error) { $changedCash=$error->calculation; }
+        self::assertNotSame($oldCash,$changedCash['payments'][0]['cash_id']);
+        self::assertSame((string)$newCash->id,$changedCash['payments'][0]['cash_id']);
+        self::assertSame(1,$db->table('documents')->count());
+        // The exact header and each converted tax receipt settle independently.
+        $db->table('companies')->update(['igtf_rate'=>'3','fiscal_emission_mode'=>'free_form']);
+        $fractional=$input;
+        $fractional['currency_type_id']='VES';$fractional['exchange_rate_sale']='0.4';
+        $fractional['payment_condition_id']='02';$fractional['items'][0]['unit_price']='0.404';
+        $fractional['payments'][0]=array_replace($fractional['payments'][0],['payment'=>'1','original_amount'=>'1','exchange_rate'=>'0.4']);
+        unset($fractional['payments'][0]['tendered_amount']);
+        $process=new \Symfony\Component\Process\Process(['node','tests/js/helpers/calculation-expectation-runner.cjs'],base_path());
+        $process->setInput(json_encode(['form'=>$fractional,'revision'=>'fractional','context'=>['enabled'=>true,'rate'=>'3',
+            'dates'=>['2026-09-10'=>['issuer_spe'=>true]],'methods'=>\App\Models\Tenant\PaymentMethodType::getPaymentMethodTypes(),
+            'destinations'=>[['id'=>'cash','cash_id'=>$newCash->id]]]]));
+        $process->mustRun();
+        $fractional['expected_calculation']=json_decode($process->getOutput(),true,512,JSON_THROW_ON_ERROR);
+        self::assertSame('0.42',$fractional['expected_calculation']['total_with_tax']);
+        self::assertSame('0.01',$fractional['expected_calculation']['balance']);
+        $small=(new \App\CoreFacturalo\Facturalo())->save($fractional)->getDocument();
+        self::assertSame('0.01',\App\Support\Exact\Decimal::represent($small->fresh()->exactBalance()));
+    }
+    // ######## FIN ACEPTACION DE CALCULOS LOCALES ########
     public function test_cash_report_entry_points_authorize_before_reading_other_cash(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
@@ -12346,6 +12464,46 @@ trait PaymentClassificationPersistenceCases
         self::assertSame('100', Movement::row($receipts[0]->change_disbursements()->firstOrFail()->global_payment)['amount']);
         self::assertSame('168', Movement::row($receipts[1]->change_disbursements()->firstOrFail()->global_payment)['amount']);
         self::assertSame('232', CashLedger::report($cash)['balances_by_currency']['VES']['final_balance']);
+        self::assertSame('0', \App\Support\Exact\Decimal::represent($document->exactBalance()));
+    }
+
+    public function test_invoice_fully_returned_payment_preserves_mixed_receipts_and_selected_change_destinations(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $cash = Cash::where('user_id', $input['user_id'])->where('state', true)->firstOrFail();
+        $account = BankAccount::create(['bank_id'=>$db->table('banks')->value('id'), 'description'=>'Cuenta de prueba para vuelto',
+            'number'=>'VES-prueba-mixta', 'currency_type_id'=>'VES', 'initial_balance'=>'0', 'status'=>1, 'establishment_id'=>null]);
+        $db->table('payment_method_types')->where('id', '01')->update(['available_for_change'=>1]);
+        $db->table('payment_method_types')->where('id', '11')->update(['collection_kind'=>'account', 'currency_type_id'=>'VES',
+            'is_active'=>1, 'available_for_change'=>1, 'bank_account_id'=>$account->id]);
+        $input['exchange_rate_sale'] = '100';
+        $common = ['date_of_payment'=>'2026-09-10', 'currency_type_id'=>'VES', 'exchange_rate'=>'100'];
+        $input['payments'] = [
+            $common + ['payment_method_type_id'=>'01', 'payment'=>'100', 'original_amount'=>'100', 'tendered_amount'=>'100',
+                'payment_destination_id'=>'cash', 'change_disbursements'=>[['payment_method_type_id'=>'01','amount'=>'100']],
+                'operation_key'=>(string)\Illuminate\Support\Str::uuid()],
+            $common + ['payment_method_type_id'=>'01', 'payment'=>'300', 'original_amount'=>'300', 'tendered_amount'=>'300',
+                'payment_destination_id'=>'cash', 'change_disbursements'=>[['payment_method_type_id'=>'11','amount'=>'168','reference'=>'TEST-MOVIL']],
+                'operation_key'=>(string)\Illuminate\Support\Str::uuid()],
+            $common + ['payment_method_type_id'=>'11', 'payment'=>'100', 'original_amount'=>'100', 'tendered_amount'=>'100',
+                'payment_destination_id'=>$account->id, 'operation_key'=>(string)\Illuminate\Support\Str::uuid()],
+        ];
+        $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $receipts = $document->payments()->whereNull('receipt_parent_id')->orderBy('id')->get();
+        self::assertCount(3, $receipts);
+        self::assertSame(['0','132','100'], $receipts->pluck('original_amount')->all());
+        self::assertSame(['100','168','0'], $receipts->pluck('change')->all());
+        self::assertSame(['100','300','100'], $receipts->map(fn ($row)=>Movement::row($row->global_payment)['amount'])->all());
+        $cashOut = $receipts[0]->change_disbursements()->firstOrFail()->global_payment;
+        $bankOut = $receipts[1]->change_disbursements()->firstOrFail()->global_payment;
+        self::assertSame(['100','168'], [Movement::row($cashOut)['amount'], Movement::row($bankOut)['amount']]);
+        self::assertSame(['egress','egress'], [Movement::row($cashOut)['direction'], Movement::row($bankOut)['direction']]);
+        self::assertSame(Cash::class, $cashOut->destination_type);
+        self::assertSame((int)$cash->id, (int)$cashOut->destination_id);
+        self::assertSame(BankAccount::class, $bankOut->destination_type);
+        self::assertSame((int)$account->id, (int)$bankOut->destination_id);
+        self::assertSame('300', CashLedger::report($cash)['balances_by_currency']['VES']['final_balance']);
         self::assertSame('0', \App\Support\Exact\Decimal::represent($document->exactBalance()));
     }
 

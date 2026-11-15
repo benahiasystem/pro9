@@ -30,7 +30,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-tag"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3" /></svg>
                 {{ enabled_discount ? 'Quitar Dto.' : 'Descuento' }}
             </button>
-            <button class="fp-action-btn flex-grow-1" @click="clickAddPayment()">
+            <button v-if="!['02','03'].includes(form.payment_condition_id)" class="fp-action-btn flex-grow-1" @click="clickAddPayment()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 10a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1l0 -8" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
                 Pagos
             </button>
@@ -59,10 +59,10 @@
                     />
                 </div>
             </div>
-            <div class="flex-grow-1 fp-field-wrap">
+            <div v-if="!['02','03'].includes(form.payment_condition_id)" class="flex-grow-1 fp-field-wrap">
                 <label class="fp-field-label mb-0">Ingrese monto</label>
                 <div class="position-relative">
-                    <span class="fp-sym">{{ currencyTypeActive.symbol }}</span>
+                    <span class="fp-sym">{{ singleTenderedSymbol || currencyTypeActive.symbol }}</span>
                     <el-input
                         ref="enter_amount"
                         v-model="enter_amount"
@@ -78,7 +78,7 @@
                     <small v-if="singleAmountInvalid" class="text-danger">Indique un monto válido.</small>
                 </div>
             </div>
-            <div class="fp-change-wrap text-center">
+            <div v-if="!['02','03'].includes(form.payment_condition_id)" class="fp-change-wrap text-center">
                 <small class="fp-field-label d-block" :class="difference < 0 ? 'text-danger' : 'text-success'">
                     {{ settlementDifferenceLabel }}
                 </small>
@@ -89,45 +89,46 @@
         </div>
 
         <!-- Totales -->
-    <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito (registrar sólo abonos reales)"/></el-select></div>
+    <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito"/></el-select></div>
         <div class="fp-totals px-3 pt-2">
 
             <template>
                 <div class="fp-total-row d-flex justify-content-between py-1">
                     <span class="fp-total-label">Subtotal</span>
-                    <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_taxed).toFixed(2) }}</span>
+                    <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ money(form.total_taxed) }}</span>
                 </div>
                 <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
                     <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
                     <span class="fp-total-label">IVA ({{ ivaPercentageLabel }}%)</span>
                     <!-- ######### FIN CAMBIO AFECTACIÓN IVA -->
                     <!-- ########### FIN CAMBIO IVA VENEZUELA -->
-                    <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_igv).toFixed(2) }}</span>
+                    <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ money(form.total_igv) }}</span>
                 </div>
                 <div class="fp-total-row d-flex justify-content-between py-1">
                     <span class="fp-total-label">Descuento</span>
-                    <span class="fp-total-val text-danger">{{ currencyTypeActive.symbol }} {{ Number(form.total_discount).toFixed(2) }}</span>
+                    <span class="fp-total-val text-danger">{{ currencyTypeActive.symbol }} {{ money(form.total_discount) }}</span>
                 </div>
             </template>
             <!-- Gran total -->
             <div class="fp-grand d-flex justify-content-between align-items-center pt-2 pb-1">
-                <span class="fp-grand-label">{{ fiscalPaymentsApplicable ? 'Total venta (sin IGTF)' : 'Total' }}</span>
-                <span class="fp-grand-amount">{{ currencyTypeActive.symbol }} {{ Number(form.total).toFixed(2) }}</span>
+                <span class="fp-grand-label">{{ fiscalPaymentsApplicable ? 'Total a pagar' : 'Total' }}</span>
+                <span class="fp-grand-amount">{{ currencyTypeActive.symbol }} {{ (localTotalPayable === null ? '—' : money(localTotalPayable)) }}</span>
             </div>
         </div>
 
-        <div v-if="fiscalPaymentsApplicable" class="col-12">
-            <igtf-settings-status />
+        <calculation-review :context="localCalculationContext" v-if="useLocalCalculations" :summary="localCalculationReview && localCalculationReview.summary" :loading="igtfQuoteLoading" :error="igtfQuoteError" :retryable="!localCalculationContext" @retry="refreshLocalContext(true)" />
+                <div v-if="fiscalPaymentsApplicable && !['02','03'].includes(form.payment_condition_id)" class="col-12">
+            <igtf-settings-status v-if="!useLocalCalculations" />
                     <igtf-quote-summary v-if="fiscalPaymentsApplicable" :quote="igtfQuote" :loading="igtfQuoteLoading" :error="igtfQuoteError" :currency="fiscalQuoteCurrency" />
-            <igtf-payment-fields :payment-methods="payment_method_types" v-for="(row, fiscalIndex) in form.payments" v-if="!isRecordedReceipt(row)" :key="'fiscal-' + fiscalIndex"
+            <igtf-payment-fields :total-tendered="true" :igtf-rate="igtfSettings.rate" :local-calculation="useLocalCalculations" :local-context="localCalculationContext" :payment-methods="payment_method_types" v-for="(row, fiscalIndex) in form.payments" v-if="!isRecordedReceipt(row)" :key="'fiscal-' + fiscalIndex"
                 :payment="row" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision" :document-currency="form.currency_type_id"
                 :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
         </div>
-                    <receipt-currency-fields v-for="(row, currencyIndex) in form.payments" v-if="form.document_type_id === '80' && !isRecordedReceipt(row)" :key="'currency-' + currencyIndex" :row="row" :methods="payment_method_types" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
+                    <receipt-currency-fields v-for="(row, currencyIndex) in form.payments" v-if="form.document_type_id === '80' && !['02','03'].includes(form.payment_condition_id) && !isRecordedReceipt(row)" :key="'currency-' + currencyIndex" :row="row" :methods="payment_method_types" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" />
         <!-- Botón Pagar -->
         <div class="px-1 pt-1 pb-1">
             <el-button
-                :disabled="singleAmountInvalid || (button_payment && form.payment_condition_id !== '02')"
+                :disabled="stockBlocked || singleAmountInvalid || (button_payment && form.payment_condition_id !== '02')"
                 :loading="loading_submit"
                 class="fp-pay-btn w-100"
                 @click="clickPayment"
@@ -268,10 +269,12 @@ import PersonForm from '../../../tenant/persons/form.vue'
 import { buhoprinter } from '@mixins/buhoprinter'
 
 export default {
+    localCalculations: true,
     components: {IgtfPaymentFields,ReceiptCurrencyFields,OptionsForm, SaleNotesOptions, MultiplePaymentForm, Keypress, PersonForm},
     mixins: [paymentSettlementSummary, fiscalPaymentSettings, documentCreationMixin,buhoprinter],
 
     props: [
+        'stockBlocked',
         'form',
         'customer',
         'currencyTypeActive',
@@ -417,7 +420,7 @@ export default {
         money(value) { try { return exactAmount(value).final(2); } catch (_) { return String(value); } },
         changeFiscalPaymentCondition(value) {
             this.$set(this.form, 'payment_condition_id', value)
-            if (value === '02') {
+            if (value === '02' && !this.useLocalCalculations) {
                 this.form.payments = []; this.payments = [];
                 this.amount = 0; this.enter_amount = 0;
             }
@@ -600,7 +603,7 @@ export default {
         },
         async setInitialAmount() {
             const rows = this.form.payments || []
-            this.enter_amount = rows.length ? exactSum(rows.map(row=>row.payment || '0')).decimal() : (this.collectionTarget ?? this.form.total)
+            this.enter_amount = rows.length ? this.enteredReceiptAmount(rows) : (this.collectionTarget ?? this.form.total)
             if (rows.length) { this.amount = this.enter_amount; this.userTouchedAmount = true }
             await this.$nextTick();
             const amountField = this.$refs.enter_amount;
@@ -707,7 +710,7 @@ export default {
                 if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
                     this.userTouchedAmount = (this.form.payments || []).length > 0
                     this.amount = exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
-                    this.enter_amount = this.amount
+                    this.enter_amount = this.useLocalCalculations ? this.enteredReceiptAmount(this.form.payments || []) : this.amount
                     this.inputAmount()
                 }
             }
@@ -766,6 +769,10 @@ export default {
             const text = String(this.enter_amount ?? '').trim()
             if (text && !/^\d+(?:\.\d*)?$/.test(text)) return
             const entered = exactAmount(!text ? '0' : (text.endsWith('.') ? text.slice(0, -1) : text)).decimal()
+            if (this.useLocalCalculations && this.form.document_type_id === '01') {
+                this.$set(rows[0], 'tendered_amount', entered)
+                this.$set(rows[0], '_tendered_edited', true)
+            }
             rows[0].payment = entered
             this.payments = rows
             this.amount = entered
@@ -967,6 +974,7 @@ export default {
             });
         },
         async clickPayment() {
+            if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             if (this.singleAmountInvalid) return this.$message.warning('Indique un monto válido.')
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
@@ -1045,11 +1053,12 @@ export default {
             }
 
             if (!await this.ensureFiscalPaymentsReady(this.form.payments)) return
+            if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
 
             this.loading_submit = true
             this.locked_submit = true
 
-            await this.$http.post(`/${this.resource_documents}`, withoutDraftRetentions(this.form)).then(async (response) => {
+            await this.$http.post(`/${this.resource_documents}`, this.prepareCalculationSubmission(withoutDraftRetentions(this.form))).then(async (response) => {
                 let response_sent = null
                 if (response.data.success) {
 
@@ -1092,6 +1101,7 @@ export default {
                     this.$message.error(response.data.message);
                 }
             }).catch(error => {
+                if (this.handleCalculationChanged(error, withoutDraftRetentions(this.form))) return;
                 if (error.response && error.response.status === 422) {
                     this.errors = error.response.data?.errors || error.response.data || {};
                     this.$message.error(checkoutValidationMessage(error.response.data));

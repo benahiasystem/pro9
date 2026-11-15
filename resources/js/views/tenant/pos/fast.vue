@@ -1,6 +1,7 @@
 <!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="fast container-fluid p-0">
+        <pos-stock-status :retryable="posStockRetryable" :pending="posStockPending" :error="posStockError" @retry="retryPosStock" />
         <div class="row page-header pr-0 no-gutters" style="height:auto">
             <Keypress
                 key-event="keyup"
@@ -654,8 +655,7 @@
                                                     v-model="item.total"
                                                     :disabled="posRateUnavailable"
                                                     @focus="$event.target.select()"
-                                                    @input="calculateQuantity(index)"
-                                                    @blur="blurCalculateQuantity(index)"
+                                                    @input="updateLocalPosTotal(index)"
                                                     :readonly="!item.item.calculate_quantity">
                                                     <!--                                                     <template slot="prepend">{{ currency_type.symbol }}</template>-->
                                                 </el-input>
@@ -679,6 +679,7 @@
                 <div class="h-50 bg-light" style="overflow-y: auto">
                     <div class="row m-0 p-0 d-flex align-items-center">
                         <fast-payment
+            :stock-blocked="posStockBlocked"
                             :is_payment.sync="is_payment"
                             :form="form"
                             :configuration="configuration"
@@ -816,6 +817,7 @@
 </style>
 
 <script>
+import posLocalQuantity from "../../../mixins/pos-local-quantity"
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {documentTotals} from "../../../helpers/exact-document"
 import {isValidPosRate, restorePosDraftRate, refreshPosRate, ensurePosRate} from "../../../helpers/pos-exchange-rate"
@@ -849,7 +851,7 @@ export default {
         Keypress,
         TableItems
     },
-    mixins: [functions, exchangeRate],
+    mixins: [functions, exchangeRate, posLocalQuantity],
 
     data() {
         return {
@@ -1491,6 +1493,7 @@ export default {
         },
         async clickAddItem(item, index, input = false) {
             if (!ensurePosRate(this)) return;
+            if (input && this.form.items[index] === item && this.updateLocalPosQuantity) return this.updateLocalPosQuantity(item,index);
             // El padre con variaciones no es vendible: se elige una variación en el modal
             if (item.variations_count > 0) {
                 this.selectedVariationParent = item;

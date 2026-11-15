@@ -38,9 +38,10 @@
 import {rateMultiply, rateDivide, appliedReceiptAmount, exactAmount} from '../../../../helpers/exchange-rate-math'
 import {isRecordedReceipt, paymentMethodIntermediation, retireDraftIgtfException} from '../../../../helpers/payment-classification'
 import {totalTendered as tenderedForPrincipal, principalFromTendered} from '../../../../helpers/tendered-receipt'
+import {localPaymentDecision} from '../../../../helpers/local-payment-quote'
 // ######## INICIO CAMPOS DE COBRO SIMPLIFICADOS ########
 export default {
-    props: {hideClassification: {type: Boolean, default: false}, totalTendered: {type: Boolean, default: false}, igtfRate: {default: '0'}, settingsVersion: {type: Number, default: 0}, igtfEnabled: {type: Boolean, default: false}, payment: {type: Object, required: true}, paymentMethods: {type: Array, default: () => []}, documentCurrency: {default: 'VES'}, documentRate: {default: null}, useDocumentRate: {type: Boolean, default: false}, customerId: {default: null}, documentId: {default: null}},
+    props: {localCalculation: Boolean, localContext: {type: Object, default: null}, hideClassification: {type: Boolean, default: false}, totalTendered: {type: Boolean, default: false}, igtfRate: {default: '0'}, settingsVersion: {type: Number, default: 0}, igtfEnabled: {type: Boolean, default: false}, payment: {type: Object, required: true}, paymentMethods: {type: Array, default: () => []}, documentCurrency: {default: 'VES'}, documentRate: {default: null}, useDocumentRate: {type: Boolean, default: false}, customerId: {default: null}, documentId: {default: null}},
     data: () => ({proposal: null, error: '', sequence: 0, lastApplied: null, lastTendered: null}),
     created() {
         if (isRecordedReceipt(this.payment)) return
@@ -76,12 +77,13 @@ export default {
     },
     beforeDestroy() { this.sequence++ },
     watch: {
+        localContext: {deep: true, handler() { this.evaluate() }},
         payment: 'syncMethodCurrency', methodContext: 'syncMethodCurrency',
         'payment.tendered_amount'(value) {
             if (!this.totalTendered || value === this.lastTendered) { this.lastTendered = null; return }
             this.convertTendered()
         },
-        'payment.igtf_status': 'refreshTendered', igtfRate: 'refreshTendered', igtfEnabled: 'refreshTendered',
+        'payment.igtf_status': 'refreshTenderedFromContext', igtfRate: 'refreshTenderedFromContext', igtfEnabled: 'refreshTenderedFromContext',
         'payment.payment'(value) {
             if (this.lastApplied !== null && String(value) === String(this.lastApplied)) this.lastApplied = null
             else { this.lastApplied = null; this.proposeReceived() }
@@ -101,6 +103,10 @@ export default {
     methods: {
         isRecordedReceipt,
         tenderedTaxRate() { return this.igtfEnabled && this.payment.igtf_status === 'subject' ? this.igtfRate : '0' },
+        refreshTenderedFromContext() {
+            if (this.localCalculation && this.totalTendered && this.payment.tendered_amount != null) this.convertTendered()
+            else this.refreshTendered()
+        },
         refreshTendered() {
             if (!this.totalTendered || isRecordedReceipt(this.payment)) return
             if (this.payment._tendered_edited) { this.convertTendered(); return }
@@ -234,6 +240,17 @@ export default {
             if (!this.$http || isRecordedReceipt(this.payment)) return
             const sequence = ++this.sequence
             this.proposal = null
+            // ######## INICIO EVALUACION LOCAL DEL COBRO ########
+            if (this.localCalculation) {
+                try {
+                    const decision = localPaymentDecision(this.payment, this.localContext, this.paymentMethods, this.documentCurrency)
+                    this.proposal = {...decision.profile, payment:{igtf_status:decision.status}}
+                    this.$set(this.payment, 'igtf_status', decision.status)
+                    this.error = ''
+                } catch (error) { this.error = this.localContext ? error.message : 'Cargando contexto fiscal…' }
+                return
+            }
+            // ######## FIN EVALUACION LOCAL DEL COBRO ########
             if (this.useDocumentRate && !this.hasDocumentRate) {
                 this.error = 'Indique una tasa VES por USD válida y mayor que cero.'
                 return

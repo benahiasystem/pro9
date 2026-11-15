@@ -1,0 +1,335 @@
+[
+  {
+    "name": "60 plus IGTF paid 70",
+    "currency": "USD",
+    "due": "60",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "70",
+        "payment": "70",
+        "tendered_amount": "70"
+      }
+    ]
+  },
+  {
+    "name": "40 exact allocation",
+    "currency": "USD",
+    "due": "38.83",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "40",
+        "payment": "40",
+        "tendered_amount": "40"
+      }
+    ]
+  },
+  {
+    "name": "40 partial",
+    "currency": "USD",
+    "due": "100",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "40",
+        "payment": "40",
+        "tendered_amount": "40"
+      }
+    ]
+  },
+  {
+    "name": "fully returned cash",
+    "currency": "VES",
+    "due": "250",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "04",
+        "payment": "250",
+        "original_amount": "250",
+        "tendered_amount": "250"
+      },
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "04",
+        "payment": "300",
+        "original_amount": "300",
+        "tendered_amount": "300"
+      },
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "01",
+        "payment": "200",
+        "original_amount": "200",
+        "tendered_amount": "200"
+      }
+    ]
+  },
+  {
+    "name": "nearest dollar cent",
+    "currency": "VES",
+    "due": "5000",
+    "rate": "897.53830000",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "5.57",
+        "payment": "5000"
+      }
+    ]
+  },
+  {
+    "name": "subcent settlement",
+    "currency": "VES",
+    "due": "500",
+    "rate": "897.53830000",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "0.56",
+        "payment": "500"
+      }
+    ]
+  },
+  {
+    "name": "mixed closing dollars",
+    "currency": "VES",
+    "due": "5000",
+    "rate": "897.53830000",
+    "payments": [
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "04",
+        "original_amount": "1000",
+        "payment": "1000"
+      },
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "4.46",
+        "payment": "4000"
+      }
+    ]
+  },
+  {
+    "name": "bank excessive",
+    "currency": "VES",
+    "due": "50",
+    "rate": "100",
+    "error": true,
+    "payments": [
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "01",
+        "payment": "100",
+        "original_amount": "100"
+      }
+    ]
+  },
+  {
+    "name": "historical cash cannot fund change",
+    "currency": "VES",
+    "due": "60",
+    "rate": "100",
+    "error": true,
+    "payments": [
+      {
+        "id": 1,
+        "currency_type_id": "VES",
+        "payment_method_type_id": "04",
+        "payment": "100",
+        "original_amount": "100"
+      },
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "01",
+        "payment": "100",
+        "original_amount": "100"
+      }
+    ]
+  },
+  {
+    "name": "large exact value",
+    "currency": "VES",
+    "due": "9007199254740993.12",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "04",
+        "payment": "9007199254740994.12",
+        "original_amount": "9007199254740994.12"
+      }
+    ]
+  },
+  {
+    "name": "distinct receipt rates",
+    "currency": "VES",
+    "due": "500",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "exchange_rate": "40.12345678",
+        "original_amount": "5",
+        "payment": "200"
+      },
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "exchange_rate": "100",
+        "original_amount": "5",
+        "payment": "500"
+      }
+    ]
+  },
+  {
+    "name": "note cash",
+    "kind": "80",
+    "currency": "VES",
+    "due": "250",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "04",
+        "original_amount": "300",
+        "payment": "300"
+      }
+    ]
+  },
+  {
+    "name": "note mixed",
+    "kind": "80",
+    "currency": "VES",
+    "due": "250",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "3",
+        "payment": "300"
+      },
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "01",
+        "original_amount": "100",
+        "payment": "100"
+      }
+    ]
+  },
+  {
+    "name": "note zero net",
+    "kind": "80",
+    "currency": "VES",
+    "due": "250",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "04",
+        "original_amount": "100",
+        "payment": "100"
+      },
+      {
+        "currency_type_id": "VES",
+        "payment_method_type_id": "04",
+        "original_amount": "300",
+        "payment": "300"
+      }
+    ]
+  },
+  {
+    "name": "fractional IGTF rate",
+    "currency": "USD",
+    "due": "60",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "70",
+        "payment": "70",
+        "tendered_amount": "70"
+      }
+    ],
+    "igtf_rate": "3.125"
+  },
+  {
+    "name": "IGTF disabled for subject payment",
+    "currency": "USD",
+    "due": "60",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "70",
+        "payment": "70",
+        "tendered_amount": "70"
+      }
+    ],
+    "enabled": false,
+    "error": true
+  },
+  {
+    "name": "issuer not SPE",
+    "currency": "USD",
+    "due": "60",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "70",
+        "payment": "70",
+        "tendered_amount": "70"
+      }
+    ],
+    "issuer_spe": false
+  },
+  {
+    "name": "different payment date",
+    "currency": "USD",
+    "due": "60",
+    "rate": "100",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "70",
+        "payment": "70",
+        "tendered_amount": "70"
+      }
+    ],
+    "date": "2026-11-14"
+  },
+  {
+    "name": "large fractional IGTF",
+    "currency": "USD",
+    "due": "9007199254740993.12",
+    "rate": "897.53831234",
+    "payments": [
+      {
+        "currency_type_id": "USD",
+        "payment_method_type_id": "10",
+        "original_amount": "9999999999999999.99",
+        "payment": "9999999999999999.99",
+        "tendered_amount": "9999999999999999.99"
+      }
+    ],
+    "igtf_rate": "3.125"
+  }
+]

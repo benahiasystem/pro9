@@ -9,7 +9,10 @@ function load(file, globals = {}) {
  vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,
  {exports, moment, _, require: name => require('./support/exact-runtime.cjs')(name) || (name === '@helpers/payment-classification' ? require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/payment-classification.js')) : name === '@mixins/document-pdf' ? require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/document-pdf.js')) : name === '@mixins/document-email' ? shared : name.includes('vuex') ? {mapActions:()=>({}),mapState:()=>({})} : {}), ...globals});
  assert.deepEqual(compiler.compile(parsed.template.content).errors, []);
- return exports.default;
+ const component=exports.default;
+ // Checkout tests isolate creation/email; the calculation mixin has its own integration tests.
+ component.methods={prepareCalculationSubmission:form=>form,handleCalculationChanged:()=>false,...component.methods};
+ return component;
 }
 const dialog = load('resources/js/views/tenant/pos/partials/options.vue');
 test('fast checkout applies a directly entered amount to a new cash receipt only when its method and destination exist',async()=>{
@@ -48,6 +51,7 @@ test('fast checkout clears the previous receipt after a successful sale',async()
  const component=load('resources/js/views/tenant/pos/partials/fast_payment.vue');
  const ctx={...component.data(),form:{document_type_id:'01',series_id:1,date_of_issue:moment().format('YYYY-MM-DD'),items:[],payments:[{payment:'100'}]},
   amount:'100',enter_amount:'100',difference:'0',payments:[{payment:'100'}],businessTurns:{active:false},config:{},rowsItems:1,
+  prepareCalculationSubmission:form=>form,handleCalculationChanged:()=>false,
   asignPlateNumberToItems:async()=>{},ensureFiscalPaymentsReady:async()=>true,saveCashDocument:()=>{},cleanLocalStoragePayment:()=>{},
   $http:{post:async()=>({data:{success:true,data:{id:1,response:{}}}})},$eventHub:{$emit:()=>{}},$message:{error:()=>{}}};
  await component.methods.clickPayment.call(ctx);
@@ -58,6 +62,7 @@ test('POS shows a rejected line error and keeps its draft available for correcti
  const form={date_of_issue:moment().format('YYYY-MM-DD'),series_id:1,document_type_id:'01',total:'1',items:[{quantity:'3'}],payments:[{payment:'1'}]};
  const ctx={form,config:{},enabledPointSystem:false,singleAmountInvalid:false,locked_submit:false,loading_submit:false,
   validateRestrictSaleItemsCpe:()=>({success:true}),validateRestrictSellerDiscount:()=>({success:true}),
+  prepareCalculationSubmission:form=>form,handleCalculationChanged:()=>false,
   asignPlateNumberToItems:async()=>{},ensureFiscalPaymentsReady:async()=>true,
   $http:{post:async()=>{throw {response:{status:422,data:{'items.price_input.amount':['Precio inválido']}}}}},
   $message:{error:m=>messages.push(m),warning:m=>messages.push(m)}};

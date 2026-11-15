@@ -1,3 +1,4 @@
+// ######## INICIO PRUEBAS RESTANTE VUELTO ########
 const {test} = require('node:test')
 const assert = require('node:assert/strict')
 const path = require('node:path')
@@ -5,7 +6,8 @@ const fs = require('node:fs')
 const vm = require('node:vm')
 const babel = require('@babel/core')
 const compiler = require('vue-template-compiler')
-const {defaultChangeDisbursements, eligibleChangeMethods, validateChangeDisbursements} = require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/change-disbursements.js'))
+const load = require('./helpers/load-module.cjs')
+const {defaultChangeDisbursements, eligibleChangeMethods, suggestChangeDisbursementAmount, validateChangeDisbursements} = load(path.resolve('resources/js/helpers/change-disbursements.js'))
 
 const methods = [
     {id:'01', description:'Bolívares', collection_kind:'cash', currency_type_id:'VES', cash_currency_type_id:'VES', is_active:true, available_for_change:true},
@@ -15,6 +17,22 @@ const methods = [
     {id:'13', description:'Crédito', collection_kind:'credit', currency_type_id:'VES', is_active:true, available_for_change:true},
 ]
 const destinations = [{id:'cash'}, {id:2, currency_type_id:'VES', establishment_id:7}]
+
+const selectorSource = compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/documents/partials/change_disbursement.vue','utf8'))
+const selectorExports = {}
+vm.runInNewContext(babel.transformSync(selectorSource.script.content, {configFile:false, babelrc:false, plugins:['@babel/plugin-transform-modules-commonjs']}).code, {
+    exports:selectorExports, require:name => load(path.resolve('resources/js/helpers', path.basename(name) + '.js')),
+})
+const selector = selectorExports.default
+function createSelector(overrides = {}) {
+    const events = []
+    const ctx = {...selector.data(), receipt:{currency_type_id:'VES',change:'1000.00',exchange_rate:'100.00000000'},
+        lines:null, methods, destinations, establishmentId:7, ...overrides,
+        events, $emit:(event,value) => events.push({event,value})}
+    for (const [name,method] of Object.entries(selector.methods)) ctx[name] = method.bind(ctx)
+    Object.defineProperty(ctx,'eligible',{get:selector.computed.eligible.bind(ctx)})
+    return ctx
+}
 
 test('only enabled methods with a compatible actual destination can be used', () => {
     assert.deepEqual(Array.from(eligibleChangeMethods(methods,destinations,7), item=>item.id), ['01','10','11','12'])
@@ -54,28 +72,221 @@ test('the default selects active cash in the receipt currency even if its switch
 })
 
 test('selector suggests the converted amount and refuses a stale distribution', () => {
-    const script = compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/documents/partials/change_disbursement.vue','utf8')).script.content
-    const exports = {}
-    const load = require('./helpers/load-module.cjs')
-    vm.runInNewContext(babel.transformSync(script, {configFile:false, babelrc:false, plugins:['@babel/plugin-transform-modules-commonjs']}).code, {
-        exports, require: name => load(path.resolve('resources/js/helpers', path.basename(name) + '.js')),
-    })
-    const component = exports.default
-    const events = []
-    const ctx = {receipt:{currency_type_id:'USD',change:'8.20',exchange_rate:'100'}, lines:null,
-        methods, destinations, establishmentId:7, eligible:eligibleChangeMethods(methods,destinations,7), suggestAmount:component.methods.suggestAmount,
-        $emit:(event, value)=>events.push({event,value})}
-    component.methods.open.call(ctx)
+    const ctx = createSelector({receipt:{currency_type_id:'USD',change:'8.20',exchange_rate:'100'}})
+    ctx.open()
     assert.equal(ctx.draft[0].payment_method_type_id,'10')
     assert.equal(ctx.draft[0].amount,'8.20')
     ctx.draft[0].payment_method_type_id = '01'
     ctx.draft[0].amount = ''
-    component.methods.suggestAmount.call(ctx,ctx.draft[0])
+    ctx.suggestAmount(ctx.draft[0])
     assert.equal(ctx.draft[0].amount,'820.00')
-    component.methods.apply.call(ctx)
-    assert.equal(events[0].event,'apply')
+    ctx.apply()
+    assert.equal(ctx.events[0].event,'apply')
     ctx.receipt.change = '8.30'
-    component.methods.apply.call(ctx)
-    assert.equal(events.length,1)
+    ctx.apply()
+    assert.equal(ctx.events.length,1)
     assert.ok(ctx.error)
 })
+
+test('adding methods fills the remainder without changing existing rows or choosing a method', () => {
+    const lines = [{payment_method_type_id:'01',amount:'100.00',reference:'Primero'}]
+    const ctx = createSelector({lines})
+    ctx.open()
+    ctx.add()
+    assert.deepEqual({...ctx.draft[1]}, {payment_method_type_id:null,amount:'900.00',reference:''})
+    assert.deepEqual({...ctx.draft[0]}, lines[0])
+    const second = ctx.draft[1]
+    second.payment_method_type_id = '11'
+    ctx.suggestAmount(second)
+    second.amount = '300.00'
+    ctx.markAmountEdited(second)
+    ctx.add()
+    assert.equal(ctx.draft[2].payment_method_type_id,null)
+    assert.equal(ctx.draft[2].amount,'600.00')
+    assert.equal(second.amount,'300.00')
+    assert.equal(lines.length,1)
+    assert.equal(lines[0].amount,'100.00')
+})
+
+test('suggested amounts convert to the chosen currency with multiple rows in either direction', () => {
+    const ves = createSelector({lines:[{payment_method_type_id:'01',amount:'100.00',reference:''}]})
+    ves.open()
+    ves.add()
+    const dollars = ves.draft[1]
+    dollars.payment_method_type_id = '10'
+    ves.suggestAmount(dollars)
+    assert.equal(dollars.amount,'9.00')
+    dollars.payment_method_type_id = '11'
+    ves.suggestAmount(dollars)
+    assert.equal(dollars.amount,'900.00')
+    ves.apply()
+    assert.equal(ves.events[0].event,'apply')
+
+    const usd = createSelector({receipt:{currency_type_id:'USD',change:'10.00',exchange_rate:'100'},
+        lines:[{payment_method_type_id:'01',amount:'100.00',reference:''}]})
+    usd.open()
+    usd.add()
+    assert.equal(usd.draft[1].amount,'9.00')
+    usd.draft[1].payment_method_type_id = '01'
+    usd.suggestAmount(usd.draft[1])
+    assert.equal(usd.draft[1].amount,'900.00')
+    usd.apply()
+    assert.equal(usd.events[0].event,'apply')
+})
+
+test('unselected rows use receipt currency provisionally and do not duplicate the remainder', () => {
+    const ctx = createSelector({lines:[{payment_method_type_id:'01',amount:'100.00',reference:''}]})
+    ctx.open()
+    ctx.add()
+    ctx.add()
+    assert.equal(ctx.draft[1].amount,'900.00')
+    assert.equal(ctx.draft[2].amount,'0.00')
+    ctx.apply()
+    assert.equal(ctx.events.length,0)
+    assert.match(ctx.error,/método disponible/)
+})
+
+test('remainder arithmetic keeps decimal precision, large amounts and eight-place rates', () => {
+    const receipt = {currency_type_id:'VES',change:'0.30',exchange_rate:'100'}
+    const cents = [{payment_method_type_id:'01',amount:'0.10'}, {payment_method_type_id:'11',amount:'0.20'}]
+    assert.equal(suggestChangeDisbursementAmount(cents,receipt,methods),'0.00')
+    assert.equal(suggestChangeDisbursementAmount([{payment_method_type_id:'01',amount:'9007199254740993.00'}],
+        {...receipt,change:'9007199254740993.10'},methods),'0.10')
+    const thirds = [{payment_method_type_id:'01',amount:'1.00'}, {payment_method_type_id:'11',amount:'1.00'}]
+    assert.equal(suggestChangeDisbursementAmount(thirds,{currency_type_id:'USD',change:'1.00',exchange_rate:'3'},methods),'0.33')
+    assert.equal(suggestChangeDisbursementAmount([{payment_method_type_id:'10',amount:'1.00'}],
+        {...receipt,change:'1000.00',exchange_rate:'911.62430001'},methods),'88.38')
+    const bolivars = {payment_method_type_id:'01',amount:''}
+    assert.equal(suggestChangeDisbursementAmount([{payment_method_type_id:'10',amount:'0.20'},bolivars],
+        {currency_type_id:'USD',change:'1.00',exchange_rate:'911.62430001'},methods,bolivars),'729.30')
+})
+
+test('covered or overassigned change suggests zero and keeps application validation', () => {
+    for (const amount of ['1000.00','1100.00']) {
+        const ctx = createSelector({lines:[{payment_method_type_id:'01',amount,reference:''}]})
+        ctx.open()
+        ctx.add()
+        assert.equal(ctx.draft[1].amount,'0.00')
+        ctx.draft[1].payment_method_type_id = '11'
+        ctx.suggestAmount(ctx.draft[1])
+        assert.equal(ctx.draft[1].amount,'0.00')
+        ctx.apply()
+        assert.equal(ctx.events.length,0)
+        assert.match(ctx.error,/importes positivos/)
+    }
+})
+
+test('manual amounts are preserved even when they match the previous suggestion', () => {
+    for (const amount of ['900.00','4.00']) {
+        const ctx = createSelector({lines:[{payment_method_type_id:'01',amount:'100.00',reference:''}]})
+        ctx.open()
+        ctx.add()
+        const line = ctx.draft[1]
+        line.amount = amount
+        ctx.markAmountEdited(line)
+        line.payment_method_type_id = '10'
+        ctx.suggestAmount(line)
+        assert.equal(line.amount,amount)
+        assert.equal(ctx.draft[0].amount,'100.00')
+    }
+    const ctx = createSelector({lines:[{payment_method_type_id:'01',amount:'100.00',reference:'Guardada'}]})
+    ctx.open()
+    ctx.draft[0].payment_method_type_id = '10'
+    ctx.suggestAmount(ctx.draft[0])
+    assert.equal(ctx.draft[0].amount,'100.00')
+    assert.equal(ctx.lines[0].payment_method_type_id,'01')
+})
+
+test('removing a row and adding another recalculates from the rows that remain', () => {
+    const ctx = createSelector({lines:[{payment_method_type_id:'01',amount:'100.00',reference:''},
+        {payment_method_type_id:'10',amount:'3.00',reference:''}]})
+    ctx.open()
+    ctx.add()
+    assert.equal(ctx.draft[2].amount,'600.00')
+    ctx.draft.splice(2,1)
+    ctx.draft.splice(1,1)
+    ctx.add()
+    assert.equal(ctx.draft[1].amount,'900.00')
+    ctx.draft[1].payment_method_type_id = '10'
+    ctx.suggestAmount(ctx.draft[1])
+    assert.equal(ctx.draft[1].amount,'9.00')
+})
+
+test('invalid drafts or rates show an error without adding a row or changing amounts', () => {
+    const invalidRows = [
+        {payment_method_type_id:'01',amount:'abc',reference:''},
+        {payment_method_type_id:'01',amount:'-1.00',reference:''},
+        {payment_method_type_id:'01',amount:'100.001',reference:''},
+        {payment_method_type_id:'missing',amount:'100.00',reference:''},
+    ]
+    for (const line of invalidRows) {
+        const ctx = createSelector({lines:[line]})
+        ctx.open()
+        ctx.add()
+        assert.equal(ctx.draft.length,1)
+        assert.deepEqual({...ctx.draft[0]},line)
+        assert.ok(ctx.error)
+    }
+    const ctx = createSelector({lines:[{payment_method_type_id:'01',amount:'100.00',reference:''}]})
+    ctx.open()
+    ctx.add()
+    const line = ctx.draft[1]
+    ctx.receipt.exchange_rate = '0'
+    ctx.suggestAmount(line,'10')
+    assert.equal(line.amount,'900.00')
+    assert.equal(line.payment_method_type_id,null)
+    assert.ok(ctx.error)
+    ctx.add()
+    assert.equal(ctx.draft.length,2)
+    ctx.receipt.exchange_rate = '100'
+    ctx.apply()
+    assert.equal(ctx.events.length,0)
+    ctx.suggestAmount(line,'10')
+    assert.equal(line.amount,'9.00')
+    assert.equal(line.payment_method_type_id,'10')
+    assert.equal(ctx.error,'')
+})
+
+test('a failed method change preserves the selected method and its amount', () => {
+    const ctx = createSelector({lines:[{payment_method_type_id:'01',amount:'100.00',reference:''}]})
+    ctx.open()
+    ctx.add()
+    const line = ctx.draft[1]
+    ctx.suggestAmount(line,'10')
+    assert.equal(line.amount,'9.00')
+    ctx.draft[0].amount = 'invalid'
+    ctx.suggestAmount(line,'11')
+    assert.equal(line.payment_method_type_id,'10')
+    assert.equal(line.amount,'9.00')
+    assert.equal(ctx.draft[0].amount,'invalid')
+    assert.ok(ctx.error)
+    ctx.draft[0].amount = '100.00'
+    ctx.apply()
+    assert.equal(ctx.events[0].event,'apply')
+})
+
+test('empty amounts can be suggested in multiple rows and UI state stays out of emitted lines', () => {
+    const ctx = createSelector({lines:[{payment_method_type_id:'01',amount:'100.00',reference:''},
+        {payment_method_type_id:'11',amount:'',reference:'Transferencia'}]})
+    ctx.open()
+    ctx.suggestAmount(ctx.draft[1])
+    assert.equal(ctx.draft[1].amount,'900.00')
+    ctx.apply()
+    assert.equal(ctx.events[0].event,'apply')
+    const sent = ctx.events[0].value
+    assert.deepEqual(Array.from(sent,line => ({...line})), [
+        {payment_method_type_id:'01',amount:'100.00',reference:''},
+        {payment_method_type_id:'11',amount:'900.00',reference:'Transferencia'},
+    ])
+    assert.notEqual(sent[0],ctx.draft[0])
+    ctx.clear()
+    assert.equal(ctx.events[1].event,'clear')
+})
+
+test('selector template compiles and distinguishes manual amount input', () => {
+    const compiled = compiler.compile(selectorSource.template.content)
+    assert.deepEqual(compiled.errors,[])
+    assert.ok(compiled.render.includes('markAmountEdited(line)'))
+    assert.ok(compiled.render.includes('suggestAmount(line, $event)'))
+})
+// ######## FIN PRUEBAS RESTANTE VUELTO ########

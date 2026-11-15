@@ -1505,6 +1505,7 @@
                         </div>
                         <!-- ######## FIN RESUMEN REACTIVO IVA E IGTF ######## -->
                         <div class="col-12 col-lg-7 text-center table-responsive">
+                            <calculation-review :context="localCalculationContext" v-if="useLocalCalculations" :summary="localCalculationReview && localCalculationReview.summary" :loading="igtfQuoteLoading" :error="igtfQuoteError" :retryable="!localCalculationContext" @retry="refreshLocalContext(true)" />
                             <table
                                 class="table table-sm text-end invoice-totals"
                             >
@@ -2190,8 +2191,8 @@
                                                         </template>
                                                             <!-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## -->
                                                         <small v-if="!row.payment_method_type_id" class="text-muted">{{ paymentMethodsLoaded ? "No hay efectivo activo para la moneda del documento; seleccione un método." : "Cargando métodos de pago…" }}</small>
-<igtf-settings-status v-if="fiscalPaymentsApplicable" />
-<igtf-payment-fields :hide-classification="true" :total-tendered="true" :igtf-rate="igtfSettings.rate" :use-document-rate="true" :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !isRecordedReceipt(row)" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+<igtf-settings-status v-if="fiscalPaymentsApplicable && !useLocalCalculations" />
+<igtf-payment-fields :local-calculation="useLocalCalculations" :local-context="localCalculationContext" :hide-classification="true" :total-tendered="true" :igtf-rate="igtfSettings.rate" :use-document-rate="true" :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !isRecordedReceipt(row)" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
     :payment="row" :document-currency="form.currency_type_id" :document-rate="form.exchange_rate_sale" :customer-id="form.customer_id" />
                                                         </td>
                                                         <!-- ######## FIN ANCHO DEL METODO DE PAGO ######## -->
@@ -2827,6 +2828,7 @@ const RemoteSlot = {
 };
 
 export default {
+    localCalculations: true,
     props: [
         "idUser",
         "initialContingency",
@@ -6121,16 +6123,21 @@ export default {
             if (!await this.ensureFiscalPaymentsReady(this.documentSubmission().payments)) return
             if (!this.validateChangeSelections()) return
 
+            const submission = this.documentSubmission();
+            const payload = this.useLocalCalculations ? this.prepareCalculationSubmission(submission) : submission;
+
             this.loading_submit = true;
             this.is_consumption_charge = false;
+            let saleCreated = false;
             let path = `/${this.resource}`;
             if (this.isUpdate) {
                 path = `/${this.resource}/${this.form.id}/update`;
             }
             this.$http
-                .post(path, this.documentSubmission())
+                .post(path, payload)
                 .then(async (response) => {
                     if (response.data.success) {
+                        saleCreated = true;
                         this.documentNewId = response.data.data.id;
                         this.printTicketUrl = response.data?.links?.print_ticket ?? null;
 
@@ -6151,6 +6158,7 @@ export default {
                     }
                 })
                 .catch(error => {
+                    if (this.handleCalculationChanged(error, this.documentSubmission())) return;
                     if (error.response && error.response.status === 422) {
                         const data = error.response.data || {};
                         this.errors = data.errors || (data.message && typeof data.message === 'object' ? data.message : data);
@@ -6184,8 +6192,10 @@ export default {
                 .finally(() => {
                     this.loading_submit = false;
                     this.customerCurrent = null;
-                    this.setDefaultDocumentType();
-                    this.selectDefaultCustomer()
+                    if (saleCreated || !this.useLocalCalculations) {
+                        this.setDefaultDocumentType();
+                        this.selectDefaultCustomer();
+                    }
                 });
         },
         showOptionsDialog(response) {

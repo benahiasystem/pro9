@@ -1474,8 +1474,8 @@ export default {
         resolveEditUnitPrice(record) {
             const parsePrice = (value) => {
                 if (value === undefined || value === null || value === '') return null;
-                const n = Number(value);
-                return isNaN(n) ? null : n;
+                try { exactAmount(value); return String(value); }
+                catch (_) { return null; }
             };
 
             const input = parsePrice(record.input_unit_price_value);
@@ -1744,7 +1744,31 @@ export default {
 
             let affectation_igv_type_id = this.form.affectation_igv_type_id;
             // let unit_price = (this.form.has_igv) ? this.form.unit_price : this.form.unit_price_value * 1.18;
-            this.form.price_input={amount:String(this.form.unit_price),currency_type_id:this.form.item.currency_type_id || this.currencyTypeIdActive,includes_iva:this.form.has_igv !== false};
+            // ######## INICIO CONSERVACION PRECIO ORIGINAL COTIZACION ########
+            const original = this.recordItem;
+            let unchangedPrice = false, unchangedQuantity = false;
+            if (original) {
+                try {
+                    unchangedPrice = exactAmount(this.form.unit_price).compare(this.resolveEditUnitPrice(original)) === 0
+                        && (original.currency_type_id || this.currencyTypeIdActive) === this.currencyTypeIdActive
+                        && (original.item?.has_igv !== false) === (this.form.has_igv !== false);
+                    unchangedQuantity = exactAmount(this.form.quantity).compare(original.quantity) === 0;
+                } catch (_) { /* La validación posterior informará la entrada inválida. */ }
+                if (unchangedQuantity && original.calculation_snapshot) {
+                    this.form.calculation_snapshot = original.calculation_snapshot;
+                    if (!this.form.quantity_input) this.form.quantity_input = original.quantity_input ?? original.calculation_snapshot.inputs?.quantity_input ?? null;
+                }
+            }
+            const originalPrice = original?.price_input ?? original?.calculation_snapshot?.inputs?.price_input;
+            if (unchangedPrice && originalPrice) this.form.price_input = {...originalPrice};
+            else if (unchangedPrice && original?.calculation_snapshot) {
+                this.form.calculation_snapshot = original.calculation_snapshot;
+                this.form.currency_type_id = original.currency_type_id || this.currencyTypeIdActive;
+                delete this.form.price_input;
+            } else this.form.price_input = {amount:String(this.form.unit_price),
+                currency_type_id:original ? this.currencyTypeIdActive : (this.form.item.currency_type_id || this.currencyTypeIdActive),
+                includes_iva:this.form.has_igv !== false};
+            // ######## FIN CONSERVACION PRECIO ORIGINAL COTIZACION ########
             let unit_price = this.form.unit_price;
             if (this.form.has_igv === false) {
                 if (

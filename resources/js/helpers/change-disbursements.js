@@ -26,6 +26,34 @@ export function defaultChangeDisbursements(receipt, methods = [], destinations =
     } catch (_) { return null }
 }
 
+export function suggestChangeDisbursementAmount(lines, receipt, methods = [], line = null) {
+    if (!Array.isArray(lines) || !receipt || receipt.reused) throw new Error('Indique los métodos y montos del vuelto.')
+    if (!['VES', 'USD'].includes(receipt.currency_type_id)) throw new Error('Seleccione una moneda válida para el vuelto.')
+    const rate = normalizeExchangeRate(receipt.exchange_rate)
+    let remaining = exactAmount(receipt.change)
+    if (remaining.compare(0) < 0) throw new Error('El vuelto no puede ser negativo.')
+    const currencyFor = row => {
+        if (row == null || row.payment_method_type_id == null || row.payment_method_type_id === '') return receipt.currency_type_id
+        const method = methods.find(item => String(item.id) === String(row.payment_method_type_id))
+        if (!method || !['VES', 'USD'].includes(method.currency_type_id)) throw new Error('Seleccione un método disponible para cada desembolso.')
+        return method.currency_type_id
+    }
+    for (const other of lines) {
+        if (other === line || other.amount === '') continue
+        const amount = exactAmount(other.amount)
+        if (amount.compare(0) < 0 || amount.compare(amount.final(2)) !== 0) throw new Error('Indique importes no negativos con hasta dos decimales.')
+        const currency = currencyFor(other)
+        const converted = currency === receipt.currency_type_id ? amount
+            : currency === 'USD' ? amount.times(rate) : amount.dividedBy(rate)
+        remaining = remaining.minus(converted)
+    }
+    const currency = currencyFor(line)
+    if (remaining.compare(0) <= 0) return '0.00'
+    const converted = currency === receipt.currency_type_id ? remaining
+        : currency === 'USD' ? remaining.dividedBy(rate) : remaining.times(rate)
+    return converted.final(2)
+}
+
 export function validateChangeDisbursements(lines, receipt, methods = [], destinations = [], establishmentId = null) {
     try {
         if (lines == null && (!receipt || receipt.reused || exactAmount(receipt.change || '0').compare(0) === 0)) return {valid:true}

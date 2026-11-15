@@ -68,7 +68,7 @@ export default {
             if (this.quoteError || this.settings.error) return {...empty, error: this.quoteError || this.settings.error}
             if (!this.settings.loaded || this.settings.loading || (this.quotePending && !this.quote)) return {...empty, pending: true}
             let base = exactAmount(0), tax = exactAmount(0)
-            if (this.settings.enabled && this.quote) {
+            if ((this.quote?.server_verified ? this.quote.igtf_enabled : this.settings.enabled) && this.quote) {
                 try {
                     for (const row of this.quote.payments) {
                         if (row.reused || row.igtf_status !== 'subject' || row.currency_type_id !== 'USD') continue

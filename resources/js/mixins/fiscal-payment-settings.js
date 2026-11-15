@@ -1,34 +1,62 @@
 import {igtfSettings, loadIgtfSettings, fiscalPaymentProblem} from '../helpers/igtf-settings'
+import {calculationContexts, contextKey, loadCalculationContext} from '../helpers/calculation-context'
+import {localPaymentQuote, quoteFromCalculation, convertExact} from '../helpers/local-payment-quote'
+import {calculationPayload, calculationDraftKey} from '../helpers/calculation-expectation'
 import IgtfSettingsStatus from '../components/IgtfSettingsStatus.vue'
 import IgtfQuoteSummary from '../components/IgtfQuoteSummary.vue'
+import CalculationReview from '../components/CalculationReview.vue'
 import {exactAmount} from '../helpers/exchange-rate-math'
 import {isRecordedReceipt, paymentMethodIntermediation, retireDraftIgtfException} from '../helpers/payment-classification'
 
 // ######## INICIO CONFIGURACION COMPARTIDA IGTF ########
 export default {
-    components: {IgtfSettingsStatus, IgtfQuoteSummary},
-    data: () => ({igtfSettings, igtfPreparingSubmission: false, igtfQuote: null, igtfQuoteLoading: false,
-        igtfQuoteError: '', igtfQuoteKey: null, igtfQuoteSequence: 0}),
+    components: {IgtfSettingsStatus, IgtfQuoteSummary, CalculationReview},
+    data() {
+        const local = this?.$options?.localCalculations === true && !this.documentId
+        return {localContextSequence:0, localCalculationReview:null, localCalculationSubmission:null,
+            igtfSettings:local ? {loaded:false,loading:true,enabled:false,rate:'0',revision:0,error:''} : igtfSettings,
+            igtfPreparingSubmission:false,igtfQuote:null,igtfQuoteLoading:false,igtfQuoteError:'',igtfQuoteKey:null,igtfQuoteSequence:0}
+    },
     computed: {
+        // ######## INICIO COTIZACION LOCAL EXACTA ########
+        useLocalCalculations() { return this.$options?.localCalculations === true && !this.isUpdateDocument },
+        localDocumentType() { return this.documentTypeId || this.form?.document_type_id || '01' },
+        localContextInput() {
+            if (!this.useLocalCalculations || this.showDialog === false) return null
+            const today = new Date().toLocaleDateString('en-CA', {timeZone:'America/Caracas'})
+            const dates = [this.form?.date_of_issue || today, ...(this.fiscalQuoteRows || []).map(row => row.date_of_payment || today)]
+                .filter(value => /^\d{4}-\d{2}-\d{2}$/.test(value))
+            return {scope:typeof location === 'undefined' ? 'test' : location.origin, company_id:this.company?.id || this.config?.company_id || null, customer_id:this.form?.customer_id || this.customerId || null,
+                establishment_id:this.form?.establishment_id || null, dates:[...new Set(dates)].sort()}
+        },
+        localDraftKey() {
+            return this.useLocalCalculations ? JSON.stringify([calculationDraftKey(this.form), calculationDraftKey({payments:this.draftPayments}), this.localContextKey]) : ''
+        },
+        localCatalogKey() { return this.useLocalCalculations ? JSON.stringify(this.payment_method_types || []) : '' },
+        localContextKey() { return this.localContextInput ? contextKey(this.localContextInput) : '' },
+        localCalculationContext() { return this.localContextKey ? calculationContexts.entries[this.localContextKey] || null : null },
+        // ######## FIN COTIZACION LOCAL EXACTA ########
         fiscalPaymentsApplicable() {
             const type = this.documentTypeId || (this.form && this.form.document_type_id) || (this.document && this.document.document_type_id)
             return ['01', '08'].includes(type)
         },
         igtfEnabled() { return this.igtfSettings.loaded && this.igtfSettings.enabled },
         fiscalQuoteRows() {
-            if (Array.isArray(this.form?.payments)) return this.form.payments
+            if (Array.isArray(this.form?.payments)) return this.useLocalCalculations && ['02','03'].includes(this.form.payment_condition_id)
+                ? this.form.payments.filter(isRecordedReceipt) : this.form.payments
             if (Array.isArray(this.draftPayments)) return this.draftPayments
             if (Array.isArray(this.document?.payments)) return this.document.payments
             return (this.records || []).filter(row => !row.id)
         },
         fiscalQuoteCurrency() { return this.form?.currency_type_id || this.currencyTypeId || this.document?.currency_type_id || '' },
         fiscalQuoteKey() {
-            if (!this.fiscalPaymentsApplicable || this.showDialog === false || (this.is_payment === false && !this.fiscalQuoteInline)) return ''
+            if ((!this.fiscalPaymentsApplicable && !this.useLocalCalculations) || this.showDialog === false || (this.is_payment === false && !this.fiscalQuoteInline)) return ''
             const request = this.fiscalQuoteRequest(this.fiscalQuoteRows)
             return request ? JSON.stringify([request, this.igtfSettings.enabled, this.igtfSettings.rate]) : ''
         },
     },
     created() {
+        if (this.useLocalCalculations) { this.syncLocalDocumentPayments(this.localDocumentType,null); this.refreshLocalContext(true); return }
         if (this.fiscalPaymentsApplicable) {
             (this.fiscalQuoteRows || []).forEach(row => retireDraftIgtfException(row, this.$set, this.$delete))
             this.refreshIgtfSettings()
@@ -36,6 +64,11 @@ export default {
         }
     },
     watch: {
+        localDocumentType(value,previous) { if (this.useLocalCalculations) this.syncLocalDocumentPayments(value,previous) },
+        localDraftKey() { if (this.localCalculationReview && this.localCalculationReview.draftKey !== this.localDraftKey) this.localCalculationReview = null },
+        localCatalogKey() { if (this.useLocalCalculations) this.refreshLocalContext(true) },
+        localContextKey() { if (this.useLocalCalculations) this.refreshLocalContext(true) },
+        localCalculationContext(value) { if (this.useLocalCalculations && value) { this.applyLocalContextSettings(value); this.refreshFiscalQuote() } },
         // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         fiscalQuoteRows: {deep: true, handler(rows) {
             const retired = (rows || []).map(row => retireDraftIgtfException(row, this.$set, this.$delete)).some(Boolean)
@@ -47,23 +80,109 @@ export default {
         }},
         // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
         fiscalPaymentsApplicable(value) { if (value) this.refreshIgtfSettings() },
-        showDialog(value) { if (value && this.fiscalPaymentsApplicable) this.refreshIgtfSettings() },
+        showDialog(value) { if (value && this.useLocalCalculations) this.refreshLocalContext(true); else if (value && this.fiscalPaymentsApplicable) this.refreshIgtfSettings() },
         is_payment(value) { if (value && this.fiscalPaymentsApplicable) this.refreshIgtfSettings() },
         documentId() { if (this.fiscalPaymentsApplicable) this.refreshIgtfSettings() },
         fiscalQuoteKey() { this.refreshFiscalQuote() },
     },
     beforeDestroy() { this.igtfQuoteSequence++ },
     methods: {
-        refreshIgtfSettings() { return loadIgtfSettings(this.$http) },
+        refreshIgtfSettings() { return this.useLocalCalculations ? this.refreshLocalContext() : loadIgtfSettings(this.$http) },
+        // ######## INICIO COTIZACION LOCAL EXACTA ########
+        syncLocalDocumentPayments(kind,previous) {
+            const rows=Array.isArray(this.form?.payments) ? this.form.payments : this.draftPayments || []
+            for (const row of rows) {
+                if (isRecordedReceipt(row)) continue
+                if (kind === '80') {
+                    if (previous && previous !== '80' && row.tendered_amount != null) {
+                        try {
+                            this.$set(row,'original_amount',row.tendered_amount)
+                            this.$set(row,'payment',convertExact(row.tendered_amount,row.currency_type_id || this.fiscalQuoteCurrency,this.fiscalQuoteCurrency,row.exchange_rate).final(2))
+                        } catch (_) { /* The quote reports incomplete currency inputs. */ }
+                    }
+                    this.$delete(row,'tendered_amount');this.$delete(row,'_tendered_edited')
+                } else if (previous === '80') {
+                    this.$set(row,'tendered_amount',row.original_amount ?? row.payment)
+                    this.$set(row,'_tendered_edited',true)
+                }
+            }
+        },
+        applyLocalContextSettings(context) {
+            Object.assign(this.igtfSettings,{loaded:true,loading:false,error:'',enabled:context.enabled,rate:context.rate,revision:this.igtfSettings.revision+1})
+        },
+        prepareCalculationSubmission(form) {
+            const revision = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+            const key = calculationDraftKey(form)
+            const approved = this.localCalculationReview?.key === key ? this.localCalculationReview.summary : null
+            this.localCalculationSubmission = {revision,key}
+            return calculationPayload(form,this.igtfQuote,revision,approved,this.localCalculationContext?.methods || this.payment_method_types || [],this.localCalculationContext?.destinations || [])
+        },
+        handleCalculationChanged(error, currentForm) {
+            const data = error.response?.data
+            if (error.response?.status !== 409 || data?.code !== 'calculation_changed') return false
+            const submission = this.localCalculationSubmission
+            if (!submission || data.calculation?.revision !== submission.revision || calculationDraftKey(currentForm) !== submission.key) {
+                this.$message.error('El borrador cambió mientras se verificaba. Revíselo y vuelva a generar.')
+                return true
+            }
+            this.localCalculationReview = {key:submission.key, draftKey:this.localDraftKey, summary:data.calculation}
+            const summary = data.calculation
+            // Only display server-owned corrections; keep original inputs and selections.
+            this.igtfQuote = quoteFromCalculation(this.igtfQuote || {}, summary)
+            this.$message.error(data.message)
+            this.refreshLocalContext(true)
+            return true
+        },
+        async refreshLocalContext(force = false) {
+            if (!this.localContextInput) return null
+            const key = this.localContextKey
+            const sequence = ++this.localContextSequence
+            this.igtfQuoteLoading = !this.localCalculationContext
+            this.igtfSettings.loading = this.igtfQuoteLoading
+            try {
+                const context = await loadCalculationContext(this.$http, this.localContextInput, force)
+                if (key !== this.localContextKey || sequence !== this.localContextSequence) return null
+                this.applyLocalContextSettings(context)
+                this.igtfQuoteError = ''
+                this.refreshFiscalQuote()
+                return context
+            } catch (_) {
+                if (key === this.localContextKey && sequence === this.localContextSequence) {
+                    this.igtfQuoteError = 'No se pudo cargar el contexto fiscal. Reintente antes de generar.'
+                    this.igtfSettings.loading = false
+                    this.igtfSettings.error = this.igtfQuoteError
+                    this.igtfQuoteLoading = false
+                }
+                return null
+            }
+        },
+        refreshLocalQuote(payments) {
+            const request = this.fiscalQuoteRequest(payments)
+            this.igtfQuote = null; this.igtfQuoteKey = null; this.igtfQuoteError = ''
+            this.igtfQuoteLoading = !this.localCalculationContext
+            if (!this.localCalculationContext || !request) return null
+            try {
+                for (const row of payments) { if (row.payment !== '' && row.payment != null) exactAmount(row.payment) }
+                const quote = localPaymentQuote(request, this.localCalculationContext, this.localCalculationContext.methods, this.localDocumentType)
+                if (this.localCalculationReview && this.localCalculationReview.draftKey === this.localDraftKey) {
+                    Object.assign(quote, quoteFromCalculation(quote, this.localCalculationReview.summary))
+                } else if (this.localCalculationReview) this.localCalculationReview = null
+                this.igtfQuote = quote
+                this.igtfQuoteKey = JSON.stringify([request, this.igtfSettings.enabled, this.igtfSettings.rate])
+                this.igtfQuoteLoading = false
+                return quote
+            } catch (error) { this.igtfQuoteError = error.message; this.igtfQuoteLoading = false; return null }
+        },
+        // ######## FIN COTIZACION LOCAL EXACTA ########
         fiscalQuoteRequest(payments) {
             const rows = (payments || []).filter(row => {
                 try { return exactAmount(row.payment || '0').compare(0) > 0 } catch (_) { return false }
             })
-            if (!rows.length) return null
+            if (!rows.length && !this.useLocalCalculations) return null
             // Wait for every new receipt's method before quoting the group.
             // A partial quote could otherwise misstate the remaining balance.
             if (rows.some(row => !isRecordedReceipt(row) && !row.payment_method_type_id)) return null
-            if (!rows.some(row => !isRecordedReceipt(row))) return null
+            if (!rows.some(row => !isRecordedReceipt(row)) && !this.useLocalCalculations) return null
             const documentId = Array.isArray(this.records) ? this.documentId : null
             const currency = this.form?.currency_type_id || this.currencyTypeId || this.document?.currency_type_id
             const rate = this.form?.exchange_rate_sale ?? this.exchangeRateSale ?? this.document?.exchange_rate_sale
@@ -72,6 +191,7 @@ export default {
             const payloadRows = rows.map(row => {
                 const money = row.currency_type_id || currency
                 return {
+                    ...(this.useLocalCalculations && isRecordedReceipt(row) ? {calculation_snapshot:row.calculation_snapshot} : {}),
                     id: row.id, document_id: row.document_id, sale_note_id: row.sale_note_id, quotation_id: row.quotation_id,
                     technical_service_id: row.technical_service_id, receipt_parent_id: row.receipt_parent_id,
                     receipt_origin: row.receipt_origin, payment_method_snapshot: row.payment_method_snapshot,
@@ -88,7 +208,10 @@ export default {
                     // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
                 }
             })
-            return {document_id: documentId || undefined, customer_id: this.form?.customer_id || this.customerId || this.document?.customer_id || undefined,
+            return {...(this.useLocalCalculations && this.form?.total != null ? {
+                commercial_total_exact:this.form.calculation_snapshot?.values?.total ?? this.form.total,
+                settlements_exact:this.form.guarantee_fund?.calculation_snapshot?.values?.amount ?? this.form.guarantee_fund?.amount ?? '0',
+            } : {}), document_id: documentId || undefined, customer_id: this.form?.customer_id || this.customerId || this.document?.customer_id || undefined,
                 currency_type_id: currency, exchange_rate_sale: rate, principal_due: due, payments: payloadRows}
         },
         fiscalQuotePresentation(quote) {
@@ -106,6 +229,7 @@ export default {
             return this.igtfQuote.payments[rows.indexOf(row)]?.payment ?? row.payment
         },
         async refreshFiscalQuote(payments = this.fiscalQuoteRows) {
+            if (this.useLocalCalculations) return this.refreshLocalQuote(payments === this.form?.payments ? this.fiscalQuoteRows : payments)
             const request = this.fiscalQuoteRequest(payments)
             const key = request ? JSON.stringify([request, this.igtfSettings.enabled, this.igtfSettings.rate]) : ''
             const sequence = ++this.igtfQuoteSequence
@@ -155,6 +279,21 @@ export default {
             }
         },
         async ensureFiscalPaymentsReady(payments) {
+            if (this.useLocalCalculations) {
+                if (payments === this.form?.payments) payments = this.fiscalQuoteRows
+                if (this.igtfPreparingSubmission || this.loading_submit) return false
+                this.igtfPreparingSubmission = true
+                const form = this.form, key = this.localDraftKey
+                try {
+                    if (!this.localCalculationContext && !await this.refreshLocalContext()) return false
+                    if (this.form !== form || this.localDraftKey !== key || this.showDialog === false || (this.is_payment === false && !this.fiscalQuoteInline)) return false
+                    const invalid = (payments || []).some(row => { try { return exactAmount(row.payment || '0').compare(0) < 0 } catch (_) { return true } })
+                    if (invalid) { this.$message.error('Indique montos de cobro válidos.'); return false }
+                    const quote = this.refreshLocalQuote(payments)
+                    if (!quote) { this.$message.error(this.igtfQuoteError || 'Complete los datos del cobro.'); return false }
+                    return true
+                } finally { this.igtfPreparingSubmission = false }
+            }
             if (!this.fiscalPaymentsApplicable) return true
             for (const row of payments || []) retireDraftIgtfException(row, this.$set, this.$delete)
             if (this.igtfPreparingSubmission || this.loading_submit) return false

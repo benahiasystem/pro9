@@ -1571,6 +1571,7 @@
 
 <script>
 import {applyCommercialTotals, allocateCommercialRows} from '../../../helpers/exact-commercial'
+import {normalizeQuotationPrices, validateQuotationPayments} from '../../../helpers/quotation-exact'
 
 // ######## INICIO TASAS OCHO DECIMALES ########
 import { normalizeExchangeRate, exactAmount } from "../../../helpers/exchange-rate-math"
@@ -2112,14 +2113,7 @@ export default {
                 ? (typeof row.item === 'object' ? Object.assign({}, row.item) : {})
                 : {};
 
-            const fallbackPrice = Number(
-                rawItem.unit_price
-                || rawItem.sale_unit_price
-                || rawItem.suggested_unit_price
-                || row.unit_price
-                || 0
-            );
-            rawItem.unit_price = fallbackPrice > 0 ? fallbackPrice : Number(rawItem.unit_price || 0);
+            normalizeQuotationPrices(row, rawItem)
             if (!rawItem.currency_type_id) {
                 rawItem.currency_type_id = this.form.currency_type_id || 'VES';
             }
@@ -2128,18 +2122,6 @@ export default {
             }
 
             row.item = rawItem;
-            if (
-                row.input_unit_price_value === undefined
-                || row.input_unit_price_value === null
-                || row.input_unit_price_value === ''
-                || isNaN(Number(row.input_unit_price_value))
-            ) {
-                const hasIgv = rawItem.has_igv !== false;
-                const fromQuotation = hasIgv ? row.unit_price : row.unit_value;
-                row.input_unit_price_value = Number(
-                    fromQuotation || row.unit_price || rawItem.unit_price || 0
-                );
-            }
             row.discounts = row.discounts
                 ? (Array.isArray(row.discounts) ? row.discounts : Object.values(row.discounts))
                 : [];
@@ -2372,24 +2354,7 @@ export default {
             this.setTotalDefaultPayment();
         },
         validate_payments() {
-            //eliminando items de pagos
-            for (let index = 0; index < this.form.payments.length; index++) {
-                if (parseFloat(this.form.payments[index].payment) === 0)
-                    this.form.payments.splice(index, 1);
-            }
-
-            let error_by_item = 0;
-            let acum_total = 0;
-
-            this.form.payments.forEach(item => {
-                acum_total += parseFloat(item.payment);
-                if (item.payment <= 0 || item.payment == null) error_by_item++;
-            });
-
-            return {
-                error_by_item: error_by_item,
-                acum_total: acum_total
-            };
+            return validateQuotationPayments(this.form.payments, this.form)
         },
         validatePaymentDestination() {
             let error_by_item = 0;
@@ -2416,7 +2381,7 @@ export default {
 
             let validate = await this.validate_payments();
             if (
-                validate.acum_total > parseFloat(this.form.total) ||
+                validate.exceeds_total ||
                 validate.error_by_item > 0
             ) {
                 return this.$message.error(

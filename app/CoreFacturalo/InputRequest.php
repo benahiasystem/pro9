@@ -25,6 +25,10 @@ class InputRequest
                     \App\Models\Tenant\Company::query()->lockForUpdate()->firstOrFail();
                 }
                 $inputs = $request->all();
+                if (isset($inputs['expected_calculation']) && $type === 'document') {
+                    // Lock before validation establishes a consistent read snapshot.
+                    \App\Models\Tenant\Company::query()->lockForUpdate()->firstOrFail();
+                }
                 if ($service === 'api') $inputs = $this->transformInputs($inputs, $type);
                 $inputs = $this->validationInputs($inputs, $type, $service);
                 $request->replace($this->setInputs($inputs, $type, $service));

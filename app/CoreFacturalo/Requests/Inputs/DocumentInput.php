@@ -116,6 +116,7 @@ class DocumentInput
             'note_creation_key' => $inputs['note_creation_key'] ?? null,
             'third_party_id' => $inputs['third_party_id'] ?? null,
             'received_retentions' => $inputs['received_retentions'] ?? [],
+            'expected_calculation' => $inputs['expected_calculation'] ?? null,
             'islr_retention_prevision' => $inputs['islr_retention_prevision'] ?? null,
             'iva_retention_prevision' => $inputs['iva_retention_prevision'] ?? null,
             'guarantee_fund' => $inputs['guarantee_fund'] ?? null,

@@ -250,7 +250,7 @@
                                 <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
                                 <p class="text-right" v-if="form.total_igv > 0">IVA: {{ currency_type.symbol }} {{ form.total_igv }}</p>
                                 <!-- ########### FIN CAMBIO IVA VENEZUELA -->
-                                <h3 class="text-right" v-if="form.total > 0"><b>TOTAL A PAGAR: </b>{{ currency_type.symbol }} {{ form.total }}</h3>
+                                <h3 class="text-right" v-if="form.total > 0"><b>TOTAL A PAGAR: </b>{{ currency_type.symbol }} {{ form.total_payable }}</h3>
                             </div>
 
                         </div>
@@ -295,6 +295,7 @@
     import DocumentOptions from '../documents/partials/options.vue'
     import {functions, exchangeRate} from '../../../mixins/functions'
     import {calculateRowItem} from '../../../helpers/functions'
+    import {documentTotals} from '../../../helpers/exact-document'
     import Logo from '../companies/logo.vue'
 
     export default {
@@ -686,51 +687,12 @@
                 this.calculateTotal()
             },
             calculateTotal() {
-                let total_discount = 0
-                let total_charge = 0
-                let total_exportation = 0
-                let total_taxed = 0
-                let total_exonerated = 0
-
-
-                let total_igv = 0
-                let total_value = 0
-                let total = 0
-                this.form.items.forEach((row) => {
-                    total_discount += parseFloat(row.total_discount)
-                    total_charge += parseFloat(row.total_charge)
-
-                    if (row.affectation_igv_type_id === '10') {
-                        total_taxed += parseFloat(row.total_value)
-                    }
-                    if (row.affectation_igv_type_id === '20') {
-                        total_exonerated += parseFloat(row.total_value)
-                    }
-                    ;
-                    if (row.affectation_igv_type_id === '40') {
-                        total_exportation += parseFloat(row.total_value)
-                    }
-                    ;
-                    if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) > -1) {
-                        total_igv += parseFloat(row.total_igv)
-                        total += parseFloat(row.total)
-                    }
-                    total_value += parseFloat(row.total_value)
-                });
-
-                this.form.total_exportation = _.round(total_exportation, 2)
-                this.form.total_taxed = _.round(total_taxed, 2)
-                this.form.total_exonerated = _.round(total_exonerated, 2)
-
-
-                this.form.total_igv = _.round(total_igv, 2)
-                this.form.total_value = _.round(total_value, 2)
-                this.form.total_taxes = _.round(total_igv, 2)
-                this.form.total = _.round(total, 2)
-
-                this.form_payment.payment = this.form.total
-
-             },
+                const items = this.form.items.map(row => row.affectation_igv_type_id === '40'
+                    ? {...row, affectation_igv_type_id:'EXP'} : row)
+                const totals = documentTotals(items, this.form.discounts, this.form.charges, this.form.total_prepayment)
+                Object.assign(this.form, totals)
+                this.form_payment.payment = totals.total_payable
+            },
             submit() {
 
                 return false

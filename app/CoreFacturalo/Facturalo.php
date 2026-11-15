@@ -41,6 +41,11 @@ use Modules\Finance\Traits\FilePaymentTrait;
  */
 class Facturalo
 {
+    // ######## INICIO VERIFICACION FINAL DE CALCULOS ########
+    private bool $checkingCalculation = false;
+    private array $deferredPaymentFiles = [];
+    // ######## FIN VERIFICACION FINAL DE CALCULOS ########
+
     private bool $webDocuments = false;
 
     public function forWebDocuments(): self
@@ -109,6 +114,11 @@ class Facturalo
     // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
     private function saveWithinTransaction($inputs)
     {
+        // ######## INICIO VERIFICACION FINAL DE CALCULOS ########
+        $this->checkingCalculation = isset($inputs['expected_calculation']);
+        $this->deferredPaymentFiles = [];
+        if ($this->checkingCalculation) \App\Models\Tenant\Company::query()->lockForUpdate()->firstOrFail();
+        // ######## FIN VERIFICACION FINAL DE CALCULOS ########
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = $inputs['type'];
         // Acquire the serialization lock before any consistent read creates a MySQL snapshot.
@@ -208,10 +218,13 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 $outstanding = \App\Support\Exact\Receivables::balancesForDocuments([$document])[$document->id];
-                \App\Services\Fiscal\FiscalDocumentPersistence::assertFreeFormCashCollection($document,$outstanding);
                 \App\Support\Exact\Installments::save($document, array_values($inputs['fee'] ?? []), \App\Support\Exact\Decimal::max(0, $outstanding));
                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+                \App\Services\Payments\CalculationExpectation::verify($document,$inputs);
+                \App\Services\Fiscal\FiscalDocumentPersistence::assertFreeFormCashCollection($document,$outstanding);
+                foreach ($this->deferredPaymentFiles as [$fileInput,$receipt]) $this->saveFilesFromPayments($fileInput,$receipt,'documents');
+                $this->deferredPaymentFiles = [];
                 \App\Services\Fiscal\HkaDispatchRelations::attach($document,$inputs);
                 \App\Services\Fiscal\HkaCreditInvoice::captureCreation($document, $this->webDocuments);
                 $this->document = Document::find($document->id);
@@ -1092,7 +1105,8 @@ class Facturalo
             if ($context !== null && !empty($row['change'])) $context['received_change'] = \App\Support\Exact\Decimal::fraction($row['change']);
             if ($context !== null && isset($row['_settlement_payment'])) $context['settlement_payment'] = $row['_settlement_payment'];
             $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $row, true, $context);
-            $this->saveFilesFromPayments($row, $record, 'documents');
+            if ($this->checkingCalculation) $this->deferredPaymentFiles[] = [$row,$record];
+            else $this->saveFilesFromPayments($row, $record, 'documents');
             if (isset($row['payment_destination_id']) && !$record->global_payment) {
                 $this->createGlobalPayment($record, $row);
                 if ($isUpdate) $this->createCashDocumentPayment($record, true);

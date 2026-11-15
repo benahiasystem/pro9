@@ -12,7 +12,7 @@
                             <th v-if="draftPayments.length>0">Método de pago</th>
                             <th v-if="draftPayments.length>0">Destino</th>
                             <th v-if="draftPayments.length>0">Referencia</th>
-                            <th v-if="draftPayments.length>0">Monto</th>
+                            <th v-if="draftPayments.length>0">{{ documentTypeId === '80' ? 'Monto' : 'Total entregado' }}</th>
                             <th width="15%"><a href="#" @click.prevent="clickAddPayment()" class="text-center font-weight-bold text-info">[+ Agregar]</a></th>
                         </tr>
                     </thead>
@@ -44,13 +44,14 @@
                             </td>
                             <td>
                                 <div class="form-group mb-2 mr-2" >
-                                    <el-input v-model="row.payment" :disabled="isRecordedReceipt(row)"
+                                    <el-input v-if="useLocalCalculations && documentTypeId !== '80' && !isRecordedReceipt(row)" v-model="row.tendered_amount" @input="$set(row, '_tendered_edited', true)" />
+                                        <el-input v-else v-model="row.payment" :disabled="isRecordedReceipt(row)"
                                               @focus="valueInputSelect"
                                               @click.native="valueInputSelect"></el-input>
                                 </div>
                             </td>
-                            <td><igtf-settings-status v-if="fiscalPaymentsApplicable" />
-                            <igtf-payment-fields :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !isRecordedReceipt(row)" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
+                            <td><igtf-settings-status v-if="fiscalPaymentsApplicable && !useLocalCalculations" />
+                            <igtf-payment-fields :total-tendered="true" :igtf-rate="igtfSettings.rate" :local-calculation="useLocalCalculations" :local-context="localCalculationContext" :payment-methods="payment_method_types" v-if="fiscalPaymentsApplicable && !isRecordedReceipt(row)" :igtf-enabled="igtfEnabled" :settings-version="igtfSettings.revision"
                                 :payment="row" :document-currency="currencyTypeId || 'VES'" :document-rate="exchangeRateSale" :customer-id="customerId" />
                             <receipt-currency-fields v-if="documentTypeId === '80' && !isRecordedReceipt(row)" :row="row" :methods="payment_method_types" :document-currency="currencyTypeId" :document-rate="exchangeRateSale" /></td>
                             <td class="series-table-actions text-center">
@@ -93,6 +94,7 @@ import {defaultCashForCurrency, isRecordedReceipt} from "@helpers/payment-classi
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
 import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
     export default {
+    localCalculations: true,
         mixins: [fiscalPaymentSettings],
         components: {IgtfPaymentFields, ReceiptCurrencyFields},
         props: ['showDialog', 'payments', 'total', 'currencyTypeId', 'exchangeRateSale', 'customerId', 'paymentConditionId', 'documentTypeId'],

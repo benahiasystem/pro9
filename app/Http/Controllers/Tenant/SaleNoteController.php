@@ -69,6 +69,11 @@ use App\CoreFacturalo\HelperFacturalo;
 
 class SaleNoteController extends Controller
 {
+    // ######## INICIO VERIFICACION FINAL DE CALCULOS ########
+    private bool $checkingCalculation = false;
+    private array $deferredPaymentFiles = [];
+    // ######## FIN VERIFICACION FINAL DE CALCULOS ########
+
 
     use FinanceTrait;
     use InventoryTrait;
@@ -356,7 +361,9 @@ class SaleNoteController extends Controller
                 $inputs['id'] = false;
                 $isUpdate = false;
             }
-            if ($isUpdate) Company::query()->lockForUpdate()->firstOrFail();
+            $this->checkingCalculation = isset($inputs['expected_calculation']);
+            $this->deferredPaymentFiles = [];
+            if ($isUpdate || $this->checkingCalculation) Company::query()->lockForUpdate()->firstOrFail();
             $previousNote = $isUpdate ? SaleNote::query()->lockForUpdate()->findOrFail($inputs['id']) : null;
             if ($previousNote) $this->assertSaleNoteSourceEditable($previousNote);
             $previousCurrency = $previousNote ? $previousNote->currency_type_id : null;
@@ -480,6 +487,10 @@ class SaleNoteController extends Controller
             $this->savePayments($this->sale_note, $payments, $isUpdate);
             $this->saveFee($this->sale_note, $data['fee'] ?? []);
 
+            \App\Services\Payments\CalculationExpectation::verify($this->sale_note,$inputs);
+            foreach ($this->deferredPaymentFiles as [$fileInput,$receipt]) $this->saveFilesFromPayments($fileInput,$receipt,'sale_notes');
+            $this->deferredPaymentFiles = [];
+
             $this->setFilename();
             if ($deferPdfUntilCommit) {
                 $note = $this->sale_note;
@@ -507,6 +518,10 @@ class SaleNoteController extends Controller
         }
         catch(Exception $e)
         {
+            if ($e instanceof \App\Services\Payments\CalculationChanged) {
+                DB::connection('tenant')->rollBack();
+                throw $e;
+            }
             $this->generalWriteErrorLog($e);
 
             DB::connection('tenant')->rollBack();
@@ -1672,7 +1687,8 @@ class SaleNoteController extends Controller
             }
 
             // para carga de voucher
-            $this->saveFilesFromPayments($row, $record_payment, 'sale_notes');
+            if ($this->checkingCalculation) $this->deferredPaymentFiles[] = [$row,$record_payment];
+            else $this->saveFilesFromPayments($row, $record_payment, 'sale_notes');
         }
         });
         });
