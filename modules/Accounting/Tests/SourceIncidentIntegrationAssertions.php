@@ -88,7 +88,7 @@ trait SourceIncidentIntegrationAssertions
     public function test_voided_native_source_after_reversal_is_excluded_without_posting_another_invoice(): void
     {
         $fixture = $this->postedNativeCase(); $observed = $this->observeNative($fixture, ['state_type_id' => '09']); $case = $observed['case'];
-        $reverse = app(EntryService::class)->prepareReversal($fixture['entry']->id, now('America/Caracas')->format('Y-m-d'), 'Reversar la anulación ficticia recibida de PRO9.', $this->admin->id);
+        $reverse = app(EntryService::class)->prepareReversal($fixture['entry']->id, now('America/Caracas')->format('Y-m-d'), 'Reversar la anulación ficticia recibida de SAB.', $this->admin->id);
         $this->postPrepared($reverse, 'source-void-reversal-' . Str::uuid());
         app(SourceIncidentService::class)->resolve($case['incident']['id'], $case['incident']['version'], [...$observed['input'], 'action' => 'apply_after_reversal'], $this->admin->id, 'source-void-apply-' . Str::uuid());
         $doc = $fixture['document']->fresh(); $this->assertSame('excluded', $doc->status); $this->assertSame('09', $doc->metadata['source_state']);

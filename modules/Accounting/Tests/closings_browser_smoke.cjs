@@ -21,7 +21,7 @@ let page, browser;
   const errors = [], checks = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('http://contabilidad.localhost:9080/contabilidad/');
-  await page.getByLabel('Correo electrónico de PRO9').fill(actor.email);
+  await page.getByLabel('Correo electrónico de SAB').fill(actor.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   const login = page.waitForResponse(r => r.url().endsWith('/api/login') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
@@ -50,7 +50,7 @@ let page, browser;
   const dialog = page.getByRole('dialog', { name: 'Revisión final del cierre', exact: true });
   const confirmClose = dialog.getByRole('button', { name: 'Confirmar cierre mensual', exact: true });
   assert.equal(await confirmClose.isDisabled(), true);
-  for (const label of ['Conciliación con PRO9 y otros orígenes', 'Conciliación de cajas y bancos', 'Revisión fiscal y soportes']) {
+  for (const label of ['Conciliación con SAB y otros orígenes', 'Conciliación de cajas y bancos', 'Revisión fiscal y soportes']) {
     await dialog.getByLabel(label, { exact: true }).fill('Papel de trabajo ficticio conciliado y revisado para este mes.');
   }
   await dialog.getByLabel('Motivo de la confirmación del cierre', { exact: true }).fill('Cierre ficticio preparado desde la interfaz con sus soportes.');

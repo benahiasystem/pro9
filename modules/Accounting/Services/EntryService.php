@@ -33,7 +33,7 @@ final class EntryService
             if (!empty($data['local_id'])) {
                 $existing = JournalEntry::where('created_by', $user)->where('local_id', $data['local_id'])->lockForUpdate()->first();
                 if ($existing) {
-                    throw new ApiProblem('LOCAL_ENTRY_EXISTS', 'PRO9 ya conserva un comprobante con esta identidad local. Compara sus versiones antes de continuar.', 409, ['current' => $this->resource($existing)]);
+                    throw new ApiProblem('LOCAL_ENTRY_EXISTS', 'SAB ya conserva un comprobante con esta identidad local. Compara sus versiones antes de continuar.', 409, ['current' => $this->resource($existing)]);
                 }
             }
             $period = $this->period($data['accounting_date']);

@@ -12,7 +12,7 @@ final class ConflictController extends \App\Http\Controllers\Controller
     {
         $value = trim((string) $request->header('If-Match'), '"');
         if (!preg_match('/^[1-9][0-9]{0,9}$/D', $value)) {
-            throw new ApiProblem('VERSION_REQUIRED', 'Se requiere la versión de PRO9 que revisaste para guardar esta decisión.', 428);
+            throw new ApiProblem('VERSION_REQUIRED', 'Se requiere la versión de SAB que revisaste para guardar esta decisión.', 428);
         }
         return (int) $value;
     }

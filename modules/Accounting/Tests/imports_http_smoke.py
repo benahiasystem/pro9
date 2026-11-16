@@ -1,4 +1,4 @@
-"""Real multipart/permission/receipt acceptance in the guarded private PRO9 clone."""
+"""Real multipart/permission/receipt acceptance in the guarded private SAB clone."""
 from isolated_http import IsolatedClient
 import csv
 import io

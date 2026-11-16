@@ -1,4 +1,4 @@
-"""Exercise recoverable requests and explicit conflict decisions in private PRO9."""
+"""Exercise recoverable requests and explicit conflict decisions in private SAB."""
 from isolated_http import IsolatedClient
 from copy import deepcopy
 import datetime
@@ -56,7 +56,7 @@ checks.append('otra clave de transporte no duplica la identidad lógica del borr
 local = deepcopy(payload)
 local['concept'] = 'Alternativa local conservada para comparar'
 server = deepcopy(payload)
-server['concept'] = 'Otra edición realizada en PRO9'
+server['concept'] = 'Otra edición realizada en SAB'
 entry = client.request(base + '/entries/' + entry['id'], server, reviewer, method='PATCH', headers={'If-Match': str(entry['version'])})['data']
 comparison = client.request(base + '/entries/' + entry['id'] + '/comparison', actor=author)['data']
 resolution_key = str(uuid.uuid4())
@@ -81,11 +81,11 @@ document_input = {'kind': 'sale_invoice', 'number': 'CONFLICTO-' + str(time.time
 document = client.request(base + '/documents', document_input, author, headers={'Idempotency-Key': str(uuid.uuid4())})['data']
 doc_local = deepcopy(document_input)
 doc_local['amounts']['base'] = doc_local['amounts']['total'] = '101.123456789012'
-document_input['number'] += '-PRO9'
+document_input['number'] += '-SAB'
 document = client.request(base + '/documents/' + document['id'], document_input, reviewer, method='PATCH', headers={'If-Match': str(document['version'])})['data']
 comparison = client.request(base + '/documents/' + document['id'] + '/comparison', actor=author)['data']
 doc_key = str(uuid.uuid4())
-resolved_document = client.request(base + '/documents/' + document['id'] + '/resolve', {'base_version': 1, 'decision': 'apply_local', 'reason': 'Selección expresa del documento local tras revisar los cambios de PRO9.', 'local': doc_local}, author, headers={'If-Match': str(comparison['version']), 'Idempotency-Key': doc_key})['data']
+resolved_document = client.request(base + '/documents/' + document['id'] + '/resolve', {'base_version': 1, 'decision': 'apply_local', 'reason': 'Selección expresa del documento local tras revisar los cambios de SAB.', 'local': doc_local}, author, headers={'If-Match': str(comparison['version']), 'Idempotency-Key': doc_key})['data']
 assert resolved_document['entity']['amounts']['total'] == '101.123456789012'
 assert resolved_document['entity']['source_revision'] == 3
 assert client.request(base + '/operations/document.resolve/' + doc_key, actor=author)['data']['result']['entity']['id'] == document['id']
@@ -99,7 +99,7 @@ kept = client.request(base + '/entries/' + entry['id'] + '/resolve', viewer_deci
 assert kept['entity']['version'] == entry['version'] and kept['entity']['concept'] == entry['concept']
 viewer_decision['decision'] = 'apply_local'
 client.request(base + '/entries/' + entry['id'] + '/resolve', viewer_decision, author, headers={'If-Match': str(entry['version']), 'Idempotency-Key': str(uuid.uuid4())}, expected=403)
-checks.append('consulta permite conservar PRO9; aplicar la alternativa exige permiso de edición vigente')
+checks.append('consulta permite conservar SAB; aplicar la alternativa exige permiso de edición vigente')
 
 for _ in range(65):
     req = urllib.request.Request('http://127.0.0.1:9080/api/accounting/v1/health', headers={

@@ -57,7 +57,7 @@ async function close(c) {
 }
 async function login(p) {
   await p.goto(origin + '/contabilidad/');
-  await p.getByLabel('Correo electrónico de PRO9').fill(actor.email);
+  await p.getByLabel('Correo electrónico de SAB').fill(actor.email);
   await p.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   const auth = p.waitForResponse(
     (r) => r.url().endsWith('/api/login') && r.request().method() === 'POST',
@@ -424,7 +424,7 @@ async function upload(p, file) {
     assert.equal(response.status(), 200);
     assert.equal((await response.json()).total, 0);
   }
-  checks.push('el autoguardado y su recuperación no crean documentos ni comprobantes en PRO9');
+  checks.push('el autoguardado y su recuperación no crean documentos ni comprobantes en SAB');
   await page.getByRole('link', { name: 'Comprobantes', exact: true }).click();
   await page.getByLabel('Buscar', { exact: true }).fill(draftInput.concept);
   await page.getByRole('cell', { name: draftInput.concept, exact: true }).click();

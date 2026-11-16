@@ -1,4 +1,4 @@
-"""Local alternative history is applied only inside PRO9's authorized draft transaction."""
+"""Local alternative history is applied only inside SAB's authorized draft transaction."""
 from isolated_http import IsolatedClient
 from copy import deepcopy
 import datetime
@@ -58,14 +58,14 @@ duplicate = client.request(base + '/offline/sync', payload, author, headers={'Id
 assert duplicate['code'] == 'LOCAL_ENTRY_EXISTS' and duplicate['details']['current']['id'] == entry['id']
 checks.append('otra identidad de transporte no duplica el comprobante lógico elegido')
 
-server = client.request(base + '/entries/' + entry['id'], {**body, 'concept': 'Cambio posterior en PRO9'}, reviewer, method='PATCH', headers={'If-Match': str(entry['version'])})['data']
+server = client.request(base + '/entries/' + entry['id'], {**body, 'concept': 'Cambio posterior en SAB'}, reviewer, method='PATCH', headers={'If-Match': str(entry['version'])})['data']
 resolved = client.request(base + '/entries/' + entry['id'] + '/resolve', {
-    'base_version': 1, 'decision': 'keep_server', 'reason': 'Conservo el cambio de PRO9 tras contrastarlo con la elección local.',
+    'base_version': 1, 'decision': 'keep_server', 'reason': 'Conservo el cambio de SAB tras contrastarlo con la elección local.',
     'local': {**body, 'local_selection': packet},
 }, author, headers={'If-Match': str(server['version']), 'Idempotency-Key': str(uuid.uuid4())})['data']
 assert resolved['entity']['version'] == server['version'] and resolved['entity']['concept'] == server['concept']
 assert resolved['resolution']['local_selection_receipts'] == entry['local_selection_receipts']
-checks.append('comparar con PRO9 conserva la misma elección local sin volver a registrarla ni cambiar el asiento al conservar servidor')
+checks.append('comparar con SAB conserva la misma elección local sin volver a registrarla ni cambiar el asiento al conservar servidor')
 
 tampered = deepcopy(packet)
 tampered['decisions'][0]['reason'] = 'Un texto modificado intenta reutilizar la identidad ya confirmada.'

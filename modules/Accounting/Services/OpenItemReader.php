@@ -16,7 +16,7 @@ final class OpenItemReader
         if ($history) {
             $allocations = SettlementAllocation::whereIn('open_item_id', $items->pluck('id'))->orderBy('settlement_date')->orderBy('id')->limit($historyLimit + 1)->get();
             if ($allocations->count() > $historyLimit) {
-                throw new ApiProblem('AUXILIARY_HISTORY_TOO_LARGE', 'La historia de aplicaciones supera el alcance de esta consulta. Consulta su detalle con PRO9 antes de preparar otra copia.', 413);
+                throw new ApiProblem('AUXILIARY_HISTORY_TOO_LARGE', 'La historia de aplicaciones supera el alcance de esta consulta. Consulta su detalle con SAB antes de preparar otra copia.', 413);
             }
             $entries = JournalEntry::whereIn('id', $allocations->pluck('journal_entry_id'))->get(['id', 'reference', 'status', 'posted_at'])->keyBy('id');
             $allocations = $allocations->groupBy('open_item_id');

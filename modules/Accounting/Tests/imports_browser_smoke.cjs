@@ -40,7 +40,7 @@ async function modal() {
   assert.equal(probe.headers()['x-accounting-isolated-test'], '1');
   page = await context.newPage(); page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto(origin + '/contabilidad/');
-  await page.getByLabel('Correo electrónico de PRO9').fill(actor.email);
+  await page.getByLabel('Correo electrónico de SAB').fill(actor.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   const auth = page.waitForResponse(r => r.url().endsWith('/api/login') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click(); actor.token = (await (await auth).json()).token;
@@ -101,7 +101,7 @@ async function modal() {
   await page.getByRole('button', { name: 'Volver a validar', exact: true }).click(); await page.locator('.import-units').getByText('Esta referencia ya fue aceptada con otros datos.', { exact: false }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Importar 0 unidades', exact: true }).isDisabled(), true);
   checks.push('historial recuperable y revalidación detectan una referencia corregida ya aceptada sin sobrescribirla');
-  await context.setOffline(true); await page.getByText('Conecta con PRO9 para cargar, validar o confirmar archivos.', { exact: false }).waitFor();
+  await context.setOffline(true); await page.getByText('Conecta con SAB para cargar, validar o confirmar archivos.', { exact: false }).waitFor();
   assert.equal(await page.getByRole('button', { name: /Importar [0-9]/ }).count(), 0);
   assert.equal(await page.getByLabel('Archivo', { exact: true }).count(), 0);
   await context.setOffline(false); await page.getByRole('heading', { name: 'Una carga, una revisión clara', exact: true }).waitFor();

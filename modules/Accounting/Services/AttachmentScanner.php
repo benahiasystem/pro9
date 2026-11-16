@@ -4,14 +4,14 @@ namespace Modules\Accounting\Services;
 
 use Modules\Accounting\Domain\ApiProblem;
 
-/** ClamD INSTREAM: no source paths or credentials leave the PRO9 process. */
+/** ClamD INSTREAM: no source paths or credentials leave the SAB process. */
 class AttachmentScanner
 {
     private function socket(): mixed
     {
         $endpoint = config('accounting.attachments.scanner_endpoint', '');
         if (!is_string($endpoint) || !preg_match('#^(?:tcp://[a-zA-Z0-9.\-]+:[0-9]{1,5}|unix:///[^\r\n\0]+)$#D', $endpoint)) {
-            throw new ApiProblem('ATTACHMENT_SCANNER_UNAVAILABLE', 'El análisis de archivos no está configurado en PRO9. El archivo no se conserva sin verificar.', 503);
+            throw new ApiProblem('ATTACHMENT_SCANNER_UNAVAILABLE', 'El análisis de archivos no está configurado en SAB. El archivo no se conserva sin verificar.', 503);
         }
         $socket = @stream_socket_client($endpoint, $error, $message, 3);
         if (!$socket) { throw new ApiProblem('ATTACHMENT_SCANNER_UNAVAILABLE', 'El servicio de análisis no está disponible. Conserva el archivo y vuelve a intentar cuando se restablezca.', 503); }

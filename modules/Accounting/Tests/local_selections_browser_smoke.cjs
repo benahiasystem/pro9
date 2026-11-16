@@ -28,7 +28,7 @@ async function request(url, data, user = reviewer, method = 'GET', extra = {}) {
 async function observe(c) { context=c;page=await c.newPage();page.on('pageerror',e=>errors.push(e.message));return page; }
 async function login() {
   await page.goto(origin+'/contabilidad/');
-  await page.getByLabel('Correo electrónico de PRO9').fill(actor.email);
+  await page.getByLabel('Correo electrónico de SAB').fill(actor.email);
   await page.getByLabel('Contraseña',{exact:true}).fill(actor.password);
   const auth=page.waitForResponse(r=>r.url().endsWith('/api/login')&&r.request().method()==='POST');
   await page.getByRole('button',{name:'Entrar',exact:true}).click();actor.token=(await (await auth).json()).token;
@@ -177,12 +177,12 @@ async function encryptedSnapshot(p=page) {
   await localDialog.getByRole('button',{name:'Guardar elección local',exact:true}).click();await localDialog.waitFor({state:'hidden'});
   await section('Borradores del equipo').getByRole('button',{name:'Comparar versiones',exact:true}).click();
   const comparison=page.getByRole('dialog',{name:'Comparar versiones',exact:true});await comparison.waitFor();
-  await comparison.getByLabel('Conservar PRO9 y archivar mi alternativa',{exact:true}).check();
-  await comparison.getByLabel('Motivo de la decisión',{exact:true}).fill('Conservo expresamente la versión vigente de PRO9 sin cambiar sus importes.');
+  await comparison.getByLabel('Conservar SAB y archivar mi alternativa',{exact:true}).check();
+  await comparison.getByLabel('Motivo de la decisión',{exact:true}).fill('Conservo expresamente la versión vigente de SAB sin cambiar sus importes.');
   await comparison.getByRole('button',{name:'Guardar decisión',exact:true}).click();await comparison.waitFor({state:'hidden'});
   await section('Borradores del equipo').getByText('Sincronizado',{exact:true}).waitFor();
   assert.equal((await request(base+'/entries/'+serverEntry.id)).data.version,1);
-  checks.push('conservar PRO9 resuelve una elección cuya versión de partida ya era actual sin crear otro cambio');
+  checks.push('conservar SAB resuelve una elección cuya versión de partida ya era actual sin crear otro cambio');
   await prepareAgain(original);await choose(original,'Reutilizo el antecedente del respaldo tras una nueva comprobación de soportes.');
   await section('Borradores del equipo').getByRole('button',{name:'Comparar versiones',exact:true}).click();await comparison.waitFor();
   await comparison.getByLabel('Guardar mi alternativa como nueva versión para revisión',{exact:true}).check();
@@ -191,7 +191,7 @@ async function encryptedSnapshot(p=page) {
   await section('Borradores del equipo').getByText('Sincronizado',{exact:true}).waitFor();
   const applied=(await request(base+'/entries/'+serverEntry.id)).data;
   assert.equal(applied.total_debit,'75.20000000');assert.equal(applied.version,2);assert.equal(applied.status,'draft');
-  checks.push('aplicar un antecedente exige comparar con PRO9 y devuelve una nueva versión para revisión con el mismo registro');
+  checks.push('aplicar un antecedente exige comparar con SAB y devuelve una nueva versión para revisión con el mismo registro');
 
   await route('/comprobantes/nuevo');await fill('Concurrencia inicial '+stamp,'33,33');await context.setOffline(true);await save();
   const concurrentUrl=page.url();await page.getByRole('link',{name:'Editar borrador',exact:true}).click();

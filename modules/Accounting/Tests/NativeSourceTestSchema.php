@@ -2,7 +2,7 @@
 
 namespace Modules\Accounting\Tests;
 
-/** Minimal native PRO9 tables, only for the guarded accounting_module_test DB. */
+/** Minimal native SAB tables, only for the guarded accounting_module_test DB. */
 final class NativeSourceTestSchema
 {
     public static function create(mixed $schema): void

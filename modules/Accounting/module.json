@@ -1,7 +1,7 @@
 {
   "name": "Accounting",
   "alias": "accounting",
-  "description": "Contabilidad multiempresa para PRO9",
+  "description": "Contabilidad multiempresa para SAB",
   "active": 1,
   "order": 0,
   "providers": [

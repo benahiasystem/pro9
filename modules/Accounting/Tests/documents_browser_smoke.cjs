@@ -12,7 +12,7 @@ let page,browser;
  assert.equal(probe.headers()['x-accounting-isolated-test'],'1');
  page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://contabilidad.localhost:9080/contabilidad/');
- await page.getByLabel('Correo electrónico de PRO9').fill(actor.email);await page.getByLabel('Contraseña',{exact:true}).fill(actor.password);
+ await page.getByLabel('Correo electrónico de SAB').fill(actor.email);await page.getByLabel('Contraseña',{exact:true}).fill(actor.password);
  const login=page.waitForResponse(r=>r.url().endsWith('/api/login')&&r.request().method()==='POST');await page.getByRole('button',{name:'Entrar',exact:true}).click();actor.token=(await (await login).json()).token;
  await page.getByLabel('Código de verificación',{exact:true}).waitFor();const code=actor.recovery_codes.shift();assert(code);fs.writeFileSync(root+'/clone-access.json',JSON.stringify(actors,null,2));
  await page.getByLabel('Código de verificación',{exact:true}).fill(code);const mfa=page.waitForResponse(r=>r.url().endsWith('/auth/mfa/verify')&&r.request().method()==='POST');await page.getByRole('button',{name:'Verificar y continuar'}).click();actor.verification=(await (await mfa).json()).verification_token;fs.writeFileSync(root+'/clone-access.json',JSON.stringify(actors,null,2));

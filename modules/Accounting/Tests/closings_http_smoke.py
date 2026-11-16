@@ -1,4 +1,4 @@
-"""Monthly close acceptance against fake books inside the private isolated PRO9 clone."""
+"""Monthly close acceptance against fake books inside the private isolated SAB clone."""
 from isolated_http import IsolatedClient
 from concurrent.futures import ThreadPoolExecutor
 import datetime
@@ -75,7 +75,7 @@ unverified = dict(reviewer)
 unverified.pop('verification', None)
 assert client.request(path, payload, unverified, headers=headers, expected=403)['code'] == 'MFA_REQUIRED'
 assert client.request(path, payload, reviewer, headers={'Idempotency-Key': str(uuid.uuid4())}, expected=428)['code'] == 'VERSION_REQUIRED'
-checks.append('permiso, MFA y versión exigidos por PRO9 para cerrar')
+checks.append('permiso, MFA y versión exigidos por SAB para cerrar')
 
 invalid = dict(payload)
 invalid['exceptions'] = {}

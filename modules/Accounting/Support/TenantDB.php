@@ -19,7 +19,7 @@ final class TenantDB
         $pdo = $connection->getPdo();
         for ($attempt = 1; ; ++$attempt) {
             // MySQL consumes SET TRANSACTION at BEGIN. Reapply it for every
-            // deadlock retry, even when PRO9's session default differs.
+            // deadlock retry, even when SAB's session default differs.
             if ($connection->getDriverName() === 'mysql') {
                 $connection->statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
             }

@@ -12,7 +12,7 @@ final class ActiveUser
         $u = $r->user();
         $active = $u?->getAttribute('active');
         if (!$u || $u->locked || $active === false || $active === 0 || $active === '0') {
-            throw new ApiProblem('INACTIVE_USER', 'El usuario no tiene acceso activo en PRO9.', 403);
+            throw new ApiProblem('INACTIVE_USER', 'El usuario no tiene acceso activo en SAB.', 403);
         }
         return $next($r);
     }

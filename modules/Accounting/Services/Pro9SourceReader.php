@@ -22,7 +22,7 @@ final class Pro9SourceReader
     }
     private function requireLink(): object
     {
-        return $this->company() ?? throw new ApiProblem('PRO9_BOOK_NOT_LINKED', 'Este libro no está vinculado a la empresa de PRO9 del dominio actual.', 409);
+        return $this->company() ?? throw new ApiProblem('PRO9_BOOK_NOT_LINKED', 'Este libro no está vinculado a la empresa de SAB del dominio actual.', 409);
     }
     public function status(): array
     {
@@ -31,7 +31,7 @@ final class Pro9SourceReader
     }
     private function query(string $kind): \Illuminate\Database\Query\Builder
     {
-        $table = self::TABLES[$kind] ?? throw new ApiProblem('SOURCE_KIND_NOT_SUPPORTED', 'El tipo de documento de PRO9 no está disponible.', 404);
+        $table = self::TABLES[$kind] ?? throw new ApiProblem('SOURCE_KIND_NOT_SUPPORTED', 'El tipo de documento de SAB no está disponible.', 404);
         $query = DB::table($table);
         if ($kind === 'purchases') {
             $query->whereNull('deleted_at');
@@ -61,7 +61,7 @@ final class Pro9SourceReader
         }
         $row = $query->first();
         if (!$row) {
-            throw new ApiProblem('SOURCE_NOT_FOUND', 'El documento no está disponible en PRO9.', 404);
+            throw new ApiProblem('SOURCE_NOT_FOUND', 'El documento no está disponible en SAB.', 404);
         }
         return $this->normalize($kind, $row);
     }
@@ -75,20 +75,20 @@ final class Pro9SourceReader
         $id = $document->metadata['source_record_id'] ?? 0;
         $snapshot = $this->snapshot($kind, (int) $id, true);
         if (!hash_equals(app(SourceIncidentService::class)->effectiveHash($document), $snapshot['hash'])) {
-            throw new ApiProblem('PRO9_SOURCE_CHANGED', 'El documento cambió en PRO9. Recibe su versión actual y resuelve las observaciones antes de continuar.', 409);
+            throw new ApiProblem('PRO9_SOURCE_CHANGED', 'El documento cambió en SAB. Recibe su versión actual y resuelve las observaciones antes de continuar.', 409);
         }
         if (in_array($snapshot['state'], \App\Models\Tenant\ModelTenant::VOIDED_REJECTED_IDS, true)) {
-            throw new ApiProblem('PRO9_SOURCE_NOT_ACTIVE', 'El documento está rechazado o anulado en PRO9. Conserva su historial y revisa la corrección correspondiente.');
+            throw new ApiProblem('PRO9_SOURCE_NOT_ACTIVE', 'El documento está rechazado o anulado en SAB. Conserva su historial y revisa la corrección correspondiente.');
         }
         if (!in_array($snapshot['state'], \App\Models\Tenant\ModelTenant::STATE_TYPES_ACCEPTED, true)) {
-            throw new ApiProblem('PRO9_SOURCE_STATE_UNSUPPORTED', 'El estado del documento de PRO9 requiere revisión antes de preparar el efecto contable.');
+            throw new ApiProblem('PRO9_SOURCE_STATE_UNSUPPORTED', 'El estado del documento de SAB requiere revisión antes de preparar el efecto contable.');
         }
         if ($kind === 'sales') {
             $row = DB::table('documents')->where('id', $id)->lockForUpdate()->first();
             if (($row->fiscal_emission_mode ?? '') === 'digital') {
                 $emission = DB::table('document_emissions')->where('document_id', $id)->lockForUpdate()->first();
                 if (!$emission || $emission->status !== 'confirmed') {
-                    throw new ApiProblem('PRO9_SOURCE_NOT_FINAL', 'La emisión digital en PRO9 todavía no está confirmada. Conserva el documento recibido pendiente de validación.');
+                    throw new ApiProblem('PRO9_SOURCE_NOT_FINAL', 'La emisión digital en SAB todavía no está confirmada. Conserva el documento recibido pendiente de validación.');
                 }
             }
         }
@@ -121,7 +121,7 @@ final class Pro9SourceReader
             DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
             $source = $this->requireLink();
             $actor = \App\Models\Tenant\User::without('establishment')->whereKey($user)->where('active', true)->where('locked', false)->first();
-            if (!$actor) { throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta no puede recibir documentos de PRO9.', 403); }
+            if (!$actor) { throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta no puede recibir documentos de SAB.', 403); }
             app(\Modules\Accounting\Domain\Permissions::class)->require($actor, 'integration');
             $snapshot = $this->snapshot($kind, $id, true);
             if (str_ends_with($snapshot['kind'], '_unsupported')) {
@@ -132,7 +132,7 @@ final class Pro9SourceReader
             }
             $tax = (string) $snapshot['party']['tax_id'];
             if ($tax === '' || mb_strlen($tax) > 30) {
-                throw new ApiProblem('PARTY_IDENTIFICATION_REQUIRED', 'Completa la identificación del tercero en PRO9 antes de recibir este documento.');
+                throw new ApiProblem('PARTY_IDENTIFICATION_REQUIRED', 'Completa la identificación del tercero en SAB antes de recibir este documento.');
             }
             $doc = SourceDocument::where('source_instance_id', 'pro9')->where('source_company_id', (string) $source->id)->where('source_id', $snapshot['source_id'])->lockForUpdate()->first();
             $latest = $doc ? SourceVersion::where('source_document_id', $doc->id)->orderByDesc('revision')->first() : null;
@@ -145,7 +145,7 @@ final class Pro9SourceReader
                 $version = app(SourceHistoryService::class)->append($doc, $snapshot, $snapshot['hash'], $user, $revision, 'pending_reconciliation');
                 $this->invalidatePending($doc, $user, $version->id);
                 $incident = Incident::create(['kind' => 'source_changed', 'resource_type' => 'source_document', 'resource_id' => $doc->id,
-                    'title' => 'PRO9 cambió un documento con efecto contable', 'details' => ['revision' => $revision, 'source_version_id' => $version->id, 'applied_revision' => $doc->source_revision,
+                    'title' => 'SAB cambió un documento con efecto contable', 'details' => ['revision' => $revision, 'source_version_id' => $version->id, 'applied_revision' => $doc->source_revision,
                         'observed_hash' => $snapshot['hash'], 'applied_hash' => $doc->metadata['source_hash'] ?? null, 'has_posted_entry' => JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists(),
                         'has_opening_item' => \Modules\Accounting\Models\OpenItem::where('source_document_id', $doc->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists(), 'financial_projection_preserved' => true]]);
                 app(AuditService::class)->record($user, 'pro9.source_change_observed', 'source_document', $doc->id, ['source_version_id' => $version->id, 'revision' => $revision, 'applied_revision' => $doc->source_revision, 'hash' => $snapshot['hash'], 'incident_id' => $incident->id, 'financial_projection_preserved' => true]);
@@ -155,7 +155,7 @@ final class Pro9SourceReader
             app(DocumentService::class)->ensureIdentity($naturalKey, $doc?->id);
             $party = ThirdParty::firstOrCreate(['tax_id' => $tax], ['name' => $snapshot['party']['name'], 'kind' => $kind === 'sales' ? 'customer' : 'supplier']);
             $changed = (bool) $doc;
-            $values = ['origin' => 'pro9', 'source_instance_id' => 'pro9', 'source_company_id' => (string) $source->id, 'source_id' => $snapshot['source_id'], 'kind' => $snapshot['kind'], 'number' => $snapshot['number'], 'fiscal_control' => $snapshot['control_number'], 'issue_date' => $snapshot['issue_date'], 'fiscal_date' => $snapshot['issue_date'], 'third_party_id' => $party->id, 'currency' => $snapshot['currency'], 'exchange_rate' => $snapshot['currency'] === 'VES' ? '1' : $snapshot['amounts']['exchange_rate_sale'], 'exchange_source' => $snapshot['exchange_source'] ?? 'PRO9 · pendiente de verificar', 'exchange_date' => $snapshot['exchange_date'] ?? $snapshot['issue_date'], 'amounts' => ['total' => $snapshot['amounts']['total'], 'base' => $snapshot['amounts']['total_value'], 'vat' => $snapshot['amounts']['total_igv'], 'taxes' => $snapshot['amounts']['total_taxes']], 'fiscal_amounts' => [], 'status' => $changed ? 'changed' : 'received', 'source_revision' => $revision, 'metadata' => ['source_hash' => $snapshot['hash'], 'source_kind' => $kind, 'source_record_id' => $id, 'source_state' => $snapshot['state'], 'exact' => $snapshot['exact']], 'issues' => ['Requiere validación contable y fiscal antes de preparar el asiento.']];
+            $values = ['origin' => 'pro9', 'source_instance_id' => 'pro9', 'source_company_id' => (string) $source->id, 'source_id' => $snapshot['source_id'], 'kind' => $snapshot['kind'], 'number' => $snapshot['number'], 'fiscal_control' => $snapshot['control_number'], 'issue_date' => $snapshot['issue_date'], 'fiscal_date' => $snapshot['issue_date'], 'third_party_id' => $party->id, 'currency' => $snapshot['currency'], 'exchange_rate' => $snapshot['currency'] === 'VES' ? '1' : $snapshot['amounts']['exchange_rate_sale'], 'exchange_source' => $snapshot['exchange_source'] ?? 'SAB · pendiente de verificar', 'exchange_date' => $snapshot['exchange_date'] ?? $snapshot['issue_date'], 'amounts' => ['total' => $snapshot['amounts']['total'], 'base' => $snapshot['amounts']['total_value'], 'vat' => $snapshot['amounts']['total_igv'], 'taxes' => $snapshot['amounts']['total_taxes']], 'fiscal_amounts' => [], 'status' => $changed ? 'changed' : 'received', 'source_revision' => $revision, 'metadata' => ['source_hash' => $snapshot['hash'], 'source_kind' => $kind, 'source_record_id' => $id, 'source_state' => $snapshot['state'], 'exact' => $snapshot['exact']], 'issues' => ['Requiere validación contable y fiscal antes de preparar el asiento.']];
             if ($doc) {
                 $values['validated_by'] = null;
                 $values['validated_at'] = null;
@@ -173,7 +173,7 @@ final class Pro9SourceReader
             if ($changed) {
                 \Modules\Accounting\Models\FiscalRecord::where('source_document_id', $doc->id)->where('status', 'validated')->update(['status' => 'source_changed']);
                 $this->invalidatePending($doc, $user);
-                Incident::create(['kind' => 'source_changed', 'resource_type' => 'source_document', 'resource_id' => $doc->id, 'title' => 'El documento de PRO9 cambió', 'details' => ['revision' => $revision, 'has_posted_entry' => JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists(), 'has_opening_item' => \Modules\Accounting\Models\OpenItem::where('source_document_id', $doc->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists()]]);
+                Incident::create(['kind' => 'source_changed', 'resource_type' => 'source_document', 'resource_id' => $doc->id, 'title' => 'El documento de SAB cambió', 'details' => ['revision' => $revision, 'has_posted_entry' => JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists(), 'has_opening_item' => \Modules\Accounting\Models\OpenItem::where('source_document_id', $doc->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists()]]);
             }
             app(AuditService::class)->record($user, $changed ? 'pro9.source_changed' : 'pro9.received', 'source_document', $doc->id, ['source_id' => $snapshot['source_id'], 'revision' => $revision, 'hash' => $snapshot['hash']]);
             return ['data' => $doc, 'unchanged' => false];
@@ -196,23 +196,23 @@ final class Pro9SourceReader
     public function applyObserved(SourceDocument $document, SourceVersion $observed, int $user): SourceDocument
     {
         $actor = \App\Models\Tenant\User::without('establishment')->whereKey($user)->where('active', true)->where('locked', false)->first();
-        if (!$actor) { throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta no puede aplicar una revisión de PRO9.', 403); }
+        if (!$actor) { throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta no puede aplicar una revisión de SAB.', 403); }
         foreach (['integration', 'review'] as $permission) { app(\Modules\Accounting\Domain\Permissions::class)->require($actor, $permission); }
         $source = $this->requireLink();
         if ($document->origin !== 'pro9' || $observed->source_document_id !== $document->id || (string) $source->id !== (string) $document->source_company_id) { throw new ApiProblem('SOURCE_CONTEXT_CHANGED', 'La versión no corresponde al vínculo y documento actuales.', 409); }
         if (app(SourceHistoryService::class)->integrity($observed)['state'] === 'failed') { throw new ApiProblem('SOURCE_HISTORY_INTEGRITY', 'El antecedente observado no conserva su integridad.', 409); }
         $kind = $document->metadata['source_kind'] ?? ''; $id = (int) ($document->metadata['source_record_id'] ?? 0); $snapshot = $this->snapshot($kind, $id, true);
-        if (!hash_equals($observed->hash, $snapshot['hash'])) { throw new ApiProblem('SOURCE_REVIEW_STALE', 'PRO9 cambió desde la revisión recibida. Recibe su versión actual.', 409); }
+        if (!hash_equals($observed->hash, $snapshot['hash'])) { throw new ApiProblem('SOURCE_REVIEW_STALE', 'SAB cambió desde la revisión recibida. Recibe su versión actual.', 409); }
         if (JournalEntry::where('source_document_id', $document->id)->whereNotNull('posted_at')->whereNull('reversal_of')->whereDoesntHave('reversal', fn($q) => $q->whereNotNull('posted_at'))->exists() || \Modules\Accounting\Models\OpenItem::where('source_document_id', $document->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists()) { throw new ApiProblem('SOURCE_EFFECTS_ACTIVE', 'Los efectos anteriores requieren reversos aprobados y contabilizados antes de aplicar otra revisión.', 409); }
         if (str_ends_with($snapshot['kind'], '_unsupported') || !in_array($snapshot['currency'], ['VES', 'USD', 'EUR'], true)) { throw new ApiProblem('SOURCE_KIND_NOT_SUPPORTED', 'Corrige la equivalencia y la moneda del origen antes de aplicar esta revisión.', 409); }
         $tax = (string) $snapshot['party']['tax_id'];
-        if ($tax === '' || mb_strlen($tax) > 30) { throw new ApiProblem('PARTY_IDENTIFICATION_REQUIRED', 'Revisa la identificación del tercero en PRO9.'); }
+        if ($tax === '' || mb_strlen($tax) > 30) { throw new ApiProblem('PARTY_IDENTIFICATION_REQUIRED', 'Revisa la identificación del tercero en SAB.'); }
         $key = app(DocumentService::class)->identity($snapshot['kind'], $snapshot['number'], $tax, $snapshot['control_number'], $snapshot['issue_date']);
         app(DocumentService::class)->ensureIdentity($key, $document->id);
         $party = ThirdParty::firstOrCreate(['tax_id' => $tax], ['name' => $snapshot['party']['name'], 'kind' => $kind === 'sales' ? 'customer' : 'supplier']);
         $void = in_array($snapshot['state'], \App\Models\Tenant\ModelTenant::VOIDED_REJECTED_IDS, true);
         $document->fill(['kind' => $snapshot['kind'], 'number' => $snapshot['number'], 'natural_key' => $key, 'fiscal_control' => $snapshot['control_number'], 'issue_date' => $snapshot['issue_date'], 'fiscal_date' => $snapshot['issue_date'], 'received_on' => null, 'due_date' => null, 'related_document_id' => null,
-            'third_party_id' => $party->id, 'currency' => $snapshot['currency'], 'exchange_rate' => $snapshot['currency'] === 'VES' ? '1' : $snapshot['amounts']['exchange_rate_sale'], 'exchange_source' => $snapshot['exchange_source'] ?? 'PRO9 · pendiente de verificar', 'exchange_date' => $snapshot['exchange_date'] ?? $snapshot['issue_date'], 'rate_evidence_reference' => null,
+            'third_party_id' => $party->id, 'currency' => $snapshot['currency'], 'exchange_rate' => $snapshot['currency'] === 'VES' ? '1' : $snapshot['amounts']['exchange_rate_sale'], 'exchange_source' => $snapshot['exchange_source'] ?? 'SAB · pendiente de verificar', 'exchange_date' => $snapshot['exchange_date'] ?? $snapshot['issue_date'], 'rate_evidence_reference' => null,
             'amounts' => ['total' => $snapshot['amounts']['total'], 'base' => $snapshot['amounts']['total_value'], 'vat' => $snapshot['amounts']['total_igv'], 'taxes' => $snapshot['amounts']['total_taxes']], 'fiscal_amounts' => [], 'tax_components' => [], 'source_revision' => $observed->revision, 'version' => $document->version + 1,
             'status' => $void ? 'excluded' : 'received', 'validated_by' => null, 'validated_at' => null, 'validated_version' => null,
             'metadata' => ['source_hash' => $snapshot['hash'], 'source_kind' => $kind, 'source_record_id' => $id, 'source_state' => $snapshot['state'], 'exact' => $snapshot['exact']],

@@ -35,7 +35,7 @@ async function request(url, data, user = reviewer, method = 'GET', extra = {}, s
 }
 async function login() {
   await page.goto(origin + '/contabilidad/');
-  await page.getByLabel('Correo electrónico de PRO9').fill(actor.email);
+  await page.getByLabel('Correo electrónico de SAB').fill(actor.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   const response = page.waitForResponse(r => r.url().endsWith('/api/login') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
@@ -112,7 +112,7 @@ async function localWork() {
   // Use the app router without reloading credentials for deterministic editor targets.
   await route('/comprobantes/' + currentEntry.id + '/editar');
   await page.getByLabel('Concepto *', { exact: true }).fill('Mi alternativa exacta ' + stamp);
-  currentEntry = await serverEdit(currentEntry, 'Cambio concurrente de PRO9 ' + stamp);
+  currentEntry = await serverEdit(currentEntry, 'Cambio concurrente de SAB ' + stamp);
   await clickSave();
   const dialog = page.getByRole('dialog', { name: 'Comparar versiones', exact: true });
   await dialog.waitFor();
@@ -126,7 +126,7 @@ async function localWork() {
   currentEntry = await serverEdit(currentEntry, 'Otro cambio durante la comparación ' + stamp);
   await dialog.getByRole('button', { name: 'Guardar decisión', exact: true }).click();
   await dialog.getByRole('heading', { name: 'Envío pendiente de confirmar', exact: true }).waitFor();
-  await dialog.getByLabel('Motivo para cancelar el envío pendiente').fill('Cancelo este intento rechazado para comparar la última versión de PRO9.');
+  await dialog.getByLabel('Motivo para cancelar el envío pendiente').fill('Cancelo este intento rechazado para comparar la última versión de SAB.');
   await dialog.getByRole('button', { name: 'Cancelar envío pendiente', exact: true }).click();
   await dialog.getByRole('cell', { name: currentEntry.concept, exact: true }).waitFor();
   await selectLocalAndReason(dialog);
@@ -139,14 +139,14 @@ async function localWork() {
 
   await page.getByRole('link', { name: 'Editar borrador', exact: true }).click();
   await page.getByLabel('Concepto *', { exact: true }).fill('Alternativa archivada ' + stamp);
-  currentEntry = await serverEdit(currentEntry, 'Versión conservada en PRO9 ' + stamp);
+  currentEntry = await serverEdit(currentEntry, 'Versión conservada en SAB ' + stamp);
   await clickSave(); await dialog.waitFor();
-  await dialog.getByLabel('Conservar PRO9 y archivar mi alternativa', { exact: true }).check();
-  await dialog.getByLabel('Motivo de la decisión').fill('Revisión expresa: la versión de PRO9 es la que debe conservarse.');
+  await dialog.getByLabel('Conservar SAB y archivar mi alternativa', { exact: true }).check();
+  await dialog.getByLabel('Motivo de la decisión').fill('Revisión expresa: la versión de SAB es la que debe conservarse.');
   await dialog.getByRole('button', { name: 'Guardar decisión', exact: true }).click();
   await page.waitForURL('**/comprobantes/' + currentEntry.id);
   assert.equal((await request(base + '/entries/' + currentEntry.id)).data.version, currentEntry.version);
-  checks.push('conservar PRO9 archiva la alternativa sin incrementar ni modificar el comprobante');
+  checks.push('conservar SAB archiva la alternativa sin incrementar ni modificar el comprobante');
 
   const docPayload = {kind: 'sale_invoice', number: 'CONFLICTO-UI-' + stamp, issue_date: fixture.date, fiscal_date: fixture.date,
     currency: 'VES', exchange_rate: '1', exchange_source: 'Moneda del libro', exchange_date: fixture.date,

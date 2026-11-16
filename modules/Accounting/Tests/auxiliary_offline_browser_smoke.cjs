@@ -18,7 +18,7 @@ const phrase = 'Copia ficticia del auxiliar 2026';
 let browser, page;
 async function login() {
   await page.goto(origin + '/contabilidad/');
-  await page.getByLabel('Correo electrónico de PRO9').fill(actor.email);
+  await page.getByLabel('Correo electrónico de SAB').fill(actor.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await page.getByLabel('Código de verificación', { exact: true }).waitFor();
@@ -40,7 +40,7 @@ async function assertAuxiliary() {
   assert.equal(await row.getByRole('link', { name: 'Cobrar', exact: true }).count(), 0);
   await row.getByRole('button', { name: 'FV-HISTORICA-1', exact: true }).click();
   await page.getByRole('dialog').getByRole('cell', { name: '40,00 USD', exact: true }).waitFor();
-  await page.getByRole('dialog').getByText('El documento de origen está fuera del intervalo preparado. Consúltalo al conectar con PRO9.', { exact: true }).waitFor();
+  await page.getByRole('dialog').getByText('El documento de origen está fuera del intervalo preparado. Consúltalo al conectar con SAB.', { exact: true }).waitFor();
   assert.equal(await page.getByRole('dialog').getByRole('link', { name: 'Abrir documento de origen' }).count(), 0);
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click();
 }
@@ -76,7 +76,7 @@ async function assertAuxiliary() {
   await page.getByRole('link', { name: 'Auxiliares', exact: true }).click();
   await assertAuxiliary();
   assert.equal(await page.evaluate(() => navigator.onLine), true);
-  checks.push('PRO9 sin respuesta identifica de inmediato la lectura local aunque el navegador tenga red');
+  checks.push('SAB sin respuesta identifica de inmediato la lectura local aunque el navegador tenga red');
   await context.unroute(auxiliaryPath);
   await context.setOffline(true);
   await page.getByRole('button', { name: 'Consultar', exact: true }).click();

@@ -32,7 +32,7 @@ final class MembershipController extends \App\Http\Controllers\Controller
             DB::table('accounting_companies')->where('id', $context->id())->lockForUpdate()->first();
             $user = DB::table('users')->where('id', $input['user_id'])->where('active', true)->where('locked', false)->first(['id']);
             if (!$user) {
-                throw new ApiProblem('USER_NOT_AVAILABLE', 'El usuario debe existir y estar activo en PRO9.');
+                throw new ApiProblem('USER_NOT_AVAILABLE', 'El usuario debe existir y estar activo en SAB.');
             }
             $old = DB::table('accounting_memberships')->where('company_id', $context->id())->where('user_id', $user->id)->lockForUpdate()->first();
             if ($old && (string) $old->version !== trim((string) $request->header('If-Match'), '"')) {

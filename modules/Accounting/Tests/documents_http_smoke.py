@@ -1,4 +1,4 @@
-"""Exercise the invoice workflow through PRO9's real routing/authentication stack."""
+"""Exercise the invoice workflow through SAB's real routing/authentication stack."""
 from isolated_http import IsolatedClient
 import datetime
 import json

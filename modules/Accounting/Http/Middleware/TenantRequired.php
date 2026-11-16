@@ -12,7 +12,7 @@ final class TenantRequired
     {
         $env = app(Environment::class);
         if (!$env->tenant() || !$env->hostname() || $env->hostname()->fqdn !== $r->getHost() || !config('database.connections.tenant')) {
-            throw new ApiProblem('TENANT_REQUIRED', 'La empresa de PRO9 no está disponible en este dominio.', 404);
+            throw new ApiProblem('TENANT_REQUIRED', 'La empresa de SAB no está disponible en este dominio.', 404);
         }
         return $next($r);
     }

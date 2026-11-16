@@ -18,7 +18,7 @@ final class ImportService
     {
         $user = \App\Models\Tenant\User::without('establishment')->whereKey($id)->where('active', true)->where('locked', false)->first();
         if (!$user) {
-            throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta de PRO9 ya no está disponible para importar.', 403);
+            throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta de SAB ya no está disponible para importar.', 403);
         }
         app(Permissions::class)->require($user, 'import');
         app(Permissions::class)->require($user, ImportSchema::definition($kind)['permission']);

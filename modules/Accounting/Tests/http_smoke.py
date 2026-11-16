@@ -43,7 +43,7 @@ for role,account in accounts.items():
   confirmed=call('/api/accounting/v1/auth/mfa/verify',{'code':account['recovery_codes'].pop(0)},token=account['token'])
  account['verification']=confirmed['verification_token']
 (root/'clone-access.json').write_text(json.dumps(accounts,indent=2))
-checks.append('PRO9 login y segundo factor de ambos usuarios')
+checks.append('SAB login y segundo factor de ambos usuarios')
 a=accounts['autor'];r=accounts['revisor'];books=call('/api/accounting/v1/companies',token=a['token'])['data'];book=next(b for b in books if b['tax_id']=='J-00000000-0');other=next(b for b in books if b['tax_id']=='J-00000000-1');base='/api/accounting/v1/companies/'+book['id']
 chart={x['code']:x for x in call(base+'/catalogs/accounts',token=a['token'])['data']}
 local_id=str(uuid.uuid4());key=str(uuid.uuid4());payload={'accounting_date':'2026-11-11','concept':'Prueba HTTP integral del módulo','local_id':local_id,'lines':[{'account_id':chart['1.1.02']['id'],'debit':'100.10','credit':'0.00'},{'account_id':chart['3.1']['id'],'debit':'0.00','credit':'100.10'}]}

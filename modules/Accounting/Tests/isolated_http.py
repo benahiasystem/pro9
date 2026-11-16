@@ -1,4 +1,4 @@
-"""Private fixture access. Never target the user's running PRO9 installation."""
+"""Private fixture access. Never target the user's running SAB installation."""
 import fcntl
 import base64
 import hashlib

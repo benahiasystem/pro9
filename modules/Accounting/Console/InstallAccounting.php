@@ -13,8 +13,8 @@ use Modules\Accounting\Models\Company;
 use Modules\Accounting\Services\CompanyService;
 final class InstallAccounting extends Command
 {
-    protected $signature = 'accounting:install {--hostname= : Dominio exacto del tenant} {--owner-user= : ID del administrador de PRO9} {--demo : Crear dos libros de datos ficticios} {--accountant : Asignar explícitamente el rol de contador al propietario}';
-    protected $description = 'Instala las tablas del módulo contable dentro de un tenant de PRO9.';
+    protected $signature = 'accounting:install {--hostname= : Dominio exacto del tenant} {--owner-user= : ID del administrador de SAB} {--demo : Crear dos libros de datos ficticios} {--accountant : Asignar explícitamente el rol de contador al propietario}';
+    protected $description = 'Instala las tablas del módulo contable dentro de un tenant de SAB.';
     public function handle(): int
     {
         if (!$this->option('hostname') || !ctype_digit((string) $this->option('owner-user'))) {
@@ -35,7 +35,7 @@ final class InstallAccounting extends Command
         $env->tenant($host->website);
         $owner = User::without('establishment')->find((int) $this->option('owner-user'));
         if (!$owner || $owner->type !== 'admin' || $owner->locked || !$owner->active) {
-            $this->error('El propietario debe ser un administrador activo de PRO9.');
+            $this->error('El propietario debe ser un administrador activo de SAB.');
             return 1;
         }
         $code = $this->call('migrate', ['--database' => 'tenant', '--path' => __DIR__ . '/../Database/Migrations', '--realpath' => true, '--force' => true]);
@@ -46,12 +46,12 @@ final class InstallAccounting extends Command
             $org = DB::table('accounting_organizations')->first();
             if (!$org) {
                 $id = (string) Str::uuid();
-                DB::table('accounting_organizations')->insert(['id' => $id, 'name' => 'Organización contable de PRO9', 'created_at' => now(), 'updated_at' => now()]);
+                DB::table('accounting_organizations')->insert(['id' => $id, 'name' => 'Organización contable de SAB', 'created_at' => now(), 'updated_at' => now()]);
                 $org = DB::table('accounting_organizations')->where('id', $id)->first();
             }
             DB::table('accounting_organization_memberships')->updateOrInsert(['organization_id' => $org->id, 'user_id' => $owner->id], ['id' => (string) Str::uuid(), 'role' => 'admin', 'active' => true, 'created_at' => now(), 'updated_at' => now()]);
             $source = DB::table('companies')->first();
-            $books = $this->option('demo') ? [['Empresa de muestra A, C.A.', 'J-00000000-0'], ['Empresa de muestra B, C.A.', 'J-00000000-1']] : [[$source->name ?? 'Empresa de PRO9', $source->number ?? 'POR-DEFINIR']];
+            $books = $this->option('demo') ? [['Empresa de muestra A, C.A.', 'J-00000000-0'], ['Empresa de muestra B, C.A.', 'J-00000000-1']] : [[$source->name ?? 'Empresa de SAB', $source->number ?? 'POR-DEFINIR']];
             foreach ($books as [$name, $tax]) {
                 $company = Company::where('organization_id', $org->id)->where('tax_id', $tax)->first();
                 if (!$company) {
@@ -70,7 +70,7 @@ final class InstallAccounting extends Command
                 app(CompanyContext::class)->run($company, fn() => app(CompanyService::class)->defaultChart());
             }
         }, 5);
-        $this->info('Módulo contable instalado en el tenant indicado. La PWA utiliza la API de PRO9.');
+        $this->info('Módulo contable instalado en el tenant indicado. La PWA utiliza la API de SAB.');
         return 0;
     }
 }

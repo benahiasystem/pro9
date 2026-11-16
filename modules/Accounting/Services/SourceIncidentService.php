@@ -13,7 +13,7 @@ final class SourceIncidentService
     private function actor(int $id): User
     {
         $user = User::without('establishment')->whereKey($id)->where('active', true)->where('locked', false)->first();
-        if (!$user) { throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta no puede resolver cambios de PRO9.', 403); }
+        if (!$user) { throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta no puede resolver cambios de SAB.', 403); }
         foreach (['integration', 'review'] as $permission) { app(Permissions::class)->require($user, $permission); }
         return $user;
     }
@@ -140,7 +140,7 @@ final class SourceIncidentService
                 $reason = trim($input['reason']); $action = $input['action'];
                 if (mb_strlen($reason) < 10 || mb_strlen($reason) > 2000 || !in_array($action, ['acknowledge_metadata', 'apply_after_reversal', 'review_received'], true)) { throw new ApiProblem('SOURCE_RESOLUTION_INPUT', 'Selecciona una resolución y explica su motivo entre 10 y 2000 caracteres.'); }
                 $snapshot = app(Pro9SourceReader::class)->snapshot($document->metadata['source_kind'] ?? '', (int) ($document->metadata['source_record_id'] ?? 0), true);
-                if (!hash_equals($observed->hash, $snapshot['hash'])) { throw new ApiProblem('SOURCE_REVIEW_STALE', 'PRO9 volvió a cambiar. Recibe su versión actual antes de confirmar esta revisión.', 409); }
+                if (!hash_equals($observed->hash, $snapshot['hash'])) { throw new ApiProblem('SOURCE_REVIEW_STALE', 'SAB volvió a cambiar. Recibe su versión actual antes de confirmar esta revisión.', 409); }
                 $ledger = $this->ledger($document); $clear = !array_filter($ledger, fn($entry) => $entry['active_effect']) && !OpenItem::where('source_document_id', $document->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists();
                 if ($action === 'acknowledge_metadata' && !$this->basisUnchanged($document, $observed, $ledger)) { throw new ApiProblem('SOURCE_FINANCIAL_CHANGE', 'El cambio afecta los datos del documento. Requiere corregir sus efectos contables antes de aplicar otra revisión.', 409); }
                 if ($action === 'apply_after_reversal' && !$clear) { throw new ApiProblem('SOURCE_EFFECTS_ACTIVE', 'Contabiliza los reversos aprobados y resuelve los auxiliares vinculados antes de aplicar la nueva revisión.', 409); }

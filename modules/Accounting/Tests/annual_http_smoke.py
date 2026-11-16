@@ -32,7 +32,7 @@ assert client.request(path, payload, author, headers={'Idempotency-Key': str(uui
 prepared = client.request(path, payload, author, headers=headers)['data']
 assert prepared['status'] == 'prepared' and len(prepared['entries']) == 3 and prepared['basis_matches']
 assert client.request(path, payload, author, headers=headers)['data'] == prepared
-checks.append('revisión anual exacta, segundo factor, versión e identidad de preparación exigidos por PRO9')
+checks.append('revisión anual exacta, segundo factor, versión e identidad de preparación exigidos por SAB')
 
 entry = prepared['entries']['result']
 entry = client.request(base + '/entries/' + entry['id'] + '/submit', {}, author, headers={'If-Match': str(entry['version'])})['data']

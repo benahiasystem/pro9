@@ -30,7 +30,7 @@ final class SecurityService
     public function enroll(Request $r, string $password): array
     {
         if (!Hash::check($password, $r->user()->password)) {
-            throw new ApiProblem('INVALID_CREDENTIALS', 'La contraseña de PRO9 no es correcta.');
+            throw new ApiProblem('INVALID_CREDENTIALS', 'La contraseña de SAB no es correcta.');
         }
         if ($this->enabled($r->user()->id)) {
             $this->requireVerified($r);

@@ -14,7 +14,7 @@ final class AttachmentService
     private function actor(int $id, string $permission = 'read'): User
     {
         $user = User::without('establishment')->whereKey($id)->where('active', true)->where('locked', false)->first();
-        if (!$user) { throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta de PRO9 no puede consultar estos soportes.', 403); }
+        if (!$user) { throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta de SAB no puede consultar estos soportes.', 403); }
         app(Permissions::class)->require($user, $permission);
         return $user;
     }

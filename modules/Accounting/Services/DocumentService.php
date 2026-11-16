@@ -96,7 +96,7 @@ final class DocumentService
                 throw new ApiProblem('OPENING_SOURCE_IMMUTABLE', 'Este documento respalda una partida inicial contabilizada. Conserva su identidad y revisa su corrección mediante la apertura y sus auxiliares.', 409);
             }
             if ($document->origin !== 'manual') {
-                throw new ApiProblem('SOURCE_READ_ONLY', 'La información original se corrige en PRO9. Su clasificación fiscal se revisa al validar.');
+                throw new ApiProblem('SOURCE_READ_ONLY', 'La información original se corrige en SAB. Su clasificación fiscal se revisa al validar.');
             }
             if (JournalEntry::where('source_document_id', $id)->whereNotNull('posted_at')->exists()) {
                 throw new ApiProblem('POSTED_DOCUMENT_IMMUTABLE', 'Conserva el documento contabilizado. Registra una nota o un reverso para su corrección.', 409);
@@ -152,7 +152,7 @@ final class DocumentService
                 throw new ApiProblem('FUTURE_FISCAL_EVENT', 'Conserva como borrador el documento cuyo hecho fiscal todavía no ha ocurrido.');
             }
             if ($document->origin === 'pro9' && empty($review['source_confirmed'])) {
-                throw new ApiProblem('SOURCE_REVIEW_REQUIRED', 'Confirma el carácter definitivo y el estado de origen mostrado por PRO9.');
+                throw new ApiProblem('SOURCE_REVIEW_REQUIRED', 'Confirma el carácter definitivo y el estado de origen mostrado por SAB.');
             }
             if (str_contains($document->kind, '_note')) {
                 $related = $document->related_document_id ? SourceDocument::find($document->related_document_id) : null;

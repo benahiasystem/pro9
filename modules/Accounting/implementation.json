@@ -1,17 +1,17 @@
 {
   "baseCommit": "861228462e208d2060c9148b87fd7d7d3f354da5",
-  "branch": "codex/contabilidad-api-v1",
+  "branch": "develop",
   "api": "/api/accounting/v1",
-  "authentication": "PRO9 auth:api Bearer",
+  "authentication": "SAB auth:api Bearer",
   "database": "tenant existente; tablas accounting_*",
   "frontend": "TypeScript Vue actual; compilación en AWS",
   "tests": "Solo entornos aislados; pruebas previas del prototipo independiente no acreditan este módulo",
-  "state": "development; PRO9 module with complete report snapshots and PDF/XLSX/CSV downloads, server-only atomic imports, closings and encrypted local work",
+  "state": "development; SAB module with complete report snapshots and PDF/XLSX/CSV downloads, server-only atomic imports, closings and encrypted local work",
   "isolation": {
     "databaseContainer": "contabilidad-api-v1-db",
     "network": "contabilidad-api-v1-tests",
     "publicDatabasePorts": false,
-    "data": "Fictitious books and a private local snapshot of PRO9; no real data uploaded to AWS"
+    "data": "Fictitious books and a private local snapshot of SAB; no real data uploaded to AWS"
   },
   "verification": {
     "core": {
@@ -266,7 +266,7 @@
       "recordAndSavedReportLinks": true
     }
   },
-  "pending": "Complete opening credits/advances and migration corrections, notes/refunds and retention/IGTF applications, PRO9 source incident reconciliation, historical source payload access and complete source/fiscal annex reconciliation, integral server backup/restore and company exit, tenant-bound migration of historical report storage, unfinished forms and offline authorization against clock/expiry/revocation. Fiscal registers remain preliminary; full V1 acceptance is pending.",
+  "pending": "Complete opening credits/advances and migration corrections, notes/refunds and retention/IGTF applications, SAB source incident reconciliation, historical source payload access and complete source/fiscal annex reconciliation, integral server backup/restore and company exit, tenant-bound migration of historical report storage, unfinished forms and offline authorization against clock/expiry/revocation. Fiscal registers remain preliminary; full V1 acceptance is pending.",
   "verifiedAt": "2026-11-12",
   "fullV1Complete": false
 }

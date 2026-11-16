@@ -841,7 +841,7 @@ final class CoreIntegrationTest extends TestCase
         app(EntryService::class)->post($entry->id, $entry->version, $this->admin->id, 'posted-before-resolution-001');
         $entry = $entry->fresh();
         DB::table('accounting_memberships')->where('company_id', $this->a->id)->where('user_id', $this->admin->id)->update(['roles' => json_encode(['viewer'])]);
-        $result = app(\Modules\Accounting\Services\ConflictService::class)->entry($this->admin->id, $entry->id, $entry->version, ['base_version' => 1, 'decision' => 'keep_server', 'reason' => 'Se conserva el asiento ya contabilizado en PRO9.', 'local' => ['concept' => 'Captura incompleta', 'lines' => []]], 'keep-posted-version-001');
+        $result = app(\Modules\Accounting\Services\ConflictService::class)->entry($this->admin->id, $entry->id, $entry->version, ['base_version' => 1, 'decision' => 'keep_server', 'reason' => 'Se conserva el asiento ya contabilizado en SAB.', 'local' => ['concept' => 'Captura incompleta', 'lines' => []]], 'keep-posted-version-001');
         $this->assertSame($entry->version, $result['entity']['version']);
         $this->assertNotNull($result['entity']['posted_at']);
         $this->assertSame('keep_server', $result['resolution']['decision']);

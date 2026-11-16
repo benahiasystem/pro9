@@ -48,7 +48,7 @@ function headers(actor) {
 }
 async function login(p, actor) {
   await p.goto(origin + '/contabilidad/');
-  await p.getByLabel('Correo electrónico de PRO9', { exact: true }).fill(actor.email);
+  await p.getByLabel('Correo electrónico de SAB', { exact: true }).fill(actor.email);
   await p.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   const response = p.waitForResponse(
     (r) => r.url().endsWith('/api/login') && r.request().method() === 'POST',
@@ -267,7 +267,7 @@ async function resume(p) {
   await locked(page);
   release();
   await page
-    .getByText('Hay una operación enviada a PRO9 pendiente de mostrar su resultado.', {
+    .getByText('Hay una operación enviada a SAB pendiente de mostrar su resultado.', {
       exact: false,
     })
     .waitFor();
@@ -278,9 +278,9 @@ async function resume(p) {
   );
   assert.equal((await saved.json()).total, 1);
   checks.push(
-    'una operación confirmada en PRO9 conserva su respuesta pendiente mientras la pantalla está bloqueada',
+    'una operación confirmada en SAB conserva su respuesta pendiente mientras la pantalla está bloqueada',
   );
-  await page.getByLabel('Correo electrónico de PRO9', { exact: true }).fill(actors.autor.email);
+  await page.getByLabel('Correo electrónico de SAB', { exact: true }).fill(actors.autor.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(actors.autor.password);
   await page.getByRole('button', { name: 'Verificar mi cuenta', exact: true }).click();
   await page
@@ -291,7 +291,7 @@ async function resume(p) {
   checks.push(
     'la contraseña válida de otro usuario no abre la sesión ni entrega su respuesta pendiente',
   );
-  await page.getByLabel('Correo electrónico de PRO9', { exact: true }).fill(actors.revisor.email);
+  await page.getByLabel('Correo electrónico de SAB', { exact: true }).fill(actors.revisor.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(actors.revisor.password);
   const auth = page.waitForResponse(
     (r) => r.url().endsWith('/api/login') && r.request().method() === 'POST',
@@ -319,8 +319,8 @@ async function resume(p) {
   );
   const reviewerPage = page;
   page = first;
-  await page.getByRole('button', { name: 'Usar mi cuenta de PRO9', exact: true }).click();
-  await page.getByLabel('Correo electrónico de PRO9', { exact: true }).fill(actors.autor.email);
+  await page.getByRole('button', { name: 'Usar mi cuenta de SAB', exact: true }).click();
+  await page.getByLabel('Correo electrónico de SAB', { exact: true }).fill(actors.autor.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(actors.autor.password);
   const authorAuth = page.waitForResponse(
     (r) => r.url().endsWith('/api/login') && r.request().method() === 'POST',
@@ -341,7 +341,7 @@ async function resume(p) {
   persist();
   await page
     .getByText(
-      'Cuenta de PRO9 verificada. Escribe tu frase local para reabrir la copia y conservar sus borradores.',
+      'Cuenta de SAB verificada. Escribe tu frase local para reabrir la copia y conservar sus borradores.',
       { exact: true },
     )
     .waitFor();
@@ -372,7 +372,7 @@ async function resume(p) {
     true,
   );
   checks.push(
-    'PRO9 vuelve a autorizar la copia con su frase e intervalo originales sin abrir otras pestañas',
+    'SAB vuelve a autorizar la copia con su frase e intervalo originales sin abrir otras pestañas',
   );
   await unlockLocal(second);
   await second.getByRole('heading', { name: 'Sesión bloqueada', exact: true }).waitFor({ state: 'hidden' });

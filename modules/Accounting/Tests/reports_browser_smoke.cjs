@@ -48,7 +48,7 @@ async function navigateReports() {
   assert.equal(probe.headers()['x-accounting-isolated-test'], '1');
   page = await context.newPage(); page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto(origin + '/contabilidad/');
-  await page.getByLabel('Correo electrónico de PRO9').fill(actor.email);
+  await page.getByLabel('Correo electrónico de SAB').fill(actor.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   const auth = page.waitForResponse(r => r.url().endsWith('/api/login') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click(); actor.token = (await (await auth).json()).token;
@@ -148,7 +148,7 @@ async function navigateReports() {
   assert.equal(await page.getByRole('button', { name: 'Conservar versión', exact: true }).count(), 0);
   assert.equal(await page.getByRole('button', { name: 'CSV', exact: true }).count(), 0);
   assert.equal(await page.locator('.report-history').count(), 0);
-  checks.push('Sin conexión solo estados preparados; captura y descargas definitivas requieren PRO9');
+  checks.push('Sin conexión solo estados preparados; captura y descargas definitivas requieren SAB');
   assert.deepEqual(pageErrors, []);
   const result = { passed: checks.length, checks, pageErrors, fakeDataOnly: true };
   fs.writeFileSync(root + '/reports-browser-tests.json', JSON.stringify(result, null, 2)); console.log(JSON.stringify({ passed: checks.length, pageErrors }));

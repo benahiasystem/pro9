@@ -34,11 +34,11 @@ async function prepareUpload(name, title, buffer = Buffer.from('Evidencia fictic
   await page.locator('#support-file').setInputFiles({ name, mimeType: 'text/plain', buffer });
   await page.getByLabel('Descripción del soporte', { exact: true }).fill(title);
   await page.getByLabel('Motivo y relación con el registro', { exact: true }).fill('Conservar la evidencia ficticia y verificar la trazabilidad de la operación.');
-  await expect(page.getByRole('button', { name: 'Conservar soporte en PRO9', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Conservar soporte en SAB', exact: true })).toBeEnabled();
 }
 async function send() {
   const pending = page.waitForResponse((r) => r.url().includes('/attachments') && r.request().method() === 'POST');
-  await page.getByRole('button', { name: 'Conservar soporte en PRO9', exact: true }).click();
+  await page.getByRole('button', { name: 'Conservar soporte en SAB', exact: true }).click();
   const response = await pending; assert.equal(response.status(), 200, await response.text());
   return (await response.json()).data;
 }
@@ -49,7 +49,7 @@ async function send() {
   assert.equal(health.headers()['x-accounting-isolated-test'], '1');
   page = await context.newPage(); page.on('pageerror', (e) => pageErrors.push(e.message));
   await page.goto(origin + '/contabilidad/');
-  await page.getByLabel('Correo electrónico de PRO9').fill(actor.email); await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
+  await page.getByLabel('Correo electrónico de SAB').fill(actor.email); await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   const auth = page.waitForResponse((r) => r.url().endsWith('/api/login') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click(); actor.token = (await (await auth).json()).token;
   await page.getByLabel('Código de verificación', { exact: true }).waitFor(); const code = actor.recovery_codes.shift(); assert(code);
@@ -97,8 +97,8 @@ async function send() {
   await prepareUpload('recuperable.txt', secretTitle, secretBytes);
   let lostResult;
   await page.route('**/evidence/journal_entry/' + fixture.pending_id + '/attachments', async (route) => { const response = await route.fetch(); assert.equal(response.status(), 200); lostResult = (await response.json()).data; await route.abort('failed'); });
-  await page.getByRole('button', { name: 'Conservar soporte en PRO9', exact: true }).click();
-  await page.getByRole('alert').filter({ hasText: 'No hay respuesta de PRO9' }).waitFor(); await stored(); assert(lostResult);
+  await page.getByRole('button', { name: 'Conservar soporte en SAB', exact: true }).click();
+  await page.getByRole('alert').filter({ hasText: 'No hay respuesta de SAB' }).waitFor(); await stored(); assert(lostResult);
   await page.unroute('**/evidence/journal_entry/' + fixture.pending_id + '/attachments');
   await page.getByRole('link', { name: 'Preparar trabajo local', exact: true }).click();
   const captureRow = page.getByRole('row').filter({ hasText: secretTitle }); await captureRow.waitFor(); await expect(captureRow).toContainText('Metadatos de soporte');
@@ -120,7 +120,7 @@ async function send() {
 
   await prepareUpload('pendiente.txt', 'Envío ficticio cancelable');
   await page.route('**/evidence/journal_entry/' + fixture.pending_id + '/attachments', (route) => route.abort('failed'));
-  await page.getByRole('button', { name: 'Conservar soporte en PRO9', exact: true }).click(); await page.getByRole('alert').filter({ hasText: 'No hay respuesta de PRO9' }).waitFor(); await stored();
+  await page.getByRole('button', { name: 'Conservar soporte en SAB', exact: true }).click(); await page.getByRole('alert').filter({ hasText: 'No hay respuesta de SAB' }).waitFor(); await stored();
   await page.unroute('**/evidence/journal_entry/' + fixture.pending_id + '/attachments');
   await page.locator('#support-file').setInputFiles({ name: 'otro.txt', mimeType: 'text/plain', buffer: Buffer.from('Archivo distinto') });
   await page.getByRole('alert').filter({ hasText: 'no coincide con el envío pendiente' }).waitFor();
@@ -130,9 +130,9 @@ async function send() {
   await page.getByRole('button', { name: 'Confirmar cancelación', exact: true }).click();
   const cancellationResponse = await cancellation; assert.equal(cancellationResponse.status(), 200, await cancellationResponse.text());
   assert.equal((await cancellationResponse.json()).data.status, 'cancelled');
-  await page.getByRole('status').filter({ hasText: 'Envío cancelado en PRO9' }).first().waitFor();
+  await page.getByRole('status').filter({ hasText: 'Envío cancelado en SAB' }).first().waitFor();
   assert.equal((await api('/evidence/journal_entry/' + fixture.pending_id)).meta.total, 1);
-  record('Un envío pendiente rechaza otro archivo y exige confirmación de PRO9 para cancelar su identidad');
+  record('Un envío pendiente rechaza otro archivo y exige confirmación de SAB para cancelar su identidad');
 
   await navigate('/documentos/' + fixture.document_id); await page.getByRole('heading', { name: 'FV-SOPORTE-FICTICIO', exact: true }).waitFor(); await page.locator('.evidence-panel').waitFor();
   await prepareUpload('factura-ficticia.txt', 'Soporte documental ficticio'); await send();
@@ -159,7 +159,7 @@ async function send() {
   await expect(page.locator('.evidence-panel .loading-state')).toHaveCount(0);
   await page.locator('.evidence-panel').evaluate((node) => window.scrollTo(0, window.scrollY + node.getBoundingClientRect().top - 138)); await page.screenshot({ path: root + '/supports-mobile.png' });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Soportes desbordan el móvil.');
-  await context.setOffline(true); await page.getByText('Conecta con PRO9 para consultar, verificar o adjuntar los archivos originales.', { exact: true }).waitFor();
+  await context.setOffline(true); await page.getByText('Conecta con SAB para consultar, verificar o adjuntar los archivos originales.', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Descargar original', exact: true }).count(), 0);
   await context.setOffline(false); await page.locator('.evidence-item').first().waitFor();
   record('Interfaz móvil sin desbordes; sin conexión los archivos privados no se ofrecen como si estuvieran disponibles');
@@ -175,7 +175,7 @@ async function send() {
   context = await browser.newContext({ viewport: { width: 1600, height: 1050 }, serviceWorkers: 'block' });
   page = await context.newPage(); page.on('pageerror', (e) => pageErrors.push(e.message));
   await page.goto(origin + '/contabilidad/');
-  await page.getByLabel('Correo electrónico de PRO9').fill(actor.email); await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
+  await page.getByLabel('Correo electrónico de SAB').fill(actor.email); await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   const restoredAuth = page.waitForResponse((r) => r.url().endsWith('/api/login') && r.request().method() === 'POST');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click(); actor.token = (await (await restoredAuth).json()).token;
   await page.getByLabel('Código de verificación', { exact: true }).waitFor(); const restoreCode = actor.recovery_codes.shift(); assert(restoreCode);

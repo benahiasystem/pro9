@@ -18,7 +18,7 @@ final class ReportExportService
     {
         $user = User::without('establishment')->whereKey($id)->where('active', true)->where('locked', false)->first();
         if (!$user) {
-            throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta de PRO9 ya no puede consultar estos informes.', 403);
+            throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta de SAB ya no puede consultar estos informes.', 403);
         }
         app(Permissions::class)->require($user, 'reports');
         return $user;

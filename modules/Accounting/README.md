@@ -1,7 +1,13 @@
-# Accounting para PRO9
+# Accounting para SAB
+
+SAB significa Sistema Administrativo Benahia y es la denominación vigente del sistema anfitrión.
+El cambio es de referencias: las rutas internas `/pro9`, las clases `Pro9Controller` y
+`Pro9SourceReader`, los códigos `PRO9_*` y los identificadores de origen `pro9`
+se conservan por compatibilidad. Los registros, huellas, archivos y evidencias
+históricos mantienen su contenido original. No se migra ni recalcula información.
 
 Este módulo contiene la API y el dominio contable de Contabilidad Benahia. Se
-ejecuta dentro de PRO9: Laravel 9, PHP 8.2, MySQL 5.7 y conexión Hyn `tenant`.
+ejecuta dentro de SAB: Laravel 9, PHP 8.2, MySQL 5.7 y conexión Hyn `tenant`.
 No incorpora otro servidor Laravel, otra tabla de usuarios ni otro login.
 
 La PWA TypeScript se desarrolla y compila en AWS, en
@@ -16,7 +22,7 @@ El acceso usa el `POST /api/login` existente y su Bearer con `auth:api`. Las
 rutas del módulo están en `/api/accounting/v1`. Los permisos pertenecen a cada
 libro; las tablas `accounting_*` incluyen organización, empresa y relaciones
 compuestas. El segundo factor autoriza operaciones críticas por un plazo
-limitado y no sustituye la identidad de PRO9.
+limitado y no sustituye la identidad de SAB.
 
 Los roles son explícitos por empresa. Administrar usuarios y configuración no
 concede aprobación ni contabilización. Para asumir también esas funciones hay
@@ -26,7 +32,7 @@ verificación reciente. La revisión separada considera a quien preparó la últ
 versión, aunque otra persona haya creado el primer borrador.
 
 `Pro9SourceReader` consulta los documentos del mismo tenant. Reutiliza los
-valores exactos de PRO9, conserva versiones de origen y detecta recepciones
+valores exactos de SAB, conserva versiones de origen y detecta recepciones
 repetidas. Recibir un documento no lo contabiliza. Las empresas ficticias no
 se vinculan a datos reales por defecto.
 
@@ -36,13 +42,13 @@ existente. Las respuestas contables no se almacenan en caché ni muestran SQL.
 
 ## Instalación en un tenant
 
-Con la rama del módulo y las dependencias actuales de PRO9 disponibles:
+Con la rama del módulo y las dependencias actuales de SAB disponibles:
 
 ```sh
-php artisan accounting:install --hostname=DOMINIO_PRO9 --owner-user=ID_ADMIN
+php artisan accounting:install --hostname=DOMINIO_SAB --owner-user=ID_ADMIN
 ```
 
-El comando exige un tenant existente y un administrador activo de PRO9; ejecuta
+El comando exige un tenant existente y un administrador activo de SAB; ejecuta
 solo las migraciones de este módulo sobre la conexión `tenant` indicada. No
 registra sus migraciones como migraciones globales del sistema. `--demo` exige
 un entorno local o de pruebas y `ACCOUNTING_DEMO_MODE=true`.
@@ -52,7 +58,7 @@ propietario. Sin esa opción el propietario conserva las funciones administrativ
 ## Documentos y configuración fiscal
 
 El módulo permite registrar borradores manuales, recibir versiones de documentos
-de PRO9 y validarlos con perfiles y reglas aprobadas por fecha. Conserva la
+de SAB y validarlos con perfiles y reglas aprobadas por fecha. Conserva la
 identidad del tercero, los importes originales, la tasa histórica y sus soportes
 en una copia de la validación. No instala alícuotas tributarias predeterminadas.
 
@@ -61,7 +67,7 @@ y una explicación por línea. Al enviarlas a revisión se comprueba que la part
 por cobrar o pagar coincida con el total, tercero, moneda y tasa validados.
 Revalidar retira las aprobaciones pendientes; regenerar una propuesta exige
 motivo y conserva la evidencia anterior en auditoría. La contabilización vuelve
-a comprobar el estado y la versión del documento de PRO9.
+a comprobar el estado y la versión del documento de SAB.
 
 Los registros fiscales disponibles son consultas preliminares separadas por
 perfil e incluyen los documentos validados del intervalo. Los formatos fiscales
@@ -200,13 +206,13 @@ deudas anteriores al intervalo, con su fecha de preparación e historia de
 aplicaciones. El paquete admite hasta 2.000 partidas y 10.000 aplicaciones;
 si excede estos límites se rechaza completo, sin presentar un saldo truncado.
 Las consultas fuera del alcance requieren
-PRO9 y no sustituyen el intervalo solicitado por otro informe en caché. El navegador cifra la copia y los borradores con
+SAB y no sustituyen el intervalo solicitado por otro informe en caché. El navegador cifra la copia y los borradores con
 AES-GCM; deriva la clave de una frase local mediante PBKDF2. El Bearer y la
 verificación adicional permanecen en memoria. La sincronización vuelve a
 comprobar permisos, autorización del dispositivo y versión del borrador.
 
 Sin conexión se permiten consultas preparadas y borradores. La aprobación,
-contabilización, reverso y cierre requieren PRO9. Un conflicto conserva el
+contabilización, reverso y cierre requieren SAB. Un conflicto conserva el
 borrador local. La copia preparada tiene límites explícitos de fechas,
 comprobantes y tamaño; no representa una réplica completa del servidor.
 
@@ -214,21 +220,21 @@ Las confirmaciones de los envíos se consultan en
 `GET companies/{company}/operations/{action}/{key}`. Solo el usuario de esa
 empresa que realizó el envío puede recuperarlas. Cancelar con
 `POST .../cancel` exige un motivo y conserva una decisión que impide ejecutar
-una solicitud tardía con esa identidad. Si PRO9 ya la confirmó, devuelve su
+una solicitud tardía con esa identidad. Si SAB ya la confirmó, devuelve su
 resultado; no elimina ni revierte la operación recibida.
 
 Los comprobantes y documentos manuales tienen rutas `.../{id}/comparison` y
-`.../{id}/resolve`. La decisión exige la versión de PRO9 revisada en `If-Match`,
-una identidad idempotente y un motivo. Conservar PRO9 archiva la alternativa
+`.../{id}/resolve`. La decisión exige la versión de SAB revisada en `If-Match`,
+una identidad idempotente y un motivo. Conservar SAB archiva la alternativa
 local en auditoría sin modificar el registro. Aplicar la alternativa local usa
 las validaciones y permisos habituales, crea una versión para revisión y retira
 su aprobación. Un cambio posterior a la comparación vuelve a impedir el guardado.
 La auditoría conserva la alternativa informada por el cliente y las versiones
-autorizadas anteriores y posteriores de PRO9. Los asientos definitivos y las
+autorizadas anteriores y posteriores de SAB. Los asientos definitivos y las
 propuestas de apertura y liquidación conservan sus flujos específicos.
 
 Los borradores contables recuperados con varias alternativas se comparan también
-antes de tener un registro en PRO9. Elegir exige un motivo y prepara otra copia
+antes de tener un registro en SAB. Elegir exige un motivo y prepara otra copia
 del borrador con la misma identidad lógica. Las versiones anteriores quedan
 como antecedentes de consulta; reutilizarlas prepara otra elección y conserva
 la cadena anterior. Una elección local no mueve saldos ni envía operaciones.
@@ -241,7 +247,7 @@ Al sincronizar, el módulo conserva las decisiones informadas por el cliente en
 la auditoría de la misma empresa y usuario, con confirmaciones que no permiten
 reemplazar su contenido ni aplicarlas a otra entidad. Los importes de los
 antecedentes son evidencia informada; el servidor valida y calcula el borrador
-que realmente guarda. Si PRO9 ya conoce esa identidad, se exige comparar con su
+que realmente guarda. Si SAB ya conoce esa identidad, se exige comparar con su
 versión actual. Elegir no aprueba ni contabiliza. Cada decisión admite hasta
 20 alternativas y cada envío hasta 100 decisiones y 2 MB de historial; el límite
 se informa sin truncar ni borrar datos. La selección auditada de capturas
@@ -250,12 +256,12 @@ incompletas de documentos manuales sigue pendiente de su interfaz específica.
 Los editores de comprobantes y documentos manuales conservan automáticamente
 capturas cifradas, incluidos campos incompletos, cuando está desbloqueada la
 copia del mismo usuario y empresa. Estas capturas todavía no son documentos
-validados ni comprobantes guardados en PRO9. Al recuperarlas se conserva la
+validados ni comprobantes guardados en SAB. Al recuperarlas se conserva la
 versión de partida y la identidad del intento de creación. Si otra pestaña
 cambia la captura, ambas alternativas permanecen disponibles; el agotamiento de
 espacio se informa sin anunciar un guardado ni borrar la versión anterior.
 Un documento preparado sin conexión se completa y guarda explícitamente en
-PRO9 después de reconectar.
+SAB después de reconectar.
 
 La interfaz se bloquea tras 15 minutos sin actividad y también admite bloqueo
 manual. Coordina la actividad y el bloqueo entre pestañas del mismo usuario.
@@ -266,13 +272,13 @@ antes de cerrar. El respaldo cifrado sigue disponible desde la pantalla de
 bloqueo.
 
 La copia se reabre con su frase. Una sesión conectada vuelve a consultar su
-autorización; cuando necesita entrar de nuevo usa la cuenta original de PRO9 y
+autorización; cuando necesita entrar de nuevo usa la cuenta original de SAB y
 su segundo factor. Si existía una copia cifrada, también exige su frase y renueva
 el mismo intervalo antes de reanudarla. Una contraseña válida de otro usuario no
 abre el trabajo anterior. Las respuestas de operaciones ya enviadas permanecen
 pendientes de mostrar hasta desbloquear; el bloqueo no repite su envío.
 
-La recuperación de un respaldo local exige sesión activa en PRO9 y coincidencia
+La recuperación de un respaldo local exige sesión activa en SAB y coincidencia
 de empresa y usuario. Renueva la copia de consulta con datos y permisos del
 servidor, verifica los datos cifrados y conserva las versiones diferentes de
 los borradores existentes. El respaldo versión 4 incluye capturas incompletas,
@@ -297,7 +303,7 @@ crear o limpiar tablas. No ejecutar esta suite contra una instalación activa.
 `.accounting-isolated` y comprueba el contenedor y la marca del servidor de
 pruebas antes de escribir.
 `documents_http_smoke.py` verifica el flujo de factura con el enrutamiento y
-autenticación reales de PRO9. `documents_browser_smoke.cjs` lo recorre desde la
+autenticación reales de SAB. `documents_browser_smoke.cjs` lo recorre desde la
 PWA compilada en AWS, incluyendo configuración fiscal y adaptación a móvil.
 `restore_browser_smoke.cjs` verifica exportación cifrada, conservación de
 alternativas, rechazo de propietario distinto e integridad, y recuperación en
@@ -315,11 +321,11 @@ se confirma el guardado, bloquea cambios de empresa durante ese envío y
 comprueba que el editor móvil desplace solo su tabla de líneas.
 `session_lock_browser_smoke.cjs` verifica el plazo de inactividad, bloqueo
 manual y entre pestañas, campos conservados ante falta de espacio, diálogos
-ocultos, reapertura de la copia y una respuesta de PRO9 confirmada durante el
+ocultos, reapertura de la copia y una respuesta de SAB confirmada durante el
 bloqueo. `users_browser_smoke.cjs` verifica creación de empresa y asignación
 explícita del rol contable desde la PWA.
 `conflicts_http_smoke.py` comprueba confirmaciones y cancelaciones propias,
-identidades lógicas, permisos de resolución y comparación versionada en PRO9.
+identidades lógicas, permisos de resolución y comparación versionada en SAB.
 `conflicts_browser_smoke.cjs` recorre la decisión con ambas alternativas,
 respuestas perdidas, conservación de cambios posteriores y recuperación de los
 envíos cifrados desde otro navegador sin repetir operaciones.
@@ -350,7 +356,7 @@ las credenciales y los compilados están excluidos de Git.
 Las importaciones RF14 usan `POST /api/accounting/v1/companies/{company}/imports/preview`
 con un archivo multipart real y `kind=third-parties|entries|opening|documents`.
 Las rutas de plantillas, historial, filas, revisión XLSX, revalidación y confirmación
-pertenecen al mismo módulo y a la conexión tenant de PRO9. No hay otra API.
+pertenecen al mismo módulo y a la conexión tenant de SAB. No hay otra API.
 La confirmación exige `If-Match`, `preview_hash`, selección de unidades completas
 e `Idempotency-Key`; su recibo se consulta como `operations/import.apply/{key}`.
 La revalidación usa `import.revalidate`. Estas acciones requieren servidor y no
@@ -414,7 +420,7 @@ e `Idempotency-Key`. Bajo bloqueo del libro se revisan nuevamente acceso y
 versión, y se conserva la lectura completa en JSONL privado con SHA-256,
 controles, número de filas, clasificación, versiones de períodos y creador.
 La lectura es repetible, incluso en reintentos por interbloqueo, sin cambiar el
-aislamiento predeterminado de la sesión de PRO9. Una transacción ajena al módulo
+aislamiento predeterminado de la sesión de SAB. Una transacción ajena al módulo
 debe iniciar la lectura consistente antes de consultar informes.
 La captura no contabiliza ni genera efectos financieros. `report.capture`
 permite recuperar su recibo; requiere servidor y no entra en la cola offline.
@@ -432,7 +438,7 @@ financiera de cierres.
 ## Soportes privados y auditoría (RF24, entrega incremental)
 
 Todo este flujo pertenece a `Modules\Accounting` y usa el usuario y la conexión
-tenant de PRO9. No requiere una API contable independiente.
+tenant de SAB. No requiere una API contable independiente.
 
 - `GET evidence/journal_entry|source_document/{id}` consulta el caso, sus
   archivos, versiones anteriores, registros relacionados y manifiesto de la
@@ -484,7 +490,7 @@ El tratamiento de rutas históricas de informes también debe endurecerse antes
 de validar una restauración integral entre tenants; no se reubican copias
 congeladas silenciosamente.
 
-PDF utiliza el mPDF instalado en PRO9; XLSX se escribe en flujo con XMLWriter
+PDF utiliza el mPDF instalado en SAB; XLSX se escribe en flujo con XMLWriter
 y ZipArchive, con celdas de texto explícito, sin fórmulas ni conversión de
 importes a float. CSV UTF-8 usa punto decimal, separador de punto y coma y
 registros de identificación, detalle y control; requiere importar referencias

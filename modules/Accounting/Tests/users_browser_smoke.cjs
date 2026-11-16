@@ -31,7 +31,7 @@ let page, browser;
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('http://contabilidad.localhost:9080/contabilidad/');
-  await page.getByLabel('Correo electrónico de PRO9').fill(actor.email);
+  await page.getByLabel('Correo electrónico de SAB').fill(actor.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(actor.password);
   const loginResponse = page.waitForResponse(
     (r) => r.url().endsWith('/api/login') && r.request().method() === 'POST',

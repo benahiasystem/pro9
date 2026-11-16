@@ -46,7 +46,7 @@ final class ApiErrors
             $body = ['code' => 'VALIDATION_ERROR', 'message' => 'Revisa los campos señalados.', 'errors' => $e->errors()];
         } elseif ($e instanceof AuthenticationException) {
             $status = 401;
-            $body = ['code' => 'UNAUTHENTICATED', 'message' => 'Inicia sesión con tu cuenta de PRO9.'];
+            $body = ['code' => 'UNAUTHENTICATED', 'message' => 'Inicia sesión con tu cuenta de SAB.'];
         } elseif ($e instanceof AuthorizationException) {
             $status = 403;
             $body = ['code' => 'FORBIDDEN_ACTION', 'message' => 'Tu cuenta no tiene permiso para esta operación.'];
