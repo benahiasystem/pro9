@@ -40,6 +40,12 @@ final class AuditHash
         $data->sequence = (int) $event['sequence'];
         $data->user_id = $event['user_id'] === null ? null : (int) $event['user_id'];
         $data->payload = json_decode($event['payload'], false, 512, JSON_THROW_ON_ERROR);
-        return hash('sha256', json_encode(self::node($data), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        return self::contentDigest($data);
+    }
+
+    /** The same typed encoding can protect other immutable JSON evidence. */
+    public static function contentDigest(mixed $value): string
+    {
+        return hash('sha256', json_encode(self::node($value), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }

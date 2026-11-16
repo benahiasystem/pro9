@@ -8,7 +8,7 @@ use Modules\Accounting\Support\TenantDB as DB;
 use Illuminate\Database\QueryException;
 final class OperationService
 {
-    private const RECOVERABLE = ['offline.sync', 'entry.create', 'entry.post', 'entry.resolve', 'document.create', 'document.resolve', 'opening.propose', 'settlement.propose', 'period.close', 'period.reopen', 'year.prepare', 'year.close', 'year.cancel', 'year.reopening.prepare', 'year.reopen', 'import.apply', 'import.revalidate', 'report.capture', 'attachment.add'];
+    private const RECOVERABLE = ['offline.sync', 'entry.create', 'entry.post', 'entry.resolve', 'document.create', 'document.resolve', 'opening.propose', 'settlement.propose', 'period.close', 'period.reopen', 'year.prepare', 'year.close', 'year.cancel', 'year.reopening.prepare', 'year.reopen', 'import.apply', 'import.revalidate', 'report.capture', 'attachment.add', 'source.resolve'];
 
     private function key(?string $key): string
     {
@@ -50,12 +50,14 @@ final class OperationService
     public function status(int $user, string $action, string $key): array
     {
         $this->recoverable($action, $key);
+        $this->sourceReceiptAccess($user, $action);
         return DB::transaction(fn() => $this->receipt($this->lookup($user, $action, $key)->lockForUpdate()->first(), $action, $key), 5);
     }
 
     public function cancel(int $user, string $action, string $key, string $reason): array
     {
         $this->recoverable($action, $key);
+        $this->sourceReceiptAccess($user, $action);
         $reason = trim($reason);
         if (mb_strlen($reason) < 10 || mb_strlen($reason) > 2000) {
             throw new ApiProblem('CANCELLATION_REASON_REQUIRED', 'Explica el motivo de cancelar este envío, entre 10 y 2000 caracteres.');
@@ -83,6 +85,14 @@ final class OperationService
             }
             throw $error;
         }
+    }
+
+    private function sourceReceiptAccess(int $user, string $action): void
+    {
+        if ($action !== 'source.resolve') { return; }
+        $actor = \App\Models\Tenant\User::without('establishment')->whereKey($user)->where('active', true)->where('locked', false)->first();
+        if (!$actor) { throw new \Modules\Accounting\Domain\ApiProblem('FORBIDDEN_ACTION', 'La cuenta no puede consultar el historial de esta resolución.', 403); }
+        app(\Modules\Accounting\Domain\Permissions::class)->require($actor, 'audit');
     }
 
     public function execute(int $user, string $action, ?string $key, array $payload, callable $fn): array

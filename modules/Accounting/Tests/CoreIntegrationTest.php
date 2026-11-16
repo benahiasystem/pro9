@@ -22,6 +22,8 @@ final class CoreIntegrationTest extends TestCase
     use ReportIntegrationAssertions;
     use AuditIntegrationAssertions;
     use AttachmentIntegrationAssertions;
+    use SourceHistoryIntegrationAssertions;
+    use SourceIncidentIntegrationAssertions;
     private static Application $application;
     private static string $originalTimezone;
     private User $admin;
@@ -95,6 +97,7 @@ final class CoreIntegrationTest extends TestCase
             }
         }
         $schema->enableForeignKeyConstraints();
+        NativeSourceTestSchema::create($schema);
         foreach (glob(dirname(__DIR__) . '/Database/Migrations/*.php') as $file) {
             (require $file)->up();
         }

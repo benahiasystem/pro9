@@ -62,10 +62,11 @@ final class DocumentService
         }
         return $candidate;
     }
-    private function evidence(SourceDocument $document, array $snapshot): void
+    private function evidence(SourceDocument $document, array $snapshot, int $user): void
     {
+        $snapshot['party_snapshot'] = $document->third_party_id ? ThirdParty::find($document->third_party_id)?->only(['id', 'name', 'tax_id']) : null;
         $hash = hash('sha256', json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
-        SourceVersion::create(['source_document_id' => $document->id, 'revision' => $document->source_revision, 'snapshot' => $snapshot, 'hash' => $hash]);
+        app(SourceHistoryService::class)->append($document, $snapshot, $hash, $user, $document->source_revision);
     }
     public function create(array $input, int $user): SourceDocument
     {
@@ -74,7 +75,7 @@ final class DocumentService
             $data = $this->fields($input);
             $this->ensureIdentity($data['natural_key']);
             $document = SourceDocument::create([...$data, 'origin' => 'manual', 'status' => 'draft', 'created_by' => $user, 'fiscal_amounts' => [], 'metadata' => ['rate_reason' => $input['rate_reason'] ?? '', 'tax_explanation' => $input['tax_explanation'] ?? '', 'tax_context' => $input['tax_context'] ?? []]]);
-            $this->evidence($document, $document->toArray());
+            $this->evidence($document, $document->toArray(), $user);
             app(AuditService::class)->record($user, 'document.created', 'source_document', $document->id, ['version' => $document->version, 'source_revision' => $document->source_revision]);
             return $document;
         }, 5);
@@ -104,7 +105,7 @@ final class DocumentService
             $this->ensureIdentity($data['natural_key'], $id);
             $document->fill([...$data, 'status' => 'draft', 'source_revision' => $document->source_revision + 1, 'version' => $document->version + 1, 'validated_by' => null, 'validated_at' => null, 'validated_version' => null, 'metadata' => [...$document->metadata ?? [], 'rate_reason' => $input['rate_reason'] ?? '', 'tax_explanation' => $input['tax_explanation'] ?? '', 'tax_context' => $input['tax_context'] ?? [], 'validation' => null], 'fiscal_amounts' => []]);
             $document->save();
-            $this->evidence($document, $document->toArray());
+            $this->evidence($document, $document->toArray(), $user);
             FiscalRecord::where('source_document_id', $id)->whereIn('status', ['validated', 'source_changed'])->update(['status' => 'superseded']);
             foreach (JournalEntry::where('source_document_id', $id)->whereNull('posted_at')->lockForUpdate()->get() as $entry) {
                 $entry->fill(['status' => 'observed', 'approved_by' => null, 'approved_at' => null, 'approved_version' => null, 'version' => $entry->version + 1]);
@@ -130,6 +131,7 @@ final class DocumentService
             if (in_array($document->status, ['posted', 'excluded'], true)) {
                 throw new ApiProblem('DOCUMENT_STATE', 'El documento no está pendiente de validación.');
             }
+            app(SourceHistoryService::class)->requireCurrent($document);
             app(Pro9SourceReader::class)->assertCurrent($document);
             if (JournalEntry::where('source_document_id', $id)->whereNotNull('posted_at')->whereDoesntHave('reversal', fn($q) => $q->whereNotNull('posted_at'))->exists()) {
                 throw new ApiProblem('POSTED_SOURCE_CHANGE', 'Resuelve primero la corrección del comprobante contabilizado y sus auxiliares.', 409);
@@ -259,7 +261,7 @@ final class DocumentService
                 throw new ApiProblem('PROPOSAL_REPLACEMENT_REQUIRED', 'Hay una propuesta con otra validación. Confirma su regeneración y documenta el motivo para conservar ambas evidencias.', 409, ['entry_id' => $existing->id, 'entry_version' => $existing->version]);
             }
             if (JournalEntry::where('source_document_id', $id)->whereNotNull('posted_at')->exists()) {
-                throw new ApiProblem('SOURCE_CORRECTION_PENDING', 'Revisa la corrección de origen y el comprobante previo antes de generar un reemplazo.', 409);
+                app(SourceIncidentService::class)->requireReplacementPermit($document);
             }
             $purchase = $document->kind === 'purchase_invoice';
             $side = $purchase ? 'purchase' : 'sale';
@@ -325,6 +327,8 @@ final class DocumentService
     }
     public function resource(SourceDocument $document): array
     {
-        return [...$document->toArray(), 'party' => $document->metadata['party_snapshot'] ?? ($document->third_party_id ? ThirdParty::find($document->third_party_id)?->only(['id', 'name', 'tax_id']) : null), 'entries' => JournalEntry::where('source_document_id', $document->id)->orderByDesc('created_at')->get(['id', 'reference', 'status', 'source_revision', 'version']), 'versions' => SourceVersion::where('source_document_id', $document->id)->orderByDesc('revision')->get(['id', 'revision', 'hash', 'created_at'])];
+        $incident = $document->origin === 'pro9' ? \Modules\Accounting\Models\Incident::where('kind', 'source_changed')->where('resource_type', 'source_document')->where('resource_id', $document->id)->where('status', 'open')->orderByRaw("CAST(JSON_UNQUOTE(JSON_EXTRACT(details, '$.revision')) AS UNSIGNED) DESC")->first() : null;
+        return [...$document->toArray(), 'party' => $document->metadata['party_snapshot'] ?? ($document->third_party_id ? ThirdParty::find($document->third_party_id)?->only(['id', 'name', 'tax_id']) : null), 'entries' => JournalEntry::where('source_document_id', $document->id)->orderByDesc('created_at')->get(['id', 'reference', 'status', 'source_revision', 'version']), 'versions' => SourceVersion::where('source_document_id', $document->id)->orderByDesc('revision')->get(['id', 'revision', 'hash', 'created_at']),
+            'origin_review' => $incident ? ['incident_id' => $incident->id, 'observed_revision' => $incident->details['revision'] ?? null, 'registered_revision' => $document->source_revision, 'financial_projection_preserved' => (bool) ($incident->details['financial_projection_preserved'] ?? false)] : null];
     }
 }
