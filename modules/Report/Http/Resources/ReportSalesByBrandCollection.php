@@ -14,8 +14,8 @@ class ReportSalesByBrandCollection extends ResourceCollection
      */
     public function toArray($request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \Modules\Report\Services\BrandSalesAmounts::presentation($this->collection)['rows'];
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 }

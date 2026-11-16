@@ -10,12 +10,12 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 
 class SaleConsolidatedExport implements FromView, ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithEvents
 {
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     protected $records;
     protected $company;
     protected $establishment;
     protected $params;
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     use Exportable;
     
@@ -53,7 +53,7 @@ class SaleConsolidatedExport implements FromView, ShouldAutoSize, \Maatwebsite\E
         ]);
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public function registerEvents(): array
     {
         return [\Maatwebsite\Excel\Events\AfterSheet::class=>function ($event) {
@@ -61,6 +61,6 @@ class SaleConsolidatedExport implements FromView, ShouldAutoSize, \Maatwebsite\E
                 array_merge(['quantity', 'total_sale', 'total_original'], \App\Support\Exact\HeaderAllocation::FIELDS));
         }];
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
 }

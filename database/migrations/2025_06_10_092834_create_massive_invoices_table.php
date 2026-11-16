@@ -14,9 +14,9 @@ class CreateMassiveInvoicesTable extends Migration
     public function up()
     {
        Schema::create('massive_invoices', function (Blueprint $table) {
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             $table->json('calculation_snapshot')->nullable();
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             $table->increments('id');
             $table->date('fecha_emision');
             $table->date('fecha_vencimiento')->nullable();

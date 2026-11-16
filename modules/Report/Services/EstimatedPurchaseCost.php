@@ -5,7 +5,7 @@ namespace Modules\Report\Services;
 use App\Models\Tenant\PurchaseItem;
 use App\Support\Exact\Decimal as D;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** An estimate from the latest eligible purchase or the current catalogue, not a frozen cost. */
 final class EstimatedPurchaseCost
 {
@@ -113,4 +113,4 @@ final class EstimatedPurchaseCost
         return $factor;
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

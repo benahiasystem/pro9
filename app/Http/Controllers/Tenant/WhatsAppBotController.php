@@ -336,7 +336,7 @@ class WhatsAppBotController extends Controller
      * Desconecta el bot de su instancia. Si la instancia fue adoptada (vino
      * de ChatBuho, ver linkExisting()), NO se elimina — solo se desvincula
      * localmente, para no romper la conexión de ChatBuho. Si la instancia la
-     * creó Pro9, sí se elimina como siempre.
+     * creó SAB, sí se elimina como siempre.
      */
     public function disconnect()
     {

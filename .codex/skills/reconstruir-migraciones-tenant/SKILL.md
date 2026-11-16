@@ -1,13 +1,13 @@
 ---
 name: reconstruir-migraciones-tenant
-description: Mantener el esquema inicial consolidado y los datos vigentes de Pro9, ordenados, reversibles y verificables en bases temporales. Usar al modificar database/migrations/tenant, columnas, índices, claves foráneas o seeders.
+description: Mantener el esquema inicial consolidado y los datos vigentes de SAB, ordenados, reversibles y verificables en bases temporales. Usar al modificar database/migrations/tenant, columnas, índices, claves foráneas o seeders.
 ---
 
-# Esquema inicial tenant de Pro9
+# Esquema inicial tenant de SAB
 
 ## Precisión exacta — contrato del 16/10/2026
 
-Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
+Aplicar [cálculos exactos](../mantener-calculos-exactos-sab/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
 
 
 ## Contrato
@@ -22,7 +22,7 @@ Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para in
 - `transfer_account_payments.currency_type_id` es nullable y referencia `cat_currency_types`: conserva la moneda del destino en traslados nuevos, sin completar datos históricos ni modificar tenants existentes.
 - Al consolidar una modificación, capturar primero el esquema producido por la rama en una base temporal y comparar el resultado completo. Toda diferencia debe corresponder a una decisión explícita del cambio.
 - Mantener un inventario de columnas junto al DDL. No usar contadores `AUTO_INCREMENT` extraídos de datos de prueba como estado inicial.
-- Los parámetros de empresa y facturas incluyen modalidad y ambiente obligatorios según `mantener-modalidad-emision-fiscal-pro9`.
+- Los parámetros de empresa y facturas incluyen modalidad y ambiente obligatorios según `mantener-modalidad-emision-fiscal-sab`.
 - Conservar estructuras vigentes de ecommerce, variaciones, inventario y preferencias aunque su creación haya estado antes en una migración incremental. `items.parent_item_id` tiene índice y FK autorreferenciada con borrado restringido.
 
 ## Datos iniciales
@@ -37,7 +37,7 @@ Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para in
 ## Verificación
 
 1. Usar exclusivamente bases temporales con nombres controlados; eliminarlas tanto en éxito como en error. No operar sobre bases reales.
-2. Ejecutar `FiscalEmissionSchemaTest` con `PRO9_FISCAL_MYSQL_TESTS=1` dentro del contenedor PHP. Comprueba creación completa, `TenancyDatabaseSeeder`, integridad referencial global, rollback y segunda creación con esquema y datos iguales, normalizando sólo timestamps generados.
+2. Ejecutar `FiscalEmissionSchemaTest` con `SAB_FISCAL_MYSQL_TESTS=1` dentro del contenedor PHP. Comprueba creación completa, `TenancyDatabaseSeeder`, integridad referencial global, rollback y segunda creación con esquema y datos iguales, normalizando sólo timestamps generados.
 3. Mantener `TenantMigrationDataSeederTest`, pruebas de catálogos y de módulos consumidores alineadas con el estado final, sin exigir nombres de migraciones incrementales eliminadas.
 4. Probar las operaciones actuales de los módulos afectados en una instalación temporal. Un esquema correcto no sustituye una prueba de creación, búsqueda o cálculo.
 5. Validar sintaxis PHP y `git diff --check`. Registrar conteos y diferencias intencionales en el informe del cambio.
@@ -72,11 +72,11 @@ Documentar las tablas y datos que cambiaron, elementos retirados, funciones cons
 - El esquema inicial vigente utiliza `series`, `series_configurations` y `series_device_groups`. Se retiraron las tablas y relaciones exclusivas del módulo de secuencias, perfiles, reservas fiscales y asignaciones anticipadas HKA. No generar una conversión ni modificar tenants existentes para reproducir esta retirada.
 - `documents.control_number` y `dispatches.control_number` son texto nullable independiente de serie/número. Las claves únicas documentales incluyen sucursal, ambiente, tipo, serie y número (en notas de venta, sin tipo). `series.number` es NOT NULL DEFAULT ''; su índice único incluye sucursal/tipo/código. Los códigos con contenido mantienen unicidad empresarial por tipo mediante bloqueo y validación de aplicación. Una serie vacía por sucursal/tipo, sin distinguir modalidad. Guías y transferencias tienen `establishment_id` persistido, índice y FK a sucursales.
 - `retentions.series`, `perceptions.series` y `purchase_settlements.series` son `varchar(20)` en el esquema inicial para admitir los códigos libres de hasta 20 caracteres. No crear conversiones de bases reales.
-- `FiscalEmissionSchemaTest` verifica ausencia de estructuras retiradas, instalación/seeding/rollback/repetición y persistencia comercial. Ver [series y correlativos](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md).
+- `FiscalEmissionSchemaTest` verifica ausencia de estructuras retiradas, instalación/seeding/rollback/repetición y persistencia comercial. Ver [series y correlativos](../mantener-numeracion-fiscal-venezuela-sab/SKILL.md).
 
 ## Persistencia fiscal de facturas y cobros
 
-Al tocar documentos, pagos o relaciones fiscales, aplicar [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md). Consultar su [informe de implementación](../../../informes/persistencia_fiscal_venezuela_hka.md) para el inventario detallado.
+Al tocar documentos, pagos o relaciones fiscales, aplicar [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-sab/SKILL.md). Consultar su [informe de implementación](../../../informes/persistencia_fiscal_venezuela_hka.md) para el inventario detallado.
 
 - La cabecera conserva `issuer` obligatorio y fuente/fecha de tasa; las líneas conservan snapshot `iva_rate`. Las creaciones de pagos incluyen moneda propia, principal recibido/aplicado, tasa/fuente/fecha, clasificación IGTF, UUID, snapshot del medio, recibo derivado y reversión.
 - Mantener las seis tablas `document_taxes`, `document_currency_totals`, `document_received_retentions`, `document_guarantee_funds`, `document_fiscal_data` y `document_emissions` en sus migraciones `000330`–`000335`, con FKs en `000999`. No desplazar las claves a migraciones incrementales.
@@ -89,7 +89,7 @@ Al tocar documentos, pagos o relaciones fiscales, aplicar [persistencia fiscal y
 
 ## Precisión de tasas BCV — instrucción de 7 de octubre de 2026
 
-- Pro9 conserva tasas como cadenas decimales de ocho posiciones en `DECIMAL(18,8)`, incluidos ceros finales. La API BCV devuelve cadenas y mantiene token fijo.
+- SAB conserva tasas como cadenas decimales de ocho posiciones en `DECIMAL(18,8)`, incluidos ceros finales. La API BCV devuelve cadenas y mantiene token fijo.
 - Calcular conversiones con `Brick\Math\BigRational` en PHP y `ExactAmount`/`BigInt` en JavaScript. Conservar la fracción durante toda la operación y al recuperarla de la base. HALF_UP sólo para representaciones finales autorizadas, presentación o liquidación; nunca reutilizar esas representaciones para calcular.
 - Excepción autorizada para tenants existentes: `exchange-rates:upgrade-precision --all-tenants --dry-run` y luego sin `--dry-run`, tras pruebas en MySQL temporal. El comando amplía únicamente las columnas inventariadas en `config/exchange_rate_precision.php`; no reconstruye bases ni recupera decimales históricos.
 
@@ -99,13 +99,13 @@ El consolidado de persons incluye is_third_party=false, third_party_rif nullable
 
 ## Esquema inicial de perfiles SPE
 
-Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md). Agregar JSON nullable `fiscal_profile` a creaciones de companies/persons y `fiscal_context` a document_payments/document_received_retentions. La nueva tabla `fiscal_profile_versions` tiene creadora 000336, empresa/persona, fecha de vigencia, JSON, actor/registro e índices entidad-fecha; FKs restrictivas a companies/persons/users en 000999 y down inverso. No confundir esta tabla tributaria con los perfiles de numeración retirados.
+Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-sab/SKILL.md). Agregar JSON nullable `fiscal_profile` a creaciones de companies/persons y `fiscal_context` a document_payments/document_received_retentions. La nueva tabla `fiscal_profile_versions` tiene creadora 000336, empresa/persona, fecha de vigencia, JSON, actor/registro e índices entidad-fecha; FKs restrictivas a companies/persons/users en 000999 y down inverso. No confundir esta tabla tributaria con los perfiles de numeración retirados.
 
 No sembrar SPE, notificaciones, facultades o perfiles ficticios como datos iniciales reales, ni añadir conversión/backfill. La evidencia SPE inicial del 12/10/2026 tenía 340 tablas/341 archivos; IVA recibido añadió dos creadoras y el inventario pasó a 342/343. Actualizar conteos de prueba sólo por cambios intencionales. Verificar `TenantMigrationDataSeederTest` y creación/seeding/FKs/rollback/repetición de `FiscalEmissionSchemaTest` en bases propias temporales.
 
 ## IVA recibido, operaciones y adjuntos temporales
 
-Aplicar [el contrato IVA recibido](../mantener-retenciones-iva-recibidas-pro9/SKILL.md) y [su esquema](../mantener-retenciones-iva-recibidas-pro9/references/contratos.md#esquema-inicial-y-soporte). Modificar únicamente consolidado de instalaciones nuevas, sin conversiones de tenants anteriores.
+Aplicar [el contrato IVA recibido](../mantener-retenciones-iva-recibidas-sab/SKILL.md) y [su esquema](../mantener-retenciones-iva-recibidas-sab/references/contratos.md#esquema-inicial-y-soporte). Modificar únicamente consolidado de instalaciones nuevas, sin conversiones de tenants anteriores.
 
 - `000332`: estado de aplicación, UUID/hash/solicitud privada, base imponible separada, diagnóstico y reversión auditada. Índice generado nullable único para un IVA pendiente/aplicado por factura; número de comprobante único sólo activo, preservando reemplazos históricos.
 - `000334`: `iva_retention_prevision` JSON nullable fuera de pagos/aplicaciones.
@@ -115,7 +115,7 @@ Aplicar [el contrato IVA recibido](../mantener-retenciones-iva-recibidas-pro9/SK
 
 ## ISLR recibido
 
-Aplicar [contrato ISLR](../mantener-retenciones-islr-recibidas-pro9/SKILL.md): 000332 añade índice generado único nullable ISLR activo, 000334 previsión JSON separada, 000339 outbox ISLR con resultado privado saneado y FKs factura/comprobante/actor en000999 con retirada inversa. Conservar tabla/outbox IVA y uploads. Inventario actual 343 tablas de aplicación/344 archivos tenant; no convertir instalaciones existentes. Pruebas de coexistencia, idempotencia/concurrencia y rollback/repetición en MySQL temporal.
+Aplicar [contrato ISLR](../mantener-retenciones-islr-recibidas-sab/SKILL.md): 000332 añade índice generado único nullable ISLR activo, 000334 previsión JSON separada, 000339 outbox ISLR con resultado privado saneado y FKs factura/comprobante/actor en000999 con retirada inversa. Conservar tabla/outbox IVA y uploads. Inventario actual 343 tablas de aplicación/344 archivos tenant; no convertir instalaciones existentes. Pruebas de coexistencia, idempotencia/concurrencia y rollback/repetición en MySQL temporal.
 
 ## Trazabilidad de notas (13/10/2026)
 

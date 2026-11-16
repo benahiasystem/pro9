@@ -453,10 +453,10 @@ export default {
 
             },
             getTotals(){
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 this.totals = this.reportSummary?.quantity ?? '0';
                 this.totals_sale = this.reportSummary?.total_sale ?? '0';
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
             },
             getRecords() {
 

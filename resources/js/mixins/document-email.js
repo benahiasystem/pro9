@@ -50,7 +50,7 @@ export const documentEmail = {
             } catch (error) {
                 if (this.form.id !== documentId) return;
                 if (error.response && error.response.status === 422) {
-                    // Pro9 AJAX validation uses a flat field map; API responses wrap it in errors.
+                    // SAB AJAX validation uses a flat field map; API responses wrap it in errors.
                     const data = error.response.data || {};
                     this.errors = data.errors || Object.fromEntries(Object.entries(data).filter(([, value]) => Array.isArray(value)));
                     if (!this.errors.customer_email) {

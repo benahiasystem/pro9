@@ -327,7 +327,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
         //     }
         // },
         methods: {
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             hasPaymentAdjustment(row) { return exactValue(row, 'payment_adjustment').compare(0) !== 0; },
             paymentAdjustmentText(row) {
                 const value = exactValue(row, 'payment_adjustment');
@@ -336,7 +336,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
                 const fraction = value.fraction();
                 return `${fraction.n}/${fraction.d}`;
             },
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             events(){
                 this.$eventHub.$on('reloadDataPayments', ()=>{
                     this.getData()

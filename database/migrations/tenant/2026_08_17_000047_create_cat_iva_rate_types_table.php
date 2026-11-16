@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 // ######## INICIO ESQUEMA INICIAL VENEZUELA ########
 /**
  * Tipos de alícuota del catálogo HKA, para instalaciones nuevas.
- * Los porcentajes reproducen el manual y no configuran el cálculo fiscal de Pro9.
+ * Los porcentajes reproducen el manual y no configuran el cálculo fiscal de SAB.
  * Inventario de columnas:
  * - `id` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL, código HKA
  * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL

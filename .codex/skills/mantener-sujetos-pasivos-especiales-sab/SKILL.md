@@ -1,0 +1,57 @@
+---
+name: mantener-sujetos-pasivos-especiales-sab
+description: Mantener los perfiles fiscales versionados SPE de emisor y comprador en SAB, RIF separado de cédula, vigencia, facultades IVA/ISLR y evaluación del cobro IGTF en Web, POS y Garage. Usar al modificar SpecialTaxpayerPolicy, FiscalProfileService, fiscal-profiles, el editor fiscal o sus snapshots y propuestas; emisión y distribución HKA tienen habilidades propias.
+---
+
+# Sujetos Pasivos Especiales de SAB
+
+## Alcance y fuentes
+
+Contrato implementado el 12 de octubre de 2026 para instalaciones nuevas. Leer [datos, endpoints y consumidores](references/contratos.md) al modificar perfiles, persistencia o formularios. El [informe SPE/HKA](../../../informes/facturas_sujetos_pasivos_especiales_hka.md) conserva fuentes normativas, resultados y límites; sus conteos históricos no sustituyen las pruebas del cambio actual.
+
+SPE, naturaleza jurídica, firma personal, actividad comercial, condición IVA y facultades IVA/ISLR son hechos independientes. El perfil tributario no es un perfil de numeración ni una reserva/asignación HKA. No recrear el módulo retirado de secuencias ni convertir tenants existentes para introducir este contrato.
+
+## Identidad, versiones y fechas
+
+- Usar `SpecialTaxpayerPolicy` para validar/evaluar y `FiscalProfileService` para versiones. No inferir SPE de la letra del RIF, naturaleza pública, tasa IGTF o bandera comercial de agente.
+- Mantener `fiscal_profile.rif` completo y separado de `persons.number`. Validar naturaleza/prefijo, actividad comercial del emisor y correspondencia del RIF de empresa con `companies.number`. No sobrescribir cédula ni catálogo de identidad, ni afirmar consulta/inscripción SENIAT.
+- SPE exige notificación expresa, referencia y fecha coherente. Resolver la última versión por vigencia y después ID; evaluar fin y revocación en la fecha del documento/cobro. La revocación SPE no borra facultades públicas o ISLR independientes.
+- Guardar una versión nueva con actor/fecha bajo bloqueo empresa → entidad y autorización administrativa tenant. Rechazar `fiscal_profile` en escrituras genéricas de empresa/persona; no añadirlo a asignación masiva ni editar versiones utilizadas.
+- Congelar perfiles y `version_id` de emisor/comprador en factura, cobro y comprobante recibido. Un cambio posterior no recalcula históricos ni payloads preparados. La edición comercial autorizada obtiene el perfil del comprador a la fecha de emisión original.
+- Sin tabla de versiones, la consulta devuelve perfil vacío y el editor no habilita escritura; no sembrar una condición supuesta. ND de exportación limpia el perfil doméstico y conserva su identificación externa.
+
+## Cobros, IGTF y crédito
+
+- Aplicar [persistencia fiscal](../mantener-persistencia-fiscal-venezuela-sab/SKILL.md) y [moneda](../migrar-venezuela-moneda/SKILL.md): separar moneda documental/recibida, principal recibido `original_amount`, aplicado `payment`, impuesto recibido `tax_amount` y tasa VES/USD exacta de ocho decimales.
+- La clasificación implementada es `subject` para emisor SPE vigente + recepción USD + `financial_intermediation=none`. Desde el 08/11/2026, por decisión del usuario, los cobros nuevos derivan la intermediación del método validado: `cash` → `none`, `account` → `financial_institution`. `Classification::withFinancialIntermediation` admite omisión y rechaza valores explícitos contradictorios; crédito y sin clasificar no son recepciones. Usar el método bloqueado al guardar. La moneda documental y SPE del comprador no sustituyen la evaluación fiscal. Rechazar clasificación publicada contradictoria; el impuesto sujeto necesita además habilitación/tasa positiva del tenant.
+- Desde el 09/11/2026 la excepción administrativa IGTF está retirada por decisión del usuario. Los cobros nuevos sólo admiten `subject`/`not_applicable`; rechazar `exempt` y motivo/fundamento no vacíos con validación 422, también para administradores. Campos antiguos vacíos/nulos no habilitan excepciones. No publicar `can_authorize_exemption` ni generar fundamento/actor en decisiones nuevas. Una propuesta informativa no reemplaza la revalidación bajo bloqueo.
+- Conservar los cobros históricos y sus columnas/snapshots. `RecordedPaymentAmounts` restaura únicamente el contexto del registro real leído bajo bloqueo y conserva su impuesto/snapshot sin recalcularlo; rechaza cambios del contexto. Un ID o bandera del navegador no acredita por sí solo un recibo. El navegador retira excepciones de borradores no registrados y los reevalúa sin cambiar moneda, tasa, importes ni UUID; no modifica recibos registrados. Probar `IgtfExceptionRetirementTest` y `test_retired_igtf_*` en MySQL temporal.
+- Repetir `operation_key` devuelve el cobro con su contexto original. Cambiar importe, fecha, tasa, medio, intermediación o fundamento con esa clave produce error.
+- Compartir `igtf_fields.vue` entre Web, POS, Garage y cobros posteriores; no mostrar selectores redundantes de moneda recibida o intermediación. En creación de factura, `useDocumentRate` sincroniza sólo cobros nuevos con la tasa de cabecera; los demás consumidores conservan su tasa independiente. Al reintentar sin intermediación, recuperar la decisión fiscal congelada, sin consultar la clasificación vigente del método; descartar propuestas asincrónicas obsoletas y conservar UUID/conversiones del borrador.
+- Crédito elimina el cobro sugerido. Reabrir Pagos o recuperar el borrador tras recargar conserva sólo abonos introducidos, sin añadir/distribuir el total de factura. Pasar `paymentConditionId` a los diálogos y conservar condición/importes en almacenamiento del borrador. Saldo pendiente no equivale a caja ni justifica una `formaPago` ficticia HKA.
+
+## Retenciones y nota exclusiva
+
+- Seguir [el contrato de comprobantes recibidos](references/contratos.md#retenciones-recibidas) y [el ciclo IVA implementado](../mantener-retenciones-iva-recibidas-sab/SKILL.md). Una propuesta no aplica saldo; prever/cobrar neto conserva deuda hasta validar soporte y referencia fiscal. IVA permite un comprobante activo con historial; ISLR usa [su ciclo recibido independiente](../mantener-retenciones-islr-recibidas-sab/SKILL.md), sin motor automático de tasas. Revalidar al activar después de confirmar factura, con perfiles de la fecha del comprobante.
+- PN sin firma personal no obtiene facultad general IVA por SPE. Entes públicos bajo norma específica requieren evidencia y ámbito de operación documentado. ISLR se acredita separadamente. Proveedor formal/no sujeto o exclusión acreditada impiden propuesta IVA.
+- El 75 % se aplica al IVA; 100 exige causal/evidencia. No deducir conceptos/tasas ISLR de SPE ni de etiquetas históricas.
+- IGTF posterior genera `08` local, motivo `IGTF`, transacción HKA `98`, sin líneas/IVA/inventario; hereda modalidad/ambiente de factura y fecha/tasa/perfiles del cobro. Seguir [emisión](../emitir-facturas-notas-hka/SKILL.md) y [distribución](../distribuir-documentos-hka/SKILL.md) para envío limitado y recuperación. Nota preparada/confirmada bloquea la reversión completa; no habilitar otras notas o cancelación remota por extensión.
+
+## HKA y evidencia
+
+Enviar SPE desde snapshot mediante `infoAdicional`, sin reutilizar `regimenEspTributacion`, `tipoProveedor` o banderas inventadas. Constructor puro y payloads preparados inmutables; adaptación doméstica USD/IGTF una sola vez, conservando dinero local y referencia monetaria original de factura afectada.
+
+La cuenta DEMO comprobada es jurídica FORMAL: acredita compradores sintéticos SPE y contado VES/USD, no emisores SPE reales ni notas IGTF aceptadas. Crédito sin cobros fue rechazado 203/1015. JSON conserva la leyenda SPE, pero A4/A5 la omiten y duplican el prefijo de identidad del comprador. Preservar originales y esos límites. Sin habilitación/contrato HKA, documentar el pendiente y detener reintentos sin cambios; el [borrador de solicitud](../../../informes/solicitud_hka_emisores_spe_demo.md) no autoriza su envío.
+
+El circuito neto por IVA recibido también se probó con abono real VES/USD, Contado/Crédito: HKA rechazó 203/1016. Mantener su bloqueo y capacidad DEMO deshabilitada según [el contrato IVA](../mantener-retenciones-iva-recibidas-sab/SKILL.md); no confundir el POST/GET/DELETE aceptado sobre facturas de control cobradas completas con habilitación SPE o aceptación del neto.
+
+Para QA real autorizada, comprobar identidad/clasificación de cuenta autenticada frente a emisor local y PDF remoto antes de emitir la matriz. Copiar credenciales no acredita correspondencia. Una discrepancia conserva evidencia parcial; corregir el tenant desechable sólo afecta documentos nuevos, sin relabelar una cuenta FORMAL como SPE. Archivar originales/respuestas saneadas/hashes/conciliación JSON-PDF-QR de forma privada y retirar únicamente instalaciones/bases propias de QA; conservar las facturas fiscales emitidas en HKA. La aplicación/eliminación de una retención recibida de prueba sigue su alcance autorizado y [su contrato de conciliación](../mantener-retenciones-iva-recibidas-sab/SKILL.md); no implica anular/borrar la factura. No incluir RIF reales, JWT o credenciales en fixtures.
+
+## Verificación según el cambio
+
+- `SpecialTaxpayerPolicyTest`: fechas, naturaleza/firma, facultades públicas, 75/100, ISLR, intermediación y autorización.
+- MySQL temporal: `FiscalEmissionSchemaTest` con `SAB_FISCAL_MYSQL_TESTS=1`, casos `test_spe_*`, instalación/rollback/repetición, concurrencia y commit exterior. `SpeProfiles`/`SpePersistenceCases` usan datos sintéticos; sus HTTP no acreditan aceptación real. Usar memoria suficiente para la matriz; identificar bases propias huérfanas tras una terminación fatal antes de retirarlas.
+- `HkaPayloadBuilderTest`, `ThirdPartyInvoiceTest`, `SpecialTaxRegimeTest`, `ExportInvoiceTest`: identidad, leyendas, USD/IGTF y fronteras de otros flujos.
+- `tests/js/fiscal-payment-ui.test.cjs` y `pos-hka-email.test.cjs`: propuesta/conversión, eventos Crédito, reapertura/cancelación de Pagos y recuperación de abonos.
+- `CurrentPdfRenderingTest`/`CurrentPdfTemplateContractTest` y revisión visual: perfil congelado/local/ticket. No confundir ticket local con original HKA.
+- Seguir [frontend-build](../frontend-build/SKILL.md): compilación a cargo del usuario salvo instrucción explícita. Verificar manifiesto/asset actuales y comportamiento visible por entrada; compilar una plantilla o probar métodos no descubre necesariamente un manejador ausente o un cobro recreado al abrir Pagos.

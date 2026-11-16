@@ -537,14 +537,8 @@ export default {
         this.loadConfiguration();
         this.$store.commit('setConfiguration', this.configuration);
         this.currentRent = this.rent
-        try {
-            const pending = JSON.parse(window.sessionStorage.getItem(`pro9-hotel-checkout:${this.rent.id}`) || 'null')
-            if (pending && ['01', '80'].includes(pending.type) && pending.id) this.pendingCheckout = pending
-        } catch (error) { /* The server still validates any document submitted on retry. */ }
-        try {
-            const pending = JSON.parse(window.sessionStorage.getItem(`pro9-hotel-atomic:${this.rent.id}`) || 'null')
-            if (pending && typeof pending.key === 'string' && ['01','80'].includes(pending.type)) this.pendingAtomic = pending
-        } catch (error) { /* An unconfirmed operation is always checked by the server. */ }
+        this.pendingCheckout = this.readPendingHotelOperation('checkout', this.rent.id)
+        this.pendingAtomic = this.readPendingHotelOperation('atomic', this.rent.id)
         this.currentRent.input_date =  moment(this.currentRent.input_date).toDate()
         this.currentRent.output_date =  moment(this.currentRent.output_date).toDate()
     },
@@ -791,8 +785,19 @@ export default {
                     this.loading = false
                 });
         },
+        readPendingHotelOperation(kind, rentId) {
+            for (const prefix of ['sab', 'pro9']) {
+                try {
+                    const pending = JSON.parse(window.sessionStorage.getItem(`${prefix}-hotel-${kind}:${rentId}`) || 'null')
+                    if (pending && ['01', '80'].includes(pending.type) &&
+                        (kind === 'atomic' ? typeof pending.key === 'string' : pending.id)) return pending
+                } catch (error) { /* Try the previous key before giving up recovery. */ }
+            }
+            return null
+        },
         clearAtomicPending() {
-            try { window.sessionStorage.removeItem(`pro9-hotel-atomic:${this.currentRent.id}`) } catch (error) { /* The completed operation remains on the server. */ }
+            try { window.sessionStorage.removeItem(`sab-hotel-atomic:${this.currentRent.id}`) } catch (error) { /* The completed operation remains on the server. */ }
+            try { window.sessionStorage.removeItem(`pro9-hotel-atomic:${this.currentRent.id}`) } catch (error) { /* Retry cleanup on the next completed operation. */ }
             this.pendingAtomic = null
             this.atomicDraft = null
         },
@@ -836,7 +841,7 @@ export default {
                     const pending = {key, type:this.document.document_type_id}
                     const draft = JSON.parse(JSON.stringify({operation_key:key, arrears:String(this.arrears || 0),
                         document:withoutDraftRetentions(this.document)}))
-                    try { window.sessionStorage.setItem(`pro9-hotel-atomic:${this.currentRent.id}`, JSON.stringify(pending)) }
+                    try { window.sessionStorage.setItem(`sab-hotel-atomic:${this.currentRent.id}`, JSON.stringify(pending)) }
                     catch (error) { throw new Error('No se puede guardar la clave necesaria para recuperar el cierre.') }
                     this.pendingAtomic = pending
                     this.atomicDraft = draft
@@ -879,7 +884,7 @@ export default {
                     const response = await this.$http.post(`/${this.resource_documents}`, withoutDraftRetentions(this.document))
                     if (!response.data.success) return this.$message.error(response.data.message)
                     this.pendingCheckout = {id: response.data.data.id, type: this.document.document_type_id, arrears: String(this.arrears || 0)}
-                    try { window.sessionStorage.setItem(`pro9-hotel-checkout:${this.currentRent.id}`, JSON.stringify(this.pendingCheckout)) } catch (error) { /* Retry remains available on this page. */ }
+                    try { window.sessionStorage.setItem(`sab-hotel-checkout:${this.currentRent.id}`, JSON.stringify(this.pendingCheckout)) } catch (error) { /* Retry remains available on this page. */ }
                     this.response = response.data
                 }
                 const pending = this.pendingCheckout
@@ -891,6 +896,7 @@ export default {
                 this.document.document_type_id = pending.type
                 this.currentRent = finalized.data.currentRent
                 this.pendingCheckout = null
+                try { window.sessionStorage.removeItem(`sab-hotel-checkout:${this.currentRent.id}`) } catch (error) { /* The completed server operation is idempotent. */ }
                 try { window.sessionStorage.removeItem(`pro9-hotel-checkout:${this.currentRent.id}`) } catch (error) { /* The completed server operation is idempotent. */ }
                 this.successGoToInvoice()
                 this.$emit('update:showDialog', false)

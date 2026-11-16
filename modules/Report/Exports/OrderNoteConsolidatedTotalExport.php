@@ -130,13 +130,13 @@ class OrderNoteConsolidatedTotalExport implements FromView, ShouldAutoSize, With
         ]);
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public function registerEvents(): array
     {
         return [AfterSheet::class => function (AfterSheet $event) {
             \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $this->records, ['quantity']);
         }];
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
 }

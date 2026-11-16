@@ -10,7 +10,7 @@ use Modules\Report\Http\Controllers\ReportSaleConsolidatedController;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactConsolidatedConsumersTest extends TestCase
 {
     public function test_a_date_selector_cannot_be_used_to_filter_a_projected_monetary_column(): void
@@ -134,7 +134,7 @@ class ExactConsolidatedConsumersTest extends TestCase
                     'reportSummary'=>SalesConsolidated::summary($this->records), 'detail'=>true, 'excel'=>true]);
             }
         };
-        $path = tempnam(sys_get_temp_dir(), 'pro9-final-xlsx-');
+        $path = tempnam(sys_get_temp_dir(), 'sab-final-xlsx-');
         try {
             file_put_contents($path, \Maatwebsite\Excel\Facades\Excel::raw($export->records($records), \Maatwebsite\Excel\Excel::XLSX));
             $book = IOFactory::load($path);
@@ -202,4 +202,4 @@ class ExactConsolidatedConsumersTest extends TestCase
         $db->disableQueryLog();
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -2,7 +2,7 @@
 
 namespace App\Support\Exact;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Read original fractions in bounded batches; SQL remains responsible for ordinary filters. */
 final class Aggregate
 {
@@ -23,4 +23,4 @@ final class Aggregate
         return Decimal::sum((function () use ($records,$field) {foreach($records as $record)yield Decimal::read($record,$field);})());
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

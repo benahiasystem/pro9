@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 
 class UnpaidPaymentMethodDayExport implements FromView, ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithEvents
 {
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     protected $records;
     protected $company;
     public function registerEvents(): array
@@ -19,7 +19,7 @@ class UnpaidPaymentMethodDayExport implements FromView, ShouldAutoSize, \Maatweb
             \App\Support\Exact\FractionSheet::append($event->sheet->getDelegate(), $this->records, \App\Support\Exact\Receivables::EXPORT_FIELDS);
         }];
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
     use Exportable;
     
     public function records($records) {

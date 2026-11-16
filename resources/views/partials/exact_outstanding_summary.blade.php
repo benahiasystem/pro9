@@ -1,4 +1,4 @@
-{{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## INICIO CALCULOS EXACTOS SAB ######## --}}
 <table style="width:100%;margin-top:10px">
     <thead><tr><th colspan="2">Resumen del conjunto filtrado</th></tr></thead>
     <tbody>
@@ -15,4 +15,4 @@
     @endif
     </tbody>
 </table>
-{{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## FIN CALCULOS EXACTOS SAB ######## --}}

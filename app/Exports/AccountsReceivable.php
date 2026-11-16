@@ -7,7 +7,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\{FromView, WithEvents};
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class AccountsReceivable implements FromView, WithEvents
 {
     private $records;
@@ -26,4 +26,4 @@ class AccountsReceivable implements FromView, WithEvents
         }];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

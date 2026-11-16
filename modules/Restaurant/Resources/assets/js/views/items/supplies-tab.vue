@@ -128,10 +128,10 @@
 </template>
 
 <script>
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import {exactAmount, exactValue, exactSnapshot, exactInput} from '../../../../../../../resources/js/helpers/exchange-rate-math'
 import {recipeEffectiveCost, recipeLineCost, recipeTotals} from '../../../../../../../resources/js/helpers/exact-recipe'
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 export default {
     name: 'SuppliesTab',
     props: {
@@ -150,7 +150,7 @@ export default {
         }
     },
     computed: {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         recipeSummary() { return recipeTotals(this.itemSupplies) },
         productionCost() { return exactValue(this.recipeSummary, 'production_cost') },
         suggestedPrice() { return exactValue(this.recipeSummary, 'suggested_price') },
@@ -158,7 +158,7 @@ export default {
             try { return exactAmount(exactInput(this.selectedQuantity)).compare('0.0001') >= 0 }
             catch (_) { return false }
         }
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     },
     mounted() {
         this.loadAvailableSupplies()
@@ -179,11 +179,11 @@ export default {
         /**
          * Calcula el costo efectivo de un insumo (costo + merma)
          */
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         exactValue,
         calculateEffectiveCost: recipeEffectiveCost,
         calculateLineCost: recipeLineCost,
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         async loadAvailableSupplies() {
             try {
                 const response = await this.$http.get('/restaurant/item-supplies/available/list')

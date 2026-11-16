@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Support\Exact\{Decimal, ReportDataset, SalesConsolidated};
 use PHPUnit\Framework\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactReportDatasetTest extends TestCase
 {
     public function test_filters_and_sorting_use_fractions_before_pagination(): void
@@ -56,4 +56,4 @@ class ExactReportDatasetTest extends TestCase
         self::assertSame(501, $calls);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

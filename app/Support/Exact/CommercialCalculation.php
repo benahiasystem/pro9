@@ -4,7 +4,7 @@ namespace App\Support\Exact;
 
 use Illuminate\Database\Eloquent\Model;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Explicit aggregate ownership; never infer or alter unrelated models from their names. */
 final class CommercialCalculation
 {
@@ -59,7 +59,7 @@ final class CommercialCalculation
             if (!$model->isDirty($field)) $preserved[$field]=$model->exactValue($field);
         }
         $line = LineCalculation::calculate($input, $affectation === '10' ? \App\Support\Venezuela\Localization::exactTaxPercentage() : '0', $preserved);
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         // La procedencia interna del precio de tienda sigue siendo válida si el
         // precio no cambió; nunca se toma del snapshot enviado por el navegador.
         if ($model->exists && !$model->isDirty(['unit_price','price_input'])
@@ -100,7 +100,7 @@ final class CommercialCalculation
         if ($model->exists && isset($model->calculation_snapshot['inputs']['invoice_global_inventory'])) {
             $line['calculation_snapshot']['inputs']['invoice_global_inventory'] = $model->calculation_snapshot['inputs']['invoice_global_inventory'];
         }
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         foreach (Persistence::columns($model) as $field) if (isset($line[$field])) $model->$field = $line[$field];
         $model->calculation_snapshot = $line['calculation_snapshot'];
         $model->discounts = $line['discounts'] ?? [];
@@ -197,4 +197,4 @@ final class CommercialCalculation
         return $connection->getName().'|'.$connection->getDatabaseName().'|'.$class.'|'.$id;
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

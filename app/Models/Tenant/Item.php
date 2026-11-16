@@ -1133,12 +1133,12 @@ class Item extends ModelTenant
 
     public static function getSaleUnitPriceByWarehouse(Item $item, int $warehouseId): string
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \App\Support\Exact\Decimal::represent(self::exactSaleUnitPriceByWarehouse($item, $warehouseId));
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public static function exactSaleUnitPriceByWarehouse(Item $item, int $warehouseId): \Brick\Math\BigRational
     {
         $warehousePrice = $item->warehousePrices->where('item_id', $item->id)
@@ -1172,7 +1172,7 @@ class Item extends ModelTenant
         $snapshot['inputs']['selected_warehouse_id'] = $warehouseId;
         return $snapshot;
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     /**
      * Devuelve la esuctura de item para los select correspondientes.
@@ -1354,11 +1354,11 @@ class Item extends ModelTenant
             $currency = new CurrencyType();
         }
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $prices = $this->modalPriceValues($warehouse->id);
         $purchase_unit_price = $prices['purchase_unit_price'];
         $purchase_unit_value = $prices['purchase_unit_value'];
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         $data = [
             'id'                               => $this->id,
@@ -2511,9 +2511,9 @@ class Item extends ModelTenant
             'currency_type_symbol' => $this->currency_type->symbol,
             'sale_unit_price' => $this->sale_unit_price,
             'purchase_unit_price' => $this->purchase_unit_price,
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             'calculation_snapshot' => $this->calculation_snapshot,
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             'unit_type_id' => $this->unit_type_id,
             'sale_affectation_igv_type_id' => $this->sale_affectation_igv_type_id,
             'purchase_affectation_igv_type_id' => $this->purchase_affectation_igv_type_id,

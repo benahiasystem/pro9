@@ -1,6 +1,6 @@
 ---
 name: migrar-venezuela-geopolitica
-description: Reemplazar catálogos y referencias geográficas de Perú por Venezuela. Usar al trabajar con country_id, countries, departments, provinces, districts, estados, municipios, parroquias, etiquetas del cascader, caché territorial, zona horaria, direcciones o datos semilla de ubicación en Pro9.
+description: Reemplazar catálogos y referencias geográficas de Perú por Venezuela. Usar al trabajar con country_id, countries, departments, provinces, districts, estados, municipios, parroquias, etiquetas del cascader, caché territorial, zona horaria, direcciones o datos semilla de ubicación en SAB.
 ---
 
 <!-- ######## INICIO SKILL GEOPOLITICO VENEZUELA -->

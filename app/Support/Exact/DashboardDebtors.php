@@ -4,7 +4,7 @@ namespace App\Support\Exact;
 
 use Carbon\Carbon;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** The widget and receivables use the same documentary balances, never SQL projections. */
 final class DashboardDebtors
 {
@@ -65,4 +65,4 @@ final class DashboardDebtors
             'calculation_snapshot'=>Decimal::snapshot(['total_to_pay'=>$total])];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

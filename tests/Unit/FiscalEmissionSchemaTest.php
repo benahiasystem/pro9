@@ -34,8 +34,8 @@ class FiscalEmissionSchemaTest extends TestCase
 
     protected function setUp(): void
     {
-        if (getenv('PRO9_FISCAL_MYSQL_TESTS') !== '1') {
-            $this->markTestSkipped('Active PRO9_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.');
+        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') {
+            $this->markTestSkipped('Active SAB_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.');
         }
         $this->previousContainer = Container::getInstance();
         $this->previousFacade = Facade::getFacadeApplication();
@@ -76,7 +76,7 @@ class FiscalEmissionSchemaTest extends TestCase
         ];
         $this->capsule = new Manager($app);
         $this->capsule->addConnection($connection, 'control');
-        $this->database = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
+        $this->database = 'sab_fiscal_test_' . bin2hex(random_bytes(6));
         $this->capsule->getConnection('control')->statement('CREATE DATABASE `' . $this->database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
         \Tests\Support\FiscalTemporaryDatabases::register($this->database, $this->capsule->getConnection('control')->getPdo());
         $connection['database'] = $this->database;
@@ -102,7 +102,7 @@ class FiscalEmissionSchemaTest extends TestCase
     protected function tearDown(): void
     {
         try {
-            if ($this->database && preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/', $this->database)) {
+            if ($this->database && preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/', $this->database)) {
                 $tenant = $this->capsule->getConnection('tenant');
                 while ($tenant->transactionLevel() > 0) $tenant->rollBack();
                 $this->capsule->getConnection('control')->statement('DROP DATABASE `' . $this->database . '`');
@@ -147,24 +147,24 @@ class FiscalEmissionSchemaTest extends TestCase
     {
         $start = microtime(true);
         $db = $this->capsule->getConnection('tenant');
-        if (getenv('PRO9_FISCAL_SNAPSHOT') !== '0' && \Tests\Support\FiscalFixtureSnapshot::restore($db)) {
-            if (getenv('PRO9_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture restaurado: %.3f s\n", microtime(true) - $start));
+        if (getenv('SAB_FISCAL_SNAPSHOT') !== '0' && \Tests\Support\FiscalFixtureSnapshot::restore($db)) {
+            if (getenv('SAB_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture restaurado: %.3f s\n", microtime(true) - $start));
             return;
         }
         foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
         $migrated = microtime(true);
         (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
         $seeded = microtime(true);
-        if (getenv('PRO9_FISCAL_SNAPSHOT') !== '0') \Tests\Support\FiscalFixtureSnapshot::capture($db);
-        if (getenv('PRO9_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture migraciones %.3f s; semillas %.3f s; captura %.3f s\n", $migrated - $start, $seeded - $migrated, microtime(true) - $seeded));
+        if (getenv('SAB_FISCAL_SNAPSHOT') !== '0') \Tests\Support\FiscalFixtureSnapshot::capture($db);
+        if (getenv('SAB_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture migraciones %.3f s; semillas %.3f s; captura %.3f s\n", $migrated - $start, $seeded - $migrated, microtime(true) - $seeded));
     }
 
     public function test_fiscal_fixture_snapshot_preserves_schema_seed_data_and_database_isolation(): void
     {
-        if (getenv('PRO9_FISCAL_SNAPSHOT') === '0') $this->markTestSkipped('La restauración del fixture está deshabilitada.');
+        if (getenv('SAB_FISCAL_SNAPSHOT') === '0') $this->markTestSkipped('La restauración del fixture está deshabilitada.');
         $this->prepareFiscalFixtureSchema();
         $source = $this->capsule->getConnection('tenant');
-        $other = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
+        $other = 'sab_fiscal_test_' . bin2hex(random_bytes(6));
         $control = $this->capsule->getConnection('control');
         $control->statement('CREATE DATABASE `' . $other . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
         \Tests\Support\FiscalTemporaryDatabases::register($other, $control->getPdo());
@@ -193,7 +193,7 @@ class FiscalEmissionSchemaTest extends TestCase
 
     public function test_fiscal_temporary_database_is_removed_after_process_error(): void
     {
-        $name = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
+        $name = 'sab_fiscal_test_' . bin2hex(random_bytes(6));
         $connection = $this->capsule->getConnection('control')->getConfig();
         $code = <<<'PHP'
 require 'vendor/autoload.php';
@@ -219,7 +219,7 @@ PHP;
         }
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public function test_central_exact_schema_range_snapshot_rollback_and_repeat_in_mysql(): void
     {
         $migrations=[];
@@ -248,7 +248,7 @@ PHP;
             self::assertFalse($db->getSchemaBuilder()->hasTable('massive_invoices'));
         }
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     public function test_change_disbursement_schema_is_created_and_reversible(): void
     {
@@ -544,8 +544,8 @@ PHP;
             foreach (['retentions', 'perceptions', 'purchase_settlements'] as $table) {
                 self::assertSame('varchar(20)', $db->select("SHOW COLUMNS FROM `$table` LIKE 'series'")[0]->Type);
             }
-            if (getenv('PRO9_EXPORT_CONTRACT') === '1') {
-                file_put_contents('/tmp/pro9-fresh-final-schema.json', json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            if (getenv('SAB_EXPORT_CONTRACT') === '1') {
+                file_put_contents('/tmp/sab-fresh-final-schema.json', json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
             $this->assertForeignKeyIntegrity($db);
             $currentSeeds = $this->seedSnapshot($db);
@@ -1076,7 +1076,7 @@ PHP;
         $edit['fiscal_data']=['special_tax_regime_id'=>4];(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->update($edit,$doc->id);$doc=$doc->fresh();
         self::assertNotSame($preparedKey,$doc->emission->operation_key);self::assertNull($doc->emission->payload);
         $company->fiscal_credentials=json_encode(['usuario'=>'test-user','clave'=>'test-secret']);$company->save();$mode='confirmed';
-        $log=tempnam(sys_get_temp_dir(),'pro9_regime_race_');
+        $log=tempnam(sys_get_temp_dir(),'sab_regime_race_');
         try{
             $edit['fiscal_data']=['special_tax_regime_id'=>5];
             $results=$this->runFiscalWorkers($doc->id,'hka-edit-race',[
@@ -1174,7 +1174,7 @@ PHP;
         self::assertSame($notesBefore,$db->table('documents')->where('document_type_id','08')->count());
         (new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($doc);
         $company->fiscal_credentials=json_encode(['usuario'=>'test-user','clave'=>'test-secret']);$company->save();
-        $raceEdit=array_replace($edit,['third_party_id'=>$parties[0]->id]);$log=tempnam(sys_get_temp_dir(),'pro9_third_party_race_');
+        $raceEdit=array_replace($edit,['third_party_id'=>$parties[0]->id]);$log=tempnam(sys_get_temp_dir(),'sab_third_party_race_');
         try{
             $results=$this->runFiscalWorkers($doc->id,'hka-edit-race',[
                 ['action'=>'edit','edit'=>$raceEdit,'web_export'=>true],['action'=>'send','log'=>$log]]);
@@ -1242,11 +1242,11 @@ PHP;
             self::assertEquals(0, $document->total_exonerated);
             self::assertEquals(0, $document->total_igv);
             self::assertEquals(195, $document->total);
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             // Stored equivalence retains 195 * 40.12345678; cents belong to the provider copy.
             self::assertSame($currency==='USD' ? '7824.0740721' : '195',
                 \App\Support\Exact\Decimal::represent($document->currency_totals->exactValue('exportation')));
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             self::assertSame('CO', $document->customer->country_id);
             self::assertSame('NIT', $document->customer->hka_identity_code);
             $before = $transmissions;
@@ -1324,7 +1324,7 @@ PHP;
         $payments = $db->table('document_payments')->where('document_id',$race->id)->get()->toArray();
         $stockBefore = (float) $db->table('item_warehouse')->where('item_id',$case['items'][0]['item_id'])->value('stock');
         $documentsBefore = $db->table('documents')->count();
-        $log = tempnam(sys_get_temp_dir(),'pro9_export_edit_race_');
+        $log = tempnam(sys_get_temp_dir(),'sab_export_edit_race_');
         try {
             $results = $this->runFiscalWorkers($race->id,'hka-edit-race',[
                 ['action'=>'edit','edit'=>$raceEdit,'web_export'=>true], ['action'=>'send','log'=>$log]]);
@@ -1341,9 +1341,9 @@ PHP;
             self::assertSame('confirmed',$after->emission->status);
             $header = $after->emission->payload['documentoElectronico']['encabezado'];
             self::assertSame(\App\Services\ExportInvoicePolicy::INCOTERMS[$after->invoice->operation_type_id],$header['identificacionDocumento']['tipoDeVenta']);
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             self::assertTrue(\App\Support\Exact\Decimal::of($header['totales']['totalAPagar'])->isEqualTo($after->exactValue('total')));
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             self::assertEquals($payments,$db->table('document_payments')->where('document_id',$race->id)->get()->toArray());
         } finally { unlink($log); }
     }
@@ -1518,7 +1518,7 @@ PHP;
         self::assertSame($before, $db->table('documents')->count());
         self::assertSame($stock, $db->table('item_warehouse')->value('stock'));
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $mixed = array_replace($input, ['external_id'=>(string)\Illuminate\Support\Str::uuid(),
             'date_of_issue'=>'2026-10-19','total_prepayment'=>'10',
             'discounts'=>[['discount_type_id'=>'02','amount'=>'10']],
@@ -1602,7 +1602,7 @@ PHP;
             self::assertEquals(json_decode($finances,true),json_decode($db->table('configurations')->value('finances'),true));
             foreach ($rows as $row) self::assertTrue($D::readRequired($row,'arrears')->isEqualTo($D::of('0.123456789012')->multipliedBy($row['delay_payment'])));
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
     public function test_exact_commercial_lifecycle_preserves_quantities_and_reverses_stock(): void
@@ -1635,7 +1635,7 @@ PHP;
         $periodic=$periodic->fresh();$periodic->unit_price='6';$periodic->save();
         self::assertSame('1000',$D::represent($saleNote->fresh()->exactValue('total')));
         self::assertSame('2500',$D::represent(\Modules\Inventory\Models\ItemWarehouse::firstOrFail()->exactValue('stock')->multipliedBy(3)));
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $report = (new \Modules\Report\Http\Controllers\ReportSaleConsolidatedController())->detailRecords([
             'document_type_id'=>'[]', 'date_range_type_id'=>'date_of_issue', 'date_start'=>'2026-09-01', 'date_end'=>'2026-09-30', 'person_id'=>null,
         ]);
@@ -1643,12 +1643,12 @@ PHP;
         $reportTotals = \App\Support\Exact\SalesConsolidated::summary($report);
         self::assertSame('1000', $reportTotals['total_sale']);
         self::assertTrue($D::readRequired($reportTotals, 'quantity')->isEqualTo($D::of(500)->dividedBy(3)));
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         $periodic->delete();
         self::assertSame('1000',$D::represent(\Modules\Inventory\Models\ItemWarehouse::firstOrFail()->exactValue('stock')));
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public function test_exact_stock_import_retains_periodic_delta_and_repeating_the_file_does_not_move_stock(): void
     {
         [$db, $app, $input] = $this->bootHkaFixture();
@@ -1678,7 +1678,7 @@ PHP;
         self::assertSame(1, $import->getData()['skipped']);
         self::assertSame($count, $db->table('inventories')->count());
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     public function test_hka_emission_runs_after_outer_commit_and_recovers_without_duplicate_sales(): void
     {
@@ -1800,14 +1800,14 @@ PHP;
         $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
         $race = (new \App\CoreFacturalo\Facturalo)->save($input)->getDocument()->fresh();
         $company->fiscal_credentials = json_encode(['usuario' => 'test-user', 'clave' => 'test-secret']); $company->save();
-        $log = tempnam(sys_get_temp_dir(), 'pro9_hka_claim_');
+        $log = tempnam(sys_get_temp_dir(), 'sab_hka_claim_');
         try {
             $results = $this->runFiscalWorkers($notSent->id, 'hka', [['log' => $log], ['log' => $log]]);
             self::assertSame("emission\n", file_get_contents($log));
             self::assertSame('confirmed', $notSent->fresh()->emission->status);
             foreach ($results as $result) self::assertContains($result['status'], ['pending', 'confirmed']);
         } finally { unlink($log); }
-        $log = tempnam(sys_get_temp_dir(), 'pro9_hka_edit_race_');
+        $log = tempnam(sys_get_temp_dir(), 'sab_hka_edit_race_');
         try {
             $edit = array_replace($input, ['id' => $race->id, 'series' => $race->series, 'number' => $race->number, 'payments' => []]);
             $payments = $db->table('document_payments')->where('document_id', $race->id)->get()->toArray();
@@ -1946,7 +1946,7 @@ PHP;
             $response['mail'] = ['automatic' => ['request_id' => (string) \Illuminate\Support\Str::uuid(),
                 'recipients' => $recipients, 'status' => 'waiting']];
             $emission->update(['response' => $response]);
-            $log = tempnam(sys_get_temp_dir(), 'pro9_hka_auto_mail_');
+            $log = tempnam(sys_get_temp_dir(), 'sab_hka_auto_mail_');
             try {
                 $results = $this->runFiscalWorkers($emission->document_id, 'hka-auto-mail', [['log' => $log], ['log' => $log]]);
                 self::assertSame("mail\n", file_get_contents($log));
@@ -2141,7 +2141,7 @@ PHP;
             // Two independent MySQL connections must still produce only one email mutation.
             $mailResponse = $after->fresh()->emission->response;
             unset($mailResponse['mail']); $after->fresh()->emission->update(['response' => $mailResponse]);
-            $log = tempnam(sys_get_temp_dir(), 'pro9_hka_mail_');
+            $log = tempnam(sys_get_temp_dir(), 'sab_hka_mail_');
             try {
                 $uuid = (string) \Illuminate\Support\Str::uuid();
                 $results = $this->runFiscalWorkers($after->id, 'hka-mail', [['log' => $log, 'uuid' => $uuid], ['log' => $log, 'uuid' => $uuid]]);

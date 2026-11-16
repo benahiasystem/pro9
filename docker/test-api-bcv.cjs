@@ -37,7 +37,7 @@ try {
         assert.match(rates[key], /^\d+\.\d{8}$/);
         assert.ok(/[1-9]/.test(rates[key]));
     }
-    console.log(JSON.stringify({ origin: 'pro9-php', queriedAt: new Date().toISOString(), ...rates }));
+    console.log(JSON.stringify({ origin: 'sab-php', queriedAt: new Date().toISOString(), ...rates }));
     console.log('OK: token fijo, rechazos 401, login retirado, salud y consulta real.');
 } catch {
     console.error('Falló la prueba API BCV. Revisar configuración, salud y conectividad; no se muestran secretos.');

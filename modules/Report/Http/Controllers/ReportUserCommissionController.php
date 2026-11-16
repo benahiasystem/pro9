@@ -41,13 +41,13 @@ class ReportUserCommissionController extends Controller
 
     public function records(Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \App\Support\Exact\ReadSnapshot::run((new User())->getConnection(), function () use ($request) {
             $records = $this->getRecords($request->all(), User::class)->paginate(config('tenant.items_per_page'));
             $amounts = \Modules\Report\Services\EstimatedUserCommission::users($records->getCollection());
             return (new ReportUserCommissionCollection($records))->withAmounts($amounts);
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
 
@@ -119,12 +119,12 @@ class ReportUserCommissionController extends Controller
 
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         [$records, $amounts] = \App\Support\Exact\ReadSnapshot::run((new User())->getConnection(), function () use ($request) {
             $records = $this->getRecords($request->all(), User::class)->get();
             return [$records, \Modules\Report\Services\EstimatedUserCommission::users($records)];
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         $pdf = PDF::loadView('report::user_commissions.report_pdf', compact("records", "company", "establishment", "amounts"));
 
@@ -141,12 +141,12 @@ class ReportUserCommissionController extends Controller
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         [$records, $amounts] = \App\Support\Exact\ReadSnapshot::run((new User())->getConnection(), function () use ($request) {
             $records = $this->getRecords($request->all(), User::class)->get();
             return [$records, \Modules\Report\Services\EstimatedUserCommission::users($records)];
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         return (new UserCommissionExport)
                 ->records($records)

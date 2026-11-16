@@ -9,7 +9,7 @@ use Modules\Dispatch\Models\{Driver,Transport,Dispatcher,OriginAddress};
 use Modules\Inventory\Models\{Warehouse,Inventory};
 use Illuminate\Support\Str;
 
-$fixtureLock=fopen(sys_get_temp_dir().'/pro9-delivery-bbc-fixture.lock','c');
+$fixtureLock=fopen(sys_get_temp_dir().'/sab-delivery-bbc-fixture.lock','c');
 if (!flock($fixtureLock,LOCK_EX|LOCK_NB)) exit("Otra preparación de BBC está en ejecución. Reintente al terminar.\n");
 $root=dirname(__DIR__);$host=$argv[1] ?? ''; $mode=$argv[2] ?? '';
 if ($host!=='bbc.localhost' || !in_array($mode,['prepare','emit','documents','audit'],true)) exit("Usage: php scripts/prepare_delivery_order_demo.php bbc.localhost prepare|emit|documents|audit [case]\n");

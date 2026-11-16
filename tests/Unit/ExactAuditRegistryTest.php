@@ -4,13 +4,13 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactAuditRegistryTest extends TestCase
 {
     public function test_unknown_operations_and_missing_evidence_stay_pending(): void
     {
         require_once dirname(__DIR__,2).'/scripts/exact_audit_registry.php';
-        $root=sys_get_temp_dir().'/pro9-exact-audit-'.bin2hex(random_bytes(8));
+        $root=sys_get_temp_dir().'/sab-exact-audit-'.bin2hex(random_bytes(8));
         mkdir($root.'/config',0777,true);
         try {
             $row=['file'=>'source.php','symbol'=>'Price::format','operation'=>'represent','expression'=>'D::represent($value, 2)','line'=>3];
@@ -51,4 +51,4 @@ class ExactAuditRegistryTest extends TestCase
         }
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

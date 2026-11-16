@@ -149,7 +149,7 @@ class CreateDocumentTool implements ToolInterface
                 'includes_iva' => (bool) $item->has_igv,
             ];
         }
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $rate = ExchangeRate::where('date', '<=', now('America/Caracas')->format('Y-m-d'))->orderByDesc('date')->first();
         try {
             $pricing = DraftPricing::calculate($lines, $rate?->sale, $discountAmount);
@@ -159,7 +159,7 @@ class CreateDocumentTool implements ToolInterface
         $lines = array_map(fn ($line) => array_replace($line, [
             'unit_price_with_igv'=>$line['unit_price'], 'line_total'=>$line['total'], 'line_igv'=>$line['total_igv'],
         ]), $pricing['items']);
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         $draft = [
             'document_type_id' => $documentTypeId,

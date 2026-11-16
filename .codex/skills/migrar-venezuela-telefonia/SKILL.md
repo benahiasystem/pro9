@@ -1,6 +1,6 @@
 ---
 name: migrar-venezuela-telefonia
-description: Adaptar prefijos telefónicos, enlaces tel y envíos de WhatsApp a Venezuela. Usar al modificar +51, +58, wa.me, customer_telephone, wsPhone, QR API, ecommerce, restaurante o normalización telefónica en Pro9.
+description: Adaptar prefijos telefónicos, enlaces tel y envíos de WhatsApp a Venezuela. Usar al modificar +51, +58, wa.me, customer_telephone, wsPhone, QR API, ecommerce, restaurante o normalización telefónica en SAB.
 ---
 
 # Migrar telefonía venezolana

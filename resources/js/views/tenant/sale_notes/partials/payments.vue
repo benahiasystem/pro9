@@ -34,7 +34,7 @@
                                             <i class="fas fa-file-download"></i>
                                         </button>
                                     </td>
-                                    <!-- ######## INICIO CALCULOS EXACTOS PRO9 ######## -->
+                                    <!-- ######## INICIO CALCULOS EXACTOS SAB ######## -->
                                     <td class="text-right">
                                         {{ row.payment }}
                                         <small v-if="row.currency_type_id && row.tendered_original_amount !== null && row.tendered_original_amount !== undefined" class="d-block">{{ row.tendered_original_amount }} {{ row.currency_type_id }} recibido · tasa {{ row.exchange_rate }}</small>
@@ -43,7 +43,7 @@
                                         <small v-if="hasChange(row) && row.received_change !== null && row.received_change !== undefined" class="d-block text-muted">Vuelto: {{ row.received_change }} {{ row.currency_type_id }}</small>
                                         <small v-else-if="hasChange(row)" class="d-block text-muted">Vuelto aplicado: {{ row.change }} {{ document.currency_type_id }}</small>
                                     </td>
-                                    <!-- ######## FIN CALCULOS EXACTOS PRO9 ######## -->
+                                    <!-- ######## FIN CALCULOS EXACTOS SAB ######## -->
                                 <template v-if="external">
                                     <td class="series-table-actions text-center">
                                         <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickOptions()"><i class="fas fa-file-upload"></i></button>
@@ -178,10 +178,10 @@
 </style>
 
 <script>
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     import {exactAmount, exactInput, exactValue, appliedReceiptAmount} from '../../../../helpers/exchange-rate-math'
     import {paymentValidationMessage} from '../../../../helpers/payment-classification'
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     import {deletable} from '../../../../mixins/deletable'
     import DocumentOptions from '../../../../../../modules/Finance/Resources/assets/js/views/unpaid/partials/options.vue'
@@ -221,7 +221,7 @@
                 })
         },
         methods: {
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             hasCashAdjustment(row) { return exactValue(row, 'cash_adjustment').compare(0) !== 0; },
             hasChange(row) { return exactValue(row, 'change').compare(0) !== 0; },
             cashAdjustmentText(row) {
@@ -231,7 +231,7 @@
                 const fraction = value.fraction();
                 return `${fraction.n}/${fraction.d}`;
             },
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             clickDownloadFile(filename) {
                 window.open(
                     `/finances/payment-file/download-file/${filename}/sale_notes`,
@@ -332,7 +332,7 @@
                 this.fileList = []
             },
             clickSubmit(index) {
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 const row = this.records[index];
                 if (row.loading) return;
                 let requested, applied;
@@ -351,7 +351,7 @@
                 row.loading = true;
 
                 const paid = applied.compare(exactValue(this.document, 'total_difference')) === 0;
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
 
 
                 let form = {

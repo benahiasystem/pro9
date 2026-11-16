@@ -189,7 +189,7 @@ import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
                 this.calculatePayments(this.payments)
                 this.$emit('add', this.payments)
             },
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             calculatePayments(list = null) {
                 if (this.paymentConditionId === '02') return;
                 const payments = list || (this.showDialog ? this.draftPayments : this.payments);

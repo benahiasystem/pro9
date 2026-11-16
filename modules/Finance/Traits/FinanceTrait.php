@@ -390,7 +390,7 @@
 
         }
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         public function getSumPayment($record, $model, $requestCurrencyTipeId = 'VES')
         {
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
@@ -424,7 +424,7 @@
             }));
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         }
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         /**
          * Devuelve los movimientos de efectivo entre cuentas.

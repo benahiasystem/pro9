@@ -8,7 +8,7 @@ use Brick\Math\BigRational;
 use Brick\Math\RoundingMode;
 use Illuminate\Validation\ValidationException;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Fractions are authoritative. Decimal strings are boundary representations only. */
 final class Decimal
 {
@@ -138,7 +138,7 @@ final class Decimal
             self::$readCache[$record]=$entry;
             if (isset($entry['values'][$field])) return $entry['values'][$field];
         }
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         // Eloquent casts may turn a stored decimal into a binary float. Read the
         // raw attribute when no fraction was frozen, retaining accessors only for
         // computed fields that have no corresponding stored attribute.
@@ -146,7 +146,7 @@ final class Decimal
         elseif (method_exists($record, 'getAttributes') && array_key_exists($field, $record->getAttributes())) {
             $value = $record->getAttributes()[$field] ?? 0;
         } else $value = $record->$field ?? 0;
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         return self::of($snapshot['values'][$field] ?? $value);
     }
 
@@ -219,4 +219,4 @@ final class Decimal
         return array_map(fn ($v) => self::represent(self::of($v)->dividedBy($unit), $scale, true), $floors);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

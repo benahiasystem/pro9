@@ -1,4 +1,4 @@
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 module.exports = function guardProof(node) {
     if (node.type !== 'BinaryExpression' || !['===','!==','==','!='].includes(node.operator)) return null
     for (const operand of [node.left, node.right]) {
@@ -14,4 +14,4 @@ module.exports = function guardProof(node) {
     }
     return null
 }
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

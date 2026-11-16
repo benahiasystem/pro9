@@ -18,7 +18,7 @@ class SellnowSalePersistenceTest extends TestCase
 
     protected function setUp(): void
     {
-        if (getenv('PRO9_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere una base MySQL descartable.');
+        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere una base MySQL descartable.');
         $this->fixture = new class extends FiscalEmissionSchemaTest {
             public bool $ready = false;
             public function start(): array { parent::setUp(); $this->ready=true; return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
@@ -294,7 +294,7 @@ class SellnowSalePersistenceTest extends TestCase
         $sale=(new SaleOperations())->submit($body);
         self::assertSame('confirmed',$sale->status);
         $journal=$sale->effects;$journal['pdf']=['status'=>'confirmed'];$sale->update(['effects'=>$journal]);
-        $gate=sys_get_temp_dir().'/pro9-sellnow-print-'.bin2hex(random_bytes(10));
+        $gate=sys_get_temp_dir().'/sab-sellnow-print-'.bin2hex(random_bytes(10));
         $start=function (?string $gate=null) use ($body) {
             $process=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/sellnow_concurrency_worker.php']);
             $process->setInput(json_encode(['connection'=>$this->db->getConfig(),'user_id'=>auth()->id(),'envelope'=>$body,
@@ -398,7 +398,7 @@ class SellnowSalePersistenceTest extends TestCase
         $token=bin2hex(random_bytes(30));
         $this->db->table('users')->where('id',$this->input['user_id'])->update(['api_token'=>$token,'email_verified_at'=>date('Y-m-d H:i:s')]);
         $this->db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
-        $temp=sys_get_temp_dir().'/pro9-sellnow-http-'.bin2hex(random_bytes(6));
+        $temp=sys_get_temp_dir().'/sab-sellnow-http-'.bin2hex(random_bytes(6));
         mkdir($temp,0700);
         foreach (['framework/views','framework/cache','framework/sessions','logs','tenant'] as $directory) mkdir($temp.'/'.$directory,0700,true);
         $private=$temp.'/fixture.json';
@@ -406,7 +406,7 @@ class SellnowSalePersistenceTest extends TestCase
         $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);
         if (!$socket) throw new \RuntimeException($error);
         $address=stream_socket_get_name($socket,false);fclose($socket);
-        $environment=getenv();$environment['PRO9_EXACT_HTTP_FIXTURE']=$private;$environment['APP_ENV']='testing';
+        $environment=getenv();$environment['SAB_EXACT_HTTP_FIXTURE']=$private;$environment['APP_ENV']='testing';
         $server=proc_open([PHP_BINARY,'-S',$address,dirname(__DIR__).'/Support/exact_http_router.php'],
             [0=>['pipe','r'],1=>['file',$temp.'/server.log','a'],2=>['file',$temp.'/server.log','a']],$pipes,dirname(__DIR__,2),$environment);
         if (!is_resource($server)) throw new \RuntimeException('No se pudo iniciar HTTP temporal.');

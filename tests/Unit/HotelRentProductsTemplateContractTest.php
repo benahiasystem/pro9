@@ -52,7 +52,7 @@ class HotelRentProductsTemplateContractTest extends TestCase
         $root = dirname(__DIR__, 2);
         $hotel = file_get_contents($root.'/modules/Hotel/Resources/assets/js/views/rooms/AddProductToRoom.vue');
         $sharedItemForm = file_get_contents($root.'/resources/js/views/tenant/documents/partials/item.vue');
-        $skill = file_get_contents($root.'/.codex/skills/mantener-operacion-local-fiscal-pro9/SKILL.md');
+        $skill = file_get_contents($root.'/.codex/skills/mantener-operacion-local-fiscal-sab/SKILL.md');
 
         self::assertStringContainsString(':show-discounts-charges-attributes="false"', $hotel);
         self::assertStringContainsString("'showDiscountsChargesAttributes'", $sharedItemForm);

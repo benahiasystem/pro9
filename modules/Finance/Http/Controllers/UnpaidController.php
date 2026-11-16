@@ -38,9 +38,9 @@ use App\CoreFacturalo\Template;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\CoreFacturalo\Helpers\Functions\GeneralPdfHelper;
 use Illuminate\Support\Str;
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 use Illuminate\Support\Facades\DB;
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 
 
 class UnpaidController extends Controller
@@ -95,7 +95,7 @@ class UnpaidController extends Controller
 
     public function records(Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $request->validate(['page'=>'sometimes|integer|min:1','limit'=>'sometimes|integer|between:1,500']);
         return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'),function () use ($request) {
             $records = DashboardView::getUnpaidFilterUser($request->all())->sortBy('delay_payment');
@@ -107,7 +107,7 @@ class UnpaidController extends Controller
             return (new UnpaidCollection($page))->additional(['summary'=>$summary,
                 'configuration'=>$raw ? \App\Support\Exact\JsonDecimals::decode($raw) : ['apply_arrears'=>false,'arrears_amount'=>'0']]);
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
     }
 

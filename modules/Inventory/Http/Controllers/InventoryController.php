@@ -683,9 +683,9 @@ class InventoryController extends Controller
         ]);
         if ($request->hasFile('file')) {
             try {
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 $import = new StockImport($request->file('file')->getRealPath());
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
                 $import->import($request->file('file'), null, Excel::XLSX);
                 $data = $import->getData();
                 return [

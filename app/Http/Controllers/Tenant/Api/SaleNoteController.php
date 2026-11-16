@@ -94,7 +94,7 @@ class SaleNoteController extends Controller
 
     public function store(Request $request)
     {
-        $deferEffects = $request->attributes->get('pro9.defer_sale_effects') === true;
+        $deferEffects = $request->attributes->get('sab.defer_sale_effects') === true;
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         $currency = $request->input('currency_type_id');
         if (!in_array($currency, ['VES', 'USD'], true)

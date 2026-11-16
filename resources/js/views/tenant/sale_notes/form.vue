@@ -3279,9 +3279,9 @@ export default {
                     this.form.quantity_period > 0 ? true : false;
             }
 
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             this.form.paid = validate.acum_total.compare(exactValue(this.form, 'total_payable')) >= 0;
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
 
             let validate_payment_destination = await this.validatePaymentDestination();
 
@@ -3333,7 +3333,7 @@ export default {
                 });
         },
         validate_payments() {
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             try {
                 const rows = this.form.payments.map(row => {
                     const savedKind = row.payment_method_snapshot?.collection_kind;
@@ -3346,7 +3346,7 @@ export default {
             } catch (error) {
                 return {error_by_item: 1, acum_total: exactAmount('0')};
             }
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
         },
         close() {
             location.href = "/sale-notes";

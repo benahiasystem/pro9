@@ -6,7 +6,7 @@ use App\Support\Exact\Decimal;
 use App\Support\Exact\SalesConsolidated;
 use PHPUnit\Framework\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactSalesConsolidatedTest extends TestCase
 {
     private function row(array $changes=[]): array
@@ -61,4 +61,4 @@ class ExactSalesConsolidatedTest extends TestCase
             [['currency_type_id'=>'USD', 'exchange_rate_sale'=>'0']], [['currency_type_id'=>'PEN']]];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

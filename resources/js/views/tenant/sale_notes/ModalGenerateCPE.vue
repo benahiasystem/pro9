@@ -186,10 +186,10 @@ export default {
                 notes.push(this.getObjectForNote(d))
               }
             });
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             const items = response.data.grouped_items;
             if (!Array.isArray(items)) throw new Error('No se recibió la agrupación conservada de las notas.');
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             const client = this.clients.find((c) => c.id === this.form.client_id);
             storeSaleNoteConversion(localStorage,{context:response.data.conversion_context,client,items,notes,payments:response.data.payments});
 

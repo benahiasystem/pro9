@@ -1,5 +1,5 @@
 <?php
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 // Inventory of initial tenant DECIMAL(30,12) columns. Exchange rates keep their own contract.
 return [
     'account_payments' => ['payment'],
@@ -124,4 +124,4 @@ return [
     'suscription_plans' => ['total', 'total_prepayment', 'total_charge', 'total_discount', 'total_exportation', 'total_free', 'total_taxed', 'total_unaffected', 'total_exonerated', 'total_igv', 'total_igv_free', 'total_base_other_taxes', 'total_other_taxes', 'total_taxes', 'total_value'],
     'technical_service_items' => ['quantity', 'unit_value', 'total_base_igv', 'percentage_igv', 'total_igv', 'total_base_other_taxes', 'percentage_other_taxes', 'total_other_taxes', 'total_taxes', 'unit_price', 'total_value', 'total_charge', 'total_discount', 'total'],
 ];
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

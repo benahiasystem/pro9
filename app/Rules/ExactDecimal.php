@@ -5,7 +5,7 @@ namespace App\Rules;
 use App\Support\Exact\Decimal;
 use Illuminate\Contracts\Validation\Rule;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Validate a decimal input without PHP's binary numeric comparisons. */
 final class ExactDecimal implements Rule
 {
@@ -29,4 +29,4 @@ final class ExactDecimal implements Rule
         return "El campo :attribute debe ser un decimal válido de hasta {$this->integerDigits} enteros y {$this->scale} decimales$minimum, sin redondeo.";
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

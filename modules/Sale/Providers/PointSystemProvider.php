@@ -2,7 +2,7 @@
 
 namespace Modules\Sale\Providers;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class PointSystemProvider extends \Illuminate\Support\ServiceProvider
 {
     public function boot()
@@ -13,4 +13,4 @@ class PointSystemProvider extends \Illuminate\Support\ServiceProvider
         }
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

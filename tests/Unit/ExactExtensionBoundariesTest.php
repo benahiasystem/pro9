@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Support\Exact\Decimal;
 use Tests\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactExtensionBoundariesTest extends TestCase
 {
     public function test_excel_rejects_a_fraction_that_would_be_silently_truncated(): void
@@ -34,7 +34,7 @@ class ExactExtensionBoundariesTest extends TestCase
             'calculation_snapshot'=>Decimal::snapshot(['cantidad'=>'1','precio'=>$third,'total_gravado'=>$third,'total_igv'=>'0','total_venta'=>$third])]);
         $export=(new \App\Exports\MassiveInvoiceExport())->records(collect([$row]));
         $bytes=\Maatwebsite\Excel\Facades\Excel::raw($export,\Maatwebsite\Excel\Excel::XLSX);
-        $path=tempnam(sys_get_temp_dir(),'pro9-exact-export-');
+        $path=tempnam(sys_get_temp_dir(),'sab-exact-export-');
         try {
             file_put_contents($path,$bytes);
             $book=\PhpOffice\PhpSpreadsheet\IOFactory::load($path);
@@ -72,4 +72,4 @@ class ExactExtensionBoundariesTest extends TestCase
         self::assertSame(['n'=>'-1','d'=>'300'],Decimal::fraction($payment->exactValue('cash_adjustment')));
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

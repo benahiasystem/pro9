@@ -1,13 +1,13 @@
 ---
 name: migrar-iva-venezuela
-description: Mantener y verificar el IVA venezolano para instalaciones nuevas de Pro9. Usar al cambiar tasa, cálculos fiscales, afectaciones, Store, POS, ecommerce, documentos, compras, reportes, PDFs o importaciones.
+description: Mantener y verificar el IVA venezolano para instalaciones nuevas de SAB. Usar al cambiar tasa, cálculos fiscales, afectaciones, Store, POS, ecommerce, documentos, compras, reportes, PDFs o importaciones.
 ---
 
-# Mantener el IVA venezolano en Pro9
+# Mantener el IVA venezolano en SAB
 
 ## Precisión exacta — contrato del 16/10/2026
 
-Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
+Aplicar [cálculos exactos](../mantener-calculos-exactos-sab/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
 
 
 ## Contrato
@@ -67,4 +67,4 @@ Las exportaciones mantienen `total_exportation` separado de `total_exonerated`, 
 
 ## IVA de factura frente a retenciones recibidas SPE
 
-La condición SPE no cambia afectación o tasa IVA de los productos. Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md) y [persistencia fiscal](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md) para propuestas y comprobantes recibidos: 75/100 sobre IVA, causal/evidencia para 100, facultad del comprador por fecha y operación pública documentada. Proveedor formal/no sujeto o excluido no acredita retención IVA. El comprobante recibido aplica saldo sin reducir IVA/total de venta ni generar efectivo; no convertir la propuesta en pago automático. El IGTF se evalúa separadamente sobre cobro real, no sobre IVA retenido. Verificar política y casos MySQL de retenciones junto al cálculo de líneas afectado.
+La condición SPE no cambia afectación o tasa IVA de los productos. Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-sab/SKILL.md) y [persistencia fiscal](../mantener-persistencia-fiscal-venezuela-sab/SKILL.md) para propuestas y comprobantes recibidos: 75/100 sobre IVA, causal/evidencia para 100, facultad del comprador por fecha y operación pública documentada. Proveedor formal/no sujeto o excluido no acredita retención IVA. El comprobante recibido aplica saldo sin reducir IVA/total de venta ni generar efectivo; no convertir la propuesta en pago automático. El IGTF se evalúa separadamente sobre cobro real, no sobre IVA retenido. Verificar política y casos MySQL de retenciones junto al cálculo de líneas afectado.

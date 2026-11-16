@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Support\Exact\ReadSnapshot;
 use PHPUnit\Framework\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactReadSnapshotTest extends TestCase
 {
     private function connection()
@@ -55,4 +55,4 @@ class ExactReadSnapshotTest extends TestCase
         ReadSnapshot::run($connection,fn()=>ReadSnapshot::run($other,fn()=>self::fail('Conexiones distintas.')));
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

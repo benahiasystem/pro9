@@ -1,0 +1,4 @@
+interface:
+  display_name: "Retenciones IVA recibidas en SAB"
+  short_description: "Previsión, saldo, HKA y reversión de IVA recibido"
+  default_prompt: "Usa $mantener-retenciones-iva-recibidas-sab para mantener el flujo común de retenciones IVA recibidas en Web, POS, Garage y API de SAB."

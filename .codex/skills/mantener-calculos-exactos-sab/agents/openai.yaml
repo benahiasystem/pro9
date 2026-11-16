@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cálculos exactos de SAB"
+  short_description: "Precisión, persistencia y presentación decimal en SAB"
+  default_prompt: "Usa $mantener-calculos-exactos-sab para conservar cálculos decimales exactos en SAB."

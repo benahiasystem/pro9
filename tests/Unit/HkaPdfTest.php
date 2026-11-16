@@ -131,7 +131,7 @@ class HkaPdfTest extends TestCase
             self::assertEqualsWithDelta(0, (float) $glyph[2], 0.0001);
             self::assertEqualsWithDelta(0, (float) $glyph[3], 0.0001);
         }
-        if ($path = getenv('PRO9_HKA_A5_FIXTURE_PATH')) file_put_contents($path, $result);
+        if ($path = getenv('SAB_HKA_A5_FIXTURE_PATH')) file_put_contents($path, $result);
         // Imported content keeps vector text streams, rather than rasterizing the invoice.
         self::assertStringNotContainsString('/Subtype /Image', $result);
     }
@@ -174,7 +174,7 @@ class HkaPdfTest extends TestCase
             self::assertEqualsWithDelta((float) $glyph[1] * (float) $placement[1], (float) $glyph[2] * (float) $placement[2], 0.0001);
             self::assertStringContainsString('(HKA test page 1) Tj', $child->getUnfilteredStream());
         }
-        if ($path = getenv('PRO9_HKA_A5_NESTED_FIXTURE_PATH')) file_put_contents($path, $result);
+        if ($path = getenv('SAB_HKA_A5_NESTED_FIXTURE_PATH')) file_put_contents($path, $result);
     }
 
     private function assertA5(string $pdf, int $pages): void

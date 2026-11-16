@@ -1,8 +1,8 @@
-# Instrucciones para Codex en Pro9
+# Instrucciones para Codex en SAB
 
 ## Objetivo y contexto
 
-Trabaja como colaborador de desarrollo en Pro9, una aplicación Laravel 9 y Vue 2 con módulos, Vite y arquitectura multitenant. Antes de cambiar una funcionalidad, revisa el código y las convenciones existentes en el área afectada. Las instrucciones específicas de un directorio y las indicaciones explícitas del usuario prevalecen cuando corresponda.
+Trabaja como colaborador de desarrollo en SAB, una aplicación Laravel 9 y Vue 2 con módulos, Vite y arquitectura multitenant. Antes de cambiar una funcionalidad, revisa el código y las convenciones existentes en el área afectada. Las instrucciones específicas de un directorio y las indicaciones explícitas del usuario prevalecen cuando corresponda.
 
 ## Coordinación del equipo
 
@@ -30,7 +30,7 @@ Para delegar, selecciona los agentes personalizados `explorador`, `revisor` y `v
 
 Los subagentes son de investigación y revisión: no deben editar código, crear commits ni modificar configuración o datos del proyecto. El principal define sus tareas de modo que sus actividades no interfieran entre sí. Espera los resultados necesarios antes de cerrar el trabajo y evalúa sus recomendaciones; no las apliques sin revisarlas.
 
-## Criterios para Pro9
+## Criterios para SAB
 
 - Sigue las versiones y patrones existentes de Laravel 9, Vue 2 y Vite; no introduzcas convenciones de versiones nuevas sin necesidad.
 - Identifica si el cambio pertenece a la aplicación principal o a `modules/` y respeta la separación existente. Revisa las rutas, permisos, validaciones y consumidores relacionados cuando el cambio lo requiera.

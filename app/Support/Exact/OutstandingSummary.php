@@ -2,7 +2,7 @@
 
 namespace App\Support\Exact;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Shared documentary balances; received cash is a separate measure. */
 final class OutstandingSummary
 {
@@ -55,4 +55,4 @@ final class OutstandingSummary
         return array_merge(Decimal::values($values), ['count'=>$count, 'calculation_snapshot'=>Decimal::snapshot($values)]);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

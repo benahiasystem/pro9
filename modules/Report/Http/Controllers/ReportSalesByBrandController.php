@@ -143,10 +143,10 @@ class ReportSalesByBrandController extends Controller
 
     private function getRecordsByBrand($request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \App\Support\Exact\ReadSnapshot::run((new DocumentItem())->getConnection(),
             fn()=> $this->calculateRecordsByBrand($request));
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
     private function calculateRecordsByBrand($request)
@@ -212,8 +212,8 @@ class ReportSalesByBrandController extends Controller
             ->with('relation_item.brand')
             ->get();
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \Modules\Report\Services\BrandSalesAmounts::groups($document_items, $sale_note_items);
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 }

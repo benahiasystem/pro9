@@ -1,11 +1,11 @@
 <?php
-// ######## INICIO RENDIMIENTO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO RENDIMIENTO CALCULOS EXACTOS SAB ########
 /** Backend/MySQL comparison. It deliberately does not certify HTTP, POS or cash flows. */
 require dirname(__DIR__).'/vendor/autoload.php';
 
 use App\Support\Exact\{Decimal as D, Payables};
 
-if (getenv('PRO9_FISCAL_MYSQL_TESTS') !== '1') throw new RuntimeException('Requiere PRO9_FISCAL_MYSQL_TESTS=1; sólo crea bases pro9_fiscal_test_* temporales.');
+if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') throw new RuntimeException('Requiere SAB_FISCAL_MYSQL_TESTS=1; sólo crea bases sab_fiscal_test_* temporales.');
 $root = dirname(__DIR__);
 $baseline = 'cab49e553230e48d3cf962261e5f6c961f6ffb13';
 $samples = 30;
@@ -25,7 +25,7 @@ foreach (['Decimal','Payables'] as $class) {
     if (proc_close($process) !== 0) throw new RuntimeException($error);
     $sourceHashes[$path] = ['baseline'=>hash('sha256',$source),'current'=>hash_file('sha256',$root.'/'.$path)];
     $source = str_replace('namespace App\\Support\\Exact;',
-        'namespace Pro9ExactBenchmark; use App\\Support\\Exact\\ReportDataset;', $source);
+        'namespace SABExactBenchmark; use App\\Support\\Exact\\ReportDataset;', $source);
     eval(substr($source,5)); // Immutable local Git code, isolated namespace; never a tenant input.
 }
 $dependencies = [];
@@ -68,8 +68,8 @@ try {
             $db->table('purchases')->insert($purchases);$db->table('purchase_payments')->insert($payments);
         }
         $runs = [
-            'baseline'=>static function () { $rows=\Pro9ExactBenchmark\Payables::dataset([])->filter(fn($row)=>D::readRequired($row,'total_to_pay')->isPositive());
-                return ['summary'=>\Pro9ExactBenchmark\Payables::summary($rows),'records'=>$rows->paginate(50,1)->items(),'total'=>count($rows)]; },
+            'baseline'=>static function () { $rows=\SABExactBenchmark\Payables::dataset([])->filter(fn($row)=>D::readRequired($row,'total_to_pay')->isPositive());
+                return ['summary'=>\SABExactBenchmark\Payables::summary($rows),'records'=>$rows->paginate(50,1)->items(),'total'=>count($rows)]; },
             'current'=>static function () { $rows=Payables::dataset([])->filter(fn($row)=>D::readRequired($row,'total_to_pay')->isPositive());
                 return ['summary'=>Payables::summary($rows),'records'=>$rows->paginate(50,1)->items(),'total'=>count($rows)]; },
         ];
@@ -107,4 +107,4 @@ try {
     fwrite(STDERR,get_class($exception).': '.$exception->getMessage().PHP_EOL);$exit=2;
 } finally { if ($fixture->ready) $fixture->stop(); }
 exit($exit);
-// ######## FIN RENDIMIENTO CALCULOS EXACTOS PRO9 ########
+// ######## FIN RENDIMIENTO CALCULOS EXACTOS SAB ########

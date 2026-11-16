@@ -1,5 +1,5 @@
 <?php
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 /** Structural proofs apply to individual expressions, never their nested operands. */
 function exactAuditGuardProof(\PhpParser\Node $node): ?string
 {
@@ -62,4 +62,4 @@ function exactAuditDateReceiverClass(\PhpParser\Node $node): ?string
     }
     return null;
 }
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

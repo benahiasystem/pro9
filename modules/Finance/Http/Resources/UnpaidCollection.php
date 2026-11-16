@@ -4,7 +4,7 @@ namespace Modules\Finance\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class UnpaidCollection extends ResourceCollection
 {
     public function toArray($request)
@@ -12,4 +12,4 @@ class UnpaidCollection extends ResourceCollection
         return $this->collection->values()->all();
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

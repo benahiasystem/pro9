@@ -5,7 +5,7 @@ namespace App\Support\Exact;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Common exact receivables for screens, dashboards, accounting and exports. */
 final class Receivables
 {
@@ -233,4 +233,4 @@ final class Receivables
         }
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

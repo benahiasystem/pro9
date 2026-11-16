@@ -160,7 +160,7 @@ trait CreditInvoicePersistenceCases
         $db->table('configurations')->update(['auto_send_hka'=>false]);
         $doc=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
         $stock=$db->table('item_warehouse')->value('stock');$financial=$db->table('global_payments')->count();
-        $log=tempnam(sys_get_temp_dir(),'pro9-credit-send-');
+        $log=tempnam(sys_get_temp_dir(),'sab-credit-send-');
         try {
             $data=['log'=>$log,'credit_invoice_verified'=>true];
             $this->runFiscalWorkers($doc->id,'hka',[$data,$data]);

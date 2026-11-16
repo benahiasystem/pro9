@@ -6,7 +6,7 @@ use App\Support\Exact\Decimal;
 use Modules\Restaurant\Models\Supply;
 use Tests\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactSupplyCostTest extends TestCase
 {
     public function test_cost_waste_and_minimum_stock_compare_preserved_fractions(): void
@@ -20,4 +20,4 @@ class ExactSupplyCostTest extends TestCase
         self::assertSame($supply->stock, $supply->minimum_stock);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

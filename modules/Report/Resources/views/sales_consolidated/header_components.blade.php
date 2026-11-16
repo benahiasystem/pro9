@@ -1,4 +1,4 @@
-{{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## INICIO CALCULOS EXACTOS SAB ######## --}}
 @php($componentDisplay = ($excel ?? false) ? [] : \App\Support\Exact\SalesConsolidated::displayComponents($reportSummary))
 <table style="width:100%;margin-top:8px">
     <thead><tr><th colspan="2">Composición del total documental (Bs.)</th></tr></thead>
@@ -16,4 +16,4 @@
     @endforeach
     </tbody>
 </table>
-{{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## FIN CALCULOS EXACTOS SAB ######## --}}

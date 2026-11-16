@@ -1,5 +1,5 @@
 <?php
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 function exactAuditSourceExcluded(string $file, array $policy): bool
 {
     foreach (explode('/', $file) as $component) if (in_array($component, $policy['excluded_directory_names'], true)) return true;
@@ -30,4 +30,4 @@ function exactAuditMissingSources(array $expected, array $scanned): array
 {
     return array_values(array_diff($expected, $scanned));
 }
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

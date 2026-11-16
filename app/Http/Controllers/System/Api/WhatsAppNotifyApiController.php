@@ -15,7 +15,7 @@ use Modules\WhatsAppBot\Services\WhatsAppProviderFactory;
  * Autenticacion: header "Authorization: Bearer {notify_wa_api_token}".
  *
  * No requiere sesion ni dominio de tenant — es un endpoint global del
- * sistema, pensado para que se llame desde fuera de Pro9 (otro backend,
+ * sistema, pensado para que se llame desde fuera de SAB (otro backend,
  * un script, un webhook, etc.).
  */
 class WhatsAppNotifyApiController extends Controller

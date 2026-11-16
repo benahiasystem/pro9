@@ -1859,7 +1859,7 @@
                                     <div class="col-12">
                                         <label class="control-label">Modificar cantidad de decimales
                                             <el-tooltip class="item"
-                                                content="Decimales del precio unitario en los PDF generados por Pro9: de 2 a 12; por defecto 2. No modifica los cálculos ni los PDF originales de HKA."
+                                                content="Decimales del precio unitario en los PDF generados por SAB: de 2 a 12; por defecto 2. No modifica los cálculos ni los PDF originales de HKA."
                                                 effect="dark" placement="top-start">
                                                 <i class="fa fa-info-circle"></i>
                                             </el-tooltip>

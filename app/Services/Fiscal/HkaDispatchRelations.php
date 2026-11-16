@@ -56,7 +56,7 @@ final class HkaDispatchRelations
             });
             if (!$attempt) return ['status'=>'pending','description'=>'Relación HKA en curso.'];
             try {
-                $response=$transport->relateDispatch($token,$source+['relacionados'=>[$target],'comentario'=>'Relación Pro9 Orden de entrega y Factura']);
+                $response=$transport->relateDispatch($token,$source+['relacionados'=>[$target],'comentario'=>'Relación SAB Orden de entrega y Factura']);
                 $body=$response->json();
                 if ($response->successful() && (string)($body['codigo'] ?? '')==='200' && empty($body['validaciones'])) {
                     $check=$transport->dispatchRelations($token,$source);$state=$this->matches($check->status(),$check->json(),$target)===true ? 'confirmed':'uncertain';

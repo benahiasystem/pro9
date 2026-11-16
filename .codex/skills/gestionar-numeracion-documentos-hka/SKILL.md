@@ -5,16 +5,16 @@ description: Mantener contratos HKA de numeraciones y controles, la consulta Est
 
 # Contratos de numeración HKA
 
-## Estado de Pro9
+## Estado de SAB
 
-El módulo de asignación anticipada y sus perfiles/secuencias/reservas fue retirado del código y del esquema inicial. La configuración vigente usa series y correlativos originales: leer [numeración Pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). La emisión y conciliación por `EstadoDocumento` de facturas en «Medios digitales» DEMO están implementadas mediante [emitir-facturas-notas-hka](../emitir-facturas-notas-hka/SKILL.md). Eso no implementa asignaciones ni importación histórica; la anulación remota de NC/ND ordinarias digital DEMO usa el contrato descrito abajo; no recrear sus endpoints locales por ejecutar esta skill.
+El módulo de asignación anticipada y sus perfiles/secuencias/reservas fue retirado del código y del esquema inicial. La configuración vigente usa series y correlativos originales: leer [numeración SAB](../mantener-numeracion-fiscal-venezuela-sab/SKILL.md). La emisión y conciliación por `EstadoDocumento` de facturas en «Medios digitales» DEMO están implementadas mediante [emitir-facturas-notas-hka](../emitir-facturas-notas-hka/SKILL.md). Eso no implementa asignaciones ni importación histórica; la anulación remota de NC/ND ordinarias digital DEMO usa el contrato descrito abajo; no recrear sus endpoints locales por ejecutar esta skill.
 
 ## Referencias del proveedor
 
 Leer [referencia HKA](../../../informes/imprenta_digital_hka_api.md) y contrastar el [Swagger HKA](https://demoemisionv2.thefactoryhka.com.ve/swagger/v1/swagger.json) antes de implementar nuevas operaciones. Los contratos del proveedor no determinan el esquema local.
 
 - Número documental: correlativo local por sucursal, tipo y serie; la serie local puede estar vacía. Número de control: identificador de imprenta independiente; conservarlo como texto, con prefijo y ceros. Un documento 16 puede tener control `00-00000021`.
-- Traducción Pro9 → HKA: Factura `01→01`, crédito `07→02`, débito `08→03`, entrega `09→04`. No modificar códigos internos ni catálogos por los del proveedor.
+- Traducción SAB → HKA: Factura `01→01`, crédito `07→02`, débito `08→03`, entrega `09→04`. No modificar códigos internos ni catálogos por los del proveedor.
 - Todas las operaciones autenticadas usan JWT y host HTTPS del ambiente de empresa, según [conexión HKA](../conectar-api-hka/SKILL.md). Nunca devolver credenciales/JWT ni mensajes crudos del proveedor.
 - `POST /api/AsignarNumeraciones` utiliza `detalleAsignacion`; sus detalles de reserva no sustituyen una verificación de tipo, serie, rango y cobertura. Es una mutación remota; no llamar al guardar una serie.
 - `POST /api/ListadoAsignaciones` permite comprobar documento/control, tipo y serie, recorriendo todas las páginas necesarias. Exigir cobertura completa, datos coherentes y ausencia de documentos/controles duplicados. No deducir continuidad de controles no consecutivos ni importar el correlativo del proveedor.

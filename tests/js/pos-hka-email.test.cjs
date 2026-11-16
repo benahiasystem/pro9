@@ -109,7 +109,7 @@ test('request validation errors cannot silently disappear in the POS dialog',asy
  const ctx=context(async()=>{throw{response:{status:422,data:{message:'Identificador de intento requerido',errors:{request_id:['Requerido']}}}}});
  await ctx.clickSendEmail();assert.equal(ctx.messages[0],'Identificador de intento requerido');assert.equal(ctx.emailBusy,false);
 });
-test('flat Pro9 AJAX validation maps the recipient error to the visible email field',async()=>{
+test('flat SAB AJAX validation maps the recipient error to the visible email field',async()=>{
  const ctx=context(async()=>{throw{response:{status:422,data:{'recipients.0':['Ingrese una dirección de correo válida.']}}}});
  await ctx.clickSendEmail();assert.deepEqual(ctx.errors.customer_email,['Ingrese una dirección de correo válida.']);assert.equal(ctx.emailBusy,false);
 });

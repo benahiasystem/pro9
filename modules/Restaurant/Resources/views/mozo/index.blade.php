@@ -92,7 +92,7 @@ gtag('config', 'G-8PH6FM2JEL');
             ? json_decode(file_get_contents($realtimeManifestPath), true) : null;
     @endphp
     @if ($realtimeManifest && ($realtimeManifest['entry'] ?? '') === '/'.$mozoAssets['js'])
-    <script type="importmap" id="pro9-realtime-importmap">{!! json_encode(['imports' => [$realtimeManifest['original'] => $realtimeManifest['authenticated']]], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES) !!}</script>
+    <script type="importmap" id="sab-realtime-importmap">{!! json_encode(['imports' => [$realtimeManifest['original'] => $realtimeManifest['authenticated']]], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES) !!}</script>
     @endif
     <script>
       (function () {

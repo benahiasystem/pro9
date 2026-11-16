@@ -4,7 +4,7 @@ namespace App\Support\Exact;
 
 use Illuminate\Database\Eloquent\Model;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Cash posted in the document currency; invoice FX/IGTF has its own fiscal boundary. */
 final class Settlement
 {
@@ -90,4 +90,4 @@ final class Settlement
         return spl_object_id($db->getPdo()).':'.$class.':'.$id;
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -54,7 +54,7 @@ class LoginController extends Controller
      * Keep the browser on its current public origin after authentication.
      *
      * The tenant is resolved with the rewritten local Host, so an intended
-     * URL saved by Laravel may contain local.pro9.test. A relative Location
+     * URL saved by Laravel may contain local.sab.test. A relative Location
      * lets browsers accessing the application through ngrok retain the
      * public tunnel host.
      */

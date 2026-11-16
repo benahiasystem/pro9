@@ -4,7 +4,7 @@ namespace App\Support\Exact;
 
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 final class DashboardStock
 {
     public static function dataset($establishment = null): ReportDataset
@@ -48,4 +48,4 @@ final class DashboardStock
         return ['item_id'=>$row['item_id'],'product'=>$row['description'],'calculation_snapshot'=>Decimal::snapshot($values)] + Decimal::values($values);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

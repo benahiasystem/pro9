@@ -1,4 +1,4 @@
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto')
 const categories = ['storage','presentation','settlement','external_protocol','allocation','discrete_units','technical','unreachable','validation','exact_arithmetic']
 function validReview(review, root, contents = new Map()) {
@@ -35,4 +35,4 @@ function diagnostics(rows, registry, language) {
 }
 function matchesProof(review, proof) { return !review?.proof || review.proof === proof }
 module.exports = {validReview, diagnostics, matchesProof}
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

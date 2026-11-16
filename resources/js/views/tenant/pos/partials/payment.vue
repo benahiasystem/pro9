@@ -780,12 +780,12 @@ export default {
             checkoutTotals(this);
 
         },
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         reCalculateTotal() {
             checkoutTotals(this);
             this.calculatePayments();
         },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         calculatePayments() {
             suggestRemainingPayment(this.form);
         },

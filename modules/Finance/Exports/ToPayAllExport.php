@@ -12,12 +12,12 @@ use Modules\Finance\Helpers\ToPay;
 
 class ToPayAllExport implements FromView, \Maatwebsite\Excel\Concerns\WithEvents
 {
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     protected $records;
     protected $company;
     protected $establishment;
     protected $params;
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
 
     public function view(): View
@@ -34,7 +34,7 @@ class ToPayAllExport implements FromView, \Maatwebsite\Excel\Concerns\WithEvents
          
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public function registerEvents(): array
     {
         return [\Maatwebsite\Excel\Events\AfterSheet::class=>function ($event) {
@@ -42,6 +42,6 @@ class ToPayAllExport implements FromView, \Maatwebsite\Excel\Concerns\WithEvents
                 ['total', 'total_payable', 'total_payment', 'total_to_pay', 'exact_balance', 'settlement_adjustment', 'total_ves_equivalent', 'balance_ves_equivalent']);
         }];
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
 }

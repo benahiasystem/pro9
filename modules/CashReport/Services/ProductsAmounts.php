@@ -6,7 +6,7 @@ use App\Support\Exact\Decimal as D;
 use App\Support\Exact\ReportDataset;
 use App\Support\Exact\ReportProjection;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Product reports keep each line's original fractions and documentary currency. */
 final class ProductsAmounts
 {
@@ -84,4 +84,4 @@ final class ProductsAmounts
         return $display;
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

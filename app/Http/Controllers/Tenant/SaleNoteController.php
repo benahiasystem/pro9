@@ -409,7 +409,7 @@ class SaleNoteController extends Controller
 
             $this->sale_note =  SaleNote::query()->updateOrCreate(['id' => $inputs['id']], $data);
 
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             \App\Support\Exact\CommercialCalculation::defer($this->sale_note, function () use ($data) {
             //se elimina los items para activar el evento deleted del modelo y controlar el inventario
             $this->deleteAllItems($this->sale_note->items);
@@ -479,7 +479,7 @@ class SaleNoteController extends Controller
             }
 
             });
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             //pagos
             $payments = $isUpdate
                 ? \App\Services\Payments\ExistingReceipts::synchronize($this->sale_note, $data['payments'], $previousCurrency)
@@ -600,11 +600,11 @@ class SaleNoteController extends Controller
 
 
     private function regularizePayments(){
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $balance = \App\Support\Exact\SaleNoteBalance::values($this->sale_note, true);
         $this->sale_note->total_canceled = $balance['total_difference']->isZero();
         $this->sale_note->save();
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
 
@@ -1579,9 +1579,9 @@ class SaleNoteController extends Controller
     {
         $query = $this->getRecords($request)->whereStateTypeAccepted()->whereFilterWithOutRelations()->filterCurrencyPen();
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \App\Support\Exact\SaleNoteBalance::listing($query);
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
 
@@ -1596,7 +1596,7 @@ class SaleNoteController extends Controller
 
     public function savePayments($sale_note, $payments, $isUpdate = false){
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \App\Support\Exact\Settlement::defer($sale_note, function () use ($sale_note, $payments, $isUpdate) {
         $newPayments = [];
         foreach ($payments as $payment) {
@@ -1616,9 +1616,9 @@ class SaleNoteController extends Controller
             }
         }
         $payments = $newPayments;
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $methods = array_values(array_unique(array_map(fn($row)=>(string)($row['payment_method_type_id'] ?? ''), $payments)));
         return \App\Services\Payments\LockedPaymentMethods::run($sale_note->getConnection(), $methods, function ($lockedMethods) use ($sale_note, $payments, $isUpdate, $methods) {
         $activeMethods = $lockedMethods->all($sale_note->getConnection());
@@ -1628,10 +1628,10 @@ class SaleNoteController extends Controller
         }
         $currencies = $activeMethods->pluck('currency_type_id')->unique()->values()->all();
         \App\Services\Payments\MethodCurrency::assertActiveCurrencies($sale_note->getConnection(), $currencies);
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $paid = \App\Support\Exact\SaleNoteBalance::values($sale_note, true);
         $cashMethods=$activeMethods->where('collection_kind','cash')->keys()->map(fn($id)=>(string)$id)->all();
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
@@ -1663,17 +1663,17 @@ class SaleNoteController extends Controller
         }
         unset($row);
         // ######## FIN MONEDA DEL MEDIO DE COBRO ########
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         foreach ($payments as $row) {
 
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             $record_payment = $sale_note->payments()->make($row);
             $record_payment->setRelation('associated_record_payment',$sale_note);
             $record_payment->setRelation('payment_method_type',$activeMethods->get($row['payment_method_type_id']));
             $record_payment->calculation_snapshot = $row['calculation_snapshot'];
             $record_payment->save();
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
 
             \App\Services\Payments\ReceiptDestination::attach($record_payment, $row, $lockedMethods);
             if($isUpdate){
@@ -1747,10 +1747,10 @@ class SaleNoteController extends Controller
         $sum_total=0;
         $records = $records->take(20)
             ->get();
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $exactTotal = \App\Support\Exact\Decimal::sum($records->map(fn($row)=>\App\Support\Exact\Decimal::readRequired($row,'total')));
         $sum_total=\App\Support\Exact\Decimal::represent($exactTotal);
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         return response()->json([
             'success' => true,
             'data' => $records,
@@ -1765,11 +1765,11 @@ class SaleNoteController extends Controller
             'notes_id' => 'required|array|min:1',
             'notes_id.*' => 'required|integer|min:1|distinct',
         ]);
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'),function () use ($request) {
             return response()->json(['success'=>true]+\App\Support\Exact\SaleNoteConversionLines::preview($request->notes_id,$request->boolean('select_all')));
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
 

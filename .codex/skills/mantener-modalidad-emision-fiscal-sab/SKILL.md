@@ -1,0 +1,54 @@
+---
+name: mantener-modalidad-emision-fiscal-sab
+description: Mantener la modalidad de emisión fiscal y el ambiente de SAB, el alta de tenants, los parámetros y credenciales de proveedores y la retirada total de SOAP/PFX de facturación. Usar al modificar configuración fiscal, fiscal_environment, fiscal_emission_mode, correlativos o la separación demo/producción.
+---
+
+# Modalidad de emisión fiscal de SAB
+
+La autenticación HKA se configura en el tenant según [configurar-conexion-hka-sab](../configurar-conexion-hka-sab/SKILL.md) y [conexión API HKA](../conectar-api-hka/SKILL.md). Verificar credenciales no transmite documentos ni asigna control. El envío y correo de facturas digitales DEMO se implementan por separado; producción permanece deshabilitada aunque la autenticación sea válida.
+
+## Evolución de numeración fiscal
+
+El contrato vigente conserva una modalidad por tenant y el modelo original de series, configuraciones y grupos de dispositivos, sin perfiles de numeración ni reservas/asignaciones anticipadas. Aplicar [mantener-numeracion-fiscal-venezuela-sab](../mantener-numeracion-fiscal-venezuela-sab/SKILL.md). La operación fiscal por documento y el control confirmado se gestionan mediante [emitir-facturas-notas-hka](../emitir-facturas-notas-hka/SKILL.md); no sustituyen el correlativo local. El bloqueo de ambiente, cifrado, auditoría y retirada de transporte peruano permanecen vigentes.
+
+## Decisiones del producto
+
+- Hay una modalidad por tenant: `fiscal_machine` (Máquina fiscal), `digital` (Medios digitales), `free_form` (Forma libre).
+- El ambiente es independiente: `demo` o `production`. No existen SOAP Tipo, SOAP Envío ni ambiente Interno; no restablecer sus campos como alias.
+- El alta exige modalidad y ambiente en superadmin, autoregistro y API. Los parámetros se completan progresivamente; elegir una modalidad no conecta equipos ni acredita emisión fiscal efectiva.
+- Este contrato parte de una instalación nueva sin tenants ni datos anteriores. No crear conversiones, backfills ni migraciones incrementales SOAP/PFX. Cada tenant nace con modalidad y ambiente obligatorios.
+- El administrador tenant y el superadmin pueden configurar modalidad y ambiente. Después de cualquier operación el ambiente queda bloqueado, incluso si posteriormente se eliminan los movimientos. Producción requiere otro tenant limpio; no copiar operaciones ni correlativos demo.
+- La operación comercial sigue siendo local y genera PDF. La verificación de autenticación HKA no transmite documentos, firma XML ni asigna números de control fiscales.
+- Envío, correo fiscal y bloqueo por registro HKA corresponden a «Medios digitales»; no extenderlos a Máquina fiscal ni Forma libre. El transporte actual sólo permite DEMO, aunque se pueda configurar o autenticar otro ambiente.
+
+## Puntos de implementación
+
+- `App\Services\FiscalEmissionSettings` centraliza valores válidos, parámetros, validación y actualización. `companies` del tenant es la fuente; el superadmin consulta ese registro y no mantiene otra copia.
+- El endpoint tenant dedicado es `GET/POST /companies/fiscal-emission`; exige un usuario tenant de tipo `admin`, también en AJAX. El editor general de empresa rechaza campos fiscales para impedir saltarse las reglas.
+- Máquina fiscal: modelo, serial, puerto y proveedor/controlador. Digital: proveedor, autorización y credenciales; en la pantalla tenant, la conexión HKA usa usuario y clave cifrados y registra la última autenticación por ambiente. Forma libre: imprenta, número de control, inicio y fin de rango. No aceptar parámetros de otra modalidad ni rangos negativos/invertidos.
+- Las credenciales se cifran en el modelo, se ocultan de toda serialización y no se incluyen en logs. Campo vacío conserva el secreto; borrado explícito lo elimina; cambiar modalidad descarta parámetros y credenciales anteriores.
+- `fiscal_configuration_audits` registra actor, campos modificados, modalidad y ambiente; nunca valores secretos.
+- El guardado de operaciones en `ModelTenant` comparte el bloqueo transaccional de la empresa con la actualización del ambiente. Revisar `config/fiscal_emission.php` al incorporar nuevas tablas o escritores que omitan Eloquent.
+- Las facturas nuevas reciben modalidad y ambiente desde el servidor. No admitir esos valores desde el payload como sustitución de la configuración ni modificar la modalidad registrada en facturas anteriores.
+- El alta inserta modalidad y ambiente en `companies` antes de guardar parámetros y auditoría; la base no acepta modalidad nula. Los endpoints fiscales usan sólo los campos del contrato actual; campos adicionales no se persisten ni requieren validadores de formatos retirados.
+- Conservar QZ Tray: sus certificados sirven a impresión y no son los PFX/PEM de envío fiscal retirados.
+
+## Migraciones y pruebas
+
+- Actualizar directamente el esquema consolidado y los seeders. `companies` contiene modalidad obligatoria, configuración/credenciales opcionales y bloqueo inicialmente falso; `documents` contiene modalidad obligatoria.
+- `2026_08_17_000176_create_fiscal_configuration_audits_table.php` crea la auditoría. Su FK de empresa pertenece a la migración final de claves foráneas. La auditoría registra cambios futuros y no es compatibilidad histórica.
+- La cadena de creación central no debe añadir certificados ni campos de transporte fiscal para borrarlos al final. El catálogo inicial tampoco contiene tipos de auditoría SOAP/certificado.
+- Ejecutar `FiscalEmissionSettingsTest` y `FiscalEmissionSchemaTest`. La segunda requiere `SAB_FISCAL_MYSQL_TESTS=1` y crea/elimina exclusivamente bases aleatorias con prefijo `sab_fiscal_test_`; verifica creación limpia, seeding, rollback y segunda creación con esquema idéntico.
+- Verificar también inicialización tenant, RIF, política fiscal local, catálogos y flujos de documentos/inventario afectados. Probar permisos, aislamiento de tenants, intentos de cambiar ambiente mediante API y ausencia de credenciales en respuestas.
+- Usar `frontend-build` para assets. No generar bundles sin petición explícita del usuario. La validación de sintaxis en memoria no sustituye la comprobación visual del bundle desplegado.
+- Delimitar los cambios propios con comentarios `######## INICIO MODALIDAD DE EMISIÓN FISCAL ########` y `######## FIN MODALIDAD DE EMISIÓN FISCAL ########`.
+
+Esta decisión sustituye las instrucciones de conservar o convertir SOAP/PFX. Por decisión explícita del producto, la retirada también alcanza contratos históricos de transporte en documentos, anulaciones, percepciones, retenciones, liquidaciones, órdenes de entrega, tablero, webhooks, PSE y migración de notas a otro servidor. No alcanza certificados QZ de impresión, QR de WhatsApp, seguimiento comercial de órdenes ni XML técnico de formatos ajenos a facturación.
+
+## Informe y revisión
+
+La implementación, comandos de prueba y límites de verificación se documentan en [el informe de adaptación](../../../informes/adaptacion_modalidad_emision_fiscal.md). Actualizarlo cuando cambie el alcance o la evidencia. No declarar probada una integración fiscal real, una aplicación en producción o el navegador basándose sólo en pruebas de servicio y esquema.
+
+## Perfiles tributarios y nota IGTF
+
+Los perfiles tributarios versionados SPE son independientes de modalidad/ambiente y grupos de dispositivos; seguir [perfiles SPE](../mantener-sujetos-pasivos-especiales-sab/SKILL.md). No retirar `fiscal_profile_versions` por confundirlo con los perfiles de numeración eliminados. La nota exclusiva IGTF hereda modalidad/ambiente de la factura, aunque la configuración actual haya cambiado; una discrepancia de configuración bloquea su envío HKA y conserva el cobro. No cambiar la clasificación remota de una cuenta FORMAL para simular SPE ni habilitar producción a partir de pruebas DEMO.

@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactJsonBoundaryTest extends TestCase
 {
     public function test_decimal_lexemes_survive_middleware_and_untrusted_snapshots_do_not(): void
@@ -83,4 +83,4 @@ JSON;
         return [[[]], [['total'=>null]], [['total'=>'1', 'calculation_snapshot'=>['version'=>9, 'values'=>[]]]]];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

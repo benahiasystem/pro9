@@ -1,4 +1,4 @@
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 const compiler = require('vue-template-compiler')
 
 /** Parse executable Vue bindings with Vue's own AST, including filters and branches. */
@@ -40,4 +40,4 @@ module.exports = function auditVueTemplate(source, file, base, hooks) {
     walk(compiled.ast)
     return compiled.errors || []
 }
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

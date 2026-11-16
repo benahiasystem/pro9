@@ -47,7 +47,7 @@ class InputRequest
         } catch (\Exception $exception) {
             // Internal durable-sale callers must distinguish unexpected failures
             // from a known validation rejection, so retries retain their UUID.
-            if ($request->attributes->get('pro9.strict_input_exceptions') === true) throw $exception;
+            if ($request->attributes->get('sab.strict_input_exceptions') === true) throw $exception;
             return response()->json(['success' => false, 'message' => 'No se pudo registrar el documento. Revise los datos y la serie seleccionada.'], 400);
         }
     }

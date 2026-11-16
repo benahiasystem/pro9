@@ -1,13 +1,13 @@
 <?php
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Own a disposable MySQL server; never change the application's MySQL settings/data. */
 require dirname(__DIR__).'/vendor/autoload.php';
 $root=dirname(__DIR__);
 $environment=is_file($root.'/.env') ? \Dotenv\Dotenv::parse(file_get_contents($root.'/.env')) : [];
 $username=$environment['DB_USERNAME'] ?? 'root';
 $password=$environment['DB_PASSWORD'] ?? '';
-$name='pro9-exact-test-'.bin2hex(random_bytes(6));
+$name='sab-exact-test-'.bin2hex(random_bytes(6));
 $run=static function (array $command, ?array $env=null): array {
     $process=proc_open($command,[1=>['pipe','w'],2=>['pipe','w']],$pipes,null,$env);
     if (!is_resource($process)) throw new RuntimeException('No se pudo iniciar el proceso de pruebas.');
@@ -18,7 +18,7 @@ $cleanup=static function () use ($name,$run): void { $run(['docker','rm','-f',$n
 $env=getenv();
 if ($password === '') $env['MYSQL_ALLOW_EMPTY_PASSWORD']='yes';
 else $env['MYSQL_ROOT_PASSWORD']=$password;
-if ($username !== 'root') { $env['MYSQL_USER']=$username;$env['MYSQL_PASSWORD']=$password;$env['MYSQL_DATABASE']='pro9_test_control'; }
+if ($username !== 'root') { $env['MYSQL_USER']=$username;$env['MYSQL_PASSWORD']=$password;$env['MYSQL_DATABASE']='sab_test_control'; }
 $command=['docker','run','--pull=never','--detach','--name',$name,'--publish','127.0.0.1::3306',
     '--tmpfs','/var/lib/mysql:rw,nosuid,size=1024m','--memory','1536m','--env','MYSQL_ROOT_HOST=%'];
 foreach (['MYSQL_ROOT_PASSWORD','MYSQL_ALLOW_EMPTY_PASSWORD','MYSQL_USER','MYSQL_PASSWORD','MYSQL_DATABASE'] as $key) {
@@ -48,7 +48,7 @@ try {
         $probe->exec('GRANT ALL PRIVILEGES ON *.* TO '.$probe->quote($username)."@'%' WITH GRANT OPTION");
     }
     unset($probe);
-    $testEnv=getenv();$testEnv['DB_HOST']='127.0.0.1';$testEnv['DB_PORT']=$port;$testEnv['PRO9_FISCAL_MYSQL_TESTS']='1';
+    $testEnv=getenv();$testEnv['DB_HOST']='127.0.0.1';$testEnv['DB_PORT']=$port;$testEnv['SAB_FISCAL_MYSQL_TESTS']='1';
     fwrite(STDERR,'MySQL 5.7 temporal aislado; sin cambios en la instancia de la aplicación.'.PHP_EOL);
     $process=proc_open(array_merge([PHP_BINARY,$root.'/vendor/bin/phpunit'],array_slice($argv,1)),[0=>STDIN,1=>STDOUT,2=>STDERR],$pipes,$root,$testEnv);
     if (!is_resource($process)) throw new RuntimeException('No se pudo iniciar PHPUnit.');
@@ -56,4 +56,4 @@ try {
 } catch (Throwable $error) { fwrite(STDERR,$error->getMessage().PHP_EOL);$exit=2; }
 finally { if ($started) $cleanup(); }
 exit($exit);
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -18,10 +18,10 @@ use Illuminate\Support\Facades\DB;
 use Modules\Report\Exports\SaleConsolidatedExport;
 use Modules\Report\Exports\SaleConsolidatedTotalExport;
 use Modules\Report\Traits\ConsolidatedReportTrayTrait;
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 use App\Support\Exact\SalesConsolidated;
 use App\Support\Exact\ReportDataset;
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 
 
 class ReportSaleConsolidatedController extends Controller
@@ -60,7 +60,7 @@ class ReportSaleConsolidatedController extends Controller
         return view('report::sales_consolidated.index');
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public function records(Request $request)
     {
         $request->validate(['page'=>'sometimes|integer|min:1']);
@@ -100,7 +100,7 @@ class ReportSaleConsolidatedController extends Controller
         $query = $this->getRecordsSalesConsolidated($request->all());
         return \App\Support\Exact\ReadSnapshot::run($query->getModel()->getConnection(), fn()=>SalesConsolidated::groupedDataset($this->sourceLines($query)));
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
 
     /**

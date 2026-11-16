@@ -12,12 +12,12 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
 
     protected function configureConnections(Manager $manager): void
     {
-        if (getenv('PRO9_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requires an isolated temporary MySQL database.');
+        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requires an isolated temporary MySQL database.');
         $env = \Dotenv\Dotenv::parse(file_get_contents(dirname(__DIR__, 2) . '/.env'));
         $config = ['driver' => 'mysql', 'host' => getenv('DB_HOST') ?: $env['DB_HOST'], 'port' => getenv('DB_PORT') ?: ($env['DB_PORT'] ?? 3306),
             'username' => $env['DB_USERNAME'], 'password' => $env['DB_PASSWORD'], 'database' => 'information_schema', 'charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'prefix' => ''];
         $manager->addConnection($config, 'control');
-        $this->database = 'pro9_series_test_' . bin2hex(random_bytes(6));
+        $this->database = 'sab_series_test_' . bin2hex(random_bytes(6));
         $manager->getConnection('control')->statement('CREATE DATABASE `' . $this->database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
         $config['database'] = $this->database;
         $this->connection = $config;
@@ -33,7 +33,7 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
     protected function tearDown(): void
     {
         try {
-            if ($this->database && preg_match('/^pro9_series_test_[a-f0-9]{12}$/', $this->database)) {
+            if ($this->database && preg_match('/^sab_series_test_[a-f0-9]{12}$/', $this->database)) {
                 $this->manager->getConnection('tenant')->disconnect();
                 $this->manager->getConnection('control')->statement('DROP DATABASE `' . $this->database . '`');
             }

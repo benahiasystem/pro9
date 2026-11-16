@@ -28,9 +28,9 @@ class SaleNotePaymentCollection extends ResourceCollection
                 ...\App\Services\Payments\ReceiptPresentation::tender($row),
                 'exchange_rate' => $row->exchange_rate,
                 'filename' => ($row->payment_file) ? $row->payment_file->filename:null,
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 ...\App\Support\Exact\SaleNoteBalance::paymentTransport($row),
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
             ];
         });
     }

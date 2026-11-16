@@ -1,6 +1,6 @@
 ---
 name: mantener-catalogos-fiscales-venezuela
-description: Mantener el inventario histórico y el estado inicial de los catálogos venezolanos de Pro9. Usar al tocar bancos, documentos, identidad, IVA, descuentos/cargos, leyendas, notas, operaciones, pagos, traslados, gastos o tablas fiscales peruanas retiradas.
+description: Mantener el inventario histórico y el estado inicial de los catálogos venezolanos de SAB. Usar al tocar bancos, documentos, identidad, IVA, descuentos/cargos, leyendas, notas, operaciones, pagos, traslados, gastos o tablas fiscales peruanas retiradas.
 ---
 
 # Mantener catálogos iniciales venezolanos
@@ -29,7 +29,7 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 - La API de datos de empresa para clientes externos devuelve métodos activos de efectivo o cuenta por clasificación, sin excluir el ID `07`, que puede pertenecer a un método personalizado. Verificar `test_company_api_includes_active_classified_custom_method_with_retired_id`.
 - En la API de factura para clientes externos, comprobar también `01` bancario USD y `04` efectivo VES, destinos incompatibles, moneda activa y efecto separado en caja. `test_api_invoice_from_restaurant_checks_method_currency_and_bank_atomically` ejecuta middleware y controlador; no verifica el compilado de Mozo.
 
-- El catálogo de ambientes fiscales es `fiscal_environments`, exclusivamente `demo` y `production`. Aplicar [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md): el esquema nace sin SOAP/PFX y sin tipos de auditoría retirados, por lo que no se crean migraciones incrementales de conversión o limpieza. Esta excepción prevalece sobre las instrucciones generales para instalaciones existentes.
+- El catálogo de ambientes fiscales es `fiscal_environments`, exclusivamente `demo` y `production`. Aplicar [mantener-modalidad-emision-fiscal-sab](../mantener-modalidad-emision-fiscal-sab/SKILL.md): el esquema nace sin SOAP/PFX y sin tipos de auditoría retirados, por lo que no se crean migraciones incrementales de conversión o limpieza. Esta excepción prevalece sobre las instrucciones generales para instalaciones existentes.
 
 - Tratar los IDs conservados como contratos estables: no reasignar códigos. Para motivos de traslado se conserva `04` y los códigos locales venezolanos son `21`, `22`, `23` y `24`; HKA no publica códigos para este catálogo.
 - `cat_identity_document_types` contiene exactamente `0`, `1`, `6`, `7`, `E`, `C`, `G` y `R`, en ese orden y todos con `active = 1`. Mantener sincronizados la fuente central, el seeder y los consumidores sin crear un backfill para tenants existentes.

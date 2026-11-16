@@ -1,7 +1,7 @@
 <?php
 /** Explicit DEMO acceptance runner. Reads only the selected tenant's connection credentials.
  * All commercial writes use a newly created, disposable database. Never sends email.
- * Usage: PRO9_FISCAL_MYSQL_TESTS=1 php -d memory_limit=1G scripts/verify_hka_notes_demo.php bbc.localhost [paid-extended|credit-extended]
+ * Usage: SAB_FISCAL_MYSQL_TESTS=1 php -d memory_limit=1G scripts/verify_hka_notes_demo.php bbc.localhost [paid-extended|credit-extended]
  */
 require dirname(__DIR__).'/vendor/autoload.php';
 use App\Models\Tenant\{Company, Document, Person, Item};
@@ -10,7 +10,7 @@ use App\CoreFacturalo\Facturalo;
 use Illuminate\Support\Str;
 
 $root=dirname(__DIR__); $host=$argv[1] ?? '';
-if (!$host || getenv('PRO9_FISCAL_MYSQL_TESTS') !== '1') exit("Specify a source host and explicitly enable isolated MySQL tests.\n");
+if (!$host || getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') exit("Specify a source host and explicitly enable isolated MySQL tests.\n");
 $app=require $root.'/bootstrap/app.php';$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 $hostname=Hyn\Tenancy\Models\Hostname::where('fqdn',$host)->firstOrFail();
 app(Hyn\Tenancy\Environment::class)->tenant($hostname->website);
@@ -34,7 +34,7 @@ try {
     $cleanupReserve=str_repeat(' ',8*1024*1024);
     $cleanupPdo=new PDO('mysql:host='.$connection['host'].';port='.$connection['port'].';dbname=information_schema;charset=utf8mb4',$connection['username'],$connection['password']);
     register_shutdown_function(static function () use ($owned,$cleanupPdo,&$cleanupReserve) {
-        if (!preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/D',$owned)) return;
+        if (!preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/D',$owned)) return;
         $cleanupReserve=null;
         $cleanupPdo->exec('DROP DATABASE IF EXISTS `'.$owned.'`');
     });
@@ -95,7 +95,7 @@ try {
                 $input['type']=$case['type'] === '07' ? 'credit':'debit';$input['document_type_id']=$case['type'];
                 $input['external_id']=(string)Str::uuid();$input['note_creation_key']=(string)Str::uuid();
                 $input['note']=['note_type'=>$input['type'],'note_credit_type_id'=>$case['type']==='07' ? $case['reason']:null,
-                    'note_debit_type_id'=>$case['type']==='08' ? $case['reason']:null,'note_description'=>'Validación sintética DEMO de nota Pro9',
+                    'note_debit_type_id'=>$case['type']==='08' ? $case['reason']:null,'note_description'=>'Validación sintética DEMO de nota SAB',
                     'affected_document_id'=>$invoice->id,'data_affected_document'=>null];
                 $input['items']=in_array($case['reason'],['01','03'],true) && $case['type']==='08'
                     ? [['item_id'=>$service->id,'adjustment_amount'=>11.60,'affectation_igv_type_id'=>'10','price_type_id'=>'01','additional_information'=>'']]
@@ -122,7 +122,7 @@ try {
                     $result['real_note_payments']=$note->payments()->count();
                     if (in_array($argv[2] ?? '',['annul','annul-extended','annul-ves','annul-ves-credit','partial','acceptance-final'],true)) {
                         foreach ($note->payments()->whereNull('reversed_at')->whereNull('receipt_parent_id')->get() as $payment) App\Services\Fiscal\FiscalDocumentPersistence::reverse($payment,'Regularización explícita del cobro sintético antes de anular ND DEMO');
-                        $annul=app(App\Services\Fiscal\NoteAnnulment::class)->request($note->fresh(),['operation_key'=>(string)Str::uuid(),'reason'=>'Anulación sintética DEMO de nota Pro9']);
+                        $annul=app(App\Services\Fiscal\NoteAnnulment::class)->request($note->fresh(),['operation_key'=>(string)Str::uuid(),'reason'=>'Anulación sintética DEMO de nota SAB']);
                         $result['annulment']=$annul['annulment'];
                         $result['commercial_state_after_annulment']=$note->fresh()->state_type_id;
                         $result['invoice_balance_after_annulment']=$invoice->fresh()->balance;
@@ -137,7 +137,7 @@ try {
                         $result['remote_status_code']=$state->json('codigo');
                     }
                     if (!isset($preview)) {
-                        $preview=sys_get_temp_dir().'/pro9-note-demo-preview';@mkdir($preview,0700,true);
+                        $preview=sys_get_temp_dir().'/sab-note-demo-preview';@mkdir($preview,0700,true);
                         file_put_contents($preview.'/a4.pdf',$bytes);file_put_contents($preview.'/a5.pdf',$a5);
                     }
                 }

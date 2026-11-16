@@ -5,7 +5,7 @@ namespace App\Support\Exact;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Exact text interchange: Excel's numeric cells cannot preserve arbitrary fractions. */
 final class FractionSheet
 {
@@ -53,4 +53,4 @@ final class FractionSheet
         }
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

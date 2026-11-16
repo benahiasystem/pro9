@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\ToCollection;
 use Modules\Inventory\Models\Inventory;
 use Modules\Inventory\Models\ItemWarehouse;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class StockImport implements ToCollection, \Maatwebsite\Excel\Concerns\WithEvents
 {
     use Importable;
@@ -203,4 +203,4 @@ class StockImport implements ToCollection, \Maatwebsite\Excel\Concerns\WithEvent
         return $message;
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

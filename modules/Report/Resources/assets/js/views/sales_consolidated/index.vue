@@ -36,11 +36,11 @@
                                 <td  class="text-center">{{row.item_quantity}}</td>
                                 <td class="text-center">
                                     {{row.total_sale}} Bs.<br><small>{{row.currency_type_id}} {{row.total_original}}</small>
-                                    <!-- ######## INICIO CALCULOS EXACTOS PRO9 ######## -->
+                                    <!-- ######## INICIO CALCULOS EXACTOS SAB ######## -->
                                     <details class="text-start"><summary>Desglose en Bs.</summary>
                                         <div v-for="(label, field) in componentLabels" :key="field">{{ label }}: {{ row[field] }}</div>
                                     </details>
-                                    <!-- ######## FIN CALCULOS EXACTOS PRO9 ######## -->
+                                    <!-- ######## FIN CALCULOS EXACTOS SAB ######## -->
                                 </td>
                             </tr>
                         </data-table>
@@ -63,11 +63,11 @@ import { documentNumberFull } from "../../../../../../../resources/js/helpers/do
             return {
                 resource: 'reports/sales-consolidated',
                 form: {},
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 componentLabels: {line_total: 'Partidas', header_discount: 'Descuentos de cabecera (restar)',
                     header_charge: 'Cargos de cabecera', header_iva_adjustment: 'Ajuste de IVA',
                     header_other_taxes: 'Otros impuestos de cabecera', header_prepayment: 'Anticipos (restar)'},
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
 
             }
         },

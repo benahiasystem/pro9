@@ -719,12 +719,12 @@ class PersonController extends Controller
      */
     public function getAccumulatedPoints($id)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         if (request()->boolean('exact')) {
             $person=Person::findOrFail($id);
             return ['amount'=>$person->accumulated_points,'exact'=>\App\Support\Exact\Decimal::fraction($person->exactValue('accumulated_points'))];
         }
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         return Person::getOnlyAccumulatedPoints($id);
     }
 

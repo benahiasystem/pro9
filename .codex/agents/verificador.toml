@@ -1,5 +1,5 @@
 name = "verificador"
-description = "Identifica y ejecuta verificaciones apropiadas para Pro9 sin editar código."
+description = "Identifica y ejecuta verificaciones apropiadas para SAB sin editar código."
 model = "gpt-6.1-terra"
 model_reasoning_effort = "medium"
 developer_instructions = """

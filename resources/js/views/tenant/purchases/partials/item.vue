@@ -1025,12 +1025,12 @@ export default {
 
             let affectation_igv_types_exonerated_unaffected = ['20', '21', '30', '31', '32', '33', '34', '35', '36', '37']
 
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             const catalogPurchase = exactValue(this.form.item, 'purchase_unit_price');
             const priceSource = exactAmount(this.form.unit_price).compare(catalogPurchase.decimal()) === 0
                 ? catalogPurchase.fraction() : String(this.form.unit_price);
             this.form.price_input={amount:priceSource,currency_type_id:this.form.item.currency_type_id || this.currencyTypeIdActive,includes_iva:this.form.purchase_has_igv !== false};
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             let unit_price = this.form.unit_price
 
             if (!affectation_igv_types_exonerated_unaffected.includes(this.form.affectation_igv_type_id)) {

@@ -6,7 +6,7 @@ use App\Models\Tenant\TransferAccountPayment;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 final class TransferAccountAmountTest extends TestCase
 {
     public function test_transfer_input_is_not_converted_to_float(): void
@@ -18,4 +18,4 @@ final class TransferAccountAmountTest extends TestCase
         self::assertSame('123456789.123456789123',$transfer->getAttributes()['amount']);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

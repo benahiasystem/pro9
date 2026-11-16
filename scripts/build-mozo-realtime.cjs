@@ -1,4 +1,4 @@
-/* Build only the editable realtime integration. Do not rebuild Pro9's Vue 2 assets. */
+/* Build only the editable realtime integration. Do not rebuild SAB's Vue 2 assets. */
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
@@ -40,9 +40,9 @@ async function build() {
     fs.writeFileSync(path.join(publicDir, authenticated), contents);
     const manifest = { original, authenticated, entry };
     fs.writeFileSync(path.join(publicDir, 'mozo/realtime-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
-    html = html.replace(/\s*<script type="importmap" id="pro9-realtime-importmap">[\s\S]*?<\/script>\s*/g, '\n');
+    html = html.replace(/\s*<script type="importmap" id="(?:pro9|sab)-realtime-importmap">[\s\S]*?<\/script>\s*/g, '\n');
     const imports = JSON.stringify({ imports: { [original]: authenticated } });
-    html = html.replace('<script type="module"', `<script type="importmap" id="pro9-realtime-importmap">${imports}</script>\n    <script type="module"`);
+    html = html.replace('<script type="module"', `<script type="importmap" id="sab-realtime-importmap">${imports}</script>\n    <script type="module"`);
     fs.writeFileSync(indexPath, html);
     console.log(`Mozo realtime: ${original} -> ${authenticated}`);
 }

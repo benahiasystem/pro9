@@ -14,7 +14,7 @@ class RetiredBagTaxExportTest extends TestCase
     public function test_ejb_workbook_keeps_columns_and_identifiers_aligned_without_the_tax(): void
     {
         $export = (new ReportAccountingEjbExport())->data(['records' => collect([$this->ejbRow()])]);
-        $path = tempnam(sys_get_temp_dir(), 'pro9-ejb-export-');
+        $path = tempnam(sys_get_temp_dir(), 'sab-ejb-export-');
         try {
             file_put_contents($path, app('excel')->raw($export, Excel::XLSX));
             $book = IOFactory::load($path);

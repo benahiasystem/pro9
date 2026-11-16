@@ -120,7 +120,7 @@ class ProcessReportSalesConsolidated implements ShouldQueue
 
     private function buildPdf($company, $establishment, $params)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $reportAmounts = null; $reportRows = null;
         if ($this->report_source === 'order_notes' && $this->export_mode === 'detail') {
             [$records, $reportAmounts] = \App\Support\Exact\ReadSnapshot::run((new OrderNoteItem())->getConnection(), function () use ($params) {
@@ -134,11 +134,11 @@ class ProcessReportSalesConsolidated implements ShouldQueue
                 return [$records, \Modules\Report\Services\DispatchReportAmounts::rows($records)];
             });
         } else $records = $this->resolveRecords($params);
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $reportSummary = $this->report_source === 'sales' ? \App\Support\Exact\SalesConsolidated::summary($records) : null;
         if ($this->report_source === 'sales') $records = \App\Support\Exact\ReportProjection::money($records, ['total_sale','total_ves','total_usd']);
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         switch ($this->report_source) {
             case 'order_notes':
@@ -177,9 +177,9 @@ class ProcessReportSalesConsolidated implements ShouldQueue
                 return [$records, \Modules\Report\Services\DispatchReportAmounts::rows($records)];
             });
         } else $records = $this->resolveRecords($params);
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $reportSummary = $this->report_source === 'sales' ? \App\Support\Exact\SalesConsolidated::summary($records) : null;
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         if ($this->report_source === 'guides') {
             $params = $this->normalizeGuidesParams($params);

@@ -5,7 +5,7 @@ namespace App\Support\Exact;
 use PhpOffice\PhpSpreadsheet\Cell\{Coordinate, DataType};
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Restore numeric business cells from OOXML text before validation or arithmetic. */
 final class XlsxDecimals
 {
@@ -54,4 +54,4 @@ final class XlsxDecimals
         return new \SimpleXMLElement($text,LIBXML_NONET);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

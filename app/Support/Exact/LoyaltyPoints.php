@@ -4,7 +4,7 @@ namespace App\Support\Exact;
 
 use App\Models\Tenant\{Document, SaleNote, Person, Item};
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 final class LoyaltyPoints
 {
     public static function earned($total, $settings): \Brick\Math\BigRational
@@ -79,4 +79,4 @@ final class LoyaltyPoints
         });
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

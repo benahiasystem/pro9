@@ -11,7 +11,7 @@ class DeliveryOrderNamingContractTest extends TestCase
         $root = dirname(__DIR__, 2);
         $seed = require $root . '/database/seeders/data/tenant_initial_data.php';
         $types = array_column($seed['tables']['cat_document_types']['rows'], 'description', 'id');
-        $skill = file_get_contents($root . '/.codex/skills/mantener-ordenes-entrega-pro9/SKILL.md');
+        $skill = file_get_contents($root . '/.codex/skills/mantener-ordenes-entrega-sab/SKILL.md');
 
         $this->assertSame('ORDEN DE ENTREGA', $types['09']);
         foreach (['31', '71', '72'] as $documentTypeId) {

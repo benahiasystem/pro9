@@ -1,14 +1,14 @@
-/* Live, reversible integration check. Requires Playwright Core and a running local Pro9. */
+/* Live, reversible integration check. Requires Playwright Core and a running local SAB. */
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const { createRequire } = require('node:module');
 const { WebSocket } = require('ws');
-const qaRequire = createRequire(process.env.PLAYWRIGHT_PACKAGE || '/tmp/pro9-centrifugo-qa/package.json');
+const qaRequire = createRequire(process.env.PLAYWRIGHT_PACKAGE || '/tmp/sab-centrifugo-qa/package.json');
 const { chromium } = qaRequire('playwright-core');
-const output = path.resolve(process.env.PRO9_QA_OUTPUT || 'informes/evidencias/centrifugo_2026_11_11');
-const hostname = process.env.PRO9_QA_HOST || 'bbc.localhost';
+const output = path.resolve(process.env.SAB_QA_OUTPUT || 'informes/evidencias/centrifugo_2026_11_11');
+const hostname = process.env.SAB_QA_HOST || 'bbc.localhost';
 assert.match(hostname, /^[a-z0-9.-]+$/i);
 const baseUrl = `http://${hostname}`;
 const manifest = JSON.parse(fs.readFileSync('public/mozo/realtime-manifest.json', 'utf8'));
@@ -22,7 +22,7 @@ function php(code) {
         $env = app(Hyn\\Tenancy\\Environment::class); $env->hostname($host); $env->tenant($host->website);
         $app->instance(Hyn\\Tenancy\\Contracts\\CurrentHostname::class, $host);
     `;
-    return JSON.parse(execFileSync('docker', ['exec', '-i', 'pro9-php', 'php'], {
+    return JSON.parse(execFileSync('docker', ['exec', '-i', 'sab-php', 'php'], {
         input: bootstrap + code, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'],
     }));
 }
@@ -207,7 +207,7 @@ async function main() {
         let socketCount = 0;
         page.on('websocket', () => socketCount++);
         await page.evaluate(async () => (await import('/mozo/assets/masterService.e2218f63.js')).u().setDataMesas([]));
-        execFileSync('docker', ['restart', 'pro9-centrifugo'], { stdio: 'pipe' });
+        execFileSync('docker', ['restart', 'sab-centrifugo'], { stdio: 'pipe' });
         const reconnectDeadline = Date.now() + 20000;
         while (socketCount < 1 && Date.now() < reconnectDeadline) await new Promise(resolve => setTimeout(resolve, 200));
         assert.ok(socketCount >= 1);

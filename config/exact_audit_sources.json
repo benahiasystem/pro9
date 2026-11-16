@@ -33,12 +33,12 @@
         {
             "path": "public/vendeya",
             "kind": "external_client",
-            "reason": "Cliente compilado cuyo cierre se separó expresamente del código disponible de Pro9."
+            "reason": "Cliente compilado cuyo cierre se separó expresamente del código disponible de SAB."
         },
         {
             "path": "public/mozo",
             "kind": "external_client",
-            "reason": "Cliente compilado cuyo cierre se separó expresamente del código disponible de Pro9."
+            "reason": "Cliente compilado cuyo cierre se separó expresamente del código disponible de SAB."
         },
         {
             "path": "public/liveapp",
@@ -53,7 +53,7 @@
         {
             "path": "public/porto-light",
             "kind": "third_party_ui",
-            "reason": "Distribución del tema Porto y sus bibliotecas de presentación. Los consumidores de datos de Pro9 se auditan en resources y modules."
+            "reason": "Distribución del tema Porto y sus bibliotecas de presentación. Los consumidores de datos de SAB se auditan en resources y modules."
         },
         {
             "path": "public/js/app.js",
@@ -108,52 +108,52 @@
         {
             "path": "public/porto-ecommerce/assets/js/bootstrap.bundle.min.js",
             "kind": "third_party",
-            "reason": "Bootstrap 4.1.3 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+            "reason": "Bootstrap 4.1.3 distribuido como dependencia; sus consumidores de SAB se auditan por separado."
         },
         {
             "path": "public/porto-ecommerce/assets/js/vue.min.js",
             "kind": "third_party",
-            "reason": "Vue 2.6.10 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+            "reason": "Vue 2.6.10 distribuido como dependencia; sus consumidores de SAB se auditan por separado."
         },
         {
             "path": "public/porto-ecommerce/assets/js/vue.js",
             "kind": "third_party",
-            "reason": "Vue 2.6.10 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+            "reason": "Vue 2.6.10 distribuido como dependencia; sus consumidores de SAB se auditan por separado."
         },
         {
             "path": "public/porto-ecommerce/assets/js/axios.min.js",
             "kind": "third_party",
-            "reason": "Axios 0.18.1 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+            "reason": "Axios 0.18.1 distribuido como dependencia; sus consumidores de SAB se auditan por separado."
         },
         {
             "path": "public/porto-ecommerce/assets/js/sweetalert2.all.min.js",
             "kind": "third_party",
-            "reason": "SweetAlert2 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+            "reason": "SweetAlert2 distribuido como dependencia; sus consumidores de SAB se auditan por separado."
         },
         {
             "path": "public/porto-ecommerce/assets/js/nouislider.min.js",
             "kind": "third_party",
-            "reason": "noUiSlider 11.1.0 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+            "reason": "noUiSlider 11.1.0 distribuido como dependencia; sus consumidores de SAB se auditan por separado."
         },
         {
             "path": "public/porto-ecommerce/assets/js/moment.min.js",
             "kind": "third_party",
-            "reason": "Moment.js distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+            "reason": "Moment.js distribuido como dependencia; sus consumidores de SAB se auditan por separado."
         },
         {
             "path": "public/porto-ecommerce/assets/js/plugins.min.js",
             "kind": "third_party",
-            "reason": "Plugins de presentación Waypoint y del tema Porto distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+            "reason": "Plugins de presentación Waypoint y del tema Porto distribuido como dependencia; sus consumidores de SAB se auditan por separado."
         },
         {
             "path": "public/porto-ecommerce/assets/js/jquery.min.js",
             "kind": "third_party",
-            "reason": "jQuery 3.3.1 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+            "reason": "jQuery 3.3.1 distribuido como dependencia; sus consumidores de SAB se auditan por separado."
         },
         {
             "path": "public/porto-ecommerce/assets/js/culqi_v3.js",
             "kind": "third_party",
-            "reason": "SDK Culqi v3 distribuido como dependencia; sus consumidores de Pro9 se auditan por separado."
+            "reason": "SDK Culqi v3 distribuido como dependencia; sus consumidores de SAB se auditan por separado."
         },
         {
             "path": "public/porto-ecommerce/assets/js/main.min.js",

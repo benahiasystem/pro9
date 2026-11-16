@@ -1336,7 +1336,7 @@ export default {
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             if (!ensurePosRate(this)) return;
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             let quantity;
             try {
                 quantity = exactAmount(exactInput(String(item.item.aux_quantity)));
@@ -1349,7 +1349,7 @@ export default {
                 item.item.aux_quantity = quantity.minus(1).decimal();
                 this.clickAddItem(item, index, true);
             }
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
         },
         setDocType(typeId) {
             this.form.document_type_id = typeId;
@@ -2208,12 +2208,12 @@ export default {
             await this.setFormPosLocalStorage();
         },
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         calculateTotal() {
             Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment));
             if (this.$refs.componentFastPaymentGarage) this.$refs.componentFastPaymentGarage.checkPaymentGarage(this.form.total_payable);
         },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         checkPaymentGarage() {
             this.$eventHub.$emit("eventCheckPaymentGarage");
         },

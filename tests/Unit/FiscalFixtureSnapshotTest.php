@@ -27,7 +27,7 @@ final class FiscalFixtureSnapshotTest extends TestCase
     public function test_connection_pointing_to_a_different_database_is_rejected(string $operation): void
     {
         $db = $this->createMock(Connection::class);
-        $db->method('getDatabaseName')->willReturn('pro9_fiscal_test_123456abcdef');
+        $db->method('getDatabaseName')->willReturn('sab_fiscal_test_123456abcdef');
         $db->method('selectOne')->willReturn((object) ['name' => 'tenancy_real']);
         $db->expects(self::never())->method('select');
         $this->expectException(\LogicException::class);

@@ -6,7 +6,7 @@ use App\Models\System\PaymentOrder;
 use App\Support\Venezuela\Localization;
 use Illuminate\Validation\ValidationException;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** A new order freezes its own quote; a browser amount/currency is never authority. */
 final class CentralPaymentQuote
 {
@@ -41,4 +41,4 @@ final class CentralPaymentQuote
             'minor_units'=>(string)$payable->multipliedBy(100)->toBigInteger()];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

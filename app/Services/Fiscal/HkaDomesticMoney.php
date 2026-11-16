@@ -47,7 +47,7 @@ final class HkaDomesticMoney
         }
         $base = D::sum(array_map(fn ($tax) => self::cents(D::read($tax,'base')), $taxes));
         $untaxed = self::cents(D::read($snapshot,'total_value'))->minus($base);
-        // Pro9 charges do not increase its IVA base. Present that conserved amount as an E service.
+        // SAB charges do not increase its IVA base. Present that conserved amount as an E service.
         // This avoids taxing the charge or reporting it twice as both an item and a header surcharge.
         if ($untaxed->isGreaterThan(0)) {
             $doc['detallesItems'][] = ['numeroLinea'=>(string) (count($doc['detallesItems']) + 1),

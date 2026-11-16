@@ -1,13 +1,13 @@
 ---
 name: migrar-venezuela-moneda
-description: Mantener VES/USD, símbolos y conversiones de Pro9, distinguiendo moneda documental, recibida y aplicada. Usar al modificar currency_type_id, tipos de cambio, POS, caja, cobros, finanzas o reportes monetarios, incluida la retirada de PEN/VED.
+description: Mantener VES/USD, símbolos y conversiones de SAB, distinguiendo moneda documental, recibida y aplicada. Usar al modificar currency_type_id, tipos de cambio, POS, caja, cobros, finanzas o reportes monetarios, incluida la retirada de PEN/VED.
 ---
 
 # Migrar moneda venezolana
 
 ## Precisión exacta — contrato del 16/10/2026
 
-Aplicar [cálculos exactos](../mantener-calculos-exactos-pro9/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
+Aplicar [cálculos exactos](../mantener-calculos-exactos-sab/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
 
 
 ## Contrato
@@ -55,7 +55,7 @@ Al abrir caja con un saldo inicial positivo, seleccionar y bloquear el método e
 
 En servicio técnico, `currency_type_id` debe leer la moneda persistida; VES es sólo la alternativa para registros sin moneda. La aceptación HTTP de VES recibido para un servicio USD figura en [clasificación de medios](../../../informes/clasificacion_medios_pago_caja.md).
 
-Al modificar cobros o saldos, aplicar [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-pro9/SKILL.md). El contrato del pago no se obtiene sólo de la moneda de la factura.
+Al modificar cobros o saldos, aplicar [persistencia fiscal y cobros](../mantener-persistencia-fiscal-venezuela-sab/SKILL.md). El contrato del pago no se obtiene sólo de la moneda de la factura.
 
 - `documents.currency_type_id` identifica la moneda documental; `document_payments.currency_type_id`, la recibida. `payment` es el principal neto aplicado en la primera; `original_amount`, el principal recibido en la segunda, sin vuelto ni IGTF. `tax_amount` conserva IGTF recibido en moneda del pago.
 - La tasa representa VES por USD: USD → VES multiplica, VES → USD divide. Usar `FiscalAmounts` y las tasas conservadas de documento/pago; no sustituirlas por la tasa vigente al reimprimir, reportar o preparar HKA.
@@ -112,19 +112,19 @@ Al modificar cobros o saldos, aplicar [persistencia fiscal y cobros](../mantener
 
 ## Precisión de tasas BCV — instrucción de 7 de octubre de 2026
 
-- Pro9 conserva tasas como cadenas decimales de ocho posiciones en `DECIMAL(18,8)`, incluidos ceros finales. La API BCV devuelve cadenas y mantiene token fijo.
+- SAB conserva tasas como cadenas decimales de ocho posiciones en `DECIMAL(18,8)`, incluidos ceros finales. La API BCV devuelve cadenas y mantiene token fijo.
 - Calcular conversiones con `Brick\Math\BigRational` en PHP y `ExactAmount`/`BigInt` en JavaScript. Conservar la fracción durante toda la operación y al recuperarla de la base. HALF_UP sólo para representaciones finales autorizadas, presentación o liquidación; nunca reutilizar esas representaciones para calcular.
 - Excepción autorizada para tenants existentes: `exchange-rates:upgrade-precision --all-tenants --dry-run` y luego sin `--dry-run`, tras pruebas en MySQL temporal. El comando amplía únicamente las columnas inventariadas en `config/exchange_rate_precision.php`; no reconstruye bases ni recupera decimales históricos.
 
 ## Cobro SPE y presentación doméstica HKA
 
-Seguir [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md): la clasificación usa perfil vigente del emisor, moneda realmente recibida e intermediación derivada del método validado (`cash`/`account`); no inferir IGTF de moneda documental o comprador. Mantener `original_amount`/`payment`/`tax_amount` y tasa exacta en el contexto congelado del cobro. Crédito y recuperación de borradores sólo conservan abonos introducidos, sin proponer/distribuir el total.
+Seguir [perfiles SPE](../mantener-sujetos-pasivos-especiales-sab/SKILL.md): la clasificación usa perfil vigente del emisor, moneda realmente recibida e intermediación derivada del método validado (`cash`/`account`); no inferir IGTF de moneda documental o comprador. Mantener `original_amount`/`payment`/`tax_amount` y tasa exacta en el contexto congelado del cobro. Crédito y recuperación de borradores sólo conservan abonos introducidos, sin proponer/distribuir el total.
 
 `HkaDomesticMoney` adapta una copia para factura doméstica USD o con IGTF y nota exclusiva 98: principales VES/OtraMoneda USD sin modificar dinero local o payloads preparados. La nota utiliza tasa/fecha del cobro y conserva moneda/tasa original del padre para `montoFacturaAfectada`. Comprobar conversiones, saldos, caja/recibos derivados y regresiones de terceros/regímenes/exportación.
 
 ## Dinero de comprobantes IVA recibidos
 
-Aplicar [retenciones IVA recibidas](../mantener-retenciones-iva-recibidas-pro9/SKILL.md). `base` es IVA sujeto, `taxable_base` es base imponible y `amount` importe retenido; `applied_amount` reduce saldo documental con tasa del comprobante. Comparar límites fiscales en VES con los importes/tasa de emisión conservados, sin confundirlos con equivalencia de liquidación.
+Aplicar [retenciones IVA recibidas](../mantener-retenciones-iva-recibidas-sab/SKILL.md). `base` es IVA sujeto, `taxable_base` es base imponible y `amount` importe retenido; `applied_amount` reduce saldo documental con tasa del comprobante. Comparar límites fiscales en VES con los importes/tasa de emisión conservados, sin confundirlos con equivalencia de liquidación.
 
 `HkaIvaRetentionPayload` convierte directamente desde moneda del comprobante a moneda fiscal confirmada; VES→VES permanece exacto aun con factura USD y tasas distintas. No convertir primero al importe aplicado USD y luego usar tasa de emisión. Ejemplo probado: IVA fiscal 320 VES, retención 240 VES, factura USD con tasa 10 y comprobante con tasa 20: aplicar 12 USD y enviar 320/240 VES. El comprobante no crea efectivo ni base IGTF; previsión y estados inactivos aplican cero. Verificar `HkaIvaRetentionPayloadTest` y `test_iva_fiscal_ves*` en MySQL temporal.
 

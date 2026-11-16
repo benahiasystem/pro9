@@ -2,7 +2,7 @@
 
 namespace Modules\Finance\Helpers;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 use App\Support\Exact\Payables;
 use App\Support\Exact\ReportDataset;
 
@@ -18,4 +18,4 @@ class ToPay
         return Payables::dataset([], true);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

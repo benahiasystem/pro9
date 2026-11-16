@@ -155,10 +155,10 @@
                                     <div class="col-md-1 text-end">
                                     </div>
 
-                                    <!-- ######## INICIO CALCULOS EXACTOS PRO9 ######## -->
+                                    <!-- ######## INICIO CALCULOS EXACTOS SAB ######## -->
                                         <div class="col-12 mt-3"><strong>Saldo consolidado (Bs.): {{ summary.consolidated_balance_ves ?? '0' }}</strong>
                                             <span class="ms-3">Total documental equivalente (Bs.): {{ summary.consolidated_total_ves ?? '0' }}</span></div>
-                                        <!-- ######## FIN CALCULOS EXACTOS PRO9 ######## -->
+                                        <!-- ######## FIN CALCULOS EXACTOS SAB ######## -->
                                         <div class="col-md-2 text-end">
                                         <el-badge :value="getTotalRowsUnpaid" class="item">
                                         <span size="small">Total comprobantes</span>
@@ -272,9 +272,9 @@
                                         </template>
                                     </tbody>
                                 </table>
-                                <!-- ######## INICIO CALCULOS EXACTOS PRO9 ######## -->
+                                <!-- ######## INICIO CALCULOS EXACTOS SAB ######## -->
                                 <el-pagination :current-page="pagination.current_page" :page-size="pagination.per_page" :total="pagination.total" layout="prev, pager, next, total" @current-change="loadToPay" />
-                                <!-- ######## FIN CALCULOS EXACTOS PRO9 ######## -->
+                                <!-- ######## FIN CALCULOS EXACTOS SAB ######## -->
                                 </div>
                                 </div>
                             </div>
@@ -353,13 +353,13 @@ import {exactValue} from '../../../../../../../resources/js/helpers/exchange-rat
         },
         computed: {
 
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             getCurrentBalance() { return this.summary.VES_balance ?? '0'; },
             getCurrentBalanceUsd() { return this.summary.USD_balance ?? '0'; },
             getTotalRowsUnpaid() { return this.summary.count ?? 0; },
             getTotalAmountUnpaid() { return this.summary.VES_total ?? '0'; },
             getTotalAmountUnpaidUsd() { return this.summary.USD_total ?? '0'; },
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             canExportResults() {
                 return this.getTotalRowsUnpaid > 0;
             }
@@ -427,7 +427,7 @@ import {exactValue} from '../../../../../../../resources/js/helpers/exchange-rat
                     this.form.establishment_id = this.establishments.length > 0 ? this.establishments[0].id : null;
                 });
             },
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             loadToPay(page = 1) {
                 const currentPage = Number.isInteger(page) ? page : 1;
                 return this.$http.post(`/${this.resource}/records`, {...this.form, page: currentPage, per_page: this.pagination.per_page}).then(response => {
@@ -436,7 +436,7 @@ import {exactValue} from '../../../../../../../resources/js/helpers/exchange-rat
                     this.pagination = response.data.meta;
                 });
             },
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             clickPurchasePayment(recordId) {
                 this.recordId = recordId;
                 this.showDialogPurchasePayments = true;

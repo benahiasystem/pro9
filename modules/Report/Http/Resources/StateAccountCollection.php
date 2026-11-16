@@ -62,12 +62,12 @@ class StateAccountCollection extends ResourceCollection
                 ]),
             ];
             foreach (['total_exportation','total_exonerated','total_unaffected','total_free','total_taxed','total_igv','total','total_charge'] as $field) {
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 if (!array_key_exists($field, $row->getAttributes())) {
                     $result[$field] = null;
                     continue;
                 }
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
                 $result[$field] = $void ? '0.00' : D::format(D::read($row, $field), 2, '.', '');
             }
             return $result;
