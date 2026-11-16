@@ -27,7 +27,8 @@ final class Pro9SourceReader
     public function status(): array
     {
         $source = $this->company();
-        return ['linked' => (bool) $source, 'source' => $source ? ['name' => $source->name, 'tax_id' => $source->number] : null, 'available' => $source ? ['sales' => DB::table('documents')->count(), 'purchases' => DB::table('purchases')->whereNull('deleted_at')->count()] : null, 'received' => SourceDocument::where('origin', 'pro9')->count(), 'pending' => SourceDocument::where('origin', 'pro9')->whereIn('status', ['received', 'changed'])->count()];
+        $pending = SourceDocument::where('origin', 'pro9')->where(fn($q) => $q->whereIn('status', ['received', 'changed'])->orWhereIn('id', Incident::where('kind', 'source_changed')->where('resource_type', 'source_document')->where('status', 'open')->select('resource_id')))->count();
+        return ['linked' => (bool) $source, 'source' => $source ? ['name' => $source->name, 'tax_id' => $source->number] : null, 'available' => $source ? ['sales' => DB::table('documents')->count(), 'purchases' => DB::table('purchases')->whereNull('deleted_at')->count()] : null, 'received' => SourceDocument::where('origin', 'pro9')->count(), 'pending' => $pending];
     }
     private function query(string $kind): \Illuminate\Database\Query\Builder
     {
@@ -123,34 +124,34 @@ final class Pro9SourceReader
             $actor = \App\Models\Tenant\User::without('establishment')->whereKey($user)->where('active', true)->where('locked', false)->first();
             if (!$actor) { throw new ApiProblem('FORBIDDEN_ACTION', 'La cuenta no puede recibir documentos de SAB.', 403); }
             app(\Modules\Accounting\Domain\Permissions::class)->require($actor, 'integration');
-            $snapshot = $this->snapshot($kind, $id, true);
-            if (str_ends_with($snapshot['kind'], '_unsupported')) {
-                throw new ApiProblem('SOURCE_KIND_NOT_SUPPORTED', 'Este tipo de documento requiere una equivalencia antes de recibirse.');
+            $table = self::TABLES[$kind] ?? throw new ApiProblem('SOURCE_KIND_NOT_SUPPORTED', 'El tipo de documento de SAB no está disponible.', 404);
+            $doc = SourceDocument::where('source_instance_id', 'pro9')->where('source_company_id', (string) $source->id)->where('source_id', $table . ':' . $id)->lockForUpdate()->first();
+            try { $snapshot = $this->snapshot($kind, $id, true); }
+            catch (ApiProblem $problem) {
+                if (!$doc || $problem->errorCode !== 'SOURCE_NOT_FOUND') { throw $problem; }
+                // Absence is an observation, never an inferred fiscal annulment.
+                $snapshot = ['availability' => 'missing', 'source_id' => $table . ':' . $id, 'source_kind' => $kind, 'id' => $id];
+                $snapshot['hash'] = hash('sha256', json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
             }
-            if (!in_array($snapshot['currency'], ['VES', 'USD', 'EUR'], true)) {
-                throw new ApiProblem('UNSUPPORTED_CURRENCY', 'Revisa la moneda del documento de origen.');
-            }
-            $tax = (string) $snapshot['party']['tax_id'];
-            if ($tax === '' || mb_strlen($tax) > 30) {
-                throw new ApiProblem('PARTY_IDENTIFICATION_REQUIRED', 'Completa la identificación del tercero en SAB antes de recibir este documento.');
-            }
-            $doc = SourceDocument::where('source_instance_id', 'pro9')->where('source_company_id', (string) $source->id)->where('source_id', $snapshot['source_id'])->lockForUpdate()->first();
+            $issues = $this->projectionIssues($snapshot);
             $latest = $doc ? SourceVersion::where('source_document_id', $doc->id)->orderByDesc('revision')->first() : null;
             if ($doc && ($latest?->hash ?? $doc->metadata['source_hash'] ?? null) === $snapshot['hash']) {
-                $incident = Incident::where('resource_type', 'source_document')->where('resource_id', $doc->id)->where('kind', 'source_changed')->where('status', 'open')->orderByDesc('created_at')->first();
+                $incident = Incident::where('resource_type', 'source_document')->where('resource_id', $doc->id)->where('kind', 'source_changed')->where('status', 'open')->orderByRaw("CAST(JSON_UNQUOTE(JSON_EXTRACT(details, '$.revision')) AS UNSIGNED) DESC")->orderByDesc('created_at')->orderByDesc('id')->first();
                 return ['data' => $doc, 'unchanged' => true, 'requires_reconciliation' => (bool) $incident, 'observed_revision' => $latest?->revision ?? $doc->source_revision, 'incident_id' => $incident?->id];
             }
             $revision = $doc ? max((int) ($latest?->revision ?? 0), (int) $doc->source_revision) + 1 : 1;
-            if ($doc && (JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists() || \Modules\Accounting\Models\OpenItem::where('source_document_id', $doc->id)->where('status', '!=', 'reversed')->where('is_opening', true)->exists())) {
+            if ($doc && ($issues || JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists() || \Modules\Accounting\Models\OpenItem::where('source_document_id', $doc->id)->where('status', '!=', 'reversed')->where('is_opening', true)->exists())) {
                 $version = app(SourceHistoryService::class)->append($doc, $snapshot, $snapshot['hash'], $user, $revision, 'pending_reconciliation');
                 $this->invalidatePending($doc, $user, $version->id);
                 $incident = Incident::create(['kind' => 'source_changed', 'resource_type' => 'source_document', 'resource_id' => $doc->id,
-                    'title' => 'SAB cambió un documento con efecto contable', 'details' => ['revision' => $revision, 'source_version_id' => $version->id, 'applied_revision' => $doc->source_revision,
+                    'title' => 'El origen de SAB requiere revisión', 'details' => ['revision' => $revision, 'source_version_id' => $version->id, 'applied_revision' => $doc->source_revision, 'projection_issues' => $issues,
                         'observed_hash' => $snapshot['hash'], 'applied_hash' => $doc->metadata['source_hash'] ?? null, 'has_posted_entry' => JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists(),
                         'has_opening_item' => \Modules\Accounting\Models\OpenItem::where('source_document_id', $doc->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists(), 'financial_projection_preserved' => true]]);
                 app(AuditService::class)->record($user, 'pro9.source_change_observed', 'source_document', $doc->id, ['source_version_id' => $version->id, 'revision' => $revision, 'applied_revision' => $doc->source_revision, 'hash' => $snapshot['hash'], 'incident_id' => $incident->id, 'financial_projection_preserved' => true]);
                 return ['data' => $doc, 'unchanged' => false, 'requires_reconciliation' => true, 'observed_revision' => $revision, 'incident_id' => $incident->id];
             }
+            if ($issues) { throw new ApiProblem('SOURCE_PROJECTION_UNSUPPORTED', implode(' ', $issues)); }
+            $tax = (string) $snapshot['party']['tax_id'];
             $naturalKey = app(DocumentService::class)->identity($snapshot['kind'], $snapshot['number'], $tax, $snapshot['control_number'], $snapshot['issue_date']);
             app(DocumentService::class)->ensureIdentity($naturalKey, $doc?->id);
             $party = ThirdParty::firstOrCreate(['tax_id' => $tax], ['name' => $snapshot['party']['name'], 'kind' => $kind === 'sales' ? 'customer' : 'supplier']);
@@ -169,15 +170,28 @@ final class Pro9SourceReader
             }
             $doc->natural_key = $naturalKey;
             $doc->save();
-            app(SourceHistoryService::class)->append($doc, $snapshot, $snapshot['hash'], $user, $revision);
+            $sourceVersion = app(SourceHistoryService::class)->append($doc, $snapshot, $snapshot['hash'], $user, $revision);
+            $incident = null;
             if ($changed) {
                 \Modules\Accounting\Models\FiscalRecord::where('source_document_id', $doc->id)->where('status', 'validated')->update(['status' => 'source_changed']);
                 $this->invalidatePending($doc, $user);
-                Incident::create(['kind' => 'source_changed', 'resource_type' => 'source_document', 'resource_id' => $doc->id, 'title' => 'El documento de SAB cambió', 'details' => ['revision' => $revision, 'has_posted_entry' => JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists(), 'has_opening_item' => \Modules\Accounting\Models\OpenItem::where('source_document_id', $doc->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists()]]);
+                $incident = Incident::create(['kind' => 'source_changed', 'resource_type' => 'source_document', 'resource_id' => $doc->id, 'title' => 'El documento de SAB cambió', 'details' => ['revision' => $revision, 'source_version_id' => $sourceVersion->id, 'has_posted_entry' => JournalEntry::where('source_document_id', $doc->id)->whereNotNull('posted_at')->exists(), 'has_opening_item' => \Modules\Accounting\Models\OpenItem::where('source_document_id', $doc->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists()]]);
             }
             app(AuditService::class)->record($user, $changed ? 'pro9.source_changed' : 'pro9.received', 'source_document', $doc->id, ['source_id' => $snapshot['source_id'], 'revision' => $revision, 'hash' => $snapshot['hash']]);
-            return ['data' => $doc, 'unchanged' => false];
+            return ['data' => $doc, 'unchanged' => false, 'requires_reconciliation' => (bool) $incident, 'observed_revision' => $revision, 'incident_id' => $incident?->id];
         }, 5);
+    }
+
+    public function projectionIssues(array $snapshot): array
+    {
+        if (($snapshot['availability'] ?? '') === 'missing') { return ['El documento ya recibido no está disponible en SAB. Revisa su recuperación; no se infiere una anulación.']; }
+        $issues = [];
+        if (!in_array($snapshot['kind'] ?? '', ['sale_invoice', 'sale_credit_note', 'sale_debit_note', 'purchase_invoice', 'purchase_credit_note', 'purchase_debit_note'], true)) { $issues[] = 'El tipo de documento necesita una equivalencia admitida.'; }
+        if (!in_array($snapshot['currency'] ?? '', ['VES', 'USD', 'EUR'], true)) { $issues[] = 'La moneda del origen necesita revisión.'; }
+        $party = is_array($snapshot['party'] ?? null) ? $snapshot['party'] : [];
+        $tax = $party['tax_id'] ?? null;
+        if (!is_string($tax) || $tax === '' || mb_strlen($tax) > 30) { $issues[] = 'Completa la identificación del tercero en SAB.'; }
+        return $issues;
     }
 
     private function invalidatePending(SourceDocument $document, int $user, ?string $sourceVersion = null): void

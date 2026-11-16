@@ -26,10 +26,12 @@ if existing.returncode == 0:
     assert container['Config']['Labels']['contabilidad.scanner-config'] == digest
     assert container['State']['Running'], 'Inspecciona la causa terminal antes de recrear el escáner.'
 else:
+    definitions = runtime / 'clamav-definitions'
+    mounts = ['-v', str(definitions) + ':/var/lib/clamav:ro'] if (definitions / 'daily.cld').is_file() else []
     subprocess.run(['docker', 'run', '-d', '--name', name, '--label', 'contabilidad.goal=api-v1', '--label', 'contabilidad.scanner-config=' + digest,
                     '--network', 'contabilidad-api-v1-tests', '--network-alias', 'accounting-av', '--memory=4g', '--cpus=1.5', '--pids-limit=96', '--read-only',
                     '--tmpfs', '/tmp:rw,nosuid,nodev,size=128m', '--user', 'clamav', '-v', str(config) + ':/etc/clamav/clamd-accounting.conf:ro',
-                    '--entrypoint', 'clamd', image, '--config-file=/etc/clamav/clamd-accounting.conf', '--foreground=true'], check=True, stdout=subprocess.DEVNULL)
+                    *mounts, '--entrypoint', 'clamd', image, '--config-file=/etc/clamav/clamd-accounting.conf', '--foreground=true'], check=True, stdout=subprocess.DEVNULL)
 probe = '$s=@stream_socket_client("tcp://accounting-av:3310",$e,$m,2); if(!$s)exit(2); stream_set_timeout($s,2); fwrite($s,"zVERSION\\0"); $r=stream_get_contents($s); fclose($s); echo trim($r,"\\0\\r\\n");'
 for attempt in range(40):
     state = json.loads(subprocess.check_output(['docker', 'inspect', name], text=True))[0]

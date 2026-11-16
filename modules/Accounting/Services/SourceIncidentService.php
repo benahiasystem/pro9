@@ -47,12 +47,13 @@ final class SourceIncidentService
 
     private function basisUnchanged(SourceDocument $document, SourceVersion $observed, array $ledger): bool
     {
+        if (!is_array($observed->snapshot) || app(SourceHistoryService::class)->integrity($observed)['state'] === 'failed') { return false; }
         $revisions = array_unique(array_map(fn($entry) => (int) ($entry['source_revision'] ?? $document->source_revision), array_filter($ledger, fn($entry) => $entry['active_effect'])));
         if (!$revisions) { $revisions = [$document->source_revision]; }
         $target = $this->businessHash($observed->snapshot);
         foreach ($revisions as $revision) {
             $old = SourceVersion::where('source_document_id', $document->id)->where('revision', $revision)->first();
-            if (!$old || app(SourceHistoryService::class)->integrity($old)['state'] === 'failed' || !hash_equals($target, $this->businessHash($old->snapshot))) { return false; }
+            if (!$old || !is_array($old->snapshot) || app(SourceHistoryService::class)->integrity($old)['state'] === 'failed' || !hash_equals($target, $this->businessHash($old->snapshot))) { return false; }
         }
         return true;
     }
@@ -71,7 +72,9 @@ final class SourceIncidentService
 
     private function requireResolutionIntegrity(SourceResolution $row): void
     {
-        if (!hash_equals($row->integrity_hash, SourceResolutionHash::digest($row->getRawOriginal()))) { throw new ApiProblem('SOURCE_RESOLUTION_INTEGRITY', 'La resolución conservada no coincide con su evidencia. Revisa la recuperación del historial.', 409); }
+        try { $valid = is_string($row->integrity_hash) && hash_equals($row->integrity_hash, SourceResolutionHash::digest($row->getRawOriginal())); }
+        catch (\Throwable) { $valid = false; }
+        if (!$valid) { throw new ApiProblem('SOURCE_RESOLUTION_INTEGRITY', 'La resolución conservada no coincide con su evidencia. Revisa la recuperación del historial.', 409); }
     }
 
     public function requireReplacementPermit(SourceDocument $document): void
@@ -116,13 +119,14 @@ final class SourceIncidentService
             $current = $latest === $version->id; $integrity = app(SourceHistoryService::class)->integrity($version); $same = $this->basisUnchanged($document, $version, $ledger);
             $activeOpening = OpenItem::where('source_document_id', $document->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists();
             $clear = !array_filter($ledger, fn($entry) => $entry['active_effect']) && !$activeOpening;
-            $open = $incident->status === 'open' && $current && $integrity['state'] !== 'failed';
+            $projectionIssues = is_array($version->snapshot) ? app(Pro9SourceReader::class)->projectionIssues($version->snapshot) : ['El antecedente no conserva la estructura de un documento de origen.'];
+            $open = $incident->status === 'open' && $current && $integrity['state'] !== 'failed' && !$projectionIssues;
             $resolution = SourceResolution::where('incident_id', $incident->id)->first();
             return ['company_id' => app(CompanyContext::class)->id(), 'incident' => $incident->only(['id', 'kind', 'title', 'status', 'version', 'details', 'resolution', 'resolved_by', 'resolved_at']),
                 'document' => $document->only(['id', 'number', 'status', 'version', 'source_revision', 'origin']), 'observed' => [...app(SourceHistoryService::class)->metadata($version, $document), 'integrity' => $integrity],
                 'observed_snapshot_json' => AuditPayload::text($version->getRawOriginal('snapshot')), 'registered_snapshot_json' => AuditPayload::text(json_encode($document->toArray(), JSON_THROW_ON_ERROR)),
-                'ledger' => $ledger, 'latest_observed' => $current, 'business_basis_unchanged' => $same, 'active_opening' => $activeOpening,
-                'actions' => ['acknowledge_metadata' => $open && $same, 'apply_after_reversal' => $open && $clear, 'review_received' => $open && $clear && $document->source_revision === $version->revision && in_array($document->status, ['validated', 'proposed'], true)],
+                'ledger' => $ledger, 'latest_observed' => $current, 'business_basis_unchanged' => $same, 'active_opening' => $activeOpening, 'projection_issues' => $projectionIssues,
+                'actions' => ['acknowledge_metadata' => $open && $same && ($ledger || $document->source_revision !== $version->revision), 'apply_after_reversal' => $open && $clear && $document->source_revision !== $version->revision, 'review_received' => $open && $clear && $document->source_revision === $version->revision && in_array($document->status, ['validated', 'proposed'], true)],
                 'resolution' => $resolution ? $this->resolution($resolution) : null];
         });
     }
@@ -142,7 +146,7 @@ final class SourceIncidentService
                 $snapshot = app(Pro9SourceReader::class)->snapshot($document->metadata['source_kind'] ?? '', (int) ($document->metadata['source_record_id'] ?? 0), true);
                 if (!hash_equals($observed->hash, $snapshot['hash'])) { throw new ApiProblem('SOURCE_REVIEW_STALE', 'SAB volvió a cambiar. Recibe su versión actual antes de confirmar esta revisión.', 409); }
                 $ledger = $this->ledger($document); $clear = !array_filter($ledger, fn($entry) => $entry['active_effect']) && !OpenItem::where('source_document_id', $document->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists();
-                if ($action === 'acknowledge_metadata' && !$this->basisUnchanged($document, $observed, $ledger)) { throw new ApiProblem('SOURCE_FINANCIAL_CHANGE', 'El cambio afecta los datos del documento. Requiere corregir sus efectos contables antes de aplicar otra revisión.', 409); }
+                if ($action === 'acknowledge_metadata' && (!$this->basisUnchanged($document, $observed, $ledger) || (!$ledger && $document->source_revision === $observed->revision))) { throw new ApiProblem('SOURCE_FINANCIAL_CHANGE', 'El cambio requiere validar la revisión recibida o corregir sus efectos anteriores antes de confirmar otra revisión.', 409); }
                 if ($action === 'apply_after_reversal' && !$clear) { throw new ApiProblem('SOURCE_EFFECTS_ACTIVE', 'Contabiliza los reversos aprobados y resuelve los auxiliares vinculados antes de aplicar la nueva revisión.', 409); }
                 if ($action === 'review_received' && (!$clear || $document->source_revision !== $observed->revision || !in_array($document->status, ['validated', 'proposed'], true))) { throw new ApiProblem('SOURCE_REVIEW_INCOMPLETE', 'Valida la revisión recibida y resuelve los efectos anteriores antes de cerrar esta incidencia.', 409); }
                 $before = $document->toArray(); $fiscal = FiscalRecord::where('source_document_id', $document->id)->whereIn('status', ['validated', 'source_changed'])->get()->toArray();

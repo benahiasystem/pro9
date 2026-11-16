@@ -67,8 +67,11 @@ final class SourceHistoryService
             $document = SourceDocument::findOrFail($documentId);
             $version = SourceVersion::where('source_document_id', $document->id)->findOrFail($versionId);
             $raw = $version->getRawOriginal();
-            $snapshot = $version->snapshot; $native = ($version->origin_kind ?? $document->origin) === 'pro9';
-            $amounts = $snapshot['amounts'] ?? []; $party = $native ? ($snapshot['party'] ?? null) : ($snapshot['party_snapshot'] ?? $snapshot['metadata']['party_snapshot'] ?? null);
+            $snapshot = is_array($version->snapshot) ? $version->snapshot : []; $native = ($version->origin_kind ?? $document->origin) === 'pro9';
+            $amounts = is_array($snapshot['amounts'] ?? null) ? $snapshot['amounts'] : [];
+            $metadata = is_array($snapshot['metadata'] ?? null) ? $snapshot['metadata'] : [];
+            $candidate = $native ? ($snapshot['party'] ?? null) : ($snapshot['party_snapshot'] ?? $metadata['party_snapshot'] ?? null);
+            $party = is_array($candidate) ? $candidate : null;
             $text = fn($value) => is_string($value) ? $value : '';
             $money = fn($value) => is_string($value) ? $value : null;
             $summary = ['kind' => $text($snapshot['kind'] ?? null), 'number' => $text($snapshot['number'] ?? null), 'issue_date' => $text($snapshot['issue_date'] ?? null), 'currency' => $text($snapshot['currency'] ?? null),

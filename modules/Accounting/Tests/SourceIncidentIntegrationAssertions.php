@@ -10,6 +10,70 @@ use Modules\Accounting\Support\TenantDB as DB;
 
 trait SourceIncidentIntegrationAssertions
 {
+    public function test_unposted_received_change_requires_validation_instead_of_metadata_acknowledgment(): void
+    {
+        $fixture = $this->nativeSourceFixture(); $observed = $this->observeNative($fixture, ['total' => '2320', 'total_value' => '2000', 'total_igv' => '320', 'total_taxes' => '320']); $case = $observed['case'];
+        $this->assertFalse(in_array(true, $case['actions'], true));
+        try { app(SourceIncidentService::class)->resolve($case['incident']['id'], $case['incident']['version'], [...$observed['input'], 'action' => 'acknowledge_metadata'], $this->admin->id, 'source-unvalidated-' . Str::uuid()); $this->fail('La validación del documento recibido no se omite al reconocer un cambio.'); }
+        catch (ApiProblem $problem) { $this->assertSame('SOURCE_FINANCIAL_CHANGE', $problem->errorCode); }
+        $document = $fixture['document']->fresh(); $components = $fixture['config']['input']['tax_components']; $components[0]['base'] = '2000'; $components[0]['amount'] = '320';
+        app(DocumentService::class)->validate($document->id, $document->version, ['source_confirmed' => true, 'tax_components' => $components], $this->admin->id);
+        $this->assertTrue(app(SourceIncidentService::class)->show($case['incident']['id'])['actions']['review_received']);
+    }
+
+    public static function unsupportedNativeChanges(): array
+    {
+        return [[['currency_type_id' => 'XXX']], [['document_type_id' => '99']], [['customer' => json_encode(['name' => 'Tercero incompleto', 'number' => ''])]]];
+    }
+
+    /** @dataProvider unsupportedNativeChanges */
+    public function test_unsupported_native_changes_are_observed_once_without_replacing_registered_values(array $change): void
+    {
+            $fixture = $this->postedNativeCase(); $document = $fixture['document'];
+            $before = (array) DB::table('accounting_source_documents')->where('id', $document->id)->first();
+            $observed = $this->observeNative($fixture, $change); $case = $observed['case'];
+            $this->assertSame($before, (array) DB::table('accounting_source_documents')->where('id', $document->id)->first());
+            $this->assertNotEmpty($case['projection_issues']);
+            $this->assertFalse(in_array(true, $case['actions'], true));
+            $again = app(Pro9SourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
+            $this->assertTrue($again['unchanged']);
+            $this->assertSame($case['incident']['id'], $again['incident_id']);
+            $this->assertSame(2, SourceVersion::where('source_document_id', $document->id)->count());
+            $this->assertSame(1, Incident::where('resource_id', $document->id)->where('status', 'open')->count());
+        $this->assertSame(1, app(Pro9SourceReader::class)->status()['pending']);
+    }
+
+    public function test_disappeared_native_source_is_an_idempotent_observation_without_inferring_annulment(): void
+    {
+        $fixture = $this->postedNativeCase(); $document = $fixture['document'];
+        $before = (array) DB::table('accounting_source_documents')->where('id', $document->id)->first();
+        $entryBefore = (array) DB::table('accounting_journal_entries')->where('id', $fixture['entry']->id)->first();
+        DB::table('documents')->where('id', $fixture['id'])->delete();
+        $received = app(Pro9SourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
+        $again = app(Pro9SourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
+        $case = app(SourceIncidentService::class)->show($received['incident_id']);
+        $this->assertTrue($again['unchanged']); $this->assertSame($received['incident_id'], $again['incident_id']);
+        $this->assertFalse(in_array(true, $case['actions'], true));
+        $this->assertSame('missing', json_decode($case['observed_snapshot_json'], true)['availability']);
+        $this->assertSame('verified', $case['observed']['integrity']['state']);
+        $this->assertSame($before, (array) DB::table('accounting_source_documents')->where('id', $document->id)->first());
+        $this->assertSame($entryBefore, (array) DB::table('accounting_journal_entries')->where('id', $fixture['entry']->id)->first());
+    }
+
+    public function test_source_resolution_receipts_recheck_audit_permission_before_returning_history(): void
+    {
+        $fixture = $this->postedNativeCase(); $observed = $this->observeNative($fixture, []); $case = $observed['case']; $key = 'source-private-receipt-' . Str::uuid();
+        $input = [...$observed['input'], 'action' => 'acknowledge_metadata'];
+        app(SourceIncidentService::class)->resolve($case['incident']['id'], $case['incident']['version'], $input, $this->admin->id, $key);
+        $operations = app(\Modules\Accounting\Services\OperationService::class);
+        $this->assertSame('confirmed', $operations->status($this->admin->id, 'source.resolve', $key)['status']);
+        DB::table('accounting_memberships')->where('company_id', $this->a->id)->where('user_id', $this->admin->id)->update(['roles' => json_encode(['viewer'])]);
+        foreach (['status', 'cancel'] as $method) {
+            try { $operations->$method($this->admin->id, 'source.resolve', $key, 'Cancelar un envío ya revisado requiere autorización vigente.'); $this->fail('La recuperación respeta el permiso actual de auditoría.'); }
+            catch (ApiProblem $problem) { $this->assertSame('FORBIDDEN_ACTION', $problem->errorCode); }
+        }
+    }
+
     private function postedNativeCase(): array
     {
         $fixture = $this->nativeSourceFixture(); $documents = app(DocumentService::class); $document = $fixture['document'];

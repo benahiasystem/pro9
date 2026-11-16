@@ -10,6 +10,52 @@ use Modules\Accounting\Support\TenantDB as DB;
 
 trait SourceHistoryIntegrationAssertions
 {
+    public static function nativeSourceKinds(): array { return [['sales'], ['purchases']]; }
+
+    /** @dataProvider nativeSourceKinds */
+    public function test_native_source_uses_exact_snapshot_fractions_and_detects_snapshot_only_changes(string $kind): void
+    {
+        $fixture = $this->nativeSourceFixture(); $table = $kind === 'sales' ? 'documents' : 'purchases'; $id = $fixture['id'];
+        if ($kind === 'purchases') {
+            $row = (array) DB::table('documents')->where('id', $id)->first(); unset($row['id']); $row['supplier'] = $row['customer']; unset($row['customer']);
+            $id = DB::table($table)->insertGetId($row);
+        }
+        $snapshot = \App\Support\Exact\Decimal::snapshot(['total' => '7/3', 'total_value' => '2', 'total_igv' => '1/3', 'total_taxes' => '1/3', 'exchange_rate_sale' => '13/7']);
+        DB::table($table)->where('id', $id)->update(['calculation_snapshot' => json_encode($snapshot)]);
+        $reader = app(Pro9SourceReader::class); $first = $reader->snapshot($kind, $id);
+        $this->assertSame('2.333333333333', $first['amounts']['total']);
+        $this->assertSame(\App\Support\Exact\Decimal::fraction('7/3'), $first['exact']['total']);
+        $this->assertSame(\App\Support\Exact\Decimal::fraction('13/7'), $first['exact']['exchange_rate_sale']);
+        $document = $reader->receive($kind, $id, $this->admin->id)['data']; $revision = $document->source_revision;
+        $beforeColumns = (array) DB::table($table)->where('id', $id)->first(['total', 'total_value', 'total_igv', 'total_taxes', 'exchange_rate_sale', 'updated_at']);
+        $snapshot['values']['total'] = \App\Support\Exact\Decimal::fraction('8/3');
+        DB::table($table)->where('id', $id)->update(['calculation_snapshot' => json_encode($snapshot)]);
+        $second = $reader->snapshot($kind, $id); $this->assertNotSame($first['hash'], $second['hash']);
+        $received = $reader->receive($kind, $id, $this->admin->id);
+        $this->assertSame($revision + 1, $received['data']->source_revision);
+        $this->assertSame($beforeColumns, (array) DB::table($table)->where('id', $id)->first(['total', 'total_value', 'total_igv', 'total_taxes', 'exchange_rate_sale', 'updated_at']));
+        $this->assertSame('2.666666666667', $received['data']->amounts['total']);
+        $version = SourceVersion::where('source_document_id', $document->id)->where('revision', $revision)->firstOrFail();
+        $this->assertSame('7', $version->snapshot['exact']['total']['n']);
+        $this->assertSame('3', $version->snapshot['exact']['total']['d']);
+        $this->assertSame('verified', app(SourceHistoryService::class)->integrity($version)['state']);
+    }
+
+    public function test_legacy_source_shapes_remain_readable_without_inventing_amounts_or_rewriting_evidence(): void
+    {
+        $config = $this->invoiceConfiguration(); $document = app(DocumentService::class)->create($config['input'], $this->admin->id);
+        $snapshots = ['Estructura histórica incompleta', ['amounts' => 'No conservado', 'party_snapshot' => 'No conservado'], ['metadata' => 'No conservado', 'amounts' => ['total' => 1160]]];
+        foreach ($snapshots as $offset => $snapshot) {
+            $row = SourceVersion::create(['source_document_id' => $document->id, 'revision' => $offset + 2, 'snapshot' => $snapshot, 'hash' => str_repeat('1', 64)]);
+            $raw = $row->fresh()->getRawOriginal('snapshot');
+            $detail = app(SourceHistoryService::class)->show($document->id, $row->id);
+            $this->assertSame('legacy', $detail['integrity']['state']);
+            $this->assertNull($detail['summary']['amounts']['total']);
+            $this->assertNull($detail['summary']['party']);
+            $this->assertSame($raw, $row->fresh()->getRawOriginal('snapshot'));
+        }
+    }
+
     private function nativeSourceFixture(): array
     {
         $config = $this->invoiceConfiguration();
