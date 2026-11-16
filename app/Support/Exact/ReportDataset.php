@@ -4,7 +4,7 @@ namespace App\Support\Exact;
 
 use Illuminate\Pagination\LengthAwarePaginator;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Private per-execution spool: repeatable report reads without retaining every row in RAM. */
 final class ReportDataset implements \IteratorAggregate, \Countable
 {
@@ -135,4 +135,4 @@ final class ReportDataset implements \IteratorAggregate, \Countable
         return new LengthAwarePaginator($rows, $this->size, $perPage, $page, $options);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

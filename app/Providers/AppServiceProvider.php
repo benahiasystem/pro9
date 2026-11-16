@@ -45,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
 			// ######### FIN CORRECCIÓN INICIALIZACIÓN TENANT ##########
 
 			// ngrok conserva el host público en X-Forwarded-Host aunque reescriba
-			// Host para que Hyn resuelva el tenant mediante local.pro9.test.
+			// Host para que Hyn resuelva el tenant mediante local.sab.test.
 			$forwardedHost = trim(explode(',', request()->header('X-Forwarded-Host', ''))[0]);
 			$forwardedProto = strtolower(trim(explode(',', request()->header('X-Forwarded-Proto', 'https'))[0]));
 

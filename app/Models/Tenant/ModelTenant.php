@@ -27,7 +27,7 @@
         use UsesTenantConnection;
         use \App\Support\Exact\HasExactValues;
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         protected static function booted()
         {
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
@@ -97,7 +97,7 @@
             return $fillable;
         }
 
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         // ######## INICIO TASAS OCHO DECIMALES ########
@@ -131,9 +131,9 @@
 
         private function saveWithExactCalculation(array $options = [])
         {
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             \App\Support\Exact\Persistence::prepare($this);
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             // ######## INICIO TASAS OCHO DECIMALES ########
             foreach (['exchange_rate_sale', 'exchange_rate'] as $column) {
                 if (array_key_exists($column, $this->attributes) && ($this->getCasts()[$column] ?? '') === 'decimal:8') {
@@ -304,14 +304,14 @@
             return \App\Support\Exact\Decimal::represent($value, $decimals, true);
         }
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         public function formatPdfUnitPrice($configuration = null): string
         {
             $configuration ??= Configuration::getDataDecimalQuantity();
             return \App\Support\Exact\PdfPrice::format($this->exactValue('unit_price'), $configuration);
         }
 
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
 
         /**

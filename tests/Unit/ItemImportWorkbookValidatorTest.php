@@ -188,7 +188,7 @@ class ItemImportWorkbookValidatorTest extends TestCase
     }
 
     /** @test */
-    public function the_downloadable_template_matches_the_effective_pro9_contract(): void
+    public function the_downloadable_template_matches_the_effective_sab_contract(): void
     {
         $result = $this->validator()->validate(__DIR__ . '/../../public/formats/items.xlsx');
 

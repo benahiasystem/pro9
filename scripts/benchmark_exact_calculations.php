@@ -1,5 +1,5 @@
 <?php
-// ######## INICIO RENDIMIENTO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO RENDIMIENTO CALCULOS EXACTOS SAB ########
 require dirname(__DIR__).'/vendor/autoload.php';
 use App\Support\Exact\Decimal as D;
 $report=['runtime'=>PHP_VERSION,'source_sha256'=>hash_file('sha256',dirname(__DIR__).'/app/Support/Exact/Decimal.php'),'cases'=>[]];
@@ -29,4 +29,4 @@ foreach([10,100,1000] as $count) {
 }
 $report['peak_memory_bytes']=memory_get_peak_usage(true);
 echo json_encode($report,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR).PHP_EOL;
-// ######## FIN RENDIMIENTO CALCULOS EXACTOS PRO9 ########
+// ######## FIN RENDIMIENTO CALCULOS EXACTOS SAB ########

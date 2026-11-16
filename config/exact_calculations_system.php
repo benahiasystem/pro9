@@ -1,5 +1,5 @@
 <?php
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 return [
     'plans'=>['pricing','sales_limit'],
     'clients'=>['price'],
@@ -8,4 +8,4 @@ return [
     'massive_invoices'=>['cantidad','precio','total_gravado','total_igv','total_venta'],
     'job_batching_trays'=>['balance'],
 ];
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

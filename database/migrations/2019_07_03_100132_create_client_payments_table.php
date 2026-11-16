@@ -15,9 +15,9 @@ class CreateClientPaymentsTable extends Migration
     {
         Schema::create('client_payments', function (Blueprint $table) {
 
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             $table->json('calculation_snapshot')->nullable();
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             $table->increments('id');
             $table->unsignedInteger('client_id');
             $table->date('date_of_payment');

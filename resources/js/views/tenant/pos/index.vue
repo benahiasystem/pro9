@@ -3061,7 +3061,7 @@ export default {
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             if (!ensurePosRate(this)) return;
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             let quantity;
             try {
                 quantity = exactAmount(exactInput(String(item.item.aux_quantity))).plus(delta);
@@ -3078,7 +3078,7 @@ export default {
                 return this.$message.error("Indique una cantidad válida.");
             }
             return this.clickAddItem(item, index, true);
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
         },
         /**
          * Vacía el carrito conservando el cliente seleccionado.
@@ -3105,11 +3105,11 @@ export default {
             await this.setFormPosLocalStorage();
             this.initFocus();
         },
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         calculateTotal() {
             Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment));
         },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         recalculateDecimalTotalTaxed(total, igv) {
             return total - igv;
         },

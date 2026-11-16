@@ -40,14 +40,14 @@ class ReportOrderNoteConsolidatedController extends Controller
 
     public function records(Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \App\Support\Exact\ReadSnapshot::run((new OrderNoteItem())->getConnection(), function () use ($request) {
             $records = $this->getRecordsOrderNotes($request->all(), OrderNoteItem::class)
                 ->with('order_note.user')->paginate(config('tenant.items_per_page'));
             $amounts = \Modules\Report\Services\OrderNoteConsolidatedAmounts::rows($records->getCollection());
             return (new OrderNoteConsolidatedCollection($records))->withAmounts($amounts);
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
 
@@ -112,13 +112,13 @@ class ReportOrderNoteConsolidatedController extends Controller
 
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         [$records, $reportAmounts] = \App\Support\Exact\ReadSnapshot::run((new OrderNoteItem())->getConnection(), function () use ($request) {
             $records = $this->getRecordsOrderNotes($request->all(), OrderNoteItem::class)
                 ->with('order_note.user')->get()->sortBy(fn($row)=>$row->order_note->user->name);
             return [$records, \Modules\Report\Services\OrderNoteConsolidatedAmounts::rows($records)];
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         $params = $request->all();
 
         $pdf = PDF::loadView('report::order_notes_consolidated.report_pdf', compact("records", "company", "establishment", "params", "reportAmounts"));
@@ -135,7 +135,7 @@ class ReportOrderNoteConsolidatedController extends Controller
      * @return \Illuminate\Support\Collection
      */
     public function totalsByItem(Request $request) {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \App\Support\Exact\ReadSnapshot::run((new OrderNoteItem())->getConnection(), function () use ($request) {
         // dd($request->all());
         //$records = $this->getRecordsSalesConsolidated($request->all())->get()->groupBy('item_id');
@@ -147,7 +147,7 @@ class ReportOrderNoteConsolidatedController extends Controller
              * @var \Modules\Order\Models\OrderNoteItem $item
              */
             $item = $row->first();
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             $quantity = \Modules\Report\Services\OrderNoteConsolidatedAmounts::quantity($row);
             return [
                 'item_id'           => $key,
@@ -158,10 +158,10 @@ class ReportOrderNoteConsolidatedController extends Controller
                 'quantity'          => \App\Support\Exact\Decimal::represent($quantity),
                 'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['quantity'=>$quantity]),
             ];
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
         });
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
     }
 

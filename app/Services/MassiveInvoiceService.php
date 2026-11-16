@@ -148,7 +148,7 @@ class MassiveInvoiceService
         return self::calculateAmounts($precio,$cantidad,$tipoAfectacion,$incluyeIgv);
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public static function calculateAmounts($price, $quantity, string $affectation, bool $includesIva): array
     {
         $rate=in_array($affectation,['20','30'],true) ? '0' : \App\Support\Venezuela\Localization::exactTaxPercentage();
@@ -159,7 +159,7 @@ class MassiveInvoiceService
             'baseImponible'=>$D::read($line,'total_value'),'igv'=>$D::read($line,'total_igv'),'total'=>$D::read($line,'total'),'igvPercentage'=>$rate];
         return $D::values($values)+['calculation_snapshot'=>$D::snapshot($values,['price'=>$price,'quantity'=>$quantity,'includes_iva'=>$includesIva])];
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     private function validateRow($row)
     {

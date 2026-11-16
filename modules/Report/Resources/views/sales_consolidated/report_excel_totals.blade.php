@@ -51,8 +51,8 @@
                 </tr>
             </table>
         </div>
-        {{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
+        {{-- ######## INICIO CALCULOS EXACTOS SAB ######## --}}
         @include('report::sales_consolidated.exact_table', ['detail'=>false, 'excel'=>true])
-        {{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}
+        {{-- ######## FIN CALCULOS EXACTOS SAB ######## --}}
     </body>
 </html>

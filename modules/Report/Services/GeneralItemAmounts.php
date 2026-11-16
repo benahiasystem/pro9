@@ -4,7 +4,7 @@ namespace Modules\Report\Services;
 
 use App\Support\Exact\Decimal as D;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Read frozen line operands and convert only into the chosen report currency. */
 final class GeneralItemAmounts
 {
@@ -27,4 +27,4 @@ final class GeneralItemAmounts
         return D::convert(D::readRequired($item, $field), $item->currency_type_id, $currency, $document->exchange_rate_sale);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -1,4 +1,4 @@
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import {exactAmount, exactValue, exactSnapshot, exactSum} from './exchange-rate-math'
 
 export function recipeEffectiveCost(row) {
@@ -13,4 +13,4 @@ export function recipeTotals(rows) {
     return {production_cost: production_cost.decimal(), suggested_price: suggested_price.decimal(),
         calculation_snapshot: exactSnapshot({production_cost, suggested_price})}
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

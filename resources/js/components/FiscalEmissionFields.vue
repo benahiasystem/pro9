@@ -56,7 +56,7 @@
             <small class="text-danger">{{ error('fiscal_credentials') }}</small>
         </div>
         <small class="text-danger">{{ error('fiscal_configuration') }}</small>
-        <p class="text-muted mb-0">Configuración progresiva: puede completar los parámetros después. Pro9 registra los documentos localmente; esta selección no conecta una máquina ni activa envíos a un proveedor fiscal.</p>
+        <p class="text-muted mb-0">Configuración progresiva: puede completar los parámetros después. SAB registra los documentos localmente; esta selección no conecta una máquina ni activa envíos a un proveedor fiscal.</p>
         <!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->
     </div>
 </template>

@@ -1,4 +1,4 @@
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 const fs = require('node:fs'), path = require('node:path')
 function excluded(file, policy) {
     if (file.split('/').some(part=>policy.excluded_directory_names.includes(part))) return true
@@ -21,4 +21,4 @@ function sourceFiles(root, policy) {
     return files.sort()
 }
 module.exports = {excluded, sourceFiles, missingSources:(expected, scanned)=>{const known=new Set(scanned); return expected.filter(file=>!known.has(file))}}
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

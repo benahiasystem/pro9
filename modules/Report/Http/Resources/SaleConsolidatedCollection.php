@@ -4,7 +4,7 @@ namespace Modules\Report\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Controller supplies the same exact DTO used by exports and PDFs. */
 class SaleConsolidatedCollection extends ResourceCollection
 {
@@ -13,4 +13,4 @@ class SaleConsolidatedCollection extends ResourceCollection
         return $this->collection->all();
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

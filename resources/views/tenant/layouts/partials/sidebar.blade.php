@@ -1710,7 +1710,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                             <span>Configuración y más</span>
                         </a>
                     </li>
-                    <span class="w-100 text-center text-muted">{{ $vc_version ?? 'Pro 9' }}</span>
+                    <span class="w-100 text-center text-muted">{{ $vc_version ?? 'SAB' }}</span>
                 </ul>
             </div>
 

@@ -2,7 +2,7 @@
 
 namespace App\Support\Exact;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Actual tender and change are cents; retain the original request independently. */
 final class TenderAllocation
 {
@@ -52,4 +52,4 @@ final class TenderAllocation
         return array_values($rows);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

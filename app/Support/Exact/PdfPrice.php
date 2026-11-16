@@ -2,7 +2,7 @@
 
 namespace App\Support\Exact;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 final class PdfPrice
 {
     public static function precision($configuration): int
@@ -44,4 +44,4 @@ final class PdfPrice
             !== Decimal::represent($price->multipliedBy($quantity),2,true);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

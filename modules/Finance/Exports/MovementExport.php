@@ -74,7 +74,7 @@ class MovementExport implements FromView, ShouldAutoSize, WithTitle, \Maatwebsit
         ]);
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public function registerEvents(): array
     {
         return [\Maatwebsite\Excel\Events\AfterSheet::class => function ($event) {
@@ -90,5 +90,5 @@ class MovementExport implements FromView, ShouldAutoSize, WithTitle, \Maatwebsit
             }
         }];
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 }

@@ -1,4 +1,5 @@
 {
+    "name": "sab",
     "private": true,
     "scripts": {
         "dev": "node dev-with-css-sync.js",

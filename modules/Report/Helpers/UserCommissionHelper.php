@@ -11,16 +11,16 @@ class UserCommissionHelper
 {
 
     public static function getCommission($user, $utilities){
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \App\Support\Exact\Decimal::format(\Modules\Report\Services\EstimatedUserCommission::commission($user, $utilities), 2, '.', '');
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
     }
 
 
     public static function getUtilities($sale_notes, $documents){
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $sale_notes_utility = \Modules\Report\Services\EstimatedUserCommission::utility($sale_notes, 'sale_note');
         $documents_utility = \Modules\Report\Services\EstimatedUserCommission::utility($documents, 'document');
         $total = $documents_utility->plus($sale_notes_utility);
@@ -32,13 +32,13 @@ class UserCommissionHelper
             'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['sale_notes_utility'=>$sale_notes_utility,
                 'documents_utility'=>$documents_utility, 'total_utility'=>$total]),
         ];
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
     }
 
 
     public static function getUtilityRecords($records){
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $documents = $records->filter(fn($record)=>$record instanceof Document);
         $notes = $records->filter(fn($record)=>$record instanceof SaleNote);
         if ($documents->count() + $notes->count() !== $records->count()) {
@@ -47,7 +47,7 @@ class UserCommissionHelper
         return \App\Support\Exact\Decimal::represent(
             \Modules\Report\Services\EstimatedUserCommission::utility($documents, 'document')
                 ->plus(\Modules\Report\Services\EstimatedUserCommission::utility($notes, 'sale_note')));
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
     }
 

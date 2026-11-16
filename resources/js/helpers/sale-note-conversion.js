@@ -1,6 +1,6 @@
 import {normalizeExchangeRate} from './exchange-rate-math'
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 // Restore the source context before preparing any rows. The server must still
 // authorize and resolve the source notes again when persisting the invoice.
 export function storeSaleNoteConversion(storage, {context, client, items, notes, payments = []}) {
@@ -58,4 +58,4 @@ export function mayApplyDocumentRate(view, request) {
         && (view.saleNoteConversionRevision || 0) === request.noteRevision
         && view.documentRateRequestSequence === request.sequence
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

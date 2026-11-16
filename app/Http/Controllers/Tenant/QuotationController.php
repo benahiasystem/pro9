@@ -398,7 +398,7 @@ class QuotationController extends Controller
 
     public function duplicate(Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         DB::connection('tenant')->transaction(function () use ($request) {
             $obj = Quotation::withoutEagerLoads()->lockForUpdate()->findOrFail($request->id);
             $this->quotation = $obj->replicate();
@@ -426,7 +426,7 @@ class QuotationController extends Controller
             $this->quotation->refresh();
             $this->setFilename();
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         return [
             'success' => true,
@@ -979,7 +979,7 @@ class QuotationController extends Controller
         $quotation->save();
         if ($items) {
             \App\Support\Exact\CommercialCalculation::defer($quotation, function () use ($quotation, $items) {
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 // Reutilizar las partidas propias para preservar los operandos exactos
                 // que no cambiaron; el snapshot recibido del cliente no es autoridad.
                 $stored = $quotation->items()->withoutEagerLoads()->lockForUpdate()->get()->keyBy('id');
@@ -1006,7 +1006,7 @@ class QuotationController extends Controller
                     }
                 }
                 $quotation->items()->whereNotIn('id', array_keys($kept))->delete();
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
             });
         } else {
             $quotation->items()->delete();

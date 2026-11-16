@@ -2,7 +2,7 @@
 
 namespace App\Support\Exact;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Shared decimal transport for central and tenant models; no connection switching. */
 trait HasExactValues
 {
@@ -70,4 +70,4 @@ trait HasExactValues
         return $this;
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

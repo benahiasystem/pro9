@@ -5,7 +5,7 @@ namespace App\Support\Exact;
 use App\Support\Venezuela\Localization;
 use Illuminate\Validation\ValidationException;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 final class CheckoutAvailability
 {
     /** Enforce the existing enabled-checkout decision on direct POSTs as well. */
@@ -16,4 +16,4 @@ final class CheckoutAvailability
         }
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

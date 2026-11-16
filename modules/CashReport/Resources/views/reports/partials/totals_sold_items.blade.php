@@ -1,4 +1,4 @@
-{{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## INICIO CALCULOS EXACTOS SAB ######## --}}
 @php
     $table_sold_items = \Modules\CashReport\Services\ProductsAmounts::sold($documents);
     $displaySold = \Modules\CashReport\Services\ProductsAmounts::display($table_sold_items, 'total');
@@ -35,4 +35,4 @@
     @endif
     </tbody>
 </table>
-{{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## FIN CALCULOS EXACTOS SAB ######## --}}

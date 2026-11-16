@@ -48,7 +48,7 @@ final class FiscalFixtureSnapshot
     private static function assertTemporaryDatabase(Connection $db): void
     {
         $name = (string) $db->getDatabaseName();
-        if (!preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/D', $name)) {
+        if (!preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/D', $name)) {
             throw new \LogicException('El fixture fiscal sólo admite bases temporales de prueba.');
         }
         $current = $db->selectOne('SELECT DATABASE() AS name');

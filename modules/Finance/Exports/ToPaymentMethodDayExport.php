@@ -10,12 +10,12 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 
 class ToPaymentMethodDayExport implements FromView, ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithEvents
 {
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     protected $records;
     protected $company;
     protected $establishment;
     protected $params;
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     use Exportable;
     
@@ -39,7 +39,7 @@ class ToPaymentMethodDayExport implements FromView, ShouldAutoSize, \Maatwebsite
             'company' => $this->company,
         ]);
     }
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public function registerEvents(): array
     {
         return [\Maatwebsite\Excel\Events\AfterSheet::class=>function ($event) {
@@ -47,6 +47,6 @@ class ToPaymentMethodDayExport implements FromView, ShouldAutoSize, \Maatwebsite
                 ['total', 'total_payable', 'total_payment', 'total_to_pay', 'exact_balance', 'settlement_adjustment', 'total_ves_equivalent', 'balance_ves_equivalent']);
         }];
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
 }

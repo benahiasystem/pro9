@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Support\Exact\{Decimal as D, HeaderAllocation as H, LineCalculation};
 use PHPUnit\Framework\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactHeaderAllocationTest extends TestCase
 {
     public function test_an_adjustment_without_an_amount_cannot_silently_become_zero(): void
@@ -96,4 +96,4 @@ class ExactHeaderAllocationTest extends TestCase
         $this->allocate([$this->line('100','20')],$this->header(['total'=>'90','total_value'=>'90','total_igv'=>'0','total_charge'=>'0','total_prepayment'=>'0']));
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

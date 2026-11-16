@@ -1,4 +1,4 @@
-{{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## INICIO CALCULOS EXACTOS SAB ######## --}}
 @php
     $decimal = \App\Support\Exact\Decimal::class;
     $amounts = \Modules\Report\Services\GeneralItemAmounts::forLine($value, $document,
@@ -70,4 +70,4 @@
     <td data-type="s" class="celda" style="mso-number-format:'\@'">{{ $document->exchange_rate_sale }}</td>
     <td class="celda">{{ $warehouse }}</td>
 </tr>
-{{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## FIN CALCULOS EXACTOS SAB ######## --}}

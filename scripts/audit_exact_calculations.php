@@ -1,5 +1,5 @@
 <?php
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 require dirname(__DIR__).'/vendor/autoload.php';
 require __DIR__.'/exact_audit_registry.php';
 require __DIR__.'/exact_guard_proof.php';
@@ -82,4 +82,4 @@ $pending=count(array_filter($matches,fn($row)=>$row['status']==='pending'));
 $result=['contract_version'=>1,'tables'=>count($inventory),'columns'=>array_sum(array_map('count',$inventory)),'decimal_columns'=>$inventory,'system_decimal_columns'=>$central,'scanned_php_files'=>$scanned,'php_review'=>$matches,'parse_errors'=>$errors,'registry_errors'=>$registryErrors,'coverage_missing'=>$missingSources,'scanned_files'=>$scannedFiles,'source_hashes'=>$sourceHashes,'source_policy'=>$policy,'pending'=>$pending];
 echo json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR).PHP_EOL;
 if($errors || (in_array('--check',$argv,true) && ($pending || $registryErrors || $missingSources)))exit(1);
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

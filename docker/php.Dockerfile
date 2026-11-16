@@ -10,15 +10,15 @@ RUN sed -i 's|http://deb.debian.org/debian-security|https://archive.debian.org/d
     && apt-get -o Acquire::https::No-Cache=true update \
     && apt-get install -y --no-install-recommends \
         cmake nasm debian-archive-keyring libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev \
-    && printf 'deb-src https://deb.debian.org/debian bookworm main\ndeb-src https://security.debian.org/debian-security bookworm-security main\n' > /etc/apt/sources.list.d/pro9-codec-sources.list \
+    && printf 'deb-src https://deb.debian.org/debian bookworm main\ndeb-src https://security.debian.org/debian-security bookworm-security main\n' > /etc/apt/sources.list.d/sab-codec-sources.list \
     && apt-get -o Acquire::https::No-Cache=true update \
-    && mkdir -p /tmp/pro9-avif-build \
-    && cd /tmp/pro9-avif-build \
+    && mkdir -p /tmp/sab-avif-build \
+    && cd /tmp/sab-avif-build \
     && apt-get source aom libavif
 
 # Build Debian's patched codec sources with encoding enabled. Source-only
 # Bookworm repositories above do not upgrade the base operating system.
-RUN cd /tmp/pro9-avif-build \
+RUN cd /tmp/sab-avif-build \
     && cmake -S aom-* -B codec-build \
         -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_INSTALL_LIBDIR=lib \
         -DBUILD_SHARED_LIBS=ON -DENABLE_TESTS=OFF -DENABLE_DOCS=OFF \
@@ -27,7 +27,7 @@ RUN cd /tmp/pro9-avif-build \
     && cmake --build codec-build --parallel 2 \
     && cmake --install codec-build
 
-RUN cd /tmp/pro9-avif-build \
+RUN cd /tmp/sab-avif-build \
     && cmake -S libavif-* -B build \
         -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_INSTALL_LIBDIR=lib \
         -DCMAKE_PREFIX_PATH=/usr/local \

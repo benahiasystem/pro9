@@ -1,4 +1,4 @@
-{{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## INICIO CALCULOS EXACTOS SAB ######## --}}
 @if(count($records))
 <table style="table-layout:fixed;width:100%">
     <thead><tr><th style="width:50%">Producto</th><th style="width:18%">Cant.</th><th style="width:32%">Total Bs.</th></tr></thead>
@@ -29,4 +29,4 @@
 @else
 <p>No se encontraron registros.</p>
 @endif
-{{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## FIN CALCULOS EXACTOS SAB ######## --}}

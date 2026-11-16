@@ -62,10 +62,10 @@ final class FiscalDocumentPersistence
         if ($exportation && ($line['item']['unit_type_id'] ?? '') === 'SERV') FiscalAmounts::error('items', 'La exportación de servicios no está habilitada.');
         validator($line, ['quantity'=>'required|numeric|min:0', 'unit_price'=>'required|numeric|min:0'])->validate();
         $percentage = $affectation === '10' ? \App\Support\Venezuela\Localization::exactTaxPercentage() : 0;
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         if (($line['total_other_taxes'] ?? 0) != 0) FiscalAmounts::error('items.total_other_taxes','Los tributos adicionales deben registrarse en el detalle del documento.');
         $line = \App\Support\Exact\LineCalculation::fromRecord($line, $percentage);
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         $rateCode = in_array($affectation, ['20', 'EXP'], true) ? 'E' : (['8'=>'R','16'=>'G','31'=>'A'][(string)$percentage] ?? null);
         $line['iva_rate'] = ['code'=>$rateCode,'percentage'=>$percentage];
         unset($line['item']['cod_digemid']);
@@ -205,9 +205,9 @@ final class FiscalDocumentPersistence
 
     public static function summarize(Document $document): void
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         ExactDocumentSummary::save($document);
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
     public static function payment(Document $document, array $input, bool $initial = false, ?array $initialAmounts = null): DocumentPayment
@@ -379,7 +379,7 @@ final class FiscalDocumentPersistence
                     'base_ves' => D::convert($taxBase, $values['currency_type_id'], 'VES', $values['exchange_rate']),
                     'amount_ves' => D::convert($values['tax_amount'], $values['currency_type_id'], 'VES', $values['exchange_rate'])]);
                 self::summarize($target);
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 $appliedTax = D::of(D::represent($tax, 2));
                 $derivedValues = ['original_amount'=>$payment->exactValue('tax_amount'), 'payment'=>$appliedTax,
                     'tax_amount'=>D::of(0), 'converted_principal'=>$tax, 'payment_adjustment'=>$appliedTax->minus($tax)];
@@ -388,7 +388,7 @@ final class FiscalDocumentPersistence
                         'original_amount'=>$payment->tax_amount,'payment'=>D::represent($appliedTax),'tax_amount'=>0,'receipt_parent_id'=>$payment->id,
                         'calculation_snapshot'=>D::snapshot($derivedValues),
                         'operation_key'=>(string) Str::uuid(),'payment_method_snapshot'=>$payment->payment_method_snapshot]);
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
                 self::updateSettlementState($target);
                 if (!$initial && HkaIgtfNote::applies($target)) HkaIgtfNote::afterCommit($target);
             }

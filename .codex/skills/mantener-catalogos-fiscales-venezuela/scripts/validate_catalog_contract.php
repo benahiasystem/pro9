@@ -11,7 +11,7 @@ require $projectRoot.'/vendor/autoload.php';
 $app = require $projectRoot.'/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
-$target = 'pro9_ve_catalog_test_'.bin2hex(random_bytes(6));
+$target = 'sab_ve_catalog_test_'.bin2hex(random_bytes(6));
 $admin = DB::connection('system');
 
 if ($admin->table('websites')->where('uuid', $target)->exists()) {

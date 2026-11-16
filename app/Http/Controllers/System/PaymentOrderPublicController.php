@@ -94,9 +94,9 @@ class PaymentOrderPublicController extends Controller
 
     public function culqiCharge(string $uuid, Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         \App\Support\Exact\CheckoutAvailability::assertAvailable();
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         $order = $this->resolveOrder($uuid);
         $this->ensureNotPaid($order);
 
@@ -180,9 +180,9 @@ class PaymentOrderPublicController extends Controller
 
     public function izipayPayment(string $uuid, Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         \App\Support\Exact\CheckoutAvailability::assertAvailable();
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         $order = $this->resolveOrder($uuid);
         $this->ensureNotPaid($order);
 
@@ -218,9 +218,9 @@ class PaymentOrderPublicController extends Controller
 
     public function izipayTransaction(string $uuid, Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         \App\Support\Exact\CheckoutAvailability::assertAvailable();
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         $order = $this->resolveOrder($uuid);
 
         $transactionUuid = $request->validate([

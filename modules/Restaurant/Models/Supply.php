@@ -57,9 +57,9 @@ class Supply extends ModelTenant
      */
     public function isBelowMinimumStock()
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return $this->exactValue('stock')->isLessThan($this->exactValue('minimum_stock'));
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
     /**
@@ -69,9 +69,9 @@ class Supply extends ModelTenant
      */
     public function getEffectiveCost()
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $wasteMultiplier = \App\Support\Exact\Decimal::of(1)->plus($this->exactValue('waste_percentage')->dividedBy(100));
         return $this->exactValue('cost')->multipliedBy($wasteMultiplier)->simplified();
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 }

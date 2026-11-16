@@ -1685,7 +1685,7 @@ export default {
 
             let prepayment = this.getPrepayment(index)
 
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             if (exactAmount(this.form.prepayments[index].amount).compare(prepayment.amount) > 0) {
 
                 this.form.prepayments[index].amount = prepayment.amount
@@ -1696,7 +1696,7 @@ export default {
             this.form.prepayments[index].total = this.form.affectation_type_prepayment == 10
                 ? exactAmount(this.form.prepayments[index].amount).times(exactAmount(1).plus(this.percentage_igv)).decimal()
                 : String(this.form.prepayments[index].amount)
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
 
             this.changeTotalPrepayment()
 

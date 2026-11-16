@@ -247,7 +247,7 @@ trait DispatchPersistenceCases
         self::assertStringContainsString('2.3456',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->loadHtml($html); $pdf->render();
         $bytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$bytes);
-        if ($dir=getenv('PRO9_DISPATCH_REPORT_EVIDENCE')) file_put_contents($dir.'/ordenes.pdf',$bytes);
+        if ($dir=getenv('SAB_DISPATCH_REPORT_EVIDENCE')) file_put_contents($dir.'/ordenes.pdf',$bytes);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         foreach ([(new \Modules\Report\Exports\GuidesConsolidatedExport())->records($records),
@@ -425,7 +425,7 @@ trait DispatchPersistenceCases
         self::assertStringContainsString('Orden de entrega',$html); self::assertStringContainsString('0.333333333333',$html);
         self::assertStringContainsString('9.666666666667',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->loadHtml($html); $pdf->render(); file_put_contents($root.'/kardex.pdf',$pdf->output());
-        if ($evidence=getenv('PRO9_DISPATCH_KARDEX_EVIDENCE_DIR')) copy($root.'/kardex.pdf',$evidence.'/kardex.pdf');
+        if ($evidence=getenv('SAB_DISPATCH_KARDEX_EVIDENCE_DIR')) copy($root.'/kardex.pdf',$evidence.'/kardex.pdf');
         $process=proc_open(['pdftotext','-layout',$root.'/kardex.pdf',$root.'/kardex.txt'],[0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$pipes);
         self::assertIsResource($process); foreach ($pipes as $pipe) fclose($pipe); self::assertSame(0,proc_close($process));
         $pdfText=file_get_contents($root.'/kardex.txt');

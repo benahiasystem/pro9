@@ -2,7 +2,7 @@
 
 namespace App\Support\Exact;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 final class AccountTotals
 {
     public static function payments(iterable $payments): array
@@ -17,4 +17,4 @@ final class AccountTotals
         return Decimal::values($values)+['calculation_snapshot'=>Decimal::snapshot($values)];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

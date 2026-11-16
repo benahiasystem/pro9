@@ -564,7 +564,7 @@ trait SpePersistenceCases
         $before=count($sent);$db->beginTransaction();$payment=FiscalDocumentPersistence::payment($doc,$pay);self::assertSame($before,count($sent));$db->commit();
         $tax=\App\Models\Tenant\DocumentTax::where('document_payment_id',$payment->id)->firstOrFail();$note=Document::findOrFail($tax->document_id);
         self::assertSame('confirmed',$note->emission->status);self::assertTrue(HkaIgtfNote::applies($note));self::assertCount(0,$note->items);self::assertEquals(0,$note->total_igv);self::assertSame('1.5000000015',$note->total);self::assertEquals(158,$doc->fresh()->balance);
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         self::assertSame('1.5',$note->total_payable);
         self::assertTrue($note->exactBalance()->isZero());
         self::assertSame('-3/2000000000',(string)$note->payments->first()->exactValue('payment_adjustment'));
@@ -606,7 +606,7 @@ trait SpePersistenceCases
         $pdf->WriteHTML($html);
         $reportPdf=$pdf->Output('','S');
         self::assertStringStartsWith('%PDF-',$reportPdf);
-        if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/igtf-document-report.pdf',$reportPdf);
+        if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/igtf-document-report.pdf',$reportPdf);
         foreach (['report_pdf_standard','report_pdf_simple'] as $viewName) {
             $rejectedRecords=new \Illuminate\Database\Eloquent\Collection([$rejectedNote]);
             $rejectedHtml=view('report::documents.'.$viewName,['records'=>$rejectedRecords,'company'=>$company,
@@ -623,7 +623,7 @@ trait SpePersistenceCases
         $changed=clone $note;$changed->total=$note->exactValue('total')->plus('0.000000000001');
         try { HkaIgtfNote::assertCollection($changed);self::fail('Una diferencia subcéntimo no acredita el impuesto original.'); }
         catch (ValidationException $error) { self::assertArrayHasKey('payment',$error->errors()); }
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         self::assertSame('03',$note->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento']['tipoDocumento']);
         self::assertSame('98',$note->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento']['tipoTransaccion']);
         self::assertSame($doc->control_number,$note->note->data_affected_document->control_number);

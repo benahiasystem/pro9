@@ -64,7 +64,7 @@
 | 0 | `description` | texto escalar obligatorio, máximo 600 caracteres |
 | 1 | `internal_id` | texto escalar anulable, máximo 30; único dentro del libro; determina actualización o creación |
 | 2 | `model` | texto escalar anulable, máximo 100 |
-| 3 | `item_code` | código SUNAT anulable de exactamente 8 dígitos numéricos, conforme al importador actual de Pro9 |
+| 3 | `item_code` | código SUNAT anulable de exactamente 8 dígitos numéricos, conforme al importador actual de SAB |
 | 4 | `unit_type_id` | identificador obligatorio, presente y activo en el catálogo de unidades del tenant; usar `UND` para productos y `SERV` para servicios; rechazar `NIU` y `ZZ` |
 | 5 | `currency_type_id` | identificador obligatorio, presente y activo en el catálogo de monedas del tenant; Venezuela usa `VES`, no `VED` |
 | 6 | `sale_unit_price` | `decimal(30,12)` obligatorio y estrictamente mayor que cero |
@@ -76,7 +76,7 @@
 | 12 | `stock_min` | `decimal(30,12)` obligatorio, mínimo cero |
 | 13 | nombre de categoría | texto escalar anulable, máximo 255 |
 | 14 | nombre de marca | texto escalar anulable, máximo 255 |
-| 15 | `name` | texto escalar anulable, máximo 1000 en el esquema efectivo de Pro9 |
+| 15 | `name` | texto escalar anulable, máximo 1000 en el esquema efectivo de SAB |
 | 16 | `second_name` | texto escalar anulable, máximo 600 |
 | 17 | código de lote | texto escalar anulable, máximo 255 |
 | 18 | `date_of_due` | serial positivo de fecha de Excel anulable; obligatorio si existe código de lote; rechazar fechas textuales |

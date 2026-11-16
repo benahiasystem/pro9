@@ -13,7 +13,7 @@ class ExampleTest extends TestCase
      *
      * @return void
      */
-    // ########### INICIO PRUEBA ACCESO RAÍZ PRO9
+    // ########### INICIO PRUEBA ACCESO RAÍZ SAB
     public function testBasicTest()
     {
         // This anonymous system-route smoke test owns its hostname lookup fixture.
@@ -31,5 +31,5 @@ class ExampleTest extends TestCase
         $response->assertRedirect('/login');
         self::assertSame(0,DB::connection('system')->table('hostnames')->count());
     }
-    // ########### FIN PRUEBA ACCESO RAÍZ PRO9
+    // ########### FIN PRUEBA ACCESO RAÍZ SAB
 }

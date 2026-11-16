@@ -1,5 +1,5 @@
 <?php
-// ######## INICIO RENDIMIENTO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO RENDIMIENTO CALCULOS EXACTOS SAB ########
 require dirname(__DIR__).'/vendor/autoload.php';
 
 use App\Support\Exact\Decimal;
@@ -92,4 +92,4 @@ if (array_filter($report['cases'], static fn($case)=>!$case['passed'])) exit(1);
     fwrite(STDERR, get_class($exception).': '.$exception->getMessage().PHP_EOL);
     exit(2);
 }
-// ######## FIN RENDIMIENTO CALCULOS EXACTOS PRO9 ########
+// ######## FIN RENDIMIENTO CALCULOS EXACTOS SAB ########

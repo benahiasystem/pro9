@@ -211,9 +211,9 @@ final class NoteAnnulment
                 $n->state_type_id='11';$n->saveQuietly();$e->status='cancelled';
                 $j['status']='completed';$j['completed_at']=now()->toIso8601String();$j['diagnostic']=$j['remote'] ? 'Nota anulada en HKA; reversión comercial completada.':'Nota anulada localmente sin transmisión HKA.';
                 self::store($e,$j);FiscalDocumentPersistence::updateSettlementState($invoice);
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 \App\Models\Tenant\CashDocumentCredit::where('document_id',$invoice->id)->update(['status'=>$invoice->fresh()->exactBalance()->isPositive() ? 'PENDING':'PROCESSED']);
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
             });
         } catch (\Throwable $exception) {
             $this->locked($note,function ($n,$e) use ($exception) {

@@ -43,7 +43,7 @@ export class ExactAmount {
     }
 }
 export const exactAmount = rational
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 export function exactInput(value, scale = 12, integerDigits = 18) {
     if (typeof value !== 'string' || !value.trim()) throw new Error('Indique un decimal válido como texto')
     if (!Number.isInteger(scale) || !Number.isInteger(integerDigits) || scale < 0 || scale > 12 || integerDigits < 1 || integerDigits + scale > 65) throw new Error('Precisión fuera de rango')
@@ -94,7 +94,7 @@ export function allocateExact(total, weights, scale = 2) {
     for (const share of order) { if (left <= BigInt(0)) break; share.integer += BigInt(1); left -= BigInt(1) }
     return shares.map(share => rational(share.integer.toString()).dividedBy(unit.toString()).final(scale))
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 export function normalizeExchangeRate(value) {
     const match = /^(\d+)(?:[.,](\d*))?$/.exec(String(value))
     if (!match) throw new Error('La tasa debe conservar hasta ocho decimales sin redondeo')

@@ -64,9 +64,9 @@ $i = 0
                 <thead>
                 <tr>
                     <!--                    <th class="">#</th>-->
-                    {{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
+                    {{-- ######## INICIO CALCULOS EXACTOS SAB ######## --}}
                     <th class="">ID movimiento</th>
-                    {{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}
+                    {{-- ######## FIN CALCULOS EXACTOS SAB ######## --}}
                     <th class="">Fecha</th>
                     <th class="">Adquiriente</th>
                     <th class="">N° Doc. Identidad</th>
@@ -108,9 +108,9 @@ $i = 0
 
 
                     <!--                        <td class="celda">{{$i}}</td>-->
-                        {{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
+                        {{-- ######## INICIO CALCULOS EXACTOS SAB ######## --}}
                         <td class="celda">{{$value['id'] ?? '-'}}</td>
-                        {{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}
+                        {{-- ######## FIN CALCULOS EXACTOS SAB ######## --}}
                         <td class="celda">{{$value['date_of_payment']}}</td>
                         <td class="celda">{{$value['person_name']}}</td>
                         <td class="celda">{{$value['person_number']}}</td>

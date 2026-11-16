@@ -440,10 +440,10 @@
                                             class="col-md-1 mt-5 text-end"
                                         ></div>
 
-                                        <!-- ######## INICIO CALCULOS EXACTOS PRO9 ######## -->
+                                        <!-- ######## INICIO CALCULOS EXACTOS SAB ######## -->
                                         <div class="col-12 mt-3"><strong>Saldo consolidado (Bs.): {{ summary.consolidated_balance_ves ?? '0' }}</strong>
                                             <span class="ms-3">Total documental equivalente (Bs.): {{ summary.consolidated_total_ves ?? '0' }}</span></div>
-                                        <!-- ######## FIN CALCULOS EXACTOS PRO9 ######## -->
+                                        <!-- ######## FIN CALCULOS EXACTOS SAB ######## -->
                                         <div class="col-md-2 mt-5 text-end">
                                             <el-badge
                                                 :value="getTotalRowsUnpaid"
@@ -920,9 +920,9 @@
 </template>
 
 <script>
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import {exactValue} from '../../../../../../../resources/js/helpers/exchange-rate-math';
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 import DocumentPayments from "@views/documents/partials/payments.vue";
 import SaleNotePayments from "@views/sale_notes/partials/payments.vue";
 // import DataTable from '../../components/DataTableWithoutPaging.vue'
@@ -995,13 +995,13 @@ export default {
         await this.changePeriod();
     },
     computed: {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         getCurrentBalance() { return this.summary.VES_balance ?? '0'; },
         getCurrentBalanceUsd() { return this.summary.USD_balance ?? '0'; },
         getTotalRowsUnpaid() { return this.summary.count ?? 0; },
         getTotalAmountUnpaid() { return this.summary.VES_total ?? '0'; },
         getTotalAmountUnpaidUsd() { return this.summary.USD_total ?? '0'; },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         canExportResults() {
             return this.getTotalRowsUnpaid > 0;
         }
@@ -1024,9 +1024,9 @@ export default {
             const fraction = amount.fraction();
             return `${fraction.n}/${fraction.d}`;
         },
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         isPositiveBalance(row) { return exactValue(row, 'total_to_pay').compare('0') > 0; },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         checkScrollShadows() {
             const el = this.$refs.scrollContainer;

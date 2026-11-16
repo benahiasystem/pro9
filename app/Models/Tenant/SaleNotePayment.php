@@ -130,13 +130,13 @@ class SaleNotePayment extends ModelTenant
      */
     public static function sumPaymentsBySaleNote($sale_notes_id)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $sum = \App\Support\Exact\Decimal::of(0);
         foreach (self::withoutEagerLoads()->whereIn('sale_note_id', $sale_notes_id)->lazyById(500) as $payment) {
             $sum = $sum->plus(\App\Support\Exact\Decimal::readRequired($payment,'payment'));
         }
         return $sum;
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
     public function cashDocumentPayments()

@@ -9,7 +9,7 @@ use Modules\Finance\Http\Controllers\ToPayController;
 use Illuminate\Http\Request;
 use Tests\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactPayablesTest extends TestCase
 {
     protected function setUp(): void
@@ -112,4 +112,4 @@ class ExactPayablesTest extends TestCase
         self::assertSame('250530', $response['summary']['consolidated_balance_ves']);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

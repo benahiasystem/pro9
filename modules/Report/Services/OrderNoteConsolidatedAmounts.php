@@ -8,7 +8,7 @@ use App\Support\Exact\ReportDataset;
 use App\Support\Exact\ReportProjection;
 use Modules\Order\Models\OrderNoteItem;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Read order snapshots and allocate each order's header before projecting VES. */
 final class OrderNoteConsolidatedAmounts
 {
@@ -47,4 +47,4 @@ final class OrderNoteConsolidatedAmounts
         return Decimal::sum(collect($rows)->map(fn($row)=>Decimal::readRequired($row, 'quantity')));
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

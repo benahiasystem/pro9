@@ -25,7 +25,7 @@ class OrderNoteConsolidatedCollection extends ResourceCollection
     public function toArray($request)
     {
         
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $amounts = $this->amounts ?? OrderNoteConsolidatedAmounts::rows($this->collection);
         return $this->collection->transform(function($row, $key) use ($amounts){
             $line = $amounts[$row->id];
@@ -42,7 +42,7 @@ class OrderNoteConsolidatedCollection extends ResourceCollection
                 'calculation_snapshot' => $line['calculation_snapshot'],
             ];
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
     

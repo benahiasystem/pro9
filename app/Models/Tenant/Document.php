@@ -153,7 +153,7 @@ class Document extends ModelTenant
     public function guarantee_fund() { return $this->hasOne(DocumentGuaranteeFund::class); }
     public function fiscal_data() { return $this->hasOne(DocumentFiscalData::class); }
     public function emission() { return $this->hasOne(DocumentEmission::class); }
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public function getRetentionAmountAttribute() { return D::represent($this->exactRetentionAmount()); }
     public function exactRetentionAmount(bool $current = false): \Brick\Math\BigRational
     {
@@ -198,7 +198,7 @@ class Document extends ModelTenant
         return $total->minus($credits)->minus($payments)->minus($this->exactRetentionAmount($current))->minus($this->exactGuaranteeAmount($current))->plus(D::sum($refunds->map(fn($r)=>$r->exactValue('amount'))));
         // ######## FIN MONEDA DEL MEDIO DE COBRO ########
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
     // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
 
     public const GROUP_INVOICE = '01';

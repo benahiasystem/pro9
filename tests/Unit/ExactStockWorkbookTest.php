@@ -7,12 +7,12 @@ use Maatwebsite\Excel\Events\BeforeSheet;
 use PhpOffice\PhpSpreadsheet\{IOFactory, Spreadsheet};
 use Tests\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactStockWorkbookTest extends TestCase
 {
     public function test_stock_import_restores_the_numeric_ooxml_lexeme_before_reading_rows(): void
     {
-        $path = tempnam(sys_get_temp_dir(), 'pro9-stock-');
+        $path = tempnam(sys_get_temp_dir(), 'sab-stock-');
         try {
             $book = new Spreadsheet(); $sheet = $book->getActiveSheet();
             $sheet->fromArray([['Código','Stock'],['ITEM','1']], null, 'A1');
@@ -34,4 +34,4 @@ class ExactStockWorkbookTest extends TestCase
         } finally { unlink($path); }
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

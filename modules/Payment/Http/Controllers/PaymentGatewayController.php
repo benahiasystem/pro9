@@ -49,9 +49,9 @@ class PaymentGatewayController extends Controller
      */
     public function culqiCreateCharge(Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         \App\Support\Exact\CheckoutAvailability::assertAvailable();
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         $is_tenant = $request->boolean('isTenant', false);
         $validated = $request->validate([
             'amount'        => 'required|numeric',
@@ -161,9 +161,9 @@ class PaymentGatewayController extends Controller
 
     public function izipayCreatePayment(Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         \App\Support\Exact\CheckoutAvailability::assertAvailable();
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         $is_tenant = $request->boolean('isTenant', false);
 
@@ -286,9 +286,9 @@ class PaymentGatewayController extends Controller
 
     public function izipayTransaction(Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         \App\Support\Exact\CheckoutAvailability::assertAvailable();
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         $is_tenant = $request->boolean('isTenant', false);
         $credentials = $this->izipayCredentials($is_tenant);
 

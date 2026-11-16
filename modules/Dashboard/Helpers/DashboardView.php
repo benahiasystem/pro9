@@ -5,7 +5,7 @@ namespace Modules\Dashboard\Helpers;
 use App\Models\Tenant\Establishment;
 use App\Support\Exact\{Receivables, ReportDataset};
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class DashboardView
 {
     public static function getEstablishments()
@@ -23,4 +23,4 @@ class DashboardView
         return Receivables::dataset($request);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

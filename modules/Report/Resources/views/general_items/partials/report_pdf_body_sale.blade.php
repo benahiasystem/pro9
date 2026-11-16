@@ -1,4 +1,4 @@
-{{-- ######## INICIO CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## INICIO CALCULOS EXACTOS SAB ######## --}}
 @php
     $decimal = \App\Support\Exact\Decimal::class;
     $amounts = \Modules\Report\Services\GeneralItemAmounts::forLine($value, $document,
@@ -46,4 +46,4 @@
     <td class="celda">{{ $isComponent ? '' : $decimal::format($values['total_item_purchase'], 2, '.', '') }}</td>
     <td class="celda">{{ $isComponent ? '' : $decimal::format($values['utility_item'], 2, '.', '') }}</td>
 </tr>
-{{-- ######## FIN CALCULOS EXACTOS PRO9 ######## --}}
+{{-- ######## FIN CALCULOS EXACTOS SAB ######## --}}

@@ -7,7 +7,7 @@ use App\Support\Exact\Decimal;
 use Illuminate\Database\Eloquent\Collection;
 use Tests\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactProductPricesTest extends TestCase
 {
     protected function setUp(): void
@@ -48,4 +48,4 @@ class ExactProductPricesTest extends TestCase
         self::assertArrayNotHasKey('stock', $rawSelection['values']);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

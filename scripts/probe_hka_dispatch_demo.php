@@ -5,7 +5,7 @@ use App\Models\Tenant\Company;
 use App\Services\Fiscal\{HkaAuthentication,HkaTransport,HkaResponse,HkaPayloadBuilder};
 use Illuminate\Support\Str;
 $root=dirname(__DIR__);
-if (getenv('PRO9_FISCAL_MYSQL_TESTS')!=='1' || ($argv[1] ?? '')!=='bbc.localhost') exit("Enable isolated tests and specify bbc.localhost.\n");
+if (getenv('SAB_FISCAL_MYSQL_TESTS')!=='1' || ($argv[1] ?? '')!=='bbc.localhost') exit("Enable isolated tests and specify bbc.localhost.\n");
 $app=require $root.'/bootstrap/app.php';$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 $host=Hyn\Tenancy\Models\Hostname::where('fqdn',$argv[1])->firstOrFail();app(Hyn\Tenancy\Environment::class)->tenant($host->website);
 $source=Company::firstOrFail();

@@ -34,7 +34,7 @@ Las cuentas bancarias de instalaciones nuevas conservan su número de cuenta; el
 
 Se retiraron las 17 filas que tenían `active = 0`.
 
-### Formas de pago Pro9 y HKA (`payment_method_types`)
+### Formas de pago SAB y HKA (`payment_method_types`)
 
 La tabla operativa siembra diez IDs locales `01`–`05`, `09`–`13`. Su `hka_code char(2)` nullable almacena el código HKA: `01→08`, `02→06`, `03→05`, `04→03`, `10→09`, `11→02`; los demás usan `99`. Los IDs `06`, `07` y `14`–`26` no se siembran y pueden utilizarse para métodos personalizados. El código `99` no es único. Sólo en Medios digitales el listado muestra el medio fiscal y se selecciona obligatoriamente un medio compatible; en otras modalidades se oculta, se deja sin asignar al crear y se conserva al editar si continúa siendo compatible. Los snapshots de cobros ya registrados conservan su código. Esta modificación del esquema corresponde únicamente a instalaciones nuevas.
 
@@ -73,7 +73,7 @@ En instalaciones nuevas, `cat_iva_rate_types.tax_kind` referencia `cat_taxes_typ
 | `P` | Percibido | 0,00 % | IVA |
 | `IGTF` | Impuesto a las Grandes Transacciones Financieras | 3,00 % | IGTF |
 
-Esta tabla reproduce el catálogo 10 del manual HKA como referencia histórica; `IGTF` es otro tributo y por eso se distingue en `tax_kind`. Sus porcentajes no configuran el IVA operativo de Pro9 ni habilitan IGTF. Los tratamientos domésticos seleccionables continúan en `cat_affectation_igv_types` (`10` Gravado, `20` Exento); EXP se selecciona exclusivamente en exportación web digital DEMO; el IVA operativo se obtiene de `Localization`.
+Esta tabla reproduce el catálogo 10 del manual HKA como referencia histórica; `IGTF` es otro tributo y por eso se distingue en `tax_kind`. Sus porcentajes no configuran el IVA operativo de SAB ni habilitan IGTF. Los tratamientos domésticos seleccionables continúan en `cat_affectation_igv_types` (`10` Gravado, `20` Exento); EXP se selecciona exclusivamente en exportación web digital DEMO; el IVA operativo se obtiene de `Localization`.
 
 ### Atributos (`cat_attribute_types`)
 
@@ -103,7 +103,7 @@ Se retiraron `04`, `05`, `06`, `45`, `47`, `48`, `49`, `50`, `51`, `52` y `53`.
 
 Se retiraron `02` Recibo por honorarios, `03` Boleta de venta electrónica, `04` Liquidación de compra, `14` Servicios públicos, `40` Comprobante de percepción, `71` orden/guía complementaria y `GU75` Guía. Los nombres de almacén con “Guía” pasaron a “Nota”.
 
-`ARCV` es el identificador interno de Pro9 para el tipo `07` del catálogo HKA. El `07` interno continúa reservado para NOTA DE CRÉDITO. Esta fila del catálogo no habilita por sí sola la emisión ARCV.
+`ARCV` es el identificador interno de SAB para el tipo `07` del catálogo HKA. El `07` interno continúa reservado para NOTA DE CRÉDITO. Esta fila del catálogo no habilita por sí sola la emisión ARCV.
 
 ### Identidad (`cat_identity_document_types`)
 
@@ -139,7 +139,7 @@ Se retiraron todas las leyendas peruanas de transferencia gratuita, percepción,
 - `0202`: Exportación CIF; activa; `incoterm = CIF`.
 - `0203`: Exportación EXW; activa; `incoterm = EXW`.
 
-`0201`–`0203` son identificadores locales de Pro9; el catálogo 5 del manual HKA no publica códigos para estas opciones. Nacen activas y se exponen sólo en Comprobantes web digital DEMO. 0200 no puede activarse desde la pantalla de tipos de operación. No enviarlas como códigos HKA.
+`0201`–`0203` son identificadores locales de SAB; el catálogo 5 del manual HKA no publica códigos para estas opciones. Nacen activas y se exponen sólo en Comprobantes web digital DEMO. 0200 no puede activarse desde la pantalla de tipos de operación. No enviarlas como códigos HKA.
 
 ### Orígenes de producto HKA (`cat_product_origins`)
 
@@ -147,14 +147,14 @@ Se retiraron todas las leyendas peruanas de transferencia gratuita, percepción,
 2. Importado
 3. Nacional e Importado
 
-Los IDs `1` a `3` son locales y los tres registros nacen activos. El manual HKA enumera estos orígenes, pero no publica códigos; los IDs de Pro9 no deben enviarse al proveedor. Este catálogo no reutiliza `origin_addresses`, que corresponde a direcciones de despacho, y todavía no se relaciona con `items`.
+Los IDs `1` a `3` son locales y los tres registros nacen activos. El manual HKA enumera estos orígenes, pero no publica códigos; los IDs de SAB no deben enviarse al proveedor. Este catálogo no reutiliza `origin_addresses`, que corresponde a direcciones de despacho, y todavía no se relaciona con `items`.
 
 ### Tipos de producto HKA (`cat_product_types`)
 
 1. Alcohol
 2. Cigarrillos
 
-Los IDs `1` y `2` son locales y ambos registros nacen activos. El manual HKA enumera estos tipos de producto, pero no publica códigos; los IDs de Pro9 no deben enviarse al proveedor. Este catálogo es sólo una referencia fiscal: no sustituye `item_types`, no reutiliza las categorías comerciales y todavía no se relaciona con `items`.
+Los IDs `1` y `2` son locales y ambos registros nacen activos. El manual HKA enumera estos tipos de producto, pero no publica códigos; los IDs de SAB no deben enviarse al proveedor. Este catálogo es sólo una referencia fiscal: no sustituye `item_types`, no reutiliza las categorías comerciales y todavía no se relaciona con `items`.
 
 ### Tipos de proveedor HKA (`cat_providers_types`)
 
@@ -174,7 +174,7 @@ Los IDs numéricos son locales; el campo `code` almacena el valor HKA. Los cuatr
 - `98`: ND por IGTF
 - `99`: Solo cuando la factura es a Terceros
 
-Los seis registros iniciales están activos. Estos códigos corresponden al campo `tipoTransaccion` del catálogo 3 de HKA; no representan el identificador `transaccionId` de solicitudes ni los tipos de transacción de caja de Pro9. La condición del `99` se validará cuando exista el adaptador HKA.
+Los seis registros iniciales están activos. Estos códigos corresponden al campo `tipoTransaccion` del catálogo 3 de HKA; no representan el identificador `transaccionId` de solicitudes ni los tipos de transacción de caja de SAB. La condición del `99` se validará cuando exista el adaptador HKA.
 
 ### Régimen especial de tributación HKA (`cat_special_tax_regime`)
 
@@ -193,7 +193,7 @@ Los IDs `1` a `7` son locales y los siete registros están activos. El manual HK
 1. Tierra Firme
 2. Régimen Especial
 
-Los IDs `1` y `2` son locales y ambos registros nacen activos. El manual HKA enumera estos destinos tributarios, pero no publica códigos; los IDs de Pro9 no deben enviarse al proveedor. Esta clasificación general no sustituye `cat_special_tax_regime`, que conserva el detalle de los regímenes especiales, y todavía no se relaciona con `items`.
+Los IDs `1` y `2` son locales y ambos registros nacen activos. El manual HKA enumera estos destinos tributarios, pero no publica códigos; los IDs de SAB no deben enviarse al proveedor. Esta clasificación general no sustituye `cat_special_tax_regime`, que conserva el detalle de los regímenes especiales, y todavía no se relaciona con `items`.
 
 ### Motivos de traslado (`cat_transfer_reason_types`)
 
@@ -203,7 +203,7 @@ Los IDs `1` y `2` son locales y ambos registros nacen activos. El manual HKA enu
 - `23`: Tránsito aduanero
 - `24`: Otras causas (especifique)
 
-`id` es simultáneamente la clave primaria `varchar(2)` y el código funcional. HKA enumera estos motivos pero no publica códigos; `22`, `23` y `24` son identificadores locales de Pro9 y no deben presentarse como códigos oficiales de HKA o SENIAT. Todos nacen activos y con `discount_stock = 0`.
+`id` es simultáneamente la clave primaria `varchar(2)` y el código funcional. HKA enumera estos motivos pero no publica códigos; `22`, `23` y `24` son identificadores locales de SAB y no deben presentarse como códigos oficiales de HKA o SENIAT. Todos nacen activos y con `discount_stock = 0`.
 
 Los cinco códigos y sus descripciones forman un catálogo cerrado: el tenant sólo puede configurar `discount_stock`. Cada Orden de entrega guarda en `dispatches.discount_stock` el efecto real calculado al emitirse; las órdenes relacionadas con una venta, nota de pedido o documento previo conservan `0` para evitar un segundo descuento. Anulaciones, Kardex y reportes consultan ese snapshot y no el valor vigente del catálogo. El código `24` exige detalle y se presenta como `Otras causas (especifique): {detalle}`.
 
@@ -285,7 +285,7 @@ El seeder no crea los tipos de auditoría `companies_certificate`, `companies_so
 
 La instalación nueva define directamente los trece estados actuales de ecommerce en `status_orders`, sin convertir cuatro estados anteriores ni volver a sembrarlos desde el alta del tenant. No incluye el servicio PENALIDAD asociado al motivo retirado de nota de débito 13; conserva DELIVERY-ECOM. Los cambios de conteo incluyen estas decisiones y la configuración inicial consolidada.
 
-Consultar también [mantener-modalidad-emision-fiscal-pro9](../../mantener-modalidad-emision-fiscal-pro9/SKILL.md). Las instalaciones nuevas crean directamente el esquema fiscal final, sin columnas SOAP/PFX/PSE ni migraciones de conversión.
+Consultar también [mantener-modalidad-emision-fiscal-sab](../../mantener-modalidad-emision-fiscal-sab/SKILL.md). Las instalaciones nuevas crean directamente el esquema fiscal final, sin columnas SOAP/PFX/PSE ni migraciones de conversión.
 
 ## Exportación de bienes (9 de octubre de 2026)
 

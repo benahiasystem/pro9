@@ -22,9 +22,9 @@ use Carbon\Carbon;
 use App\Models\Tenant\Person;
 use Modules\Dashboard\Helpers\DashboardView;
 use Modules\Finance\Helpers\ToPay;
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 use App\Support\Exact\{Decimal, Payables, ReportProjection};
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 use Modules\Finance\Exports\ToPaymentMethodDayExport;
 
 
@@ -96,14 +96,14 @@ class ToPayController extends Controller
             $data['stablishmentTopaidAll'] = 1; // Lista todos los establecimients
         }
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $request->validate(['page'=>'sometimes|integer|min:1', 'per_page'=>'sometimes|integer|between:1,500']);
         $dataset = ToPay::getToPay($data)->filter(fn($row)=>Decimal::readRequired($row, 'total_to_pay')->isPositive());
         $summary = Payables::summary($dataset);
         $page = $dataset->paginate((int)$request->input('per_page', 50), (int)$request->input('page', 1));
         return ['records'=>$page->items(), 'summary'=>$summary,
             'meta'=>['current_page'=>$page->currentPage(), 'per_page'=>$page->perPage(), 'total'=>$page->total()]];
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
     /**

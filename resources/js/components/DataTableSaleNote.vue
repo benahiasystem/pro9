@@ -121,9 +121,9 @@
 
     import moment from 'moment'
     import queryString from 'query-string'
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     import {exactAmount, exactValue} from '../helpers/exchange-rate-math'
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     export default {
         props: {
@@ -208,13 +208,13 @@
                 }));
             },
             formatDecimal(value, field) {
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 if (value === undefined || value === null) return '';
                 const amount = field ? exactValue(this.totals, field) : exactAmount(value);
                 const parts = amount.final(Number(this.decimal_quantity)).split('.');
                 parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                 return parts.join('.');
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
             },
             checkScrollShadows() {
                 const el = this.$refs.scrollContainer;

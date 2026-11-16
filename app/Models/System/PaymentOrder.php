@@ -35,9 +35,9 @@ class PaymentOrder extends ModelSystem
             if (empty($order->uuid)) {
                 $order->uuid = (string) Str::uuid();
             }
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             \App\Support\Exact\CentralPaymentQuote::freeze($order);
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
         });
     }
 

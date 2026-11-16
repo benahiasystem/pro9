@@ -3,7 +3,7 @@
 ini_set('display_errors', 'stderr');
 require dirname(__DIR__,2).'/vendor/autoload.php';
 $input=json_decode(stream_get_contents(STDIN),true,512,JSON_THROW_ON_ERROR);
-if (!preg_match('/\Apro9_fiscal_test_[a-f0-9]{12}\z/',$input['connection']['database'] ?? '')) exit(2);
+if (!preg_match('/\Asab_fiscal_test_[a-f0-9]{12}\z/',$input['connection']['database'] ?? '')) exit(2);
 if (!class_exists('DB')) class_alias(Illuminate\Support\Facades\DB::class,'DB');
 $app=new Illuminate\Foundation\Application(dirname(__DIR__,2));
 Illuminate\Container\Container::setInstance($app);

@@ -763,11 +763,11 @@
                     }
                 }
                 $this->order_note->fill($data);
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 // Guardar la cabecera antes de las partidas: sus eventos recalculan
                 // los totales y el guardado del nombre no debe sobrescribirlos.
                 $this->order_note->save();
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
 
                 foreach ($existing as $id=>$line) if (!isset($seen[$id])) {
                     $this->assertSimpleOrderInventory($line);

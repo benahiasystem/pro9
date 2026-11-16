@@ -2182,7 +2182,7 @@ export default {
                 this.total_item = this.form.unit_price_value;
             }
         },
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         restoreEditedQuantity() {
             const row = this.recordItem;
             this.form.record_id = row.record_id || row.id || null;
@@ -2214,7 +2214,7 @@ export default {
                 : this.currentExactQuantity();
             this.readonly_total = quantity.times(this.form.unit_price_value || '0').decimal();
         },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         cleanTotalItem() {
             this.total_item = null;
         },
@@ -2362,7 +2362,7 @@ export default {
 
 
             // Configurar base, amount, porcentaje y factor de cada descuento
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             const igvFactor = affectation_igv_type_id === '10' ? exactAmount(1).plus(this.percentageIgv) : exactAmount(1);
             const quantity = this.currentExactQuantity();
             const itemCurrency = this.form.item.currency_type_id || this.currencyTypeIdActive;
@@ -2382,7 +2382,7 @@ export default {
                 discount.factor = base.compare(0) > 0 ? amount.dividedBy(base).decimal() : '0';
                 discount.use_input_amount = true;
             });
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
 
             this.row = calculateRowItem(
                 this.form,

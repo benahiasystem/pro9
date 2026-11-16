@@ -2,7 +2,7 @@
 
 namespace App\Support\Exact;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Allocate frozen header components without changing the original line or its taxes. */
 final class HeaderAllocation
 {
@@ -187,4 +187,4 @@ final class HeaderAllocation
         return $amount->multipliedBy($weight)->dividedBy($total)->simplified();
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

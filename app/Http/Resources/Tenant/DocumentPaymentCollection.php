@@ -33,9 +33,9 @@ class DocumentPaymentCollection extends ResourceCollection
                 'receipt_reused' => !empty($row->payment_method_snapshot['receipt_origin']),
                 // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                 'tax_amount' => $row->tax_amount,
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 'receipt_parent_id' => $row->receipt_parent_id,
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
                 'payment_adjustment' => \App\Support\Exact\Decimal::represent($row->calculation_snapshot['values']['payment_adjustment'] ?? 0),
                 'calculation_snapshot' => $row->calculation_snapshot,
                 'reversed_at' => $row->reversed_at,

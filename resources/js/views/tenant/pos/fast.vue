@@ -1676,11 +1676,11 @@ export default {
             await this.setFormPosLocalStorage();
         },
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         calculateTotal() {
             Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment));
         },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         changeDateOfIssue() {
             // this.searchExchangeRateByDate(this.form.date_of_issue).then(response => {
             //     this.form.exchange_rate_sale = response

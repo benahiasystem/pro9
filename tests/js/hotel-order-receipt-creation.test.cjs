@@ -311,7 +311,7 @@ test('hotel atomic checkout never sends a document without a recoverable session
 })
 
 test('hotel atomic checkout does not recreate a missing draft after a reload', async () => {
-    const storage=new Map([['pro9-hotel-atomic:7','pending']]), messages=[]; let posts=0
+    const storage=new Map([['sab-hotel-atomic:7','pending']]), messages=[]; let posts=0
     globals.window={sessionStorage:{removeItem:key=>storage.delete(key)}}
     const ctx={loading:false,preparingCheckout:false,pendingAtomic:{key:'a98c5b98-5964-4f6e-9cff-7c405690a58b',type:'80'},
         atomicDraft:null,currentRent:{id:7},$message:{error:message=>messages.push(message)},
@@ -322,6 +322,44 @@ test('hotel atomic checkout does not recreate a missing draft after a reload', a
     assert.equal(ctx.pendingAtomic,null)
     assert.equal(storage.size,0)
     assert.match(messages[0],/Revise los datos/)
+})
+
+test('hotel recovers pending operations saved before the SAB rename', async () => {
+    const key='a98c5b98-5964-4f6e-9cff-7c405690a58b'
+    const storage=new Map([
+        ['sab-hotel-atomic:7','invalid json'],
+        ['pro9-hotel-atomic:7',JSON.stringify({key,type:'80'})],
+        ['pro9-hotel-checkout:7',JSON.stringify({id:42,type:'01'})],
+    ])
+    globals.window={sessionStorage:{getItem:k=>storage.get(k),removeItem:k=>storage.delete(k),setItem(){throw Error('denegado')}}}
+    const read=hotel.method('readPendingHotelOperation')
+    const pending=read('atomic',7)
+    assert.equal(pending.key,key)
+    assert.equal(read('checkout',7).id,42)
+    let posts=0
+    const ctx={loading:false,preparingCheckout:false,pendingAtomic:pending,atomicDraft:null,currentRent:{id:7},
+        $http:{async get(){return {data:{found:true}}},async post(){posts++}},
+        completeAtomicCheckout(){this.clearAtomicPending()}}
+    ctx.clearAtomicPending=hotel.method('clearAtomicPending')
+    await hotel.method('onAtomicCheckout').call(ctx)
+    assert.equal(posts,0)
+    assert.equal(storage.has('pro9-hotel-atomic:7'),false)
+    assert.equal(storage.has('sab-hotel-atomic:7'),false)
+})
+
+test('hotel finalizes a legacy checkout without creating another document', async () => {
+    const storage=new Map([['pro9-hotel-checkout:7',JSON.stringify({id:42,type:'80',arrears:'0.25'})]])
+    globals.window={sessionStorage:{getItem:k=>storage.get(k),removeItem:k=>storage.delete(k)}}
+    const pendingCheckout=hotel.method('readPendingHotelOperation')('checkout',7)
+    const calls=[]
+    const ctx={loading:false,preparingCheckout:false,pendingCheckout,currentRent:{id:7},document:{},
+        $http:{async post(url,data){calls.push({url,data});return {data:{success:true,currentRent:{id:7,status:'FINALIZADO'}}}}},
+        successGoToInvoice(){},$emit(){},saveCashDocument(){}}
+    await hotel.method('onGoToInvoice').call(ctx)
+    assert.equal(calls.length,1)
+    assert.match(calls[0].url,/finalized$/)
+    assert.equal(calls[0].data.checkout_document_id,42)
+    assert.equal(storage.size,0)
 })
 
 test('hotel product summary adds exact rows without mixing registered items or binary rounding', () => {

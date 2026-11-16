@@ -1,5 +1,5 @@
 <?php
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 /** Materialize narrow, individual AST proofs; never approve monetary arithmetic or whole files. */
 $root = dirname(__DIR__);
 $commands = [
@@ -61,4 +61,4 @@ if (in_array('--write', $argv, true)) {
     file_put_contents($path, json_encode($registry, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR).PHP_EOL);
 }
 echo json_encode(['individual_type_guard_reviews'=>$added, 'reproved_type_guards'=>$refreshed, 'written'=>in_array('--write', $argv, true)], JSON_THROW_ON_ERROR).PHP_EOL;
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

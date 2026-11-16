@@ -6,9 +6,9 @@ use App\Models\Tenant\Item;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 use Illuminate\Validation\Rule;
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 use App\Support\Exact\Decimal;
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 
 /**
  * Class DocumentRequest
@@ -118,7 +118,7 @@ class DocumentRequest extends FormRequest
                 }
 
                 $description = $this->resolveItemDescription($row, $index);
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 $quantity = Decimal::of(Decimal::input($row['quantity'] ?? '0', "items.{$index}.quantity"));
                 $idLoteSelected = $row['IdLoteSelected']
                     ?? data_get($row, 'item.IdLoteSelected')
@@ -161,7 +161,7 @@ class DocumentRequest extends FormRequest
                     $sumCompromise = $sumCompromise->plus($compromise)->simplified();
                 }
 
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
 
                 if (!$sumCompromise->isEqualTo($quantity)) {
                     $validator->errors()->add(

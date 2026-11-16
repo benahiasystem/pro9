@@ -4932,7 +4932,7 @@ export default {
             this.recordItem = null;
             this.showDialogAddItem = true;
         },
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         getFormatUnitPriceRow(unit_price, row) {
             const price = exactAmount(unit_price || '0');
             if (this.form.currency_type_id === row.item.currency_type_id) return price.decimal();
@@ -4949,7 +4949,7 @@ export default {
                 description: 'Descuento por anticipos', amount: amount.decimal(), amount_exact: amount.fraction(),
                 base: base.decimal(), factor: amount.dividedBy(base).decimal(), is_amount: true});
         },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         async changeDocumentPrepayment(index) {
             let prepayment = await _.find(this.prepayment_documents, {
                 id: this.form.prepayments[index].document_id
@@ -5604,7 +5604,7 @@ export default {
             }
             this.calculateTotal();
         },
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         calculateTotal() {
             if (this.enabled_discount_global) this.clearGlobalDistributionDiscounts();
             Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment));
@@ -5620,7 +5620,7 @@ export default {
             this.calculateFee();
             this.setTotalPointsBySale(this.config);
         },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         recalculateDecimalTotalTaxed(total, igv) {
             return total - igv;
         },
@@ -5647,7 +5647,7 @@ export default {
             // }
             this.calculatePayments();
         },
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         applyExportGlobalCharge() {
             const amount = exactAmount(this.total_global_charge || '0');
             const base = exactValue(documentTotals(this.form.items, this.form.discounts), 'total_value');
@@ -5677,7 +5677,7 @@ export default {
                 base: base.decimal(), amount: amount.decimal(), amount_exact: amount.fraction(), factor: exactAmount(this.restaurant_tip_factor).dividedBy(100).decimal()});
             this.calculateTotal();
         },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         deleteChargeGlobal() {
             let charge = _.find(this.form.charges, { charge_type_id: "50" });
             let index = this.form.charges.indexOf(charge);
@@ -5883,7 +5883,7 @@ export default {
             this.recalculateDiscountedItems([index]);
             this.calculateTotal();
         },
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         discountGlobalItems(ctx) {
             if (this.isExportInvoice) {
                 this.deleteDiscountGlobal();
@@ -5918,7 +5918,7 @@ export default {
                 item._original_before_global_discount = snapshot;
             });
         },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         recalcItemBasesAndIgv(item) {
             Object.assign(item, calculateRowItem(item, this.form.currency_type_id, this.form.exchange_rate_sale, this.percentage_igv, this.isExportInvoice));
             return item;
@@ -6458,7 +6458,7 @@ export default {
             this.calculateFee();
             this.setDateOfDue(this.getLastDateFee());
         },
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         calculatePayments() {
             if (this.form.payment_condition_id === '02') return;
             if (this.isUpdateDocument) return;
@@ -6467,7 +6467,7 @@ export default {
         calculateFee() {
             suggestInstallments({...this.form, payments: this.activeInvoicePayments}, this.getTotal());
         },
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         getTotal() {
             let total_pay = this.collectionTarget;
             ;

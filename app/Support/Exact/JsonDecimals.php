@@ -2,7 +2,7 @@
 
 namespace App\Support\Exact;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Preserve JSON decimal lexemes; integer identifiers and booleans keep their types. */
 final class JsonDecimals
 {
@@ -24,4 +24,4 @@ final class JsonDecimals
         return $decoded;
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

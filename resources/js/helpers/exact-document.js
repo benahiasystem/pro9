@@ -1,6 +1,6 @@
 import {exactAmount, exactValue, exactSum, exactSnapshot} from './exchange-rate-math'
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 export function documentTotals(items, discounts = [], charges = [], prepayment = '0') {
     const sum = (rows, field) => exactSum(rows.map(row => exactValue(row, field)))
     const amount = row => exactAmount(row.amount_exact ?? row.amount ?? 0)
@@ -27,4 +27,4 @@ export function documentTotals(items, discounts = [], charges = [], prepayment =
         subtotal: total, total, total_payable: exactAmount(total.final(2)), settlement_adjustment: exactAmount(total.final(2)).minus(total)}
     return {...Object.fromEntries(Object.entries(values).map(([field, value]) => [field, value.decimal()])), calculation_snapshot: exactSnapshot(values)}
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

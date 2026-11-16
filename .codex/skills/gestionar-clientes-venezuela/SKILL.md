@@ -1,6 +1,6 @@
 ---
 name: gestionar-clientes-venezuela
-description: Mantener el alta, edición, catálogo, persistencia y presentación de documentos de identidad de clientes venezolanos en Pro9. Usar al tocar persons, PersonRequest, PersonController, formularios o selectores de clientes, RIF/cédula/pasaporte, cat_identity_document_types, documentos, reportes, PDFs, APIs o seeders tenant.
+description: Mantener el alta, edición, catálogo, persistencia y presentación de documentos de identidad de clientes venezolanos en SAB. Usar al tocar persons, PersonRequest, PersonController, formularios o selectores de clientes, RIF/cédula/pasaporte, cat_identity_document_types, documentos, reportes, PDFs, APIs o seeders tenant.
 ---
 
 # Gestionar clientes de Venezuela
@@ -94,6 +94,6 @@ En el formulario reutilizado por el titular, usar selection_target=third_party y
 
 ## Perfil fiscal SPE separado de la identidad comercial
 
-Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-pro9/SKILL.md) al tocar `persons.fiscal_profile`, `FiscalProfileService`, el editor fiscal o snapshots. `persons.number` conserva los dígitos de cédula/documento y su presentación canónica; `fiscal_profile.rif` es un RIF fiscal adicional completo, separado y validado contra naturaleza jurídica. Firma personal del perfil, SPE, IVA y facultades IVA/ISLR no se deducen de la fila del catálogo de identidad ni de banderas comerciales.
+Aplicar [perfiles SPE](../mantener-sujetos-pasivos-especiales-sab/SKILL.md) al tocar `persons.fiscal_profile`, `FiscalProfileService`, el editor fiscal o snapshots. `persons.number` conserva los dígitos de cédula/documento y su presentación canónica; `fiscal_profile.rif` es un RIF fiscal adicional completo, separado y validado contra naturaleza jurídica. Firma personal del perfil, SPE, IVA y facultades IVA/ISLR no se deducen de la fila del catálogo de identidad ni de banderas comerciales.
 
 El editor compartido de empresa/cliente guarda versiones sólo para administrador mediante `/fiscal-profiles/customer/{id}` y muestra historial. El POST genérico de persona rechaza `fiscal_profile`; no hacerlo mass fillable. Al emitir, conservar la versión vigente por fecha; un cambio posterior no sustituye snapshots. HKA toma el RIF fiscal del snapshot doméstico, mientras ND limpia ese perfil y usa su tipo/número externos. Mostrar RIF adicional identificado como fiscal sin cambiar el formato de cédula ni afirmar consulta SENIAT. Verificar política, historial/autorización y congelación en `test_spe_*`.

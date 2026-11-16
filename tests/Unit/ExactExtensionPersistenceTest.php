@@ -6,7 +6,7 @@ use App\Support\Exact\{Decimal, LoyaltyPoints};
 use Illuminate\Support\Facades\{DB, Schema};
 use Tests\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactExtensionPersistenceTest extends TestCase
 {
     protected function setUp(): void
@@ -213,4 +213,4 @@ class ExactLoyaltyDocument extends \App\Models\Tenant\Document
     public function items(){return $this->hasMany(\App\Models\Tenant\DocumentItem::class,'document_id');}
     public function fee(){return $this->hasMany(\App\Models\Tenant\DocumentFee::class,'document_id');}
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

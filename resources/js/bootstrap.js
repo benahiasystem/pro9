@@ -2,17 +2,11 @@ import Vue from 'vue';
 import lodash from 'lodash';
 import moment from 'moment';
 import * as Popper from '@popperjs/core';
-import jquery from 'jquery';
+import './jquery-global';
 
 window._ = lodash;
 window.moment = moment;
 window.Popper = Popper;
-// No sobrescribir un jQuery global existente (por ejemplo, el de porto-ecommerce)
-// porque algunos plugins (OwlCarousel) quedan registrados en esa instancia.
-if (!window.jQuery && !window.$) {
-    window.$ = window.jQuery = jquery;
-}
-
 // try {
 //     window.$ = window.jQuery = require('jquery');
 //     require('bootstrap');

@@ -4,7 +4,7 @@ namespace App\Support\Exact;
 
 use App\Models\Tenant\SaleNote;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 final class SaleNoteBalance
 {
     public static function payable(SaleNote $note): \Brick\Math\BigRational
@@ -63,4 +63,4 @@ final class SaleNoteBalance
         });
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

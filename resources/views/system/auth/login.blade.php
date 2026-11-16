@@ -26,7 +26,7 @@
                 <div class="card-header bg-info d-flex align-items-center justify-content-between py-3">
                     <p class="card-title mb-0 text-white font-weight-bold">Acceso al Sistema</p>
                     <span class="login-version">
-                        <i class="ti ti-sparkles"></i> Versión <b>9</b>
+                        <i class="ti ti-sparkles"></i> <b>SAB</b>
                     </span>
                 </div>
 

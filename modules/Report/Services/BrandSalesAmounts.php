@@ -6,7 +6,7 @@ use App\Support\Exact\ConsolidatedLines;
 use App\Support\Exact\Decimal as D;
 use Illuminate\Database\Eloquent\Collection;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Current brand and estimated cost; sales are allocated and converted at document rates. */
 final class BrandSalesAmounts
 {
@@ -76,4 +76,4 @@ final class BrandSalesAmounts
         }, $groups)));
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\{DB, Schema};
 use Modules\Finance\Http\Controllers\UnpaidController;
 use Tests\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactReceivablesTest extends TestCase
 {
     protected function setUp(): void
@@ -227,7 +227,7 @@ class ExactReceivablesTest extends TestCase
         self::assertStringContainsString('0.01',$html);
         $pdf=\Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->output();
         self::assertStringStartsWith('%PDF-',$pdf);
-        if ($path=getenv('PRO9_MIXED_RECEIVABLE_PDF_PATH')) file_put_contents($path,$pdf);
+        if ($path=getenv('SAB_MIXED_RECEIVABLE_PDF_PATH')) file_put_contents($path,$pdf);
     }
 
     public function test_real_xlsx_export_has_text_amounts_composite_identity_and_original_fractions(): void
@@ -273,7 +273,7 @@ class ExactReceivablesTest extends TestCase
         self::assertSame('501',$reportSummary['consolidated_total_ves']);
         self::assertSame('500.99',$reportSummary['consolidated_balance_ves']);
         $records = \App\Support\Exact\ReportProjection::money($rows,['total','total_to_pay','total_ves_equivalent','balance_ves_equivalent']);
-        $company = (new \App\Models\Tenant\Company())->forceFill(['name'=>'Demostración Pro9','trade_name'=>'Demostración Pro9','number'=>'J000000000']);
+        $company = (new \App\Models\Tenant\Company())->forceFill(['name'=>'Demostración SAB','trade_name'=>'Demostración SAB','number'=>'J000000000']);
         $html = view('finance::unpaid.reports.report_pdf',compact('records','reportSummary','company'))->render();
         self::assertStringContainsString('500.99',$html);
         self::assertStringContainsString('<small>Bs. 0.99</small>',$html);
@@ -281,7 +281,7 @@ class ExactReceivablesTest extends TestCase
         self::assertSame('1/3',(string)D::readRequired(iterator_to_array($rows)[1],'total'));
         $bytes = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->output();
         self::assertStringStartsWith('%PDF-',$bytes);
-        if ($path = getenv('PRO9_EXACT_RECEIVABLE_PDF_PATH')) file_put_contents($path,$bytes);
+        if ($path = getenv('SAB_EXACT_RECEIVABLE_PDF_PATH')) file_put_contents($path,$bytes);
     }
 
     public function test_payables_pdf_shows_original_currency_and_historical_equivalents(): void
@@ -294,7 +294,7 @@ class ExactReceivablesTest extends TestCase
         $rows=new \App\Support\Exact\ReportDataset([$row]);
         $reportSummary=OutstandingSummary::summarize($rows);
         $records=\App\Support\Exact\ReportProjection::money($rows,['total','total_to_pay','total_ves_equivalent','balance_ves_equivalent']);
-        $company=(new \App\Models\Tenant\Company())->forceFill(['name'=>'Demostración Pro9','trade_name'=>'Demostración Pro9','number'=>'J000000000']);
+        $company=(new \App\Models\Tenant\Company())->forceFill(['name'=>'Demostración SAB','trade_name'=>'Demostración SAB','number'=>'J000000000']);
         $html=view('finance::to_pay.report_pdf',compact('records','reportSummary','company'))->render();
         self::assertStringContainsString('USD 0.33',$html);
         self::assertStringContainsString('<small>Bs. 0.99</small>',$html);
@@ -302,7 +302,7 @@ class ExactReceivablesTest extends TestCase
         self::assertSame('1/3',(string)D::readRequired($row,'total'));
         $bytes=\Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->output();
         self::assertStringStartsWith('%PDF-',$bytes);
-        if ($path=getenv('PRO9_EXACT_PAYABLE_PDF_PATH')) file_put_contents($path,$bytes);
+        if ($path=getenv('SAB_EXACT_PAYABLE_PDF_PATH')) file_put_contents($path,$bytes);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

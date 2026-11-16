@@ -7,7 +7,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactReportTicketRenderingTest extends TestCase
 {
     /** @dataProvider ticketWidths */
@@ -29,7 +29,7 @@ class ExactReportTicketRenderingTest extends TestCase
         self::assertSame('503', $reportSummary['total_sale']);
         self::assertSame('1', $reportSummary['currency_totals']['USD']);
         $records = ReportProjection::money($records, ['total_sale','total_ves','total_usd']);
-        $company = (new \App\Models\Tenant\Company())->forceFill(['name'=>'DEMOSTRACIÓN DE CÁLCULOS', 'trade_name'=>'Pro9 - Prueba local','number'=>'J000000000']);
+        $company = (new \App\Models\Tenant\Company())->forceFill(['name'=>'DEMOSTRACIÓN DE CÁLCULOS', 'trade_name'=>'SAB - Prueba local','number'=>'J000000000']);
         $establishment = (new \App\Models\Tenant\Establishment())->forceFill(['address'=>'Sucursal de prueba']);
         $establishment->setRelation('department', new \Illuminate\Support\Fluent(['description'=>'Caracas']));
         $establishment->setRelation('district', new \Illuminate\Support\Fluent(['description'=>'Libertador']));
@@ -40,7 +40,7 @@ class ExactReportTicketRenderingTest extends TestCase
         self::assertStringNotContainsString('499.99', $html);
         $pdf = Pdf::loadHTML($html)->setPaper([0,0,$width/25.4*72,1440])->output();
         self::assertStringStartsWith('%PDF-', $pdf);
-        if ($directory = getenv('PRO9_EXACT_PDF_OUTPUT_DIR')) {
+        if ($directory = getenv('SAB_EXACT_PDF_OUTPUT_DIR')) {
             if (!is_dir($directory)) mkdir($directory,0775,true);
             file_put_contents($directory.'/calculos-exactos-ticket-'.$width.'mm.pdf', $pdf);
         }
@@ -51,4 +51,4 @@ class ExactReportTicketRenderingTest extends TestCase
         return [[58,'report::sales_consolidated.report_pdf_totals_ticket'], [80,'report::sales_consolidated.report_pdf_totals_ticket_80']];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

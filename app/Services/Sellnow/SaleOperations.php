@@ -44,7 +44,7 @@ final class SaleOperations
                     throw ValidationException::withMessages(['payload.id'=>'La venta pendiente no puede modificar un comprobante existente.']);
                 }
                 if ($sale->kind === 'document' && (string)($payload['codigo_tipo_documento'] ?? '') !== '01') {
-                    throw ValidationException::withMessages(['payload.codigo_tipo_documento'=>'Seleccione una factura vigente de Pro9.']);
+                    throw ValidationException::withMessages(['payload.codigo_tipo_documento'=>'Seleccione una factura vigente de SAB.']);
                 }
                 $sale->update(['status'=>'processing','error'=>null]);
                 $result = CashContext::run($cash, function () use ($sale, $payload) {
@@ -53,7 +53,7 @@ final class SaleOperations
                     $document = $model::findOrFail($result['data']['id']);
                     $expectedTotal = $sale->kind === 'document' ? data_get($payload, 'totales.total_venta') : ($payload['total'] ?? null);
                     if ($expectedTotal === null || \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::input($expectedTotal, 'total')) !== \App\Support\Exact\Decimal::represent($document->exactValue('total'))) {
-                        throw ValidationException::withMessages(['total'=>'El total calculado por Pro9 difiere de la venta guardada. Revise la operación sin cambiar lo cobrado automáticamente.']);
+                        throw ValidationException::withMessages(['total'=>'El total calculado por SAB difiere de la venta guardada. Revise la operación sin cambiar lo cobrado automáticamente.']);
                     }
 
                     // Existing observers and receipt destinations also use CashContext;
@@ -77,7 +77,7 @@ final class SaleOperations
             $this->block($uuid, $exception->reason, $exception->getMessage());
             return $this->owned($uuid);
         } catch (ValidationException $exception) {
-            $this->block($uuid, 'VALIDATION_FAILED', 'Revise los datos de la venta en Pro9.', $exception->errors());
+            $this->block($uuid, 'VALIDATION_FAILED', 'Revise los datos de la venta en SAB.', $exception->errors());
             return $this->owned($uuid);
         } catch (\Throwable $exception) {
             if ($exception instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface

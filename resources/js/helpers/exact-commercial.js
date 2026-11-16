@@ -2,7 +2,7 @@ import {exactAmount, exactInput, exactValue, exactSum, allocateExact} from './ex
 import {documentTotals} from './exact-document'
 import {isRecordedReceipt} from './payment-classification'
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 // Rebuild headers from line fractions. Calling this repeatedly never compounds adjustments.
 export function commercialTotals(form, options = {}) {
     const raw = documentTotals(form.items || [])
@@ -97,4 +97,4 @@ export function checkoutTotals(vm) {
     }))
     if (vm.setTotalPointsBySale) vm.setTotalPointsBySale(config)
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

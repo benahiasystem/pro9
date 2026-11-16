@@ -6,7 +6,7 @@ use App\Support\Exact\ConsolidatedLines;
 use App\Support\Exact\Decimal as D;
 use Illuminate\Database\Eloquent\Collection;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Profit and commissions are estimates because the cost source is not frozen. */
 final class EstimatedUserCommission
 {
@@ -81,4 +81,4 @@ final class EstimatedUserCommission
         return $utility->multipliedBy($user->user_commission->type === 'amount' ? $amount : $amount->dividedBy(100))->simplified();
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

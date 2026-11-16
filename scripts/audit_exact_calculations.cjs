@@ -1,4 +1,4 @@
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 const fs=require('node:fs'), path=require('node:path'), crypto=require('node:crypto')
 const parser=require('@babel/parser')
 const {parseComponent}=require('vue-template-compiler')
@@ -97,4 +97,4 @@ const registry_errors=diagnostics(matches,registry,'javascript')
 const pending=matches.filter(row=>row.status==='pending').length
 process.stdout.write(JSON.stringify({scanned_javascript_templates:scanned,javascript_review:matches,parse_errors:errors,registry_errors,coverage_missing,scanned_files,source_hashes,source_policy,pending},null,2)+'\n')
 if(errors.length || (process.argv.includes('--check') && (pending || registry_errors.length || coverage_missing.length)))process.exitCode=1
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

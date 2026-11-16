@@ -1,5 +1,5 @@
 <?php
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 function exactAuditClassify(array $rows, string $root): array
 {
     $path=$root.'/config/exact_rounding_registry.json';
@@ -60,4 +60,4 @@ function exactAuditRegistryDiagnostics(array $rows, string $root, string $langua
     }
     return $errors;
 }
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

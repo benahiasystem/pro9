@@ -52,7 +52,7 @@ if (function_exists('pcntl_async_signals')) {
     pcntl_signal(SIGINT, $interrupt);
     pcntl_signal(SIGTERM, $interrupt);
 }
-putenv('PRO9_FISCAL_MYSQL_TESTS=1');
+putenv('SAB_FISCAL_MYSQL_TESTS=1');
 foreach ($groups as $index => $group) {
     $pattern = '(?:' . implode('|', array_map(static fn ($name) => preg_quote($name, '/'), $group)) . ')$';
     $command = array_merge($base, ['--printer', 'Tests\\Support\\FiscalProgressPrinter', '--filter', $pattern, $suite]);

@@ -42,14 +42,14 @@ final class Localization
         return 1 + self::taxRate();
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public static function exactTaxMultiplier(): \Brick\Math\BigRational
     {
         return \App\Support\Exact\Decimal::of(1)->plus(\App\Support\Exact\Decimal::of(
             \App\Support\Exact\Decimal::input(config('venezuela.tax.rate', '0.16'), 'iva.rate')
         ));
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     public static function selectableAffectationIds(): array
     {

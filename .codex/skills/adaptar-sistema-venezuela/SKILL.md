@@ -1,13 +1,13 @@
 ---
 name: adaptar-sistema-venezuela
-description: Coordinar y documentar Pro9 para instalaciones nuevas en Venezuela, con esquema consolidado, catálogos vigentes y pruebas. Usar para cambios que combinen país, geopolítica, RIF/cédula, IVA, moneda, telefonía, POS, caja, documentos, compras, reportes o configuración.
+description: Coordinar y documentar SAB para instalaciones nuevas en Venezuela, con esquema consolidado, catálogos vigentes y pruebas. Usar para cambios que combinen país, geopolítica, RIF/cédula, IVA, moneda, telefonía, POS, caja, documentos, compras, reportes o configuración.
 ---
 
-# Adaptar integralmente Pro9 a Venezuela
+# Adaptar integralmente SAB a Venezuela
 
 ## Principios
 
-- Implementar cambios en fuentes de Pro9; no editar bundles compilados manualmente ni respaldos. Aplicar `frontend-build`: la compilación queda a cargo del usuario.
+- Implementar cambios en fuentes de SAB; no editar bundles compilados manualmente ni respaldos. Aplicar `frontend-build`: la compilación queda a cargo del usuario.
 - Este proyecto no tiene tenants ni información histórica que convertir. Modificar directamente las creaciones de tablas y sus datos iniciales; no crear backfills ni comandos para tenants existentes.
 - Retirar herramientas de migración entre servidores, regularización/reenvío fiscal, módulos PSE, el módulo peruano SIRE y estados externos de SUNAT. Conservar únicamente barreras defensivas que rechacen solicitudes XML/CDR antiguas y las funciones comerciales locales vigentes.
 - Mantener la facturación masiva como función comercial: carga, emisión por tenant, listado, filtros, Excel y PDF. Sus estados son locales (`estado_emision`/`mensaje_emision`) y no deben comunicar aceptación SUNAT ni ofrecer XML/CDR.
@@ -47,7 +47,7 @@ Crear las tablas una sola vez y agregar sus claves en `000999_add_tenant_foreign
 
 ## Alta y primer acceso de un tenant
 
-Modalidad y ambiente se rigen por [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md). Crear directamente `fiscal_environment` y `fiscal_emission_mode`, ambos obligatorios. La política de instalación nueva aplica a todos los módulos.
+Modalidad y ambiente se rigen por [mantener-modalidad-emision-fiscal-sab](../mantener-modalidad-emision-fiscal-sab/SKILL.md). Crear directamente `fiscal_environment` y `fiscal_emission_mode`, ambos obligatorios. La política de instalación nueva aplica a todos los módulos.
 
 <!-- ######## INICIO CONTRATO DE INICIALIZACIÓN TENANT ######## -->
 

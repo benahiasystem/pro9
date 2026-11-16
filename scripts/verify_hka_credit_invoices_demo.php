@@ -1,6 +1,6 @@
 <?php
 /** Explicit isolated acceptance; creates four remote DEMO invoices, never source-tenant sales.
- * PRO9_FISCAL_MYSQL_TESTS=1 php -d memory_limit=1G scripts/verify_hka_credit_invoices_demo.php bbc.localhost
+ * SAB_FISCAL_MYSQL_TESTS=1 php -d memory_limit=1G scripts/verify_hka_credit_invoices_demo.php bbc.localhost
  */
 require dirname(__DIR__).'/vendor/autoload.php';
 
@@ -10,7 +10,7 @@ use App\Services\Fiscal\{HkaAuthentication, HkaCreditInvoice, HkaEmission, HkaPa
 use Illuminate\Support\Str;
 
 $root=dirname(__DIR__);$host=$argv[1] ?? '';
-if (!$host || getenv('PRO9_FISCAL_MYSQL_TESTS') !== '1') exit("Specify a host and explicitly enable isolated MySQL tests.\n");
+if (!$host || getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') exit("Specify a host and explicitly enable isolated MySQL tests.\n");
 $app=require $root.'/bootstrap/app.php';$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 $hostname=Hyn\Tenancy\Models\Hostname::where('fqdn',$host)->firstOrFail();
 app(Hyn\Tenancy\Environment::class)->tenant($hostname->website);
@@ -41,7 +41,7 @@ try {
     $owned=$db->getDatabaseName();$connection=$db->getConfig();
     $cleanupPdo=new PDO('mysql:host='.$connection['host'].';port='.$connection['port'].';dbname=information_schema;charset=utf8mb4',$connection['username'],$connection['password']);
     register_shutdown_function(static function () use ($owned,$cleanupPdo) {
-        if (preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/D',$owned)) $cleanupPdo->exec('DROP DATABASE IF EXISTS `'.$owned.'`');
+        if (preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/D',$owned)) $cleanupPdo->exec('DROP DATABASE IF EXISTS `'.$owned.'`');
     });
     $db->table('companies')->update(['fiscal_credentials'=>null]);
     $key=random_bytes(32);config(['app.key'=>'base64:'.base64_encode($key),'hka_credit_invoices.demo_no_advance_verified'=>true]);
@@ -60,7 +60,7 @@ try {
     $base['payment_condition_id']='02';$base['payments']=[];$base['source_module']='WEB';$base['exchange_rate_sale']='50.12345678';
     $http=$testApp->make(Illuminate\Http\Client\Factory::class);$http->fake([]);
     $transport=app(HkaTransport::class);$token=$transport->token($company);
-    $pdfDir=sys_get_temp_dir().'/pro9-credit-invoices-'.$run;mkdir($pdfDir,0700,true);
+    $pdfDir=sys_get_temp_dir().'/sab-credit-invoices-'.$run;mkdir($pdfDir,0700,true);
     foreach (['VES','USD'] as $currency) foreach ([false,true] as $mixed) {
         $case=['currency'=>$currency,'mixed_iva'=>$mixed];
         try {

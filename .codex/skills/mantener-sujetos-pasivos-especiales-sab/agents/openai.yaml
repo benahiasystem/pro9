@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sujetos Pasivos Especiales de SAB"
+  short_description: "Perfiles SPE, cobros IGTF y retenciones recibidas"
+  default_prompt: "Usa $mantener-sujetos-pasivos-especiales-sab para mantener el contrato SPE de SAB y verificar sus perfiles, cobros y retenciones."

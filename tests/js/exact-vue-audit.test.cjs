@@ -32,7 +32,7 @@ test('Vue AST covers filters, nested objects, branch expressions, slots and nume
 })
 
 test('registry rejects changed evidence, missing anchors, symlink escapes and orphan reviews', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pro9-registry-'))
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sab-registry-'))
     try {
         fs.writeFileSync(path.join(root, 'proof.js'), 'function verified_case() {}')
         const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, 'proof.js'))).digest('hex')
@@ -93,7 +93,7 @@ test('loose nonnumeric guards exclude numeric coercions and nested money', () =>
 })
 
 test('new production files are covered and undocumented exclusions fail', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pro9-coverage-'))
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sab-coverage-'))
     try {
         fs.mkdirSync(path.join(root,'public','build'), {recursive:true})
         fs.writeFileSync(path.join(root,'public','consumer.js'), 'const total = Number(price)')

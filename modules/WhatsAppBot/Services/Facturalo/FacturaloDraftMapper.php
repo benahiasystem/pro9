@@ -20,7 +20,7 @@ class FacturaloDraftMapper
 
     public function map(array $draft, User $user): array
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         if (($draft['pricing_version'] ?? null) !== 1 || !\Illuminate\Support\Str::isUuid($draft['operation_key'] ?? '')) {
             \App\Services\Payments\Classification::error('items', 'El borrador anterior debe prepararse y confirmarse nuevamente.');
         }
@@ -28,7 +28,7 @@ class FacturaloDraftMapper
         if (!isset($draft['total']) || !D::of(D::input($draft['total'], 'total'))->isEqualTo(D::of($pricing['total_payable']))) {
             \App\Services\Payments\Classification::error('total', 'El importe confirmado cambió; prepare y confirme nuevamente el borrador.');
         }
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
         $cashMethod = \App\Services\Payments\Classification::defaultCashMethod('VES');
         if (!\App\Models\Tenant\Cash::where('user_id', $user->id)->where('state', true)->exists()) {
@@ -156,7 +156,7 @@ class FacturaloDraftMapper
         return $payload;
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     private function mapItem(Item $item, array $line): array
     {
         return array_replace($line, [
@@ -179,7 +179,7 @@ class FacturaloDraftMapper
             'discount' => null, 'attribute' => null, 'name_product_pdf' => null,
         ]);
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     private function nextNumber(Series $series): int
     {

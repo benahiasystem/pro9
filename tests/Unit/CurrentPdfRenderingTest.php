@@ -65,7 +65,7 @@ class CurrentPdfRenderingTest extends TestCase
     {
         $company = new Fluent([
             'name' => 'Empresa Venezolana de Prueba, C.A.',
-            'trade_name' => 'Pro9 Prueba',
+            'trade_name' => 'SAB Prueba',
             'number' => 'J-12345678-9',
             'logo' => null,
         ]);
@@ -118,7 +118,7 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertStringStartsWith('%PDF-', $pdf);
         self::assertGreaterThan(10000, strlen($pdf));
 
-        $path = getenv('PRO9_PDF_FIXTURE_PATH') ?: sys_get_temp_dir().'/pro9-current-invoice.pdf';
+        $path = getenv('SAB_PDF_FIXTURE_PATH') ?: sys_get_temp_dir().'/sab-current-invoice.pdf';
         $directory = dirname($path);
         if (!is_dir($directory)) {
             mkdir($directory, 0775, true);
@@ -226,7 +226,7 @@ class CurrentPdfRenderingTest extends TestCase
         $pdf=new Mpdf(['tempDir'=>sys_get_temp_dir(),'default_font'=>'arial']);
         $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')),HTMLParserMode::HEADER_CSS);
         $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);
-        $path=getenv('PRO9_FISCAL_PDF_FIXTURE_PATH') ?: sys_get_temp_dir().'/pro9-fiscal-snapshot.pdf';
+        $path=getenv('SAB_FISCAL_PDF_FIXTURE_PATH') ?: sys_get_temp_dir().'/sab-fiscal-snapshot.pdf';
         file_put_contents($path,$pdf->Output('','S'));self::assertFileExists($path);
     }
 
@@ -258,7 +258,7 @@ class CurrentPdfRenderingTest extends TestCase
         $pdf=new Mpdf(['tempDir'=>sys_get_temp_dir(),'default_font'=>'arial']);
         $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')),HTMLParserMode::HEADER_CSS);
         $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);
-        $path=sys_get_temp_dir().'/pro9-fiscal-igtf-note.pdf';file_put_contents($path,$pdf->Output('','S'));self::assertFileExists($path);
+        $path=sys_get_temp_dir().'/sab-fiscal-igtf-note.pdf';file_put_contents($path,$pdf->Output('','S'));self::assertFileExists($path);
     }
 
     public function invoiceSeries(): array
@@ -324,7 +324,7 @@ class CurrentPdfRenderingTest extends TestCase
         $document->setRelation('taxes', new Collection());
         $document->setRelation('received_retentions', new Collection());
         $document->setRelation('guarantee_fund', null);
-        $company = new Fluent(['name' => 'Empresa Venezolana de Prueba, C.A.', 'trade_name' => 'Pro9 Prueba', 'number' => 'J-12345678-9', 'logo' => null]);
+        $company = new Fluent(['name' => 'Empresa Venezolana de Prueba, C.A.', 'trade_name' => 'SAB Prueba', 'number' => 'J-12345678-9', 'logo' => null]);
         $engine = new class($company) extends \App\CoreFacturalo\Facturalo {
             public function __construct($company) {
                 $this->company = $company; $this->configuration = \App\Models\Tenant\Configuration::first(); $this->actions = [];
@@ -384,7 +384,7 @@ class CurrentPdfRenderingTest extends TestCase
                 self::assertEqualsWithDelta($expectedWidth, $size['width'], .01);
                 self::assertEqualsWithDelta($originalSize['height'] + 42, $size['height'], .01);
             }
-            if ($directory = getenv('PRO9_HKA_TICKET_FIXTURE_DIR')) {
+            if ($directory = getenv('SAB_HKA_TICKET_FIXTURE_DIR')) {
                 if (!is_dir($directory)) mkdir($directory, 0775, true);
                 file_put_contents($directory.'/ticket-'.$expectedWidth.'mm-'.$rows.'rows.pdf', $download);
             }

@@ -1,6 +1,6 @@
 ---
 name: quitar-seleccion-billetes-pos
-description: Ocultar los accesos rápidos de denominaciones en el pago efectivo del POS de Pro9, conservando el monto manual, vuelto y los demás métodos de pago.
+description: Ocultar los accesos rápidos de denominaciones en el pago efectivo del POS de SAB, conservando el monto manual, vuelto y los demás métodos de pago.
 ---
 
 # Quitar la selección de billetes del POS

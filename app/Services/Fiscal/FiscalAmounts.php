@@ -12,7 +12,7 @@ final class FiscalAmounts
         throw ValidationException::withMessages([$field => $message]);
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public static function convert($amount, string $from, string $to, $rate): string
     {
         return \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::convert($amount, $from, $to, $rate));
@@ -28,7 +28,7 @@ final class FiscalAmounts
             \App\Support\Exact\Decimal::of($principal)->multipliedBy(\App\Support\Exact\Decimal::of($rate))->dividedBy(100), 2, true
         );
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     public static function payment(array $input, string $documentCurrency, $documentRate, bool $igtfEnabled, $igtfRate, bool $allowZeroNetAfterChange = false): array
     {
@@ -59,7 +59,7 @@ final class FiscalAmounts
             self::error('igtf_status', 'Configure y habilite el IGTF antes de registrar pagos sujetos.');
         }
         if ($status === 'subject' && $currency !== 'USD') self::error('igtf_status', 'La percepción IGTF de ventas requiere un pago en divisas.');
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $taxExact = $status === 'subject' ? \App\Support\Exact\Decimal::of($original)->multipliedBy(\App\Support\Exact\Decimal::of($igtfRate))->dividedBy(100) : \App\Support\Exact\Decimal::of(0);
         $converted = \App\Support\Exact\Decimal::convert($original, $currency, $documentCurrency, $rate);
         $applied = \App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::represent($converted, 2));
@@ -73,7 +73,7 @@ final class FiscalAmounts
             'original_amount' => $original, 'payment' => \App\Support\Exact\Decimal::represent($applied),
             'tax_amount' => $tax, 'igtf_status' => $status,
             'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot($values),
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
             'exchange_rate_source' => $input['exchange_rate_source'] ?? 'manual',
             'exchange_rate_date' => $input['exchange_rate_date'] ?? ($input['date_of_payment'] ?? null),
         ];

@@ -25,7 +25,7 @@ class PaymentWorkbookExportTest extends TestCase
                     'rate'=>['n'=>'20006172839','d'=>'50000000']]]]]),
         ];
         $export=(new PaymentExport())->records(collect([$record]))->payment_count(1);
-        $path=tempnam(sys_get_temp_dir(),'pro9-payment-exact-');
+        $path=tempnam(sys_get_temp_dir(),'sab-payment-exact-');
         try {
             file_put_contents($path,ExcelFacade::raw($export,Excel::XLSX));
             $book=IOFactory::load($path);

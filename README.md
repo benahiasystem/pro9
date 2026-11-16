@@ -1,6 +1,12 @@
-<img src="icon_pro5.png" width="120">
+# SAB — Sistema Administrativo Benahia
 
-# **Facturador PRO 9**
+SAB es un sistema administrativo multitenant de Benahia para la gestión comercial,
+inventario, compras, ventas, caja y documentos fiscales. Está construido con
+Laravel 9, Vue 2 y Vite y contiene módulos para distintas operaciones comerciales.
+La configuración fiscal y los catálogos del proyecto están orientados a Venezuela.
+
+La aplicación se identifica como SAB; los informes y evidencias históricas conservan
+el nombre con el que se produjeron para mantener su trazabilidad.
 
 ## Términos y condiciones del uso de este repositorio
 
@@ -16,25 +22,81 @@
 
 ## Manuales de Instalación
 
+### Migración de una instalación Docker existente
+
+El proyecto Compose y sus contenedores ahora usan el prefijo `sab`; las rutas de
+trabajo también cambiaron a `/var/www/sab`. El cambio del nombre de proyecto hace
+que Compose busque volúmenes nuevos. No iniciar la nueva pila antes de migrar los
+datos, ni ejecutar `docker compose down -v`.
+
+1. En el directorio y configuración de la instalación anterior, identifique los
+   nombres reales de los volúmenes MySQL y Redis con `docker inspect` sobre los
+   contenedores antiguos y sus montajes. El nombre puede variar por `-p`,
+   `COMPOSE_PROJECT_NAME` u otros overrides; no suponga que el prefijo es fijo.
+2. Detenga la pila anterior con su configuración original, sin eliminar volúmenes.
+   Guarde y compruebe un respaldo restaurable de MySQL y Redis. Conserve los
+   volúmenes originales y el respaldo para una reversión.
+3. Confirme el nombre efectivo del proyecto Compose y de sus volúmenes: por
+   defecto son `sab`, `sab_mysql_data` y `sab_redis_data`. Si los destinos ya
+   existen, deténgase y determine su procedencia; no los sobrescriba. Para los
+   nombres predeterminados, cree los volúmenes vacíos con las etiquetas de Compose:
+
+   ```bash
+   docker volume create --label com.docker.compose.project=sab --label com.docker.compose.volume=mysql_data sab_mysql_data
+   docker volume create --label com.docker.compose.project=sab --label com.docker.compose.volume=redis_data sab_redis_data
+   ```
+
+   Si usa otro nombre de proyecto, sustituya tanto los nombres de volumen como
+   la etiqueta `com.docker.compose.project` por los valores efectivos.
+4. Con los servicios detenidos, copie cada volumen por separado. Sustituya los
+   marcadores por los nombres reales, sin incluir caracteres `<>`:
+
+   ```bash
+   docker run --rm --network none -v <origen>:/origen:ro -v <destino>:/destino alpine:3.20 \
+   sh -ec 'set -o pipefail; test -z "$(ls -A /destino)"; cd /origen; tar cf - . | (cd /destino && tar xpf -)'
+   docker run --rm --network none -v <origen>:/origen:ro -v <destino>:/destino:ro alpine:3.20 \
+     sh -ec 'diff -r /origen /destino'
+   ```
+
+   El primer comando rechaza destinos no vacíos; repítalo para MySQL y Redis.
+   Compare también permisos y propiedad antes de arrancar:
+
+   ```bash
+   docker run --rm --network none -v <origen>:/origen:ro -v <destino>:/destino:ro alpine:3.20 \
+     sh -ec '(cd /origen && find . -exec stat -c "%n %u %g %a" {} + | sort) >/tmp/origen; (cd /destino && find . -exec stat -c "%n %u %g %a" {} + | sort) >/tmp/destino; diff -u /tmp/origen /tmp/destino'
+   ```
+
+   Una copia de archivos no reemplaza la prueba de restauración del respaldo.
+5. Configure `APP_NAME=SAB` en el `.env` existente. Actualice automatizaciones y variables `PRO9_*` propias de pruebas a `SAB_*`,
+   así como referencias a contenedores e imágenes. Arranque la nueva pila, ejecute
+   `docker compose exec -T php php artisan config:clear` y compruebe integridad,
+   acceso a tenants y recuperación de operaciones Hotel pendientes. Mantenga la
+   instalación sin escrituras durante la validación inicial. Si falla en esa
+   etapa, detenga la nueva pila y vuelva a la configuración y volúmenes anteriores.
+   Si SAB ya recibió escrituras, antes de revertir es necesario respaldarlas y
+   migrarlas o restaurarlas a la instalación anterior: volver directamente a los
+   volúmenes antiguos las perdería. Conserve el respaldo y los originales hasta
+   validar la migración.
+
 <!-- ######## INICIO API BCV EN DOCKER ######## -->
-### API BCV exclusiva para Pro9
+### API BCV exclusiva para SAB
 
 El Compose construye `api-bcv` desde el proyecto hermano `../api-bcv`. La API usa
 un token fijo de 64 caracteres hexadecimales minúsculos: `API_TOKEN` en su `.env`
-y el mismo valor en `BCV_API_TOKEN` del `.env` de Pro9. No existe inicio de sesión
+y el mismo valor en `BCV_API_TOKEN` del `.env` de SAB. No existe inicio de sesión
 por usuario/clave. Los secretos se mantienen fuera de Git y del navegador.
 
-Pro9 configura `BCV_API_URL=http://api-bcv:3000`, `BCV_API_TIMEOUT=15` y
+SAB configura `BCV_API_URL=http://api-bcv:3000`, `BCV_API_TIMEOUT=15` y
 `BCV_API_CONNECT_TIMEOUT=5`. PHP envía `Authorization: Bearer <token>` desde el backend.
 Para rotar el token, actualizar ambos archivos `.env`, recrear API BCV y limpiar la
-configuración de Pro9. No imprimir el Compose expandido ni los archivos de secretos.
+configuración de SAB. No imprimir el Compose expandido ni los archivos de secretos.
 
 Sólo PHP y API BCV comparten la red `bcv`; PHP conserva también la red predeterminada.
 La API no publica puertos en el host ni tiene proxy público. Mantiene salida HTTPS
 al banco con verificación TLS. El administrador de Docker conserva control del despliegue.
 `GET /health` comprueba el proceso; `GET /` exige token y devuelve `{ euro, dolar }`.
 
-Desde la carpeta de Pro9:
+Desde la carpeta de SAB:
 
 ```bash
 docker compose config --quiet
@@ -198,7 +260,7 @@ wsapp: 930 973 902<br>
 <!-- ######## INICIO TASAS OCHO DECIMALES ######## -->
 ### Precisión exacta de tasas
 
-API BCV y Pro9 devuelven las tasas como cadenas, por ejemplo `"873.86700000"`.
+API BCV y SAB devuelven las tasas como cadenas, por ejemplo `"873.86700000"`.
 Las columnas de tasas de 19 tablas usan `DECIMAL(18,8)`; los importes conservan su
 precisión monetaria. `ExchangeRateMath` (PHP) y `exchange-rate-math` (JS) operan con
 racionales exactos antes del redondeo del importe final. No convertir tasas a float

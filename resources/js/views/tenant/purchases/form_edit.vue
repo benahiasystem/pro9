@@ -932,13 +932,13 @@ export default {
                     this.form.payment_method_type_id = dato.purchase_payments.payment_method_type_id
                     this.form.currency_type_id = dato.currency_type_id
                     this.form.exchange_rate_sale = dato.exchange_rate_sale
-                    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                    // ######## INICIO CALCULOS EXACTOS SAB ########
                     // Los JSON históricos pueden llegar como objetos indexados.
                     this.form.items = dato.items.map(item => ({...item,
                         discounts: item.discounts ? Object.values(item.discounts) : [],
                         charges: item.charges ? Object.values(item.charges) : [],
                     }))
-                    // ######## FIN CALCULOS EXACTOS PRO9 ########
+                    // ######## FIN CALCULOS EXACTOS SAB ########
                     this.form.payments = dato.purchase_payments
                     this.form.purchase_payments_id = dato.purchase_payments.id
                     this.form.purchase_order_id = dato.purchase_order_id

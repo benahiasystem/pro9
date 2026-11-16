@@ -4,7 +4,7 @@ import { exactAmount, exactSnapshot, exactValue } from "./exchange-rate-math"
 // ######## FIN TASAS OCHO DECIMALES ########
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 // ########## INICIO CAMBIO AFECTACIÓN IVA
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 function calculateRowItem(old, currency, rate, pigv = '0.16', exportation = false) {
 // ######### FIN CAMBIO AFECTACIÓN IVA
     if (!(exportation ? ['EXP'] : ['10', '20']).includes(old.affectation_igv_type_id)) throw new Error('Seleccione una afectación de IVA vigente: Gravado o Exento.')
@@ -76,7 +76,7 @@ function canMergeRowPrice(left, right) {
     try { return exactValue(left, 'unit_price').compare(exactValue(right, 'unit_price')) === 0 }
     catch (_) { return false }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 
 
 /*

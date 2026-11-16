@@ -7,12 +7,12 @@ use App\Support\Exact\{Decimal as D, SaleNoteBalance};
 use Illuminate\Http\{JsonResponse, Request};
 use PHPUnit\Framework\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactMySqlContinuationTest extends TestCase
 {
     public function test_tender_credit_check_and_reversal_use_the_same_mysql_fractions(): void
     {
-        if (getenv('PRO9_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere MySQL temporal aislado.');
+        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere MySQL temporal aislado.');
         $fixture=new class extends FiscalEmissionSchemaTest {
             public bool $ready=false;
             public function start(): array { parent::setUp();$this->ready=true;return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
@@ -83,4 +83,4 @@ class ExactMySqlContinuationTest extends TestCase
         }
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -1,13 +1,13 @@
 ---
 name: mantener-facturas-notas-venta-sin-boleta
-description: Mantener en Pro9 las ventas con Factura y Nota de venta para instalaciones nuevas, sin soporte de Boletas. Usar al cambiar tipos de comprobante, series, POS, pedidos, Hotel, ecommerce, restaurante, WhatsApp, servicio técnico, conversiones, importaciones o configuración de documentos.
+description: Mantener en SAB las ventas con Factura y Nota de venta para instalaciones nuevas, sin soporte de Boletas. Usar al cambiar tipos de comprobante, series, POS, pedidos, Hotel, ecommerce, restaurante, WhatsApp, servicio técnico, conversiones, importaciones o configuración de documentos.
 ---
 
 # Mantener Facturas y Notas de venta sin Boleta
 
 ## Numeración venezolana
 
-La adecuación aprobada de SCRUM-39 se rige por [mantener-numeracion-fiscal-venezuela-pro9](../mantener-numeracion-fiscal-venezuela-pro9/SKILL.md). Los prefijos FF/FC/FD descritos abajo dejan de ser una obligación de formato fiscal al integrar el nuevo servicio. La separación entre Factura, NC/ND, Nota de venta y Órdenes de entrega permanece; no habilitar FE ni retenciones por la mera existencia de una fila de catálogo. Mantener el rechazo de Boletas y las identidades activas.
+La adecuación aprobada de SCRUM-39 se rige por [mantener-numeracion-fiscal-venezuela-sab](../mantener-numeracion-fiscal-venezuela-sab/SKILL.md). Los prefijos FF/FC/FD descritos abajo dejan de ser una obligación de formato fiscal al integrar el nuevo servicio. La separación entre Factura, NC/ND, Nota de venta y Órdenes de entrega permanece; no habilitar FE ni retenciones por la mera existencia de una fila de catálogo. Mantener el rechazo de Boletas y las identidades activas.
 
 ## Objetivo
 

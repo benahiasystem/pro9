@@ -110,9 +110,9 @@
 </template>
 
 <script>
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import {exactAmount, exactInput} from '../../../../../../../resources/js/helpers/exchange-rate-math'
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 export default {
     props: {
         showDialog: {
@@ -187,7 +187,7 @@ export default {
                 return;
             }
 
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             try {
                 for (const field of ['cost', 'waste_percentage', 'stock', 'minimum_stock']) {
                     this.form[field] = exactInput(this.form[field] ?? '0')
@@ -195,7 +195,7 @@ export default {
                 }
                 if (exactAmount(this.form.waste_percentage).compare(100) > 0) throw new Error('La merma no puede superar 100%')
             } catch (error) { this.$message.error(error.message); return }
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
 
             this.loading = true;
 

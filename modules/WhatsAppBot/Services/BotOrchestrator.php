@@ -518,7 +518,7 @@ class BotOrchestrator
 
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         if (str_contains($lower, 'modalidad de emisión fiscal')) {
-            return "No se pudo registrar la {$type}: configura la modalidad de emisión fiscal del negocio en Pro9.";
+            return "No se pudo registrar la {$type}: configura la modalidad de emisión fiscal del negocio en SAB.";
         }
         // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
 

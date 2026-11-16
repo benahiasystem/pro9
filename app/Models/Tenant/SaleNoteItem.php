@@ -125,7 +125,7 @@ class SaleNoteItem extends ModelTenant
     public function scopeWhereDefaultDocumentType($query, $params)
     {
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $db_raw = DB::raw("sale_note_items.id as id, sale_notes.series as series, sale_notes.number as number,
             sale_note_items.item as item, sale_note_items.quantity as quantity, sale_note_items.item_id as item_id,
             sale_notes.date_of_issue as date_of_issue, sale_note_items.unit_price as unit_price,
@@ -136,7 +136,7 @@ class SaleNoteItem extends ModelTenant
             sale_note_items.total_value, sale_note_items.total_base_igv, sale_note_items.total_igv,
             sale_note_items.total_other_taxes, sale_note_items.total_discount, sale_note_items.total_charge,
             sale_note_items.discounts");
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         if (isset($params['establishment_id'])) {
             $query->where('establishment_id', $params['establishment_id']);

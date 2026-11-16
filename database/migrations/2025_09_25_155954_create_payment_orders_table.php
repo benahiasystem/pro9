@@ -14,9 +14,9 @@ class CreatePaymentOrdersTable extends Migration
     public function up()
     {
         Schema::create('payment_orders', function (Blueprint $table) {
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             $table->json('calculation_snapshot')->nullable();
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             $table->increments('id');
             $table->string('order');
             $table->date('date_of_due');

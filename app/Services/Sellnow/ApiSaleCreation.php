@@ -21,8 +21,8 @@ class ApiSaleCreation
         $payload['source_module'] = 'VENDEYA';
         $request = Request::create('/api/sellnow/sales', 'POST', $payload);
         $request->setUserResolver(fn () => auth()->user());
-        $request->attributes->set('pro9.strict_input_exceptions', true);
-        $request->attributes->set('pro9.defer_sale_effects', true);
+        $request->attributes->set('sab.strict_input_exceptions', true);
+        $request->attributes->set('sab.defer_sale_effects', true);
         $rules = [
             'items'=>'required|array|min:1','items.*'=>'required|array',
             'control_number'=>'prohibited','numero_control'=>'prohibited','issuer'=>'prohibited',
@@ -66,7 +66,7 @@ class ApiSaleCreation
             $result = $body;
         }
         if (!is_array($result) || ($result['success'] ?? false) !== true || empty($result['data']['id'])) {
-            throw ValidationException::withMessages(['payload' => 'Pro9 no confirmó la creación de la venta.']);
+            throw ValidationException::withMessages(['payload' => 'SAB no confirmó la creación de la venta.']);
         }
         return $result;
     }

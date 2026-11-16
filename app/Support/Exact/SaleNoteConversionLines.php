@@ -5,7 +5,7 @@ namespace App\Support\Exact;
 use App\Models\Tenant\SaleNote;
 use Illuminate\Validation\ValidationException;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Read-only preparation. Persisting a conversion must re-authorize its sources. */
 final class SaleNoteConversionLines
 {
@@ -231,4 +231,4 @@ final class SaleNoteConversionLines
         throw ValidationException::withMessages(['notes_id'=>$message]);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

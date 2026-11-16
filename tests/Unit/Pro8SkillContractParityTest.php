@@ -4,11 +4,11 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 
-// ######## INICIO PARIDAD DE CONTRATOS PRO8 Y PRO9 ########
+// ######## INICIO PARIDAD DE CONTRATOS PRO8 Y SAB ########
 class Pro8SkillContractParityTest extends TestCase
 {
     /** @test */
-    public function every_pro8_venezuela_skill_has_its_pro9_counterpart(): void
+    public function every_pro8_venezuela_skill_has_its_sab_counterpart(): void
     {
         // ########## INICIO CAMBIO SUNAT A SENIAT
         $availableSkills = $this->skillNames(base_path('.codex/skills'));
@@ -16,12 +16,12 @@ class Pro8SkillContractParityTest extends TestCase
         foreach (array_keys($this->requiredContracts()) as $requiredSkill) {
             self::assertContains($requiredSkill, $availableSkills);
         }
-        // Los skills específicos de Pro9 pueden extender los contratos heredados de Pro8.
+        // Los skills específicos de SAB pueden extender los contratos heredados de Pro8.
         // ######### FIN CAMBIO SUNAT A SENIAT
     }
 
     /** @test */
-    public function pro9_skills_document_the_current_venezuela_contracts(): void
+    public function sab_skills_document_the_current_venezuela_contracts(): void
     {
         foreach ($this->requiredContracts() as $skill => $requirements) {
             $source = (string) file_get_contents(base_path(".codex/skills/{$skill}/SKILL.md"));
@@ -119,4 +119,4 @@ class Pro8SkillContractParityTest extends TestCase
         ];
     }
 }
-// ######## FIN PARIDAD DE CONTRATOS PRO8 Y PRO9 ########
+// ######## FIN PARIDAD DE CONTRATOS PRO8 Y SAB ########

@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
-// ######## INICIO AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## INICIO AUDITORIA CALCULOS EXACTOS SAB ########
 class ExactCounterProofTest extends TestCase
 {
     public function test_only_resolved_native_counters_compared_with_integer_literals_are_proven(): void
@@ -33,4 +33,4 @@ class ExactCounterProofTest extends TestCase
         self::assertNull(\exactAuditGuardProof($node->args[0]->value));
     }
 }
-// ######## FIN AUDITORIA CALCULOS EXACTOS PRO9 ########
+// ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

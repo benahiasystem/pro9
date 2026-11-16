@@ -391,7 +391,7 @@ class PaymentOrderController extends Controller
 
     public function paymentViewPay(Request $request)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         \App\Support\Exact\CheckoutAvailability::assertAvailable();
         $validated = $request->validate([
             'status' => 'required|string',
@@ -406,7 +406,7 @@ class PaymentOrderController extends Controller
             'paid' => (int) $order->order_state_id === 2,
             'status' => $order->order_state_id,
         ];
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
         public function returnStatusOrder(string $status) : bool
         {

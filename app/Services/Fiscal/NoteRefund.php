@@ -27,7 +27,7 @@ final class NoteRefund
             || $note->control_number !== optional($note->emission)->control_number) FiscalAmounts::error('note','Confirme la NC digital DEMO en HKA antes de registrar una devolución de dinero.');
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public static function available(Document $note): string
     {
         return D::represent(self::availableExact($note), 2, true);
@@ -63,7 +63,7 @@ final class NoteRefund
         $noteRefunds = D::sum(DocumentNoteRefund::where('document_id',$note->id)->where('component','principal')->whereNull('reversed_at')->get()->map(fn ($r) => $r->exactValue('amount')));
         return D::min($remaining, D::max(0, $note->exactValue('total')->minus($noteRefunds)));
     }
-    // ######## FIN CALCULOS EXACTOS PRO9 ########
+    // ######## FIN CALCULOS EXACTOS SAB ########
 
     public static function view(Document $note): array
     {

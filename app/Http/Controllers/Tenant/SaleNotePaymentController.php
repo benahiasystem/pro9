@@ -29,12 +29,12 @@ class SaleNotePaymentController extends Controller
 
     public function records($sale_note_id)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $records = SaleNotePayment::with(['global_payment.destination'=>fn($relation)=>$relation->morphWith([
             \App\Models\Tenant\BankAccount::class=>['bank'],
         ]),'payment_file'])
             ->where('sale_note_id', $sale_note_id)->get();
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         return new SaleNotePaymentCollection($records);
     }
@@ -49,7 +49,7 @@ class SaleNotePaymentController extends Controller
 
     public function document($sale_note_id)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () use ($sale_note_id) {
         $sale_note = SaleNote::withoutEagerLoads()->findOrFail($sale_note_id);
         $values = \App\Support\Exact\SaleNoteBalance::values($sale_note);
@@ -73,7 +73,7 @@ class SaleNotePaymentController extends Controller
             'external_id' => $sale_note->external_id,
         ];
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
     public function store(SaleNotePaymentRequest $request)
@@ -81,11 +81,11 @@ class SaleNotePaymentController extends Controller
         $id = $request->input('id');
 
         DB::connection('tenant')->transaction(function () use ($id, $request) {
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             $sale_note = SaleNote::withoutEagerLoads()->lockForUpdate()->findOrFail($request->sale_note_id);
             $record = $id ? $sale_note->payments()->whereKey($id)->firstOrFail() : $sale_note->payments()->make();
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             $input = $request->only(['date_of_payment','payment_method_type_id','reference','payment']);
             if (!$record->exists) {
@@ -101,7 +101,7 @@ class SaleNotePaymentController extends Controller
                 && $record->isDirty(['payment','payment_method_type_id'])) {
                 \App\Services\Fiscal\FiscalAmounts::error('payment','Revierta el cobro inicial antes de registrar otro importe o medio de pago.');
             }
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             $record->save();
             $this->createGlobalPayment($record, $request->all());
             $this->saveFiles($record, $request, 'sale_notes');
@@ -109,10 +109,10 @@ class SaleNotePaymentController extends Controller
 
             $sale_note = SaleNote::lockForUpdate()->findOrFail($request->sale_note_id);
 
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             $values = \App\Support\Exact\SaleNoteBalance::values($sale_note, true);
             $sale_note->total_canceled = $values['total_difference']->isZero();
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
             $sale_note->save();
 
             if ($sale_note->total_canceled) {
@@ -146,7 +146,7 @@ class SaleNotePaymentController extends Controller
 
     public function destroy($id)
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $sale_note_id = DB::connection('tenant')->transaction(function () use ($id) {
             $ownerId = SaleNotePayment::withoutEagerLoads()->findOrFail($id)->sale_note_id;
             $sale_note = SaleNote::withoutEagerLoads()->lockForUpdate()->findOrFail($ownerId);
@@ -158,7 +158,7 @@ class SaleNotePaymentController extends Controller
             $sale_note->save();
             return $sale_note->id;
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         $this->createPdf($sale_note_id);
 

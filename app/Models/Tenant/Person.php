@@ -103,10 +103,10 @@ use Illuminate\Support\Facades\DB;
      */
     class Person extends Authenticatable
     {
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         use \App\Support\Exact\HasExactValues;
         use \App\Support\Exact\PersistsExactValues;
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
         use Notifiable, UsesTenantConnection;
 
         protected $guard = 'ecommerce';

@@ -8,7 +8,7 @@ class ExactHttpAcceptanceTest extends TestCase
 {
     public function test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql(): void
     {
-        if (getenv('PRO9_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere MySQL temporal aislado.');
+        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere MySQL temporal aislado.');
         $fixture=new class extends FiscalEmissionSchemaTest {
             public bool $ready=false;
             public function start(): array { parent::setUp();$this->ready=true;return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
@@ -30,7 +30,7 @@ class ExactHttpAcceptanceTest extends TestCase
             $token=bin2hex(random_bytes(30));
             $db->table('users')->where('id',$input['user_id'])->update(['api_token'=>$token,'email_verified_at'=>'2026-10-19 12:00:00']);
             $db->table('configurations')->update(['auto_send_hka'=>false]);
-            $temp=sys_get_temp_dir().'/pro9-http-'.bin2hex(random_bytes(6));
+            $temp=sys_get_temp_dir().'/sab-http-'.bin2hex(random_bytes(6));
             mkdir($temp,0700);
             foreach (['framework/views','framework/cache','framework/sessions','logs','tenant'] as $directory) mkdir($temp.'/'.$directory,0700,true);
             $sessionId=bin2hex(random_bytes(20));$csrf=bin2hex(random_bytes(20));
@@ -38,13 +38,13 @@ class ExactHttpAcceptanceTest extends TestCase
                 '_token'=>$csrf,'login_web_'.sha1(\Illuminate\Auth\SessionGuard::class)=>$input['user_id'],
             ]));
             $encrypter=new \Illuminate\Encryption\Encrypter(str_repeat('k',32),'AES-256-CBC');
-            $cookie=$encrypter->encrypt(\Illuminate\Cookie\CookieValuePrefix::create('pro9_exact_http_session',str_repeat('k',32)).$sessionId,false);
+            $cookie=$encrypter->encrypt(\Illuminate\Cookie\CookieValuePrefix::create('sab_exact_http_session',str_repeat('k',32)).$sessionId,false);
             $private=$temp.'/fixture.json';
             file_put_contents($private,json_encode(['connection'=>$db->getConfig(),'storage'=>$temp],JSON_THROW_ON_ERROR));chmod($private,0600);
             $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);
             if (!$socket) throw new \RuntimeException($error);
             $address=stream_socket_get_name($socket,false);fclose($socket);
-            $env=getenv();$env['PRO9_EXACT_HTTP_FIXTURE']=$private;$env['APP_ENV']='testing';
+            $env=getenv();$env['SAB_EXACT_HTTP_FIXTURE']=$private;$env['APP_ENV']='testing';
             $server=proc_open([PHP_BINARY,'-S',$address,dirname(__DIR__).'/Support/exact_http_router.php'],
                 [0=>['pipe','r'],1=>['file',$temp.'/server.log','a'],2=>['file',$temp.'/server.log','a']],$pipes,dirname(__DIR__,2),$env);
             if (!is_resource($server)) throw new \RuntimeException('No se pudo abrir HTTP temporal.');
@@ -54,13 +54,13 @@ class ExactHttpAcceptanceTest extends TestCase
                 if ($probe) { fclose($probe);break; }
                 usleep(50000);
             }
-            $reference=getenv('PRO9_EXACT_HTTP_REFERENCE_CONTROLLER');
+            $reference=getenv('SAB_EXACT_HTTP_REFERENCE_CONTROLLER');
             if ($reference) {
                 if (!is_file($reference)) throw new \RuntimeException('Falta la fuente congelada del controlador.');
                 $privateReference=$temp.'/reference.json';
                 file_put_contents($privateReference,json_encode(['connection'=>$db->getConfig(),'storage'=>$temp,'controller_reference'=>$reference],JSON_THROW_ON_ERROR));chmod($privateReference,0600);
                 $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);$referenceAddress=stream_socket_get_name($socket,false);fclose($socket);
-                $referenceEnv=$env;$referenceEnv['PRO9_EXACT_HTTP_FIXTURE']=$privateReference;
+                $referenceEnv=$env;$referenceEnv['SAB_EXACT_HTTP_FIXTURE']=$privateReference;
                 $referenceServer=proc_open([PHP_BINARY,'-S',$referenceAddress,dirname(__DIR__).'/Support/exact_http_router.php'],
                     [0=>['pipe','r'],1=>['file',$temp.'/reference.log','a'],2=>['file',$temp.'/reference.log','a']],$referencePipes,dirname(__DIR__,2),$referenceEnv);
                 if (!is_resource($referenceServer)) throw new \RuntimeException('No se pudo abrir HTTP de referencia.');
@@ -75,7 +75,7 @@ class ExactHttpAcceptanceTest extends TestCase
                 curl_setopt_array($handle,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,
                     CURLOPT_HTTPHEADER=>array_filter(['Host: exact-http.example.test','Accept: application/json','Content-Type: application/json',
                         'X-Requested-With: XMLHttpRequest',$authenticated ? 'Authorization: Bearer '.$token : null,
-                        $authenticated ? 'Cookie: pro9_exact_http_session='.rawurlencode($cookie) : null,
+                        $authenticated ? 'Cookie: sab_exact_http_session='.rawurlencode($cookie) : null,
                         $authenticated ? 'X-CSRF-TOKEN: '.$csrf : null]),
                     CURLOPT_HEADERFUNCTION=>static function ($handle,$line) use (&$headers) { $parts=explode(':',$line,2);if (count($parts)===2) $headers[strtolower(trim($parts[0]))]=trim($parts[1]);return strlen($line); }]);
                 if ($payload!==null) {
@@ -89,7 +89,7 @@ class ExactHttpAcceptanceTest extends TestCase
             [$code,$body,$headers]=$get('/api/company');
             self::assertSame(200,$code,substr($body,0,3500));
             self::assertStringContainsString('Test fiscal',$body);
-            self::assertGreaterThan(0,(int)$headers['x-pro9-test-queries']);
+            self::assertGreaterThan(0,(int)$headers['x-sab-test-queries']);
             [$code,$body]=$get('/api/company',false);
             self::assertSame(401,$code,$body);
             foreach (['/documents/tables','/sale-notes/tables','/sale-notes/option/tables',
@@ -505,15 +505,15 @@ class ExactHttpAcceptanceTest extends TestCase
             [$code,$body]=$get('/sale-notes/items',true,['notes_id'=>[$note->id]]);
             self::assertSame(200,$code,substr($body,0,2500));
             self::assertSame('500',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired(json_decode($body,true)['data'][0],'unit_price')));
-            if (getenv('PRO9_EXACT_HTTP_PROFILE')==='1') {
+            if (getenv('SAB_EXACT_HTTP_PROFILE')==='1') {
                 $profileRow=$line->getAttributes();unset($profileRow['id']);
                 $db->table('sale_note_items')->where('sale_note_id',$note->id)->delete();
                 foreach ([500,500] as $count) $db->table('sale_note_items')->insert(array_fill(0,$count,$profileRow));
                 $start=hrtime(true);[$code,$body,$headers]=$get('/sale-notes/items',true,['notes_id'=>[$note->id]]);
-                fwrite(STDERR,json_encode(['profile_headers'=>array_filter($headers,fn($key)=>str_starts_with($key,'x-pro9'),ARRAY_FILTER_USE_KEY),'total_ms'=>(hrtime(true)-$start)/1000000,'body_bytes'=>strlen($body)]).PHP_EOL);
+                fwrite(STDERR,json_encode(['profile_headers'=>array_filter($headers,fn($key)=>str_starts_with($key,'x-sab'),ARRAY_FILTER_USE_KEY),'total_ms'=>(hrtime(true)-$start)/1000000,'body_bytes'=>strlen($body)]).PHP_EOL);
                 self::assertSame(200,$code,substr($body,0,1500));
             }
-            $output=getenv('PRO9_EXACT_HTTP_BENCH_OUTPUT');
+            $output=getenv('SAB_EXACT_HTTP_BENCH_OUTPUT');
             if ($output) {
                 $hashes=[];
                 foreach (['app/Http/Controllers/Tenant/SaleNoteController.php','app/Http/Kernel.php','routes/web.php','composer.lock','tests/Support/exact_http_router.php'] as $file) $hashes[$file]=hash_file('sha256',dirname(__DIR__,2).'/'.$file);
@@ -539,7 +539,7 @@ class ExactHttpAcceptanceTest extends TestCase
                         $start=hrtime(true);[$code,$body,$headers]=$get('/sale-notes/items',true,['notes_id'=>[$note->id]],$variant==='reference');$elapsed=(hrtime(true)-$start)/1000000;
                         self::assertSame(200,$code,substr($body,0,1500));
                         self::assertCount($size,json_decode($body,true)['data']);
-                        if ($sample>=0) {$times[$variant][]=$elapsed;$queries[$variant][]=(int)$headers['x-pro9-test-queries'];$memory[$variant][]=(int)$headers['x-pro9-test-peak-memory'];}
+                        if ($sample>=0) {$times[$variant][]=$elapsed;$queries[$variant][]=(int)$headers['x-sab-test-queries'];$memory[$variant][]=(int)$headers['x-sab-test-peak-memory'];}
                     }
                     foreach ($variants as $variant) {
                         $sorted=$times[$variant];sort($sorted);
@@ -551,7 +551,7 @@ class ExactHttpAcceptanceTest extends TestCase
                         $result['cases'][(string)$size]['allowed_p95_ms']=$limit;
                         $result['cases'][(string)$size]['passed']=$result['cases'][(string)$size]['current']['p95_ms']<=$limit;
                     }
-                    if ($initialPath=getenv('PRO9_EXACT_HTTP_INITIAL_BASELINE')) {
+                    if ($initialPath=getenv('SAB_EXACT_HTTP_INITIAL_BASELINE')) {
                         $initial=json_decode(file_get_contents($initialPath),true,512,JSON_THROW_ON_ERROR);
                         $base=$initial['cases'][(string)$size]['p95_ms'];$limit=$base+max($base*.2,100);
                         $result['cases'][(string)$size]['initial_allowed_p95_ms']=$limit;
@@ -561,7 +561,7 @@ class ExactHttpAcceptanceTest extends TestCase
                 foreach ($hashes as $file=>$hash) self::assertSame($hash,hash_file('sha256',dirname(__DIR__,2).'/'.$file),'Cambió una fuente durante la medición.');
                 file_put_contents($output,json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR).PHP_EOL);
                 if ($reference) foreach ($result['cases'] as $case) self::assertTrue($case['passed'],'El p95 excede el presupuesto HTTP.');
-                if (getenv('PRO9_EXACT_HTTP_INITIAL_BASELINE')) foreach ($result['cases'] as $case) self::assertTrue($case['initial_passed'],'El p95 excede la referencia inicial de la continuación.');
+                if (getenv('SAB_EXACT_HTTP_INITIAL_BASELINE')) foreach ($result['cases'] as $case) self::assertTrue($case['initial_passed'],'El p95 excede la referencia inicial de la continuación.');
             }
             // Re-resolve the sources on each request; a stale selection is not authority.
             [$code,$body]=$get('/sale-notes/items',true,['notes_id'=>[$note->id]]);
@@ -851,7 +851,7 @@ class ExactHttpAcceptanceTest extends TestCase
                 [$pdfStatus,$templatePdf]=$get('/downloads/purchaseSettlement/pdf/'.$advanceExternal.'/a4');
                 self::assertSame(200,$pdfStatus,$settlementTemplate.': '.substr($templatePdf,0,1000));
                 self::assertStringStartsWith('%PDF-',$templatePdf);
-                if ($evidenceDir=getenv('PRO9_SETTLEMENT_PDF_EVIDENCE_DIR')) file_put_contents($evidenceDir.'/'.$settlementTemplate.'.pdf',$templatePdf);
+                if ($evidenceDir=getenv('SAB_SETTLEMENT_PDF_EVIDENCE_DIR')) file_put_contents($evidenceDir.'/'.$settlementTemplate.'.pdf',$templatePdf);
                 $templatePdfPath=$temp.'/settlement-'.$settlementTemplate.'.pdf';
                 $templateTextPath=$temp.'/settlement-'.$settlementTemplate.'.txt';
                 file_put_contents($templatePdfPath,$templatePdf);
@@ -1788,7 +1788,7 @@ class ExactHttpAcceptanceTest extends TestCase
                     curl_setopt_array($handle,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,CURLOPT_POST=>true,
                         CURLOPT_POSTFIELDS=>json_encode($raceOperation,JSON_THROW_ON_ERROR),CURLOPT_HTTPHEADER=>[
                             'Host: exact-http.example.test','Accept: application/json','Content-Type: application/json','X-Requested-With: XMLHttpRequest',
-                            'Authorization: Bearer '.$token,'Cookie: pro9_exact_http_session='.rawurlencode($cookie),'X-CSRF-TOKEN: '.$csrf]]);
+                            'Authorization: Bearer '.$token,'Cookie: sab_exact_http_session='.rawurlencode($cookie),'X-CSRF-TOKEN: '.$csrf]]);
                     curl_multi_add_handle($multi,$handle); $handles[]=$handle;
                 }
                 $deadline=microtime(true)+20; $connected=0;
@@ -1826,7 +1826,7 @@ class ExactHttpAcceptanceTest extends TestCase
             file_put_contents($temp.'/framework/sessions/'.$secondSession,serialize([
                 '_token'=>$secondCsrf,'login_web_'.sha1(\Illuminate\Auth\SessionGuard::class)=>$input['user_id'],
             ]));
-            $secondCookie=$encrypter->encrypt(\Illuminate\Cookie\CookieValuePrefix::create('pro9_exact_http_session',str_repeat('k',32)).$secondSession,false);
+            $secondCookie=$encrypter->encrypt(\Illuminate\Cookie\CookieValuePrefix::create('sab_exact_http_session',str_repeat('k',32)).$secondSession,false);
             // Two API delivery orders contend for one physical unit with stock control disabled.
             $raceDispatchItem=\App\Models\Tenant\Item::findOrFail($input['items'][0]['item_id'])->replicate();
             $raceDispatchItem->internal_id='API-DISPATCH-RACE'; $raceDispatchItem->stock='1';
@@ -1848,7 +1848,7 @@ class ExactHttpAcceptanceTest extends TestCase
                     curl_setopt_array($handle,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,CURLOPT_POST=>true,
                         CURLOPT_POSTFIELDS=>json_encode($payload,JSON_THROW_ON_ERROR),CURLOPT_HTTPHEADER=>[
                             'Host: exact-http.example.test','Accept: application/json','Content-Type: application/json','X-Requested-With: XMLHttpRequest',
-                            'Authorization: Bearer '.$token,'Cookie: pro9_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
+                            'Authorization: Bearer '.$token,'Cookie: sab_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
                     curl_multi_add_handle($multi,$handle); $raceDispatchHandles[]=$handle;
                 }
                 $deadline=microtime(true)+20;
@@ -1900,7 +1900,7 @@ class ExactHttpAcceptanceTest extends TestCase
                     curl_setopt_array($handle,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,CURLOPT_POST=>true,
                         CURLOPT_POSTFIELDS=>json_encode($serialOrder,JSON_THROW_ON_ERROR),CURLOPT_HTTPHEADER=>[
                             'Host: exact-http.example.test','Accept: application/json','Content-Type: application/json','X-Requested-With: XMLHttpRequest',
-                            'Authorization: Bearer '.$token,'Cookie: pro9_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
+                            'Authorization: Bearer '.$token,'Cookie: sab_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
                     curl_multi_add_handle($multi,$handle); $handles[]=$handle;
                 }
                 $deadline=microtime(true)+20;
@@ -1950,7 +1950,7 @@ class ExactHttpAcceptanceTest extends TestCase
                     curl_setopt_array($handle,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,CURLOPT_POST=>true,
                         CURLOPT_POSTFIELDS=>json_encode($data,JSON_THROW_ON_ERROR),CURLOPT_HTTPHEADER=>[
                             'Host: exact-http.example.test','Accept: application/json','Content-Type: application/json','X-Requested-With: XMLHttpRequest',
-                            'Authorization: Bearer '.$token,'Cookie: pro9_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
+                            'Authorization: Bearer '.$token,'Cookie: sab_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
                     curl_multi_add_handle($multi,$handle); $handles[]=$handle;
                 }
                 $deadline=microtime(true)+20; $connected=0;
@@ -2043,7 +2043,7 @@ class ExactHttpAcceptanceTest extends TestCase
                     $handle=curl_init('http://'.$worker.$path);
                     curl_setopt_array($handle,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,CURLOPT_HTTPHEADER=>[
                         'Host: exact-http.example.test','Accept: application/json','X-Requested-With: XMLHttpRequest',
-                        'Authorization: Bearer '.$token,'Cookie: pro9_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
+                        'Authorization: Bearer '.$token,'Cookie: sab_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
                     curl_multi_add_handle($multi,$handle); $handles[]=$handle;
                 }
                 $deadline=microtime(true)+20; $connected=0;
@@ -2080,7 +2080,7 @@ class ExactHttpAcceptanceTest extends TestCase
                     $handle=curl_init('http://'.$worker.$path);
                     curl_setopt_array($handle,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,CURLOPT_CUSTOMREQUEST=>$method,CURLOPT_HTTPHEADER=>[
                         'Host: exact-http.example.test','Accept: application/json','X-Requested-With: XMLHttpRequest',
-                        'Authorization: Bearer '.$token,'Cookie: pro9_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
+                        'Authorization: Bearer '.$token,'Cookie: sab_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
                     curl_multi_add_handle($multi,$handle); $handles[]=$handle;
                 }
                 $deadline=microtime(true)+20; $connected=0;
@@ -2133,7 +2133,7 @@ class ExactHttpAcceptanceTest extends TestCase
                     $handle=curl_init('http://'.$worker.$path);
                     curl_setopt_array($handle,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,CURLOPT_HTTPHEADER=>[
                         'Host: exact-http.example.test','Accept: application/json','Content-Type: application/json','X-Requested-With: XMLHttpRequest',
-                        'Authorization: Bearer '.$token,'Cookie: pro9_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
+                        'Authorization: Bearer '.$token,'Cookie: sab_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
                     if ($payload!==null) { curl_setopt($handle,CURLOPT_POST,true); curl_setopt($handle,CURLOPT_POSTFIELDS,json_encode($payload,JSON_THROW_ON_ERROR)); }
                     curl_multi_add_handle($multi,$handle); $handles[]=$handle;
                 }
@@ -2192,7 +2192,7 @@ class ExactHttpAcceptanceTest extends TestCase
                     $handle=curl_init('http://'.$worker.$path);
                     curl_setopt_array($handle,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,CURLOPT_HTTPHEADER=>[
                         'Host: exact-http.example.test','Accept: application/json','Content-Type: application/json','X-Requested-With: XMLHttpRequest',
-                        'Authorization: Bearer '.$token,'Cookie: pro9_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
+                        'Authorization: Bearer '.$token,'Cookie: sab_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
                     if ($payload!==null) { curl_setopt($handle,CURLOPT_POST,true); curl_setopt($handle,CURLOPT_POSTFIELDS,json_encode($payload,JSON_THROW_ON_ERROR)); }
                     curl_multi_add_handle($multi,$handle); $handles[]=$handle;
                 }
@@ -2252,7 +2252,7 @@ class ExactHttpAcceptanceTest extends TestCase
                         $handle=curl_init('http://'.$worker.$path);
                         curl_setopt_array($handle,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,CURLOPT_CUSTOMREQUEST=>$method,CURLOPT_HTTPHEADER=>[
                             'Host: exact-http.example.test','Accept: application/json','Content-Type: application/json','X-Requested-With: XMLHttpRequest',
-                            'Authorization: Bearer '.$token,'Cookie: pro9_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
+                            'Authorization: Bearer '.$token,'Cookie: sab_exact_http_session='.rawurlencode($workerCookie),'X-CSRF-TOKEN: '.$workerCsrf]]);
                         if ($payload!==null) curl_setopt($handle,CURLOPT_POSTFIELDS,json_encode($payload,JSON_THROW_ON_ERROR));
                         curl_multi_add_handle($multi,$handle); $handles[]=$handle;
                     }
@@ -2400,7 +2400,7 @@ class ExactHttpAcceptanceTest extends TestCase
             if (is_resource($referenceServer)) { proc_terminate($referenceServer);proc_close($referenceServer); }
             if (is_resource($raceServer)) { proc_terminate($raceServer);proc_close($raceServer); }
             if ($temp) {
-                if (is_file($temp.'/server.log')) file_put_contents(sys_get_temp_dir().'/pro9-exact-http-last.log',file_get_contents($temp.'/server.log'));
+                if (is_file($temp.'/server.log')) file_put_contents(sys_get_temp_dir().'/sab-exact-http-last.log',file_get_contents($temp.'/server.log'));
                 (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($temp);
             }
             if ($fixture->ready) $fixture->stop();

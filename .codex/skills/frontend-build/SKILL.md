@@ -1,6 +1,6 @@
 ---
 name: frontend-build
-description: Controlar la compilación de assets de Pro9. Usar antes de ejecutar `npm run build`, `npm run dev`, `npm run watch`, Vite, Yarn, pnpm u otro comando de compilación, o antes de modificar `public/build/`. También usar cuando cambios en `resources/js`, `resources/sass` o archivos Vue requieran compilación para verse en el navegador.
+description: Controlar la compilación de assets de SAB. Usar antes de ejecutar `npm run build`, `npm run dev`, `npm run watch`, Vite, Yarn, pnpm u otro comando de compilación, o antes de modificar `public/build/`. También usar cuando cambios en `resources/js`, `resources/sass` o archivos Vue requieran compilación para verse en el navegador.
 ---
 
 # Controlar la compilación de assets

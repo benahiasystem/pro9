@@ -4,6 +4,7 @@ Author: Wrappixel
 Email: niravjoshi87@gmail.com
 File: js
 */
+import '../jquery-global';
 import $ from 'jquery';
 (function (_jquery) {
   'use strict';
@@ -328,4 +329,4 @@ import $ from 'jquery';
     };
     return AdminMenu;
   }(jQuery);
-});
+})($);

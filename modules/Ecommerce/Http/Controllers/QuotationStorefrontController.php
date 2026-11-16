@@ -401,7 +401,7 @@ class QuotationStorefrontController extends Controller
                 $quotation = Quotation::create($data);
 
                 foreach ($built['items'] as $row) {
-                    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                    // ######## INICIO CALCULOS EXACTOS SAB ########
                     $exact = $row['_server_exact'];
                     unset($row['_server_exact']);
                     $line = $quotation->items()->create($row);
@@ -410,7 +410,7 @@ class QuotationStorefrontController extends Controller
                     $snapshot['inputs']['storefront_catalog_price'] = $exact['source'];
                     $line->calculation_snapshot = $snapshot;
                     $line->saveQuietly();
-                    // ######## FIN CALCULOS EXACTOS PRO9 ########
+                    // ######## FIN CALCULOS EXACTOS SAB ########
                 }
                 \App\Support\Exact\CommercialCalculation::summarize($quotation);
                 $quotation->refresh();
@@ -637,7 +637,7 @@ class QuotationStorefrontController extends Controller
             }
 
             $affectation = $item->sale_affectation_igv_type_id ?: '10';
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             if (!in_array($affectation, ['10','20'], true)) \App\Services\Fiscal\FiscalAmounts::error('items', 'Seleccione un producto con IVA vigente.');
             $sourcePrice = \App\Support\Exact\Decimal::readRequired($item, 'sale_unit_price');
             if ($item->currency_type_id === 'USD' && $exchangeRate === null) {
@@ -659,7 +659,7 @@ class QuotationStorefrontController extends Controller
             $totalValue = $calculated['total_value'];
             $totalIgv = $calculated['total_igv'];
             $total = $calculated['total'];
-            // ######## FIN CALCULOS EXACTOS PRO9 ########
+            // ######## FIN CALCULOS EXACTOS SAB ########
 
             $brandName = null;
             if ($item->relationLoaded('brand') && $item->brand) {

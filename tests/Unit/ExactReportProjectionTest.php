@@ -5,7 +5,7 @@ namespace Tests\Unit;
 use App\Support\Exact\{Decimal, ReportDataset, ReportProjection};
 use PHPUnit\Framework\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExactReportProjectionTest extends TestCase
 {
     private function dataset(array $values): ReportDataset
@@ -41,4 +41,4 @@ class ExactReportProjectionTest extends TestCase
         }
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
