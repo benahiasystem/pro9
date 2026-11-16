@@ -1,0 +1,10 @@
+{
+  "name": "benahia/pro9-accounting",
+  "type": "library",
+  "description": "M\u00f3dulo contable de PRO9",
+  "autoload": {
+    "psr-4": {
+      "Modules\\Accounting\\": ""
+    }
+  }
+}

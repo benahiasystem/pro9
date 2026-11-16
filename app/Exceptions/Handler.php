@@ -46,6 +46,10 @@ class Handler extends ExceptionHandler
      */
     public function report(Throwable $exception)
     {
+        if ($this->container->bound('accounting.errors') && request()->is('api/accounting/v1', 'api/accounting/v1/*')) {
+            $this->container->make('accounting.errors')->report($exception);
+            return;
+        }
         parent::report($exception);
     }
 
@@ -62,6 +66,9 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $exception)
     {
         if ($exception instanceof \App\Services\Payments\CalculationChanged) return $exception->response();
+        if ($this->container->bound('accounting.errors') && $request->is('api/accounting/v1', 'api/accounting/v1/*')) {
+            return $this->container->make('accounting.errors')->render($request, $exception);
+        }
         // ######## INICIO API BCV ########
         if ($request->is('services/exchange/*', 'services/exchange_rate', 'services/exchange_rate/*',
             'services/search_exchange_rate', 'service/exchange/*', 'exchange_rate/ecommence/*')) {

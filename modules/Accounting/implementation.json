@@ -1,0 +1,272 @@
+{
+  "baseCommit": "861228462e208d2060c9148b87fd7d7d3f354da5",
+  "branch": "codex/contabilidad-api-v1",
+  "api": "/api/accounting/v1",
+  "authentication": "PRO9 auth:api Bearer",
+  "database": "tenant existente; tablas accounting_*",
+  "frontend": "TypeScript Vue actual; compilación en AWS",
+  "tests": "Solo entornos aislados; pruebas previas del prototipo independiente no acreditan este módulo",
+  "state": "development; PRO9 module with complete report snapshots and PDF/XLSX/CSV downloads, server-only atomic imports, closings and encrypted local work",
+  "isolation": {
+    "databaseContainer": "contabilidad-api-v1-db",
+    "network": "contabilidad-api-v1-tests",
+    "publicDatabasePorts": false,
+    "data": "Fictitious books and a private local snapshot of PRO9; no real data uploaded to AWS"
+  },
+  "verification": {
+    "core": {
+      "tests": 136,
+      "assertions": 757,
+      "result": "passed"
+    },
+    "http": {
+      "checks": 8,
+      "result": "passed"
+    },
+    "frontendUnit": 71,
+    "browser": {
+      "checks": 9,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "typescript": "7.0.2 primary; Vue SFC checker uses the classic 6.0.3 API in isolated tooling",
+    "frontendLint": {
+      "warnings": 0,
+      "errors": 0
+    },
+    "pro9Snapshot": {
+      "sales": 24,
+      "purchases": 0,
+      "decimalStrings": true,
+      "duplicateReception": "same record, unchanged"
+    },
+    "documentsHttp": {
+      "checks": 5,
+      "result": "passed",
+      "suite": "Tests/documents_http_smoke.py"
+    },
+    "documentsBrowser": {
+      "checks": 8,
+      "result": "passed",
+      "pageErrors": 0,
+      "suite": "Tests/documents_browser_smoke.cjs"
+    },
+    "memberships": {
+      "checks": 7,
+      "result": "passed"
+    },
+    "usersBrowser": {
+      "checks": 4,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "offlineScope": {
+      "defaultDays": 90,
+      "companyConfigurable": true,
+      "documentsAndFiscalConfigurationCached": true,
+      "reportDatesChecked": true,
+      "auxiliarySnapshotCached": true,
+      "auxiliaryIncludesPriorDebt": true,
+      "auxiliaryLimit": 2000,
+      "allocationLimit": 10000
+    },
+    "localRestoreBrowser": {
+      "checks": 7,
+      "result": "passed",
+      "pageErrors": 0,
+      "suite": "Tests/restore_browser_smoke.cjs"
+    },
+    "pendingIdentityOperations": {
+      "checks": 3,
+      "result": "passed",
+      "suite": "src/__tests__/offline-session.spec.ts in AWS frontend"
+    },
+    "auxiliaryHttp": {
+      "checks": 5,
+      "result": "passed",
+      "suite": "Tests/auxiliary_http_smoke.py"
+    },
+    "auxiliaryBrowser": {
+      "checks": 6,
+      "result": "passed",
+      "pageErrors": 0,
+      "suite": "Tests/auxiliary_browser_smoke.cjs"
+    },
+    "auxiliaryLayout": {
+      "desktopPaginationOverlap": false,
+      "mobilePageOverflow": false
+    },
+    "auxiliaryOfflineBrowser": {
+      "checks": 6,
+      "result": "passed",
+      "pageErrors": 0,
+      "suite": "Tests/auxiliary_offline_browser_smoke.cjs"
+    },
+    "importsHttp": {
+      "checks": 9,
+      "result": "passed",
+      "suite": "Tests/imports_http_smoke.py"
+    },
+    "importsBrowser": {
+      "checks": 9,
+      "result": "passed",
+      "suite": "Tests/imports_browser_smoke.cjs",
+      "pageErrors": 0,
+      "scope": "AWS build tested in private local clone; final delivery metadata in the release manifest"
+    },
+    "moduleCoreProcess": {
+      "exitCode": 0,
+      "completeReport": true,
+      "tests": 136,
+      "assertions": 757
+    },
+    "imports": {
+      "kinds": [
+        "third-parties",
+        "entries",
+        "opening",
+        "documents"
+      ],
+      "formats": [
+        "xlsx",
+        "csv"
+      ],
+      "serverOnly": true,
+      "partialAcceptanceByWholeUnit": true,
+      "immutableAcceptedReferences": true,
+      "preflightRollsBackDomainWrites": true,
+      "exactOoxmlDecimals": true,
+      "formulaAndExternalContentRejected": true,
+      "privateDataset": true,
+      "freshCatalogAndPermissionChecksUnderBookLock": true,
+      "unexpectedInfrastructureFailureRollsBackWholeSelection": true,
+      "rowsAndFieldsInErrorWorkbook": true,
+      "automaticPosting": false
+    },
+    "reportsHttp": {
+      "checks": 8,
+      "formats": 30,
+      "result": "passed",
+      "suite": "Tests/reports_http_smoke.py"
+    },
+    "reportsBrowser": {
+      "checks": 10,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "reports": {
+      "kinds": 9,
+      "formats": [
+        "pdf",
+        "xlsx",
+        "csv"
+      ],
+      "serverOnlyCaptureAndDownload": true,
+      "completeDatasetNotVisiblePage": true,
+      "sameImmutableSnapshot": true,
+      "exactDecimalsAndTextIdentifiers": true,
+      "consistentReadAcrossRetries": true,
+      "historicalOpenItemsCutoff": true,
+      "auxiliaryDormantOpeningGroups": true,
+      "comparativeFinancialStatements": "preliminary",
+      "freshAccessAndCompanyChecks": true,
+      "snapshotAndArtifactHashVerified": true,
+      "recoverableAction": "report.capture",
+      "offlineQueue": false,
+      "pdfVisualReview": "fake normal and large amounts, first and last journal pages, comparative and open items; no clipping observed",
+      "traceToAttachments": "Journal/source links open private supports and approval manifests; complete source/fiscal annex reconciliation remains pending."
+    },
+    "closingsHttp": {
+      "checks": 8,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "annualHttp": {
+      "checks": 7,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "sessionLockBrowser": {
+      "checks": 13,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "currentChangeProvenance": {
+      "scope": "RF24 private supports and verifiable audit, metadata-only recovery v5; incremental V1",
+      "core": 136,
+      "assertions": 757,
+      "frontendUnit": 71,
+      "supportsHttp": 8,
+      "supportsBrowser": 10,
+      "reportsBrowser": 10,
+      "editorRecoveryBrowser": 19,
+      "sessionLockBrowser": 13,
+      "browserRegression": 9,
+      "localSelectionsBrowser": 13,
+      "conflictsBrowser": 9,
+      "restoreBrowser": 7,
+      "closingsHttp": 8,
+      "annualHttp": 7,
+      "browserChecksTotal": 90,
+      "httpChecksTotal": 23,
+      "allFinalProcessesExitCode": 0,
+      "otherChecks": "cumulative previous releases; not rerun in this increment"
+    },
+    "supportsHttp": {
+      "checks": 8,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "supportsBrowser": {
+      "checks": 10,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "editorRecoveryBrowser": {
+      "checks": 19,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "localSelectionsBrowser": {
+      "checks": 13,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "conflictsBrowser": {
+      "checks": 9,
+      "result": "passed",
+      "pageErrors": 0
+    },
+    "attachments": {
+      "privateTenantOrganizationCompanyStorage": true,
+      "originalBytesPreserved": true,
+      "immutableMetadataAndSuccessors": true,
+      "sha256CheckedServerAndClient": true,
+      "realClamAV": true,
+      "missingUnavailableOrStaleScannerRejectsUpload": true,
+      "maxBytes": 5242880,
+      "safeRasterPreview": true,
+      "freshAccessChecks": true,
+      "pendingReviewInvalidated": true,
+      "postedRecordsUnchanged": true,
+      "sourceRevisionUnchangedByUpload": true,
+      "recoverableAction": "attachment.add",
+      "offlineUploadQueue": false,
+      "localRecovery": "encrypted metadata only, backup v5 compatible with v1-v4"
+    },
+    "audit": {
+      "listFiltersStableSequencePaginationAndDetail": true,
+      "permission": "audit",
+      "hashVersion": 2,
+      "mysqlJsonStableTypedEncoding": true,
+      "actorIdentityAtEvent": true,
+      "legacyV1PreservedWithLimitedVerification": true,
+      "integrityVerifier": "content, sequence, previous links and head; not certified electronic signature",
+      "credentialsAndPrivatePathsOmitted": true,
+      "recordAndSavedReportLinks": true
+    }
+  },
+  "pending": "Complete opening credits/advances and migration corrections, notes/refunds and retention/IGTF applications, PRO9 source incident reconciliation, historical source payload access and complete source/fiscal annex reconciliation, integral server backup/restore and company exit, tenant-bound migration of historical report storage, unfinished forms and offline authorization against clock/expiry/revocation. Fiscal registers remain preliminary; full V1 acceptance is pending.",
+  "verifiedAt": "2026-11-12",
+  "fullV1Complete": false
+}
