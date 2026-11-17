@@ -5,6 +5,42 @@ const vm = require('node:vm');
 const compiler = require('vue-template-compiler');
 const babel = require('@babel/core');
 const cp = require('node:child_process');
+const path = require('node:path');
+const load = require('./helpers/load-module.cjs');
+
+test('invoice import automatically sends a blank series only when it is the sole option', () => {
+    const source = fs.readFileSync('resources/js/views/tenant/documents/partials/ImportExcel.vue', 'utf8');
+    const {script} = compiler.parseComponent(source);
+    const seriesHelper = load(path.resolve('resources/js/helpers/document-series.js'));
+    const exported = {};
+    vm.runInNewContext(babel.transformSync(script.content, {configFile:false, babelrc:false,
+        plugins:['@babel/plugin-transform-modules-commonjs']}).code, {
+        exports: exported,
+        require: () => seriesHelper,
+        _: require('lodash'),
+    });
+    const component = exported.default;
+    const ctx = {form: {document_type_id: '01'}, series: []};
+    Object.defineProperty(ctx, 'showSeriesSelector', {get: component.computed.showSeriesSelector.bind(ctx)});
+    const blank = {document_type_id: '01', number: ''};
+    const named = {document_type_id: '01', number: 'FF01'};
+    const otherType = {document_type_id: '80', number: 'NV01'};
+
+    for (const [options, selected, visible] of [
+        [[blank], '', false],
+        [[blank, named], null, true],
+        [[named], null, true],
+        [[], null, false],
+    ]) {
+        ctx.all_series = [...options, otherType];
+        component.methods.changeDocumentType.call(ctx);
+        assert.equal(ctx.form.series, selected);
+        assert.equal(ctx.showSeriesSelector, visible);
+    }
+    ctx.series = [named];
+    component.methods.initForm.call(ctx);
+    assert.equal(ctx.showSeriesSelector, false);
+});
 
 test('blank series option displays no ID or filter marker in Element UI', () => {
     const parsed = compiler.parseComponent(fs.readFileSync('node_modules/element-ui/packages/select/src/option.vue', 'utf8'));

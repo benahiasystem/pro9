@@ -23,6 +23,9 @@ const component = loadScript(parsed.script.content, name => {
     if (name.endsWith('.vue')) return {};
     if (name === '@mixins/functions') return {fnRestrictSaleItemsCpe: {}};
     if (name === '@mixins/fiscal-payment-settings') return {};
+    if (name === '@helpers/document-series') {
+        return require('./helpers/load-module.cjs')(path.resolve(__dirname, '../../resources/js/helpers/document-series.js'));
+    }
     if (name.startsWith('.')) {
         return require('./helpers/load-module.cjs')(path.resolve(path.dirname(filename), name + '.js'));
     }

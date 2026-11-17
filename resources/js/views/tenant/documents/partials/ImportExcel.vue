@@ -25,17 +25,19 @@
                             ></small>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div v-if="showSeriesSelector || errors.series" class="col-md-4">
                         <div :class="{ 'has-danger': errors.series }" class="form-group">
-                            <label class="control-label">Serie</label>
-                            <el-select v-model="form.series">
-                                <el-option
-                                    v-for="option in series"
-                                    :key="option.number"
-                                    :label="option.number || '\u00a0'"
-                                    :value="option.number"
-                                ></el-option>
-                            </el-select>
+                            <template v-if="showSeriesSelector">
+                                <label class="control-label">Serie</label>
+                                <el-select v-model="form.series">
+                                    <el-option
+                                        v-for="option in series"
+                                        :key="option.number"
+                                        :label="option.number || '\u00a0'"
+                                        :value="option.number"
+                                    ></el-option>
+                                </el-select>
+                            </template>
                             <small
                                 v-if="errors.series"
                                 class="form-control-feedback"
@@ -72,6 +74,7 @@
 </template>
 
 <script>
+import { hasNamedSeries } from '@helpers/document-series';
 
 export default {
     props: ['showDialog'],
@@ -92,6 +95,11 @@ export default {
         await this.initTables();
         this.initForm()
     },
+    computed: {
+        showSeriesSelector() {
+            return hasNamedSeries(this.series);
+        },
+    },
     methods: {
         async initTables() {
             await this.$http.get(`/documents/import_excel_tables`)
@@ -105,6 +113,7 @@ export default {
         },
         initForm() {
             this.errors = {}
+            this.series = [];
             this.form = {
                 file: null,
                 document_type_id: null,
@@ -115,8 +124,8 @@ export default {
             this.title = 'Importar Documentos'
         },
         changeDocumentType() {
-            this.form.series = null;
             this.series = _.filter(this.all_series, {'document_type_id': this.form.document_type_id});
+            this.form.series = this.series.length === 1 && !this.showSeriesSelector ? '' : null;
         },
         async onSubmit() {
             this.loadingSubmit = true

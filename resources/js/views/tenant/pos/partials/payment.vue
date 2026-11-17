@@ -140,7 +140,7 @@
                         </el-radio-group>
                     </div>
 
-                    <div class="pos-field pos-field--series">
+                    <div v-if="hasNamedSeries" class="pos-field pos-field--series">
                         <el-select v-model="form.series_id" placeholder="Serie">
                             <el-option v-for="option in series"
                                        :key="option.id"
@@ -507,6 +507,9 @@ export default {
         // console.log(this.currencyTypeActive)
     },
     computed: {
+        hasNamedSeries() {
+            return this.series.some(option => (option.number || '').trim() !== '')
+        },
         isNrus: function () {
             return !!(this.config && this.config.is_nrus)
         },
@@ -586,10 +589,10 @@ export default {
                 }
                 // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 this.filterSeries()
-                let alt = _.find(this.all_series, { id: this.default_series_type });
+                const defaultSeries = _.find(this.series, { id: this.default_series_type });
 
-                if (this.default_series_type !== null && alt !== undefined) {
-                    this.form.series_id = this.default_series_type;
+                if (defaultSeries) {
+                    this.form.series_id = defaultSeries.id;
                 }
             }
         },

@@ -216,27 +216,29 @@
                                     ></small>
                                 </div>
                             </div>
-                            <div class="col-4" :class="{'col-lg-2': currency_types.length > 1, 'col-lg-3': currency_types.length <= 1}">
+                            <div v-if="showSeriesSelector || errors.series_id" class="col-4" :class="{'col-lg-2': currency_types.length > 1, 'col-lg-3': currency_types.length <= 1}">
                                 <div
                                     class="form-group"
                                     :class="{
                                         'has-danger': errors.series_id
                                     }"
                                 >
-                                    <label class="control-label"
-                                        >Serie</label
-                                    >
-                                    <el-select
-                                        v-model="form.series_id"
-                                        :disabled="disabledSeries()"
-                                    >
-                                        <el-option
-                                            v-for="option in series"
-                                            :key="option.id"
-                                            :value="option.id"
-                                            :label="option.number || '\u00a0'"
-                                        ></el-option>
-                                    </el-select>
+                                    <template v-if="showSeriesSelector">
+                                        <label class="control-label"
+                                            >Serie</label
+                                        >
+                                        <el-select
+                                            v-model="form.series_id"
+                                            :disabled="disabledSeries()"
+                                        >
+                                            <el-option
+                                                v-for="option in series"
+                                                :key="option.id"
+                                                :value="option.id"
+                                                :label="option.number || '\u00a0'"
+                                            ></el-option>
+                                        </el-select>
+                                    </template>
                                     <small
                                         class="form-control-feedback"
                                         v-if="errors.series_id"
@@ -2160,6 +2162,7 @@ header .head-notes > div {
 </style>
 
 <script>
+import { hasNamedSeries } from '@helpers/document-series';
 import {suggestRemainingPayment, suggestInstallments, paymentConditionPayload} from '@helpers/document-creation'
 import {exactAmount, exactValue} from '../../../helpers/exchange-rate-math'
 
@@ -2207,6 +2210,9 @@ export default {
     },
     mixins: [functions, exchangeRate, editableRowItems, fnItemSearchQuickSale],
     computed: {
+        showSeriesSelector() {
+            return hasNamedSeries(this.series);
+        },
         receiptAppliedAmounts() {
             return JSON.stringify((this.form?.payments || []).map(row => row.payment));
         },

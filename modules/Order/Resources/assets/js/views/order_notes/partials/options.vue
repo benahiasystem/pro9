@@ -85,12 +85,14 @@
                     <small class="form-control-feedback" v-if="errors.document_type_id" v-text="errors.document_type_id[0]"></small>
                 </div>
             </div>
-            <div class="col-lg-4">
+            <div v-if="showSeriesSelector || errors.series_id" class="col-lg-4">
                 <div class="form-group" :class="{'has-danger': errors.series_id}">
-                    <label class="control-label">Serie</label>
-                    <el-select v-model="document.series_id">
-                        <el-option v-for="option in series" :key="option.id" :value="option.id" :label="option.number || '\u00a0'"></el-option>
-                    </el-select>
+                    <template v-if="showSeriesSelector">
+                        <label class="control-label">Serie</label>
+                        <el-select v-model="document.series_id">
+                            <el-option v-for="option in series" :key="option.id" :value="option.id" :label="option.number || '\u00a0'"></el-option>
+                        </el-select>
+                    </template>
                     <small class="form-control-feedback" v-if="errors.series_id" v-text="errors.series_id[0]"></small>
                 </div>
             </div>
@@ -409,6 +411,7 @@
 </template>
 
 <script>
+import { hasNamedSeries } from '@helpers/document-series';
 import {withoutDraftRetentions, paymentConditionPayload, suggestInstallments, suggestRemainingPayment, markPaymentEdited} from "@helpers/document-creation"
 import {exactAmount} from "@helpers/exchange-rate-math"
 import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale"
@@ -472,6 +475,9 @@ export default {
     },
     computed:
     {
+        showSeriesSelector() {
+            return hasNamedSeries(this.series);
+        },
         isInvoiceDocument()
         {
             return this.document.document_type_id === '01'

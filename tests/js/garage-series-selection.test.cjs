@@ -41,6 +41,7 @@ function context() {
         }},
         $eventHub: {$emit() {}},
         ensureFiscalPaymentsReady: async () => true,
+        prepareCalculationSubmission: form => form,
     };
     for (const [name, method] of Object.entries(component.methods)) ctx[name] = method.bind(ctx);
     for (const name of ['setLocalStorageIndex', 'setFormPosLocalStorage', 'asignPlateNumberToItems',
@@ -79,6 +80,24 @@ test('switching document type replaces an incompatible series and preserves a co
     ctx.form.document_type_id = '01';
     ctx.filterSeries();
     assert.equal(ctx.form.series_id, 1);
+});
+
+test('the sole authorized option without a series is selected and submitted automatically', async () => {
+    const {ctx, warnings, requests} = context();
+    ctx.all_series = [{id: 6, document_type_id: '80', number: ''}];
+    ctx.form.document_type_id = '80';
+    ctx.filterSeries();
+
+    const events = [];
+    component.watch.series.call({$emit: (...args) => events.push(args)}, ctx.series);
+    assert.deepEqual(events, [['series-filtered', 1]]);
+    assert.equal(ctx.form.series_id, 6);
+
+    await ctx.clickPayment();
+    assert.deepEqual(warnings, []);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].url, '/sale-notes');
+    assert.equal(requests[0].form.series_id, 6);
 });
 
 test('refreshing available series discards a removed selection and blocks payment when none remain', async () => {

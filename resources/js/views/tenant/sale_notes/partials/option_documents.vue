@@ -15,12 +15,14 @@
                         <!-- <el-checkbox  v-model="generate_dispatch">Generar Orden de entrega</el-checkbox> -->
                     </div>
                 </div>
-                <div class="col-lg-4">
+                <div v-if="showSeriesSelector || errors.series_id" class="col-lg-4">
                     <div class="form-group" :class="{'has-danger': errors.series_id}">
-                        <label class="control-label">Serie</label>
-                        <el-select v-model="document.series_id">
-                            <el-option v-for="option in series" :key="option.id" :value="option.id" :label="option.number || '\u00a0'"></el-option>
-                        </el-select>
+                        <template v-if="showSeriesSelector">
+                            <label class="control-label">Serie</label>
+                            <el-select v-model="document.series_id">
+                                <el-option v-for="option in series" :key="option.id" :value="option.id" :label="option.number || '\u00a0'"></el-option>
+                            </el-select>
+                        </template>
                         <small class="form-control-feedback" v-if="errors.series_id" v-text="errors.series_id[0]"></small>
                     </div>
                 </div>
@@ -278,6 +280,7 @@
 </template>
 
 <script>
+import { hasNamedSeries } from '@helpers/document-series';
 
     import DocumentOptions from '../../documents/partials/options.vue'
     import moment from "moment";
@@ -359,6 +362,11 @@
             this.validateDateOfIssue()
 
            // console.log(moment().format('YYYY-MM-DD'))
+        },
+        computed: {
+            showSeriesSelector() {
+                return hasNamedSeries(this.series);
+            },
         },
         methods: {
             /**

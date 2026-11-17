@@ -20,7 +20,7 @@
                                     <th>Pedido</th>
                                     <th class="text-right">Total</th>
                                     <th>Tipo comprobante</th>
-                                    <th>Serie</th>
+                                    <th v-if="showSeriesColumn">Serie</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -41,8 +41,8 @@
                                             <el-option v-for="option in row.document_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                         </el-select>
                                     </td>
-                                    <td>
-                                        <el-select v-model="row.series_id">
+                                    <td v-if="showSeriesColumn">
+                                        <el-select v-if="hasNamedSeries(row.series)" v-model="row.series_id">
                                             <el-option v-for="option in row.series" :key="option.id" :value="option.id" :label="option.number || '\u00a0'"></el-option>
                                         </el-select>
                                     </td>
@@ -70,6 +70,7 @@
 </template>
 
 <script>
+    import { hasNamedSeries } from '@helpers/document-series';
 
     import moment from 'moment'
     import queryString from 'query-string'
@@ -95,7 +96,13 @@
         async created() {
             await this.getTables()
         },
+        computed: {
+            showSeriesColumn() {
+                return this.records.some(row => hasNamedSeries(row.series));
+            },
+        },
         methods: {
+            hasNamedSeries,
             onSelectedAll(value) {
                 if (value) {
                     this.records.map((row, i) => {

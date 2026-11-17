@@ -76,24 +76,26 @@
                                     ></small>
                                 </div>
                             </div>
-                            <div class="align-self-end serie-input col-2">
+                            <div v-if="hasNamedSeries || errors.series_id" class="align-self-end serie-input col-2">
                                 <div
                                     :class="{ 'has-danger': errors.series_id }"
                                     class="form-group"
                                 >
-                                    <label class="control-label">Serie</label>
-                                    <el-select
-                                        v-model="form.series_id"
-                                        :disabled="isUpdateDocument || disabledSeries()"
-                                    >
-                                        <el-option
-                                            v-for="option in series"
-                                            :key="option.id"
-                                            :label="option.number || '\u00a0'"
-                                            :disabled="option.disabled"
-                                            :value="option.id"
-                                        ></el-option>
-                                    </el-select>
+                                    <template v-if="hasNamedSeries">
+                                        <label class="control-label">Serie</label>
+                                        <el-select
+                                            v-model="form.series_id"
+                                            :disabled="isUpdateDocument || disabledSeries()"
+                                        >
+                                            <el-option
+                                                v-for="option in series"
+                                                :key="option.id"
+                                                :label="option.number || '\u00a0'"
+                                                :disabled="option.disabled"
+                                                :value="option.id"
+                                            ></el-option>
+                                        </el-select>
+                                    </template>
                                     <small
                                         v-if="errors.series_id"
                                         class="form-control-feedback"
@@ -3063,6 +3065,9 @@ export default {
         };
     },
     computed: {
+        hasNamedSeries() {
+            return this.series.some(option => (option.number || '').trim() !== '');
+        },
         // ######## INICIO TOTAL UNICO DE VUELTO ########
         fiscalChangeReceipts() {
             return (this.displayFiscalQuote?.payments || []).map((payment, index) => ({payment, index}))

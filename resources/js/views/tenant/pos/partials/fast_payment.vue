@@ -15,7 +15,7 @@
                 </el-radio-group>
                 <!-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
             </div>
-            <div class="col-2 px-0">
+            <div v-if="hasNamedSeries" class="col-2 px-0">
                 <el-select v-model="form.series_id" class="c-width" style="height: 30px;">
                     <el-option v-for="option in series"
                                :key="option.id"
@@ -312,6 +312,9 @@ export default {
         // console.log(this.currencyTypeActive)
     },
     computed: {
+        hasNamedSeries() {
+            return this.series.some(option => (option.number || '').trim() !== '')
+        },
         enableGlobalDiscount() {
             return !!(this.configuration && this.configuration.enable_global_discount);
         },

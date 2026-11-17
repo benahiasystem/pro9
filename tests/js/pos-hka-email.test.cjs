@@ -38,6 +38,61 @@ test('fast checkout preserves an authorized series and selects a series for a re
  ctx.form={document_type_id:'08',series_id:null};component.watch.form.call(ctx);assert.equal(ctx.form.series_id,null);assert.equal(warnings.length,0);
  ctx.filterSeries();assert.equal(warnings.length,1);
 });
+
+for (const file of ['payment.vue', 'fast_payment.vue']) {
+    test(`${file} shows the selector only when the active document type has a named series`, () => {
+        const panelPath = `resources/js/views/tenant/pos/partials/${file}`;
+        const payment = load(panelPath);
+        const template = compiler.parseComponent(fs.readFileSync(panelPath, 'utf8')).template.content;
+        assert.match(template, /<div v-if="hasNamedSeries"[^>]*>\s*<el-select v-model="form.series_id"/);
+
+        const ctx = {
+            form: {document_type_id: '01', series_id: null},
+            $message: {warning() {}},
+        };
+        for (const [type, otherType, code] of [['01', '80', 'FF01'], ['80', '01', 'NV01']]) {
+            const blank = {id: 1, document_type_id: type, number: ''};
+            const named = {id: 2, document_type_id: type, number: code};
+            const other = {id: 3, document_type_id: otherType, number: 'OTHER'};
+            ctx.form.document_type_id = type;
+
+            for (const [options, expectedId, visible] of [
+                [[blank, named], 1, true],
+                [[blank], 1, false],
+                [[named], 2, true],
+                [[], null, false],
+            ]) {
+                ctx.all_series = [other, ...options];
+                payment.methods.filterSeries.call(ctx);
+                assert.equal(ctx.form.series_id, expectedId);
+                assert.equal(payment.computed.hasNamedSeries.call(ctx), visible);
+            }
+        }
+    });
+}
+
+test('standard POS only applies a default series authorized for the active document type', () => {
+    const payment = load('resources/js/views/tenant/pos/partials/payment.vue');
+    const ctx = {
+        authUser: {document_id: '01', serie: 3},
+        all_series: [
+            {id: 1, document_type_id: '01', number: ''},
+            {id: 3, document_type_id: '80', number: 'NV01'},
+        ],
+        form: {},
+        $message: {warning: message => assert.fail(message)},
+    };
+    ctx.filterSeries = payment.methods.filterSeries.bind(ctx);
+    payment.methods.setDefaultDocumentType.call(ctx);
+    assert.equal(ctx.form.series_id, 1);
+
+    ctx.authUser.document_id = '80';
+    ctx.all_series.push({id: 4, document_type_id: '80', number: ''});
+    ctx.all_series.reverse();
+    payment.methods.setDefaultDocumentType.call(ctx);
+    assert.equal(ctx.form.series_id, 3);
+});
+
 test('fast payment restores its own amounts without reading Garage values and formats totals to cents',async()=>{
  const values={amount:'"0.30"',amount_garage:'"1.00"',enter_amount:'"0.30"',enter_amount_garage:'"1.00"',difference:'"0"'};
  const component=load('resources/js/views/tenant/pos/partials/fast_payment.vue',{localStorage:{getItem:key=>values[key] ?? null}});
@@ -49,11 +104,16 @@ test('fast payment restores its own amounts without reading Garage values and fo
 });
 test('fast checkout clears the previous receipt after a successful sale',async()=>{
  const component=load('resources/js/views/tenant/pos/partials/fast_payment.vue');
- const ctx={...component.data(),form:{document_type_id:'01',series_id:1,date_of_issue:moment().format('YYYY-MM-DD'),items:[],payments:[{payment:'100'}]},
+ const ctx={...component.data(),all_series:[{id:1,document_type_id:'01',number:''}],
+  form:{document_type_id:'01',series_id:null,date_of_issue:moment().format('YYYY-MM-DD'),items:[],payments:[{payment:'100'}]},
   amount:'100',enter_amount:'100',difference:'0',payments:[{payment:'100'}],businessTurns:{active:false},config:{},rowsItems:1,
   prepareCalculationSubmission:form=>form,handleCalculationChanged:()=>false,
   asignPlateNumberToItems:async()=>{},ensureFiscalPaymentsReady:async()=>true,saveCashDocument:()=>{},cleanLocalStoragePayment:()=>{},
-  $http:{post:async()=>({data:{success:true,data:{id:1,response:{}}}})},$eventHub:{$emit:()=>{}},$message:{error:()=>{}}};
+  $http:{post:async(url,form)=>{
+   assert.equal(url,'/documents');assert.equal(form.series_id,1);
+   return {data:{success:true,data:{id:1,response:{}}}};
+  }},$eventHub:{$emit:()=>{}},$message:{error:message=>assert.fail(message)}};
+ component.methods.filterSeries.call(ctx);
  await component.methods.clickPayment.call(ctx);
  assert.equal(ctx.amount,0);assert.equal(ctx.enter_amount,0);assert.equal(ctx.difference,0);assert.equal(ctx.payments.length,0);
 });
@@ -131,11 +191,13 @@ for(const file of ['payment.vue','fast_payment_garage.vue']) {
 for(const file of ['payment.vue','fast_payment_garage.vue']) {
  const payment=load('resources/js/views/tenant/pos/partials/'+file);
  test(`${file} generates a paid invoice and opens options even when HKA is uncertain`,async()=>{
-  const requests=[],ctx={form:{document_type_id:'01',series_id:2,customer_id:10,date_of_issue:moment().format('YYYY-MM-DD'),items:[{quantity:1,unit_type_id:'UND'}],payments:[{payment:100}],total:100},
+  const requests=[],ctx={all_series:[{id:2,document_type_id:'01',number:''}],
+   form:{document_type_id:'01',series_id:null,customer_id:10,date_of_issue:moment().format('YYYY-MM-DD'),items:[{quantity:1,unit_type_id:'UND'}],payments:[{payment:100}],total:100},
    config:{auto_send_pdf_email:true},configuration:{},businessTurns:{active:false},rowsItems:1,form_cash_document:{},hidePdfViewDocuments:false,
    $message:{success(){},warning:m=>assert.fail(m),error:m=>assert.fail(m)},$eventHub:{$emit(){}},
    $http:{post:async(url,form)=>{requests.push({url,form:JSON.parse(JSON.stringify(form))});return{data:{success:true,data:{id:44,fiscal_emission:{status:'uncertain'}}}}}}};
   for(const[name,fn]of Object.entries(payment.methods))ctx[name]=fn.bind(ctx);
+  ctx.filterSeries();
   ctx.form.iva_retention_prevision={enabled:true,amount:12};ctx.form.islr_retention_prevision={enabled:true,amount:3};ctx.form.received_retentions=[{tax_kind:'IVA'}];
   for(const name of ['asignPlateNumberToItems','saveCashDocument','cleanLocalStoragePayment','initDataComponent'])ctx[name]=()=>{};
   ctx.ensureFiscalPaymentsReady=async()=>true;ctx.validateRestrictSaleItemsCpe=ctx.validateRestrictSellerDiscount=()=>({success:true});

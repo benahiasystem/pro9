@@ -58,12 +58,14 @@
                                     <small class="form-control-feedback" v-if="errors.operation_type_id" v-text="errors.operation_type_id[0]"></small>
                                 </div>
                             </div>
-                            <div class="col-lg-2">
+                            <div v-if="showSeriesSelector || errors.series_id" class="col-lg-2">
                                 <div class="form-group" :class="{'has-danger': errors.series_id}">
-                                    <label class="control-label">Serie</label>
-                                    <el-select v-model="form.series_id">
-                                        <el-option v-for="option in series" :key="option.id" :value="option.id" :label="option.number || '\u00a0'"></el-option>
-                                    </el-select>
+                                    <template v-if="showSeriesSelector">
+                                        <label class="control-label">Serie</label>
+                                        <el-select v-model="form.series_id">
+                                            <el-option v-for="option in series" :key="option.id" :value="option.id" :label="option.number || '\u00a0'"></el-option>
+                                        </el-select>
+                                    </template>
                                     <small class="form-control-feedback" v-if="errors.series_id" v-text="errors.series_id[0]"></small>
                                 </div>
                             </div>
@@ -289,6 +291,7 @@
 
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+import { hasNamedSeries } from '@helpers/document-series';
 // ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
     import DocumentFormItem from './partials/item.vue'
     import PersonForm from '../persons/form.vue'
@@ -370,6 +373,11 @@
             this.$eventHub.$on('reloadDataPersons', (customer_id) => {
                 this.reloadDataCustomers(customer_id)
             })
+        },
+        computed: {
+            showSeriesSelector() {
+                return hasNamedSeries(this.series);
+            },
         },
         methods: {
 

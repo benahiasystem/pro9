@@ -28,13 +28,15 @@
                                         v-text="errors.establishment[0]"></small>
                                 </div>
                             </div>
-                            <div class="col-lg-2">
+                            <div v-if="showSeriesSelector || errors.series" class="col-lg-2">
                                 <div :class="{ 'has-danger': errors.series }" class="form-group">
-                                    <label class="control-label">Serie<span class="text-danger"> *</span></label>
-                                    <el-select v-model="form.series" :disabled="generalDisabledSeries()">
-                                        <el-option v-for="option in series" :key="option.number" :label="option.number || '\u00a0'"
-                                            :value="option.number"></el-option>
-                                    </el-select>
+                                    <template v-if="showSeriesSelector">
+                                        <label class="control-label">Serie<span class="text-danger"> *</span></label>
+                                        <el-select v-model="form.series" :disabled="generalDisabledSeries()">
+                                            <el-option v-for="option in series" :key="option.number" :label="option.number || '\u00a0'"
+                                                :value="option.number"></el-option>
+                                        </el-select>
+                                    </template>
                                     <small v-if="errors.series" class="form-control-feedback"
                                         v-text="errors.series[0]"></small>
                                 </div>
@@ -890,6 +892,7 @@
 
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+import { hasNamedSeries } from '@helpers/document-series';
 // ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import PersonForm from '../persons/form.vue';
 import Items from './items.vue';
@@ -944,6 +947,9 @@ export default {
     },
     mixins: [setDefaultSeriesByMultipleDocumentTypes],
     computed: {
+        showSeriesSelector() {
+            return hasNamedSeries(this.series);
+        },
         ...mapState([
             'config',
             'item',

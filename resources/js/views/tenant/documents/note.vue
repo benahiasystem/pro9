@@ -9,12 +9,13 @@
         <form @submit.prevent="submit" autocomplete="off">
             <div class="row">
                 <div class="col-md-3"><label>Tipo de nota</label><el-select v-model="form.document_type_id" @change="changeType"><el-option value="07" label="Nota de crédito"/><el-option value="08" label="Nota de débito"/></el-select></div>
-                <div class="col-md-3"><label>Serie</label><el-select v-model="form.series_id"><el-option v-for="s in series" :key="s.id" :value="s.id" :label="s.number || '\u00a0'"/></el-select></div>
+                <div v-if="showSeriesSelector" class="col-md-3"><label>Serie</label><el-select v-model="form.series_id"><el-option v-for="s in series" :key="s.id" :value="s.id" :label="s.number || '\u00a0'"/></el-select></div>
                 <div class="col-md-6"><label>{{ credit ? 'Motivo de nota de crédito' : 'Motivo de nota de débito' }}</label><el-select v-model="form.note_credit_or_debit_type_id" @change="changeReason"><el-option v-for="reason in reasons" :key="reason.id" :value="reason.id" :label="reason.description"/></el-select></div>
                 <div class="col-md-6 mt-2"><label>Descripción del ajuste</label><el-input v-model="form.note_description" maxlength="255"/></div>
                 <div class="col-md-3 mt-2"><label>Fecha de emisión</label><el-date-picker v-model="form.date_of_issue" type="date" value-format="yyyy-MM-dd" :clearable="false" @change="changeDate"/></div>
                 <div class="col-md-3 mt-2"><label>Tasa VES por USD <el-tooltip content="Tipo de cambio del día"><i class="fa fa-info-circle"/></el-tooltip></label><el-input v-model="form.exchange_rate_sale" :disabled="credit"/></div>
             </div>
+            <el-alert v-if="!loading && context.can_create && !series.length" class="mt-3" title="No hay una configuración de numeración disponible para este tipo de nota." type="warning" :closable="false"/>
             <el-alert v-if="full" class="mt-3" title="Se acreditará el importe comercial restante y se devolverán las cantidades pendientes de cada partida." type="info" :closable="false"/>
             <div class="table-responsive mt-3"><table class="table"><thead><tr><th>Partida original</th><th>Unidad / IVA</th><th>Pendiente devolución</th><th>Importe acreditable</th><th>{{ returning ? 'Cantidad que regresa' : 'Importe del ajuste' }}</th><th v-if="returning">Lotes / seriales originales</th><th/></tr></thead>
                 <tbody><tr v-for="(row,index) in displayedRows" :key="index">
@@ -43,6 +44,7 @@
 <script>
 // ########## INICIO CAMBIO SUNAT A SENIAT
 import { documentNumberFull } from '../../../helpers/document-number';
+import { hasNamedSeries } from '@helpers/document-series';
 import {noteSeries,noteTotalLabel,noteRequestId,noteAmountLabel,noteIsPositive,noteCanGenerate,noteCanReturnPartially} from '../../../helpers/fiscal-note';
 import {functions,exchangeRate} from '../../../mixins/functions';
 import DocumentFormItem from './partials/item.vue';
@@ -52,6 +54,7 @@ export default {
     data(){return {document:this.document_affected,context:this.document_affected.note_context,form:{items:[]},tables:{series:[],note_credit_types:[],note_debit_types:[]},loading:false,busy:false,errors:{},showItem:false,showOptions:false,newId:null};},
     computed:{credit(){return this.form.document_type_id==='07';},full(){return this.credit && this.form.note_credit_or_debit_type_id==='01';},returning(){return this.credit && this.form.note_credit_or_debit_type_id==='07';},
         series(){return noteSeries(this.tables.series,this.form.document_type_id,this.document.establishment_id);},reasons(){return (this.credit?this.tables.note_credit_types:this.tables.note_debit_types).filter(r=>r.id!=='IGTF');},
+        showSeriesSelector(){return hasNamedSeries(this.series);},
         eligibleItems(){return this.context.items.filter(r=>this.returning ? r.unit_type_id!=='SERV' && noteCanReturnPartially(r) : !this.credit || noteIsPositive(r,'remaining_total'));},
         displayedRows(){return this.full?this.context.items.map(r=>({affected_document_item_id:r.id})):this.form.items;},total(){return noteTotalLabel(this.form,this.context);},
         canGenerate(){return noteCanGenerate(this.form,this.context);}},

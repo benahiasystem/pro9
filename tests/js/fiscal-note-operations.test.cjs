@@ -4,6 +4,10 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const babel=require('@babel/core');
 const compiler=require('vue-template-compiler');
+const path=require('node:path');
+const load=require('./helpers/load-module.cjs');
+const fiscalNote=load(path.resolve('resources/js/helpers/fiscal-note.js'));
+const documentSeries=load(path.resolve('resources/js/helpers/document-series.js'));
 let key=0;
 function component(file) {
     const parsed=compiler.parseComponent(fs.readFileSync(file,'utf8'));
@@ -11,13 +15,51 @@ function component(file) {
     const module={exports:{}};
     vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,
         plugins:['@babel/plugin-transform-modules-commonjs']}).code,{module,exports:module.exports,
-        moment:()=>({format:()=> '2026-10-13'}),require:path=>path.includes('fiscal-note') ? {noteRequestId:()=>`request-${++key}`} : {}});
+        moment:()=>({format:()=> '2026-10-13'}),require:name=>{
+            if(name.includes('fiscal-note')) return {...fiscalNote,noteRequestId:()=>`request-${++key}`};
+            if(name==='@helpers/document-series') return documentSeries;
+            return {};
+        }});
     return module.exports.default;
 }
 const note=component('resources/js/views/tenant/documents/note.vue');
 const operations=component('resources/js/views/tenant/documents/partials/note-operations.vue');
 function bind(c,data) { for(const [name,method] of Object.entries(c.methods))if(typeof method==='function')data[name]=method.bind(data);return data; }
 function deferred() {let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};}
+
+test('credit and debit notes select their blank series automatically and show mixed choices', () => {
+    const credit = {id: 7, document_type_id: '07', establishment_id: 1, number: ''};
+    const debit = {id: 8, document_type_id: '08', establishment_id: 1, number: ''};
+    const state = bind(note, {
+        document: {establishment_id: 1},
+        tables: {series: [credit, debit, {...credit, id: 9, establishment_id: 2, number: 'NC02'}]},
+        form: {document_type_id: '07'},
+    });
+    state.changeDate = () => {};
+    Object.defineProperties(state, {
+        series: {get: note.computed.series.bind(state)},
+        credit: {get: note.computed.credit.bind(state)},
+    });
+
+    state.changeType();
+    assert.equal(state.form.series_id, 7);
+    assert.equal(note.computed.showSeriesSelector.call(state), false);
+
+    state.form.document_type_id = '08';
+    state.changeType();
+    assert.equal(state.form.series_id, 8);
+    assert.equal(note.computed.showSeriesSelector.call(state), false);
+
+    state.tables.series.push({...debit, id: 10, number: 'ND01'});
+    assert.equal(note.computed.showSeriesSelector.call(state), true);
+    assert.equal(state.form.series_id, 8);
+
+    state.tables.series = [credit];
+    state.changeType();
+    assert.equal(state.form.series_id, null);
+    assert.equal(note.computed.showSeriesSelector.call(state), false);
+});
+
 test('double click and a lost save response preserve the creation UUID',async()=>{
     const network=deferred();let calls=0;
     const state=bind(note,{form:{note_creation_key:'original-uuid'},busy:false,errors:{},$message:{error(){}},

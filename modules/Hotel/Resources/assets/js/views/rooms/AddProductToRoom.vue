@@ -173,18 +173,20 @@
                                 {{ errors.products[0] }}
                             </div>
 
-                            <div class="pull-right col-md-2 form-group">
+                            <div v-if="showSeriesSelector || errors.series_id" class="pull-right col-md-2 form-group">
                                 <div :class="{ 'has-danger': errors.series_id }"
                                     class="form-group">
-                                    <label class="control-label">Serie</label>
-                                    <el-select v-model="document.series_id">
-                                        <el-option
-                                            v-for="option in series"
-                                            :key="option.id"
-                                            :label="option.number || '\u00a0'"
-                                            :value="option.id"
-                                        ></el-option>
-                                    </el-select>
+                                    <template v-if="showSeriesSelector">
+                                        <label class="control-label">Serie</label>
+                                        <el-select v-model="document.series_id">
+                                            <el-option
+                                                v-for="option in series"
+                                                :key="option.id"
+                                                :label="option.number || '\u00a0'"
+                                                :value="option.id"
+                                            ></el-option>
+                                        </el-select>
+                                    </template>
                                     <small
                                         v-if="errors.series_id"
                                         class="form-control-feedback"
@@ -276,6 +278,7 @@
 </template>
 
 <script>
+import { hasNamedSeries } from '@helpers/document-series';
 // import DocumentFormItem from "@views/documents/partials/item.vue";
 import {functions} from "@mixins/functions";
 import {ensureExchangeRateSale} from "@helpers/ensure-exchange-rate-sale";
@@ -355,6 +358,9 @@ export default {
         };
     },
     computed: {
+        showSeriesSelector() {
+            return hasNamedSeries(this.series);
+        },
         ...mapState([
             'config',
         ]),

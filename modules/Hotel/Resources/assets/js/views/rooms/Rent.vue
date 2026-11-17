@@ -413,18 +413,20 @@
 
                                 <!-- mostrar campos adicionales para pago, si tiene estado pagado -->
                                 <template v-if="isPaid">
-                                    <div class="col-12 col-md-2 form-group">
+                                    <div v-if="showSeriesSelector || errors.series_id" class="col-12 col-md-2 form-group">
                                         <div :class="{ 'has-danger': errors.series_id }"
                                             class="form-group">
-                                            <label class="control-label mt-0">Serie</label>
-                                            <el-select v-model="document.series_id">
-                                                <el-option
-                                                    v-for="option in series"
-                                                    :key="option.id"
-                                                    :label="option.number || '\u00a0'"
-                                                    :value="option.id"
-                                                ></el-option>
-                                            </el-select>
+                                            <template v-if="showSeriesSelector">
+                                                <label class="control-label mt-0">Serie</label>
+                                                <el-select v-model="document.series_id">
+                                                    <el-option
+                                                        v-for="option in series"
+                                                        :key="option.id"
+                                                        :label="option.number || '\u00a0'"
+                                                        :value="option.id"
+                                                    ></el-option>
+                                                </el-select>
+                                            </template>
                                             <small
                                                 v-if="errors.series_id"
                                                 class="form-control-feedback"
@@ -574,6 +576,7 @@
 </template>
 
 <script>
+import { hasNamedSeries } from '@helpers/document-series';
 
 import PersonForm from "@views/persons/form.vue";
 import moment from "moment";
@@ -693,6 +696,9 @@ export default {
         });
     },
     computed: {
+        showSeriesSelector() {
+            return hasNamedSeries(this.series);
+        },
         isPaid()
         {
             return (this.form.payment_status === 'PAID' || this.form.payment_status === 'ACCOUNT')

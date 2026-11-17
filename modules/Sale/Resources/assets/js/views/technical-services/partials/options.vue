@@ -98,16 +98,18 @@
                                v-text="errors.document_type_id[0]"></small>
                     </div>
                 </div>
-                <div class="col-lg-4">
+                <div v-if="showSeriesSelector || errors.series_id" class="col-lg-4">
                     <div :class="{'has-danger': errors.series_id}"
                          class="form-group">
-                        <label class="control-label">Serie</label>
-                        <el-select v-model="form.series">
-                            <el-option v-for="option in series"
-                                       :key="option.number"
-                                       :label="option.number || '\u00a0'"
-                                       :value="option.number"></el-option>
-                        </el-select>
+                        <template v-if="showSeriesSelector">
+                            <label class="control-label">Serie</label>
+                            <el-select v-model="form.series">
+                                <el-option v-for="option in series"
+                                           :key="option.number"
+                                           :label="option.number || '\u00a0'"
+                                           :value="option.number"></el-option>
+                            </el-select>
+                        </template>
                         <small v-if="errors.series_id"
                                class="form-control-feedback"
                                v-text="errors.series_id[0]"></small>
@@ -282,6 +284,7 @@
 </template>
 
 <script>
+import { hasNamedSeries } from '@helpers/document-series';
 import {withoutDraftRetentions, suggestRemainingPayment, suggestInstallments, paymentConditionPayload} from "@helpers/document-creation"
 import {calculateRowItem} from "@helpers/functions"
 import {exactAmount, exactValue} from "@helpers/exchange-rate-math"
@@ -305,6 +308,9 @@ export default {
     components: {DocumentOptions, SaleNoteOptions, SeriesForm, IgtfPaymentFields, ReceiptCurrencyFields},
     mixins: [functions, fiscalPaymentSettings],
     computed: {
+        showSeriesSelector() {
+            return hasNamedSeries(this.series);
+        },
         ...mapState([
             'exchange_rate',
             'config',

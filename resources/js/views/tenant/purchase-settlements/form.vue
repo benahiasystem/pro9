@@ -49,16 +49,18 @@
                                 </div>
                             </div> -->
     
-                            <div :class="{'has-danger': errors.series_id}"
+                            <div v-if="showSeriesSelector || errors.series_id" :class="{'has-danger': errors.series_id}"
                                     class="form-group">
-                                <label class="control-label">Serie</label>
-                                <el-select v-model="form.series_id">
-                                    <el-option v-for="option in series"
-                                                :key="option.id"
-                                                :label="option.number || '\u00a0'"
-                                                :disabled="option.disabled"
-                                                :value="option.id"></el-option>
-                                </el-select>
+                                <template v-if="showSeriesSelector">
+                                    <label class="control-label">Serie</label>
+                                    <el-select v-model="form.series_id">
+                                        <el-option v-for="option in series"
+                                                    :key="option.id"
+                                                    :label="option.number || '\u00a0'"
+                                                    :disabled="option.disabled"
+                                                    :value="option.id"></el-option>
+                                    </el-select>
+                                </template>
                                 <small v-if="errors.series_id"
                                         class="form-control-feedback"
                                         v-text="errors.series_id[0]"></small>
@@ -442,6 +444,7 @@
 </template>
 
 <script>
+import { hasNamedSeries } from '@helpers/document-series';
 import {defaultCashForCurrency} from "@helpers/payment-classification"
 import {suggestRemainingPayment} from "@helpers/document-creation"
 
@@ -461,6 +464,9 @@ export default {
     components: {PurchaseFormItem, PersonForm, PurchaseOptions, SeriesForm},
     mixins: [functions, exchangeRate, fnPaymentsFee],
     computed: {
+        showSeriesSelector() {
+            return hasNamedSeries(this.series);
+        },
         ...mapState([
             'config',
             'establishment',
