@@ -14,10 +14,12 @@ if ($hostname) {
             'verify'   => false
         ]);
 
-        Route::get('search', 'Tenant\SearchController@index')->name('search.index');
-        Route::get('buscar', 'Tenant\SearchController@index')->name('search.index');
-        Route::get('search/tables', 'Tenant\SearchController@tables');
-        Route::post('search', 'Tenant\SearchController@store');
+        if (config('tenant.public_document_search_enabled')) {
+            Route::get('search', 'Tenant\SearchController@index');
+            Route::get('buscar', 'Tenant\SearchController@index')->name('search.index');
+            Route::get('search/tables', 'Tenant\SearchController@tables');
+            Route::post('search', 'Tenant\SearchController@store');
+        }
 
 
 
@@ -911,20 +913,22 @@ if ($hostname) {
         // Página pública de Términos y Condiciones (decide según configuración del system).
         Route::get('terminos-y-condiciones', 'System\TermsController@show')->name('system.terms');
 
-        Route::middleware('throttle:30,1')->group(function () {
-            Route::get('consultas', 'System\PublicDocumentSearchController@index')->name('system.public_search.index');
-            Route::post('consultas', 'System\PublicDocumentSearchController@search')->name('system.public_search.search');
-            Route::get('consultas/widget/{slug}', 'System\PublicDocumentSearchController@widget')->name('system.public_search.widget');
-            Route::post('consultas/widget/{slug}', 'System\PublicDocumentSearchController@searchWidget')
-                ->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class)
-                ->name('system.public_search.widget.search');
-            Route::get('consultas/widget', 'System\PublicDocumentSearchController@widgetInternal')->name('system.public_search.widget.internal');
-        });
+        if (config('tenant.public_document_search_enabled')) {
+            Route::middleware('throttle:30,1')->group(function () {
+                Route::get('consultas', 'System\PublicDocumentSearchController@index')->name('system.public_search.index');
+                Route::post('consultas', 'System\PublicDocumentSearchController@search')->name('system.public_search.search');
+                Route::get('consultas/widget/{slug}', 'System\PublicDocumentSearchController@widget')->name('system.public_search.widget');
+                Route::post('consultas/widget/{slug}', 'System\PublicDocumentSearchController@searchWidget')
+                    ->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class)
+                    ->name('system.public_search.widget.search');
+                Route::get('consultas/widget', 'System\PublicDocumentSearchController@widgetInternal')->name('system.public_search.widget.internal');
+            });
+            Route::get('consultas/embed.js', 'System\PublicDocumentSearchController@embedScript')->name('system.public_search.embed');
+        }
 
         Route::get('payment-orders/payment-view/{uuid}', 'System\PaymentOrderController@paymentView')->name('system.payments-view.index');
 
         Route::post('payment-orders/payment-view/pays', 'System\PaymentOrderController@paymentViewPay');
-        Route::get('consultas/embed.js', 'System\PublicDocumentSearchController@embedScript')->name('system.public_search.embed');
 
         Route::prefix('pago')->group(function () {
             Route::get('{uuid}', 'System\PaymentOrderPublicController@show')->name('payment.public.show');

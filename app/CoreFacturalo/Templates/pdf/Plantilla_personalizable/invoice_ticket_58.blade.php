@@ -556,8 +556,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 @if(!((string) $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital'))
 <tr>
                 <td class="text-center desc-9 pt-2">
-                    Para consultar el comprobante ingresar a {!! url('/buscar') !!}
-                    <br>
+                    @if(config('tenant.public_document_search_enabled'))
+                        Para consultar el comprobante ingresar a {!! url('/buscar') !!}
+                        <br>
+                    @endif
                     Representacion impresa de la <span style="text-transform: capitalize" class="text-capitalize">{{ $document->document_type->description }}</span>
                 </td>
             </tr>

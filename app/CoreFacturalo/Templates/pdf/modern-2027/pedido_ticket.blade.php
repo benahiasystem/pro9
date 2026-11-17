@@ -430,9 +430,11 @@
 
         </tr>
 
-    <tr>
-        <td class="text-center desc pt-5">Para consultar el comprobante ingresar a {!! url('/buscar') !!}</td>
-    </tr>
+    @if(config('tenant.public_document_search_enabled'))
+        <tr>
+            <td class="text-center desc pt-5">Para consultar el comprobante ingresar a {!! url('/buscar') !!}</td>
+        </tr>
+    @endif
 </table>
 
 </body>

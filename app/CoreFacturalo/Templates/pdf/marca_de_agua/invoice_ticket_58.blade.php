@@ -474,11 +474,11 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             </tr>
 
             {{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
-@if(!((string) $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital'))
-<tr>
-                <td class="text-center desc-9 pt-2">Para consultar el comprobante ingresar a {!! url('/buscar') !!}</td>
-            </tr>
-@endif
+    @if(config('tenant.public_document_search_enabled') && !((string) $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital'))
+        <tr>
+            <td class="text-center desc-9 pt-2">Para consultar el comprobante ingresar a {!! url('/buscar') !!}</td>
+        </tr>
+    @endif
 {{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}
 </table>
 

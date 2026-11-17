@@ -332,8 +332,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 <table class="full-width">
     <tr>
         <td class="m27-note pt-2">
-            Representación impresa de la <span style="text-transform: capitalize;">{{ $document->document_type->description }}</span>.<br/>
-            Consúltela en {!! url('/buscar') !!}
+            Representación impresa de la <span style="text-transform: capitalize;">{{ $document->document_type->description }}</span>.
+            @if(config('tenant.public_document_search_enabled'))
+                <br/>Consúltela en {!! url('/buscar') !!}
+            @endif
         </td>
     </tr>
 </table>

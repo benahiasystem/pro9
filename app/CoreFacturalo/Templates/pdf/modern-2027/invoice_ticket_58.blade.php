@@ -636,9 +636,12 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 {!! $configurationInPdf->legend_footer_sale !!}<br/>
             @endif
             @if($document->document_type && !((string) $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital'))
-                Representación impresa de la <span style="text-transform: capitalize;">{{ $document->document_type->description }}</span>.<br/>
+                Representación impresa de la <span style="text-transform: capitalize;">{{ $document->document_type->description }}</span>.
             @endif
-            @if(!in_array($document->document_type_id, ['09']) && !((string) $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital'))
+            @if(config('tenant.public_document_search_enabled') && !in_array($document->document_type_id, ['09']) && !((string) $document->document_type_id === '01' && $document->fiscal_emission_mode === 'digital'))
+                @if($document->document_type)
+                    <br/>
+                @endif
                 Consúltela en {!! url('/buscar') !!}
             @endif
         </td>

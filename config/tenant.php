@@ -17,6 +17,7 @@ return [
     'recreate_document' => env('RECREATE_DOCUMENT', false),
     'pdf_template' => env('PDF_TEMPLATE', 'default'),
     'pdf_template_footer' => env('PDF_TEMPLATE_FOOTER', false),
+    'public_document_search_enabled' => env('PUBLIC_DOCUMENT_SEARCH_ENABLED', false),
     'pdf_name_regular' => env('PDF_NAME_REGULAR', false),
     'pdf_name_bold' => env('PDF_NAME_BOLD', false),
     'change_to_registered_status' => env('CHANGE_TO_REGISTERED_STATUS', false),

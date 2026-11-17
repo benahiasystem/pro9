@@ -276,11 +276,13 @@
                             </a>
                         </li>
                     @endif
+                    @if(config('tenant.public_document_search_enabled'))
                         <li>
                             <a href="{{ route('search.index') }}">
                                 <i class="ti ti-chevron-right"></i> Consulta de Comprobantes Electrónicos
                             </a>
                         </li>
+                    @endif
 
                     @if(!empty($information->customised_link_one) && !empty($information->title_one_customised_link))
                         <li>

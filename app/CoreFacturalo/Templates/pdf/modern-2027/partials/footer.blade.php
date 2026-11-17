@@ -17,7 +17,7 @@
                 {!! $configurationInPdf->legend_footer_sale !!}
             @endif
             {{-- Condición para omitir la línea de enlace si es Orden de entrega --}}
-            @if(!$digitalInvoice && !is_null($document) && !in_array($document->document_type_id, ['09']))
+            @if(config('tenant.public_document_search_enabled') && !$digitalInvoice && !is_null($document) && !in_array($document->document_type_id, ['09']))
                 Para consultar el comprobante ingresar a {!! url('/buscar') !!}
                 <br>
             @endif          

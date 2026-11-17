@@ -123,13 +123,14 @@ class TemplatePreview
             'background_head' => $background_head,
             'color_head_text' => $color_head_text])->render();
 
-        $environment = environment_active();
-        $url_cpe = (is_null($environment->url_cpe) || $environment->url_cpe === '') ? 'buscar' : $environment->url_cpe;
-
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         $footer_text_1 = 'Representación impresa de la FACTURA';
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-        $footer_text_2 = 'Para consultar el comprobante ingresar a ' . $url_cpe;
+        $footer_text_2 = null;
+        if (config('tenant.public_document_search_enabled')) {
+            $url_cpe = environment_active()->url_cpe ?: url('/buscar');
+            $footer_text_2 = 'Para consultar el comprobante ingresar a ' . $url_cpe;
+        }
 
 
         $pdf = new Pdf([

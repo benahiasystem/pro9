@@ -3,9 +3,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Tenant\ConfigurationImageController;
 
 Route::get('generate_token', 'Tenant\Api\MobileController@getSeries');
-Route::post('consultas/search', 'System\PublicDocumentSearchController@searchApi')
-    ->middleware('throttle:30,1')
-    ->name('api.public_search.search');
+if (config('tenant.public_document_search_enabled')) {
+    Route::post('consultas/search', 'System\PublicDocumentSearchController@searchApi')
+        ->middleware('throttle:30,1')
+        ->name('api.public_search.search');
+}
 
 // Envío de WhatsApp desde el número conectado al superadmin, para servicios
 // externos. Auth propia por token (Authorization: Bearer), ver

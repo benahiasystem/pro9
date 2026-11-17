@@ -122,7 +122,12 @@
 @endif
 <table class="full-width">
     <tr>
-        <td class="text-center desc">{{ isset($document->document_type) ? $document->document_type->description : 'Documento' }}<br>Para consultar el documento ingrese a {!! url('/buscar') !!}</td>
+        <td class="text-center desc">
+            {{ isset($document->document_type) ? $document->document_type->description : 'Documento' }}
+            @if(config('tenant.public_document_search_enabled'))
+                <br>Para consultar el documento ingrese a {!! url('/buscar') !!}
+            @endif
+        </td>
     </tr>
 </table>
 </body>

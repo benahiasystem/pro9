@@ -835,6 +835,7 @@ trait NotePersistenceCases
             self::assertSame('220.4',\App\Support\Exact\Decimal::represent($sum));
         }
         config(['view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/free-form-note-views',
+            'tenant.pdf_template_footer' => true, 'tenant.public_document_search_enabled' => false,
             'view.paths'=>[base_path('resources/views')], 'filesystems.disks.public'=>['driver'=>'local','root'=>sys_get_temp_dir()]]);
         mkdir(config('view.compiled'),0777,true); $app->register(\Illuminate\View\ViewServiceProvider::class);
         $db->table('establishments')->where('id',$input['establishment_id'])->update(['template_pdf'=>'default']);
@@ -853,6 +854,18 @@ trait NotePersistenceCases
             $bytes=$pdf->Output('','S');
             self::assertStringStartsWith('%PDF-',$bytes);
             self::assertStringStartsWith('%PDF-',(new Facturalo())->createPdf($print,$type,'a4','string'));
+            $template = new \App\CoreFacturalo\Template();
+            $footer = $template->pdfFooter('default', $print);
+            self::assertStringNotContainsString('/buscar', $footer);
+            self::assertStringContainsString('Representacion impresa de la', $footer);
+            if ($print->id === $printedInvoice->id) {
+                config(['tenant.public_document_search_enabled' => true]);
+                try {
+                    self::assertStringContainsString('/buscar', $template->pdfFooter('default', $print));
+                } finally {
+                    config(['tenant.public_document_search_enabled' => false]);
+                }
+            }
             self::assertStringContainsString(\App\Support\Exact\Decimal::format($print->exactValue('total'),2,'.',','),$html);
             if ($print->document_type_id==='07') { self::assertStringContainsString('TOTAL NOTA DE CRÉDITO',$html); self::assertStringNotContainsString('TOTAL A PAGAR',$html); }
             if ($print->document_type_id==='08') self::assertStringContainsString('TOTAL NOTA DE DÉBITO',$html);
