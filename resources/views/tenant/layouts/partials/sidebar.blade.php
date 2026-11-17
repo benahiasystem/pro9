@@ -622,7 +622,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                                 @if(in_array('items_packs', $vc_module_levels))
                                                     <li class="{{ ($firstLevel === 'item-sets') ? 'nav-active' : '' }}">
                                                         <a class="nav-link"
-                                                            href="{{route('tenant.item_sets.index')}}">Conjuntos y Packs</a>
+                                                            href="{{route('tenant.item_sets.index')}}">Productos compuestos</a>
                                                     </li>
                                                 @endif
                                                 @if(in_array('items_services', $vc_module_levels))
@@ -1096,7 +1096,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
                                 <li class="{{ ($secondLevel === 'item-sets') ? 'nav-active' : '' }}">
                                     <a class="nav-link"
-                                        href="{{route('tenant.ecommerce.item_sets.index')}}">Conjuntos y Packs</a>
+                                        href="{{route('tenant.ecommerce.item_sets.index')}}">Productos compuestos</a>
                                 </li>
 
                                 @if(in_array('ecommerce_tags', $vc_module_levels))
