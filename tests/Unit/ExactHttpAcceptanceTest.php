@@ -106,6 +106,7 @@ class ExactHttpAcceptanceTest extends TestCase
                 $entry = collect(json_decode($response, true, 512, JSON_THROW_ON_ERROR)[$records])->firstWhere('id', $posItemId);
                 self::assertSame(\App\Support\Exact\Decimal::fraction($available), $entry['pos_stock']['components'][0]['stock']);
             }
+            $this->assertPosCatalogExcludesServices($db, $get, $posItem, $warehouseId);
             foreach (['/documents/tables','/sale-notes/tables','/sale-notes/option/tables',
                 '/quotations/tables','/quotations/option/tables'] as $catalogPath) {
                 [$status,$catalogBody]=$get($catalogPath);
@@ -2448,6 +2449,77 @@ class ExactHttpAcceptanceTest extends TestCase
                 (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($temp);
             }
             if ($fixture->ready) $fixture->stop();
+        }
+    }
+
+    private function assertPosCatalogExcludesServices($db, callable $get, object $product, int $warehouseId): void
+    {
+        $serviceId = $db->table('items')->where('internal_id', 'MOCK-SERV-VES-001')->value('id');
+        $db->table('items')->where('id', $serviceId)->update(['category_id' => $product->category_id]);
+        $variation = [
+            'parent_item_id' => $product->id, 'currency_type_id' => 'VES', 'sale_unit_price' => 10,
+            'sale_affectation_igv_type_id' => '10', 'purchase_affectation_igv_type_id' => '10',
+            'category_id' => $product->category_id, 'brand_id' => $product->brand_id,
+        ];
+        $physicalVariationId = $db->table('items')->insertGetId($variation + [
+            'description' => 'POS variation product', 'item_type_id' => '01', 'unit_type_id' => 'UND', 'stock' => 3,
+        ]);
+        $serviceVariationId = $db->table('items')->insertGetId($variation + [
+            'description' => 'POS variation service', 'item_type_id' => '02', 'unit_type_id' => 'SERV', 'stock' => 7,
+        ]);
+        $db->table('item_warehouse')->insert(['warehouse_id' => $warehouseId, 'item_id' => $physicalVariationId, 'stock' => 3]);
+
+        $articles = [$product->id => 'POS-PRODUCT', $serviceId => 'POS-SERVICE'];
+        foreach ($articles as $id => $barcode) {
+            $db->table('items')->where('id', $id)->update(['barcode' => $barcode, 'calculate_quantity' => true]);
+            $db->table('item_unit_types')->insert([
+                'item_id' => $id, 'unit_type_id' => 'CAJ', 'description' => 'Caja POS',
+                'quantity_unit' => 2, 'barcode' => $barcode.'-BOX',
+            ]);
+        }
+
+        $catalog = static function (string $path, ?string $key = null) use ($get) {
+            [$status, $body] = $get($path);
+            self::assertSame(200, $status, $path.' '.substr($body, 0, 1500));
+            $response = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+            return collect($key === null ? $response : $response[$key]);
+        };
+        $originalSetting = $db->table('configurations')->value('show_service_on_pos');
+        try {
+            foreach ([false, true] as $showServices) {
+                $db->table('configurations')->update(['show_service_on_pos' => $showServices]);
+                foreach ([
+                    ['/pos/tables', 'items'], ['/pos/table/items', null], ['/pos/items?garage=1', 'data'],
+                    ['/pos/items?group_variations=1', 'data'],
+                    ['/pos/search_items_cat?input_item=MOCK&cat='.$product->category_id, 'data'],
+                    ['/pos/search_items?input_item=MOCK', 'items'],
+                ] as [$path, $key]) {
+                    $rows = $catalog($path, $key);
+                    self::assertContains($product->id, $rows->pluck('id'), $path);
+                    self::assertNotContains('SERV', $rows->pluck('unit_type_id'), $path);
+                }
+
+                foreach (['', '-BOX&search_item_by_barcode_presentation=true'] as $suffix) {
+                    self::assertSame([$product->id], $catalog('/pos/search_items?input_item=POS-PRODUCT'.$suffix, 'items')->pluck('id')->all());
+                    self::assertCount(0, $catalog('/pos/search_items?input_item=POS-SERVICE'.$suffix, 'items'));
+                }
+
+                $parent = $catalog('/pos/items?group_variations=1', 'data')->firstWhere('id', $product->id);
+                self::assertSame([$physicalVariationId], array_column($parent['variations'], 'id'));
+                self::assertSame(1, $parent['variations_count']);
+                self::assertEquals(3, $parent['variations_stock']);
+                self::assertSame([$physicalVariationId], $catalog('/pos/item/'.$physicalVariationId, 'data')->pluck('id')->all());
+                self::assertCount(0, $catalog('/pos/item/'.$serviceVariationId, 'data'));
+                self::assertCount(0, $catalog('/pos/item/'.$serviceId, 'data'));
+                self::assertContains($serviceId, $catalog('/documents/search-items?input=MOCK-SERV-VES-001', 'items')->pluck('id'));
+            }
+        } finally {
+            $db->table('configurations')->update(['show_service_on_pos' => $originalSetting]);
+            $db->table('item_unit_types')->whereIn('barcode', ['POS-PRODUCT-BOX', 'POS-SERVICE-BOX'])->delete();
+            $db->table('items')->where('id', $product->id)->update(['barcode' => $product->barcode, 'calculate_quantity' => $product->calculate_quantity]);
+            $db->table('items')->where('id', $serviceId)->update(['barcode' => null, 'calculate_quantity' => false, 'category_id' => null]);
+            $db->table('item_warehouse')->where('item_id', $physicalVariationId)->delete();
+            $db->table('items')->whereIn('id', [$physicalVariationId, $serviceVariationId])->delete();
         }
     }
 }

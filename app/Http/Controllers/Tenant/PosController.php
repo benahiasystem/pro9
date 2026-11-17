@@ -80,32 +80,26 @@ class PosController extends Controller
         $establishment_id = auth()->user()->establishment_id;
         $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
 
-        $items_query = Item::where('description', 'like', "%{$request->input_item}%")
-            // ->orWhere('internal_id','like', "%{$request->input_item}%")
+        $input = $request->input_item;
+        $items_query = $this->catalogItems()
             ->with(['warehouse_prices' => function ($q) use ($warehouse) {
                 $q->where('warehouse_id', $warehouse->id);
             }, 'item_unit_types.prices.priceLabel'])
-            ->orWhere(function ($query) use ($request) {
-                $query->where('internal_id', 'like', "%{$request->input_item}%")
-                    ->orWhere('barcode', "{$request->input_item}");
-            })
-            ->orWhereHas('category', function ($query) use ($request) {
-                $query->where('name', 'like', '%' . $request->input_item . '%');
-            })
-            ->orWhereHas('brand', function ($query) use ($request) {
-                $query->where('name', 'like', '%' . $request->input_item . '%');
-            })
-            ->whereWarehouse();
+            ->where(function (Builder $query) use ($input, $search_item_by_barcode_presentation) {
+                $query->where('description', 'like', "%{$input}%")
+                    ->orWhere('internal_id', 'like', "%{$input}%")
+                    ->orWhere('barcode', (string) $input)
+                    ->orWhereHas('category', fn (Builder $category) => $category->where('name', 'like', "%{$input}%"))
+                    ->orWhereHas('brand', fn (Builder $brand) => $brand->where('name', 'like', "%{$input}%"));
 
-        if ($configuration->isShowServiceOnPos() !== true) {
-            $items_query->where('unit_type_id', '!=', 'SERV');
-        }
-
-        if ($search_item_by_barcode_presentation) $items_query->orFilterItemUnitTypeBarcode($request->input_item);
+                if ($search_item_by_barcode_presentation) {
+                    $query->orFilterItemUnitTypeBarcode($input);
+                }
+            });
 
         $all_prices_label = PriceLabel::all();
 
-        $items = $items_query->whereIsActive()->get();
+        $items = $items_query->get();
         $stock = PosCatalogStock::forItems($items);
         $items->transform(function ($row) use ($configuration, $search_item_by_barcode_presentation, $request, $all_prices_label, $stock) {
 
@@ -326,15 +320,8 @@ class PosController extends Controller
 
         if ($table === 'items') {
 
-            $items = Item::whereWarehouse()
-                ->whereIsActive();
             $configuration = Configuration::first();
-
-            if ($configuration->isShowServiceOnPos() !== true) {
-                $items->where('unit_type_id', '!=', 'SERV');
-            }
-            //$items = $items->where('series_enabled', 0)
-            $items = $items->orderBy('description')->take(100)->get();
+            $items = $this->catalogItems()->orderBy('description')->take(100)->get();
             $stock = PosCatalogStock::forItems($items);
             $items->transform(function (Item $row) use ($configuration, $stock) {
                     $full_description = ($row->internal_id) ? $row->internal_id . ' - ' . $row->description : $row->description;
@@ -494,19 +481,7 @@ class PosController extends Controller
      */
     public function item(Request $request)
     {
-        // whereWarehouse termina en un orWhere sin agrupar; se envuelve para que
-        // los filtros posteriores (activo, agrupado de variaciones) apliquen a todas las ramas
-        $items = Item::query()
-            ->where(function ($query) {
-                $query->whereWarehouse();
-            })
-            ->whereIsActive()
-            //->where('series_enabled', 0)
-            ->orderBy('description');
-        $config = Configuration::first();
-        if ($config->isShowServiceOnPos() !== true) {
-            $items->where('unit_type_id', '!=', 'SERV');
-        }
+        $items = $this->catalogItems()->orderBy('description');
 
         if ($request->garage == 1) {
             $items->where('calculate_quantity', 1);
@@ -546,10 +521,11 @@ class PosController extends Controller
                     ->orWhere('barcode', $input);
             }
         })
-            ->withCount('variations')
-            ->withSum('variations as variations_stock', 'stock')
+            ->withCount(['variations' => fn (Builder $query) => $query->whereNotService()])
+            ->withSum(['variations as variations_stock' => fn (Builder $query) => $query->whereNotService()], 'stock')
             ->with(['variations' => function ($query) {
-                $query->whereIsActive()
+                $query->whereNotService()
+                    ->whereIsActive()
                     ->with(['variationValues.value', 'variationValues.variable'])
                     ->orderBy('id');
             }]);
@@ -565,7 +541,7 @@ class PosController extends Controller
      */
     public function singleItem($id)
     {
-        return new PosCollection(Item::where('id', $id)->paginate(1));
+        return new PosCollection(Item::whereNotService()->where('id', $id)->paginate(1));
     }
 
     /**
@@ -613,22 +589,20 @@ class PosController extends Controller
      */
     public function search_items_cat(Request $request)
     {
-        $item = Item::query()->where(function ($query) {
-            $query->whereWarehouse();
-        });
-            // ->whereIsActive()
-            //->where('series_enabled', 0);
-
-        $config = Configuration::first();
-        if ($config->isShowServiceOnPos() !== true) {
-            $item->where('unit_type_id', '!=', 'SERV');
-        }
-
+        $item = $this->catalogItems();
         self::applyVariationsGrouping($item, $request);
 
         self::FilterItem($item, $request);
         return new PosCollection($item->paginate(50));
 
+    }
+
+    private function catalogItems(): Builder
+    {
+        return Item::query()
+            ->where(fn (Builder $query) => $query->whereWarehouse())
+            ->whereNotService()
+            ->whereIsActive();
     }
 
     /**

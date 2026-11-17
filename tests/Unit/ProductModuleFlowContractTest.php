@@ -84,7 +84,7 @@ class ProductModuleFlowContractTest extends TestCase
         $sellNow = $this->source('app/Http/Controllers/Tenant/Api/SellnowController.php');
         $restaurant = $this->source('modules/Restaurant/Http/Controllers/RestaurantController.php');
 
-        self::assertStringContainsString("withCount('variations')", $pos);
+        self::assertStringContainsString("withCount(['variations'", $pos);
         self::assertStringContainsString("whereNull('parent_item_id')", $pos);
         self::assertStringContainsString("whereNotNull('internal_id')", $sellNow);
         self::assertStringContainsString("whereIsActive()", $sellNow);

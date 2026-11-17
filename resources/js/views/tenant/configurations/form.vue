@@ -2015,9 +2015,9 @@
 
                                     <div class="col-12">
                                         <label class="control-label">
-                                            Activar servicios
+                                            Mostrar servicios en la app móvil
                                             <el-tooltip class="item"
-                                                content="Muestra los servicios en el punto de venta. Si está desactivado, no se podrán vender."
+                                                content="Incluye los servicios en el catálogo de artículos de la app móvil."
                                                 effect="dark" placement="top-start">
                                                 <i class="fa fa-info-circle"></i>
                                             </el-tooltip>

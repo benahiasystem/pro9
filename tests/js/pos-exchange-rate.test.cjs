@@ -8,6 +8,7 @@ const parser = require('@babel/parser')
 const generate = require('@babel/generator').default
 const load = require('./helpers/load-module.cjs')
 const {isValidPosRate, restorePosDraftRate, refreshPosRate, ensurePosRate} = load(path.resolve('resources/js/helpers/pos-exchange-rate.js'))
+const {withoutDraftRetentions} = load(path.resolve('resources/js/helpers/document-creation.js'))
 
 function deferred() {
     let resolve, reject
@@ -94,7 +95,8 @@ for (const file of ['index.vue', 'fast.vue', 'garage.vue']) {
     for (const hasDraftRate of [true, false]) {
         test(`${file}: restaura borrador ${hasDraftRate ? 'con tasa' : 'sin tasa'} sin esperar una consulta pendiente`, async () => {
             const initial = deferred(), retry = deferred(), requests = []
-            const draft = {exchange_rate_sale: hasDraftRate ? '25' : null, date_of_issue:'2026-10-30', total:'10'}
+            const draft = {exchange_rate_sale: hasDraftRate ? '25' : null, date_of_issue:'2026-10-30', total:'10',
+                items: [{item_id: 17, item: {unit_type_id: 'SERV'}}]}
             const ctx = component()
             Object.assign(ctx, {resource:'pos', currency_types:[],
                 $http:{get:async () => ({data:{affectation_igv_types:[], customers:[], establishment:{id:1},
@@ -104,7 +106,7 @@ for (const file of ['index.vue', 'fast.vue', 'garage.vue']) {
                 searchExchangeRateByDate(){const pending = requests.length ? retry : initial; requests.push(pending); return pending.promise},
                 changeExchangeRate(){return refreshPosRate(this)}})
             const storage = {getItem:() => JSON.stringify(draft), setItem(){}}
-            const scope = {localStorage:storage, withoutDraftRetentions:value => value, restorePosDraftRate, isValidPosRate}
+            const scope = {localStorage:storage, withoutDraftRetentions, restorePosDraftRate, isValidPosRate}
             function extract(name) {
                 const method = methods.properties.find(n => n.key?.name === name)
                 return vm.runInNewContext(`({${generate(method).code}})[${JSON.stringify(name)}]`, scope)
@@ -114,6 +116,7 @@ for (const file of ['index.vue', 'fast.vue', 'garage.vue']) {
             assert.equal(completed, true, 'las tablas no deben esperar la respuesta de tasa')
             extract('getFormPosLocalStorage').call(ctx)
             assert.equal(ctx.form.total, '10')
+            assert.equal(JSON.stringify(ctx.form.items), JSON.stringify(draft.items))
             assert.equal(ctx.form.exchange_rate_sale, hasDraftRate ? '25' : null)
             assert.equal(requests.length, hasDraftRate ? 1 : 2)
             initial.resolve('30')
