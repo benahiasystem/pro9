@@ -92,7 +92,7 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertStringContainsString('FACTURA', $html);
         self::assertStringNotContainsStringIgnoringCase('Sin serie', $html);
         self::assertStringNotContainsString('SIN_SERIE', $html);
-        self::assertStringContainsString('<h3>'.($series === '' ? '00000457' : $series.'-00000457').'</h3>', $html);
+        self::assertStringContainsString('N° de documento: <strong>'.($series === '' ? '00000457' : $series.'-00000457').'</strong>', $html);
         if ($series === '') self::assertStringNotContainsString('-457', $html);
         self::assertStringContainsString('J-12345678-9', $html);
         self::assertStringContainsString('IVA:', $html);
@@ -127,6 +127,404 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertFileExists($path);
     }
 
+    public static function localA4Designs(): array
+    {
+        $cases=[];
+        foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable'] as $design) {
+            foreach (['a4','a5'] as $format) {
+                foreach ([false,true] as $fiscal) $cases[$design.'-'.$format.($fiscal ? '-fiscal' : '-simple')]=[$design,$fiscal,$format];
+            }
+        }
+        return $cases;
+    }
+
+    private function paperPdf(string $format): Mpdf
+    {
+        return new Mpdf($format === 'a5'
+            ? ['format'=>[210,148], 'tempDir'=>sys_get_temp_dir(), 'default_font'=>'arial', 'margin_top'=>2,
+                'margin_bottom'=>10, 'margin_left'=>5, 'margin_right'=>5, 'margin_footer'=>3, 'shrink_tables_to_fit'=>1]
+            : ['format'=>'A4', 'tempDir'=>sys_get_temp_dir(), 'default_font'=>'arial',
+                'margin_top'=>15, 'margin_bottom'=>15, 'margin_left'=>15, 'margin_right'=>15]);
+    }
+
+    public function test_a5_keeps_the_physical_font_sizes_of_a4(): void
+    {
+        $document=$this->documentFixture();
+        $document->number_full='00000034';
+        $company=new Fluent(['name'=>'Empresa de prueba', 'number'=>'J087897598', 'logo'=>null]);
+        $heights=[];
+        foreach (['a4','a5'] as $format) {
+            $pdf=$this->paperPdf($format);
+            $pdf->SetHTMLFooter((new Template())->pdfFooter('default',$document));
+            $pdf->WriteHTML((new Template())->pdfStylesheet('default','invoice',$document,$format),HTMLParserMode::HEADER_CSS);
+            $pdf->WriteHTML((new Template())->pdf('default','invoice',$company,$document,$format),HTMLParserMode::HTML_BODY);
+            $path=tempnam(sys_get_temp_dir(),'sab-paper-font-');
+            try {
+                file_put_contents($path,$pdf->Output('','S'));
+                $process=new \Symfony\Component\Process\Process(['pdftotext','-bbox',$path,'-']);
+                $process->mustRun();
+                $xml=simplexml_load_string($process->getOutput(),\SimpleXMLElement::class,LIBXML_NONET);
+                foreach (['FACTURA','CLIENTE','P.UNIT'] as $word) {
+                    $matches=$xml->xpath('//*[local-name()="word" and (text()="'.$word.'" or text()="'.$word.':")]');
+                    self::assertNotEmpty($matches,$format.' '.$word);
+                    $heights[$format][$word]=(float) $matches[0]['yMax'] - (float) $matches[0]['yMin'];
+                }
+                $pages=$xml->xpath('//*[local-name()="page"]');
+                self::assertEqualsWithDelta($format === 'a5' ? 419.527559 : 841.889764,(float) $pages[0]['height'],0.1);
+                self::assertEqualsWithDelta(595.275591,(float) $pages[0]['width'],0.1);
+            } finally { unlink($path); }
+        }
+        foreach ($heights['a4'] as $word=>$height) {
+            self::assertEqualsWithDelta($height,$heights['a5'][$word],0.02,'Physical font size: '.$word);
+        }
+    }
+
+    /** @dataProvider localA4Designs */
+    public function test_local_a4_design_and_fiscal_sections_render_real_pages(string $design, bool $fiscal, string $format): void
+    {
+        $D=\App\Support\Exact\Decimal::class;
+        $company=new Fluent(['name'=>'Empresa de prueba, C.A.','trade_name'=>'bbc','number'=>'J087897598','logo'=>null]);
+        $document=$this->documentFixture();
+        $document->series=''; $document->number=34; $document->number_full='00000034';
+        $document->exchange_rate_sale='40.12345678';
+        $document->payment_condition=new Fluent(['name'=>'Contado']);
+        $document->total=$document->subtotal='5000'; $document->total_taxed='4310.34'; $document->total_igv='689.66';
+        $document->items->first()->unit_price=$document->items->first()->total='5000';
+        $document->legends=[new Fluent(['code'=>'1000','value'=>'CINCO MIL CON 00/100'])];
+        $payment=new \App\Models\Tenant\DocumentPayment(['currency_type_id'=>'VES','original_amount'=>'4700',
+            'payment'=>'4700','tax_amount'=>'0','change'=>'300','exchange_rate'=>'40.12345678',
+            'calculation_snapshot'=>$D::snapshot(['tendered_original_amount'=>'5000','received_change'=>'300'])]);
+        $payment->setRelation('change_disbursements', new \Illuminate\Database\Eloquent\Collection([
+            new \App\Models\Tenant\DocumentChangeDisbursement(['currency_type_id'=>'VES','original_amount'=>'300'])]));
+        $second=new \App\Models\Tenant\DocumentPayment(['currency_type_id'=>'VES','original_amount'=>'300',
+            'payment'=>'300','tax_amount'=>'0','change'=>'0','exchange_rate'=>'40.12345678']);
+        $second->setRelation('change_disbursements',new \Illuminate\Database\Eloquent\Collection());
+        $document->payments=new Collection([$payment,$second]);
+        if ($fiscal) {
+            \Tests\Support\InvoiceA4Ledger::create();
+            $fixture=$document; $document=new CurrentFiscalPdfDocumentFixture();
+            foreach ($fixture->getAttributes() as $key=>$value) {
+                if (in_array($key,['person','invoice','note','currency_type','document_type','state_type','items','payments','fee','reference_guides','dispatch','transport','quotation','seller','payment_condition'],true)) $document->setRelation($key,$value);
+                else $document->forceFill([$key=>$key==='additional_information' ? '' : $value]);
+            }
+            $document->forceFill(['id'=>1,'customer_id'=>1,'establishment_id'=>1,'issuer'=>['name'=>'Empresa conservada, C.A.','trade_name'=>'bbc','number'=>'J087897598','logo'=>null],
+                'control_number'=>'00-00000034','fiscal_environment'=>'demo','fiscal_emission_mode'=>'free_form',
+                'total'=>'118.40','subtotal'=>'116','total_value'=>'100','total_taxed'=>'100','total_igv'=>'16',
+                'total_other_taxes'=>'2.40','total_payable'=>'118.40','payment_condition_id'=>'02',
+                'legends'=>[['code'=>'1000','value'=>'CIENTO DIECIOCHO CON 40/100']]]);
+            $document->exists=true;
+            $document->setRelation('payment_condition',new Fluent(['name'=>'Crédito']));
+            $document->items->first()->unit_price=$document->items->first()->total='116';
+            $payment->forceFill(['id'=>1,'document_id'=>1,'original_amount'=>'80','payment'=>'80','tax_amount'=>'2.40','change'=>'27.60',
+                'calculation_snapshot'=>$D::snapshot(['total_tendered'=>'110','tendered_original_amount'=>'107.60','received_change'=>'27.60'])]);
+            $payment->change_disbursements->first()->original_amount='27.60';
+            $derived=new \App\Models\Tenant\DocumentPayment(['receipt_parent_id'=>1,'currency_type_id'=>'VES','payment'=>'2.40','tax_amount'=>'0']);
+            $derived->setRelation('change_disbursements',new \Illuminate\Database\Eloquent\Collection());
+            $document->setRelation('payments',new \Illuminate\Database\Eloquent\Collection([$payment,$derived]));
+            DB::connection('tenant')->table('document_payments')->insert([
+                ['id'=>1,'document_id'=>1,'payment'=>'80','receipt_parent_id'=>null],
+                ['id'=>2,'document_id'=>1,'payment'=>'2.40','receipt_parent_id'=>1]]);
+            $document->setRelation('taxes',new \Illuminate\Database\Eloquent\Collection([
+                new \App\Models\Tenant\DocumentTax(['tax_kind'=>'IGTF','percentage'=>'3','amount'=>'2.40'])]));
+            $document->setRelation('received_retentions',new \Illuminate\Database\Eloquent\Collection([
+                new \App\Models\Tenant\DocumentReceivedRetention(['tax_kind'=>'IVA','voucher_number'=>'20261100000001','voucher_date'=>'2026-11-14',
+                    'base'=>'16','taxable_base'=>'100','percentage'=>'75','amount'=>'12','applied_amount'=>'12','application_status'=>'applied','currency_type_id'=>'VES']),
+                new \App\Models\Tenant\DocumentReceivedRetention(['tax_kind'=>'ISLR','voucher_number'=>'ISLR-2026-34','voucher_date'=>'2026-11-14',
+                    'base'=>'100','subtrahend'=>'0','percentage'=>'4','amount'=>'4','applied_amount'=>'4','application_status'=>'applied','currency_type_id'=>'VES'])]));
+            $document->setRelation('fiscal_data',new \App\Models\Tenant\DocumentFiscalData(['islr_retention_prevision'=>[
+                'eligible'=>true,'amount'=>'8','percentage'=>'4.125','currency_type_id'=>'VES']]));
+            $document->setRelation('guarantee_fund',null); $document->setRelation('currency_totals',null);
+            $document->setRelation('fee',new Collection([new class(['date'=>Carbon::parse('2026-12-14'),'amount'=>'20.00','currency_type'=>$document->currency_type]) extends Fluent {
+                public function getStringPaymentMethodType(): string { return ''; }
+            }]));
+        }
+        if ($format === 'a5') {
+            DB::connection('tenant')->table('configurations')->update(['show_seller_in_pdf'=>true]);
+            if ($document instanceof \App\Models\Tenant\Document) $document->setRelation('seller',new Fluent(['name'=>'Administrador']));
+            else $document->seller=new Fluent(['name'=>'Administrador']);
+            $amounts=$fiscal ? ['50','50','16'] : ['500','1500','3000'];
+            $document->items=collect($amounts)->map(function ($amount, $index) use ($document) {
+                $row=clone $document->items->first(); $row->item=clone $row->item;
+                $row->item->internal_id='P-'.($index + 1); $row->item->description='Producto de prueba '.($index + 1);
+                $row->unit_price=$row->total=$amount;
+                return $row;
+            });
+        }
+        $html=(new Template())->pdf($design,'invoice',$company,$document,$format,['is_preview'=>false]);
+        self::assertSame(1,substr_count($html,'data-invoice-'.$format.'-identity'));
+        self::assertSame(1,substr_count($html,'R.I.F. J-08789759-8'));
+        self::assertSame(1,substr_count($html,'Tasa de Cambio: Bs. 40.12345678'));
+        if ($format === 'a5') self::assertStringContainsString('Administrador',$html);
+        self::assertStringNotContainsString('DEMO — SIN VALIDEZ FISCAL',$html);
+        self::assertStringNotContainsString('Rif fiscal',$html);
+        self::assertDoesNotMatchRegularExpression('/<td[^>]*>\s*(?:<strong>)?MONEDA/i',$html);
+        self::assertStringContainsString('N° de documento: <strong>00000034</strong>',$html);
+        self::assertStringContainsString('N° de control: <strong>'.($fiscal ? '00-00000034' : 'No asignado').'</strong>',$html);
+        self::assertTrue(strpos($html,'Esta factura es solo de prueba') < strpos($html,'data-invoice-'.$format.'-identity'));
+        if ($fiscal) {
+            self::assertSame(1,substr_count($html,'IGTF 3.00%'));
+            self::assertTrue(strpos($html,'IGTF 3.00%') < strpos($html,'TOTAL A PAGAR'));
+            self::assertStringContainsString('20261100000001',$html);
+            self::assertStringContainsString('ISLR-2026-34',$html);
+            self::assertStringContainsString('RETENCIONES PREVISTAS',$html);
+            self::assertStringContainsString('Recibido VES 110.00',$html);
+            self::assertStringContainsString('Vuelto VES 27.60',$html);
+            self::assertStringContainsString('<strong>VES 20.00</strong>',$html);
+        } else {
+            self::assertStringNotContainsString('data-invoice-'.$format.'-igtf',$html);
+            self::assertStringContainsString('Recibido VES 5,000.00',$html);
+            self::assertStringContainsString('Recibido VES 300.00',$html);
+            self::assertStringContainsString('Vuelto VES 300.00',$html);
+        }
+        $pdf=new Mpdf($format === 'a5'
+            ? ['format'=>[210,148],'tempDir'=>sys_get_temp_dir(),'default_font'=>'arial','margin_top'=>2,
+                'margin_bottom'=>10,'margin_left'=>5,'margin_right'=>5,'margin_footer'=>3,'shrink_tables_to_fit'=>1]
+            : ['format'=>'A4','tempDir'=>sys_get_temp_dir(),'default_font'=>'arial',
+                'margin_top'=>15,'margin_bottom'=>15,'margin_left'=>15,'margin_right'=>15]);
+        $pdf->SetHTMLFooter((new Template())->pdfFooter($design,$document));
+        $pdf->WriteHTML((new Template())->pdfStylesheet($design,'invoice',$document,$format),HTMLParserMode::HEADER_CSS);
+        $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);
+        $bytes=$pdf->Output('','S');
+        self::assertStringStartsWith('%PDF-',$bytes);
+        if ($directory=getenv($format === 'a5' ? 'SAB_A5_FIXTURE_DIR' : 'SAB_A4_FIXTURE_DIR')) {
+            if (!is_dir($directory)) mkdir($directory,0775,true);
+            file_put_contents($directory.'/'.$design.($fiscal ? '-fiscal' : '-simple').'.pdf',$bytes);
+        }
+        self::assertSame(1,$pdf->page, $design.' '.$format.' must fit a representative invoice on one page');
+
+    }
+
+    public function test_a4_logo_header_and_production_notice_are_isolated_from_other_formats(): void
+    {
+        $public=public_path(); $disk=config('filesystems.disks.public');
+        $logoDirectory=sys_get_temp_dir().'/sab-a4-logo-'.bin2hex(random_bytes(6));
+        mkdir($logoDirectory.'/storage/uploads/logos',0775,true);
+        copy($public.'/logo/tulogo.png',$logoDirectory.'/storage/uploads/logos/a4-test.png');
+        $this->app->instance('path.public',$logoDirectory);
+        config()->set('filesystems.disks.public',['driver'=>'local','root'=>$logoDirectory.'/storage']);
+        \Illuminate\Support\Facades\Storage::forgetDisk('public');
+        try {
+            $company=new Fluent(['name'=>'Emisor','trade_name'=>'Prueba','number'=>'J087897598','logo'=>'a4-test.png']);
+            $document=$this->documentFixture();
+            $document->series='AB-CD123456789012345'; $document->number=457;
+            $document->number_full='AB-CD123456789012345-00000457'; $document->fiscal_environment='production';
+            foreach (['a4','a5'] as $format) {
+            foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable'] as $design) {
+                $html=(new Template())->pdf($design,'invoice',$company,$document,$format,['is_preview'=>false]);
+                self::assertStringContainsString('data:image/png;base64',$html);
+                self::assertStringNotContainsString('Esta factura es solo de prueba',$html);
+                self::assertSame(1,substr_count($html,'R.I.F. J-08789759-8'));
+                self::assertSame(1,substr_count($html,'data-invoice-'.$format.'-identity'));
+                $pdf=$this->paperPdf($format);
+                $pdf->SetHTMLFooter((new Template())->pdfFooter($design,$document));
+                $pdf->WriteHTML((new Template())->pdfStylesheet($design,'invoice',$document,$format),HTMLParserMode::HEADER_CSS);
+                $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);
+                self::assertSame(1,$pdf->page);
+                if ($fixtureDirectory=getenv($format === 'a5' ? 'SAB_A5_FIXTURE_DIR' : 'SAB_A4_FIXTURE_DIR')) {
+                    if (!is_dir($fixtureDirectory)) mkdir($fixtureDirectory,0775,true);
+                    file_put_contents($fixtureDirectory.'/'.$design.'-logo.pdf',$pdf->Output('','S'));
+                }
+            }
+            }
+        } finally {
+            $this->app->instance('path.public',$public);
+            config()->set('filesystems.disks.public',$disk);
+            \Illuminate\Support\Facades\Storage::forgetDisk('public');
+            (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($logoDirectory);
+        }
+        $document->fiscal_environment='demo'; $company->logo=null;
+        $document->items->first()->additional_information=[];
+        foreach (['ticket','ticket_58'] as $format) {
+            $html=(new Template())->pdf('default','invoice',$company,$document,$format,['is_preview'=>false]);
+            self::assertStringNotContainsString('data-invoice-'.$format.'-identity',$html);
+            self::assertStringNotContainsString('data-invoice-a4-rate',$html);
+            self::assertStringContainsString('J087897598',$html);
+        }
+    }
+
+    public static function paperFormats(): array { return [['a4'], ['a5']]; }
+
+    /** @dataProvider paperFormats */
+    public function test_long_a4_preserves_the_last_item_retentions_and_payments_across_pages(string $format): void
+    {
+        $document=$this->documentFixture();
+        $document->number_full='FF01-00000001'; $document->exchange_rate_sale='40.12345678';
+        $document->total=$document->subtotal='5000'; $document->total_taxed='4310.34'; $document->total_igv='689.66';
+        $document->items=collect(range(1,40))->map(function ($number) use ($document) {
+            $row=clone $document->items->first(); $row->item=clone $row->item;
+            $row->item->internal_id='P-'.$number;
+            $row->item->description='Producto '.$number.' con descripción extensa para verificar el salto de página y conservar todos los datos impresos.';
+            $row->unit_price=$row->total='125';
+            return $row;
+        });
+        $document->legends=[new Fluent(['code'=>'1000','value'=>'CINCO MIL CON 00/100'])];
+        $document->payment_condition_id='02'; $document->payment_condition=new Fluent(['name'=>'Crédito']);
+        $document->payments=collect([new Fluent(['currency_type_id'=>'VES','original_amount'=>'4988','payment'=>'4988',
+            'tax_amount'=>'0','change'=>'300','exchange_rate'=>'40.12345678','calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot([
+                'tendered_original_amount'=>'5288','received_change'=>'300'])])]);
+        $document->received_retentions=collect([new Fluent(['tax_kind'=>'IVA','voucher_number'=>'RETENCION-ULTIMA-PAGINA',
+            'application_status'=>'applied','applied_amount'=>'12','amount'=>'12','currency_type_id'=>'VES'])]);
+        $company=new Fluent(['name'=>'Empresa de prueba','trade_name'=>'bbc','number'=>'J087897598','logo'=>null]);
+        $html=(new Template())->pdf('default','invoice',$company,$document,$format,['is_preview'=>false]);
+        self::assertStringContainsString('Producto 40 con descripción extensa',$html);
+        self::assertSame(1,substr_count($html,'RETENCION-ULTIMA-PAGINA'));
+        self::assertSame(1,substr_count($html,'PAGOS:'));
+        $pdf=$this->paperPdf($format);
+        $pdf->SetHTMLFooter((new Template())->pdfFooter('default',$document));
+        $pdf->WriteHTML((new Template())->pdfStylesheet('default','invoice',$document,$format),HTMLParserMode::HEADER_CSS);
+        $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);
+        self::assertGreaterThanOrEqual(2,$pdf->page);
+        $bytes=$pdf->Output('','S');
+        $path=tempnam(sys_get_temp_dir(),'sab-paper-long-');
+        try {
+            file_put_contents($path,$bytes);
+            $process=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']);
+            $process->mustRun();
+            $text=$process->getOutput();
+            self::assertStringContainsString('Producto 40 con descripción extensa',$text);
+            self::assertSame(1,substr_count($text,'RETENCION-ULTIMA-PAGINA'));
+            self::assertSame(1,substr_count($text,'Recibido VES 5,288.00'));
+            self::assertStringContainsString('Vuelto VES 300.00',$text);
+            self::assertStringContainsString('Tasa de Cambio: Bs. 40.12345678',$text);
+            foreach (explode("\f",$text) as $pageText) {
+                if (str_contains($pageText,'PAGOS:')) self::assertStringContainsString('Recibido VES',$pageText,'Keep payment heading with its first row.');
+            }
+        } finally { unlink($path); }
+        if ($fixtureDirectory=getenv($format === 'a5' ? 'SAB_A5_FIXTURE_DIR' : 'SAB_A4_FIXTURE_DIR')) {
+            if (!is_dir($fixtureDirectory)) mkdir($fixtureDirectory,0775,true);
+            file_put_contents($fixtureDirectory.'/default-long.pdf',$bytes);
+        }
+    }
+
+    public function test_a5_many_retentions_receipts_and_installments_flow_without_losing_the_last_rows(): void
+    {
+        $document=$this->documentFixture();
+        $document->number_full='00000034'; $document->payment_condition_id='02';
+        $document->payment_condition=new Fluent(['name'=>'Crédito']);
+        $document->total=$document->subtotal='200'; $document->total_value=$document->total_taxed='172.41'; $document->total_igv='27.59';
+        $document->items->first()->unit_price=$document->items->first()->total='200';
+        $document->legends=[new Fluent(['code'=>'1000','value'=>'DOSCIENTOS CON 00/100'])];
+        $document->payments=collect(range(1,60))->map(fn ($number)=>new Fluent([
+            'currency_type_id'=>'VES','original_amount'=>$number === 60 ? '97' : '1',
+            'payment'=>$number === 60 ? '97' : '1','tax_amount'=>'0','change'=>'0','exchange_rate'=>'40.12345678']));
+        $document->received_retentions=collect(range(1,20))->map(fn ($number)=>new Fluent([
+            'tax_kind'=>'IVA','voucher_number'=>'RET-LARGA-'.$number,'application_status'=>'applied',
+            'applied_amount'=>'0.60','amount'=>'0.60','currency_type_id'=>'VES']));
+        $document->fee=collect(range(1,40))->map(fn ($number)=>new class([
+            'date'=>Carbon::parse('2026-12-01')->addDays($number),'amount'=>'0.8','currency_type'=>$document->currency_type,
+            'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['amount'=>'4/5'])]) extends Fluent {
+                public function getStringPaymentMethodType(): string { return ''; }
+            });
+        $company=new Fluent(['name'=>'Emisor', 'number'=>'J087897598', 'logo'=>null]);
+        $pdf=$this->paperPdf('a5');
+        $pdf->SetHTMLFooter((new Template())->pdfFooter('default',$document));
+        $pdf->WriteHTML((new Template())->pdfStylesheet('default','invoice',$document,'a5'),HTMLParserMode::HEADER_CSS);
+        $pdf->WriteHTML((new Template())->pdf('default','invoice',$company,$document,'a5'),HTMLParserMode::HTML_BODY);
+        self::assertGreaterThan(2,$pdf->page);
+        $bytes=$pdf->Output('','S'); $path=tempnam(sys_get_temp_dir(),'sab-a5-ledger-');
+        try {
+            file_put_contents($path,$bytes);
+            $process=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']);
+            $process->mustRun(); $text=$process->getOutput();
+            self::assertSame(60,substr_count($text,'Recibido VES'));
+            self::assertStringContainsString('Recibido VES 97.00',$text);
+            self::assertStringContainsString('RET-LARGA-20',$text);
+            self::assertStringContainsString('Cuota #40',$text);
+            self::assertMatchesRegularExpression('/Cuota #40.*Monto: Bs\.0\.80/s',$text);
+            self::assertSame($pdf->page,substr_count($text,'Para consultar el comprobante'));
+            if ($directory=getenv('SAB_A5_FIXTURE_DIR')) file_put_contents($directory.'/default-ledger-long.pdf',$bytes);
+        } finally { unlink($path); }
+    }
+
+    public function test_other_designs_keep_their_legacy_a5_fallback_and_styles(): void
+    {
+        $document=$this->documentFixture();
+        $document->number_full='00000034';
+        $company=new Fluent(['name'=>'Emisor', 'number'=>'J087897598', 'logo'=>null]);
+        $html=(new Template())->pdf('nrus','invoice',$company,$document,'a5');
+        self::assertStringNotContainsString('data-invoice-a5-identity',$html);
+        self::assertStringNotContainsString('data-invoice-a5-summary',$html);
+        self::assertStringContainsString('J087897598',$html);
+        self::assertStringContainsString('MONEDA:',$html);
+        self::assertSame(file_get_contents(app_path('CoreFacturalo/Templates/pdf/nrus/style.css')),
+            (new Template())->pdfStylesheet('nrus','invoice',$document,'a5'));
+    }
+
+    public function test_a5_preserves_historical_unaffected_and_free_operation_amounts(): void
+    {
+        $document=$this->documentFixture();
+        $document->number_full='00000034';
+        $document->total=$document->subtotal='126';
+        $document->total_value='110'; $document->total_unaffected='10'; $document->total_free='5';
+        $company=new Fluent(['name'=>'Emisor', 'number'=>'J087897598', 'logo'=>null]);
+        foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable'] as $design) {
+            $html=(new Template())->pdf($design,'invoice',$company,$document,'a5');
+            self::assertMatchesRegularExpression('/OP\. INAFECTAS:.*?10\.00/s',$html);
+            self::assertMatchesRegularExpression('/OP\. GRATUITAS:.*?5\.00/s',$html);
+            self::assertMatchesRegularExpression('/TOTAL A PAGAR:.*?126\.00/s',$html);
+        }
+    }
+
+    public function test_a5_edit_preview_uses_the_authorized_source_without_changing_tickets(): void
+    {
+        \Tests\Support\InvoiceA4Ledger::create();
+        $fixture=$this->documentFixture();
+        $draft=new CurrentFiscalPdfDocumentFixture();
+        foreach ($fixture->getAttributes() as $key=>$value) {
+            if (in_array($key,['person','invoice','note','currency_type','document_type','state_type','items','payments','fee','reference_guides','dispatch','transport','quotation','seller','payment_condition'],true)) $draft->setRelation($key,$value);
+            else $draft->forceFill([$key=>$key === 'additional_information' ? '' : $value]);
+        }
+        $receipt=new \App\Models\Tenant\DocumentPayment(['id'=>1,'currency_type_id'=>'VES','original_amount'=>'80',
+            'payment'=>'80','tax_amount'=>'0','change'=>'10','exchange_rate'=>'40.12345678',
+            'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['total_tendered'=>'90','received_change'=>'10'])]);
+        $receipt->exists=true;
+        $draft->setRelation('payments',new \Illuminate\Database\Eloquent\Collection([$receipt]));
+        $draft->setRelation('received_retentions',new Collection());
+        $draft->setRelation('fiscal_data',null);
+        $draft->setRelation('taxes',new Collection());
+        $draft->setRelation('guarantee_fund',null);
+        $draft->setRelation('currency_totals',null);
+        $source=clone $draft;
+        $source->forceFill(['id'=>1,'series'=>'AUT','number'=>99,'control_number'=>'00-00000099',
+            'total'=>'116','total_payable'=>'116','fiscal_environment'=>'production','fiscal_emission_mode'=>'free_form',
+            'issuer'=>['name'=>'Emisor autorizado','number'=>'J087897598','logo'=>null]]);
+        $source->exists=true;
+        $original=clone $receipt;
+        $original->setRelation('change_disbursements',new \Illuminate\Database\Eloquent\Collection([
+            new \App\Models\Tenant\DocumentChangeDisbursement(['currency_type_id'=>'VES','original_amount'=>'10'])]));
+        $source->setRelation('payments',new \Illuminate\Database\Eloquent\Collection([$original]));
+        $source->setRelation('received_retentions',new \Illuminate\Database\Eloquent\Collection([
+            new \App\Models\Tenant\DocumentReceivedRetention(['tax_kind'=>'IVA','voucher_number'=>'RET-AUTORIZADA',
+                'applied_amount'=>'12','amount'=>'12','application_status'=>'applied','currency_type_id'=>'VES'])]));
+        $source->setRelation('fiscal_data',new \App\Models\Tenant\DocumentFiscalData(['islr_retention_prevision'=>[
+            'eligible'=>true,'amount'=>'1','percentage'=>'1','currency_type_id'=>'VES'], 'transaction_type_id'=>'99',
+            'third_party'=>['rif'=>'J-11111111-1','name'=>'Tercero conservado','address'=>'Dirección del tercero'],
+            'special_tax_regime_id'=>1,'catalog_snapshot'=>['special_tax_regime_id'=>['description'=>'Régimen conservado']]]));
+        DB::connection('tenant')->table('document_payments')->insert(['id'=>1,'document_id'=>1,'payment'=>'80']);
+        $draft->setRelation('invoice_source_document',$source);
+        $company=new Fluent(['name'=>'Emisor actual','number'=>'J999999999','logo'=>null]);
+        foreach (['a4','a5'] as $format) {
+            $html=(new Template())->pdf('default','invoice',$company,$draft,$format);
+            self::assertStringContainsString('N° de documento: <strong>AUT-00000099</strong>',$html);
+            self::assertStringContainsString('N° de control: <strong>00-00000099</strong>',$html);
+            self::assertStringContainsString('Emisor autorizado',$html);
+            self::assertStringContainsString('RET-AUTORIZADA',$html);
+            self::assertStringContainsString('DEL DOCUMENTO GUARDADO',$html);
+            self::assertStringContainsString('Recibido VES 90.00',$html);
+            self::assertStringContainsString('Vuelto VES 10.00',$html);
+            self::assertStringContainsString('Tercero conservado',$html);
+            self::assertStringContainsString('Régimen conservado',$html);
+            self::assertTrue(strpos($html,'data-invoice-'.$format.'-identity') < strpos($html,'VENTA POR CUENTA DE TERCEROS'));
+            self::assertStringNotContainsString('Esta factura es solo de prueba',$html);
+        }
+        self::assertFalse($draft->payments->first()->relationLoaded('change_disbursements'), 'Rendering must not mutate the caller preview.');
+        $draft->items->first()->additional_information=[];
+        $ticket=(new Template())->pdf('default','invoice',$company,$draft,'ticket');
+        self::assertStringNotContainsString('RET-AUTORIZADA',$ticket);
+        self::assertStringNotContainsString('Emisor autorizado',$ticket);
+        self::assertStringNotContainsString('data-invoice-a5-',$ticket);
+    }
+
     public function test_issuer_igtf_retentions_and_ves_totals_use_persisted_snapshots(): void
     {
         $fixture=$this->documentFixture();
@@ -157,14 +555,14 @@ class CurrentPdfRenderingTest extends TestCase
             'currency_type_id'=>'VES','exchange_rate'=>'10.123','original_amount'=>'100','payment'=>'9.88',
             'tax_amount'=>'0','change'=>'0','payment_method_snapshot'=>json_encode(['description'=>'Medio conservado'])]);
         $receipt=\App\Models\Tenant\DocumentPayment::findOrFail(1);
+        $receipt->setRelation('change_disbursements', new Collection());
         $document->setRelation('payments',new Collection([$receipt]));
         $company=new Fluent(['name'=>'Nombre actual cambiado','number'=>'J-99999999-9','trade_name'=>'Actual','logo'=>null]);
         $html=(new Template())->pdf('default','invoice',$company,$document,'a4',['is_preview'=>false,'enabled_price_items_dispatch'=>false]);
         self::assertStringContainsString('Emisor conservado',$html);self::assertStringNotContainsString('Nombre actual cambiado',$html);
         self::assertStringContainsString('IGTF 3.00%',$html);self::assertStringContainsString('IVA-TEST-1',$html);self::assertStringContainsString('Fondo de garantía',$html);
         self::assertStringContainsString('1,209.50',$html);
-        self::assertStringContainsString('Cobro recibido (VES)',$html);self::assertStringContainsString('Principal aplicado (USD)',$html);
-        self::assertStringContainsString('Medio conservado',$html);
+        self::assertStringNotContainsString('Medio conservado',$html);
         self::assertStringContainsString('Recibido VES 100.00',$html);
         self::assertStringContainsString('Aplicado USD 9.88',$html);
         self::assertStringNotContainsString('USD 100.00',$html);
@@ -172,7 +570,7 @@ class CurrentPdfRenderingTest extends TestCase
         $ticket = (new Template())->pdf('default', 'invoice', $company, $document, 'ticket', ['is_preview'=>false]);
         self::assertStringContainsString('Recibido VES 100.00',$ticket);
         self::assertStringContainsString('Aplicado USD 9.88',$ticket);
-        foreach (['a5', 'ticket_58'] as $format) {
+        foreach (['ticket_58'] as $format) {
             $otherFormat = (new Template())->pdf('default', 'invoice', $company, $document, $format, ['is_preview'=>false]);
             self::assertStringContainsString('Medio conservado', $otherFormat);
             self::assertStringContainsString('Recibido VES 100.00', $otherFormat);
@@ -184,13 +582,15 @@ class CurrentPdfRenderingTest extends TestCase
                   'nrus'=>['ticket','ticket_58']] as $template => $formats) {
             foreach ($formats as $format) {
                 $rendered = (new Template())->pdf($template, 'invoice', $company, $document, $format, ['is_preview'=>false]);
-                self::assertStringContainsString('Medio conservado', $rendered, "$template $format");
+                if (!in_array($format, ['a4','a5'], true)) self::assertStringContainsString('Medio conservado', $rendered, "$template $format");
+                else self::assertStringNotContainsString('Medio conservado', $rendered, "$template $format");
                 self::assertStringContainsString('Recibido VES 100.00', $rendered, "$template $format");
                 self::assertStringContainsString('Aplicado USD 9.88', $rendered, "$template $format");
             }
         }
         // A receipt's real change stays in the received currency; a reversed receipt disappears.
         $receipt->change='3';
+        $receipt->calculation_snapshot=\App\Support\Exact\Decimal::snapshot(['tendered_original_amount'=>'103', 'received_change'=>'3']);
         foreach (['default'=>['a4','a5','ticket','ticket_58'], 'modern-2027'=>['a4','a5','ticket','ticket_58'],
                   'Plantilla_personalizable'=>['a4','a5','ticket','ticket_58'],
                   'marca_de_agua'=>['a4','a5','ticket','ticket_58','ticket_50'], 'nrus'=>['ticket','ticket_58']] as $template=>$formats) {
@@ -216,10 +616,10 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertSame(1, substr_count($ticket, 'IGTF 3.00%'));
         $receipt->payment_method_snapshot=['description'=>'Medio conservado','receipt_origin'=>['type'=>'test','id'=>'1']];
         $reused=(new Template())->pdf('default','invoice',$company,$document,'a4',['is_preview'=>false,'enabled_price_items_dispatch'=>false]);
-        self::assertStringContainsString('Cobro previo recibido (VES)', $reused);
-        self::assertStringContainsString('Cobro previo', $reused);
+        self::assertStringContainsString('(cobro previo)', $reused);
         $receipt->original_amount=null;
         $receipt->exchange_rate=null;
+        $receipt->calculation_snapshot=null;
         $legacy=(new Template())->pdf('default','invoice',$company,$document,'a4',['is_preview'=>false,'enabled_price_items_dispatch'=>false]);
         self::assertStringContainsString('Importe recibido no disponible', $legacy);
         self::assertStringNotContainsString('Cobro previo recibido (VES)', $legacy);
@@ -639,6 +1039,7 @@ class CurrentPdfItemFixture extends Fluent
 
 class CurrentFiscalPdfDocumentFixture extends \App\Models\Tenant\Document
 {
+    public function getForeignKey() { return 'document_id'; }
     public function load($relations) { return $this; }
     public function getBalanceAttribute() { return $this->total - $this->payments->sum('payment') - $this->retention_amount - $this->guarantee_amount; }
 }

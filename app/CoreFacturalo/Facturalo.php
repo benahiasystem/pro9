@@ -600,6 +600,13 @@ class Facturalo
                 'margin_left' => 1,
                 'default_font' => 'monospace'
             ]);
+        } elseif ($format_pdf === 'a5' && $this->type === 'invoice' && $this->document->document_type_id === '01'
+            && in_array($base_pdf_template, ['default', 'modern-2027', 'marca_de_agua', 'Plantilla_personalizable'], true)) {
+            $pdf = new Mpdf([
+                'mode' => 'utf-8', 'format' => [210, 148],
+                'margin_top' => 2, 'margin_right' => 5, 'margin_bottom' => 10, 'margin_left' => 5,
+                'margin_footer' => 3, 'default_font' => 'arial', 'shrink_tables_to_fit' => 1,
+            ]);
         }else if($format_pdf === 'a5'){
 
             $company_name      = (strlen($this->company->name) / 20) * 10;
@@ -721,12 +728,7 @@ class Facturalo
             }
         }
 
-        $path_css = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.
-                                             DIRECTORY_SEPARATOR.'pdf'.
-                                             DIRECTORY_SEPARATOR.$base_pdf_template.
-                                             DIRECTORY_SEPARATOR.'style.css');
-
-        $stylesheet = file_get_contents($path_css);
+        $stylesheet = $template->pdfStylesheet($base_pdf_template, $this->type, $this->document, $format_pdf);
 
 
         // if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58')) {
@@ -1461,6 +1463,13 @@ class Facturalo
                 'margin_left' => 1,
                 'default_font' => 'monospace'
             ]);
+        } elseif ($format_pdf === 'a5' && $this->type === 'invoice' && $this->document->document_type_id === '01'
+            && in_array($base_pdf_template, ['default', 'modern-2027', 'marca_de_agua', 'Plantilla_personalizable'], true)) {
+            $pdf = new Mpdf([
+                'mode' => 'utf-8', 'format' => [210, 148],
+                'margin_top' => 2, 'margin_right' => 5, 'margin_bottom' => 10, 'margin_left' => 5,
+                'margin_footer' => 3, 'default_font' => 'arial', 'shrink_tables_to_fit' => 1,
+            ]);
         }else if($format_pdf === 'a5'){
 
             $company_name      = (strlen($this->company->name) / 20) * 10;
@@ -1584,12 +1593,7 @@ class Facturalo
             }
         }
 
-        $path_css = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.
-                                             DIRECTORY_SEPARATOR.'pdf'.
-                                             DIRECTORY_SEPARATOR.$base_pdf_template.
-                                             DIRECTORY_SEPARATOR.'style.css');
-
-        $stylesheet = file_get_contents($path_css);
+        $stylesheet = $template->pdfStylesheet($base_pdf_template, $this->type, $this->document, $format_pdf);
 
         if(config('tenant.pdf_template_footer')) {
             $html_footer = '';
@@ -1721,6 +1725,8 @@ class Facturalo
             $values = \App\Services\Payments\TenderedReceipt::withAllocation($values, $row['_tendered_input'] ?? null);
             $normalized[] = array_merge($row, $values);
         }
+        $previewOriginalAmounts = array_map(fn ($row) => !empty($row['_preview_existing']) || \App\Services\Fiscal\PaymentQuote::reused($row)
+            ? null : \App\Support\Exact\Decimal::fraction(\App\Support\Exact\Decimal::readRequired($row, 'original_amount')), $normalized);
         if ($existingDocument) {
             foreach ($normalized as $row) if (empty($row['_preview_existing'])) {
                 \App\Services\Fiscal\FiscalAmounts::error('payments', 'Los cobros se administran desde Pagos, no desde la edición.');
@@ -1731,7 +1737,7 @@ class Facturalo
                 $document->currency_type_id);
         }
         $taxTotal = \App\Support\Exact\Decimal::of(0);
-        foreach ($normalized as $row) {
+        foreach ($normalized as $previewIndex => $row) {
             if (!empty($row['_preview_existing'])) {
                 $document->payments[] = $row['_preview_existing'];
                 continue;
@@ -1744,6 +1750,17 @@ class Facturalo
             if (isset($row['_settlement_payment'])) {
                 $values = \App\Services\Payments\ReceiptChange::withSettlement($values, $row['_settlement_payment']);
             }
+            // ######## INICIO PRESENTACION FACTURA A4 ########
+            if (!\App\Services\Fiscal\PaymentQuote::reused($row)) {
+                $context = \App\Services\Payments\TenderedReceipt::context($row);
+                foreach (['requested_total_tendered', 'total_tendered'] as $field) {
+                    if (isset($context[$field])) $values['calculation_snapshot']['values'][$field] = $context[$field];
+                }
+                $values['calculation_snapshot']['values']['tendered_original_amount'] = $context['original_amount'] ?? $previewOriginalAmounts[$previewIndex];
+                $values['calculation_snapshot']['values']['received_change'] = \App\Support\Exact\Decimal::fraction(
+                    \App\Support\Exact\Decimal::of($row['change'] ?? 0));
+            }
+            // ######## FIN PRESENTACION FACTURA A4 ########
             $row = array_merge($row, $values);
             $payment = new \App\Models\Tenant\DocumentPayment($row);
             $document->payments[] = $payment;
@@ -1753,6 +1770,7 @@ class Facturalo
                 $taxTotal = $taxTotal->plus($amount);
                 $previewTaxes->push(new \App\Models\Tenant\DocumentTax(['tax_kind'=>'IGTF', 'code'=>'IGTF',
                     'percentage'=>$this->company->igtf_rate, 'amount'=>\App\Support\Exact\Decimal::represent($amount),
+                    'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['amount'=>$amount]),
                     'base'=>\App\Support\Exact\Decimal::convert($row['original_amount'], $row['currency_type_id'], $document->currency_type_id, $row['exchange_rate'])]));
             }
         }

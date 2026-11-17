@@ -54,7 +54,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
 </head>
 
 <body>
-    @if ($type->fiscal_environment === 'demo')
+    @if (($invoicePdf['environment'] ?? $type->fiscal_environment) === 'demo')
     <table class="full-width">
         <tr>
             <td style="width: 100%;text-align: center">
@@ -94,10 +94,10 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                             alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
                     </div>
                 </td>
-                <td width="50%" class="pl-3 text-center">
+                <td width="40%" class="pl-3 text-center">
                     <div>
                         @include('pdf.partials.company_document_header_names')
-                        <h5>{{ 'RIF '.$company->number }}</h5>
+                        <h5>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>
                         <h6 style="text-transform: uppercase;">
                             {{ ($establishment->address !== '-') ? $establishment->address : '' }}
                             {{ ($establishment->district_id !== '-') ? ', '.$establishment->district->description : '' }}
@@ -117,16 +117,20 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                         @endisset
                     </div>
                 </td>
-                <td width="30%" class="border-box py-4 px-2 text-center">
+                <td width="40%" class="border-box py-2 px-2 text-left" style="border: 0.5pt solid #888; padding: 9px 10px;">
+@if($invoicePdf)
+@include('pdf.partials.invoice_identity')
+@else
                     <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                     <h5>{{ $document->document_type->description }}</h5>
                     <h3>{{ $document_number }}</h3>
-                </td>
+                @endif
+</td>
             @else
-                <td colspan="2" width="70%" class="pl-1 text-left">
+                <td colspan="2" width="60%" class="pl-1 text-left">
                     <div>
                         @include('pdf.partials.company_document_header_names')
-                        <h5>{{ 'R.I.F. '.$company->number }}</h5>
+                        <h5>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>
                         <h6 style="text-transform: uppercase;">
                             {{ ($establishment->address !== '-') ? $establishment->address : '' }}
                             {{ ($establishment->district_id !== '-') ? ', '.$establishment->district->description : '' }}
@@ -146,14 +150,19 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                         @endisset
                     </div>
                 </td>
-                <td width="30%" class="border-box py-4 px-2 text-center">
+                <td width="40%" class="border-box py-2 px-2 text-left" style="border: 0.5pt solid #888; padding: 9px 10px;">
+@if($invoicePdf)
+@include('pdf.partials.invoice_identity')
+@else
                     <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                     <h5>{{ $document->document_type->description }}</h5>
                     <h3>{{ $document_number }}</h3>
-                </td>
+                @endif
+</td>
             @endif
         </tr>
     </table>
+<!-- INVOICE_SPECIAL_IDENTITY -->
     <table class="full-width mt-5">
         <tr>
             <td width="120px">FECHA DE EMISIÓN</td>
@@ -250,7 +259,8 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 dd($document->currency_type->toArray());
             @endphp --}}
         </tr>
-        <tr>
+        @if(!$invoicePdf)
+<tr>
             <td class="align-top">MONEDA</td>
             <td>:</td>
             <td>
@@ -261,6 +271,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 @endif
             </td>
         </tr>
+@endif
         @endif
         @if ($document->consigned_id)
         @php
@@ -819,7 +830,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
 
 
             <tr>
-                <td colspan="{{ $colspan_total }}" class="text-right pr-2">IGV: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_total }}" class="text-right pr-2">IVA: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
             </tr>
 
@@ -868,7 +879,8 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             @endif
 
 
-            <tr>
+            @include('pdf.partials.invoice_igtf')
+<tr>
                 <td colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" class="text-left font-bold">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
                 <td colspan="{{ floor(($colspan_total + 1) / 2)  }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
@@ -965,7 +977,10 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             </td>
         </tr>
     </table>
-    @php
+    @if($invoicePdf)
+@include('pdf.partials.invoice_fiscal')
+@endif
+@php
     $paymentCondition = \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentPaymentCondition($document);
     @endphp
     {{-- Condicion de pago  Crédito / Contado --}}
@@ -987,7 +1002,10 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
     </table>
     @endif
 
-    @if (in_array((string) $document->payment_condition_id, ['01', '02', '03'], true))
+    @if($invoicePdf)
+@include('pdf.partials.invoice_payments')
+@else
+@if (in_array((string) $document->payment_condition_id, ['01', '02', '03'], true))
     @if($payments->count())
     <table class="full-width">
         <tr>
@@ -1003,7 +1021,8 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
     </table>
     @endif
     @endif
-                @if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
+                @endif
+@if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
     <table class="full-width">
         @foreach($document->fee as $key => $quote)
         <tr>

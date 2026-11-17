@@ -76,6 +76,10 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
         self::assertStringContainsString('Recibido USD 12.00', $html);
         self::assertStringContainsString('Aplicado VES 100.00', $html);
         self::assertStringContainsString('Vuelto USD 2.00', $html);
+        $a4=\App\Services\Fiscal\InvoicePaperPdfData::forDocument($document,new Fluent(['number'=>'J087897598']));
+        self::assertSame('12.00',$a4['receipts'][0]['amount']);
+        self::assertFalse($a4['receipts'][0]['net']);
+        self::assertSame('2.00',$a4['changes'][0]['amount']);
     }
 
     public function test_preview_shows_tax_and_total_after_change(): void
@@ -98,6 +102,28 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
         self::assertStringContainsString('Recibido USD 12.30', $html);
         self::assertStringContainsString('Vuelto USD 2.00', $html);
         self::assertStringContainsString('IGTF USD 0.30', $html);
+        $document->payment_condition_id='02';
+        $a4=\App\Services\Fiscal\InvoicePaperPdfData::forDocument($document,new Fluent(['number'=>'J087897598']));
+        self::assertSame('12.30',$a4['receipts'][0]['amount']);
+        self::assertSame('0.00',$a4['balance']);
+    }
+
+    public function test_a4_preview_keeps_inclusive_tender_igtf_and_change_without_a_fictitious_balance(): void
+    {
+        $document=new Document(['document_type_id'=>'01','currency_type_id'=>'USD','total'=>'60',
+            'total_taxes'=>'0','total_other_taxes'=>'0','exchange_rate_sale'=>'40.12345678','payment_condition_id'=>'02']);
+        $document->setRelation('payments',new Collection());
+        $engine=new class extends Facturalo {
+            public function __construct() { $this->company=new Fluent(['igtf_enabled'=>true,'igtf_rate'=>'3']); }
+        };
+        $engine->setPaymentsPreview($document,[['payment_method_type_id'=>'10','currency_type_id'=>'USD',
+            'tendered_amount'=>'70','exchange_rate'=>'40.12345678','igtf_status'=>'subject']]);
+        $a4=\App\Services\Fiscal\InvoicePaperPdfData::forDocument($document,new Fluent(['number'=>'J087897598']));
+        self::assertSame('70.00',$a4['receipts'][0]['amount']);
+        self::assertSame('8.20',$a4['changes'][0]['amount']);
+        self::assertSame('1.80',$a4['igtf'][0]['amount']);
+        self::assertSame('0.00',$a4['balance']);
+        self::assertCount(1,$a4['receipts']);
     }
 
     public function test_edit_preview_keeps_recorded_tax_when_company_setting_changes(): void
@@ -123,6 +149,23 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
             self::assertSame('subject',$preview->payments->first()->igtf_status);
             self::assertSame(1,$preview->taxes->count());
         }
+    }
+
+    public function test_edit_preview_keeps_a_historical_receipt_with_unknown_received_amount(): void
+    {
+        $receipt=(new \App\Models\Tenant\DocumentPayment())->forceFill(['id'=>7,'document_id'=>3,
+            'payment_method_type_id'=>'10','currency_type_id'=>'VES','original_amount'=>null,'payment'=>'100','tax_amount'=>'0']);
+        $existing=(new Document())->forceFill(['id'=>3]);
+        $existing->setRelation('payments',new Collection([$receipt]));
+        $existing->setRelation('taxes',new Collection());
+        $preview=new Document(['currency_type_id'=>'VES','total'=>'100','exchange_rate_sale'=>'10']);
+        $preview->setRelation('payments',new Collection());
+        $engine=new class extends Facturalo {
+            public function __construct() { $this->company=new Fluent(['igtf_enabled'=>false]); }
+        };
+        $engine->setPaymentsPreview($preview,[['id'=>7]],$existing);
+        self::assertSame($receipt,$preview->payments->first());
+        self::assertNull($preview->payments->first()->original_amount);
     }
 
     public function test_preview_rejects_bank_excess_even_when_its_id_was_originally_cash(): void
@@ -173,11 +216,16 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
         self::assertSame('100', \App\Support\Exact\Decimal::represent($document->payments->first()->exactValue('payment')));
     }
 
-    public function test_preview_rejects_change_not_representable_in_received_cents(): void
+    public function test_preview_settles_received_cents_and_preserves_the_documentary_adjustment(): void
     {
-        $this->expectException(ValidationException::class);
-        $this->preview([['payment_method_type_id'=>'10', 'currency_type_id'=>'USD',
+        $document=$this->preview([['payment_method_type_id'=>'10', 'currency_type_id'=>'USD',
             'original_amount'=>'1', 'exchange_rate'=>'3', 'payment'=>'3']], '2.98');
+        $payment=$document->payments->first();
+        $D=\App\Support\Exact\Decimal::class;
+        self::assertSame('0.99',$D::represent($payment->exactValue('original_amount')));
+        self::assertSame('0.01',$D::represent($payment->exactValue('change')));
+        self::assertSame('2.98',$D::represent($payment->exactValue('payment')));
+        self::assertSame('0.01',$D::represent($payment->exactValue('payment_adjustment')));
     }
 
     public function test_sale_note_detail_uses_the_received_change_fraction_and_frozen_method(): void

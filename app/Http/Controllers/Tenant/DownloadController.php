@@ -61,10 +61,15 @@ class DownloadController extends Controller
                     if ($configuration && trim(strip_tags(html_entity_decode($configuration->terms_condition_sale ?? ''))) !== '') {
                         $document->terms_condition = $configuration->terms_condition_sale;
                         $document->save();
-                        $this->reloadPDF($document, $type_pdf, $format ?? 'a4');
+                        if (!\App\Services\Fiscal\CurrentLocalInvoicePdf::applies($document, $format ?? 'a4')) {
+                            $this->reloadPDF($document, $type_pdf, $format ?? 'a4');
+                        }
                     }
                 }
             }
+
+            $currentInvoicePdf = \App\Services\Fiscal\CurrentLocalInvoicePdf::bytesIfApplicable($document, $format ?? 'a4');
+            if ($currentInvoicePdf !== null) return $this->localCurrentPdf($document, $currentInvoicePdf, true);
 
             if ($format != null) {
                 $this->reloadPDF($document, $type_pdf, $format);
@@ -172,6 +177,8 @@ class DownloadController extends Controller
             && in_array($format ?? 'a4', ['a4', 'a5'], true)) {
             return $this->digitalPdf($document, $format ?? 'a4', false);
         }
+        $currentInvoicePdf = \App\Services\Fiscal\CurrentLocalInvoicePdf::bytesIfApplicable($document, $format ?? 'a4');
+        if ($currentInvoicePdf !== null) return $this->localCurrentPdf($document, $currentInvoicePdf, false);
         if ($document instanceof \App\Models\Tenant\Document && in_array($format ?? 'a4',['a4','a5','ticket','ticket_58'],true)) {
             $bytes=\App\Services\Fiscal\CurrentFreeFormPdf::bytesIfRegistered($document,$format ?? 'a4');
             if ($bytes!==null) return $this->localCurrentPdf($document,$bytes,false);

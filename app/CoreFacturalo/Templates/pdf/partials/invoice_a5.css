@@ -1,0 +1,6 @@
+/* Keep A4 font sizes; recover vertical space through line spacing and padding. */
+body, table, tr, td, th, p { line-height: 1.05; }
+td, th { padding-top: 0; padding-bottom: 0; }
+.invoice-a5-details th { padding-top: 2px !important; padding-bottom: 2px !important; }
+.invoice-a5-details td { padding-top: 1px !important; padding-bottom: 1px !important; }
+.invoice-a5-totals td { padding-top: 0; padding-bottom: 0; }

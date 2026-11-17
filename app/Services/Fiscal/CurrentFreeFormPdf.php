@@ -11,6 +11,10 @@ final class CurrentFreeFormPdf
     public static function bytesIfRegistered(Document $document, string $format='a4'): ?string
     {
         if ($document->fiscal_emission_mode!=='free_form' || !in_array($document->document_type_id,['01','07','08'],true)) return null;
+        // Paper invoice paths read collections and balances from one cut.
+        if (in_array($format, ['a4', 'a5'], true) && $document->document_type_id === '01' && $document->getConnection()->transactionLevel() === 0) {
+            return \App\Support\Exact\ReadSnapshot::run($document->getConnection(), fn () => self::bytesIfRegistered($document, $format));
+        }
         // A caller may still hold a model loaded before the control was recorded.
         $document=$document->fresh() ?? $document;
         $registration=$document->emission->response['free_form_control'] ?? null;

@@ -495,8 +495,8 @@ use Illuminate\Support\Str;
             $configuration = Configuration::first();
             $template = new Template();
              // $base_pdf_template = $configuration->formats;
-            if (\Auth::user() !== null)  {
-                $base_pdf_template = \Auth::user()->establishment->template_pdf;
+            if (Auth::user() !== null)  {
+                $base_pdf_template = Auth::user()->establishment->template_pdf;
             } else if (isset($array['user_id'])) {
                 $user = Auth::loginUsingId($array['user_id']);
                 $base_pdf_template = $user->establishment->template_pdf;
@@ -695,6 +695,17 @@ use Illuminate\Support\Str;
                         for ($page = 1; $page <= $count; $page++) {
                             $templateId = $pdfj->importPage($page, 'MediaBox');
                             $pdfj->AddPage('L', [210, 148]);
+                            $pdfj->useImportedPage($templateId);
+                        }
+                        continue;
+                    }
+                    $current = \App\Services\Fiscal\CurrentLocalInvoicePdf::bytesIfApplicable($document, 'a5');
+                    if ($current !== null) {
+                        $count = $pdfj->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($current));
+                        for ($page = 1; $page <= $count; $page++) {
+                            $templateId = $pdfj->importPage($page, 'MediaBox');
+                            $size = $pdfj->getTemplateSize($templateId);
+                            $pdfj->AddPage($size['orientation'], [$size['width'], $size['height']]);
                             $pdfj->useImportedPage($templateId);
                         }
                         continue;

@@ -60574,27 +60574,6 @@
             "operation_language": "php"
         }
     },
-    "433c3654b34dfc457cc93177": {
-        "category": "technical",
-        "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $type->fiscal_environment === 'demo'",
-        "evidence": [
-            "app/CoreFacturalo/Templates/pdf/marca_de_agua/invoice_a4.blade.php",
-            "scripts/exact_guard_proof.php",
-            "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
-        ],
-        "evidence_sha256": {
-            "app/CoreFacturalo/Templates/pdf/marca_de_agua/invoice_a4.blade.php": "12633b5fda5c9ade6adc9e8d188ad764fe5951058e31dafa3b5329a67518c2f3",
-            "scripts/exact_guard_proof.php": "f43ec06e7cf4e5e491c54f398703eb2322c1264436a87ad5d32b40d2b4339db0",
-            "tests/Unit/ExactGuardProofTest.php": "15d12e18cd20e9fc75d0133eb88769ed8f1b6ed4b83883106b1206e4a78278b7"
-        },
-        "proof": "nonnumeric_string_equality",
-        "source": {
-            "file": "app/CoreFacturalo/Templates/pdf/marca_de_agua/invoice_a4.blade.php",
-            "symbol": "{blade}",
-            "operation": "native_Identical",
-            "operation_language": "php"
-        }
-    },
     "433c436ea208d4d6ae911e0d": {
         "category": "technical",
         "justification": "Igualdad JavaScript con literal cuya conversión numérica es NaN; compara texto/tipo, no importes. Los operandos anidados conservan su propia revisión: place == 'cat2'",
@@ -73483,27 +73462,6 @@
             "symbol": "{template}",
             "operation": "native_==",
             "operation_language": "javascript"
-        }
-    },
-    "5302abad7383e9709818ec84": {
-        "category": "technical",
-        "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $type->fiscal_environment === 'demo'",
-        "evidence": [
-            "app/CoreFacturalo/Templates/pdf/modern-2027/invoice_a4.blade.php",
-            "scripts/exact_guard_proof.php",
-            "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
-        ],
-        "evidence_sha256": {
-            "app/CoreFacturalo/Templates/pdf/modern-2027/invoice_a4.blade.php": "5272a40393e567cc97044023ff644e66cf7a67f605597d900953206c3b5c0ed5",
-            "scripts/exact_guard_proof.php": "f43ec06e7cf4e5e491c54f398703eb2322c1264436a87ad5d32b40d2b4339db0",
-            "tests/Unit/ExactGuardProofTest.php": "15d12e18cd20e9fc75d0133eb88769ed8f1b6ed4b83883106b1206e4a78278b7"
-        },
-        "proof": "nonnumeric_string_equality",
-        "source": {
-            "file": "app/CoreFacturalo/Templates/pdf/modern-2027/invoice_a4.blade.php",
-            "symbol": "{blade}",
-            "operation": "native_Identical",
-            "operation_language": "php"
         }
     },
     "530423d42874808bae02e7f3": {
@@ -96405,27 +96363,6 @@
             "file": "app/CoreFacturalo/Templates/pdf/default/quotation_a4.blade.php",
             "symbol": "{blade}",
             "operation": "native_Equal",
-            "operation_language": "php"
-        }
-    },
-    "6ed9128116aae633ec9f2d31": {
-        "category": "technical",
-        "justification": "Comparación estricta con null/booleano; comprueba tipo o presencia sin calcular un importe: \\Auth::user() !== null",
-        "evidence": [
-            "modules/Report/Traits/MassiveDownloadTrait.php",
-            "scripts/exact_guard_proof.php",
-            "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
-        ],
-        "evidence_sha256": {
-            "modules/Report/Traits/MassiveDownloadTrait.php": "a54897f7917de0af58af3e09181888983376cf7cc75dec59636b762c68242f62",
-            "scripts/exact_guard_proof.php": "f43ec06e7cf4e5e491c54f398703eb2322c1264436a87ad5d32b40d2b4339db0",
-            "tests/Unit/ExactGuardProofTest.php": "15d12e18cd20e9fc75d0133eb88769ed8f1b6ed4b83883106b1206e4a78278b7"
-        },
-        "proof": "strict_type_guard",
-        "source": {
-            "file": "modules/Report/Traits/MassiveDownloadTrait.php",
-            "symbol": "createPdf",
-            "operation": "native_NotIdentical",
             "operation_language": "php"
         }
     },
@@ -133475,27 +133412,6 @@
             "symbol": "parseAmount",
             "operation": "native_===",
             "operation_language": "javascript"
-        }
-    },
-    "995dc2c7511cd30858a320b6": {
-        "category": "technical",
-        "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $type->fiscal_environment === 'demo'",
-        "evidence": [
-            "app/CoreFacturalo/Templates/pdf/Plantilla_personalizable/invoice_a4.blade.php",
-            "scripts/exact_guard_proof.php",
-            "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
-        ],
-        "evidence_sha256": {
-            "app/CoreFacturalo/Templates/pdf/Plantilla_personalizable/invoice_a4.blade.php": "2a74e31053218a2935ba00d7afe9aa7be737702d502a6f0bde9a0492eb79b541",
-            "scripts/exact_guard_proof.php": "f43ec06e7cf4e5e491c54f398703eb2322c1264436a87ad5d32b40d2b4339db0",
-            "tests/Unit/ExactGuardProofTest.php": "15d12e18cd20e9fc75d0133eb88769ed8f1b6ed4b83883106b1206e4a78278b7"
-        },
-        "proof": "nonnumeric_string_equality",
-        "source": {
-            "file": "app/CoreFacturalo/Templates/pdf/Plantilla_personalizable/invoice_a4.blade.php",
-            "symbol": "{blade}",
-            "operation": "native_Identical",
-            "operation_language": "php"
         }
     },
     "99631dc27558f93b01a31849": {
@@ -181652,27 +181568,6 @@
             "operation_language": "javascript"
         }
     },
-    "d089b5b062c06525ffd54fb3": {
-        "category": "technical",
-        "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $type->fiscal_environment === 'demo'",
-        "evidence": [
-            "app/CoreFacturalo/Templates/pdf/default/invoice_a4.blade.php",
-            "scripts/exact_guard_proof.php",
-            "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
-        ],
-        "evidence_sha256": {
-            "app/CoreFacturalo/Templates/pdf/default/invoice_a4.blade.php": "c6d7d335dc607a7493c2206ab92a7fa77134577576e4547227845d0bddfa7c6a",
-            "scripts/exact_guard_proof.php": "f43ec06e7cf4e5e491c54f398703eb2322c1264436a87ad5d32b40d2b4339db0",
-            "tests/Unit/ExactGuardProofTest.php": "15d12e18cd20e9fc75d0133eb88769ed8f1b6ed4b83883106b1206e4a78278b7"
-        },
-        "proof": "nonnumeric_string_equality",
-        "source": {
-            "file": "app/CoreFacturalo/Templates/pdf/default/invoice_a4.blade.php",
-            "symbol": "{blade}",
-            "operation": "native_Identical",
-            "operation_language": "php"
-        }
-    },
     "d090ebd65ad78aa9a8930419": {
         "category": "technical",
         "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: this.form.period === \"date\"",
@@ -222368,6 +222263,2046 @@
             "symbol": "readPendingHotelOperation",
             "operation": "native_===",
             "operation_language": "javascript"
+        }
+    },
+    "e26f792fde56a43d9ff9741f": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $template === 'invoice'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Template.php",
+            "symbol": "Template::pdf",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "741dbbd063904a49108263e6": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: ($document->document_type_id ?? null) === '01'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Template.php",
+            "symbol": "Template::pdf",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "74cde4943ef4daa250c71613": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $current === null",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        },
+        "source": {
+            "file": "app/Mail/Tenant/DocumentEmail.php",
+            "symbol": "DocumentEmail::build",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "2707ee355f6693dae339c911": {
+        "category": "technical",
+        "justification": "Guardia de formato, tipo o profundidad entera de transacción que delimita la lectura consistente; no opera importes. Expresión: $document->document_type_id === '01'",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/CurrentFreeFormPdf.php",
+            "symbol": "CurrentFreeFormPdf::bytesIfRegistered",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "5e75fffec43890273bfcb092": {
+        "category": "technical",
+        "justification": "Guardia de formato, tipo o profundidad entera de transacción que delimita la lectura consistente; no opera importes. Expresión: $document->getConnection()->transactionLevel() === 0",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/CurrentFreeFormPdf.php",
+            "symbol": "CurrentFreeFormPdf::bytesIfRegistered",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "c0701c1171ad930ff0bdad32": {
+        "category": "technical",
+        "justification": "Ancho entero de la fila IGTF igual a las otras filas de totales de la plantilla personalizable; no opera importes. Expresión: $colspan_total - 1",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/Plantilla_personalizable/invoice_a4.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Minus",
+            "operation_language": "php"
+        }
+    },
+    "2edfdbab1aafe6e5032a0d14": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $this->document->document_type_id === '01'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Facturalo.php",
+            "symbol": "Facturalo::createPdf",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "c1082fcf9dd391047b92bc09": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $this->type === 'invoice'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Facturalo.php",
+            "symbol": "Facturalo::createPdf",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "66beb9bb46b6ac6231ba16b5": {
+        "category": "technical",
+        "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $format_pdf === 'a5'",
+        "evidence": [
+            "app/CoreFacturalo/Facturalo.php",
+            "scripts/exact_guard_proof.php",
+            "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+        ],
+        "evidence_sha256": {
+            "app/CoreFacturalo/Facturalo.php": "137d1c719524b74c37edba41e628ebf97629c3e2205d99f8a71ccc789f0bc47d",
+            "scripts/exact_guard_proof.php": "f43ec06e7cf4e5e491c54f398703eb2322c1264436a87ad5d32b40d2b4339db0",
+            "tests/Unit/ExactGuardProofTest.php": "15d12e18cd20e9fc75d0133eb88769ed8f1b6ed4b83883106b1206e4a78278b7"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Facturalo.php",
+            "symbol": "Facturalo::createPdf",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "45a6aa491eb15ed88cd089a2": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $this->document->document_type_id === '01'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Facturalo.php",
+            "symbol": "Facturalo::previewPdf",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "559e9ce9eb4365adab49b54a": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $this->type === 'invoice'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Facturalo.php",
+            "symbol": "Facturalo::previewPdf",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "bbab29fdfc649483ea4ddca1": {
+        "category": "technical",
+        "justification": "Igualdad con literal de texto no numérico; comprueba una categoría sin adaptar valores decimales: $format_pdf === 'a5'",
+        "evidence": [
+            "app/CoreFacturalo/Facturalo.php",
+            "scripts/exact_guard_proof.php",
+            "tests/Unit/ExactGuardProofTest.php#test_only_type_or_nonnumeric_string_guards_are_proven"
+        ],
+        "evidence_sha256": {
+            "app/CoreFacturalo/Facturalo.php": "137d1c719524b74c37edba41e628ebf97629c3e2205d99f8a71ccc789f0bc47d",
+            "scripts/exact_guard_proof.php": "f43ec06e7cf4e5e491c54f398703eb2322c1264436a87ad5d32b40d2b4339db0",
+            "tests/Unit/ExactGuardProofTest.php": "15d12e18cd20e9fc75d0133eb88769ed8f1b6ed4b83883106b1206e4a78278b7"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Facturalo.php",
+            "symbol": "Facturalo::previewPdf",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "03ce70b9b905e2934ba4c627": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat !== null",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Template.php",
+            "symbol": "Template::render",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "strict_type_guard"
+    },
+    "09c1bbaabf0a920b8019bbe2": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: ($document->document_type_id ?? null) === '01'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Template.php",
+            "symbol": "Template::pdfStylesheet",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "41f470db29990b3ecd5a6256": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $format_pdf === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Template.php",
+            "symbol": "Template::pdfStylesheet",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "57eac7870f2e49bcf810b0e4": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $template === 'invoice'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Template.php",
+            "symbol": "Template::pdfStylesheet",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "b8a2bc3f3b6f0a1091114b75": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: ($invoicePdf['environment'] ?? $type->fiscal_environment) === 'demo'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/Plantilla_personalizable/invoice_a4.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "1da5fec72f22920dc029feeb": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: ($invoicePdf['environment'] ?? \\App\\CoreFacturalo\\Helpers\\Template\\TemplateHelper::getFiscalEnvironment()->fiscal_environment) === 'demo'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/Plantilla_personalizable/invoice_a5.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "3ef3ddb44711e66fb642f972": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: ($invoicePdf['environment'] ?? $type->fiscal_environment) === 'demo'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/default/invoice_a4.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "e3544ad9e8d52a594f569600": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: ($invoicePdf['environment'] ?? \\App\\CoreFacturalo\\Helpers\\Template\\TemplateHelper::getFiscalEnvironment()->fiscal_environment) === 'demo'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/default/invoice_a5.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "1aff01faaee79ef276946b7c": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: ($invoicePdf['environment'] ?? $type->fiscal_environment) === 'demo'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/marca_de_agua/invoice_a4.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "ed860ffb5a86dd2ef69df10a": {
+        "category": "technical",
+        "justification": "Cantidad entera de filas del resumen A4/A5 para rowspan; no es aritmética monetaria. Expresión: 6 + count($invoicePdf['igtf'] ?? [])",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/marca_de_agua/invoice_a4.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Plus",
+            "operation_language": "php"
+        }
+    },
+    "a74c8d0ac94d66f4b760afdf": {
+        "category": "technical",
+        "justification": "Cantidad entera de filas del resumen A4/A5 para rowspan; no es aritmética monetaria. Expresión: 6 + count($invoicePdf['igtf'] ?? [])",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/marca_de_agua/invoice_a4.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Plus",
+            "operation_language": "php"
+        }
+    },
+    "2fbf71c37c228d00ff5672fd": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: ($invoicePdf['environment'] ?? \\App\\CoreFacturalo\\Helpers\\Template\\TemplateHelper::getFiscalEnvironment()->fiscal_environment) === 'demo'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/marca_de_agua/invoice_a5.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "b1f90e3c2257402be692a2e1": {
+        "category": "presentation",
+        "justification": "Representación final de importes conservados con Decimal/PdfAmounts a dos decimales, o fecha/porcentaje para impresión; no persiste ni alimenta cálculos comerciales. Expresión: \\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\PdfAmounts::read($prepayment, 'total'), 2)",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/marca_de_agua/invoice_a5.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "7d891ec7220b9ad69d495b64": {
+        "category": "technical",
+        "justification": "Opera sobre índices, cantidad entera de columnas/filas o páginas del PDF; no sobre magnitudes de negocio. Expresión: $colspan_total + 4",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/marca_de_agua/invoice_a5.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Plus",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "7a5384d49cadc1b0e75998da": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: ($invoicePdf['environment'] ?? $type->fiscal_environment) === 'demo'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/modern-2027/invoice_a4.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "9abd94fdae1b1ddf6340a966": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: ($invoicePdf['environment'] ?? \\App\\CoreFacturalo\\Helpers\\Template\\TemplateHelper::getFiscalEnvironment()->fiscal_environment) === 'demo'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/modern-2027/invoice_a5.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "550a77128d129a9a757ea52d": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $legend->code == '1000'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Equal",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "5ba7a18f68128bea7d70b7bc": {
+        "category": "presentation",
+        "justification": "Representación final de importes conservados con Decimal/PdfAmounts a dos decimales, o fecha/porcentaje para impresión; no persiste ni alimenta cálculos comerciales. Expresión: \\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\PdfAmounts::read($document, $field), 2)",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "d387a2aef6301373fbcc01cf": {
+        "category": "presentation",
+        "justification": "Representación final de importes conservados con Decimal/PdfAmounts a dos decimales, o fecha/porcentaje para impresión; no persiste ni alimenta cálculos comerciales. Expresión: \\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\PdfAmounts::read($document, 'total_igv'), 2)",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "0f54ed2f56a152aa11d6a00c": {
+        "category": "presentation",
+        "justification": "Proyección del descuento a céntimos para reconstruir exclusivamente el subtotal visible con el mismo presupuesto que A4; no cambia el snapshot ni la liquidación. Expresión: \\App\\Support\\Exact\\Decimal::represent(\\App\\Support\\Exact\\PdfAmounts::read($document, 'total_discount_with_igv'), 2)",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "represent",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "ae2b476d43700d6d32323f63": {
+        "category": "presentation",
+        "justification": "Representación final de importes conservados con Decimal/PdfAmounts a dos decimales, o fecha/porcentaje para impresión; no persiste ni alimenta cálculos comerciales. Expresión: \\App\\Support\\Exact\\Decimal::format($subtotal, 2)",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "eafd60516abed48c716a3f0c": {
+        "category": "presentation",
+        "justification": "Representación final de importes conservados con Decimal/PdfAmounts a dos decimales, o fecha/porcentaje para impresión; no persiste ni alimenta cálculos comerciales. Expresión: \\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\PdfAmounts::read($document, 'total_discount_with_igv'), 2)",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "a04625abbf888cd4e3afb3b1": {
+        "category": "presentation",
+        "justification": "Representación final de importes conservados con Decimal/PdfAmounts a dos decimales, o fecha/porcentaje para impresión; no persiste ni alimenta cálculos comerciales. Expresión: \\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\PdfAmounts::read($document, 'total_charge'), 2)",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "570331777cde50fa93094443": {
+        "category": "presentation",
+        "justification": "Representación final de importes conservados con Decimal/PdfAmounts a dos decimales, o fecha/porcentaje para impresión; no persiste ni alimenta cálculos comerciales. Expresión: \\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\PdfAmounts::read($document, 'total'), 2)",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "f76700129f07d47c0100042e": {
+        "category": "presentation",
+        "justification": "Representación final de importes conservados con Decimal/PdfAmounts a dos decimales, o fecha/porcentaje para impresión; no persiste ni alimenta cálculos comerciales. Expresión: $quote->date->format('d-m-Y')",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "3096df363b82ff93ed09da37": {
+        "category": "technical",
+        "justification": "Opera sobre índices, cantidad entera de columnas/filas o páginas del PDF; no sobre magnitudes de negocio. Expresión: $key + 1",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Plus",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        }
+    },
+    "4f435591ad51d32ff4414cc4": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "ce6c0255f9c0960419d2ee23": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "f1fd4747b6dc4d9585699ef9": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "dc6cfe614e8a994d14da7109": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "304017635a12ec2be7d93af9": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $retention['percentage'] !== null",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "bf47f2e5dbd8517090d07c3a": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $retention['amount'] !== null",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "c870e18a8495fd8a966dfd6c": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $retention['currency'] !== $invoicePdf['currency']",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "4d279767547054fa7775b774": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "75a7963a50073626f58d1c0d": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "d2744c0578cac3471f68fd33": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "514d4742239ce3cd66854c7a": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $invoicePdf['guarantee'] !== null",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "ddab661c9f0b65085f4aabf4": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $invoicePdf['balance'] !== null",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "3e78dddf10962842a567e600": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "5486f15c357924d087d5d9f0": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "c5211ff4e4911d5288e1b7d0": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "bb32caa5e46ca74200892eaf": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $invoicePdf['guarantee'] !== null",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "043b6d169e8a53b7a8bb1b96": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $invoicePdf['balance'] !== null",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "3e8234627c13a73aad028bee": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: \\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\Decimal::read($invoicePdf['ves_totals'], 'iva'))",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "8e79bf3358d4fc9027702236": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: \\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\Decimal::read($invoicePdf['ves_totals'], 'total'))",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "3d11fc19156fb124634062b1": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "5ee25080199cc4709c4a3582": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "cf2e23dede0849d7389d6761": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_fiscal.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "e5519fafaefb60bc747f8965": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $receipt['amount'] !== null",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_payments.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "0d278d1110fee885eae6d928": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $invoiceFormat === 'a5'",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_rate.blade.php",
+            "symbol": "{blade}",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "62a0e1829646670e93bfe382": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $currentInvoicePdf/A5 !== null",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        },
+        "source": {
+            "file": "app/Http/Controllers/Tenant/DownloadController.php",
+            "symbol": "DownloadController::downloadExternal",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "ebe190a7a62d57361a49f72e": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $currentInvoicePdf/A5 !== null",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        },
+        "source": {
+            "file": "app/Http/Controllers/Tenant/DownloadController.php",
+            "symbol": "DownloadController::toPrint",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "b66748942faa3aa09ad42fac": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $document->document_type_id === '01'",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/CurrentLocalInvoicePdf.php",
+            "symbol": "CurrentLocalInvoicePdf::applies",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "c61bd065966e6de92ddd8a72": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $registered !== null",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/CurrentLocalInvoicePdf.php",
+            "symbol": "CurrentLocalInvoicePdf::bytesIfApplicable",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "a70466f31789146963db1f77": {
+        "category": "technical",
+        "justification": "Guardia de formato, tipo o profundidad entera de transacción que delimita la lectura consistente; no opera importes. Expresión: $connection->transactionLevel() > 0",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/CurrentLocalInvoicePdf.php",
+            "symbol": "CurrentLocalInvoicePdf::bytesIfApplicable",
+            "operation": "native_Greater",
+            "operation_language": "php"
+        }
+    },
+    "10f81292bee8e98963ba713c": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $r->application_status === 'applied'",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "b35b713cabe45814b4a6447c": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $gross === null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "a200d1b6cf443f445db1c501": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $tender['tendered_original_amount'] !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "93f69e02e36df2a0a44179d8": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $payment->original_amount !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "1a7494e766ce59b9600babba": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format($gross)",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "fc3fc179c8119618ab67d4e3": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format(D::read($payment, 'original_amount')->plus(D::read($payment, 'tax_amount')))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "57fe2e98f0aaac4545225137": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $gross !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "7550cbfbb3acfc40c098a4fc": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $gross === null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "cd2b720610ab70de9dee89bc": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $tender['received_change'] !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "ded5801476707555f5e7a9ac": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format(D::read($payment, 'payment'))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "368583c31c507b1bfac22a01": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $payment->currency_type_id !== $currency",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        }
+    },
+    "9ac5da3af569b71be8b6adf2": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $receivedChange !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "a1ea08151f8360dacabed467": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $payment->currency_type_id === $currency",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "461afb49bc980d2adb55c438": {
+        "category": "exact_arithmetic",
+        "justification": "Agrega fracciones conservadas mediante Decimal::sum, sin aritmética binaria ni redondeo intermedio. Expresión: D::sum($retentions->where('tax_kind', $kind)->map(fn($r) => D::read($r, 'applied_amount')))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "sum",
+            "operation_language": "php"
+        }
+    },
+    "4ac85c2fa05cafe40c0b3d25": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format($amount)",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "23711fe16f27a3015ceca9e1": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format($remaining)",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "2974b2cbc4a31bf4fbd1bc61": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $document->total_payable !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "70c03ce904de2de0e4e44fa0": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $ledger->total_payable !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "b0875a8a9d22bd66b5d22364": {
+        "category": "exact_arithmetic",
+        "justification": "Agrega fracciones conservadas mediante Decimal::sum, sin aritmética binaria ni redondeo intermedio. Expresión: D::sum($payments->map(function ($payment) use ($activePayments, $currency) { if (!D::read($payment, 'tax_amount')->isPositive() || $payment->id && $activePayments->contains(fn($p) => $p->receipt_parent_id == $payment->id)) { return D::of(0); } return D::of(D::represent(D::convert(D::read($payment, 'tax_amount'), $payment->currency_type_id, $currency, $payment->exchange_rate), 2)); }))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "sum",
+            "operation_language": "php"
+        }
+    },
+    "f6c128046dfce893d6edba82": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $p->receipt_parent_id == $payment->id",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_Equal",
+            "operation_language": "php"
+        }
+    },
+    "063ed616fe2c53ca15827af2": {
+        "category": "settlement",
+        "justification": "La vista previa reproduce una sola liquidación a céntimos de la aplicación derivada IGTF, igual que el guardado; no crea otro ingreso. Expresión: D::represent(D::convert(D::read($payment, 'tax_amount'), $payment->currency_type_id, $currency, $payment->exchange_rate), 2)",
+        "evidence": [
+            "tests/Unit/InvoicePaymentPreviewCurrencyTest.php#test_a4_preview_keeps_inclusive_tender_igtf_and_change_without_a_fictitious_balance"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaymentPreviewCurrencyTest.php": "dbd7ebc8cf3aa088d145760bd615ac8e40ff20e1c3896a7924a28d217ed68d90"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "68c19da68996664b36a6573f": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $document->total_payable !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "6386ce5919583373be140871": {
+        "category": "exact_arithmetic",
+        "justification": "Agrega fracciones conservadas mediante Decimal::sum, sin aritmética binaria ni redondeo intermedio. Expresión: D::sum($activePayments->map(fn($p) => D::read($p, 'payment')))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "sum",
+            "operation_language": "php"
+        }
+    },
+    "7d03de0c46aa10a9002052cf": {
+        "category": "exact_arithmetic",
+        "justification": "Agrega fracciones conservadas mediante Decimal::sum, sin aritmética binaria ni redondeo intermedio. Expresión: D::sum($retentions->map(fn($r) => D::read($r, 'applied_amount')))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "sum",
+            "operation_language": "php"
+        }
+    },
+    "f41c3543fd4277a672cb8b56": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $currency === 'USD'",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "83bcccc070bb2ebf39d86dab": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $currency === 'USD'",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "7edbe2ebd009e6f9bf0b6f5f": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format($r['amount'])",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "471f30c1ba3798a4ecf5ea5e": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format($balance)",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "5e9977d8980632312eb17442": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $balance === null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "75969b2ea5b9eda65ece90f6": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $ledger !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "665ee599027bc1d6af66fc21": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format($guarantee)",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_received_tender_includes_igtf_once_and_change_uses_actual_currencies"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::forDocument",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "dadf964161f0b39b869055ef": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::represent($value)",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_active_forecasts_remain_informative_and_percentages_are_not_rounded"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::percentage",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "060e79726c796b133bfdda21": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::represent(D::read($row, 'percentage'))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_igtf_display_reconciles_fractional_tax_rows"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::taxes",
+            "operation": "represent",
+            "operation_language": "php"
+        }
+    },
+    "b1f688ef209710bd3536ad4e": {
+        "category": "exact_arithmetic",
+        "justification": "Agrega fracciones conservadas mediante Decimal::sum, sin aritmética binaria ni redondeo intermedio. Expresión: D::sum($rows->map(fn($row) => D::read($row, 'amount')))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_igtf_display_reconciles_fractional_tax_rows"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::taxes",
+            "operation": "sum",
+            "operation_language": "php"
+        }
+    },
+    "4355bfc97c54f297a55a5915": {
+        "category": "exact_arithmetic",
+        "justification": "Agrega fracciones conservadas mediante Decimal::sum, sin aritmética binaria ni redondeo intermedio. Expresión: D::sum($weights)",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_igtf_display_reconciles_fractional_tax_rows"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::taxes",
+            "operation": "sum",
+            "operation_language": "php"
+        }
+    },
+    "bf0cdf2b32b677db498b4b83": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format($amount)",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_igtf_display_reconciles_fractional_tax_rows"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::taxes",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "840fca46fba3c3c835a2df3f": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $row->tax_kind === 'IVA'",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_active_forecasts_remain_informative_and_percentages_are_not_rounded"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::retention",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "5c84ada27e5b9f3e348b1ee5": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format(D::read($row, $field))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_active_forecasts_remain_informative_and_percentages_are_not_rounded"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::retention",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "89dfe2951b0ac98f289101b2": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $row->{$field} !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_active_forecasts_remain_informative_and_percentages_are_not_rounded"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::retention",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "912f05af7ec49bc7a9323196": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: \\Carbon\\Carbon::parse($row->voucher_date)->format('d/m/Y')",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_active_forecasts_remain_informative_and_percentages_are_not_rounded"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::retention",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "821d759c0cdc2eefb373e726": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $row->percentage !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_active_forecasts_remain_informative_and_percentages_are_not_rounded"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::retention",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "5bd27feb80559e5a31e69d02": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format(D::read($row, 'amount'))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_active_forecasts_remain_informative_and_percentages_are_not_rounded"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::retention",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "b00c63cbd2f15bcb1ae773a6": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $row->amount !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_active_forecasts_remain_informative_and_percentages_are_not_rounded"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::retention",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "3b0b76f52c70a6b74f09abc9": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format(D::read($row, 'applied_amount'))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_active_forecasts_remain_informative_and_percentages_are_not_rounded"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::retention",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "c110a5bfbdcf718c3744558a": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format(D::read($row, 'amount'))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_persisted_invoice_links_later_igtf_to_its_real_collections_only"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::laterIgtf",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "4625bf9392acbb545fbaa64e": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $row->state_type_id === '13'",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_persisted_invoice_links_later_igtf_to_its_real_collections_only"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::laterIgtf",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        }
+    },
+    "9f67366977f471227c14cb6c": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $row->fiscal_emission_mode === 'digital'",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_persisted_invoice_links_later_igtf_to_its_real_collections_only"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::laterIgtf",
+            "operation": "native_Identical",
+            "operation_language": "php"
+        },
+        "proof": "nonnumeric_string_equality"
+    },
+    "3c5e41b907bb88f0f5447f8b": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $row->origin_id == $document->id",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_persisted_invoice_links_later_igtf_to_its_real_collections_only"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::laterIgtf",
+            "operation": "native_Equal",
+            "operation_language": "php"
+        }
+    },
+    "fc135f95d5d29cb3ba68ebb4": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format(D::read($a, 'amount'))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_persisted_invoice_links_later_igtf_to_its_real_collections_only"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::laterIgtf",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "1fcb621499cbd94de6524cac": {
+        "category": "presentation",
+        "justification": "Representación final de importe a dos decimales, porcentaje conservado o fecha; no altera los snapshots ni alimenta cálculos comerciales. Expresión: D::format(D::read($r, 'original_amount'))",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_persisted_invoice_links_later_igtf_to_its_real_collections_only"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::laterIgtf",
+            "operation": "format",
+            "operation_language": "php"
+        }
+    },
+    "90b7109b1200055812a18ae7": {
+        "category": "technical",
+        "justification": "Guardia de presencia, identidad, ambiente, estado o moneda; compara metadatos, no importes. Expresión: $r->reversed_at !== null",
+        "evidence": [
+            "tests/Unit/InvoicePaperPdfDataTest.php#test_persisted_invoice_links_later_igtf_to_its_real_collections_only"
+        ],
+        "evidence_sha256": {
+            "tests/Unit/InvoicePaperPdfDataTest.php": "e138b4148da3f61614176d4fc5d3d5f23fec23ce9a40619ac0ede44ecc6224e0"
+        },
+        "source": {
+            "file": "app/Services/Fiscal/InvoicePaperPdfData.php",
+            "symbol": "InvoicePaperPdfData::laterIgtf",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "proof": "strict_type_guard"
+    },
+    "387294de90eb59774d9289cb": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: Auth::user() !== null",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "source": {
+            "file": "modules/Report/Traits/MassiveDownloadTrait.php",
+            "symbol": "createPdf",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        },
+        "proof": "strict_type_guard"
+    },
+    "d2ea68fb93cd36bbd2e4971d": {
+        "category": "technical",
+        "justification": "Guardia de formato, presencia, identidad, ambiente, estado o moneda de la presentación A4/A5; compara metadatos y no importes. Expresión: $current !== null",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "source": {
+            "file": "modules/Report/Traits/MassiveDownloadTrait.php",
+            "symbol": "createPdf",
+            "operation": "native_NotIdentical",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        },
+        "proof": "strict_type_guard"
+    },
+    "f2a21c7a677c815c70bfeba5": {
+        "category": "technical",
+        "justification": "Opera sobre índices, cantidad entera de columnas/filas o páginas del PDF; no sobre magnitudes de negocio. Expresión: $page <= $count",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "source": {
+            "file": "modules/Report/Traits/MassiveDownloadTrait.php",
+            "symbol": "createPdf",
+            "operation": "native_SmallerOrEqual",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        }
+    },
+    "45f19efdf697e91d45ba392e": {
+        "category": "technical",
+        "justification": "Opera sobre índices, cantidad entera de columnas/filas o páginas del PDF; no sobre magnitudes de negocio. Expresión: $page++",
+        "evidence": [
+            "tests/Support/NotePersistenceCases.php#test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf"
+        ],
+        "source": {
+            "file": "modules/Report/Traits/MassiveDownloadTrait.php",
+            "symbol": "createPdf",
+            "operation": "native_update",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Support/NotePersistenceCases.php": "0c6c9afa6d8c6c3743541ec11d14d0075090f1537cede7178df30c95e8cf8093"
+        }
+    },
+    "dc58a9aea9e8615fbbd1a95a": {
+        "category": "presentation",
+        "justification": "Representación final de importes conservados con Decimal/PdfAmounts a dos decimales, o fecha/porcentaje para impresión; no persiste ni alimenta cálculos comerciales. Expresión: \\App\\Support\\Exact\\Decimal::format(\\App\\Support\\Exact\\Decimal::read($quote, 'amount'), 2)",
+        "evidence": [
+            "tests/Unit/CurrentPdfRenderingTest.php#test_local_a4_design_and_fiscal_sections_render_real_pages"
+        ],
+        "source": {
+            "file": "app/CoreFacturalo/Templates/pdf/partials/invoice_a5_summary.blade.php",
+            "symbol": "{blade}",
+            "operation": "format",
+            "operation_language": "php"
+        },
+        "evidence_sha256": {
+            "tests/Unit/CurrentPdfRenderingTest.php": "ac86c94abd3b90a4aa1663b91f60eb10689ef55ff4cb89353cbc131a93bf7659"
         }
     }
 }

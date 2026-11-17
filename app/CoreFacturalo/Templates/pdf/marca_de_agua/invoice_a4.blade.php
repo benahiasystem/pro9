@@ -31,6 +31,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
     $document->load('reference_guides');
 
+    if (!$invoicePdf) {
     $total_payment = $document->payments->sum('payment');
     $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
@@ -66,6 +67,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     }
     $quantity_items = $document->items->count();
     $cycle_items = $allowed_items - ($quantity_items * 3);
+    } else {
+        $cycle_items = 0;
+    }
     $total_weight = 0;
 
     $logo = null;
@@ -126,7 +130,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             alt="vista previa" class="" style="opacity: 0.6; width: 50%;">
     </div>
 @endif
-@if ($type->fiscal_environment === 'demo')
+@if (($invoicePdf['environment'] ?? $type->fiscal_environment) === 'demo')
     <table class="full-width">
         <tr>
             <td style="width: 100%;text-align: center">
@@ -147,7 +151,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td width="40%" class="text-center">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RIF '.$company->number }}</h5>
+                    <h5>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -172,17 +176,21 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @endisset
                 </div>
             </td>
-            <td width="40%" class="border-box py-2 px-2 text-center">
+            <td width="40%" class="border-box py-2 px-2 text-left" style="border: 0.5pt solid #888; padding: 9px 10px;">
+@if($invoicePdf)
+@include('pdf.partials.invoice_identity')
+@else
                 <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h3 class="text-center font-bold">{{ $document->document_type->description }}</h3>
                 <br>
                 <h3 class="text-center font-bold">{{ $document_number }}</h3>
-            </td>
+            @endif
+</td>
         @else
-            <td width="40%" class="pl-1">
+            <td width="60%" class="pl-1">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RIF '.$company->number }}</h5>
+                    <h5>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -207,15 +215,20 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @endisset
                 </div>
             </td>
-            <td width="40%" class="border-box py-2 px-2 text-center">
+            <td width="40%" class="border-box py-2 px-2 text-left" style="border: 0.5pt solid #888; padding: 9px 10px;">
+@if($invoicePdf)
+@include('pdf.partials.invoice_identity')
+@else
                 <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h3 class="text-center font-bold">{{ $document->document_type->description }}</h3>
                 <br>
                 <h3 class="text-center font-bold">{{ $document_number }}</h3>
-            </td>
+            @endif
+</td>
         @endif
     </tr>
 </table>
+<!-- INVOICE_SPECIAL_IDENTITY -->
 <table class="full-width mt-3">
     <tr>
         <td width="47%" class="border-box pl-3 align-top">
@@ -330,13 +343,15 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         </td>
                     @endif
 
-                    <td class="font-sm align-top" width="70px">
+                    @if(!$invoicePdf)
+<td class="font-sm align-top" width="70px">
                         <strong>Moneda</strong>
                     </td>
                     <td class="font-sm align-top" width="8px">:</td>
                     <td class="font-sm">
                         {{ $document->currency_type->description }}
                     </td>
+@endif
                 </tr>
                 <tr>
                     @if($document->purchase_order)
@@ -349,7 +364,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         </td>
                     @endif
 
-                    {{-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## --}}
+                    @if(!$invoicePdf)
+{{-- ######## INICIO MONEDA DEL MEDIO DE COBRO ######## --}}
                     @if($payments->count() > 0)
                         <td class="font-sm align-top" width="70px">
                             <strong>F. Pago</strong>
@@ -360,6 +376,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         </td>
                     @endif
                     {{-- ######## FIN MONEDA DEL MEDIO DE COBRO ######## --}}
+@endif
                 </tr>
                 @if($document->guides)
                     <tr>
@@ -638,7 +655,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </tr>
 
         <tr>
-            <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="6">
+            <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="{{ 6 + count($invoicePdf['igtf'] ?? []) }}">
                 @php
                     // Solo contar productos (no servicios) para total bultos
                     $total_packages = 0;
@@ -676,7 +693,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 @endforeach
 
 
-            <td class="p-1 text-center align-top desc cell-solid " rowspan="6">
+            <td class="p-1 text-center align-top desc cell-solid " rowspan="{{ 6 + count($invoicePdf['igtf'] ?? []) }}">
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
                 OP. INAFECTAS {{$document->currency_type->symbol}}
@@ -704,11 +721,12 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <tr>
 
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
-                IGV ({{ \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentIgvPercentage($document) }}%). {{$document->currency_type->symbol}}
+                IVA ({{ \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentIgvPercentage($document) }}%). {{$document->currency_type->symbol}}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
-        <tr>
+        @include('pdf.partials.invoice_igtf')
+<tr>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
                 TOTAL A PAGAR. {{$document->currency_type->symbol}}
             </td>
@@ -742,6 +760,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 @endif
 
 
+@if($invoicePdf)
+@include('pdf.partials.invoice_fiscal')
+@endif
 @php
     $paymentCondition = \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentPaymentCondition($document);
 @endphp
@@ -764,6 +785,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     </table>
 @endif
 
+@if($invoicePdf)
+@include('pdf.partials.invoice_payments')
+@else
 @if (in_array((string) $document->payment_condition_id, ['01', '02', '03'], true))
     @if($payments->count())
         <table class="full-width">
@@ -780,7 +804,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </table>
     @endif
 @endif
-                @if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
+                @endif
+@if (in_array((string) $document->payment_condition_id, ['02', '03'], true))
     <table class="full-width">
         @foreach($document->fee as $key => $quote)
             <tr>

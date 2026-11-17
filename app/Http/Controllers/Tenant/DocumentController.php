@@ -1594,6 +1594,11 @@ class DocumentController extends Controller
         $document = new Document($inputs);
         $existingDocument = !empty($inputs['id']) ? Document::findOrFail($inputs['id']) : null;
         if ($existingDocument) DocumentFiscalController::authorizeDocument($existingDocument);
+        // ######## INICIO PRESENTACION FACTURA A4/A5 ########
+        if ($existingDocument) {
+            $document->setRelation('invoice_source_document', $existingDocument);
+        }
+        // ######## FIN PRESENTACION FACTURA A4/A5 ########
         $facturalo->setPaymentsPreview($document, $inputs['payments'], $existingDocument);
         $facturalo->setFeePreview($document, $inputs['fee']);
 

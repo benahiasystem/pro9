@@ -29,6 +29,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         $logo = "{$establishment->logo}";
     }
 
+    $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
     $payments = $document->payments->filter(fn ($payment) => !data_get($payment, 'reversed_at'));
     $document->load('reference_guides');
 
@@ -40,7 +41,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     {{--<title>{{ $document_number }}</title>--}}
     {{--<link href="{{ $path_style }}" rel="stylesheet" />--}}
 </head>
-<body>
+<body @if($invoicePdf) style="line-height: 1.05;" @endif>
+@if($invoicePdf && ($invoicePdf['environment'] ?? \App\CoreFacturalo\Helpers\Template\TemplateHelper::getFiscalEnvironment()->fiscal_environment) === 'demo')
+<table class="full-width"><tr><td class="text-center"><span style="color: red; font-weight: bold; font-size: 1.6rem;">Esta factura es solo de prueba</span></td></tr></table>
+@endif
 @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top: 30%; left: 0; right: 0;">
         <img
@@ -83,19 +87,19 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 @endif
 <table class="full-width">
     <tr>
-        @if($company->logo)
+        @if($exists_logo)
             <td width="20%">
-                <div class="company_logo_box">
+                <div class="company_logo_box" @if($invoicePdf) style="height: 64px;" @endif>
                     <img
-                        src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}"
-                        alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
+                        src="data:{{mime_content_type(public_path($logo))}};base64, {{base64_encode(file_get_contents(public_path($logo)))}}"
+                        alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px; {{ $invoicePdf ? 'max-height: 64px;' : '' }}">
                 </div>
             </td>
-            <td width="50%" class="text-center">
+            <td width="{{ $invoicePdf ? '40%' : '50%' }}" class="text-left">
                 <div class="text-left">
-                    @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RIF '.$company->number }}</h5>
-                    <h6 style="text-transform: uppercase;">
+                    @include('pdf.partials.company_document_header_names', ['primaryStyle'=>$invoicePdf ? 'margin: 0; line-height: 1.2;' : null])
+                    <h5 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>
+                    <h6 style="text-transform: uppercase; {{ $invoicePdf ? 'margin: 0; line-height: 1.2;' : '' }}">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
                         {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
@@ -103,33 +107,37 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     </h6>
 
                     @isset($establishment->trade_address)
-                        <h6>{{ ($establishment->trade_address !== '-')? 'D. Comercial: '.$establishment->trade_address : '' }}</h6>
+                        <h6 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ ($establishment->trade_address !== '-')? 'D. Comercial: '.$establishment->trade_address : '' }}</h6>
                     @endisset
 
-                    <h6>{{ ($establishment->telephone !== '-')? 'Central telefónica: '.$establishment->telephone : '' }}</h6>
+                    <h6 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ ($establishment->telephone !== '-')? 'Central telefónica: '.$establishment->telephone : '' }}</h6>
 
-                    <h6>{{ ($establishment->email !== '-')? 'Email: '.$establishment->email : '' }}</h6>
+                    <h6 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ ($establishment->email !== '-')? 'Email: '.$establishment->email : '' }}</h6>
 
                     @isset($establishment->web_address)
-                        <h6>{{ ($establishment->web_address !== '-')? 'Web: '.$establishment->web_address : '' }}</h6>
+                        <h6 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ ($establishment->web_address !== '-')? 'Web: '.$establishment->web_address : '' }}</h6>
                     @endisset
 
                     @isset($establishment->aditional_information)
-                        <h6>{{ ($establishment->aditional_information !== '-')? $establishment->aditional_information : '' }}</h6>
+                        <h6 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ ($establishment->aditional_information !== '-')? $establishment->aditional_information : '' }}</h6>
                     @endisset
                 </div>
             </td>
-            <td width="30%" class="border-box py-4 px-2 text-center">
+            <td width="{{ $invoicePdf ? '40%' : '30%' }}" class="{{ $invoicePdf ? 'border-box text-left' : 'border-box py-4 px-2 text-center' }}" @if($invoicePdf) style="border: 0.5pt solid #888; padding: 9px 10px;" @endif>
+                @if($invoicePdf)
+                    @include('pdf.partials.invoice_identity')
+                @else
                 <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h5 class="text-center">{{ $document->document_type->description }}</h5>
                 <h3 class="text-center">{{ $document_number }}</h3>
+            @endif
             </td>
         @else
-            <td width="50%" class="pl-1">
+            <td width="{{ $invoicePdf ? '60%' : '50%' }}" class="pl-1">
                 <div class="text-left">
-                    @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RIF '.$company->number }}</h5>
-                    <h6 style="text-transform: uppercase;">
+                    @include('pdf.partials.company_document_header_names', ['primaryStyle'=>$invoicePdf ? 'margin: 0; line-height: 1.2;' : null])
+                    <h5 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>
+                    <h6 style="text-transform: uppercase; {{ $invoicePdf ? 'margin: 0; line-height: 1.2;' : '' }}">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
                         {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
@@ -137,30 +145,35 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     </h6>
 
                     @isset($establishment->trade_address)
-                        <h6>{{ ($establishment->trade_address !== '-')? 'D. Comercial: '.$establishment->trade_address : '' }}</h6>
+                        <h6 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ ($establishment->trade_address !== '-')? 'D. Comercial: '.$establishment->trade_address : '' }}</h6>
                     @endisset
 
-                    <h6>{{ ($establishment->telephone !== '-')? 'Central telefónica: '.$establishment->telephone : '' }}</h6>
+                    <h6 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ ($establishment->telephone !== '-')? 'Central telefónica: '.$establishment->telephone : '' }}</h6>
 
-                    <h6>{{ ($establishment->email !== '-')? 'Email: '.$establishment->email : '' }}</h6>
+                    <h6 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ ($establishment->email !== '-')? 'Email: '.$establishment->email : '' }}</h6>
 
                     @isset($establishment->web_address)
-                        <h6>{{ ($establishment->web_address !== '-')? 'Web: '.$establishment->web_address : '' }}</h6>
+                        <h6 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ ($establishment->web_address !== '-')? 'Web: '.$establishment->web_address : '' }}</h6>
                     @endisset
 
                     @isset($establishment->aditional_information)
-                        <h6>{{ ($establishment->aditional_information !== '-')? $establishment->aditional_information : '' }}</h6>
+                        <h6 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ ($establishment->aditional_information !== '-')? $establishment->aditional_information : '' }}</h6>
                     @endisset
                 </div>
             </td>
-            <td width="30%" class="border-box py-4 px-2 text-center">
+            <td width="{{ $invoicePdf ? '40%' : '30%' }}" class="{{ $invoicePdf ? 'border-box text-left' : 'border-box py-4 px-2 text-center' }}" @if($invoicePdf) style="border: 0.5pt solid #888; padding: 9px 10px;" @endif>
+                @if($invoicePdf)
+                    @include('pdf.partials.invoice_identity')
+                @else
                 <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h5 class="text-center">{{ $document->document_type->description }}</h5>
                 <h3 class="text-center">{{ $document_number }}</h3>
+            @endif
             </td>
         @endif
     </tr>
 </table>
+<!-- INVOICE_SPECIAL_IDENTITY -->
 <table class="full-width mt-2">
     <tr>
         <td width="47%" class="border-box pl-3 align-top">
@@ -403,7 +416,7 @@ foreach ($document->items as $row) {
     if ($showModelColumn && $showBrandColumn) break;
 }
 @endphp
-<table class="full-width mt-10 mb-10">
+<table class="{{ $invoicePdf ? 'full-width invoice-a5-details' : 'full-width mt-10 mb-10' }}" @if($invoicePdf) style="margin-top: 6px; margin-bottom: 4px;" @endif>
     <thead class="">
     <tr>
         <th class="border-top-bottom text-center py-1 desc cell-solid" width="6%">COD.</th>
@@ -578,6 +591,16 @@ foreach ($document->items as $row) {
             <td class="text-center align-top desc cell-solid-rl p-1">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td>
         </tr>
     @endforeach
+    @if($invoicePdf)
+    @if($document->prepayments)
+        @foreach($document->prepayments as $prepayment)
+        <tr><td colspan="{{ $colspan_total + 4 }}">ANTICIPO: FACTURA NRO. {{ $prepayment->number }}</td><td class="text-right">-{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($prepayment, 'total'), 2) }}</td></tr>
+        @endforeach
+    @endif
+    </tbody>
+</table>
+@include('pdf.partials.invoice_a5_summary')
+@else
     @php
         $quantity_items = $document->items->count();
         $allowed_items = 5;
@@ -854,6 +877,7 @@ foreach ($document->items as $row) {
             </td>
         </tr>
     </table>
+@endif
 @endif
 </body>
 </html>

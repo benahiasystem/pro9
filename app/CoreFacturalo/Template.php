@@ -16,10 +16,17 @@ class Template
         }
         $path_template =  $this->validate_template($base_template, $template, $format_pdf);
         // Log::info($document);
+        // ######## INICIO PRESENTACION FACTURA A4/A5 ########
+        $isPaperInvoice = $template === 'invoice' && in_array($format_pdf, ['a4', 'a5'], true)
+            && ($document->document_type_id ?? null) === '01'
+            && in_array($base_template, ['default', 'modern-2027', 'marca_de_agua', 'Plantilla_personalizable'], true);
+        if ($isPaperInvoice) $document = self::invoicePreviewDocument($document);
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         $fiscal = \App\Services\Fiscal\FiscalPdfData::forDocument($document);
         $company = \App\Services\Fiscal\FiscalPdfData::issuerForPrint($company, $fiscal);
-        $html = self::render($path_template, $company, $document, $configuration);
+        $html = self::render($path_template, $company, $document, $configuration, $isPaperInvoice ? $format_pdf : null);
+        $paperSpecialIdentity = '';
+        // ######## FIN PRESENTACION FACTURA A4/A5 ########
         if ($template === 'sale_note' && $document instanceof \App\Models\Tenant\SaleNote
             && in_array($format_pdf, ['a4','a5'], true)
             && in_array($base_template, ['default','modern-2027','marca_de_agua','Plantilla_personalizable'], true)
@@ -54,7 +61,9 @@ class Template
         if (($document->document_type_id ?? null) === '01' && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($document)) {
             $third = (array) $document->fiscal_data->third_party;
             $thirdIdentity = view('pdf.partials.third_party_identity', compact('third'))->render();
-            if (preg_match('/<body\b[^>]*>/i', $html)) {
+            if ($isPaperInvoice) {
+                $paperSpecialIdentity .= $thirdIdentity;
+            } elseif (preg_match('/<body\b[^>]*>/i', $html)) {
                 $html = preg_replace_callback('/<body\b[^>]*>/i', fn ($match) => $match[0].$thirdIdentity, $html, 1);
             } else {
                 $html = $thirdIdentity.$html;
@@ -63,11 +72,12 @@ class Template
         if (\App\Services\SpecialTaxRegimePolicy::applies($document)) {
             $regime = \App\Services\SpecialTaxRegimePolicy::view($document)['special_tax_regime_description'];
             $regimeIdentity = view('pdf.partials.special_tax_regime', compact('regime'))->render();
-            $html = preg_match('/<body\b[^>]*>/i', $html)
+            if ($isPaperInvoice) $paperSpecialIdentity .= $regimeIdentity;
+            else $html = preg_match('/<body\b[^>]*>/i', $html)
                 ? preg_replace_callback('/<body\b[^>]*>/i', fn ($match) => $match[0].$regimeIdentity, $html, 1)
                 : $regimeIdentity.$html;
         }
-        if ($fiscal) {
+        if ($fiscal && !$isPaperInvoice) {
             $profiles = \App\Services\Fiscal\SpecialTaxpayerPolicy::forPrint($document);
             if ($profiles) {
                 $profileHtml = view('pdf.partials.fiscal_profiles', compact('profiles'))->render();
@@ -85,7 +95,7 @@ class Template
                 $html = $identity . $html;
             }
         }
-        return $html;
+        return str_replace('<!-- INVOICE_SPECIAL_IDENTITY -->', $paperSpecialIdentity, $html);
         // ######## FIN NUMERACIÓN FISCAL VENEZUELA ########
     }
 
@@ -105,9 +115,35 @@ class Template
         return self::render('xml.'.$template, $company, $document, null);
     }
 
-    private function render($view, $company, $document, $configuration = null)
+    private function invoicePreviewDocument($document)
+    {
+        // A4/A5 borrow the authorized source ledger when editing an unsaved preview.
+        if ($document instanceof \App\Models\Tenant\Document
+            && $document->relationLoaded('invoice_source_document')) {
+            $document = clone $document;
+            $source = $document->getRelation('invoice_source_document');
+            $source->loadMissing(['payments.change_disbursements', 'received_retentions', 'fiscal_data', 'guarantee_fund']);
+            foreach (['received_retentions', 'fiscal_data', 'guarantee_fund'] as $relation) {
+                $document->setRelation($relation, $source->getRelation($relation));
+            }
+            $sourcePayments = $source->payments->keyBy('id');
+            $document->setRelation('payments', $document->payments->map(fn ($payment) => clone $payment));
+            foreach ($document->payments as $payment) {
+                if ($payment->exists && ($original = $sourcePayments->get($payment->id))) {
+                    $payment->setRelation('change_disbursements', $original->getRelation('change_disbursements'));
+                }
+            }
+            foreach (['issuer', 'control_number', 'series', 'number', 'fiscal_environment', 'fiscal_emission_mode'] as $field) {
+                $document->$field = $source->$field;
+            }
+        }
+        return $document;
+    }
+
+    private function render($view, $company, $document, $configuration = null, ?string $invoiceFormat = null)
     {
         view()->addLocation(__DIR__.'/Templates');
+        $isPaperInvoice = $invoiceFormat !== null;
         // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
         if ($document instanceof \App\Models\Tenant\Document && $document->issuer) {
             $company = clone $company;
@@ -126,13 +162,16 @@ class Template
             });
             $document->legends = array_reverse(array_values($legends));
         }
-        $html = view($view, compact('company', 'document', 'configuration'))->render();
+        $invoicePdf = $isPaperInvoice ? \App\Services\Fiscal\InvoicePaperPdfData::forDocument($document, $company) : null;
+        $html = view($view, compact('company', 'document', 'configuration', 'invoicePdf', 'invoiceFormat'))->render();
         if ($document instanceof \App\Models\Tenant\Document) {
-            if ($document->exists && \App\Services\Fiscal\IvaRetentionService::available($document)) $document->loadMissing('fiscal_data');
-            $summary = view('pdf.partials.document_fiscal_totals', compact('document'))->render();
-            // Some ticket footers contain their own body: append the fiscal summary once.
-            $bodyEnd = strripos($html, '</body>');
-            $html = $bodyEnd === false ? $html.$summary : substr_replace($html, $summary, $bodyEnd, 0);
+            if (!$isPaperInvoice) {
+                if ($document->exists && \App\Services\Fiscal\IvaRetentionService::available($document)) $document->loadMissing('fiscal_data');
+                $summary = view('pdf.partials.document_fiscal_totals', compact('document'))->render();
+                // Some ticket footers contain their own body: append the fiscal summary once.
+                $bodyEnd = strripos($html, '</body>');
+                $html = $bodyEnd === false ? $html.$summary : substr_replace($html, $summary, $bodyEnd, 0);
+            }
             if (!empty($configuration['hka_ticket_qr'])) {
                 $qr = view('pdf.partials.hka_ticket_qr', ['qr' => $configuration['hka_ticket_qr']])->render();
                 // Ticket templates reserve a cell below the amount in words, beside payments.
@@ -160,6 +199,17 @@ class Template
         view()->addLocation(__DIR__.'/Templates');
 
         return view('pdf.'.$base_template.'.partials.footer', compact('document'))->render();
+    }
+
+    public function pdfStylesheet($base_template, $template, $document, $format_pdf): string
+    {
+        $directory=__DIR__.'/Templates/pdf/';
+        $stylesheet=file_get_contents($directory.$base_template.'/style.css');
+        if ($template === 'invoice' && $format_pdf === 'a5' && ($document->document_type_id ?? null) === '01'
+            && in_array($base_template, ['default', 'modern-2027', 'marca_de_agua', 'Plantilla_personalizable'], true)) {
+            $stylesheet .= file_get_contents($directory.'partials/invoice_a5.css');
+        }
+        return $stylesheet;
     }
 
     public function pdfHeader($base_template, $company, $document = null)

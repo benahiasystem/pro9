@@ -31,7 +31,10 @@ class DocumentEmail extends Mailable
      */
     public function build()
     {
-        $current=\App\Services\Fiscal\CurrentFreeFormPdf::bytesIfRegistered($this->document);
+        $current=\App\Services\Fiscal\CurrentLocalInvoicePdf::bytesIfApplicable($this->document);
+        if ($current === null && $this->document instanceof Document) {
+            $current=\App\Services\Fiscal\CurrentFreeFormPdf::bytesIfRegistered($this->document);
+        }
         $pdf = $current ?? $this->getStorage($this->document->filename, 'pdf');
         // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         $template_document_mail = config('tenant.template_document_mail');

@@ -637,6 +637,109 @@ trait NotePersistenceCases
         self::assertSame('free_form',$note->fresh()->fiscal_emission_mode);
     }
 
+    public function test_local_invoice_downloads_and_mail_regenerate_without_replacing_stored_pdf(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form','number'=>'J087897598']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $http=$app->make(\Illuminate\Http\Client\Factory::class); $http->fake();
+        $invoice=(new Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $customer=(array)$invoice->customer; $customer['identity_document_type']=['description'=>'Venezolano'];
+        $establishment=(array)$invoice->establishment;
+        foreach (['district_id','province_id','department_id'] as $field) { $customer[$field]='-'; $establishment[$field]='-'; }
+        $db->table('documents')->where('id',$invoice->id)->update(['customer'=>json_encode($customer),'establishment'=>json_encode($establishment),'terms_condition'=>'']);
+        $db->table('configurations')->update(['terms_condition_sale'=>'<p>Condiciones A4 de prueba</p>']);
+        $db->table('establishments')->where('id',$invoice->establishment_id)->update(['template_pdf'=>'default']);
+        config(['view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/current-a4-views',
+            'view.paths'=>[base_path('resources/views')], 'filesystems.disks.public'=>['driver'=>'local','root'=>sys_get_temp_dir()],
+            'tenant.template_document_mail'=>'default','mail.username'=>'test@example.test']);
+        mkdir(config('view.compiled'),0777,true); $app->register(\Illuminate\View\ViewServiceProvider::class);
+        $path='pdf/'.$invoice->filename.'.pdf';
+        \Illuminate\Support\Facades\Storage::disk('tenant')->put($path,'%PDF-stored-before-a4-design');
+        $readText=static function (string $bytes): string {
+            $file=tempnam(sys_get_temp_dir(),'sab-a4-delivery-');
+            try {
+                file_put_contents($file,$bytes);
+                $process=new \Symfony\Component\Process\Process(['pdftotext','-layout',$file,'-']);
+                $process->mustRun();
+                return $process->getOutput();
+            } finally { unlink($file); }
+        };
+        foreach (['free_form','fiscal_machine'] as $mode) {
+            $db->table('documents')->where('id',$invoice->id)->update(['fiscal_emission_mode'=>$mode]);
+            $db->table('companies')->update(['fiscal_emission_mode'=>$mode]);
+            $current=$invoice->fresh();
+            self::assertNull($current->control_number);
+            $before=$current->only(['total','subtotal','currency_type_id','calculation_snapshot']);
+            self::assertNull(\App\Services\Fiscal\CurrentLocalInvoicePdf::bytesIfApplicable($current,'ticket'));
+            $controller=new \App\Http\Controllers\Tenant\DownloadController();
+            $download=$controller->downloadExternal('document','pdf',$current->external_id);
+            $print=$controller->toPrint('document',$current->external_id,'a4');
+            $mail=(new \App\Mail\Tenant\DocumentEmail(\App\Models\Tenant\Company::active(),$current))->build();
+            $a5Download=$controller->downloadExternal('document','pdf',$current->external_id,'a5');
+            $a5Print=$controller->toPrint('document',$current->external_id,'a5');
+            foreach ([$download->getContent(),$print->getContent(),$mail->rawAttachments[0]['data'],$a5Download->getContent(),$a5Print->getContent()] as $bytes) {
+                self::assertStringStartsWith('%PDF-',$bytes);
+                self::assertNotSame('%PDF-stored-before-a4-design',$bytes);
+                $text=$readText($bytes);
+                self::assertStringContainsString('FACTURA',$text);
+                self::assertStringContainsString('No asignado',$text);
+                self::assertStringContainsString('J-08789759-8',$text);
+                self::assertStringContainsString('Tasa de Cambio:',$text);
+                self::assertStringNotContainsString('SIN VALIDEZ FISCAL',$text);
+                self::assertStringNotContainsString('MONEDA',$text);
+            }
+            self::assertStringContainsString('Condiciones A4 de prueba',$readText($download->getContent()));
+            self::assertStringContainsString('Condiciones A4 de prueba',$current->fresh()->terms_condition);
+            self::assertSame($before,$current->fresh()->only(['total','subtotal','currency_type_id','calculation_snapshot']));
+            self::assertSame('%PDF-stored-before-a4-design',\Illuminate\Support\Facades\Storage::disk('tenant')->get($path));
+        }
+        // A reversal committed between payment materialization and balance queries must not mix cuts.
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('documents')->where('id',$invoice->id)->update(['fiscal_emission_mode'=>'free_form','payment_condition_id'=>'02']);
+        // Registered controls and bulk downloads use the same A5 generator.
+        $controlled=$invoice->fresh();
+        \App\Services\Fiscal\FreeFormControl::register($controlled,['control_number'=>'00-00000034','evidence_reference'=>'Control físico para A5']);
+        $controller=new \App\Http\Controllers\Tenant\DownloadController();
+        foreach ([$controller->toPrint('document',$controlled->external_id,'a5')->getContent(),
+            $controller->downloadExternal('document','pdf',$controlled->external_id,'a5')->getContent()] as $bytes) {
+            self::assertStringContainsString('00-00000034',$readText($bytes));
+            $reader=new \setasign\Fpdi\Fpdi();
+            $reader->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($bytes));
+            $page=$reader->getTemplateSize($reader->importPage(1));
+            self::assertEqualsWithDelta(210,$page['width'],0.01);
+            self::assertEqualsWithDelta(148,$page['height'],0.01);
+        }
+        $report=new class { use \Modules\Report\Traits\MassiveDownloadTrait; };
+        $bulk=$report->createPdf(['documents_01'=>[$controlled->fresh(),$controlled->fresh()]],'a5');
+        self::assertSame(2,substr_count($readText($bulk),'Tasa de Cambio:'));
+        self::assertSame(2,substr_count($readText($bulk),'00-00000034'));
+        self::assertSame('%PDF-stored-before-a4-design',\Illuminate\Support\Facades\Storage::disk('tenant')->get($path));
+        $configuration=$db->getConfig();
+        $writer=new \PDO('mysql:host='.$configuration['host'].';port='.$configuration['port'].';dbname='.$configuration['database'],
+            $configuration['username'],$configuration['password'],[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);
+        $reversed=false;
+        $db->listen(function ($query) use ($db,$writer,$invoice,&$reversed) {
+            if ($reversed || $db->transactionLevel() === 0 || !preg_match('/^select .*from `document_payments`/i',$query->sql)) return;
+            $reversed=true;
+            $statement=$writer->prepare('UPDATE document_payments SET reversed_at = ? WHERE document_id = ? AND receipt_parent_id IS NULL');
+            $statement->execute(['2026-11-16 12:00:00',$invoice->id]);
+        });
+        foreach (['a4','a5'] as $format) {
+            $db->table('document_payments')->where('document_id',$invoice->id)->update(['reversed_at'=>null]);
+            $reversed=false;
+            $before=$invoice->fresh();
+            $bytes=\App\Services\Fiscal\CurrentLocalInvoicePdf::bytesIfApplicable($before,$format);
+            self::assertTrue($reversed);
+            $text=$readText($bytes);
+            self::assertMatchesRegularExpression('/Saldo pendiente\s+VES 0\.00/u',$text);
+            self::assertStringContainsString('Recibido VES',$text);
+            self::assertTrue($invoice->fresh()->exactBalance()->isEqualTo($invoice->exactValue('total')));
+            self::assertSame('%PDF-stored-before-a4-design',\Illuminate\Support\Facades\Storage::disk('tenant')->get($path));
+        }
+        $http->assertNothingSent();
+    }
+
     public function test_free_form_invoices_credit_and_debit_match_cash_products_and_local_pdfs(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture();
@@ -722,7 +825,7 @@ trait NotePersistenceCases
         $debitPayment=\App\Services\Fiscal\FiscalDocumentPersistence::payment($printedDebit->fresh(),[
             'operation_key'=>(string)Str::uuid(),'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10',
             'payment_destination_id'=>'cash','currency_type_id'=>'USD','original_amount'=>'1','exchange_rate'=>'10.12345678',
-            'igtf_status'=>'not_applicable','financial_intermediation'=>'financial_institution']);
+            'igtf_status'=>'not_applicable','financial_intermediation'=>'none']);
         self::assertSame('10.12',\App\Support\Exact\Decimal::represent($debitPayment->exactValue('payment')));
         self::assertSame('1.48',\App\Support\Exact\Decimal::represent($printedDebit->fresh()->exactBalance()));
         $rows=(new \Modules\CashReport\Services\Builders\ProductsBuilder())->getDataReport($cash->id)['documents'];
