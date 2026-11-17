@@ -168,7 +168,7 @@ for (const file of ['index.vue', 'fast.vue', 'garage.vue']) {
             assert.equal(inputs.length, 1, `se esperaba el control visible ${model}`)
             assert.equal(inputs[0].attrsMap[':disabled'], 'posRateUnavailable')
         }
-        const buttons = nodes.filter(n => n.tag === 'button' && /changeCartQuantity\(|decrementItem\(|clickAddItem\(item, index\)/.test(n.attrsMap['@click'] || ''))
+        const buttons = nodes.filter(n => n.tag === 'button' && /changeCartQuantity\(|decrementItem\(|incrementPosLine\(/.test(n.attrsMap['@click'] || ''))
         if (file !== 'fast.vue') {
             assert.equal(buttons.length, 2)
             for (const button of buttons) assert.equal(button.attrsMap[':disabled'], 'posRateUnavailable')
@@ -230,7 +230,11 @@ test('Garage recalcula la línea en moneda documental después de restar una can
     const row = calculateRowItem(initial,'VES','12.5')
     row.item.aux_quantity = '1.5'
     const ctx = component('12.5')
+    const localQuantity = parser.parse(fs.readFileSync('resources/js/mixins/pos-local-quantity.js', 'utf8'), {sourceType:'module'})
+    const localMethods = localQuantity.program.body.find(n => n.type === 'ExportDefaultDeclaration').declaration.properties.find(n => n.key.name === 'methods').value
+    const quantityMethods = vm.runInNewContext(`let lineSequence = 0; (${generate(localMethods).code})`, scope)
     Object.assign(ctx, {form:{items:[row], currency_type_id:'VES', exchange_rate_sale:'12.5'}, items:[], percentage_igv:'0.16',
+        ...quantityMethods, localPosStockChecks:[], $set(target, key, value){target[key] = value},
         $notify:() => ({close(){}}), async getStatusStock(id, qty){this.checkedQuantity=qty; return {success:true}},
         cleanInput(){}, calculateTotal(){}, setFormPosLocalStorage(){}, setDefaultDataPriceSelected(){},
         clickDeleteItem(){throw Error('No debe eliminar la partida')},

@@ -12,6 +12,7 @@ use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
+use App\Services\PosCatalogStock;
 use App\Models\Tenant\PaymentMethodType;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\User;
@@ -104,7 +105,9 @@ class PosController extends Controller
 
         $all_prices_label = PriceLabel::all();
 
-        $items = $items_query->whereIsActive()->get()->transform(function ($row) use ($configuration, $search_item_by_barcode_presentation, $request, $all_prices_label) {
+        $items = $items_query->whereIsActive()->get();
+        $stock = PosCatalogStock::forItems($items);
+        $items->transform(function ($row) use ($configuration, $search_item_by_barcode_presentation, $request, $all_prices_label, $stock) {
 
             $full_description = ($row->internal_id) ? $row->internal_id . ' - ' . $row->description : $row->description;
 
@@ -120,6 +123,7 @@ class PosController extends Controller
             return [
                 'id' => $row->id,
                 'item_id' => $row->id,
+                'pos_stock' => $stock[$row->id],
                 'full_description' => $full_description,
                 'description' => ($row->brand->name) ? $row->description . ' - ' . $row->brand->name : $row->description,
                 'currency_type_id' => $row->currency_type_id,
@@ -330,10 +334,9 @@ class PosController extends Controller
                 $items->where('unit_type_id', '!=', 'SERV');
             }
             //$items = $items->where('series_enabled', 0)
-            $items = $items->orderBy('description')
-                ->take(100)
-                ->get()
-                ->transform(function (Item $row) use ($configuration) {
+            $items = $items->orderBy('description')->take(100)->get();
+            $stock = PosCatalogStock::forItems($items);
+            $items->transform(function (Item $row) use ($configuration, $stock) {
                     $full_description = ($row->internal_id) ? $row->internal_id . ' - ' . $row->description : $row->description;
                     $currency = $row->currency_type;
                     if(empty($currency )){
@@ -342,6 +345,7 @@ class PosController extends Controller
                     return [
                         'id' => $row->id,
                         'item_id' => $row->id,
+                        'pos_stock' => $stock[$row->id],
                         'full_description' => $full_description,
                         'description' => ($row->brand->name) ? $row->description . ' - ' . $row->brand->name : $row->description,
                         'currency_type_id' => $row->currency_type_id,

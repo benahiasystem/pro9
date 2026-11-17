@@ -638,6 +638,7 @@
 
                 <table-items
                     ref="table_items"
+                    include-price-presentation
                     @clickAddItem="clickAddItem"
                     @clickWarehouseDetail="clickWarehouseDetail"
                     @clickHistorySales="clickHistorySales"
@@ -792,7 +793,7 @@
                                         @keyup.enter.native="keyupEnterQuantity"
                                         class="pos-qty-field"
                                     />
-                                    <button class="pos-qty-btn" :disabled="posRateUnavailable" @click="clickAddItem(item, index)">
+                                    <button class="pos-qty-btn" :disabled="posRateUnavailable" @click="incrementPosLine(item)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                                     </button>
                                 </div>
@@ -806,7 +807,7 @@
                     <template v-if="show_fast_payment_garage">
                         <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
                         <fast-payment
-            :stock-blocked="posStockBlocked"
+            :stock-blocked="posStockBlocked || !!posBarcodePending"
                             :is_payment.sync="is_payment"
                             :form="form"
                             :currency-type-id-active="form.currency_type_id"
@@ -1012,6 +1013,7 @@ import {exactAmount, exactInput} from "../../../helpers/exchange-rate-math"
 
 import Keypress from "vue-keypress";
 import posLocalQuantity from "../../../mixins/pos-local-quantity"
+import posCartAdditions from "../../../mixins/pos-cart-additions"
 import { calculateRowItem } from "../../../helpers/functions";
 import FastPayment from "./partials/fast_payment_garage.vue";
 import ItemForm from "./partials/form.vue";
@@ -1047,7 +1049,7 @@ export default {
         Keypress,
         TableItems
     },
-    mixins: [functions, exchangeRate, posLocalQuantity],
+    mixins: [functions, exchangeRate, posLocalQuantity, posCartAdditions],
 
     data() {
         return {
@@ -1571,17 +1573,11 @@ export default {
             this.variationsDetail = item.variations || [];
             this.showWarehousesDetail = true;
         },
-        async selectVariationFromModal(variation) {
-            try {
-                const response = await this.$http.get(`/${this.resource}/item/${variation.id}`);
-                const row = (response.data.data || [])[0];
-                if (!row) {
-                    return this.$message.error("No se pudo cargar la variación seleccionada");
-                }
-                await this.clickAddItem(row, null);
-            } catch (error) {
-                this.$message.error("No se pudo cargar la variación seleccionada");
+        selectVariationFromModal(variation) {
+            if (!variation.sale_item) {
+                return this.$message.error("No se pudo cargar la variación seleccionada");
             }
+            return this.clickAddItem(variation.sale_item);
         },
         clickHistoryPurchases(item_id) {
             this.history_item_id = item_id;
@@ -1840,6 +1836,7 @@ export default {
                 // this.is_payment = false
                 this.initForm();
                 await this.getTables();
+                if (["prod", "cat2", "cat3"].includes(this.place)) await this.getRecords();
                 this.selectDefaultCustomer();
                 this.setFormPosLocalStorage();
                 this.setOriginalAffectationToItems();
@@ -1859,6 +1856,9 @@ export default {
             this.initFocus();
         },
         initForm() {
+            this.posCartGeneration++;
+            this.posBarcodePending = 0;
+            this.loading = false;
             this.form = {
                 establishment_id: null,
                 // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -1940,7 +1940,7 @@ export default {
             };
         },
         async clickPayment() {
-            if (!ensurePosRate(this)) return;
+            if (this.posBarcodePending || !ensurePosRate(this)) return;
             if (!this.form.subtotal) {
                 //fix para agregar subtotal si no existe prop en json almacenado en local storage
                 this.form.subtotal = this.form.total;
@@ -1962,7 +1962,7 @@ export default {
             this.form.establishment_id = this.establishment.id;
             this.loading = true;
             await this.sleep(800);
-            this.is_payment = true;
+            this.is_payment = !this.posBarcodePending;
             this.loading = false;
         },
         sleep(ms) {
@@ -1974,208 +1974,24 @@ export default {
             this.setLocalStorageIndex("customer", null);
             this.setFormPosLocalStorage();
         },
-        async clickAddItem(item, index, input = false) {
+        clickAddItem(item, index, input = false) {
             if (!ensurePosRate(this)) return;
-            if (input && this.form.items[index] === item && this.updateLocalPosQuantity) return this.updateLocalPosQuantity(item,index);
-            // El padre con variaciones no es vendible: se elige una variación en el modal
+            if (input) {
+                if (this.form.items[index] === item) return this.updateLocalPosQuantity(item, index);
+                return;
+            }
             if (item.variations_count > 0) {
                 this.selectedVariationParent = item;
                 this.showDialogVariations = true;
                 return;
             }
-
-            //Validar precio mínimo
-
-            if (parseFloat(item.sale_unit_price) < 0.1) {
-                this.$message.error(
-                    "El precio del producto debe ser mayor a 0.1"
-                );
-                this.loading = false;
-                return;
-            }
-
-            let addingNotification = this.$notify({
-                title: "",
-                message: "Agregando...",
-                type: "info",
-                duration: 0
-            });
-
-            let exchangeRateSale = this.form.exchange_rate_sale;
-
-            // console.log(item.unit_type_id)
-            // console.log(exist_item)
-            // console.log(item)
-            let presentation = item.presentation
-
-            let exist_item =  false
-            if (presentation === undefined) {
-                exist_item = _.find(this.form.items, {
-                    item_id: item.item_id,
-                    unit_type_id: item.unit_type_id
-                });
-            }
-            else {
-                // Se evalua si existe presentation de item
-                exist_item = _.find(this.form.items, {
-                    item_id: item.item_id,
-                    presentation: presentation,
-                    unit_type_id: item.unit_type_id
-                });
-            }
-            // console.log(exist_item)
-
-            let pos = this.form.items.indexOf(exist_item);
-            let response = null;
-
-            if (exist_item) {
-                if (input) {
-                    response = await this.getStatusStock(
-                        item.item_id,
-                        exist_item.item.aux_quantity
-                    );
-                    if (!response.success) {
-                        item.item.aux_quantity = item.quantity;
-                        this.loading = false;
-                        addingNotification.close();
-                        return this.$message.error(response.message);
-                    }
-
-                    exist_item.quantity = exist_item.item.aux_quantity;
-                } else {
-                    response = await this.getStatusStock(
-                        item.item_id,
-                        parseFloat(exist_item.item.aux_quantity) + 1
-                    );
-                    if (!response.success) {
-                        this.loading = false;
-                        addingNotification.close();
-                        return this.$message.error(response.message);
-                    }
-
-                    exist_item.quantity++;
-                    exist_item.item.aux_quantity++;
+            const { sale_unit_price, unit_type_id, presentation } = item;
+            return this.addPosItem(item, { onAdded: () => {
+                if (item.sale_unit_price === sale_unit_price && item.unit_type_id === unit_type_id &&
+                    item.presentation === presentation) {
+                    this.setDefaultDataPriceSelected(item);
                 }
-
-                // console.log(exist_item)
-                let search_item_bd = await _.find(this.items, {
-                    item_id: item.item_id
-                });
-
-                if (search_item_bd) {
-                    exist_item.item.unit_price = parseFloat(
-                        search_item_bd.sale_unit_price
-                    );
-                }
-
-                let unit_price = exist_item.item.has_igv
-                    ? exist_item.item.sale_unit_price
-                    : exist_item.item.sale_unit_price *
-                      (1 + this.percentage_igv);
-                // exist_item.unit_price = unit_price
-                exist_item.item.unit_price = unit_price;
-
-
-
-                this.row = calculateRowItem(
-                    exist_item,
-                    this.form.currency_type_id,
-                    exchangeRateSale,
-                    this.percentage_igv
-                );
-
-                this.row.item.sale_unit_price_original = this.row.item.sale_unit_price
-
-                this.row["unit_type_id"] = item.unit_type_id;
-
-                this.form.items[pos] = this.row;
-            } else {
-                response = await this.getStatusStock(
-                    item.item_id,
-                    item.presentation
-                        ? parseInt(item.presentation.quantity_unit)
-                        : 1
-                );
-                if (!response.success) {
-                    this.loading = false;
-                    addingNotification.close();
-                    return this.$message.error(response.message);
-                }
-
-                // this.form_item.item = item;
-                this.form_item.item = { ...item };
-
-                this.form_item.unit_price_value = this.form_item.item.sale_unit_price;
-                this.form_item.has_igv = this.form_item.item.has_igv;
-
-                this.form_item.affectation_igv_type_id = this.form_item.item.sale_affectation_igv_type_id;
-                this.form_item.quantity = 1;
-                this.form_item.aux_quantity = 1;
-
-                let unit_price = this.form_item.has_igv
-                    ? this.form_item.unit_price_value
-                    : this.form_item.unit_price_value *
-                      (1 + this.percentage_igv);
-
-                this.form_item.unit_price = unit_price;
-                this.form_item.item.unit_price = unit_price;
-                this.form_item.item.presentation = item.presentation
-                    ? item.presentation
-                    : null;
-
-                this.form_item.charges = [];
-                this.form_item.discounts = [];
-                this.form_item.attributes = [];
-                this.form_item.affectation_igv_type = _.find(
-                    this.affectation_igv_types,
-                    { id: this.form_item.affectation_igv_type_id }
-                );
-
-                // console.log(this.form_item)
-                this.row = calculateRowItem(
-                    this.form_item,
-                    this.form.currency_type_id,
-                    exchangeRateSale,
-                    this.percentage_igv
-                );
-                console.log(this.row)
-
-                // this.row['unit_type_id'] = item.presentation ? item.presentation.unit_type_id : 'UND';
-
-                this.row["unit_type_id"] = item.presentation
-                    ? item.presentation.unit_type_id
-                    : this.form_item.item.unit_type_id;
-
-                this.row.item.sale_unit_price_original = this.row.item.sale_unit_price
-
-                this.form.items.unshift(this.row);
-                item.aux_quantity = 1;
-            }
-
-            // console.log("pos", this.row);
-
-            addingNotification.close();
-
-            this.$notify({
-                title: "",
-                message: "Producto añadido!",
-                type: "success",
-                duration: 1000
-            });
-
-            this.cleanInput();
-
-            if (!input) {
-                this.initFocus();
-            }
-
-            // console.log(this.row)
-            // console.log(this.form.items)
-            await this.calculateTotal();
-
-            await this.setFormPosLocalStorage();
-
-            await this.setDefaultDataPriceSelected(item);
+            } });
         },
         setDefaultDataPriceSelected(item) {
             if (
@@ -2189,16 +2005,6 @@ export default {
 
                 item.apply_price_selected_add_product = false;
             }
-        },
-        async getStatusStock(item_id, quantity) {
-            let data = {};
-            if (!quantity) quantity = 0;
-            await this.$http
-                .get(`/${this.resource}/validate_stock/${item_id}/${quantity}`)
-                .then(response => {
-                    data = response.data;
-                });
-            return data;
         },
         async clickDeleteItem(index) {
             this.form.items.splice(index, 1);
@@ -2227,7 +2033,7 @@ export default {
         },
         async getTables() {
             await this.$http.get(`/${this.resource}/tables`).then(response => {
-                //this.all_items = response.data.items;
+                response.data.items?.forEach(item => this.rememberPosStock(item));
                 this.affectation_igv_types =
                     response.data.affectation_igv_types;
                 this.all_customers = response.data.customers;
@@ -2308,12 +2114,16 @@ export default {
             // console.log(query)
             // console.log("in:" + this.input_item)
             if (this.input_item.length > 1) {
+                const generation = this.posCartGeneration;
                 this.loading = true;
                 let parameters = `input_item=${this.input_item}`;
 
+                this.posBarcodePending++;
                 await this.$http
                     .get(`/${this.resource}/search_items?${parameters}`)
                     .then(response => {
+                        if (this.posCartGeneration !== generation) return;
+                        response.data.items.forEach(item => this.rememberPosStock(item));
                         console.log("buah");
                         this.items = response.data.items;
                         this.enabledSearchItemsBarcode();
@@ -2321,12 +2131,20 @@ export default {
                         if (this.items.length == 0) {
                             this.filterItems();
                         }
+                    }).catch(() => {
+                        if (this.posCartGeneration === generation) {
+                            this.loading = false;
+                            this.$message.error("No se pudo buscar el código de barras");
+                        }
+                    }).finally(() => {
+                        if (this.posCartGeneration === generation) this.posBarcodePending--;
                     });
             } else {
                 await this.filterItems();
             }
         },
         fixItems() {
+            this.all_items.forEach(item => this.rememberPosStock(item));
             this.items = this.all_items.map(i => {
                 /** Si description es vacio y hay nombre */
                 if (i.name !== undefined) {

@@ -297,6 +297,7 @@ export default {
             required: false,
             default: false
         },
+        includePricePresentation: Boolean,
     },
     data() {
         return {
@@ -451,7 +452,7 @@ export default {
         events(){
 
             this.$eventHub.$on("selectedItemUnitTypeTable", (unit_type) => {
-                this.setPriceItem(unit_type)
+                this.setPriceItem(unit_type, this.currentIndex)
             })
 
         },
@@ -494,6 +495,7 @@ export default {
         setPriceItem(price, index) {
 
             const item = this.records[index];
+            if (!item || !price) return;
             if (item && item.item_unit_types && Array.isArray(item.item_unit_types)) {
                 item.item_unit_types.forEach(iut => {
                     if (iut && iut.prices && Array.isArray(iut.prices)) {
@@ -506,22 +508,21 @@ export default {
                 });
             }
 
-            if (price) {
-                this.$set(price, 'selected', true);
-                this.addItemFromPriceSelected(item)
-            }
-
-            this.records[index].sale_unit_price = price.price;
-            this.records[index].unit_type_id = price.unit_type_id;
+            this.$set(price, 'selected', true);
+            item.sale_unit_price = price.price;
+            item.unit_type_id = price.unit_type_id;
+            if (this.includePricePresentation) this.$set(item, 'presentation', price);
+            this.addItemFromPriceSelected(item);
             this.$message.success("Precio seleccionado");
 
         },
-        async addItemFromPriceSelected(item)
+        addItemFromPriceSelected(item)
         {
             if(this.originIsGarage && this.config.price_selected_add_product)
             {
-                await this.handle13()
-                item.apply_price_selected_add_product = true
+                if (this.searchFromBarcode || this.visibleTagsCustomer || this.keyboardBlocked()) return;
+                item.apply_price_selected_add_product = true;
+                this.$emit("clickAddItem", item);
             }
         },
         openTableListPrices113(){
@@ -574,6 +575,7 @@ export default {
                             label: p.label || "Precio",
                             position: p.position || 0,
                             unit_type_id: p.unit_type_id || iut.unit_type_id,
+                            item_unit_type_id: iut.id,
                             description: iut.description,
                             quantity_unit: p.quantity_unit || iut.quantity_unit,
                             ref: p
@@ -611,6 +613,15 @@ export default {
 
             item.sale_unit_price = opt.price;
             item.unit_type_id = opt.unit_type_id;
+            if (this.includePricePresentation) {
+                this.$set(item, "presentation", {
+                    ...opt.ref,
+                    item_unit_type_id: opt.item_unit_type_id,
+                    unit_type_id: opt.unit_type_id,
+                    description: opt.description,
+                    quantity_unit: opt.quantity_unit
+                });
+            }
 
             this.$emit("clickAddItem", item);
         },

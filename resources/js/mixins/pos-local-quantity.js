@@ -39,10 +39,18 @@ export default {
                 next=calculateRowItem({...row,item:{...row.item,aux_quantity:quantity},quantity,quantity_input:quantityInput},this.form.currency_type_id,this.form.exchange_rate_sale,this.percentage_igv)
                 next.unit_type_id=row.unit_type_id
             } catch (error) { entry.inputError=error.message;return }
-            entry.row=next;entry.pending=true
+            if (this.validatePosStockChange && !this.validatePosStockChange(row, next)) {
+                row.item.aux_quantity = row.quantity
+                row.total = exactValue(row, 'total').decimal()
+                return
+            }
+            entry.row=next
             this.$set(this.form.items,index,next)
             this.calculateTotal()
             this.setFormPosLocalStorage()
+            if (this.validatePosStockChange) return
+
+            entry.pending=true
             const current=()=>entry.generation === generation && this.form.items.some(row=>row._pos_line_key === entry.key && String(row.item.aux_quantity) === quantity)
             Promise.resolve().then(()=>this.getStatusStock(next.item_id,quantity)).then(result=>{
                 if (!current()) return

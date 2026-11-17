@@ -92,6 +92,20 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertGreaterThan(0,(int)$headers['x-sab-test-queries']);
             [$code,$body]=$get('/api/company',false);
             self::assertSame(401,$code,$body);
+            $posItemId = $input['items'][0]['item_id'];
+            $posItem = $db->table('items')->find($posItemId);
+            $warehouseId = $db->table('warehouses')->where('establishment_id', $input['establishment_id'])->value('id');
+            $available = \Modules\Inventory\Models\ItemWarehouse::where('warehouse_id', $warehouseId)
+                ->where('item_id', $posItemId)->firstOrFail()->exactValue('stock');
+            foreach ([
+                ['/pos/item/'.$posItemId, 'data'],
+                ['/pos/search_items?input_item='.rawurlencode($posItem->internal_id), 'items'],
+            ] as [$catalogPath, $records]) {
+                [$status, $response] = $get($catalogPath);
+                self::assertSame(200, $status, $response);
+                $entry = collect(json_decode($response, true, 512, JSON_THROW_ON_ERROR)[$records])->firstWhere('id', $posItemId);
+                self::assertSame(\App\Support\Exact\Decimal::fraction($available), $entry['pos_stock']['components'][0]['stock']);
+            }
             foreach (['/documents/tables','/sale-notes/tables','/sale-notes/option/tables',
                 '/quotations/tables','/quotations/option/tables'] as $catalogPath) {
                 [$status,$catalogBody]=$get($catalogPath);
@@ -1992,6 +2006,36 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
             self::assertSame($legacyServiceRows,$db->table('kardex')->where('item_id',$service->id)->count());
             self::assertEquals($serviceStock,$db->table('items')->where('id',$service->id)->value('stock'));
+            $stockControl = $db->table('inventory_configurations')->value('stock_control');
+            $db->table('inventory_configurations')->update(['stock_control' => true]);
+            try {
+                $unavailable = $input['items'][0];
+                $unavailable['quantity'] = '1000000';
+                $stockRow = \Modules\Inventory\Models\ItemWarehouse::where('warehouse_id', $warehouseId)
+                    ->where('item_id', $posItemId)->firstOrFail();
+                foreach ([
+                    ['/documents', 'documents', $serviceInvoice],
+                    ['/sale-notes', 'sale_notes', $serviceNote],
+                ] as [$path, $table, $payload]) {
+                    $draft = array_replace($payload, [
+                        'external_id' => (string) \Illuminate\Support\Str::uuid(),
+                        'created_from_pos' => true,
+                        'items' => [$unavailable],
+                    ]);
+                    $documentsBefore = $db->table($table)->count();
+                    $paymentsBefore = $db->table('global_payments')->count();
+                    $stockBefore = $stockRow->fresh()->exactValue('stock');
+                    [$status, $response] = $get($path, true, $draft);
+                    self::assertSame(200, $status, $response);
+                    self::assertFalse(json_decode($response, true, 512, JSON_THROW_ON_ERROR)['success'], $response);
+                    self::assertStringContainsString('no tiene suficiente stock', $response);
+                    self::assertSame($documentsBefore, $db->table($table)->count());
+                    self::assertSame($paymentsBefore, $db->table('global_payments')->count());
+                    self::assertTrue($stockRow->fresh()->exactValue('stock')->isEqualTo($stockBefore));
+                }
+            } finally {
+                $db->table('inventory_configurations')->update(['stock_control' => $stockControl]);
+            }
             $beforeServiceInventory=$db->table('inventory_kardex')->where('item_id',$service->id)->count();
             $service->sale_unit_price='1'; $service->purchase_unit_price='2'; $service->purchase_has_igv=true; $service->save();
             $purchaseLine=$serviceLine;
