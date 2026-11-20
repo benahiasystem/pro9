@@ -2,6 +2,7 @@
 
 namespace Modules\Document\Http\Controllers;
 
+use App\Database\IntegerTransport;
 use App\Http\Controllers\SearchItemController;
 use App\Models\Tenant\User;
 use Illuminate\Http\Request;
@@ -21,6 +22,9 @@ use Modules\Document\Traits\SearchTrait;
 use Modules\Item\Models\ItemLot;
 use Modules\Document\Http\Resources\ItemLotCollection;
 use App\Models\Tenant\Configuration;
+use App\Models\Tenant\Company;
+use App\Services\Fiscal\FiscalAmounts;
+use App\Services\Fiscal\PrepaymentReference;
 use App\Models\Tenant\SaleNoteItem;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -82,38 +86,41 @@ class DocumentController extends Controller
 
     public function prepayments($type)
     {
+        $query = Document::whereHasPrepayment()->whereAffectationTypePrepayment($type);
+        $context = request()->only(['customer_id', 'currency_type_id', 'establishment_id']);
+        if ($context !== []) {
+            $customer = IntegerTransport::positiveKey($context['customer_id'] ?? null);
+            $establishment = IntegerTransport::positiveKey($context['establishment_id'] ?? null);
+            $currency = $context['currency_type_id'] ?? null;
+            if ($customer === null || $establishment === null || !in_array($currency, ['VES', 'USD'], true)) {
+                FiscalAmounts::error('prepayments', 'Indique el cliente, la moneda y la sucursal para consultar anticipos.');
+            }
 
-        $prepayment_documents = Document::whereHasPrepayment()->whereAffectationTypePrepayment($type)->get()->transform(function ($row) {
+            $query->where('customer_id', $customer)
+                ->where('currency_type_id', $currency)
+                ->where('establishment_id', $establishment)
+                ->where('fiscal_environment', Company::firstOrFail()->fiscal_environment)
+                ->whereIn('document_type_id', ['01', '03']);
+        }
 
-            $total = round($row->pending_amount_prepayment, 2);
-            // ########## INICIO CAMBIO AFECTACIÓN IVA
-            $amount = ($row->affectation_type_prepayment == '10')
-                ? round($total / \App\Support\Venezuela\Localization::taxMultiplier(), 2)
-                : $total;
-            // ######### FIN CAMBIO AFECTACIÓN IVA
-
-            return [
-                'id' => $row->id,
-                'description' => $row->series . '-' . $row->number,
-                'series' => $row->series,
-                'number' => $row->number,
-                'document_type_id' => ($row->document_type_id == '01') ? '02' : '03',
-                // 'amount' => $row->total_value,
-                // 'total' => $row->total,
-                'amount' => $amount,
-                'total' => $total,
-
-            ];
-        });
-        return $prepayment_documents;
-
+        return $query->get()->map(fn (Document $row) => PrepaymentReference::available($row, $row->series . '-' . $row->number));
     }
 
 
     public function searchItems(Request $request)
     {
-
-        $items = SearchItemController::getItemsToDocuments($request);
+        $requestedItems = $request->input('items_id');
+        if ($requestedItems !== null) {
+            if (!is_array($requestedItems)) {
+                FiscalAmounts::error('items_id', 'Indique una lista de identificadores de productos.');
+            }
+            foreach ($requestedItems as $index => $id) {
+                if (IntegerTransport::positiveKey($id) === null) {
+                    FiscalAmounts::error("items_id.{$index}", 'Seleccione un producto válido.');
+                }
+            }
+        }
+        $items = SearchItemController::getItemsToDocuments($request, forInvoice: true);
 
         return compact('items');
 
@@ -241,8 +248,9 @@ class DocumentController extends Controller
 
     public function searchItemById($id)
     {
-        // $items = SearchItemController::searchByIdToModal($id);
-        $items = SearchItemController::getItemsToDocuments(null, $id);
+        $itemId = IntegerTransport::positiveKey($id);
+        abort_unless($itemId !== null, 404);
+        $items = SearchItemController::getItemsToDocuments(null, $itemId, forInvoice: true);
         return compact('items');
     }
 }

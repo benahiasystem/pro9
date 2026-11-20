@@ -1,39 +1,39 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `rel_user_to_documentary_offices` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `active` tinyint(3) unsigned NOT NULL DEFAULT '0'
- * - `user_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'usuario asociado'
- * - `documentary_office_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'etapa asociada'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - active: smallint
+ * - user_id: bigint
+ * - documentary_office_id: bigint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `rel_user_to_documentary_offices` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `active` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `user_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'usuario asociado',
-  `documentary_office_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'etapa asociada',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('rel_user_to_documentary_offices', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->smallInteger('active')->default('0');
+            $table->bigInteger('user_id')->default('0')->comment('usuario asociado');
+            $table->bigInteger('documentary_office_id')->default('0')->comment('etapa asociada');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "rel_user_to_documentary_offices" ADD CONSTRAINT "rel_user_to_documentary_offices_active_range" CHECK ("active" BETWEEN 0 AND 255)');
+        DB::statement('ALTER TABLE "rel_user_to_documentary_offices" ADD CONSTRAINT "rel_user_to_documentary_offices_user_id_range" CHECK ("user_id" >= 0)');
+        DB::statement('ALTER TABLE "rel_user_to_documentary_offices" ADD CONSTRAINT "rel_user_to_documentary_offices_documentary_office_id_range" CHECK ("documentary_office_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `rel_user_to_documentary_offices`');
+        Schema::dropIfExists('rel_user_to_documentary_offices');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -242,9 +242,9 @@ for(const [filename, target] of [
     const method=methods.properties.find(node=>node.key?.name==='clickAddPayment')
     const add=vm.runInNewContext(`({${generate(method).code}}).clickAddPayment`,{...helper,moment:()=>({format:()=> '2026-10-01'}),suggestRemainingPayment:()=>{}})
     test(`${filename} proposes only cash in the document currency`,()=>{
-        const ctx={payment_method_types:[{id:'01',is_active:true,collection_kind:'account',currency_type_id:'USD'}, {id:'04',is_active:true,collection_kind:'cash',currency_type_id:'USD'}], [target]:{currency_type_id:'USD',payments:[]}}
+        const ctx={payment_method_types:[{id:'01',is_active:true,collection_kind:'account',currency_type_id:'USD'}, {id:'04',is_active:true,collection_kind:'cash',currency_type_id:'VES'}], [target]:{currency_type_id:'VES',payments:[]}}
         add.call(ctx);assert.equal(ctx[target].payments[0].payment_method_type_id,'04')
-        ctx[target].currency_type_id='VES';add.call(ctx);assert.equal(ctx[target].payments[1].payment_method_type_id,null)
+        ctx.payment_method_types[1].currency_type_id='USD';add.call(ctx);assert.equal(ctx[target].payments[1].payment_method_type_id,null)
         assert.deepEqual(compiler.compile(source.template.content).errors,[])
     })
 }
@@ -355,7 +355,7 @@ for(const [filename,target] of [['resources/js/views/tenant/documents/invoice.vu
         const methods=tree.program.body.find(node=>node.type==='ExportDefaultDeclaration').declaration.properties.find(node=>node.key.name==='methods').value
         const entry=methods.properties.find(node=>node.key?.name==='clickAddPayment')
         const add=vm.runInNewContext(`({${generate(entry).code}}).clickAddPayment`,{...helper,moment:()=>({format:()=> '2026-10-01'}),String})
-        const ctx={[target]:{currency_type_id:'USD',payments:[],total:'20'},form:{currency_type_id:'USD',payments:[],total:'20',quotation:{total:'20'}},paymentMethodsLoaded:true,pendingDefaultPaymentRows:[],payment_method_types:[{id:'01',is_active:true,collection_kind:'account',currency_type_id:'USD'},{id:'04',is_active:true,collection_kind:'cash',currency_type_id:'USD'}],getPaymentDestinationId:()=> 'cash',calculatePayments(){}}
+        const ctx={[target]:{currency_type_id:'VES',payments:[],total:'20'},form:{currency_type_id:'VES',payments:[],total:'20',quotation:{total:'20'}},paymentMethodsLoaded:true,pendingDefaultPaymentRows:[],payment_method_types:[{id:'01',is_active:true,collection_kind:'account',currency_type_id:'USD'},{id:'04',is_active:true,collection_kind:'cash',currency_type_id:'VES'}],getPaymentDestinationId:()=> 'cash',calculatePayments(){}}
         add.call(ctx);assert.equal(ctx[target].payments[0].payment_method_type_id,'04')
         ctx.payment_method_types.pop();add.call(ctx);assert.equal(ctx[target].payments[1].payment_method_type_id,null)
         assert.deepEqual(compiler.compile(source.template.content).errors,[])
@@ -408,13 +408,13 @@ test('suggested installments deduct applied receipts and keep saved or manually 
     form.payments[0].payment='100';suggestInstallments(form);assert.equal(suggested.amount,'0.00')
 })
 
-test('USD credit installments divide the applied VES receipt balance by cents',()=>{
+test('VES credit installments divide the balance after a USD receipt by cents',()=>{
     const load=require('./helpers/load-module.cjs')
     const {suggestInstallments}=load(require('node:path').resolve('resources/js/helpers/document-creation.js'))
-    const form={total:'232',currency_type_id:'USD',payments:[{payment:'5.01',original_amount:'50.10',currency_type_id:'VES'}],
+    const form={total:'232',currency_type_id:'VES',payments:[{payment:'50.01',original_amount:'5',exchange_rate:'10.00200000',currency_type_id:'USD'}],
         fee:[{amount:'0'},{amount:'0'}]}
     suggestInstallments(form)
-    assert.deepEqual(form.fee.map(row=>row.amount),['113.50','113.49'])
+    assert.deepEqual(form.fee.map(row=>row.amount),['91.00','90.99'])
 })
 
 for(const [filename,target] of [['resources/js/views/tenant/documents/invoice.vue','form'],['resources/js/views/tenant/documents/invoiceupdate.vue','form'],['resources/js/views/tenant/documents/invoice_generate.vue','form'],['resources/js/views/tenant/sale_notes/form.vue','form'],['modules/Sale/Resources/assets/js/views/technical-services/form.vue','form'],['resources/js/views/tenant/quotations/partials/options.vue','document']]) {

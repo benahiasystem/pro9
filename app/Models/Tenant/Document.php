@@ -177,6 +177,9 @@ class Document extends ModelTenant
     public function getBalanceAttribute() { return D::represent($this->exactBalance()); }
     public function exactBalance(bool $current = false): \Brick\Math\BigRational
     {
+        // ########## INICIO CAMBIO POSTGRESQL 17
+        if (!$current && ($cached=\App\Support\Exact\ReadBalanceScope::value($this)) !== null) return $cached;
+        // ######### FIN CAMBIO POSTGRESQL 17
         if ($this->document_type_id === '07' || ($this->document_type_id === '08' && $this->isVoidedOrRejected())) return D::of(0);
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         $creditRows=collect(); $refunds=collect();
@@ -305,6 +308,16 @@ class Document extends ModelTenant
         'consigned_ubigeo',
         'custom_fields_data',
     ];
+
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    public function getNumberAttribute($value)
+    {
+        // Match integer transport within PHP's range and retain the full unsigned range as text.
+        if ($value === null) return null;
+        $integer=filter_var($value,FILTER_VALIDATE_INT);
+        return $integer === false ? $value : $integer;
+    }
+    // ######### FIN CAMBIO POSTGRESQL 17
 
     protected $casts = [
         'issuer' => 'array',
@@ -689,7 +702,7 @@ class Document extends ModelTenant
     }
     public function getAdditionalInformationAttribute($value)
     {
-        $arr = explode('|', $value);
+        $arr = explode('|', $value ?? '');
         return $arr;
     }
 
@@ -1135,6 +1148,7 @@ class Document extends ModelTenant
      */
     public function getOrderNoteCollection()
     {
+        if ($this->order_note_id === null) return [];
         $orderNote = OrderNote::find($this->order_note_id);
         if ($orderNote === null) return [];
         return $orderNote->getCollectionData();

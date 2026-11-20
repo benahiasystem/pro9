@@ -1,3 +1,5 @@
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { formatCompactOriginal, formatUnitOriginal } from '../../../../../../resources/js/helpers/dashboard-originals'
 /**
  * Registro frontend del dashboard de widgets: tamaños, tipos de gráfica,
  * recomendador y utilidades de tema. El catálogo de fuentes (módulos y
@@ -159,43 +161,17 @@ export function themePalette() {
 }
 
 export function formatCompact(value, unit) {
-  const n = Number(value) || 0
-  let s
-  if (Math.abs(n) >= 1000000) s = (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M'
-  else if (Math.abs(n) >= 1000) s = (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
-  else s = unit === 'money' ? String(Math.round(n * 100) / 100) : String(Math.round(n))
-  return unit === 'money' ? 'Bs. ' + s : s
+  return formatCompactOriginal(value, unit)
 }
 
-/**
- * Valor de KPI compacto (espejo de RowTop.formatNumber) para que quepa
- * junto al sparkline: 29.3K / 1.2M, o 2 decimales si es menor a mil.
- */
 export function formatKpi(value, unit) {
-  const n = Number(value) || 0
-  if (unit === 'percent') {
-    return n.toLocaleString('es-VE', { maximumFractionDigits: 1 }) + '%'
-  }
-  if (unit !== 'money') {
-    if (Math.abs(n) >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0+$/, '') + 'M'
-    if (Math.abs(n) >= 1000) return (n / 1000).toFixed(1).replace(/\.0+$/, '') + 'K'
-    return Math.round(n).toLocaleString('es-VE')
-  }
-  let amount
-  if (Math.abs(n) >= 1000000) amount = (n / 1000000).toFixed(1).replace(/\.0+$/, '') + 'M'
-  else if (Math.abs(n) >= 1000) amount = (n / 1000).toFixed(1).replace(/\.0+$/, '') + 'K'
-  else amount = n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  return 'Bs. ' + amount
+  return formatCompactOriginal(value, unit, unit === 'money' ? 'en-US' : 'es-VE')
 }
 
 export function formatValue(value, unit) {
-  const n = Number(value) || 0
-  if (unit === 'money') {
-    return 'Bs. ' + n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  }
-  if (unit === 'percent') return n.toLocaleString('es-VE', { maximumFractionDigits: 1 }) + '%'
-  return Math.round(n).toLocaleString('es-VE')
+  return formatUnitOriginal(value, unit)
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 
 /**
  * Layout por defecto: réplica del dashboard actual. Se filtra contra el

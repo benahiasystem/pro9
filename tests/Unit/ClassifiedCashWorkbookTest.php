@@ -60,7 +60,7 @@ class ClassifiedCashWorkbookTest extends TestCase
         $pdf->WriteHTML($html);
         $pdfBytes=$pdf->Output('', 'S');
         self::assertStringStartsWith('%PDF-', $pdfBytes);
-        if ($dir=getenv('SAB_CASH_PRODUCTS_EVIDENCE')) file_put_contents($dir.'/productos-caja.pdf',$pdfBytes);
+        if ($dir=getenv('PRO9_CASH_PRODUCTS_EVIDENCE')) file_put_contents($dir.'/productos-caja.pdf',$pdfBytes);
         $many=$payload;
         $many['documents']=collect(range(1,100))->map(function ($id) use ($usd) {
             return array_replace($usd,['id'=>$id,'description'=>'Producto de prueba '.$id]);
@@ -70,12 +70,12 @@ class ClassifiedCashWorkbookTest extends TestCase
         $manyBytes=$manyPdf->Output('', 'S');
         self::assertGreaterThan(1,preg_match_all('/\/Type\s*\/Page\b/',$manyBytes));
         self::assertSame('100',$d::represent(\Modules\CashReport\Services\ProductsAmounts::subtotals($many['documents'])['USD']));
-        if ($dir=getenv('SAB_CASH_PRODUCTS_EVIDENCE')) file_put_contents($dir.'/productos-caja-extenso.pdf',$manyBytes);
+        if ($dir=getenv('PRO9_CASH_PRODUCTS_EVIDENCE')) file_put_contents($dir.'/productos-caja-extenso.pdf',$manyBytes);
         $export=(new ClassifiedCashExport())->view_name('cashreport::reports.products_excel')->data($payload);
         $path=tempnam(sys_get_temp_dir(),'sab-products-xlsx-');
         try {
             file_put_contents($path,ExcelFacade::raw($export,Excel::XLSX));
-            if ($dir=getenv('SAB_CASH_PRODUCTS_EVIDENCE')) copy($path,$dir.'/productos-caja.xlsx');
+            if ($dir=getenv('PRO9_CASH_PRODUCTS_EVIDENCE')) copy($path,$dir.'/productos-caja.xlsx');
             $book=IOFactory::load($path);
             $sheet=$book->getSheet(0);
             $productRow=null;

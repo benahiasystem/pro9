@@ -100,6 +100,9 @@ final class CommercialCalculation
         if ($model->exists && isset($model->calculation_snapshot['inputs']['invoice_global_inventory'])) {
             $line['calculation_snapshot']['inputs']['invoice_global_inventory'] = $model->calculation_snapshot['inputs']['invoice_global_inventory'];
         }
+        if ($model->exists && isset($model->calculation_snapshot['inputs']['invoice_tracked_inventory'])) {
+            $line['calculation_snapshot']['inputs']['invoice_tracked_inventory'] = $model->calculation_snapshot['inputs']['invoice_tracked_inventory'];
+        }
         // ######## FIN CALCULOS EXACTOS SAB ########
         foreach (Persistence::columns($model) as $field) if (isset($line[$field])) $model->$field = $line[$field];
         $model->calculation_snapshot = $line['calculation_snapshot'];

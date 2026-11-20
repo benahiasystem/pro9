@@ -9,7 +9,7 @@ class AddMozoConfigurationToSystemConfigurations extends Migration
 {
     public function up()
     {
-        Schema::connection('system')->table('configurations', function (Blueprint $table) {
+        Schema::table('configurations', function (Blueprint $table) {
             $table->json('mozo_configuration')->nullable();
         });
 
@@ -42,14 +42,14 @@ class AddMozoConfigurationToSystemConfigurations extends Migration
             }
         }
 
-        DB::connection('system')->table('configurations')->update([
+        DB::connection()->table('configurations')->update([
             'mozo_configuration' => json_encode($defaults, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ]);
     }
 
     public function down()
     {
-        Schema::connection('system')->table('configurations', function (Blueprint $table) {
+        Schema::table('configurations', function (Blueprint $table) {
             $table->dropColumn('mozo_configuration');
         });
     }

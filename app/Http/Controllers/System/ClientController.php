@@ -748,6 +748,13 @@ use Illuminate\Support\Facades\Mail;
 
         public function store(ClientRequest $request)
         {
+            // ########## INICIO CAMBIO POSTGRESQL 17
+            return \App\Tenancy\TenantOnboarding::run(fn () => $this->storeNewTenant($request));
+            // ######### FIN CAMBIO POSTGRESQL 17
+        }
+
+        private function storeNewTenant(ClientRequest $request)
+        {
             // Establecer tiempo de ejecución manual para evitar timeout
             set_time_limit(3600); // 60 minutos
             ini_set('memory_limit', '2048M');
@@ -854,6 +861,7 @@ use Illuminate\Support\Facades\Mail;
                 \Log::info('Configurando tenancy...');
                 $tenancy = app(Environment::class);
                 $tenancy->tenant($website);
+                \App\Tenancy\TenantOnboarding::beginTenant();
                 \Log::info('Tenancy configurado');
 
                 \Log::info('=== INICIANDO OPERACIONES EN TENANT DATABASE ===');
@@ -1073,8 +1081,10 @@ use Illuminate\Support\Facades\Mail;
 
         } catch (Exception $e) {
             Log::error('Error en store client', ['error' => $e->getTraceAsString()]);
-            app(HostnameRepository::class)->delete($hostname, true);
-            app(WebsiteRepository::class)->delete($website, true);
+            if (!\App\Tenancy\TenantOnboarding::active()) {
+                app(HostnameRepository::class)->delete($hostname, true);
+                app(WebsiteRepository::class)->delete($website, true);
+            }
             return [
                 'success' => false,
                 'message' => $e->getMessage()

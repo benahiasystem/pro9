@@ -35,7 +35,8 @@
 </template>
 
 <script>
-import { formatMoneyExact } from "../../../../../../../../resources/js/helpers/format-money-exact";
+import { readVector, chartCoordinate, compareOriginal, formatUnitOriginal, escapeDashboardText } from "../../../../../../../../resources/js/helpers/dashboard-originals";
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
 export default {
     name: "MonthlyComparisonChart",
     props: {
@@ -51,6 +52,8 @@ export default {
             type: Array,
             default: () => [],
         },
+        salesFractions: {type: Array, default: () => []},
+        purchasesFractions: {type: Array, default: () => []},
         salesExact: { type: Array, default: () => [] },
         purchasesExact: { type: Array, default: () => [] },
         emptyBarRatio: {
@@ -94,24 +97,21 @@ export default {
             return this.categories.slice(this.offset, this.offset + this.maxVisible);
         },
         visibleSales() {
-            return this.sales.slice(this.offset, this.offset + this.maxVisible);
+            return readVector(this, 'salesFractions').slice(this.offset, this.offset + this.maxVisible);
         },
         visiblePurchases() {
-            return this.purchases.slice(this.offset, this.offset + this.maxVisible);
+            return readVector(this, 'purchasesFractions').slice(this.offset, this.offset + this.maxVisible);
         },
-        maxValue() {
-            const values = [...this.visibleSales, ...this.visiblePurchases].map((v) => Number(v) || 0);
-            return values.length ? Math.max(...values) : 0;
+        coordinates() {
+            return [...this.visibleSales, ...this.visiblePurchases].map(chartCoordinate).filter(value => value !== null);
         },
-        baseScale() {
-            return this.maxValue > 0 ? this.maxValue : 1;
-        },
-        stubValue() {
-            return this.baseScale * this.emptyBarRatio;
-        },
-        yAxisMax() {
-            return this.baseScale * 1.08;
-        },
+        maxValue() { return Math.max(0, ...this.coordinates.map(value => Math.abs(value))); },
+        minValue() { return Math.min(0, ...this.coordinates); },
+        maxPositive() { return Math.max(0, ...this.coordinates); },
+        baseScale() { return this.maxValue > 0 ? this.maxValue : 1; },
+        stubValue() { return this.baseScale * this.emptyBarRatio; },
+        yAxisMax() { return this.maxPositive > 0 ? this.maxPositive * 1.08 : this.minValue < 0 ? 0 : this.baseScale * 1.08; },
+        yAxisMin() { return this.minValue * 1.08; },
         barRadius() {
             const count = this.visibleCategories.length || 1;
             if (!this.bodyWidth) return 2;
@@ -132,10 +132,7 @@ export default {
             ];
         },
         chartOptions() {
-            const realSales = this.salesExact.slice(this.offset, this.offset + this.maxVisible);
-            const realPurchases = this.purchasesExact.slice(this.offset, this.offset + this.maxVisible);
-            const fallbackSales = this.visibleSales;
-            const fallbackPurchases = this.visiblePurchases;
+            const realSales = this.visibleSales, realPurchases = this.visiblePurchases;
             return {
                 chart: {
                     toolbar: { show: false },
@@ -161,19 +158,19 @@ export default {
                         style: { colors: "#9ca3af", fontSize: "12px" },
                     },
                 },
-                yaxis: { show: false, min: 0, max: this.yAxisMax },
+                yaxis: { show: false, min: this.yAxisMin, max: this.yAxisMax },
                 tooltip: {
                     custom: function ({ seriesIndex, dataPointIndex, w }) {
                         const realValue = seriesIndex === 0
-                            ? (realSales[dataPointIndex] ?? fallbackSales[dataPointIndex])
-                            : (realPurchases[dataPointIndex] ?? fallbackPurchases[dataPointIndex]);
-                        const name = w.config.series[seriesIndex].name;
-                        const label = w.globals.labels[dataPointIndex];
-                        const value = formatMoneyExact(realValue);
+                            ? realSales[dataPointIndex]
+                            : realPurchases[dataPointIndex];
+                        const name = escapeDashboardText(w.config.series[seriesIndex].name);
+                        const label = escapeDashboardText(w.globals.labels[dataPointIndex]);
+                        const value = formatUnitOriginal(realValue, 'money', 'en-US');
                         return (
                             '<div style="padding:6px 10px;font-size:12px;">' +
                             '<strong>' + label + '</strong><br/>' +
-                            name + ': Bs. ' + value +
+                            name + ': ' + value +
                             '</div>'
                         );
                     },
@@ -194,8 +191,8 @@ export default {
         },
         buildSeriesData(values, solidColor, fadedColor) {
             return values.map((v, i) => {
-                const value = Number(v) || 0;
-                const isStub = value <= 0;
+                const value = chartCoordinate(v);
+                const isStub = v !== null && compareOriginal(v, '0') === 0;
                 return {
                     x: this.visibleCategories[i],
                     y: isStub ? this.stubValue : value,
@@ -205,6 +202,7 @@ export default {
         },
     },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

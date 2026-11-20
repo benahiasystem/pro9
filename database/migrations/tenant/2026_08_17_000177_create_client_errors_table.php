@@ -1,39 +1,36 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `client_errors` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `code` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `client_error_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `original_message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `user_message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - code: varchar(255)
+ * - client_error_type_id: varchar(255)
+ * - original_message: varchar(255)
+ * - user_message: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `client_errors` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `code` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `client_error_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `original_message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `client_errors_client_error_type_id_foreign` (`client_error_type_id`),
-  KEY `client_errors_code_index` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('client_errors', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('code', 255)->collation('pro9_ci_ai');
+            $table->string('client_error_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('original_message', 255)->collation('pro9_ci_ai');
+            $table->string('user_message', 255)->collation('pro9_ci_ai');
+            $table->index(['client_error_type_id'], 'client_errors_client_error_type_id_foreign');
+            $table->index(['code'], 'client_errors_code_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `client_errors`');
+        Schema::dropIfExists('client_errors');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

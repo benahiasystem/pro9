@@ -13,6 +13,13 @@ class StatusClientExport implements  FromView, ShouldAutoSize, WithEvents
 {
     use Exportable;
 
+    public $records;
+    public $company;
+    public $establishment;
+    public $filters;
+    public $categories;
+    public $categories_services;
+
     public function records($records) {
         $this->records = $records;
 

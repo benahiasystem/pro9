@@ -107,7 +107,7 @@
 
     function remove(id) {
         let array = localStorage.getItem('products_cart');
-        array = JSON.parse(array);
+        array = JSON.parse(array || '[]');
         let indexFound = array.findIndex(x => x.id == id);
         array.splice(indexFound, 1);
         localStorage.setItem('products_cart', JSON.stringify(array));
@@ -123,14 +123,9 @@
         }
         $totalRow.show();
         let array = localStorage.getItem('products_cart');
-        array = JSON.parse(array);
-        let total = 0;
-        array.forEach(element => {
-            let qty   = parseInt(element.quantity) || 1;
-            let price = parseFloat(element.sale_unit_price) || 0;
-            total += price * qty;
-        });
-        $(".cart-total-price").text('Bs. ' + total.toFixed(2));
+        array = JSON.parse(array || '[]');
+        try {$(".cart-total-price").text(window.Pro9StorefrontAmounts.total(array || []));}
+        catch (error) {$(".cart-total-price").text('Importe pendiente');}
     }
 
     function populate() {
@@ -138,13 +133,13 @@
         $(".cart-count").empty();
 
         let array = localStorage.getItem('products_cart');
-        array = JSON.parse(array);
+        array = JSON.parse(array || '[]');
         let count = array.length;
         const showPrices = storefrontShowsPrices();
 
         const defaultImagePath = '{{ $defaultImagePath }}';
 
-        let totalUnits = array.reduce((sum, el) => sum + (parseInt(el.quantity) || 1), 0);
+        const totalUnits = window.Pro9StorefrontAmounts.sum(array.map(el => window.Pro9StorefrontAmounts.quantity(el.quantity ?? '1'))).decimal();
 
         if (count === 0) {
             $(".dropdown-cart-products").append(`
@@ -160,14 +155,14 @@
             `);
             $('#cart-dd-count-badge').hide();
         } else {
-            $('#cart-dd-count-badge').text(totalUnits + (totalUnits === 1 ? ' artículo' : ' artículos')).show();
+            $('#cart-dd-count-badge').text(totalUnits + (totalUnits === '1' ? ' artículo' : ' artículos')).show();
             array.forEach(element => {
-                let qty = parseInt(element.quantity) || 1;
+                const qty = window.Pro9StorefrontAmounts.quantity(element.quantity ?? '1');
                 const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
                     ? `/storage/uploads/items/${element.image_small}`
                     : defaultImagePath;
                 const priceHtml = showPrices
-                    ? `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> × Bs. ${parseFloat(element.sale_unit_price).toFixed(2)}</span>`
+                    ? `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> × ${element.currency_type_symbol || (element.currency_type_id === 'USD' ? 'USD' : 'Bs.')} ${window.Pro9StorefrontAmounts.line({...element,cantidad:'1'}, {convert:false}).total.final(2)}</span>`
                     : `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> und.</span>`;
                 $(".dropdown-cart-products").append(`
                     <div class="product cart-product-row">

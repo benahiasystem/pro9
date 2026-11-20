@@ -140,7 +140,7 @@ trait ReportTrait
         $web_platform = (int)$web_platform;
         $document_type_id = ($document_type_id == 'null')?null:$document_type_id;
         // En unas vistas esta consultando "01" en vez 01
-        $document_type_id = str_replace('"','',$document_type_id);
+        $document_type_id = str_replace('"','',$document_type_id ?? '');
 
         if($model !== PurchaseItem::class) {
 
@@ -248,7 +248,7 @@ trait ReportTrait
         }
         if($model == 'App\Models\Tenant\Document'){
             if(!empty($guides)){
-                $data->where('guides','like', DB::raw("%\"number\":\"%").$guides. DB::raw("%\"%"));
+                \App\Database\TextSearch::whereGuideNumber($data, 'guides', '%'.$guides.'%');
             }
         }
 

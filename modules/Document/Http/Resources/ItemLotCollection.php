@@ -2,6 +2,7 @@
 
 namespace Modules\Document\Http\Resources;
 
+use App\Database\IntegerTransport;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 /**
@@ -22,7 +23,7 @@ class ItemLotCollection extends ResourceCollection
         return $this->collection->transform(function ($row, $key) {
             $lot_code = isset($row->item_loteable->lot_code) ? $row->item_loteable->lot_code : null;
             return [
-                'id'           => $row->id,
+                'id'           => IntegerTransport::value($row->id),
                 'series'       => $row->series,
                 'date'         => $row->date,
                 'item_id'      => $row->item_id,

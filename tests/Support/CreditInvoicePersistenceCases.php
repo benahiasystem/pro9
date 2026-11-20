@@ -19,7 +19,7 @@ trait CreditInvoicePersistenceCases
         [$db,$app,$input]=$this->bootHkaFixture();$input=$this->creditInvoiceInput($input);
         config(['hka_credit_invoices.demo_no_advance_verified'=>true]);
         $sent=[];$mode='confirmed';$this->fakeSpeHka($db,$app,$sent,$mode);
-        foreach (['VES','USD'] as $currency) {
+        foreach ($this->invoiceTestCurrencies() as $currency) {
             $input['currency_type_id']=$currency;
             $financialBefore=$db->table('global_payments')->count();
             $doc=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
@@ -179,7 +179,7 @@ trait CreditInvoicePersistenceCases
         $sent=[];$mode='confirmed';$this->fakeSpeHka($db,$app,$sent,$mode);
         $input['discounts']=[['discount_type_id'=>'02','amount'=>'10']];
         $input['charges']=[['charge_type_id'=>'50','amount'=>'6']];
-        foreach(['VES','USD'] as $currency) {
+        foreach($this->invoiceTestCurrencies() as $currency) {
             $input['currency_type_id']=$currency;
             $doc=(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
             self::assertSame('confirmed',$doc->emission->status,$doc->emission->response['diagnostic'] ?? '');

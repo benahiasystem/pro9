@@ -2,12 +2,14 @@
 
 namespace Modules\Inventory\Providers;
 
+use App\Database\IntegerTransport;
 use App\Models\Tenant\DocumentItem;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Item;
 use App\Models\Tenant\PurchaseItem;
 use App\Models\Tenant\PurchaseSettlementItem;
 use App\Models\Tenant\SaleNoteItem;
+use App\Services\Fiscal\FiscalNoteInventory;
 use Exception;
 use App\Support\Exact\Decimal as ExactDecimal;
 use Illuminate\Support\ServiceProvider;
@@ -81,7 +83,14 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 if ($serials !== null) $snapshot['inputs']['order_serial_inventory']=$serials;
                 if ($item->series_enabled && $serials === null) \App\Services\Fiscal\FiscalAmounts::error('items','Seleccione los seriales del producto.');
             }
-            if ($item && $item->is_set && empty($line->item->IdLoteSelected) && empty($line->item->lots_group) && empty($line->item->lots)) {
+            if ($item && $item->is_set) {
+                if (!empty($line->item->IdLoteSelected)
+                    || collect($line->item->lots_group ?? [])->contains(fn ($lot) => !ExactDecimal::of(
+                        ExactDecimal::input(data_get($lot, 'compromise_quantity') ?? '0', 'items')
+                    )->isZero())
+                    || collect($line->item->lots ?? [])->contains(fn ($serial) => filter_var(data_get($serial, 'has_sale'), FILTER_VALIDATE_BOOLEAN))) {
+                    \App\Services\Fiscal\FiscalAmounts::error('items', 'Los paquetes con lotes o seriales requieren trazabilidad por componente.');
+                }
                 $components=[];
                 foreach ($item->sets()->orderBy('individual_item_id')->get() as $component) {
                     if ($component->individual_item->unit_type_id === 'SERV') continue;
@@ -197,7 +206,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
         DocumentItem::created(function (DocumentItem $document_item) {
             if (\App\Services\Fiscal\FiscalNote::ordinary($document_item->document)) {
                 \App\Services\Fiscal\FiscalNoteInventory::apply($document_item);
-                if ($document_item->inventory_quantity > 0 && !empty($document_item->item->inventory_components)) {
+                if ($document_item->exactValue('inventory_quantity')->isPositive() && !empty($document_item->item->inventory_components)) {
                     $ids=[$document_item->item_id];
                     foreach ((array)$document_item->item->inventory_components as $component) $ids[]=((array)$component)['item_id'];
                     foreach (array_unique($ids) as $id) $this->syncRestaurantStock($id);
@@ -211,7 +220,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             if (!$document_item->item->is_set)
             {
-                $presentationQuantity = (!empty($document_item->item->presentation)) ? $document_item->item->presentation->quantity_unit : 1;
+                $presentationQuantity = \App\Services\Fiscal\FiscalNoteInventory::presentationQuantity($document_item->item);
                 $document = $document_item->document;
                 $factor = ($document->document_type_id === '07') ? 1 : -1;
                 $warehouse = ($document_item->warehouse_id) ? $this->findWarehouseById($document_item->warehouse_id) : $this->findWarehouse();
@@ -261,11 +270,11 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 }
             }
 
-            // Procesar productos fusionados desde data_json
-            $this->processMergedProducts($document_item);
-
-            // Procesar modificadores aplicados
-            $this->processModifiersApplied($document_item);
+            if (!$document_item->item->is_set) $this->moveInvoiceModifiers($document_item, $factor);
+            foreach (\App\Services\Fiscal\InvoiceModifiers::components($document_item->item) as $component) {
+                $this->syncRestaurantStock($component['item_id']);
+            }
+            $invoiceLotMovements=[];$invoiceSerialMovements=[];
 
             /*
              * Calculando el stock por lote por factor según la unidad
@@ -276,7 +285,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
                 if (isset($document_item->item->IdLoteSelected))
                 {
-                    if ($document_item->item->IdLoteSelected != null)
+                    if (!in_array($document_item->item->IdLoteSelected, ['', []], true))
                     {
                         $productName = $document_item->item->description
                             ?? ($document_item->item->name ?? 'sin nombre');
@@ -284,17 +293,19 @@ class InventoryKardexServiceProvider extends ServiceProvider
                         if(is_array($document_item->item->IdLoteSelected))
                         {
                             // presentacion - factor de lista de precios
-                            $quantity_unit = isset($document_item->item->presentation->quantity_unit) ? $document_item->item->presentation->quantity_unit : 1;
+                            $quantity_unit = \App\Services\Fiscal\FiscalNoteInventory::presentationQuantity($document_item->item);
 
                             // ######## INICIO ASIGNACIÓN EXACTA Y BLOQUEO DE LOTES ########
                             $lotesSelecteds=[]; $seen=[]; $selectedTotal=ExactDecimal::of(0);
                             foreach ($document_item->item->IdLoteSelected as $selected) {
                                 $selected=(array)$selected;
-                                $id=$selected['id'] ?? null;
-                                if (!$id || isset($seen[(string)$id])) throw new Exception("Lote vacío o duplicado para el producto [{$productName}]");
+                                $id = IntegerTransport::positiveKey($selected['id'] ?? null);
+                                if ($id === null || isset($seen[$id])) {
+                                    \App\Services\Fiscal\FiscalAmounts::error('items.IdLoteSelected', "Lote inválido o duplicado para el producto [{$productName}].");
+                                }
                                 $quantity=ExactDecimal::inputRational($selected['compromise_quantity'] ?? null,'items.lots');
                                 if (!$quantity->isPositive()) throw new Exception("La cantidad del lote debe ser positiva para el producto [{$productName}]");
-                                $seen[(string)$id]=true; $selectedTotal=$selectedTotal->plus($quantity);
+                                $seen[$id]=true; $selectedTotal=$selectedTotal->plus($quantity);
                                 $lotesSelecteds[]=['id'=>$id,'quantity'=>$quantity];
                             }
                             $lineQuantity=$document_item->exactValue('quantity');
@@ -304,7 +315,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                             $last=count($lotesSelecteds)-1;
                             $lotesSelecteds[$last]['quantity']=$lotesSelecteds[$last]['quantity']->plus($lineQuantity->minus($selectedTotal));
                             if (!$lotesSelecteds[$last]['quantity']->isPositive()) throw new Exception("La cantidad del lote debe ser positiva para el producto [{$productName}]");
-                            usort($lotesSelecteds,fn($a,$b)=>(int)$a['id']<=>(int)$b['id']);
+                            usort($lotesSelecteds,fn($a,$b)=>$a['id']<=>$b['id']);
                             $document_factor = ($document->document_type_id === '07') ? 1 : -1;
                             $lotMetadata=[];
 
@@ -313,19 +324,17 @@ class InventoryKardexServiceProvider extends ServiceProvider
                                 $lotId = $item['id'];
                                 $compromiseQuantity = $item['quantity'];
 
-                                if ($lotId === null || $lotId === '') {
-                                    throw new Exception("Lote vacío o sin identificador para el producto [{$productName}]");
-                                }
-
                                 $lot = ItemLotsGroup::query()->where('item_id',$document_item->item_id)->lockForUpdate()->find($lotId);
                                 if (!$lot) {
                                     throw new Exception("Lote no encontrado (id: {$lotId}) para el producto [{$productName}]");
                                 }
                                 $lotMetadata[(string)$lotId]=['code'=>$lot->code,'date_of_due'=>$lot->date_of_due];
 
-                                $lot->quantity = $lot->exactValue('quantity')->plus(ExactDecimal::of($quantity_unit)->multipliedBy(ExactDecimal::of($compromiseQuantity))->multipliedBy($document_factor));
+                                $lotDelta=ExactDecimal::of($quantity_unit)->multipliedBy(ExactDecimal::of($compromiseQuantity))->multipliedBy($document_factor);
+                                $lot->quantity = $lot->exactValue('quantity')->plus($lotDelta);
                                 $this->validateStockLotGroup($lot, $document_item);
                                 $lot->save();
+                                $invoiceLotMovements[]=['id'=>$lot->id,'quantity'=>ExactDecimal::fraction($lotDelta)];
                             }
                             $frozen=json_decode(json_encode($document_item->item,JSON_THROW_ON_ERROR),true,512,JSON_THROW_ON_ERROR);
                             $exactById=[];
@@ -346,51 +355,48 @@ class InventoryKardexServiceProvider extends ServiceProvider
                         }
                         else{
 
-                            $lotId = $document_item->item->IdLoteSelected;
+                            $lotId = IntegerTransport::positiveKey($document_item->item->IdLoteSelected);
+                            if ($lotId === null) {
+                                \App\Services\Fiscal\FiscalAmounts::error('items.IdLoteSelected', "Lote inválido para el producto [{$productName}].");
+                            }
                             $lot = ItemLotsGroup::query()->where('item_id',$document_item->item_id)->lockForUpdate()->find($lotId);
                             if (!$lot) {
                                 throw new Exception("Lote no encontrado (id: {$lotId}) para el producto [{$productName}]");
                             }
 
-                            try {
-                                $quantity_unit = $document_item->item->presentation->quantity_unit;
-                            } catch (Exception $e) {
-                                $quantity_unit = 1;
-                            }
+                            $quantity_unit = \App\Services\Fiscal\FiscalNoteInventory::presentationQuantity($document_item->item);
                             if ($document->document_type_id === '07') {
                                 $quantity = $lot->exactValue('quantity')->plus($document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($quantity_unit)));
                             } else {
                                 $quantity = $lot->exactValue('quantity')->minus($document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($quantity_unit)));
                             }
 
+                            $lotDelta=$quantity->minus($lot->exactValue('quantity'));
                             $lot->quantity = $quantity;
                             $this->validateStockLotGroup($lot, $document_item);
                             $lot->save();
+                            $invoiceLotMovements[]=['id'=>$lot->id,'quantity'=>ExactDecimal::fraction($lotDelta)];
                         }
 
                     }
                 }
             }
 
-            if (isset($document_item->item->lots)) {
-                foreach ($document_item->item->lots as $it) {
-
-                    if ($it->has_sale == true) {
-                        $r = ItemLot::find($it->id);
-                        // $r->has_sale = true;
-                        $r->has_sale = ($document->document_type_id === '07') ? false : true;
-                        $r->save();
-                    }
-
+            foreach (FiscalNoteInventory::selectedSerials((array) ($document_item->item->lots ?? [])) as $it) {
+                $r = ItemLot::where('item_id', $document_item->item_id)->whereKey($it->id)->lockForUpdate()->firstOrFail();
+                if ($r->warehouse_id !== null && (string) $r->warehouse_id !== (string) $document_item->warehouse_id) {
+                    \App\Services\Fiscal\FiscalAmounts::error('items.serial_ids', 'El serial no corresponde al almacén de la factura.');
                 }
-                /*if($document_item->item->IdLoteSelected != null)
-                {
-                    $lot = ItemLotsGroup::find($document_item->item->IdLoteSelected);
-                    $lot->quantity = ($lot->quantity - $document_item->quantity);
-                    $lot->save();
-                }*/
+                if ($document->document_type_id === '01' && $r->has_sale) {
+                    \App\Services\Fiscal\FiscalAmounts::error('items.serial_ids', 'El serial ya fue vendido.');
+                }
+                $serialBefore = $r->has_sale;
+                $r->has_sale = ($document->document_type_id === '07') ? false : true;
+                $r->save();
+                $invoiceSerialMovements[] = ['id' => $r->id, 'before' => $serialBefore, 'after' => $r->has_sale];
             }
 
+            \App\Services\Fiscal\InvoiceTrackedInventory::remember($document_item,$invoiceLotMovements,$invoiceSerialMovements);
             // Sincronizar stock del restaurante
             $this->syncRestaurantStock($document_item->item_id);
 
@@ -438,26 +444,22 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             }
 
-            // Procesar productos fusionados desde item JSON
-            $this->processMergedProductsSaleNote($sale_note_item);
-
-            // Procesar modificadores aplicados
-            $this->processModifiersAppliedSaleNote($sale_note_item);
-
-            // series
-            if(isset($sale_note_item->item->lots) )
-            {
-                foreach ($sale_note_item->item->lots as $it)
-                {
-                    if($it->has_sale == true)
-                    {
-                        $r = ItemLot::find($it->id);
-                        $r->has_sale =  true;
-                        $r->save();
-                    }
-                }
+            $components = array_merge(
+                $this->processMergedProductsSaleNote($sale_note_item),
+                $this->processModifiersAppliedSaleNote($sale_note_item)
+            );
+            if ($components && \App\Support\Exact\Persistence::enabled($sale_note_item)) {
+                $sale_note_item->refresh();
+                $snapshot = $sale_note_item->calculation_snapshot;
+                $snapshot['inputs']['sale_note_component_movements'] = ['ids' => $components, 'reversed' => false];
+                $sale_note_item->forceFill(['calculation_snapshot' => $snapshot])->saveQuietly();
             }
-            // series
+
+            foreach (FiscalNoteInventory::selectedSerials((array) ($sale_note_item->item->lots ?? [])) as $serial) {
+                $record = ItemLot::findOrFail($serial->id);
+                $record->has_sale = true;
+                $record->save();
+            }
 
             // Sincronizar stock del restaurante
             $this->syncRestaurantStock($sale_note_item->item_id);
@@ -489,6 +491,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             if ($this->hasNoServiceInventory($sale_note_item)) return;
             if ($sale_note_item->sale_note->order_note_id) return;
+            if (($sale_note_item->calculation_snapshot['inputs']['sale_note_component_movements']['reversed'] ?? false) === true) return;
             if (isset($sale_note_item->calculation_snapshot['inputs']['sale_note_pack_inventory'])) {
                 if (!in_array((string)$sale_note_item->sale_note->state_type_id,['09','11'],true)) \App\Services\Fiscal\SaleNotePackInventory::apply($sale_note_item,1);
                 return;
@@ -527,6 +530,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             }
 
+            $this->reverseSaleNoteComponents($sale_note_item);
             $this->deleteItemLots($sale_note_item);
 
         });
@@ -616,6 +620,8 @@ class InventoryKardexServiceProvider extends ServiceProvider
             // $this->createInventoryKardex($order_note_item->order_note, $order_note_item->item_id, $order_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
             // $this->updateStock($order_note_item->item_id, $order_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity))->negated(), $warehouse->id);
 
+            if (isset($order_note_item->calculation_snapshot['inputs']['order_inventory_warehouse_id'])) return;
+
             // control de lotes
             if (isset($order_note_item->item->IdLoteSelected))
             {
@@ -651,18 +657,10 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
 
 
-            if(isset($item->lots) )
-            {
-                foreach ($item->lots as $it) {
-
-                    if($it->has_sale == true)
-                    {
-                        $r = ItemLot::find($it->id);
-                        $r->has_sale = true;
-                        $r->save();
-                    }
-
-                }
+            foreach (FiscalNoteInventory::selectedSerials((array) ($item->lots ?? [])) as $serial) {
+                $record = ItemLot::findOrFail($serial->id);
+                $record->has_sale = true;
+                $record->save();
             }
 
 
@@ -700,6 +698,8 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             $this->updateStock($order_note_item->item_id, $order_note_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentationQuantity)), $warehouse->id);
 
+            // Los lotes registrados ya se compensaron en OrderTrackedInventory.
+            if ($recordedWarehouse !== null) return;
 
             if (isset($order_note_item->item->lots_group)) {
                 if(is_array($order_note_item->item->lots_group) && count($order_note_item->item->lots_group) > 0) {
@@ -917,12 +917,17 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
         DocumentItem::deleted(function(DocumentItem $document_item) {
             if (\App\Services\Fiscal\FiscalNote::ordinary($document_item->document)) { \App\Services\Fiscal\FiscalNoteInventory::apply($document_item, -1); $this->syncRestaurantStock($document_item->item_id); return; }
+            if ($document_item->relationLoaded('invoice_inventory_reversed_for_edit') && $document_item->getRelation('invoice_inventory_reversed_for_edit') === true) {
+                $this->syncRestaurantStock($document_item->item_id);
+                return;
+            }
 
             if ($this->hasNoServiceInventory($document_item)) return;
 
             if(!$document_item->item->is_set){
 
                 $this->processIndividualDocumentItem($document_item);
+                $this->moveInvoiceModifiers($document_item, 1);
 
             }else{
 
@@ -935,109 +940,25 @@ class InventoryKardexServiceProvider extends ServiceProvider
     }
 
     /**
-     * Procesa los productos fusionados (merged_products) para descontar su stock
-     * Lee los datos desde document->data_json->items
-     * Excluye el producto raíz para evitar doble descuento
-     *
-     * @param DocumentItem $document_item
-     */
-    private function processMergedProducts(DocumentItem $document_item) {
-
-        $document = $document_item->document;
-
-        // Obtener data_json del documento
-        $data_json = $document->data_json;
-        if (!$data_json || !isset($data_json->items)) {
-            return;
-        }
-
-        // Buscar el item correspondiente en data_json
-        $item_data = null;
-        foreach ($data_json->items as $item) {
-            if (isset($item->codigo_interno) && $item->codigo_interno == $document_item->item->internal_id) {
-                $item_data = $item;
-                break;
-            }
-        }
-
-        // Si no se encuentra el item o no está fusionado, salir
-        if (!$item_data || !isset($item_data->esFusionado) || !$item_data->esFusionado) {
-            return;
-        }
-
-        // Verificar que tenga productosFusionados
-        if (!isset($item_data->productosFusionados) || empty($item_data->productosFusionados)) {
-            return;
-        }
-
-        $factor = ($document->document_type_id === '07') ? 1 : -1;
-        $warehouse = ($document_item->warehouse_id)
-            ? $this->findWarehouse($this->findWarehouseById($document_item->warehouse_id)->establishment_id)
-            : $this->findWarehouse();
-
-        // Procesar cada producto fusionado
-        foreach ($item_data->productosFusionados as $merged_product) {
-
-            $merged_item_id = $merged_product->id ?? null;
-            $merged_quantity = $merged_product->quantity ?? 1;
-
-            // Si no tiene id, no podemos procesar
-            if (!$merged_item_id) {
-                \Log::warning("processMergedProducts: Producto fusionado sin ID");
-                continue;
-            }
-
-            // Saltar el producto principal para evitar doble descuento
-            if ($merged_item_id == $document_item->item_id) {
-                continue;
-            }
-
-            $total_quantity = $merged_quantity;
-
-            // Crear registro en kardex
-            $this->createInventoryKardex(
-                $document,
-                $merged_item_id,
-                ($factor * $total_quantity),
-                $warehouse->id
-            );
-
-            // Actualizar stock si corresponde
-            if (!$document->sale_note_id && !$document->order_note_id && !$document->dispatch_id && !$document->sale_notes_relateds) {
-                $this->updateStock($merged_item_id, ($factor * $total_quantity), $warehouse->id);
-            } else {
-                if ($document->dispatch) {
-                    if (!$document->dispatch->discountsPhysicalStock()) {
-                        $this->updateStock($merged_item_id, ($factor * $total_quantity), $warehouse->id);
-                    }
-                }
-            }
-
-            // Sincronizar stock del restaurante
-            $this->syncRestaurantStock($merged_item_id);
-        }
-    }
-
-    /**
      * Procesa los productos fusionados (merged_products) en nota de venta
      * Lee los datos desde sale_note_item->item (campo JSON)
      * Excluye el producto raíz para evitar doble descuento
      *
      * @param SaleNoteItem $sale_note_item
      */
-    private function processMergedProductsSaleNote(SaleNoteItem $sale_note_item) {
+    private function processMergedProductsSaleNote(SaleNoteItem $sale_note_item): array {
 
         // Obtener item del sale_note_item (campo JSON)
         $item_data = $sale_note_item->item;
 
         // Si no está fusionado, salir
         if (!isset($item_data->esFusionado) || !$item_data->esFusionado) {
-            return;
+            return [];
         }
 
         // Verificar que tenga productosFusionados
         if (!isset($item_data->productosFusionados) || empty($item_data->productosFusionados)) {
-            return;
+            return [];
         }
 
         $sale_note = $sale_note_item->sale_note;
@@ -1046,6 +967,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
             : $this->findWarehouse($sale_note->establishment_id);
 
         // Procesar cada producto fusionado
+        $movements = [];
         foreach ($item_data->productosFusionados as $merged_product) {
 
             $merged_item_id = $merged_product->id ?? null;
@@ -1061,99 +983,27 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 continue;
             }
 
-            $total_quantity = $merged_quantity;
+            $quantity = ExactDecimal::of(ExactDecimal::input($merged_quantity, 'items.productosFusionados.quantity'));
+            if (!$quantity->isPositive()) {
+                \App\Services\Fiscal\FiscalAmounts::error('items', 'La cantidad del producto fusionado debe ser positiva.');
+            }
+            $movement = $quantity->negated();
 
             // Crear registro en kardex
-            $this->createInventoryKardexSaleNote(
+            $movements[] = $this->createInventoryKardexSaleNote(
                 $sale_note,
                 $merged_item_id,
-                (-1 * $total_quantity),
+                $movement,
                 $warehouse->id,
                 $sale_note_item->id
-            );
+            )->id;
 
             // Actualizar stock si no viene de order_note
             if (!$sale_note->order_note_id) {
-                $this->updateStock($merged_item_id, (-1 * $total_quantity), $warehouse->id);
+                $this->updateStock($merged_item_id, $movement, $warehouse->id);
             }
         }
-    }
-
-    /**
-     * Procesa los modificadores aplicados (modifiersApplied) para descontar su stock
-     * Procesa todos los modificadores en data_json->items
-     * Solo procesa modificadores con type: "item" y item_id
-     *
-     * @param DocumentItem $document_item
-     */
-    private function processModifiersApplied(DocumentItem $document_item) {
-
-        $document = $document_item->document;
-
-        // Obtener data_json del documento
-        $data_json = $document->data_json;
-        if (!$data_json || !isset($data_json->items)) {
-            return;
-        }
-
-        $factor = ($document->document_type_id === '07') ? 1 : -1;
-        $warehouse = ($document_item->warehouse_id)
-            ? $this->findWarehouse($this->findWarehouseById($document_item->warehouse_id)->establishment_id)
-            : $this->findWarehouse();
-
-        // Procesar todos los items del data_json
-        foreach ($data_json->items as $item_data) {
-
-            // Verificar que tenga modifiersApplied
-            if (!isset($item_data->modifiersApplied) || empty($item_data->modifiersApplied)) {
-                continue;
-            }
-
-            // Procesar cada grupo de modificadores
-            foreach ($item_data->modifiersApplied as $group) {
-                if (!isset($group->items) || empty($group->items)) {
-                    continue;
-                }
-
-                // Procesar cada item del grupo
-                foreach ($group->items as $modifierItem) {
-                    // Solo procesar si es de tipo "item" y tiene item_id
-                    if (!isset($modifierItem->type) || $modifierItem->type !== 'item') {
-                        continue;
-                    }
-
-                    if (!isset($modifierItem->item_id) || !$modifierItem->item_id) {
-                        continue;
-                    }
-
-                    $modifier_item_id = $modifierItem->item_id;
-                    // Usar quantity del item_data, no del document_item
-                    $modifier_quantity = $item_data->cantidad ?? 1;
-
-                    // Crear registro en kardex
-                    $this->createInventoryKardex(
-                        $document,
-                        $modifier_item_id,
-                        ($factor * $modifier_quantity),
-                        $warehouse->id
-                    );
-
-                    // Actualizar stock si corresponde
-                    if (!$document->sale_note_id && !$document->order_note_id && !$document->dispatch_id && !$document->sale_notes_relateds) {
-                        $this->updateStock($modifier_item_id, ($factor * $modifier_quantity), $warehouse->id);
-                    } else {
-                        if ($document->dispatch) {
-                            if (!$document->dispatch->discountsPhysicalStock()) {
-                                $this->updateStock($modifier_item_id, ($factor * $modifier_quantity), $warehouse->id);
-                            }
-                        }
-                    }
-
-                    // Sincronizar stock del restaurante
-                    $this->syncRestaurantStock($modifier_item_id);
-                }
-            }
-        }
+        return $movements;
     }
 
     /**
@@ -1163,14 +1013,14 @@ class InventoryKardexServiceProvider extends ServiceProvider
      *
      * @param SaleNoteItem $sale_note_item
      */
-    private function processModifiersAppliedSaleNote(SaleNoteItem $sale_note_item) {
+    private function processModifiersAppliedSaleNote(SaleNoteItem $sale_note_item): array {
 
         // Obtener item del sale_note_item (campo JSON)
         $item_data = $sale_note_item->item;
 
         // Verificar que tenga modifiersApplied
         if (!isset($item_data->modifiersApplied) || empty($item_data->modifiersApplied)) {
-            return;
+            return [];
         }
 
         $sale_note = $sale_note_item->sale_note;
@@ -1179,6 +1029,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
             : $this->findWarehouse($sale_note->establishment_id);
 
         // Procesar cada grupo de modificadores
+        $movements = [];
         foreach ($item_data->modifiersApplied as $group) {
             if (!isset($group->items) || empty($group->items)) {
                 continue;
@@ -1196,26 +1047,28 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 }
 
                 $modifier_item_id = $modifierItem->item_id;
-                $modifier_quantity = $sale_note_item->quantity; // Cantidad del producto principal
+                // La conversión recupera esta misma cantidad decimal de la partida.
+                $movement = ExactDecimal::of($sale_note_item->quantity)->negated();
 
                 // Crear registro en kardex
-                $this->createInventoryKardexSaleNote(
+                $movements[] = $this->createInventoryKardexSaleNote(
                     $sale_note,
                     $modifier_item_id,
-                    (-1 * $modifier_quantity),
+                    $movement,
                     $warehouse->id,
                     $sale_note_item->id
-                );
+                )->id;
 
                 // Actualizar stock si no viene de order_note
                 if (!$sale_note->order_note_id) {
-                    $this->updateStock($modifier_item_id, (-1 * $modifier_quantity), $warehouse->id);
+                    $this->updateStock($modifier_item_id, $movement, $warehouse->id);
                 }
 
                 // Sincronizar stock del restaurante
                 $this->syncRestaurantStock($modifier_item_id);
             }
         }
+        return $movements;
     }
 
     /**

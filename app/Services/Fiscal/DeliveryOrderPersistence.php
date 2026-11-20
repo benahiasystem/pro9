@@ -1,6 +1,6 @@
 <?php
 namespace App\Services\Fiscal;
-use App\Models\Tenant\{Company,Dispatch,SaleNote};
+use App\Models\Tenant\{Company,Dispatch,Document,SaleNote};
 use App\Support\Exact\Decimal as D;
 
 final class DeliveryOrderPersistence
@@ -16,6 +16,11 @@ final class DeliveryOrderPersistence
                 abort_unless(hash_equals($existing->creation_hash,$input['creation_hash']),409,'La clave de creación corresponde a datos diferentes.');
                 return $existing;
             }
+        }
+        if (!empty($input['reference_document_id'])) {
+            $invoice = Document::whereKey($input['reference_document_id'])->lockForUpdate()->firstOrFail();
+            DeliveryOrderInvoiceReference::assertDocument($invoice, $input['establishment_id'], $input['customer_id']);
+            DeliveryOrderInvoiceReference::assertItems($invoice->items()->lockForUpdate()->get(), $input['items']);
         }
         if (!empty($input['reference_sale_note_id'])) {
             $note=SaleNote::whereKey($input['reference_sale_note_id'])->lockForUpdate()->firstOrFail();

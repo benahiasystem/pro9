@@ -11,7 +11,7 @@
         <div class="form-body">
             <div class="col-md-12 text-end">
                 <h5>Cant. Pedida: {{ quantity }}</h5>
-                <h5 v-bind:class="{ 'text-danger': (toAttend < 0) }">Por Atender: {{ toAttend }}</h5>
+                <h5 v-bind:class="{ 'text-danger': seriesSelectionInvalid }">Por Atender: {{ toAttend }}</h5>
             </div>
             <div class="row">
                 <div class="col-md-6 col-lg-6 col-xl-6 ">
@@ -73,7 +73,7 @@
         <div class="form-actions text-end pt-2">
             <el-button @click.prevent="close">Cerrar</el-button>
             <el-button type="primary"
-                       :disabled="toAttend < 0"
+                       :disabled="seriesSelectionInvalid"
                        @click="submit">Guardar
             </el-button>
         </div>
@@ -81,7 +81,9 @@
 </template>
 
 <script>
+import {serialIdKey} from "../../../../helpers/invoice-lots";
 import queryString from "query-string";
+import { exactAmount } from "../../../../helpers/exchange-rate-math";
 
 export default {
     props: [
@@ -96,6 +98,8 @@ export default {
         'warehouseId',
         'inputSearch',
         'documentId',
+        'exactQuantities',
+        'exactQuantity',
     ],
     data() {
         return {
@@ -115,9 +119,22 @@ export default {
         }
     },
     computed: {
+        exactSeriesBalance() {
+            if (!this.exactQuantities || this.exactQuantity == null) return null;
+            return exactAmount(this.exactQuantity).minus(this.lotsSelected.length);
+        },
         toAttend() {
-            return this.quantity - this.lotsSelected.length
-        }
+            if (!this.exactQuantities) return this.quantity - this.lotsSelected.length;
+            if (!this.exactSeriesBalance) return '—';
+            const decimal = this.exactSeriesBalance.decimal();
+            if (decimal !== '0' || this.exactSeriesBalance.compare(0) === 0) return decimal;
+            const {n, d} = this.exactSeriesBalance.fraction();
+            return `${n}/${d}`;
+        },
+        seriesSelectionInvalid() {
+            if (!this.exactQuantities) return this.toAttend < 0;
+            return !this.exactSeriesBalance || this.exactSeriesBalance.compare(0) < 0;
+        },
     },
     async mounted() {
         await this.getRecords()
@@ -171,9 +188,9 @@ export default {
             if(this.search.input){
                 const isAlreadySelected = this.lotsSelected.some(lot => lot.series === this.search.input);
                 if (!isAlreadySelected) {
-                    let lot = _.find(this.records, {series: this.search.input})
-                    lot.has_sale = true
-                    if(lot) {
+                    const lot = this.records.find(record => record.series === this.search.input);
+                    if (lot && serialIdKey(lot.id) !== null) {
+                        lot.has_sale = true
                         this.lotsSelected.push(lot)
                         this.$nextTick(() => {
                             this.$refs.searchInput.select();
@@ -210,7 +227,12 @@ export default {
         //     }
         // },
         changeHasSale(row, index) {
-            let lotIndex = _.findIndex(this.lotsSelected, {id: row.id})
+            const key = serialIdKey(row.id);
+            if (key === null) {
+                row.has_sale = false;
+                return;
+            }
+            const lotIndex = this.lotsSelected.findIndex(lot => serialIdKey(lot.id) === key);
             if (lotIndex > -1) {
                 this.lotsSelected.splice(lotIndex, 1)
                 row.has_sale = false;
@@ -227,15 +249,14 @@ export default {
             );
         },
         checkedLot() {
-            _.forEach(this.lotsSelected, row => {
-                let lot = _.find(this.records, {id: row.id})
-                if (lot) {
-                    lot.has_sale = true;
-                }
-            });
+            const selected = new Set(this.lotsSelected.map(lot => serialIdKey(lot.id)));
+            selected.delete(null);
+            for (const lot of this.records) {
+                if (selected.has(serialIdKey(lot.id))) lot.has_sale = true;
+            }
         },
         submit() {
-            if (this.toAttend < 0) {
+            if (this.seriesSelectionInvalid) {
                 return this.$message.error('La cantidad de series seleccionadas no es la correcta');
             }
             this.$emit('addRowSelectLot', this.lotsSelected);

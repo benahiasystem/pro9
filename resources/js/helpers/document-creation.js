@@ -37,6 +37,21 @@ const suggestedPayments = new WeakMap()
 const editedPayments = new WeakSet()
 const suggestedInstallments = new WeakMap()
 
+/** Invoice edit rollback preserves suggestion ownership on the original rows. */
+export function captureCreationSuggestions(form) {
+    const payments=(form.payments || []).map(row=>({row,suggestion:suggestedPayments.get(row),edited:editedPayments.has(row)}))
+    const installments=(form.fee || []).map(row=>({row,suggestion:suggestedInstallments.get(row)}))
+    return () => {
+        for (const {row,suggestion,edited} of payments) {
+            if (suggestion===undefined) suggestedPayments.delete(row);else suggestedPayments.set(row,suggestion)
+            if (edited) editedPayments.add(row);else editedPayments.delete(row)
+        }
+        for (const {row,suggestion} of installments) {
+            if (suggestion===undefined) suggestedInstallments.delete(row);else suggestedInstallments.set(row,suggestion)
+        }
+    }
+}
+
 // Only replace amounts still owned by the suggestion; entered and saved
 // installments remain untouched when receipts or document totals change.
 export function suggestInstallments(form, target = null) {

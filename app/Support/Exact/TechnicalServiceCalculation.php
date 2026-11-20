@@ -44,7 +44,7 @@ final class TechnicalServiceCalculation
                 $base=$discount['discount_type_id'] === '02' ? $taxed : $stats['exempt_base'];
                 $amount=$base->multipliedBy($percentage)->dividedBy(100);
             } else {
-                $amount=Decimal::of(Decimal::input($discount['amount'] ?? null,'discounts.amount'));
+                $amount=self::manualAmount($discount,'discounts',null);
             }
             if ($amount->isNegative()) FiscalAmounts::error('discounts','El descuento no puede ser negativo.');
             $discount['amount']=Decimal::represent($amount);
@@ -64,7 +64,7 @@ final class TechnicalServiceCalculation
         $charge=Decimal::of(0); $automatic=[];
         foreach ($chargeRows as $index=>&$row) {
             if (!empty($row['service_auto_percentage'])) { $automatic[]=$index; continue; }
-            $amount=Decimal::of(Decimal::input($row['amount'] ?? 0,'charges.amount'));
+            $amount=self::manualAmount($row,'charges',0);
             if ($amount->isNegative()) FiscalAmounts::error('charges','El cargo no puede ser negativo.');
             $row['amount']=Decimal::represent($amount);
             $row['amount_exact']=Decimal::fraction($amount);
@@ -100,5 +100,16 @@ final class TechnicalServiceCalculation
         $snapshot['inputs']['service_adjustments']=['discounts'=>$discountRows,'charges'=>$chargeRows];
         $service->calculation_snapshot=$snapshot;
         $service->save();
+    }
+
+    /** Retain a matching original; an edited decimal supersedes its old positive fraction. */
+    private static function manualAmount(array $row,string $field,$fallback): \Brick\Math\BigRational
+    {
+        $scalar=Decimal::of(Decimal::input($row['amount'] ?? $fallback,$field.'.amount'));
+        if (!isset($row['amount_exact'])) return $scalar;
+        $original=Decimal::inputRational($row['amount_exact'],$field.'.amount');
+        // Negative originals remain invalid even when paired with a positive scalar.
+        if ($original->isNegative()) return $original;
+        return $scalar->isEqualTo(Decimal::represent($original)) ? $original : $scalar;
     }
 }

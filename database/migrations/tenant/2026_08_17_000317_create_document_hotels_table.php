@@ -1,69 +1,70 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `document_hotels` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `document_id` int(10) unsigned NOT NULL
- * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `sex` enum('M','F') COLLATE utf8mb4_unicode_ci NOT NULL
- * - `age` int(11) NOT NULL
- * - `civil_status` enum('S','C','V','D') COLLATE utf8mb4_unicode_ci NOT NULL
- * - `nacionality` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `origin` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `room_number` int(11) NOT NULL
- * - `date_entry` date NOT NULL
- * - `time_entry` time NOT NULL
- * - `date_exit` date NOT NULL
- * - `time_exit` time NOT NULL
- * - `ocupation` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `room_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `guests` json DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - document_id: bigint
+ * - number: varchar(255)
+ * - name: varchar(255)
+ * - identity_document_type_id: varchar(255)
+ * - sex: varchar(255)
+ * - age: integer
+ * - civil_status: varchar(255)
+ * - nacionality: varchar(255)
+ * - origin: varchar(255)
+ * - room_number: integer
+ * - date_entry: date
+ * - time_entry: time
+ * - date_exit: date
+ * - time_exit: time
+ * - ocupation: varchar(255)
+ * - room_type: varchar(255)
+ * - guests: json
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `document_hotels` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `document_id` int(10) unsigned NOT NULL,
-  `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sex` enum('M','F') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `age` int(11) NOT NULL,
-  `civil_status` enum('S','C','V','D') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `nacionality` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `origin` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `room_number` int(11) NOT NULL,
-  `date_entry` date NOT NULL,
-  `time_entry` time NOT NULL,
-  `date_exit` date NOT NULL,
-  `time_exit` time NOT NULL,
-  `ocupation` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `room_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `guests` json DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `document_hotels_document_id_foreign` (`document_id`),
-  KEY `document_hotels_identity_document_type_id_foreign` (`identity_document_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('document_hotels', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('document_id');
+            $table->string('number', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('identity_document_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('sex', 255)->collation('pro9_ci_ai');
+            $table->integer('age');
+            $table->string('civil_status', 255)->collation('pro9_ci_ai');
+            $table->string('nacionality', 255)->collation('pro9_ci_ai');
+            $table->string('origin', 255)->collation('pro9_ci_ai');
+            $table->integer('room_number');
+            $table->date('date_entry');
+            $table->time('time_entry');
+            $table->date('date_exit');
+            $table->time('time_exit');
+            $table->string('ocupation', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('room_type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->json('guests')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['document_id'], 'document_hotels_document_id_foreign');
+            $table->index(['identity_document_type_id'], 'document_hotels_identity_document_type_id_foreign');
+        });
+        DB::statement('ALTER TABLE "document_hotels" ADD CONSTRAINT "document_hotels_sex_check" CHECK ("sex" IN (\'M\',\'F\'))');
+        DB::statement('ALTER TABLE "document_hotels" ADD CONSTRAINT "document_hotels_age_range" CHECK ("age" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "document_hotels" ADD CONSTRAINT "document_hotels_civil_status_check" CHECK ("civil_status" IN (\'S\',\'C\',\'V\',\'D\'))');
+        DB::statement('ALTER TABLE "document_hotels" ADD CONSTRAINT "document_hotels_room_number_range" CHECK ("room_number" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `document_hotels`');
+        Schema::dropIfExists('document_hotels');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

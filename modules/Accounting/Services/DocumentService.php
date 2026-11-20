@@ -327,7 +327,7 @@ final class DocumentService
     }
     public function resource(SourceDocument $document): array
     {
-        $incident = $document->origin === 'pro9' ? \Modules\Accounting\Models\Incident::where('kind', 'source_changed')->where('resource_type', 'source_document')->where('resource_id', $document->id)->where('status', 'open')->orderByRaw("CAST(JSON_UNQUOTE(JSON_EXTRACT(details, '$.revision')) AS UNSIGNED) DESC")->first() : null;
+        $incident = $document->origin === 'pro9' ? \Modules\Accounting\Models\Incident::where('kind', 'source_changed')->where('resource_type', 'source_document')->where('resource_id', $document->id)->where('status', 'open')->orderByRaw("CAST(details ->> 'revision' AS bigint) DESC NULLS LAST")->first() : null;
         return [...$document->toArray(), 'party' => $document->metadata['party_snapshot'] ?? ($document->third_party_id ? ThirdParty::find($document->third_party_id)?->only(['id', 'name', 'tax_id']) : null), 'entries' => JournalEntry::where('source_document_id', $document->id)->orderByDesc('created_at')->get(['id', 'reference', 'status', 'source_revision', 'version']), 'versions' => SourceVersion::where('source_document_id', $document->id)->orderByDesc('revision')->get(['id', 'revision', 'hash', 'created_at']),
             'origin_review' => $incident ? ['incident_id' => $incident->id, 'observed_revision' => $incident->details['revision'] ?? null, 'registered_revision' => $document->source_revision, 'financial_projection_preserved' => (bool) ($incident->details['financial_projection_preserved'] ?? false)] : null];
     }

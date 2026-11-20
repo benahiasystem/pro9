@@ -88,3 +88,19 @@ test('sale note payment dialog uses fractions for residual debt and adjustment v
     assert.equal(documents.methods.hasPaymentAdjustment(tiny),true)
     assert.equal(documents.methods.paymentAdjustmentText(tiny),'-1/100000000000000000000')
 })
+
+test('receipt dialogs offer collection from exact debt even when its decimal projection is zero',()=>{
+    for(const file of ['resources/js/views/tenant/sale_notes/partials/payments.vue','resources/js/views/tenant/documents/partials/payments.vue']) {
+        const component=load(file)
+        const parsed=compiler.parseComponent(fs.readFileSync(file,'utf8'))
+        assert.ok(compiler.compile(parsed.template.content).render.includes('hasOutstandingBalance()'),file)
+        const hasBalance=component.methods.hasOutstandingBalance
+        assert.equal(hasBalance.call({document:{}}),false,file)
+        for(const [n,expected] of [['1',true],['0',false],['-1',false]]) {
+            const document={total_difference:'0',calculation_snapshot:{version:1,values:{total_difference:{n,d:'1000000000000000000000000000000'}}}}
+            assert.equal(hasBalance.call({document}),expected,file)
+        }
+        assert.equal(hasBalance.call({document:{total_difference:'0.01'}}),true,file)
+        assert.equal(hasBalance.call({document:{total_difference:'999999999999999999',calculation_snapshot:{version:1,values:{total_difference:{n:'0',d:'1'}}}}}),false,file)
+    }
+})

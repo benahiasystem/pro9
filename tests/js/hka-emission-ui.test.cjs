@@ -64,6 +64,52 @@ function context(component, post, record = {}) {
     ctx.newEmailRequestId = () => 'test-request';
     return ctx;
 }
+test('a positive subprecision invoice balance remains open in the list and drawer', async () => {
+    const invoice = { balance: '0', has_open_balance: true };
+    const listing = context(list.component, undefined, invoice);
+    const detail = context(drawer.component, undefined, invoice);
+    assert.equal(detail.balanceAmount, '0');
+    assert.equal(detail.balanceIsPaid, false);
+    assert.match(detail.balanceStatusLabel, /Pendiente/);
+    assert.equal(listing.hasOpenBalance(invoice), true);
+    assert.match(list.template, /hasOpenBalance\(row\) && isDateWarning\(row.date_of_due\)/);
+    assert.match(list.template, /'text-warning': hasOpenBalance\(row\)/);
+    assert.equal(listing.hasOpenBalance({ balance: '1' }), true);
+    assert.equal(listing.hasOpenBalance({ balance: '0' }), false);
+
+    detail.$http.get = async () => ({ data: { data: { balance: '0', has_open_balance: false, items: [{}] } } });
+    await detail.loadRecord();
+    assert.equal(detail.balanceIsPaid, true);
+    detail.$http.get = async () => ({ data: { data: { balance: '2', items: [{}] } } });
+    await detail.loadRecord();
+    assert.equal(detail.balanceIsPaid, false);
+});
+
+test('invoice drawer shows both settlement rows for amounts below the decimal projection', () => {
+    const rows = drawer.template.match(/<div v-if="[^"]+" class="detail-drawer__totals-row"><span>(?:Ajuste de liquidación|Importe cobrable)<\/span>[^]*?<\/div>/g);
+    assert.equal(rows.length, 2);
+    const render = compiler.compileToFunctions('<div>' + rows.join('') + '</div>');
+    for (const [adjustment, snapshot, expected] of [
+        ['0', {n:'1', d:'10000000000000'}, 'Bs. 1/10000000000000'],
+        ['0', {n:'-1', d:'10000000000000'}, 'Bs. -1/10000000000000'],
+        ['0', {n:'0', d:'1'}, null],
+        [null, null, null],
+        ['0.01', null, 'Bs. 0,01'],
+    ]) {
+        const record = {currency_type_id:'VES', settlement_adjustment:adjustment, total_payable:'100'};
+        if (snapshot) record.calculation_snapshot = {version:1, values:{settlement_adjustment:snapshot}};
+        const instance = new Vue({
+            ...render,
+            data:()=>({record}),
+            computed:drawer.component.computed,
+            methods:drawer.component.methods,
+        });
+        const shown = instance._render().children.filter(row => row.tag === 'div');
+        assert.deepEqual(shown.map(row => row.children[1].children[0].text), expected === null ? [] : [expected, 'Bs. 100,00']);
+        instance.$destroy();
+    }
+});
+
 function deferred() {
     let resolve, reject;
     const promise = new Promise((yes, no) => { resolve = yes; reject = no; });

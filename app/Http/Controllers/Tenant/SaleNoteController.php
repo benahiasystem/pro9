@@ -85,6 +85,8 @@ class SaleNoteController extends Controller
     protected $sale_note;
     protected $company;
     protected $apply_change;
+    public $configuration;
+    public $document;
 
     public function index()
     {
@@ -492,16 +494,18 @@ class SaleNoteController extends Controller
             $this->deferredPaymentFiles = [];
 
             $this->setFilename();
-            if ($deferPdfUntilCommit) {
+            $this->regularizePayments();
+            $writeConnection=DB::connection('tenant');
+            if ($deferPdfUntilCommit || ($writeConnection->transactionLevel()>1 && !$this->compensatesPdfOnRollback())) {
                 $note = $this->sale_note;
                 DB::connection('tenant')->afterCommit(function () use ($note) {
                     try { $this->createPdf($note, 'a4', $note->filename); }
                     catch (\Throwable $e) { \Log::warning('No se pudo generar el PDF de la nota de Hotel después del cierre.', ['sale_note_id'=>$note->id, 'error'=>get_class($e)]); }
                 });
             } else {
+                if ($writeConnection instanceof \App\Database\PostgresConnection) $writeConnection->assertBeforeCommitValidations();
                 $this->createPdf($this->sale_note,"a4", $this->sale_note->filename);
             }
-            $this->regularizePayments();
             DB::connection('tenant')->commit();
 
             return [
@@ -530,6 +534,12 @@ class SaleNoteController extends Controller
                 'message' => $e->getMessage(),
             ];
         }
+    }
+
+    /** A batch with file restoration can keep PDF failure inside its database write. */
+    protected function compensatesPdfOnRollback(): bool
+    {
+        return false;
     }
 
     private function saveFee($document, $fee)
@@ -850,7 +860,7 @@ class SaleNoteController extends Controller
             $company_address   = (strlen($this->document->establishment->address) / 30) * 10;
             $company_number    = $this->document->establishment->telephone != '' ? '10' : '0';
             $customer_name     = strlen($this->document->customer->name) > '25' ? '10' : '0';
-            $customer_address  = (strlen($this->document->customer->address) / 200) * 10;
+            $customer_address  = (strlen((string) ($this->document->customer->address ?? '')) / 200) * 10;
             $p_order           = $this->document->purchase_order != '' ? '10' : '0';
 
             $total_exportation = $this->document->total_exportation != '' ? '10' : '0';
@@ -930,7 +940,7 @@ class SaleNoteController extends Controller
             $company_address   = (strlen($this->document->establishment->address) / 30) * 10;
             $company_number    = $this->document->establishment->telephone != '' ? '10' : '0';
             $customer_name     = strlen($this->document->customer->name) > '25' ? '10' : '0';
-            $customer_address  = (strlen($this->document->customer->address) / 200) * 10;
+            $customer_address  = (strlen((string) ($this->document->customer->address ?? '')) / 200) * 10;
             $p_order           = $this->document->purchase_order != '' ? '10' : '0';
 
             $total_exportation = $this->document->total_exportation != '' ? '10' : '0';
@@ -1494,6 +1504,7 @@ class SaleNoteController extends Controller
 
                 // voided sets
                 $this->voidedSaleNoteItem($sale_note_item, $warehouse);
+                $this->reverseSaleNoteComponents($sale_note_item);
                 // voided sets
 
                 //habilito las series
@@ -1528,6 +1539,10 @@ class SaleNoteController extends Controller
         if (\App\Services\Fiscal\SaleNotePackInventory::apply($sale_note_item,1)) return;
 
         $warehouse_id = $sale_note_item->warehouse_id ?: optional($warehouse)->id;
+        if (isset($sale_note_item->calculation_snapshot['inputs']['sale_note_component_movements'])) {
+            $warehouse_id = $sale_note_item->sale_note->inventory_kardex()
+                ->whereKey($sale_note_item->inventory_kardex_id)->value('warehouse_id');
+        }
         if (!$warehouse_id) \App\Services\Fiscal\FiscalAmounts::error('inventory','No se encontró el almacén de la nota de venta.');
 
         if(!$sale_note_item->item->is_set){

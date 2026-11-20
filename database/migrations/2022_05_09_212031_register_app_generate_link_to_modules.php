@@ -32,12 +32,12 @@ class RegisterAppGenerateLinkToModules extends Migration
 
     public static function getSystemModuleConnection(): Builder
     {
-        return DB::connection('system')->table('modules');
+        return DB::connection()->table('modules');
     }
 
     public static function getSystemModuleLevelConnection(): Builder
     {
-        return DB::connection('system')->table('module_levels');
+        return DB::connection()->table('module_levels');
     }
 
     /**
@@ -51,7 +51,7 @@ class RegisterAppGenerateLinkToModules extends Migration
 
         $suscriptionRow = self::getSystemModuleConnection()->where($suscriptionData)->first();
         if ($suscriptionRow != null) {
-            DB::connection('system')->table('modules')->delete($suscriptionRow->id);
+            DB::connection()->table('modules')->delete($suscriptionRow->id);
         }
 
 

@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Skin extends Model
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     use UsesSystemConnection;
 
     protected $table = 'system_skins';

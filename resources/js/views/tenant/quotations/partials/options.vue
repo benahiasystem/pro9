@@ -531,7 +531,8 @@
             </div>
 
             <!-- controlar series y lotes -->
-            <series-form v-if="generate && form.quotation" :items="form.quotation.items" :config="config"></series-form>
+            <series-form v-if="generate && form.quotation" :items="form.quotation.items" :config="config"
+                :exact-quantities="document.document_type_id === '01'"></series-form>
             <!-- controlar series y lotes -->
 
             <div  v-show="document.total > 0" class="col-lg-12">
@@ -587,6 +588,7 @@
 <script>
 import { hasNamedSeries } from '@helpers/document-series';
 import {suggestRemainingPayment, suggestInstallments} from '@helpers/document-creation'
+import {exactAmount} from '@helpers/exchange-rate-math'
 import {defaultCashForCurrency, isRecordedReceipt} from '@helpers/payment-classification'
 import {whatsappNumber} from "@helpers/phone";
 import DocumentOptions from "../../documents/partials/options.vue";
@@ -597,6 +599,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import {functions} from '../../../../mixins/functions';
 import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
 import { validateItemsLots, hydrateItemLots } from '../../../../helpers/lotValidation';
+import { validateItemsLots as validateInvoiceItemsLots } from '../../../../helpers/invoice-lots';
 import fiscalPaymentSettings from '@mixins/fiscal-payment-settings';
 import IgtfPaymentFields from '../../documents/partials/igtf_fields.vue';
 import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue';
@@ -710,38 +713,34 @@ export default {
 
         },
         changeRetention() {
-
             if (this.document.has_retention) {
-
-                let base = this.document.total
-                let percentage = _.round(parseFloat(this.config.igv_retention_percentage) / 100, 5)
-                let amount = _.round(base * percentage, 2)
-
-                this.document.retention = {
-                    base: base,
-                    // ########## INICIO CAMBIO IGV A IVA
-                    code: '62', //Código de Retención del IVA
-                    // ######### FIN CAMBIO IGV A IVA
-                    amount: amount,
-                    percentage: percentage
+                const base = this.document.total
+                let percentage
+                let amount
+                try {
+                    percentage = exactAmount(this.config.igv_retention_percentage).dividedBy('100').final(5)
+                    amount = exactAmount(base).times(percentage).final(2)
+                } catch (_) {
+                    this.document.has_retention = false
+                    this.$message.error('No se pudo calcular la retención. Revise el porcentaje configurado y el importe de la cotización.')
                 }
 
-                this.setTotalPendingAmountRetention(amount)
-
-            } else {
-
-                this.document.retention = {}
-                this.document.total_pending_payment = 0
-                this.calculateAmountToPayments()
+                if (this.document.has_retention) {
+                    this.document.retention = {base, code: '62', amount, percentage}
+                    this.setTotalPendingAmountRetention(amount)
+                    return
+                }
             }
 
+            this.document.retention = {}
+            this.document.total_pending_payment = 0
+            this.calculateAmountToPayments()
         },
         setTotalPendingAmountRetention(amount) {
-
-            //monto neto pendiente aplica si la condicion de pago es credito
-            this.document.total_pending_payment = ['02', '03'].includes(this.document.payment_condition_id) ? this.document.total - amount : 0
+            this.document.total_pending_payment = ['02', '03'].includes(this.document.payment_condition_id)
+                ? exactAmount(this.document.total).minus(amount).decimal()
+                : 0
             this.calculateAmountToPayments()
-
         },
         calculateAmountToPayments() {
             this.calculateFee()
@@ -1252,21 +1251,33 @@ export default {
         },
         async validateQuantityandSeriesLots() {
 
+            const isInvoice = this.document.document_type_id === '01';
+            const items = this.form.quotation.items;
             let error = 0;
 
-            await this.form.quotation.items.forEach((element) => {
+            items.forEach((element) => {
 
                 if (element.item.series_enabled) {
                     const select_lots = _.filter(element.item.lots, {
                         has_sale: true,
                     }).length;
-                    if (select_lots != element.quantity) error++;
+                    let mismatch;
+                    try {
+                        mismatch = isInvoice
+                            ? exactAmount(element.quantity).compare(select_lots) !== 0
+                            : select_lots != element.quantity;
+                    } catch {
+                        mismatch = true;
+                    }
+                    if (mismatch) error++;
                 }
 
             });
 
             // Lotes de origen: misma regla que invoice_generate / DocumentRequest
-            const lotsValidation = validateItemsLots(this.form.quotation.items);
+            const lotsValidation = isInvoice
+                ? validateInvoiceItemsLots(items)
+                : validateItemsLots(items);
             if (!lotsValidation.valid) {
                 return {
                     success: false,

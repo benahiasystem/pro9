@@ -180,7 +180,7 @@ final class Receivables
         $credits = [];
         $query = $db->table('documents as nc')->join('notes','notes.document_id','=','nc.id')
             ->whereIn('notes.affected_document_id',$ids)->where('nc.document_type_id','07')
-            ->whereNotIn('nc.state_type_id',['09','11'])->select('nc.*','notes.affected_document_id')->distinct();
+            ->whereNotIn('nc.state_type_id',['09','11'])->select('nc.*','notes.affected_document_id'); // notes.document_id is unique; no JSON equality is needed.
         foreach ($query->lazyById(500,'nc.id','id') as $row) {
             $id = $row->affected_document_id;
             $value = isset($row->total_payable) ? Decimal::readRequired($row,'total_payable') : Decimal::readRequired($row,'total');

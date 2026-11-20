@@ -25,6 +25,9 @@ class DocumentInput
         $inputs = \App\Support\Venezuela\RetiredDetractionFields::discard($inputs);
         $document_type_id = $inputs['document_type_id'];
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($document_type_id);
+        if (in_array($document_type_id, ['01', '07', '08'], true)) {
+            EstablishmentInput::validatedId($inputs['establishment_id'] ?? null);
+        }
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         \App\Services\ExportInvoicePolicy::assertInput($inputs, $service === 'web');
         SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)));
@@ -211,8 +214,11 @@ class DocumentInput
                     $items[] = $row; // The locked original is resolved by FiscalNote before persistence.
                     continue;
                 }
-                $item = Item::query()->find($row['item_id']);
-                /** @var Item $item */
+                $itemId = \App\Database\IntegerTransport::positiveKey($row['item_id'] ?? null);
+                if ($itemId === null) \App\Services\Fiscal\FiscalAmounts::error('items', 'Las partidas deben identificar un producto válido.');
+                /** @var Item|null $item */
+                $item = Item::query()->find($itemId);
+                if (!$item) \App\Services\Fiscal\FiscalAmounts::error('items', 'El producto seleccionado no está disponible.');
 
                 $items_attributes = self::attributes($row);
 
@@ -228,7 +234,7 @@ class DocumentInput
                         'description' => trim($item->description == 'REPLACE DESCRIPTION' || $item->barcode == 'VARIOUS_ITEM' ? $row['item']['description'] : trim($item->description)),
                         'item_type_id' => $item->item_type_id,
                         'internal_id' => $item->barcode == 'VARIOUS_ITEM' ? null : $item->internal_id,
-                        'item_code' => trim($item->item_code),
+                        'item_code' => trim((string) $item->item_code),
                         'item_code_gs1' => $item->item_code_gs1,
                         'unit_type_id' => (key_exists('item', $row)) ? $row['item']['unit_type_id'] : $item->unit_type_id,
                         'presentation' => (key_exists('item', $row)) ? (isset($row['item']['presentation']) ? $row['item']['presentation'] : []) : [],
@@ -277,6 +283,9 @@ class DocumentInput
                 ];
 //                dd($arayItem);
                 Item::SaveExtraDataToRequest($arayItem,$row);
+                if ($inputs['document_type_id'] === '01' && array_key_exists('source_sale_note_items', $row)) {
+                    $arayItem['source_sale_note_items'] = $row['source_sale_note_items'];
+                }
                 $items[] = $arayItem;
             }
             return $items;
@@ -398,6 +407,7 @@ class DocumentInput
                         'description' => $description,
                         'factor' => $factor,
                         'amount' => $amount,
+                        'amount_exact' => $row['amount_exact'] ?? null,
                         'base' => $base,
                     ];
                 }
@@ -416,7 +426,7 @@ class DocumentInput
                     $discount_type_id = $row['discount_type_id'];
                     $description = $row['description'];
                     $factor = $row['factor'];
-                    $amount = $row['amount'];
+                    $amount = $row['amount'] ?? null;
                     $base = $row['base'];
                     $is_amount = $row['is_amount'] ?? null; //registra si el descuento fue por monto o porcentaje
                     // ########## INICIO CAMBIO IGV A IVA
@@ -427,6 +437,7 @@ class DocumentInput
                         'discount_type_id' => $discount_type_id,
                         'amount_without_rounded'  => $amount_without_rounded,
                         'amount_exact' => $row['amount_exact'] ?? null,
+                        'use_input_amount' => $row['use_input_amount'] ?? null,
                         'from_global_distribution' => $row['from_global_distribution'] ?? null, // para identificar si el descuento viene de una distribución global o es un descuento directo del item
                         'description' => $description,
                         'factor' => $factor,
@@ -448,17 +459,7 @@ class DocumentInput
             if ($inputs['prepayments']) {
                 $prepayments = [];
                 foreach ($inputs['prepayments'] as $row) {
-                    $number = $row['number'];
-                    $document_type_id = $row['document_type_id'];
-                    $amount = $row['amount'];
-                    $total = $row['total'];
-
-                    $prepayments[] = [
-                        'number' => $number,
-                        'document_type_id' => $document_type_id,
-                        'amount' => $amount,
-                        'total' => $total
-                    ];
+                    $prepayments[] = \App\Services\Fiscal\PrepaymentReference::normalize((array)$row);
                 }
                 return $prepayments;
             }

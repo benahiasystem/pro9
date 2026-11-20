@@ -1,93 +1,91 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `purchase_items` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `purchase_id` int(10) unsigned NOT NULL
- * - `item_id` int(10) unsigned NOT NULL
- * - `item` json NOT NULL
- * - `item_lot_group_id` int(10) unsigned DEFAULT NULL
- * - `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `quantity` decimal(30,12) NOT NULL
- * - `unit_value` decimal(30,12) NOT NULL
- * - `date_of_due` date DEFAULT NULL
- * - `affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total_base_igv` decimal(30,12) NOT NULL
- * - `percentage_igv` decimal(30,12) NOT NULL
- * - `total_igv` decimal(30,12) NOT NULL
- * - `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `percentage_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_taxes` decimal(30,12) NOT NULL
- * - `price_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `unit_price` decimal(30,12) NOT NULL
- * - `total_value` decimal(30,12) NOT NULL
- * - `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total` decimal(30,12) NOT NULL
- * - `attributes` json DEFAULT NULL
- * - `discounts` json DEFAULT NULL
- * - `charges` json DEFAULT NULL
- * - `warehouse_id` int(10) unsigned DEFAULT NULL
- * - `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci
- * - `update_purchase_price` tinyint(1) NOT NULL DEFAULT '0'
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - purchase_id: bigint
+ * - item_id: bigint
+ * - item: json
+ * - item_lot_group_id: bigint
+ * - lot_code: varchar(255)
+ * - quantity: numeric(30,12)
+ * - unit_value: numeric(30,12)
+ * - date_of_due: date
+ * - affectation_igv_type_id: varchar(255)
+ * - total_base_igv: numeric(30,12)
+ * - percentage_igv: numeric(30,12)
+ * - total_igv: numeric(30,12)
+ * - total_base_other_taxes: numeric(30,12)
+ * - percentage_other_taxes: numeric(30,12)
+ * - total_other_taxes: numeric(30,12)
+ * - total_taxes: numeric(30,12)
+ * - price_type_id: varchar(255)
+ * - unit_price: numeric(30,12)
+ * - total_value: numeric(30,12)
+ * - total_charge: numeric(30,12)
+ * - total_discount: numeric(30,12)
+ * - total: numeric(30,12)
+ * - attributes: json
+ * - discounts: json
+ * - charges: json
+ * - warehouse_id: bigint
+ * - name_product_pdf: text
+ * - update_purchase_price: boolean
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `purchase_items` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `purchase_id` int(10) unsigned NOT NULL,
-  `item_id` int(10) unsigned NOT NULL,
-  `item` json NOT NULL,
-  `item_lot_group_id` int(10) unsigned DEFAULT NULL,
-  `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `quantity` decimal(30,12) NOT NULL,
-  `unit_value` decimal(30,12) NOT NULL,
-  `date_of_due` date DEFAULT NULL,
-  `affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total_base_igv` decimal(30,12) NOT NULL,
-  `percentage_igv` decimal(30,12) NOT NULL,
-  `total_igv` decimal(30,12) NOT NULL,
-  `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `percentage_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_taxes` decimal(30,12) NOT NULL,
-  `price_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `unit_price` decimal(30,12) NOT NULL,
-  `total_value` decimal(30,12) NOT NULL,
-  `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total` decimal(30,12) NOT NULL,
-  `attributes` json DEFAULT NULL,
-  `discounts` json DEFAULT NULL,
-  `charges` json DEFAULT NULL,
-  `warehouse_id` int(10) unsigned DEFAULT NULL,
-  `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci,
-  `update_purchase_price` tinyint(1) NOT NULL DEFAULT '0',
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `purchase_items_purchase_id_foreign` (`purchase_id`),
-  KEY `purchase_items_item_id_foreign` (`item_id`),
-  KEY `purchase_items_affectation_igv_type_id_foreign` (`affectation_igv_type_id`),
-  KEY `purchase_items_price_type_id_foreign` (`price_type_id`),
-  KEY `purchase_items_warehouse_id_foreign` (`warehouse_id`),
-  KEY `purchase_items_item_lot_group_id_index` (`item_lot_group_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('purchase_items', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('purchase_id');
+            $table->bigInteger('item_id');
+            $table->json('item');
+            $table->bigInteger('item_lot_group_id')->nullable();
+            $table->string('lot_code', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('quantity', 30, 12);
+            $table->decimal('unit_value', 30, 12);
+            $table->date('date_of_due')->nullable();
+            $table->string('affectation_igv_type_id', 255)->collation('pro9_ci_ai');
+            $table->decimal('total_base_igv', 30, 12);
+            $table->decimal('percentage_igv', 30, 12);
+            $table->decimal('total_igv', 30, 12);
+            $table->decimal('total_base_other_taxes', 30, 12)->default('0.00');
+            $table->decimal('percentage_other_taxes', 30, 12)->default('0.00');
+            $table->decimal('total_other_taxes', 30, 12)->default('0.00');
+            $table->decimal('total_taxes', 30, 12);
+            $table->string('price_type_id', 255)->collation('pro9_ci_ai');
+            $table->decimal('unit_price', 30, 12);
+            $table->decimal('total_value', 30, 12);
+            $table->decimal('total_charge', 30, 12)->default('0.00');
+            $table->decimal('total_discount', 30, 12)->default('0.00');
+            $table->decimal('total', 30, 12);
+            $table->json('attributes')->nullable();
+            $table->json('discounts')->nullable();
+            $table->json('charges')->nullable();
+            $table->bigInteger('warehouse_id')->nullable();
+            $table->text('name_product_pdf')->collation('pro9_ci_ai')->nullable();
+            $table->boolean('update_purchase_price')->default(false);
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['purchase_id'], 'purchase_items_purchase_id_foreign');
+            $table->index(['item_id'], 'purchase_items_item_id_foreign');
+            $table->index(['affectation_igv_type_id'], 'purchase_items_affectation_igv_type_id_foreign');
+            $table->index(['price_type_id'], 'purchase_items_price_type_id_foreign');
+            $table->index(['warehouse_id'], 'purchase_items_warehouse_id_foreign');
+            $table->index(['item_lot_group_id'], 'purchase_items_item_lot_group_id_index');
+        });
+        DB::statement('ALTER TABLE "purchase_items" ADD CONSTRAINT "purchase_items_item_lot_group_id_range" CHECK ("item_lot_group_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `purchase_items`');
+        Schema::dropIfExists('purchase_items');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

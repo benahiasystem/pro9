@@ -83,6 +83,8 @@ class FiscalIdentityTest extends SeriesDatabaseTestCase
     /** @dataProvider prepaymentSeries */
     public function test_prepayment_is_deducted_and_restored_only_in_its_branch(string $series): void
     {
+        $this->db->setTransactionManager(new \Illuminate\Database\DatabaseTransactionsManager());
+        $this->db->statement('ALTER TABLE documents ADD COLUMN calculation_snapshot TEXT');
         $this->db->statement('ALTER TABLE documents ADD COLUMN pending_amount_prepayment REAL');
         $this->db->statement('ALTER TABLE documents ADD COLUMN was_deducted_prepayment INTEGER DEFAULT 0');
         $this->db->table('documents')->insert([

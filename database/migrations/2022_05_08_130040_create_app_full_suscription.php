@@ -48,7 +48,7 @@
 
         public static function getSystemModuleConnection(): Builder
         {
-            return DB::connection('system')->table('modules');
+            return DB::connection()->table('modules');
         }
 
         public function getModuleLevelData($module_id): array
@@ -70,7 +70,7 @@
 
         public static function getSystemModuleLevelConnection(): Builder
         {
-            return DB::connection('system')->table('module_levels');
+            return DB::connection()->table('module_levels');
         }
 
         /**
@@ -89,11 +89,11 @@
                 foreach ($levels as $level) {
                     $suscriptionLevelRow = self::getSystemModuleLevelConnection()->where($level)->first();
                     if ($suscriptionLevelRow != null) {
-                        DB::connection('system')->table('module_levels')->delete($suscriptionLevelRow->id);
+                        DB::connection()->table('module_levels')->delete($suscriptionLevelRow->id);
                     }
                 }
                 */
-                DB::connection('system')->table('modules')->delete($suscriptionRow->id);
+                DB::connection()->table('modules')->delete($suscriptionRow->id);
             }
 
 

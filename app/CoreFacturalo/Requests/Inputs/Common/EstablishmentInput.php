@@ -3,9 +3,21 @@
 namespace App\CoreFacturalo\Requests\Inputs\Common;
 
 use App\Models\Tenant\Establishment as EstablishmentModel;
+use App\Database\IntegerTransport;
 
 class EstablishmentInput
 {
+    public static function validatedId($value): int
+    {
+        $id = IntegerTransport::positiveKey($value);
+        if ($id === null) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'establishment_id' => 'Seleccione un identificador de sucursal válido.',
+            ]);
+        }
+        return $id;
+    }
+
     public static function set($establishment_id)
     {
         $establishment = EstablishmentModel::find($establishment_id);

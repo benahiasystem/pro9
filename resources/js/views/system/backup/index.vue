@@ -28,8 +28,11 @@
                 <p v-if="newLastZip !== ''">Ultimo Backup generado: <strong>{{newLastZip.name}} {{newLastZipDate}}</strong></p>
                 <el-button @click.prevent="clickDownload()" >Descargar</el-button>
                 <hr>
-                <p class="mb-2">Para restaurar una base de datos debe ejecutar los siguientes comandos.</p>
-                <code>mysql -u [user] -p [database_name] < [filename].sql</code>
+                <!-- ########## INICIO CAMBIO POSTGRESQL 17 -->
+                <p class="mb-2">El respaldo PostgreSQL incluye un manifiesto con verificaciones de integridad. Restáurelo primero en una base independiente.</p>
+                <code>php artisan pro9:restore-tenant [empresa] [respaldo.zip]</code>
+                <p class="mb-2">La activación requiere mantenimiento y los trabajos detenidos. Consulte el manual de recuperación antes de utilizar --activate.</p>
+                <!-- ######### FIN CAMBIO POSTGRESQL 17 -->
                 <br>
                 <hr>
                 <p class="mb-2">Para restaurar los archivos descargados debe copiar todas carpetas dentro de la carpeta del cliente.</p>

@@ -1,39 +1,37 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `billing_cycles` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `date_time_start` datetime NOT NULL
- * - `renew` tinyint(1) NOT NULL DEFAULT '0'
- * - `quantity_documents` int(11) NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - date_time_start: timestamp
+ * - renew: boolean
+ * - quantity_documents: integer
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `billing_cycles` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `date_time_start` datetime NOT NULL,
-  `renew` tinyint(1) NOT NULL DEFAULT '0',
-  `quantity_documents` int(11) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('billing_cycles', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->timestamp('date_time_start');
+            $table->boolean('renew')->default(false);
+            $table->integer('quantity_documents');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "billing_cycles" ADD CONSTRAINT "billing_cycles_quantity_documents_range" CHECK ("quantity_documents" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `billing_cycles`');
+        Schema::dropIfExists('billing_cycles');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

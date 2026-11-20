@@ -4,6 +4,7 @@ namespace App\Services\Payments;
 
 use App\Services\Fiscal\FiscalAmounts;
 use App\Support\Exact\Decimal as D;
+use Brick\Math\BigRational;
 
 // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
 /** Settle received cents, then allocate documentary excess only to real cash. */
@@ -84,6 +85,15 @@ final class ReceiptChange
     }
 
     /** Update both representations from an internally computed exact application. */
+    public static function settleClosingBalance(array $values, BigRational $balance): array
+    {
+        $principal = D::readRequired($values, 'payment');
+        if (!$principal->isEqualTo($balance) && $principal->isEqualTo(D::represent($balance, 2))) {
+            return self::withSettlement($values, $balance);
+        }
+        return $values;
+    }
+
     public static function withSettlement(array $values, $applied): array
     {
         $applied = D::of($applied);

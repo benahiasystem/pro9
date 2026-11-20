@@ -68,6 +68,27 @@ test('fractions, large decimals and currency round trips are lossless', () => {
     assert.equal(math.exactAmount('9007199254740993.000000000001').decimal(), '9007199254740993.000000000001')
     assert.equal(math.exactAmount('500').dividedBy('873.86712345').times('873.86712345').decimal(), '500')
 })
+
+test('rational normalization and HALF_UP presentation keep signs and scale boundaries',()=>{
+    const {ExactAmount,exactAmount}=math
+    for(const [n,d,expected] of [['0','3','0'],['2','6','0.333333333333'],['-2','6','-0.333333333333'],['2','-6','-0.333333333333'],['-2','-6','0.333333333333']]) {
+        const amount=new ExactAmount(BigInt(n),BigInt(d));assert.equal(amount.decimal(),expected)
+        assert.ok(amount.d>0n);assert.equal(amount.times('3').decimal(),n==='0'?'0':(BigInt(n)*BigInt(d)<0n?'-1':'1'))
+    }
+    for(const [input,scale,expected] of [['1.005',2,'1.01'],['-1.005',2,'-1.01'],['1.004999999999',2,'1.00'],['-0.0001',2,'0.00'],['2.5',0,'3'],['-2.5',0,'-3'],
+        ['0.0000000000005',12,'0.000000000001'],['-0.0000000000005',12,'-0.000000000001']]) assert.equal(exactAmount(input).final(scale),expected)
+    assert.throws(()=>new ExactAmount(1n,0n),/cero/)
+})
+
+test('largest remainders preserve targets with signs, weighted ties and twelve decimal units',()=>{
+    for(const [total,weights,scale,expected] of [['-1',['1','1','1'],2,['-0.34','-0.33','-0.33']],['5',['1','1'],0,['3','2']],
+        ['0.000000000001',['1','1'],12,['0.000000000001','0.000000000000']],['1',['1','2','3'],2,['0.17','0.33','0.50']]]) {
+        const values=math.allocateExact(total,weights,scale);assert.deepEqual(Array.from(values),expected)
+        assert.equal(math.exactSum(values).compare(total),0)
+    }
+    assert.throws(()=>math.allocateExact('1',['1','-1']),/negativo/)
+    assert.throws(()=>math.allocateExact('1',['0','0']),/base positiva/)
+})
 test('reopening lines restores original inputs for server recalculation', () => {
     const periodic={...input('166.666666666667'),affectation_igv_type_id:'20',
         item:{id:1,currency_type_id:'VES',unit_price:'3'},quantity_input:{amount:'500',unit_price:'3'}}

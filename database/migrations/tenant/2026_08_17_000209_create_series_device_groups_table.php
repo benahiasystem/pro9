@@ -1,47 +1,45 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `series_device_groups` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `establishment_id` int(10) unsigned NOT NULL COMMENT 'El grupo vive en un establecimiento'
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre del grupo: ej. Caja 1'
- * - `module_value` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Modulo asociado (uno solo). Catalogo extensible'
- * - `bound_device_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nombre del equipo vinculado (clave de vinculo)'
- * - `bound_user_id` int(10) unsigned DEFAULT NULL COMMENT 'Usuario que vinculo el grupo'
- * - `bound_at` timestamp NULL DEFAULT NULL COMMENT 'Fecha de vinculo al equipo'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - establishment_id: bigint
+ * - name: varchar(255)
+ * - module_value: varchar(255)
+ * - bound_device_name: varchar(255)
+ * - bound_user_id: bigint
+ * - bound_at: timestamp
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `series_device_groups` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `establishment_id` int(10) unsigned NOT NULL COMMENT 'El grupo vive en un establecimiento',
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre del grupo: ej. Caja 1',
-  `module_value` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Modulo asociado (uno solo). Catalogo extensible',
-  `bound_device_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Nombre del equipo vinculado (clave de vinculo)',
-  `bound_user_id` int(10) unsigned DEFAULT NULL COMMENT 'Usuario que vinculo el grupo',
-  `bound_at` timestamp NULL DEFAULT NULL COMMENT 'Fecha de vinculo al equipo',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `series_device_groups_establishment_id_foreign` (`establishment_id`),
-  KEY `series_device_groups_bound_device_name_index` (`bound_device_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('series_device_groups', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('establishment_id')->comment('El grupo vive en un establecimiento');
+            $table->string('name', 255)->collation('pro9_ci_ai')->comment('Nombre del grupo: ej. Caja 1');
+            $table->string('module_value', 255)->collation('pro9_ci_ai')->nullable()->comment('Modulo asociado (uno solo). Catalogo extensible');
+            $table->string('bound_device_name', 255)->collation('pro9_ci_ai')->nullable()->comment('Nombre del equipo vinculado (clave de vinculo)');
+            $table->bigInteger('bound_user_id')->nullable()->comment('Usuario que vinculo el grupo');
+            $table->timestamp('bound_at')->nullable()->comment('Fecha de vinculo al equipo');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['establishment_id'], 'series_device_groups_establishment_id_foreign');
+            $table->index(['bound_device_name'], 'series_device_groups_bound_device_name_index');
+        });
+        DB::statement('ALTER TABLE "series_device_groups" ADD CONSTRAINT "series_device_groups_bound_user_id_range" CHECK ("bound_user_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `series_device_groups`');
+        Schema::dropIfExists('series_device_groups');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

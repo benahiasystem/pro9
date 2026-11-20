@@ -115,6 +115,7 @@ class UpdateModulesLevelsTable extends Migration
             'generate_link_app',
         ])->delete(); 
 
+        \App\Database\SequenceSynchronizer::sync(\Illuminate\Support\Facades\DB::connection());
     }
 
     /**

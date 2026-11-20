@@ -63,15 +63,13 @@
                         </el-tooltip>
                     </label>
 
-                    <el-input-number
+                    <el-input
                         v-model="transfer_amount.amount_transform_temp"
                         :disabled="!fullLoad"
-                        :max="maxTransfer"
-                        :min="0"
-                        @change="convertTotal"
-                    >
-
-                    </el-input-number>
+                        inputmode="decimal"
+                        @input="convertTotal"
+                    />
+                    <small v-if="amountError" class="text-danger">{{ amountError }}</small>
                 </div>
                 <div class="col-6">
                     <label class="control-label">
@@ -85,13 +83,7 @@
                         </el-tooltip>
                     </label>
 
-                    <el-input-number
-                        v-model="transfer_amount.amount_transform"
-                        :disabled="true"
-                        :max="maxTransfer"
-                        :min="0"
-                    >
-                    </el-input-number>
+                    <el-input v-model="transfer_amount.amount_transform" :disabled="true" />
                 </div>
                 <div class="col-12">
                     &nbsp;
@@ -109,7 +101,8 @@
                 </div>
                 <div class="col-4">
                     <el-button
-                        :disabled="!fullLoad || transfer_amount.amount_transform == 0"
+                        :disabled="!fullLoad || !canTransfer()"
+                        :loading="loading"
                         class="submit "
                         style="width: 100%;"
                         type="primary"
@@ -127,7 +120,7 @@
 
 <script>
 // ######## INICIO TASAS OCHO DECIMALES ########
-import { exactAmount } from "../../../../../../../resources/js/helpers/exchange-rate-math"
+import { exactAmount, exactInput, exactValue, normalizeExchangeRate } from "../../../../../../../resources/js/helpers/exchange-rate-math"
 // ######## FIN TASAS OCHO DECIMALES ########
 
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
@@ -147,7 +140,8 @@ export default {
             titleDialog: "Transferencia entre cuentas",
             loading: false,
             resource: 'finances/balance',
-            maxTransfer: 99999,
+            maxTransfer: '99999',
+            amountError: null,
             tempFrom: [],
             tempTo: [],
             banks: [],
@@ -156,8 +150,8 @@ export default {
             bankLoad: false,
             cashLoad: false,
             transfer_amount: {
-                amount_transform_temp: 0,
-                amount_transform: 0,
+                amount_transform_temp: '0',
+                amount_transform: '0',
                 from: null,
                 to: null,
             },
@@ -179,30 +173,20 @@ export default {
             return id == this.transfer_amount.from;
         },
         setMaxAmount() {
-            let max = this.maxTransfer;
-            let temporalBank = this.banks;
-            let temporalCash = this.cashs
-            let check = this.transfer_amount.from;
-
-            let tempB = temporalBank.find((item) => item.id === check);
-            if (tempB === undefined) {
-                tempB = temporalCash.find((item) => item.id === check);
-                // No es posible obtener el total de caja en este momento
-                max = 9999
-            } else {
-                max = parseFloat(tempB.balance)
+            const bank = this.banks.find(item => item.id === this.transfer_amount.from);
+            try {
+                const max = bank ? exactValue(bank, 'balance') : exactAmount('9999');
+                this.maxTransfer = max.compare(0) < 0 ? exactAmount('0') : max;
+            } catch (error) {
+                this.maxTransfer = '0';
             }
-            if (isNaN(max)) {
-                max = 0;
-            }
-            if (max !== 0) {
-                this.maxTransfer = max
-            }
-            this.convertTotal()
+            this.convertTotal();
         },
         clearForm() {
-            this.transfer_amount.amount_transform = 0;
-            this.transfer_amount.amount_transform_temp = 0;
+            this.transfer_amount.amount_transform = '0';
+            this.transfer_amount.amount_transform_temp = '0';
+            this.maxTransfer = '99999';
+            this.amountError = null;
 
             this.transfer_amount.from = null;
             this.transfer_amount.to = null;
@@ -257,10 +241,32 @@ export default {
                 }
             })
         },
+        validatedTransfer() {
+            const origin = exactInput(this.transfer_amount.amount_transform_temp);
+            const destination = exactInput(this.transfer_amount.amount_transform);
+            if (!this.transfer_amount.from || !this.transfer_amount.to || this.transfer_amount.from === this.transfer_amount.to) {
+                throw new Error('Seleccione cuentas de origen y destino diferentes.');
+            }
+            if (exactAmount(origin).compare(0) <= 0 || exactAmount(destination).compare(0) <= 0) {
+                throw new Error('El importe del traslado debe ser positivo.');
+            }
+            if (exactAmount(origin).compare(exactAmount(this.maxTransfer)) > 0) {
+                throw new Error('El importe supera el saldo disponible para el traslado.');
+            }
+            return {...this.transfer_amount, amount_transform_temp: origin, amount_transform: destination,
+                cash_currency_type_id: this.config.currency_type_id};
+        },
+        canTransfer() {
+            try { this.validatedTransfer(); return true; }
+            catch (error) { return false; }
+        },
         transferAmount() {
+            let data;
+            try { data = this.validatedTransfer(); }
+            catch (error) { this.$message.error(error.message); return; }
+            this.loading = true;
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
-            const data = {...this.transfer_amount, cash_currency_type_id: this.config.currency_type_id};
-            this.$http.post(`/${this.resource}/transfer`, {data}).then((resource) => {
+            return this.$http.post(`/${this.resource}/transfer`, {data}).then((resource) => {
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
                 let data = resource.data;
                 this.cashs = data.cash
@@ -270,8 +276,10 @@ export default {
             }).catch((error) => {
                 this.$message.error(error.response?.data?.errors?.cash_currency_type_id?.[0]
                     || error.response?.data?.errors?.currency_type_id?.[0]
+                    || error.response?.data?.errors?.['data.amount_transform_temp']?.[0]
+                    || error.response?.data?.errors?.['data.amount_transform']?.[0]
                     || error.response?.data?.message || 'No se pudo registrar el traslado.');
-            })
+            }).finally(() => { this.loading = false; })
 
         },
         clickFinalize() {
@@ -285,34 +293,29 @@ export default {
             this.clearForm()
         },
         convertTotal() {
-            let fromAccount = _.find(this.tempFrom, {id: this.transfer_amount.from});
-            let toAccount = _.find(this.tempTo, {id: this.transfer_amount.to});
-            // se buscan las cuentas primero
-            if (fromAccount !== undefined && toAccount !== undefined) {
-                let coinIn = this.config.currency_type_id;
-                let coinOut = this.config.currency_type_id;
-                // para caja, se define la moneda por defecto del sistema
-
-                if (fromAccount.currency_type_id !== undefined) {
-                    coinIn = fromAccount.currency_type_id;
-                }
-                if (toAccount.currency_type_id !== undefined) {
-                    coinOut = toAccount.currency_type_id;
-                }
-                let total = this.transfer_amount.amount_transform_temp
+            this.amountError = null;
+            const fromAccount = this.tempFrom.find(item => item.id === this.transfer_amount.from);
+            const toAccount = this.tempTo.find(item => item.id === this.transfer_amount.to);
+            this.transfer_amount.amount_transform = '0';
+            if (!fromAccount || !toAccount || this.transfer_amount.amount_transform_temp === '') return;
+            try {
+                const coinIn = fromAccount.currency_type_id || this.config.currency_type_id;
+                const coinOut = toAccount.currency_type_id || this.config.currency_type_id;
+                const source = exactInput(this.transfer_amount.amount_transform_temp);
+                let total = source;
                 if (coinIn !== coinOut) {
-                    if (coinIn === 'VES') {
-                        // si la moneda de ingreso es Bolívares, se divide
-                        total = exactAmount(total).dividedBy(exactAmount(this.exchange_rate_sale)).final(2);
-                    } else {
-                        total = exactAmount(total).times(exactAmount(this.exchange_rate_sale)).final(2);
-
-                    }
+                    const rate = normalizeExchangeRate(this.exchange_rate_sale);
+                    total = coinIn === 'VES'
+                        ? exactAmount(source).dividedBy(rate).final(2)
+                        : exactAmount(source).times(rate).final(2);
                 }
-                this.transfer_amount.amount_transform = total;
+                this.transfer_amount.amount_transform = exactInput(total);
+                if (exactAmount(source).compare(this.maxTransfer) > 0) {
+                    this.amountError = 'El importe supera el saldo disponible para el traslado.';
+                }
+            } catch (error) {
+                this.amountError = error.message;
             }
-
-
         }
     }
 }

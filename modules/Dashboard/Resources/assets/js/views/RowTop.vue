@@ -9,7 +9,7 @@
             <div class="kpi-values">
               <h3 class="kpi-amount font-weight-bold m-0">Bs. {{ monthly_sales | formatNumber }}</h3>
             </div>
-            <kpi-sparkline class="kpi-spark" :data="trend.monthly_sales" :labels="trend.labels" color="#0f766e"></kpi-sparkline>
+            <kpi-sparkline class="kpi-spark" :data="trend.monthly_sales" :labels="trend.labels" :formatter="trendFormatter('monthly_sales')" color="#0f766e"></kpi-sparkline>
           </div>
           <small
             v-if="changes.monthly_sales"
@@ -30,7 +30,7 @@
             <div class="kpi-values">
               <h3 class="kpi-amount font-weight-bold m-0">Bs. {{ average_ticket | formatNumber }}</h3>
             </div>
-            <kpi-sparkline class="kpi-spark" :data="trend.average_ticket" :labels="trend.labels" color="#0d9488"></kpi-sparkline>
+            <kpi-sparkline class="kpi-spark" :data="trend.average_ticket" :labels="trend.labels" :formatter="trendFormatter('average_ticket')" color="#0d9488"></kpi-sparkline>
           </div>
           <small
             v-if="changes.average_ticket"
@@ -51,7 +51,7 @@
             <div class="kpi-values">
               <h3 class="kpi-amount font-weight-bold m-0">Bs. {{ accounts_receivable | formatNumber }}</h3>
             </div>
-            <kpi-sparkline class="kpi-spark" :data="trend.accounts_receivable" :labels="trend.labels" color="#f59e0b"></kpi-sparkline>
+            <kpi-sparkline class="kpi-spark" :data="trend.accounts_receivable" :labels="trend.labels" :formatter="trendFormatter('accounts_receivable')" color="#f59e0b"></kpi-sparkline>
           </div>
           <small
             v-if="changes.accounts_receivable"
@@ -72,7 +72,7 @@
             <div class="kpi-values">
               <h3 class="kpi-amount font-weight-bold m-0">Bs. {{ net_utility | formatNumber }}</h3>
             </div>
-            <kpi-sparkline class="kpi-spark" :data="trend.net_utility" :labels="trend.labels" color="#16a34a"></kpi-sparkline>
+            <kpi-sparkline class="kpi-spark" :data="trend.net_utility" :labels="trend.labels" :formatter="trendFormatter('net_utility')" color="#16a34a"></kpi-sparkline>
           </div>
           <small
             v-if="changes.net_utility"
@@ -91,28 +91,16 @@
 <script>
 import moment from "moment";
 import KpiSparkline from "./KpiSparkline.vue";
+import { readOriginal, rawChange, originalNumber, formatUnitOriginal } from "../../../../../../resources/js/helpers/dashboard-originals";
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+const emptyTrend = () => ({labels: [], monthly_sales: [], average_ticket: [], accounts_receivable: [], net_utility: [], calculation_snapshots: []});
 
 export default {
   props: ["company", "utilities", "filters"],
   components: { KpiSparkline },
   data() {
-    return {
-      document_total_global: 0,
-      total_cpe: 0,
-      sale_note_total_global: 0,
-      total: 0,
-      monthly_sales: 0,
-      average_ticket: 0,
-      accounts_receivable: 0,
-      net_utility: 0,
-      trend: {
-        labels: [],
-        monthly_sales: [],
-        average_ticket: [],
-        accounts_receivable: [],
-        net_utility: [],
-      },
-    };
+    return {monthly_sales: null, average_ticket: null, accounts_receivable: null, net_utility: null,
+      trend: emptyTrend(), fetchVersion: 0, loading: false, fetchFailed: false};
   },
   mounted() {
     this.onFetchData();
@@ -127,23 +115,13 @@ export default {
   },
   computed: {
     changes() {
-      const keys = ["monthly_sales", "average_ticket", "accounts_receivable", "net_utility"];
+      const snapshots = this.trend.calculation_snapshots || [];
+      const previous = snapshots[snapshots.length - 2];
+      const current = snapshots[snapshots.length - 1];
       const result = {};
-      keys.forEach((key) => {
-        const serie = this.trend[key] || [];
-        if (serie.length < 2) {
-          result[key] = null;
-          return;
-        }
-        const current = Number(serie[serie.length - 1]);
-        const previous = Number(serie[serie.length - 2]);
-        if (!previous) {
-          result[key] = null;
-          return;
-        }
-        const pct = ((current - previous) / Math.abs(previous)) * 100;
-        result[key] = { pct: Math.abs(pct), up: pct >= 0 };
-      });
+      for (const key of ["monthly_sales", "average_ticket", "accounts_receivable", "net_utility"]) {
+        result[key] = rawChange(readOriginal({calculation_snapshot: current}, key), readOriginal({calculation_snapshot: previous}, key));
+      }
       return result;
     },
     changeLabel() {
@@ -184,56 +162,36 @@ export default {
     },
   },
   methods: {
-    onFetchData() {
-      this.$http.get("/dashboard/global-data", { params: this.filters || {} }).then((response) => {
+    trendFormatter(key) {
+      return (_coordinate, options) => formatUnitOriginal(readOriginal({
+        calculation_snapshot: (this.trend.calculation_snapshots || [])[options && options.dataPointIndex]
+      }, key), 'money');
+    },
+    async onFetchData() {
+      const version = ++this.fetchVersion;
+      this.loading = true; this.fetchFailed = false;
+      for (const key of ["monthly_sales", "average_ticket", "accounts_receivable", "net_utility"]) this[key] = null;
+      this.trend = emptyTrend();
+      try {
+        const response = await this.$http.get("/dashboard/global-data", {params: {...(this.filters || {})}});
+        if (version !== this.fetchVersion) return;
         const data = response.data;
-        this.document_total_global = Number(data.document_total_global) || 0;
-        this.total_cpe = Number(data.total_cpe) || 0;
-        this.sale_note_total_global = Number(data.sale_note_total_global) || 0;
-        this.total = this.document_total_global + this.sale_note_total_global;
-        this.monthly_sales = Number(data.monthly_sales) || 0;
-        this.average_ticket = Number(data.average_ticket) || 0;
-        this.accounts_receivable = Number(data.accounts_receivable) || 0;
-        this.net_utility = Number(data.net_utility) || 0;
-        if (data.trend) {
-          this.trend = data.trend;
-        }
-      });
+        for (const key of ["monthly_sales", "average_ticket", "accounts_receivable", "net_utility"]) this[key] = readOriginal(data, key);
+        this.trend = data.trend || emptyTrend();
+      } catch (_) {
+        if (version === this.fetchVersion) this.fetchFailed = true;
+      } finally {
+        if (version === this.fetchVersion) this.loading = false;
+      }
     },
   },
   filters: {
     formatNumber(value, baseDecimals = 2, suffixDecimals = 1) {
-      const numericValue = Number(value);
-      const defaultString = (0).toLocaleString("en-US", {
-        minimumFractionDigits: baseDecimals,
-        maximumFractionDigits: baseDecimals,
-      });
-
-      if (!Number.isFinite(numericValue)) {
-        return defaultString;
-      }
-
-      if (Math.abs(numericValue) >= 1000000) {
-        const millions = (numericValue / 1000000)
-          .toFixed(suffixDecimals)
-          .replace(/\.0+$/, "");
-        return `${millions}M`;
-      }
-
-      if (Math.abs(numericValue) >= 1000) {
-        const thousands = (numericValue / 1000)
-          .toFixed(suffixDecimals)
-          .replace(/\.0+$/, "");
-        return `${thousands}K`;
-      }
-
-      return numericValue.toLocaleString("en-US", {
-        minimumFractionDigits: baseDecimals,
-        maximumFractionDigits: baseDecimals,
-      });
+      return originalNumber(value, baseDecimals, suffixDecimals);
     },
   },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 <style>
 .card-green {

@@ -44,13 +44,7 @@ export default {
           x: { show: this.labels.length > 0 },
           y: {
             formatter:
-              this.formatter ||
-              ((val) =>
-                "Bs. " +
-                Number(val).toLocaleString("es-VE", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })),
+              this.formatter || (() => '—'),
             title: { formatter: () => "" },
           },
           marker: { show: false },

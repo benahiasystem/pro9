@@ -27,7 +27,17 @@ return new class extends Migration
             $t->uuid('origin_entry_id')->nullable();
             $t->foreign(['organization_id', 'company_id', 'origin_entry_id'], 'fk_acc_open_items_origin')->references(['organization_id', 'company_id', 'id'])->on('accounting_journal_entries')->restrictOnDelete();
         });
-        DB::statement('UPDATE accounting_open_items i LEFT JOIN (SELECT organization_id,company_id,source_document_id,MIN(id) AS entry_id FROM accounting_journal_entries WHERE posted_at IS NOT NULL AND source_document_id IS NOT NULL GROUP BY organization_id,company_id,source_document_id HAVING COUNT(*)=1) e ON e.organization_id=i.organization_id AND e.company_id=i.company_id AND e.source_document_id=i.source_document_id SET i.origin_entry_id=COALESCE(i.opening_entry_id,e.entry_id)');
+        DB::statement(<<<'SQL'
+UPDATE accounting_open_items AS i
+SET origin_entry_id = COALESCE(i.opening_entry_id, (
+    SELECT MIN(e.id::text COLLATE "C")::uuid
+    FROM accounting_journal_entries AS e
+    WHERE e.posted_at IS NOT NULL AND e.source_document_id IS NOT NULL
+      AND e.organization_id = i.organization_id AND e.company_id = i.company_id
+      AND e.source_document_id = i.source_document_id
+    HAVING COUNT(*) = 1
+))
+SQL);
         $this->owned('accounting_opening_batches', function (Blueprint $t) {
             $t->uuid('journal_entry_id')->unique();
             $t->date('cutoff_date');

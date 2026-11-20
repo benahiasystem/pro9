@@ -42,6 +42,8 @@ use Modules\Dispatch\Models\DispatchAddress;
 use App\Models\Tenant\PersonAddress;
 use App\Models\Tenant\PriceLabel;
 use App\Models\Tenant\SaleNote;
+use App\Support\Exact\Decimal;
+use Brick\Math\RoundingMode;
 use Modules\QrApi\Http\Controllers\QrApiController;
 use Modules\BusinessTurn\Models\BusinessTurn;
 use Modules\MobileApp\Http\Controllers\Api\BankAccountController;
@@ -251,6 +253,7 @@ class MobileController extends Controller
                     ->get()
                     ->transform(function($row) use($warehouse, $configuration, $decimal_units){
                         $full_description = ($row->internal_id)?$row->internal_id.' - '.$row->description:$row->description;
+                        $salePrice = Decimal::readRequired($row, 'sale_unit_price');
 
                         return [
                             'id' => $row->id,
@@ -262,7 +265,8 @@ class MobileController extends Controller
                             'internal_id' => $row->internal_id,
                             'item_code' => $row->item_code,
                             'currency_type_symbol' => $row->currency_type->symbol,
-                            'sale_unit_price' => $row->generalApplyNumberFormat($row->sale_unit_price),
+                            'sale_unit_price' => $row->generalApplyNumberFormat($salePrice),
+                            'calculation_snapshot' => Decimal::snapshot(['sale_unit_price' => $salePrice]),
                             // 'sale_unit_price' => number_format($row->sale_unit_price, 2),
                             'price' => $row->sale_unit_price,
                             'purchase_unit_price' => $row->purchase_unit_price,
@@ -517,18 +521,23 @@ class MobileController extends Controller
                     return (int) $price->priceLabel->position;
                 });
 
-            $price1 = data_get($pricesByPosition->get(1), 'price', $itemUnitType->price1);
-            $price2 = data_get($pricesByPosition->get(2), 'price', $itemUnitType->price2);
-            $price3 = data_get($pricesByPosition->get(3), 'price', $itemUnitType->price3);
+            $prices = [];
+            $quantity = Decimal::readRequired($itemUnitType, 'quantity_unit');
+            $values = ['quantity_unit' => $quantity];
+            foreach ([1=>'price1', 2=>'price2', 3=>'price3'] as $position=>$field) {
+                $quote = $pricesByPosition->get($position);
+                $amount = $quote ? Decimal::readRequired($quote, 'price') : $itemUnitType->exactValue($field);
+                $prices[$field] = Decimal::represent($amount, 2, true);
+                if ($quote || $itemUnitType->getAttribute($field) !== null) $values[$field] = $amount;
+            }
 
             return [
                 'id' => $itemUnitType->id,
                 'description' => $itemUnitType->description,
                 'unit_type_id' => $itemUnitType->unit_type_id,
-                'quantity_unit' => number_format($itemUnitType->quantity_unit, $decimal_units, '.', ''),
-                'price1' => number_format((float) ($price1 ?? 0), 2, '.', ''),
-                'price2' => number_format((float) ($price2 ?? 0), 2, '.', ''),
-                'price3' => number_format((float) ($price3 ?? 0), 2, '.', ''),
+                'quantity_unit' => (string) $quantity->toScale(max(0, $decimal_units), RoundingMode::HALF_UP),
+                'calculation_snapshot' => Decimal::snapshot($values),
+                ...$prices,
                 'price_default' => $itemUnitType->price_default,
             ];
         });
@@ -565,6 +574,7 @@ class MobileController extends Controller
                     ->transform(function($row) use($warehouse){
 
                         $full_description = ($row->internal_id)?$row->internal_id.' - '.$row->description:$row->description;
+                        $salePrice = Decimal::readRequired($row, 'sale_unit_price');
 
                         return [
                             'id' => $row->id,
@@ -577,7 +587,8 @@ class MobileController extends Controller
                             'item_code' => $row->item_code ?? '',
                             'currency_type_symbol' => $row->currency_type->symbol,
                             'lots' => $row->lots,
-                            'sale_unit_price' => $row->generalApplyNumberFormat($row->sale_unit_price),
+                            'sale_unit_price' => $row->generalApplyNumberFormat($salePrice),
+                            'calculation_snapshot' => Decimal::snapshot(['sale_unit_price' => $salePrice]),
                             // 'sale_unit_price' => number_format( $row->sale_unit_price, 2),
                             'purchase_unit_price' => $row->purchase_unit_price,
                             'unit_type_id' => $row->unit_type_id,
@@ -871,9 +882,7 @@ class MobileController extends Controller
     {
         $item = \App\Models\Tenant\Item::findOrFail($id);
 
-        \DB::connection('tenant')->statement('SET FOREIGN_KEY_CHECKS=0;');
-        $item->delete();
-        \DB::connection('tenant')->statement('SET FOREIGN_KEY_CHECKS=1;');
+        \DB::connection('tenant')->transaction(static function () use ($item) { $item->delete(); });
 
         return [
             'success' => true,

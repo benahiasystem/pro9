@@ -13,6 +13,12 @@ use Modules\Report\Services\SaleNoteReportAmounts;
 
 class SaleNoteExport implements FromView, ShouldAutoSize, WithEvents
 {
+    // Explicit properties preserve the public export contract on PHP 8.2.
+    public $company;
+    public $establishment;
+    public $filters;
+    public $records;
+
     use Exportable;
     
     public function records($records) {

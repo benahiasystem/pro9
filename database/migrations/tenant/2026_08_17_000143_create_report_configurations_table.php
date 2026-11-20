@@ -1,43 +1,40 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `report_configurations` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `route_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `route_path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `convert_pen` tinyint(1) NOT NULL DEFAULT '0'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - route_name: varchar(255)
+ * - route_path: varchar(255)
+ * - name: varchar(255)
+ * - convert_pen: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `report_configurations` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `route_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `route_path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `convert_pen` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `report_configurations_route_name_unique` (`route_name`),
-  UNIQUE KEY `report_configurations_route_path_unique` (`route_path`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('report_configurations', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('route_name', 255)->collation('pro9_ci_ai');
+            $table->string('route_path', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->boolean('convert_pen')->default(false);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['route_name'], 'report_configurations_route_name_unique');
+            $table->unique(['route_path'], 'report_configurations_route_path_unique');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `report_configurations`');
+        Schema::dropIfExists('report_configurations');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -2,6 +2,7 @@
 
 namespace Modules\Item\Models;
 
+use App\Database\IntegerTransport;
 use App\Models\Tenant\Item;
 use App\Models\Tenant\ModelTenant;
 use Modules\Inventory\Models\Warehouse;
@@ -37,6 +38,14 @@ class ItemLot extends ModelTenant
     protected $casts = [
         'has_sale' => 'boolean',
     ];
+
+    public function attributesToArray()
+    {
+        $attributes = parent::attributesToArray();
+        if (isset($attributes['id'])) $attributes['id'] = IntegerTransport::value($attributes['id']);
+
+        return $attributes;
+    }
 
     public function item()
     {

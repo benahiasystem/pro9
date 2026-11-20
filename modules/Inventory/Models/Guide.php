@@ -12,6 +12,10 @@ use Modules\Inventory\Traits\InventoryTrait;
 
 class Guide extends Model
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     use UsesTenantConnection;
 
     public function getNumberFullAttribute(): string

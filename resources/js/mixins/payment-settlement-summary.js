@@ -1,4 +1,4 @@
-import {exactAmount, exactSum} from '../helpers/exchange-rate-math'
+import {exactAmount, exactInput, exactSum, exactValue} from '../helpers/exchange-rate-math'
 import {isRecordedReceipt} from '../helpers/payment-classification'
 
 // Mirrors ReceiptChange: allocate documentary excess to cash rows in order,
@@ -46,6 +46,17 @@ export default {
         singleTenderedCurrency() { return this.useLocalCalculations && this.form?.payments?.length === 1 ? this.form.payments[0].currency_type_id || this.form.currency_type_id : this.form?.currency_type_id },
         singleTenderedSymbol() { return this.singleTenderedCurrency === 'USD' ? '$' : this.singleTenderedCurrency === 'VES' ? 'Bs.' : this.currencyTypeActive?.symbol },
         // ######## INICIO RESUMEN LOCAL DE LIQUIDACION ########
+        localInvoiceSettlement() {
+            return this.useLocalCalculations && this.form?.document_type_id === '01'
+        },
+        localQuoteReady() {
+            return Boolean(this.igtfQuote && !this.igtfQuoteError && !this.igtfQuoteLoading)
+        },
+        settlementPaymentBlocked() {
+            if (!this.localInvoiceSettlement) return this.button_payment
+            if (['02','03'].includes(this.form.payment_condition_id)) return false
+            return !this.localQuoteReady || exactAmount(this.igtfQuote.balance).compare(0) > 0
+        },
         localSettlementDisplay() {
             if (!this.useLocalCalculations) return null
             if (!this.igtfQuote || this.igtfQuoteError) return {label:'Vuelto / faltante',text:'Pendiente de cálculo'}
@@ -76,20 +87,31 @@ export default {
         },
         singleAmountInvalid() {
             const rows = this.form && this.form.payments
-            if (this.singleAmountLocked || !Array.isArray(rows) || rows.length !== 1) return false
+            if (this.singleAmountLocked || !Array.isArray(rows)) return false
+            if (this.localInvoiceSettlement) {
+                if (['02', '03'].includes(this.form.payment_condition_id)) return false
+            } else if (rows.length !== 1) return false
             const text = String(this.enter_amount ?? '').trim()
-            return text !== '' && !/^\d+(?:\.\d*)?$/.test(text)
+            if (!text) return false
+            if (!/^\d+(?:\.\d*)?$/.test(text)) return true
+            if (!this.localInvoiceSettlement) return false
+            try {
+                exactInput(text.endsWith('.') ? text.slice(0, -1) : text)
+                return false
+            } catch (_) {
+                return true
+            }
         },
         paymentAppliedTotal() {
             const rows = this.form && this.form.payments
             if (!Array.isArray(rows) || rows.length === 0) return null
-            try { return exactSum(rows.map(row => row.payment || '0')).decimal() }
+            try { return this.appliedReceiptTotal(rows) }
             catch (e) { return null }
         },
     },
     watch: {
         localSettlementDisplay(value) {
-            if (!this.useLocalCalculations || !value) return
+            if (this.localInvoiceSettlement || !this.useLocalCalculations || !value || !this.localQuoteReady) return
             this.button_payment = !['02','03'].includes(this.form.payment_condition_id) && exactAmount(this.igtfQuote.balance).compare(0) > 0
         },
         paymentAppliedTotal(total) {
@@ -99,9 +121,23 @@ export default {
         },
     },
     methods: {
+        checkoutValue(record, field) {
+            if (this.form.document_type_id !== '01') return record[field]
+            try { return exactValue(record, field) } catch (_) { return exactAmount(0) }
+        },
+        checkoutHasDiscount() {
+            if (this.form.document_type_id !== '01') return this.form.total_discount > 0
+            return this.checkoutValue(this.form, 'total_discount').compare(0) > 0
+        },
+        appliedReceiptTotal(rows) {
+            const restoreExact = this.localInvoiceSettlement && rows.some(isRecordedReceipt)
+            const total = exactSum(rows.map(row => restoreExact && isRecordedReceipt(row)
+                ? exactValue(row, 'payment') : row.payment || '0'))
+            return restoreExact ? total.final(2) : total.decimal()
+        },
         enteredReceiptAmount(rows) {
             return this.useLocalCalculations && rows.length === 1 && !isRecordedReceipt(rows[0]) && rows[0].tendered_amount != null
-                ? rows[0].tendered_amount : exactSum(rows.map(row=>row.payment || '0')).decimal()
+                ? rows[0].tendered_amount : this.appliedReceiptTotal(rows)
         },
     },
 }

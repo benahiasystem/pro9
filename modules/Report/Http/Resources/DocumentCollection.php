@@ -6,6 +6,7 @@ namespace Modules\Report\Http\Resources;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use \App\CoreFacturalo\Helpers\Template\ReportHelper;
 use App\CoreFacturalo\Helpers\Template\TemplateHelper;
+use Modules\Item\Models\WebPlatform;
 
 class DocumentCollection extends ResourceCollection
 {
@@ -15,9 +16,27 @@ class DocumentCollection extends ResourceCollection
 
 
         \App\Services\Fiscal\FiscalIdentity::preload($this->collection);
-        (new \Illuminate\Database\Eloquent\Collection($this->collection->all()))
-            ->loadMissing(['currency_type', 'payments.global_payment', 'payments.payment_method_type', 'fee.currency_type']);
-        return $this->collection->transform(function(\App\Models\Tenant\Document $row, $key){
+        $documents = new \Illuminate\Database\Eloquent\Collection($this->collection->all());
+        $documents->loadMissing([
+            'seller', 'sale_note', 'quotation.sale_opportunity', 'agent',
+            'currency_type', 'payments.global_payment', 'payments.payment_method_type', 'fee.currency_type',
+        ]);
+        $documents->filter(fn ($row) => $row->document_type_id === '01')->loadMissing('affected_documents.document');
+        // ########## INICIO CAMBIO POSTGRESQL 17
+        $customers=\App\Models\Tenant\Person::whereIn('id',$this->collection->pluck('customer_id')->unique()->all())
+            ->with(['district','department','province'])->get()->keyBy('id')->all();
+        // ######### FIN CAMBIO POSTGRESQL 17
+        $itemIds = $documents->flatMap(fn ($document) => $document->items->pluck('item_id'))
+            ->filter()->unique()->values();
+        $platformsByItem = $itemIds->isEmpty() ? collect() : WebPlatform::query()
+            ->join('items', 'items.web_platform_id', '=', 'web_platforms.id')
+            ->whereIn('items.id', $itemIds)
+            ->get(['web_platforms.id', 'web_platforms.name', 'items.id as catalog_item_id'])
+            ->mapWithKeys(fn (WebPlatform $platform) => [
+                $platform->getAttribute('catalog_item_id') => $platform->only(['id', 'name']),
+            ]);
+
+        return $this->collection->map(function (\App\Models\Tenant\Document $row) use ($customers, $platformsByItem) {
 
 
             $affected_document = null;
@@ -31,10 +50,12 @@ class DocumentCollection extends ResourceCollection
             $signal = $row->document_type_id;
             $state = $row->state_type_id;
 
-            $web_platforms = $row->getPlatformThroughItems();
+            $web_platforms = $row->items->pluck('item_id')->unique()->sort()->map(
+                fn ($id) => $platformsByItem->get($id)
+            )->filter()->values();
             $seller = $row->getSellerData();
 
-            $stablishment_info=ReportHelper::getLocationData($row);
+            $stablishment_info=ReportHelper::getLocationData($row,$customers);
 
             $payments_total= [];
             $payment_description='';
@@ -91,7 +112,7 @@ class DocumentCollection extends ResourceCollection
                 'user_name' => ($seller) ? $seller->name : '',
                 'user_email' => ($seller) ? $seller->email : '',
 
-                'notes' => (in_array($row->document_type_id, ['01'])) ? $row->affected_documents->transform(function($row) {
+                'notes' => (in_array($row->document_type_id, ['01'])) ? $row->affected_documents->map(function($row) {
                     return [
                         'id' => $row->id,
                         'document_id' => $row->document_id,
@@ -103,7 +124,7 @@ class DocumentCollection extends ResourceCollection
                 'sale_opportunity_number_full' => isset($row->quotation->sale_opportunity) ? $row->quotation->sale_opportunity->number_full : '',
                 'web_platforms' => $web_platforms,
                 'plate_number' => $row->plate_number,
-                'items' => $row->items->transform(function($row, $key) {
+                'items' => $row->items->map(function($row, $key) {
                     return [
                         'key' => $key + 1,
                         'id' => $row->id,

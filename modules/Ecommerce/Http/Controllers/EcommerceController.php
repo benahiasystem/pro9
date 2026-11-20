@@ -339,12 +339,8 @@ class EcommerceController extends Controller
             return redirect()->route('tenant.ecommerce.item', $params, 301);
         }
 
-        $exchange_rate_sale = $this->getExchangeRateSale();
-        // ########## INICIO CAMBIO AFECTACIÓN IVA
-        $sale_unit_price = ($row->has_igv)
-            ? $row->sale_unit_price
-            : $row->sale_unit_price * \App\Support\Venezuela\Localization::taxMultiplier();
-        // ######### FIN CAMBIO AFECTACIÓN IVA
+        $campaignPricing = app(CampaignPriceService::class)->forItem($row);
+        $showPrices = ConfigurationEcommerce::storefrontShowsPrices();
 
         $description = $promotion_id ? $this->getDescriptionWithPromotion($row, $promotion_id) : $row->description;
 
@@ -360,10 +356,12 @@ class EcommerceController extends Controller
             'technical_specifications' => $row->technical_specifications,
             'name' => $row->name,
             'second_name' => $row->second_name,
-            'sale_unit_price' => ($row->currency_type_id === 'VES') ? $sale_unit_price : ((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_unit_price)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($exchange_rate_sale)), 6)),
+            'sale_unit_price' => $showPrices ? $campaignPricing['final_price'] : null,
+            'currency_type_id' => $row->currency_type_id,
             'currency_type' => $row->currency_type,
             'has_igv' => (bool) $row->has_igv,
-            'sale_unit' => $row->sale_unit_price,
+            'sale_unit' => $showPrices ? $campaignPricing['base_price'] : null,
+            'campaign_pricing_snapshot' => $showPrices ? $campaignPricing['calculation_snapshot'] : null,
             'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
             'currency_type_symbol' => $row->currency_type->symbol,
             'image' =>  $row->image,
@@ -379,7 +377,7 @@ class EcommerceController extends Controller
                     'id' => $component->id,
                     'name' => $component->description,
                     'description' => $component->name,
-                    'quantity' => (float) $component->pivot->quantity,
+                    'quantity' => \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($component->pivot,'quantity')),
                     'unit_type_id' => $component->unit_type_id,
                     'image' => $component->image,
                     'image_medium' => $component->image_medium,
@@ -393,7 +391,6 @@ class EcommerceController extends Controller
         }
 
         // El servicio requiere el modelo Eloquent, no el DTO usado por la vista.
-        $campaignPricing = app(CampaignPriceService::class)->forItem($row);
         $categories = \Modules\Item\Models\Category::has('items')->get();
         return view('ecommerce::items.record', compact('record', 'categories', 'campaignPricing'));
     }
@@ -418,6 +415,7 @@ class EcommerceController extends Controller
 
         $variables = [];
         $combinations = [];
+        $showPrices = ConfigurationEcommerce::storefrontShowsPrices();
 
         foreach ($parent->variations as $variation) {
             $value_ids = [];
@@ -457,7 +455,8 @@ class EcommerceController extends Controller
             $item_warehouse = $warehouse
                 ? $variation->warehouses->firstWhere('warehouse_id', $warehouse->id)
                 : null;
-            $stock = $item_warehouse ? (float) $item_warehouse->stock : 0;
+            $stock = $item_warehouse
+                ? \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($item_warehouse,'stock')) : '0';
 
             $pricing = $campaign_price_service->forItem($variation);
             $has_discount = $pricing['has_social_proof_price'] || $pricing['has_real_discount'];
@@ -471,8 +470,8 @@ class EcommerceController extends Controller
                 'value_ids' => array_values($value_ids),
                 'label' => $variation->variation_label,
                 'stock' => $stock,
-                'price' => $pricing['final_price'],
-                'compare_at_price' => $pricing['compare_at_price'],
+                'price' => $showPrices ? $pricing['final_price'] : null,
+                'compare_at_price' => $showPrices ? $pricing['compare_at_price'] : null,
                 'currency_type_symbol' => $symbol,
                 'image_url' => $image_url,
                 'internal_id' => $variation->internal_id,
@@ -484,9 +483,10 @@ class EcommerceController extends Controller
                 'cart' => [
                     'id' => $variation->id,
                     'description' => $variation->description,
-                    'sale_unit_price' => $pricing['final_price'],
-                    'original_price' => (float) $variation->sale_unit_price,
-                    'compare_at_price' => $pricing['compare_at_price'],
+                    'sale_unit_price' => $showPrices ? $pricing['final_price'] : null,
+                    'original_price' => $showPrices ? $pricing['base_price'] : null,
+                    'compare_at_price' => $showPrices ? $pricing['compare_at_price'] : null,
+                    'campaign_pricing_snapshot' => $showPrices ? $pricing['calculation_snapshot'] : null,
                     'discount_campaign_id' => $pricing['discount_campaign_id'],
                     'discount_campaign_name' => $pricing['discount_campaign_name'],
                     'campaign_discount_percent' => $pricing['real_discount_percentage'],
@@ -1192,10 +1192,22 @@ class EcommerceController extends Controller
             $adjustment=$decimal::of($calculation['total_payable'])->minus($decimal::of($subtotal)->minus($discount)->plus($shipping));
             $items=array_map(fn($row)=>['id'=>$row['item_id'],
                 'unit_price'=>$decimal::represent($row['unit_price_ves']),
-                'subtotal'=>$decimal::represent($row['subtotal_ves'],2,true)],$calculation['items']);
+                'subtotal'=>$decimal::represent($row['subtotal_ves'],2,true),
+                'calculation_snapshot'=>$decimal::snapshot(['unit_price'=>$row['unit_price_ves'],
+                    'subtotal'=>$row['subtotal_ves'],'quantity'=>$row['quantity']])],$calculation['items']);
+            // The browser reuses the same public document calculation as checkout.
+            // Expose only sale values, never the source Item snapshot or costs.
+            $purchase=app(\Modules\Ecommerce\Services\StorefrontCheckoutCalculation::class)->purchase([],$calculation);
+            $document=array_intersect_key($purchase,array_flip(['items','totales','descuentos','cargos',
+                'codigo_tipo_moneda','factor_tipo_de_cambio']));
+            $document['calculation_snapshot']=$decimal::snapshot($calculation['document']['totals']);
             return ['success'=>true,'subtotal'=>$subtotal,'discount'=>$discount,'shipping'=>$shipping,
                 'rounding_adjustment'=>$decimal::represent($adjustment,2,true),
                 'total'=>$calculation['total_payable'],'items'=>$items,
+                'document'=>$document,
+                'calculation_snapshot'=>$decimal::snapshot(['subtotal'=>$calculation['subtotal'],
+                    'discount'=>$calculation['discount'],'shipping'=>$calculation['shipping_amount'],
+                    'total'=>$calculation['total_payable'],'document_total'=>$calculation['total']]),
                 'coupon'=>$calculation['coupon'] ? [
                     'id'=>$calculation['coupon']['id'],'code'=>$calculation['coupon']['code'],
                     'free_shipping'=>$calculation['coupon']['free_shipping'],
@@ -3476,11 +3488,17 @@ class EcommerceController extends Controller
             }
 
             $pricing = $pricingService->forItem($item);
-            $quantity = max(1, (float) ($line['cantidad'] ?? $line['quantity'] ?? 1));
+            $decimal=\App\Support\Exact\Decimal::class;
+            $quantity=$decimal::of($decimal::input($line['cantidad'] ?? $line['quantity'] ?? '1','items.quantity'));
+            if (!$quantity->isPositive()) {
+                \App\Services\Fiscal\FiscalAmounts::error('items.quantity','La cantidad debe ser positiva.');
+            }
             $line['original_price'] = $pricing['base_price'];
             $line['compare_at_price'] = $pricing['compare_at_price'];
             $line['sale_unit_price'] = $pricing['final_price'];
-            $line['sub_total'] = round($pricing['final_price'] * $quantity, 2);
+            $line['sub_total'] = $decimal::represent($decimal::readRequired($pricing,'final_price')->multipliedBy($quantity),2,true);
+            $line['cantidad'] = $decimal::represent($quantity);
+            $line['campaign_pricing_snapshot'] = $pricing['calculation_snapshot'];
             $line['discount_campaign_id'] = $pricing['discount_campaign_id'];
             $line['discount_campaign_name'] = $pricing['discount_campaign_name'];
             $line['campaign_discount_percent'] = $pricing['real_discount_percentage'];

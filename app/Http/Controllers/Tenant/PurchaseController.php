@@ -940,7 +940,8 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
         {
             // ######## INICIO ANULACIÓN EXACTA DE COMPRA ########
             return DB::connection('tenant')->transaction(function () use ($id) {
-                $obj = Purchase::query()->lockForUpdate()->findOrFail($id);
+                $obj = Purchase::query()->lockForUpdate()->find($id);
+                abort_if($obj === null, 404);
                 if ((string)$obj->state_type_id === '11') return ['success'=>true,'message'=>'La compra ya está anulada'];
                 // Match sales/orders: lock catalog items before their lot and serial rows.
                 $itemIds=$obj->items()->orderBy('item_id')->pluck('item_id')->unique()->values()->all();

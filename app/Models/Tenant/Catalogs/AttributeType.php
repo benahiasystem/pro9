@@ -10,6 +10,7 @@ class AttributeType extends ModelCatalog
 
     protected $table = "cat_attribute_types";
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 
     protected $fillable = [

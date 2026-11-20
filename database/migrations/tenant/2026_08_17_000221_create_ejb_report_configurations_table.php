@@ -1,42 +1,39 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `ejb_report_configurations` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `bank_account_pen_id` int(10) unsigned DEFAULT NULL
- * - `bank_account_usd_id` int(10) unsigned DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - document_type_id: varchar(255)
+ * - bank_account_pen_id: bigint
+ * - bank_account_usd_id: bigint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `ejb_report_configurations` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `bank_account_pen_id` int(10) unsigned DEFAULT NULL,
-  `bank_account_usd_id` int(10) unsigned DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `ejb_report_configurations_document_type_id_foreign` (`document_type_id`),
-  KEY `ejb_report_configurations_bank_account_pen_id_foreign` (`bank_account_pen_id`),
-  KEY `ejb_report_configurations_bank_account_usd_id_foreign` (`bank_account_usd_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('ejb_report_configurations', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
+            $table->bigInteger('bank_account_pen_id')->nullable();
+            $table->bigInteger('bank_account_usd_id')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['document_type_id'], 'ejb_report_configurations_document_type_id_foreign');
+            $table->index(['bank_account_pen_id'], 'ejb_report_configurations_bank_account_pen_id_foreign');
+            $table->index(['bank_account_usd_id'], 'ejb_report_configurations_bank_account_usd_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `ejb_report_configurations`');
+        Schema::dropIfExists('ejb_report_configurations');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

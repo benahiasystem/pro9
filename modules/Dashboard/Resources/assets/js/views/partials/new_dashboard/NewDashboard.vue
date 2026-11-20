@@ -160,7 +160,9 @@
                             :sales="monthlyComparison.sales"
                             :purchases="monthlyComparison.purchases"
                             :sales-exact="monthlyComparison.salesExact"
+                            :sales-fractions="monthlyComparison.salesFractions"
                             :purchases-exact="monthlyComparison.purchasesExact"
+                            :purchases-fractions="monthlyComparison.purchasesFractions"
                         ></monthly-comparison-chart>
                     </div>
                 </div>
@@ -179,7 +181,9 @@
                             :current="salesGrowth.current"
                             :previous="salesGrowth.previous"
                             :current-exact="salesGrowth.currentExact"
+                            :current-fractions="salesGrowth.currentFractions"
                             :previous-exact="salesGrowth.previousExact"
+                            :previous-fractions="salesGrowth.previousFractions"
                             :current-label="salesGrowth.currentLabel"
                             :previous-label="salesGrowth.previousLabel"
                         ></sales-growth-chart>
@@ -197,7 +201,9 @@
 <script>
 import MonthlyComparisonChart from "./MonthlyComparisonChart.vue";
 import SalesGrowthChart from "./SalesGrowthChart.vue";
-import { formatMoneyExact } from "../../../../../../../../resources/js/helpers/format-money-exact";
+import moment from "moment";
+import { readOriginal, readVector, chartCoordinate, originalText, compareOriginal } from "../../../../../../../../resources/js/helpers/dashboard-originals";
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
 
 export default {
     name: "NewDashboard",
@@ -211,6 +217,7 @@ export default {
                 { key: "business_health", label: "Salud del Negocio" },
             ],
             loadingKpi: false,
+            requestVersions: {kpi: 0, comparison: 0, growth: 0},
             establishments: [],
             form: {
                 establishment_id: null,
@@ -223,27 +230,27 @@ export default {
                 compare: "previous_period",
             },
             kpi: {
-                monthSales: "0.00",
-                monthPurchases: "0.00",
-                operatingMargin: "0",
-                accumulatedSales: "0.00",
+                monthSales: "—",
+                monthPurchases: "—",
+                operatingMargin: "—",
+                accumulatedSales: "—",
                 accumulatedYear: "",
-                monthSalesVariation: 0,
-                monthPurchasesVariation: 0,
+                monthSalesVariation: null,
+                monthPurchasesVariation: null,
             },
             monthlyComparison: {
                 categories: [],
                 sales: [],
                 purchases: [],
-                salesExact: [],
-                purchasesExact: [],
+                salesExact: [], salesFractions: [],
+                purchasesExact: [], purchasesFractions: [],
             },
             salesGrowth: {
                 categories: [],
                 current: [],
                 previous: [],
-                currentExact: [],
-                previousExact: [],
+                currentExact: [], currentFractions: [],
+                previousExact: [], previousFractions: [],
                 currentLabel: "",
                 previousLabel: "",
             },
@@ -407,69 +414,66 @@ export default {
                 },
             };
         },
-        loadKpi() {
+        async loadKpi() {
+            const version = ++this.requestVersions.kpi;
             this.loadingKpi = true;
-            this.$http
-                .get("/dashboard/kpi", this.requestParams())
-                .then((response) => {
-                    const data = response.data.data;
-                    this.kpi = {
-                        monthSales: this.formatMoney(data.month_sales),
-                        monthPurchases: this.formatMoney(data.month_purchases),
-                        operatingMargin: data.operating_margin || "0",
-                        accumulatedSales: this.formatMoney(data.accumulated_sales),
-                        accumulatedYear: data.accumulated_year,
-                        monthSalesVariation: data.month_sales_variation,
-                        monthPurchasesVariation: data.month_purchases_variation,
-                    };
-                })
-                .finally(() => {
-                    this.loadingKpi = false;
-                });
+            this.kpi = {monthSales: '—', monthPurchases: '—', operatingMargin: '—', accumulatedSales: '—', accumulatedYear: '', monthSalesVariation: null, monthPurchasesVariation: null};
+            try {
+                const response = await this.$http.get('/dashboard/kpi', this.requestParams());
+                if (version !== this.requestVersions.kpi) return;
+                const data = response.data.data;
+                this.kpi = {
+                    monthSales: this.formatMoney(readOriginal(data, 'month_sales')),
+                    monthPurchases: this.formatMoney(readOriginal(data, 'month_purchases')),
+                    operatingMargin: originalText(readOriginal(data, 'operating_margin'), 1),
+                    accumulatedSales: this.formatMoney(readOriginal(data, 'accumulated_sales')),
+                    accumulatedYear: data.accumulated_year,
+                    monthSalesVariation: readOriginal(data, 'month_sales_variation'),
+                    monthPurchasesVariation: readOriginal(data, 'month_purchases_variation'),
+                };
+            } catch (_) {
+                // The current request keeps its unknown values; a stale failure cannot clear a newer result.
+            } finally {
+                if (version === this.requestVersions.kpi) this.loadingKpi = false;
+            }
         },
-        loadMonthlyComparison() {
-            this.$http
-                .get("/dashboard/monthly-comparison", this.requestParams())
-                .then((response) => {
-                    const data = response.data.data;
-                    this.monthlyComparison = {
-                        categories: data.categories,
-                        sales: data.sales,
-                        purchases: data.purchases,
-                        salesExact: data.sales_exact || [],
-                        purchasesExact: data.purchases_exact || [],
-                    };
-                });
+        async loadMonthlyComparison() {
+            const version = ++this.requestVersions.comparison;
+            this.monthlyComparison = {categories: [], sales: [], purchases: [], salesExact: [], purchasesExact: [], salesFractions: [], purchasesFractions: []};
+            try {
+                const response = await this.$http.get('/dashboard/monthly-comparison', this.requestParams());
+                if (version !== this.requestVersions.comparison) return;
+                const data = response.data.data, sales = readVector(data, 'sales_fractions'), purchases = readVector(data, 'purchases_fractions');
+                this.monthlyComparison = {categories: data.categories || [], sales: sales.map(chartCoordinate), purchases: purchases.map(chartCoordinate),
+                    salesExact: data.sales_exact || [], purchasesExact: data.purchases_exact || [], salesFractions: sales, purchasesFractions: purchases};
+            } catch (_) { /* Unknown chart values remain absent. */ }
         },
-        loadSalesGrowth() {
-            this.$http
-                .get("/dashboard/sales-growth", this.requestParams())
-                .then((response) => {
-                    const data = response.data.data;
-                    this.salesGrowth = {
-                        categories: data.categories,
-                        current: data.current,
-                        previous: data.previous,
-                        currentExact: data.current_exact || [],
-                        previousExact: data.previous_exact || [],
-                        currentLabel: data.current_label,
-                        previousLabel: data.previous_label,
-                    };
-                });
+        async loadSalesGrowth() {
+            const version = ++this.requestVersions.growth;
+            this.salesGrowth = {categories: [], current: [], previous: [], currentExact: [], previousExact: [], currentFractions: [], previousFractions: [], currentLabel: '', previousLabel: ''};
+            try {
+                const response = await this.$http.get('/dashboard/sales-growth', this.requestParams());
+                if (version !== this.requestVersions.growth) return;
+                const data = response.data.data, current = readVector(data, 'current_fractions'), previous = readVector(data, 'previous_fractions');
+                this.salesGrowth = {categories: data.categories || [], current: current.map(chartCoordinate), previous: previous.map(chartCoordinate),
+                    currentExact: data.current_exact || [], previousExact: data.previous_exact || [], currentFractions: current, previousFractions: previous,
+                    currentLabel: data.current_label, previousLabel: data.previous_label};
+            } catch (_) { /* Unknown chart values remain absent. */ }
         },
         formatMoney(value) {
-            return formatMoneyExact(value);
+            return originalText(value);
         },
         formatPercent(value) {
-            const number = Number(value) || 0;
-            const sign = number >= 0 ? "+" : "";
-            return sign + number.toFixed(1) + "%";
+            const sign = compareOriginal(value, '0');
+            return sign === null ? '—' : (sign >= 0 ? '+' : '') + originalText(value, 1) + '%';
         },
         badgeClass(value) {
-            return Number(value) >= 0 ? "nd-badge--up" : "nd-badge--down";
+            const sign = compareOriginal(value, '0');
+            return sign === null ? '' : sign >= 0 ? 'nd-badge--up' : 'nd-badge--down';
         },
     },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

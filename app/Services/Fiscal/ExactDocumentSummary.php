@@ -77,7 +77,11 @@ final class ExactDocumentSummary
         $values['settlement_adjustment'] = $values['total_payable']->minus($values['total']);
         // Update calculated fields while keeping original operands (including periodic advances).
         $document->setExactValues($values);
-        $legends = collect((array) $document->legends)->map(fn ($v) => (array) $v)->reject(fn ($v) => ($v['code'] ?? '') === '1000')->values()->all();
+        // Identificar la leyenda del total con la misma regla que usan las plantillas históricas.
+        $legends = collect((array) $document->legends)
+            ->map(fn ($legend) => (array) $legend)
+            ->reject(fn ($legend) => ($legend['code'] ?? null) == '1000')
+            ->values()->all();
         $legends[] = ['code' => '1000', 'value' => \App\CoreFacturalo\Helpers\Number\NumberLetter::convertToLetter($document->total_payable)];
         $document->legends = $legends;
         \App\Support\Exact\HeaderAllocation::freeze($document, $items);

@@ -11,11 +11,11 @@
 |
 */
 
-Route::prefix('padron')->group(function() {
+Route::prefix('padron')->middleware('auth')->group(function() {
     //Route::get('/', 'PadronController@index');
     Route::get('consulta/{ruc}', 'PadronController@consulta');
-    Route::get('charges_data', 'PadronController@charges_data');
+    Route::post('charges_data', 'PadronController@charges_data');
     Route::get('list_history', 'PadronController@list_history');
-    Route::get('demo', 'PadronController@demo');
+    Route::post('demo', 'PadronController@demo');
 
 });

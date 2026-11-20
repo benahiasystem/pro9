@@ -3,7 +3,12 @@ const vm = require('node:vm')
 const babel = require('@babel/core')
 const cache = new Map()
 module.exports = function exactRuntime(name) {
-    const file = ['exact-commercial','exact-document','exchange-rate-math','document-creation','sale-note-conversion','payment-classification','pos-exchange-rate'].find(file=>name.includes(file))
+    if (name.endsWith('/pos-scale-prices')) {
+        const file = 'pos-scale-prices'
+        if (!cache.has(file)) cache.set(file, require('../helpers/load-module.cjs')(require('node:path').resolve('resources/js/helpers/pos-scale-prices.js')))
+        return cache.get(file)
+    }
+    const file = ['invoice-edit-state','pos-invoice-line','invoice-lots','dashboard-originals','exact-commercial','exact-document','exchange-rate-math','document-creation','sale-note-conversion','payment-classification','pos-exchange-rate'].find(file=>name.includes(file))
     if (!file) return null
     if (!cache.has(file)) {
         const exports = {}

@@ -1,45 +1,42 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `dispatch_items` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `dispatch_id` int(10) unsigned NOT NULL
- * - `item_id` int(10) unsigned NOT NULL
- * - `item` json NOT NULL
- * - `quantity` decimal(30,12) NOT NULL
- * - `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci
- * - `additional_data` json DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - dispatch_id: bigint
+ * - item_id: bigint
+ * - item: json
+ * - quantity: numeric(30,12)
+ * - name_product_pdf: text
+ * - additional_data: json
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `dispatch_items` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `dispatch_id` int(10) unsigned NOT NULL,
-  `item_id` int(10) unsigned NOT NULL,
-  `item` json NOT NULL,
-  `quantity` decimal(30,12) NOT NULL,
-  `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci,
-  `additional_data` json DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `dispatch_items_dispatch_id_foreign` (`dispatch_id`),
-  KEY `dispatch_items_item_id_foreign` (`item_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('dispatch_items', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('dispatch_id');
+            $table->bigInteger('item_id');
+            $table->json('item');
+            $table->decimal('quantity', 30, 12);
+            $table->text('name_product_pdf')->collation('pro9_ci_ai')->nullable();
+            $table->json('additional_data')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['dispatch_id'], 'dispatch_items_dispatch_id_foreign');
+            $table->index(['item_id'], 'dispatch_items_item_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `dispatch_items`');
+        Schema::dropIfExists('dispatch_items');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

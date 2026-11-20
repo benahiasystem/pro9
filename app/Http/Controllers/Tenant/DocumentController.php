@@ -478,7 +478,7 @@ class DocumentController extends Controller
     public function item_tables()
     {
         // $items = $this->table('items');
-        $items = SearchItemController::getItemsToDocuments();
+        $items = SearchItemController::getItemsToDocuments(forInvoice: true);
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive(\App\Services\ExportInvoicePolicy::available(Company::firstOrFail()))->get();
         $price_types = PriceType::whereActive()->get();
@@ -572,26 +572,7 @@ class DocumentController extends Controller
 
         if ($table === 'prepayment_documents') {
             $prepayment_documents = Document::whereHasPrepayment()->get()->transform(function ($row) {
-
-                $total = round($row->pending_amount_prepayment, 2);
-                // ########## INICIO CAMBIO AFECTACIÓN IVA
-                $amount = ($row->affectation_type_prepayment == '10')
-                    ? round($total / \App\Support\Venezuela\Localization::taxMultiplier(), 2)
-                    : $total;
-                // ######### FIN CAMBIO AFECTACIÓN IVA
-
-                return [
-                    'id' => $row->id,
-                    'description' => $row->number_full,
-                    'series' => $row->series,
-                    'number' => $row->number,
-                    'document_type_id' => ($row->document_type_id == '01') ? '02' : '03',
-                    // 'amount' => $row->total_value,
-                    // 'total' => $row->total,
-                    'amount' => $amount,
-                    'total' => $total,
-
-                ];
+                return \App\Services\Fiscal\PrepaymentReference::available($row);
             });
             return $prepayment_documents;
         }
@@ -604,7 +585,7 @@ class DocumentController extends Controller
 
         if ($table === 'items') {
 
-            return SearchItemController::getItemsToDocuments();
+            return SearchItemController::getItemsToDocuments(forInvoice: true);
 
             $establishment_id = auth()->user()->establishment_id;
             $warehouse = ModuleWarehouse::where('establishment_id', $establishment_id)->first();
@@ -1041,19 +1022,20 @@ class DocumentController extends Controller
         DocumentFiscalController::authorizeDocument($document);
         foreach ($document->items as &$item) {
             $discounts = [];
-            if($item->discounts) {
-                foreach ($item->discounts as $discount) {
-                    $discount_type = ChargeDiscountType::query()->find($discount->discount_type_id);
-                    $discounts[] = [
-                        'amount' => $discount->amount,
-                        'base' => $discount->base,
-                        'description' => $discount->description,
-                        'discount_type_id' => $discount->discount_type_id,
-                        'factor' => $discount->factor,
-                        'percentage' => $discount->factor * 100,
-                        'is_amount' => false,
-                        'discount_type' => $discount_type
-                    ];
+            $raw = $item->getAttributes()['discounts'] ?? null;
+            if ($raw !== null) {
+                foreach (\App\Support\Exact\JsonDecimals::decode($raw) as $stored) {
+                    $discount = (array) $stored;
+                    $discount['discount_type'] = ChargeDiscountType::query()->find($discount['discount_type_id']);
+                    if (!array_key_exists('is_amount', $discount)) $discount['is_amount'] = false;
+                    if (!array_key_exists('percentage', $discount) && isset($discount['factor'])) {
+                        $percentage = \App\Support\Exact\Decimal::of($discount['factor'])->multipliedBy(100);
+                        $text = \App\Support\Exact\Decimal::represent($percentage);
+                        // A legacy finite factor can populate the editor. Never
+                        // replace a periodic factor with a rounded percentage.
+                        if (\App\Support\Exact\Decimal::of($text)->isEqualTo($percentage)) $discount['percentage'] = $text;
+                    }
+                    $discounts[] = $discount;
                 }
             }
             $item->discounts = $discounts;
@@ -1179,7 +1161,7 @@ class DocumentController extends Controller
     {
         if ($request->hasFile('file')) {
             try {
-                $import = new DocumentsImport();
+                $import = new DocumentsImport($request->file('file')->getRealPath());
                 $import->import($request->file('file'), null, Excel::XLSX);
                 $data = $import->getData();
                 return [
@@ -1204,7 +1186,7 @@ class DocumentController extends Controller
     {
         if ($request->hasFile('file')) {
             try {
-                $import = new DocumentsImportTwoFormat();
+                $import = new DocumentsImportTwoFormat($request->file('file')->getRealPath());
                 $import->import($request->file('file'), null, Excel::XLSX);
                 $data = $import->getData();
                 return [
@@ -1334,7 +1316,7 @@ class DocumentController extends Controller
             });
         }
         if (!empty($guides)) {
-            $records->where('guides', 'like', DB::raw("%\"number\":\"%") . $guides . DB::raw("%\"%"));
+            \App\Database\TextSearch::whereGuideNumber($records, 'guides', '%'.$guides.'%');
         }
         if ($plate_numbers) {
             $records->where('plate_number', 'like', '%' . $plate_numbers . '%');
@@ -1483,7 +1465,7 @@ class DocumentController extends Controller
 
         } catch (Exception $e) {
 
-            return ($e->getCode() == '23000') ? ['success' => false, 'message' => 'El Documento esta siendo usada por otros registros, no puede eliminar'] : ['success' => false, 'message' => 'Error inesperado, no se pudo eliminar el Documento'];
+            return (\App\Database\SqlErrors::reference($e)) ? ['success' => false, 'message' => 'El Documento esta siendo usada por otros registros, no puede eliminar'] : ['success' => false, 'message' => 'Error inesperado, no se pudo eliminar el Documento'];
 
         }
 
@@ -1530,7 +1512,7 @@ class DocumentController extends Controller
     {
         if ($request->hasFile('file')) {
             try {
-                $import = new DocumentImportExcelFormat();
+                $import = new DocumentImportExcelFormat($request->file('file')->getRealPath());
                 $import->import($request->file('file'), null, Excel::XLSX);
                 $data = $import->getData();
 

@@ -70,7 +70,7 @@
             </el-table-column>
             <el-table-column v-if="cols.precio" label="Precio" width="110" align="right">
                 <template slot-scope="{ row }">
-                    {{ row.currency_type_symbol }} {{ formatPrice(row.sale_unit_price) }}
+                    {{ row.currency_type_symbol }} {{ formatPrice(row) }}
                 </template>
             </el-table-column>
             <el-table-column v-if="cols.unidad" property="unit_type_id" label="Unidad" width="90">
@@ -125,11 +125,11 @@
                             :key="i"
                             type="button"
                             class="pos-price-chip"
-                            :title="opt.label + ': agregar al carrito con precio ' + formatPrice(opt.price) + ' (' + opt.unit_type_id + ')'"
+                            :title="opt.label + ': agregar al carrito con precio ' + formatPrice(opt.ref, 'price') + ' (' + opt.unit_type_id + ')'"
                             @click.stop="pickPrice(opt, $index)"
                         >
                             <span class="pos-price-chip__label">{{ shortLabel(opt) }}</span>
-                            {{ formatPrice(opt.price) }}
+                            {{ formatPrice(opt.ref, 'price') }}
                         </button>
                         <button
                             v-if="priceOptions(row).length > 2"
@@ -247,11 +247,11 @@
                         <span class="pos-price-pick__info">
                             <span class="pos-price-pick__label">{{ opt.label }}</span>
                             <span class="pos-price-pick__meta">
-                                {{ opt.unit_type_id }}<template v-if="opt.description"> · {{ opt.description }}</template><template v-if="Number(opt.quantity_unit) > 1"> · x{{ opt.quantity_unit }}</template>
+                                {{ opt.unit_type_id }}<template v-if="opt.description"> · {{ opt.description }}</template><template v-if="opt.quantity_label"> · x{{ opt.quantity_label }}</template>
                             </span>
                         </span>
                         <span class="pos-price-pick__price">
-                            {{ pricePick.row ? pricePick.row.currency_type_symbol : "" }} {{ formatPrice(opt.price) }}
+                            {{ pricePick.row ? pricePick.row.currency_type_symbol : "" }} {{ formatPrice(opt.ref, 'price') }}
                         </span>
                     </button>
                 </li>
@@ -274,6 +274,9 @@
 import ItemUnitTypesTable from "./item_unit_types_table.vue";
 
 const COLS_STORAGE_KEY = "pos_table_columns_v1";
+
+import {posPriceAmount, quotedAmount, selectPosCatalogPrice} from '../../../../helpers/pos-invoice-line'
+import {exactAmount} from '../../../../helpers/exchange-rate-math'
 
 export default {
     components: { ItemUnitTypesTable },
@@ -367,12 +370,15 @@ export default {
          * "Bs. 30" y "Bs. 20.0000" mezclados: la BD guarda texto con 4 decimales
          * y las listas de precios reasignan números sin formato.
          */
-        formatPrice(value) {
-            const n = parseFloat(value);
-            if (isNaN(n)) return value;
-
-            const decimals = parseInt(this.config.decimal_quantity, 10);
-            return n.toFixed(isNaN(decimals) ? 2 : decimals);
+        formatPrice(record, field = 'sale_unit_price') {
+            const decimals = parseInt(this.config.decimal_quantity, 10)
+            const precision = decimals >= 0 && decimals <= 12 ? decimals : 2
+            try {
+                const amount = field === 'price' ? quotedAmount(record, field) : posPriceAmount(record)
+                return amount.final(precision)
+            } catch (_) {
+                return record?.[field] ?? ''
+            }
         },
         handleKeyup(e) {
             const key = e.key || "";
@@ -452,7 +458,7 @@ export default {
         events(){
 
             this.$eventHub.$on("selectedItemUnitTypeTable", (unit_type) => {
-                this.setPriceItem(unit_type, this.currentIndex)
+                this.setPriceItem(unit_type, this.records.findIndex(item=>String(item.item_id)===String(unit_type.item_id)))
             })
 
         },
@@ -493,28 +499,16 @@ export default {
             return (el.getAttribute("placeholder") || "") !== "Buscar productos";
         },
         setPriceItem(price, index) {
-
-            const item = this.records[index];
+            const item=this.records[index];
             if (!item || !price) return;
-            if (item && item.item_unit_types && Array.isArray(item.item_unit_types)) {
-                item.item_unit_types.forEach(iut => {
-                    if (iut && iut.prices && Array.isArray(iut.prices)) {
-                        iut.prices.forEach(p => {
-                            if (p && p.selected) {
-                                this.$set(p, 'selected', false);
-                            }
-                        });
-                    }
-                });
-            }
-
-            this.$set(price, 'selected', true);
-            item.sale_unit_price = price.price;
-            item.unit_type_id = price.unit_type_id;
-            if (this.includePricePresentation) this.$set(item, 'presentation', price);
+            try { selectPosCatalogPrice(item,price); }
+            catch (error) { return this.$message.error(error.message); }
+            (item.item_unit_types || []).forEach(unit=>(unit.prices || []).forEach(option=>{
+                if (option.selected) this.$set(option,'selected',false);
+            }));
+            this.$set(price,'selected',true);
             this.addItemFromPriceSelected(item);
             this.$message.success("Precio seleccionado");
-
         },
         addItemFromPriceSelected(item)
         {
@@ -567,8 +561,19 @@ export default {
 
             iuts.forEach(iut => {
                 if (!iut || !Array.isArray(iut.prices)) return;
+                let quantityLabel = null;
+                if (iut.quantity_unit != null) {
+                    const quantity = quotedAmount(iut, 'quantity_unit');
+                    if (quantity.compare(1) > 0) {
+                        quantityLabel = quantity.decimal();
+                        if (quantityLabel === '1') {
+                            const {n, d} = quantity.fraction();
+                            quantityLabel = `${n}/${d}`;
+                        }
+                    }
+                }
                 iut.prices.forEach(p => {
-                    if (p && !isNaN(Number(p.price)) && Number(p.price) > 0) {
+                    if (p && exactAmount(p.price).compare(0) > 0) {
                         out.push({
                             price: p.price,
                             // Nombre de la lista de precios a la que pertenece
@@ -577,7 +582,8 @@ export default {
                             unit_type_id: p.unit_type_id || iut.unit_type_id,
                             item_unit_type_id: iut.id,
                             description: iut.description,
-                            quantity_unit: p.quantity_unit || iut.quantity_unit,
+                            quantity_label: quantityLabel,
+                            presentation: iut,
                             ref: p
                         });
                     }
@@ -611,17 +617,8 @@ export default {
             });
             this.$set(opt.ref, "selected", true);
 
-            item.sale_unit_price = opt.price;
-            item.unit_type_id = opt.unit_type_id;
-            if (this.includePricePresentation) {
-                this.$set(item, "presentation", {
-                    ...opt.ref,
-                    item_unit_type_id: opt.item_unit_type_id,
-                    unit_type_id: opt.unit_type_id,
-                    description: opt.description,
-                    quantity_unit: opt.quantity_unit
-                });
-            }
+            try { selectPosCatalogPrice(item,opt.ref,opt.presentation); }
+            catch (error) { return this.$message.error(error.message); }
 
             this.$emit("clickAddItem", item);
         },

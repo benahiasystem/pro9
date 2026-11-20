@@ -30,9 +30,9 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
         ]);
     }
 
-    private function preview(array $rows, string $total = '100'): Document
+    private function preview(array $rows, string $total = '100', string $currency = 'VES'): Document
     {
-        $document = new Document(['currency_type_id'=>'VES', 'total'=>$total, 'exchange_rate_sale'=>'10']);
+        $document = new Document(['currency_type_id'=>$currency, 'total'=>$total, 'exchange_rate_sale'=>'10']);
         $document->setRelation('payments', new Collection());
         $engine = new class extends Facturalo {
             public function __construct() { $this->company = new Fluent(['igtf_enabled'=>false]); }
@@ -226,6 +226,31 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
         self::assertSame('0.01',$D::represent($payment->exactValue('change')));
         self::assertSame('2.98',$D::represent($payment->exactValue('payment')));
         self::assertSame('0.01',$D::represent($payment->exactValue('payment_adjustment')));
+    }
+
+    public function test_preview_settles_dollar_change_in_real_received_cents_and_keeps_the_adjustment(): void
+    {
+        $document = $this->preview([['payment_method_type_id'=>'10', 'currency_type_id'=>'USD',
+            'original_amount'=>'1', 'exchange_rate'=>'3', 'payment'=>'3']], '2.98');
+        $payment = $document->payments->first();
+        $decimal = \App\Support\Exact\Decimal::class;
+        self::assertSame('0.99', $decimal::represent($payment->exactValue('original_amount')));
+        self::assertSame('0.01', $decimal::represent($payment->exactValue('change')));
+        self::assertSame('1', $decimal::represent($payment->exactValue('original_amount')->plus($payment->exactValue('change'))));
+        self::assertSame('2.98', $decimal::represent($payment->exactValue('payment')));
+        self::assertSame('0.01', $decimal::represent($payment->exactValue('payment_adjustment')));
+        $html = view('pdf.partials.invoice_receipt', ['row'=>$payment, 'document'=>$document])->render();
+        self::assertStringContainsString('Recibido USD 1.00', $html);
+        self::assertStringContainsString('Vuelto USD 0.01', $html);
+        self::assertStringContainsString('Ajuste de liquidación VES', $html);
+    }
+
+    public function test_preview_rejects_change_not_representable_in_received_cents(): void
+    {
+        $this->expectException(ValidationException::class);
+        // USD 0.005 of excess would require VES 0.015 of cash change.
+        $this->preview([['payment_method_type_id'=>'10', 'currency_type_id'=>'VES',
+            'original_amount'=>'3', 'exchange_rate'=>'3', 'payment'=>'1']], '0.995', 'USD');
     }
 
     public function test_sale_note_detail_uses_the_received_change_fraction_and_frozen_method(): void

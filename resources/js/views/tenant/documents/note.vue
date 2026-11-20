@@ -25,8 +25,12 @@
                     <td>{{ source(row).unit_type_id || 'SERV' }} / {{ (source(row).iva_rate || row.iva_rate || {}).percentage }}%</td>
                     <td>{{ noteAmountLabel(source(row),'remaining_quantity') }}</td><td>{{ noteAmountLabel(source(row),'remaining_total') }}</td>
                     <td v-if="full">{{ noteAmountLabel(source(row),'remaining_quantity') }}</td>
-                    <td v-else><el-input v-if="returning" v-model="row.quantity" type="number" min="0.0001" step="0.0001"/><el-input v-else v-model="row.adjustment_amount" type="number" min="0.01" step="0.01"/></td>
-                    <td v-if="returning"><el-select v-if="(source(row).serials || []).length" v-model="row.serial_ids" multiple placeholder="Seriales que regresan"><el-option v-for="s in source(row).serials" :key="s.id" :value="s.id" :label="s.series"/></el-select><div v-for="lot in source(row).lots || []" :key="lot.id"><label>Lote {{ lot.id }} · Disponible {{ noteAmountLabel(lot,'quantity') }}</label><el-input :value="lotQuantity(row,lot.id)" type="number" min="0" step="0.0001" @input="setLot(row,lot.id,$event)"/></div></td>
+                    <td v-else>
+                        <el-input v-if="returning" v-model="row.quantity" type="number" min="0.000000000001" step="any"/>
+                        <el-input v-else :value="row.adjustment_amount" @input="changeAdjustmentAmount(row, $event)"
+                                  type="number" :min="row.adjustment_amount_exact ? 0 : '0.000000000001'" step="any"/>
+                    </td>
+                    <td v-if="returning"><el-select v-if="(source(row).serials || []).length" v-model="row.serial_ids" multiple placeholder="Seriales que regresan"><el-option v-for="s in source(row).serials" :key="s.id" :value="s.id" :label="s.series"/></el-select><div v-for="lot in source(row).lots || []" :key="lot.id"><label>Lote {{ lot.id }} · Disponible {{ noteAmountLabel(lot,'quantity') }}</label><el-input :value="lotQuantity(row,lot.id)" type="number" min="0" step="any" @input="setLot(row,lot.id,$event)"/></div></td>
                     <td><el-button v-if="!full" size="mini" @click="form.items.splice(index,1)">Quitar</el-button></td>
                 </tr></tbody>
             </table></div>
@@ -46,6 +50,7 @@
 import { documentNumberFull } from '../../../helpers/document-number';
 import { hasNamedSeries } from '@helpers/document-series';
 import {noteSeries,noteTotalLabel,noteRequestId,noteAmountLabel,noteIsPositive,noteCanGenerate,noteCanReturnPartially} from '../../../helpers/fiscal-note';
+import {exactValue} from '../../../helpers/exchange-rate-math';
 import {functions,exchangeRate} from '../../../mixins/functions';
 import DocumentFormItem from './partials/item.vue';
 import DocumentOptions from './partials/options.vue';
@@ -67,7 +72,15 @@ export default {
         changeOriginal(row){row.serial_ids=(this.source(row).serials || []).slice(0,Number(row.quantity)||1).map(s=>s.id);row.lot_returns=null;},
         lotQuantity(row,id){const selected=(row.lot_returns || []).find(l=>l.id===id);return selected ? selected.compromise_quantity : '';},
         setLot(row,id,value){row.lot_returns=(row.lot_returns || []).filter(l=>l.id!==id);if(Number(value)>0)row.lot_returns.push({id,compromise_quantity:value});},
-        addService(row){if(row.item.unit_type_id!=='SERV')return this.$message.error('Seleccione un servicio para intereses o gastos.');this.form.items.push({...row,quantity:1,adjustment_amount:row.unit_price});},
+        addService(row) {
+            if (row.item.unit_type_id !== 'SERV') return this.$message.error('Seleccione un servicio para intereses o gastos.');
+            const amount = exactValue(row, 'total');
+            this.form.items.push({...row, quantity: 1, adjustment_amount: amount.decimal(), adjustment_amount_exact: amount.fraction()});
+        },
+        changeAdjustmentAmount(row, value) {
+            row.adjustment_amount = value;
+            if (row.adjustment_amount_exact) row.adjustment_amount_exact = null;
+        },
         async submit(){if(this.busy)return;this.busy=true;this.errors={};this.form.payment_condition_id=this.credit?null:'02';this.form.payments=[];try{const response=await this.$http.post('/documents',this.form);if(!response.data.success)return this.$message.error(response.data.message);this.newId=response.data.data.id;this.showOptions=true;const record=await this.$http.get(`/documents/note/record/${this.document.id}`);this.document=record.data;this.context=record.data.note_context;this.reset();this.changeType();}catch(e){const data=e.response&&e.response.data||{};if(e.response&&e.response.status===422)this.errors=data.errors||data;else this.$message.error(data.message||'No se pudo confirmar el guardado. Reintente con la misma nota.');}finally{this.busy=false;}},close(){location.href='/documents';}}
 };
 // ######### FIN CAMBIO SUNAT A SENIAT

@@ -18,7 +18,7 @@
     @endforeach
     @isset($classified['credit_pending'])
         <h3 class="section">Crédito pendiente</h3>
-        @foreach($classified['credit_pending'] as $currency=>$amount)<p>{{ $currency }} {{ \App\Support\Exact\Decimal::format($amount) }}</p>@endforeach
+        @foreach($classified['credit_pending'] as $currency=>$amount)<p>{{ $currency }} {{ \App\Support\Exact\Decimal::format(\Modules\CashReport\Services\ClassifiedCashReport::pendingCredit($classified,$currency)) }}</p>@endforeach
     @endisset
     @if($classified['show_detail'])
         <h3 class="section">Movimientos</h3>

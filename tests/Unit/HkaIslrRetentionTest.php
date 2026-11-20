@@ -20,6 +20,43 @@ class HkaIslrRetentionTest extends TestCase
         $transport->applyIslrRetention('secret-test',$payload);$transport->queryIslrRetention('secret-test',$id);$transport->removeIslrRetention('secret-test',$id);
         foreach(['POST','GET','DELETE'] as $method)Http::assertSent(fn($req)=>$req->method()===$method && str_ends_with($req->url(),'/AplicarRetencionISLR') && $req->data()===($method==='POST'?$payload:$id) && $req->hasHeader('Content-Type','application/json'));
     }
+    public function test_payload_rounds_retained_tax_from_the_exact_converted_amount(): void
+    {
+        $document = new Document;
+        $document->setRawAttributes(['control_number'=>'00-100', 'currency_type_id'=>'VES', 'exchange_rate_sale'=>'30']);
+        $emission = new DocumentEmission;
+        $emission->forceFill(['status'=>'confirmed', 'payload'=>['documentoElectronico'=>['encabezado'=>[
+            'identificacionDocumento'=>['tipoDocumento'=>'01', 'serie'=>'', 'numeroDocumento'=>'100', 'moneda'=>'VES'],
+        ]]]]);
+        $document->setRelation('emission', $emission);
+        $retention = new DocumentReceivedRetention;
+        $retention->setRawAttributes(['voucher_number'=>'ISLR-test', 'voucher_date'=>'2026-10-12', 'currency_type_id'=>'USD',
+            'amount'=>'5', 'percentage'=>'4', 'agent_number'=>'V-12345678-9']);
+
+        $actual = [];
+        foreach (['0.00099999', '0.00100000', '0.00100001'] as $rate) {
+            $retention->exchange_rate = $rate;
+            $actual[] = HkaIslrRetentionPayload::build($document, $retention)['detallesRetencionISLR']['impuestoRetenido'];
+        }
+        $retention->exchange_rate = '0.00100000';
+        $retention->setExactValues(['amount'=>\App\Support\Exact\Decimal::of('49999999999996/10000000000000')]);
+        self::assertSame('5', $retention->amount);
+        $actual[] = HkaIslrRetentionPayload::build($document, $retention)['detallesRetencionISLR']['impuestoRetenido'];
+
+        self::assertSame(['0.00', '0.01', '0.01', '0.00'], $actual);
+
+        foreach ([['4', '4.00'], ['1.23', '1.23'], ['1.234', null], ['1.235', null], ['1.23000000000001', null]] as [$rate, $expected]) {
+            $retention->setExactValues(['percentage'=>\App\Support\Exact\Decimal::of($rate)]);
+            $details = HkaIslrRetentionPayload::build($document, $retention)['detallesRetencionISLR'];
+            self::assertSame('0.00', $details['impuestoRetenido']);
+            if ($expected === null) {
+                self::assertArrayNotHasKey('porcentaje', $details);
+            } else {
+                self::assertSame($expected, $details['porcentaje']);
+            }
+        }
+    }
+
     public function test_query_verifies_only_returned_fields_and_stops_at_conflicts():void
     {
         $payload=$this->payload();$remote=HkaIslrRetentionPayload::identity($payload)+array_intersect_key($payload['detallesRetencionISLR'],array_flip(['numeroCompRetencion','fechaEmisionCR','impuestoRetenido']));
@@ -31,6 +68,9 @@ class HkaIslrRetentionTest extends TestCase
         self::assertSame('unknown',$read(['codigo'=>'204','mensaje'=>'No se ha registrado aún ninguna Retención de ISLR a este documento','infoRetencionISLR'=>$remote]));
         self::assertSame('unknown',$read(['codigo'=>'200']));self::assertSame('unknown',$read(['codigo'=>'203','mensaje'=>'Retención no encontrada','validaciones'=>['No se ha aplicado retención previamente por lo que no se puede consultar nada']]));
         foreach(['numeroCompRetencion','fechaEmisionCR','numeroControl'] as $key)self::assertSame('conflict',$read(['codigo'=>'200','infoRetencionISLR'=>array_replace($remote,[$key=>'other'])]));
+        foreach (['6'=>'match', '6.01'=>'conflict', 'n/a'=>'unknown'] as $amount => $status) {
+            self::assertSame($status, $read(['codigo'=>'200', 'infoRetencionISLR'=>array_replace($remote, ['impuestoRetenido'=>(string) $amount])]));
+        }
         unset($remote['impuestoRetenido']);self::assertSame('unknown',$read(['codigo'=>'200','infoRetencionISLR'=>$remote]));
         self::assertNotContains('porcentaje',HkaIslrRetentionPayload::VERIFIED_FIELDS);self::assertNotContains('rifAgenteRetencion',HkaIslrRetentionPayload::VERIFIED_FIELDS);
     }

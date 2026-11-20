@@ -1,60 +1,65 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `documentary_file_offices` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `documentary_file_id` int(10) unsigned NOT NULL
- * - `documentary_office_id` int(10) unsigned NOT NULL
- * - `documentary_action_id` int(10) unsigned NOT NULL DEFAULT '0'
- * - `status` enum('POR DERIVAR','POR RECIBIR','EN PROCESO','FINALIZADO','ARCHIVADO') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'POR DERIVAR'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `office_name` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Nombre de la etapa'
- * - `process_name` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Nombre del tramite'
- * - `documentary_process_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Tramite relacionado'
- * - `complete` int(11) NOT NULL DEFAULT '0' COMMENT 'Define si la etapa esta completa'
- * - `start_date` datetime DEFAULT NULL COMMENT 'Fecha de inicio'
- * - `end_date` datetime DEFAULT NULL COMMENT 'Fecha de finalizacion'
- * - `days` int(10) unsigned DEFAULT '0' COMMENT 'dias para el tramite'
- * - `observation` int(11) NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - documentary_file_id: bigint
+ * - documentary_office_id: bigint
+ * - documentary_action_id: bigint
+ * - status: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - office_name: text
+ * - process_name: text
+ * - documentary_process_id: bigint
+ * - complete: integer
+ * - start_date: timestamp
+ * - end_date: timestamp
+ * - days: bigint
+ * - observation: integer
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `documentary_file_offices` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `documentary_file_id` int(10) unsigned NOT NULL,
-  `documentary_office_id` int(10) unsigned NOT NULL,
-  `documentary_action_id` int(10) unsigned NOT NULL DEFAULT '0',
-  `status` enum('POR DERIVAR','POR RECIBIR','EN PROCESO','FINALIZADO','ARCHIVADO') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'POR DERIVAR',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `office_name` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Nombre de la etapa',
-  `process_name` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Nombre del tramite',
-  `documentary_process_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Tramite relacionado',
-  `complete` int(11) NOT NULL DEFAULT '0' COMMENT 'Define si la etapa esta completa',
-  `start_date` datetime DEFAULT NULL COMMENT 'Fecha de inicio',
-  `end_date` datetime DEFAULT NULL COMMENT 'Fecha de finalizacion',
-  `days` int(10) unsigned DEFAULT '0' COMMENT 'dias para el tramite',
-  `observation` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `documentary_file_offices_documentary_file_id_foreign` (`documentary_file_id`),
-  KEY `documentary_file_offices_documentary_office_id_foreign` (`documentary_office_id`),
-  KEY `documentary_file_offices_documentary_action_id_foreign` (`documentary_action_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('documentary_file_offices', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('documentary_file_id');
+            $table->bigInteger('documentary_office_id');
+            $table->bigInteger('documentary_action_id')->default('0');
+            $table->string('status', 255)->collation('pro9_ci_ai')->default('POR DERIVAR');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->text('office_name')->collation('pro9_ci_ai')->nullable()->comment('Nombre de la etapa');
+            $table->text('process_name')->collation('pro9_ci_ai')->nullable()->comment('Nombre del tramite');
+            $table->bigInteger('documentary_process_id')->default('0')->comment('Tramite relacionado');
+            $table->integer('complete')->default('0')->comment('Define si la etapa esta completa');
+            $table->timestamp('start_date')->nullable()->comment('Fecha de inicio');
+            $table->timestamp('end_date')->nullable()->comment('Fecha de finalizacion');
+            $table->bigInteger('days')->nullable()->default('0')->comment('dias para el tramite');
+            $table->integer('observation');
+            $table->index(['documentary_file_id'], 'documentary_file_offices_documentary_file_id_foreign');
+            $table->index(['documentary_office_id'], 'documentary_file_offices_documentary_office_id_foreign');
+            $table->index(['documentary_action_id'], 'documentary_file_offices_documentary_action_id_foreign');
+        });
+        DB::statement('ALTER TABLE "documentary_file_offices" ADD CONSTRAINT "documentary_file_offices_documentary_file_id_range" CHECK ("documentary_file_id" >= 0)');
+        DB::statement('ALTER TABLE "documentary_file_offices" ADD CONSTRAINT "documentary_file_offices_documentary_office_id_range" CHECK ("documentary_office_id" >= 0)');
+        DB::statement('ALTER TABLE "documentary_file_offices" ADD CONSTRAINT "documentary_file_offices_documentary_action_id_range" CHECK ("documentary_action_id" >= 0)');
+        DB::statement('ALTER TABLE "documentary_file_offices" ADD CONSTRAINT "documentary_file_offices_status_check" CHECK ("status" IN (\'POR DERIVAR\',\'POR RECIBIR\',\'EN PROCESO\',\'FINALIZADO\',\'ARCHIVADO\'))');
+        DB::statement('ALTER TABLE "documentary_file_offices" ADD CONSTRAINT "documentary_file_offices_documentary_process_id_range" CHECK ("documentary_process_id" >= 0)');
+        DB::statement('ALTER TABLE "documentary_file_offices" ADD CONSTRAINT "documentary_file_offices_complete_range" CHECK ("complete" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "documentary_file_offices" ADD CONSTRAINT "documentary_file_offices_days_range" CHECK ("days" BETWEEN 0 AND 4294967295)');
+        DB::statement('ALTER TABLE "documentary_file_offices" ADD CONSTRAINT "documentary_file_offices_observation_range" CHECK ("observation" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `documentary_file_offices`');
+        Schema::dropIfExists('documentary_file_offices');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

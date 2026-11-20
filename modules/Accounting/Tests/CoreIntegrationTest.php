@@ -25,7 +25,7 @@ final class CoreIntegrationTest extends TestCase
     use SourceHistoryIntegrationAssertions;
     use SourceIncidentIntegrationAssertions;
     private static Application $application;
-    private static string $originalTimezone;
+    private static ?\Tests\Support\AccountingPostgresFixture $postgres = null;
     private User $admin;
     private Company $a;
     private Company $b;
@@ -40,70 +40,14 @@ final class CoreIntegrationTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
-        self::$originalTimezone = date_default_timezone_get();
-        if (getenv('ACCOUNTING_ISOLATED_TESTS') !== '1' || getenv('ACCOUNTING_TEST_DATABASE') !== 'accounting_module_test' || getenv('ACCOUNTING_TEST_HOST') !== 'accounting-db') {
-            throw new \RuntimeException('Esta suite exige la base y red aisladas del módulo.');
+        if (getenv('PRO9_POSTGRES_TESTS') !== '1') {
+            self::markTestSkipped('Utilice el ejecutor PostgreSQL temporal aislado.');
         }
-        date_default_timezone_set('America/Caracas');
-        $root = dirname(__DIR__, 3);
-        $app = new Application($root);
-        $config = new Repository(['app' => ['env' => 'testing', 'timezone' => 'America/Caracas'], 'accounting' => ['demo' => true], 'database' => ['default' => 'tenant']]);
-        $app->instance('config', $config);
-        $app->instance('date', new DateFactory());
-        $events = new Dispatcher($app);
-        $app->instance('events', $events);
-        $app->instance('validator', new \Illuminate\Validation\Factory(new \Illuminate\Translation\Translator(new \Illuminate\Translation\ArrayLoader(), 'es'), $app));
-        $manager = new Manager($app);
-        $manager->addConnection(['driver' => 'mysql', 'host' => 'accounting-db', 'port' => 3306, 'database' => 'accounting_module_test', 'username' => getenv('ACCOUNTING_TEST_USERNAME'), 'password' => getenv('ACCOUNTING_TEST_PASSWORD'), 'charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'prefix' => '', 'strict' => true], 'tenant');
-        $manager->getDatabaseManager()->setDefaultConnection('tenant');
-        $manager->setEventDispatcher($events);
-        $manager->setAsGlobal();
-        $manager->bootEloquent();
-        $app->instance('db', $manager->getDatabaseManager());
-        $tenant = new class extends TenancyConnection
-        {
-            public function __construct()
-            {
-            }
-            public function tenantName(): string
-            {
-                return 'tenant';
-            }
-        };
-        $app->instance(TenancyConnection::class, $tenant);
-        $app->singleton(CompanyContext::class, fn() => new CompanyContext());
-        Facade::clearResolvedInstances();
-        Facade::setFacadeApplication($app);
-        self::$application = $app;
-        $schema = DB::getSchemaBuilder();
-        if (!$schema->hasTable('users')) {
-            $schema->create('users', function ($t) {
-                $t->increments('id');
-                $t->string('name');
-                $t->string('email')->unique();
-                $t->string('password');
-                $t->string('type')->default('admin');
-                $t->boolean('active')->default(true);
-                $t->boolean('locked')->default(false);
-                $t->string('api_token')->nullable();
-                $t->timestamps();
-            });
-        }
-        $schema->disableForeignKeyConstraints();
-        foreach (DB::select('SHOW TABLES') as $record) {
-            $table = array_values((array) $record)[0];
-            if (str_starts_with($table, 'accounting_')) {
-                $schema->drop($table);
-            }
-        }
-        $schema->enableForeignKeyConstraints();
-        NativeSourceTestSchema::create($schema);
-        foreach (glob(dirname(__DIR__) . '/Database/Migrations/*.php') as $file) {
-            (require $file)->up();
-        }
-        if (!DB::table('users')->where('email', 'contabilidad-test@example.invalid')->exists()) {
-            DB::table('users')->insert(['name' => 'Contador de prueba aislada', 'email' => 'contabilidad-test@example.invalid', 'password' => password_hash('Fictitious-Accounting-Test-Only', PASSWORD_BCRYPT), 'type' => 'admin', 'active' => true, 'locked' => false, 'api_token' => str_repeat('t', 60), 'created_at' => now(), 'updated_at' => now()]);
-        }
+        self::$postgres = new \Tests\Support\AccountingPostgresFixture();
+        self::$application = self::$postgres->start();
+        DB::table('users')->insert(['name' => 'Contador de prueba aislada', 'email' => 'contabilidad-test@example.invalid',
+            'password' => password_hash('Fictitious-Accounting-Test-Only', PASSWORD_BCRYPT), 'type' => 'admin',
+            'active' => true, 'locked' => false, 'api_token' => str_repeat('t', 60), 'created_at' => now(), 'updated_at' => now()]);
     }
     protected function setUp(): void
     {
@@ -122,8 +66,8 @@ final class CoreIntegrationTest extends TestCase
     }
     public static function tearDownAfterClass(): void
     {
-        date_default_timezone_set(self::$originalTimezone);
-        parent::tearDownAfterClass();
+        try { self::$postgres?->close(); }
+        finally { self::$postgres = null; parent::tearDownAfterClass(); }
     }
     protected function tearDown(): void
     {
@@ -202,6 +146,34 @@ final class CoreIntegrationTest extends TestCase
         $line = JournalLine::where('journal_entry_id', $draft->id)->firstOrFail();
         $this->expectException(\Illuminate\Database\QueryException::class);
         DB::table('accounting_journal_lines')->where('id', $line->id)->update(['journal_entry_id' => $posted->id, 'position' => 99]);
+    }
+    public function test_database_rejects_moving_a_posted_line_to_a_draft_entry(): void
+    {
+        $posted = $this->approved();
+        app(EntryService::class)->post($posted->id, $posted->version, $this->admin->id, 'posted-move-origin-001');
+        $draft = $this->draft();
+        $line = JournalLine::where('journal_entry_id', $posted->id)->firstOrFail();
+        try {
+            DB::transaction(fn() => DB::table('accounting_journal_lines')->where('id', $line->id)
+                ->update(['journal_entry_id' => $draft->id, 'position' => 99]));
+            $this->fail('El padre original contabilizado también debe proteger la partida.');
+        } catch (\Illuminate\Database\QueryException $error) {
+            $this->assertSame('45000', $error->errorInfo[0]);
+        }
+        $this->assertSame($posted->id, DB::table('accounting_journal_lines')->where('id', $line->id)->value('journal_entry_id'));
+    }
+
+    public function test_accounting_actor_references_accept_the_same_bigint_range_as_users(): void
+    {
+        $actor = 4294967296;
+        DB::table('users')->insert(['id' => $actor, 'name' => 'Actor bigint ficticio', 'email' => 'bigint-accounting@example.invalid',
+            'password' => 'test-only', 'created_at' => now(), 'updated_at' => now()]);
+        $entry = app(EntryService::class)->create(['accounting_date' => now('America/Caracas')->format('Y-m-d'),
+            'concept' => 'Referencia bigint aislada', 'lines' => $this->draft()->lines->map(fn($line) => [
+                'account_id' => $line->account_id, 'debit' => $line->debit, 'credit' => $line->credit,
+            ])->all()], $actor);
+        $this->assertSame($actor, $entry->created_by);
+        $this->assertSame($actor, (int) DB::table('accounting_audit_events')->where('resource_id', $entry->id)->value('user_id'));
     }
     public function test_ledger_page_balance_includes_previous_pages(): void
     {
@@ -1083,7 +1055,7 @@ final class CoreIntegrationTest extends TestCase
         foreach (['update', 'delete'] as $action) {
             try {
                 $query = DB::table('accounting_period_reviews')->where('id', $closed['review_id']);
-                $action === 'update' ? $query->update(['reason' => 'Cambio no autorizado']) : $query->delete();
+                DB::transaction(fn() => $action === 'update' ? $query->update(['reason' => 'Cambio no autorizado']) : $query->delete());
                 $this->fail('La revisión conservada no permite ' . $action . '.');
             } catch (\Illuminate\Database\QueryException $error) {
                 $this->assertSame('45000', $error->errorInfo[0]);
@@ -1368,7 +1340,7 @@ final class CoreIntegrationTest extends TestCase
         $fixture = $this->annualFixture();
         $prepared = $this->annualPrepared($fixture);
         try {
-            DB::table('accounting_year_closings')->where('id', $prepared['id'])->update(['proposal' => json_encode(['changed' => true])]);
+            DB::transaction(fn() => DB::table('accounting_year_closings')->where('id', $prepared['id'])->update(['proposal' => json_encode(['changed' => true])]));
             $this->fail('La propuesta anual no se reescribe.');
         } catch (\Illuminate\Database\QueryException $error) {
             $this->assertSame('45000', $error->errorInfo[0]);
@@ -1376,6 +1348,30 @@ final class CoreIntegrationTest extends TestCase
         app(CompanyContext::class)->set($this->b);
         $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
         app(\Modules\Accounting\Services\YearClosingService::class)->show($prepared['id']);
+    }
+
+    public function test_postgresql_annual_guards_compare_json_values_and_preserve_null_and_state_rules(): void
+    {
+        $prepared = $this->annualPrepared($this->annualFixture());
+        $query = fn() => DB::table('accounting_year_closings')->where('id', $prepared['id']);
+        $basis = $query()->value('basis');
+        // Same JSON values, different object key order/whitespace: no rewrite of evidence.
+        $query()->update(['basis' => DB::raw('(SELECT json_object_agg(j.key,j.value ORDER BY j.key DESC) FROM json_each(accounting_year_closings.basis) AS j)')]);
+        $this->assertEquals(
+            json_decode($basis, true, 512, JSON_THROW_ON_ERROR),
+            json_decode($query()->value('basis'), true, 512, JSON_THROW_ON_ERROR));
+        $query()->update(['posted_snapshot' => '{"first":1,"second":2}']);
+        $query()->update(['posted_snapshot' => '{ "second": 2.0, "first": 1.0 }']);
+        foreach ([['posted_snapshot' => null], ['status' => 'posted'], ['basis' => '{"altered":true}']] as $change) {
+            try {
+                DB::transaction(fn() => $query()->update($change));
+                $this->fail('La equivalencia JSON no permite borrar evidencia ni saltar estados.');
+            } catch (\Illuminate\Database\QueryException $error) {
+                $this->assertSame('45000', $error->errorInfo[0]);
+            }
+        }
+        $query()->update(['status' => 'cancelled']);
+        $this->assertSame('cancelled', $query()->value('status'));
     }
 
     public function test_annual_approval_keeps_separate_preparer_and_reviewer(): void

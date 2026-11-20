@@ -94,7 +94,7 @@ class SupplyController extends Controller
                 'message' => 'Insumo eliminado con éxito'
             ];
         } catch (Exception $e) {
-            return ($e->getCode() == '23000')
+            return (\App\Database\SqlErrors::reference($e))
                 ? ['success' => false, 'message' => 'El insumo está siendo usado por otros registros, no se puede eliminar']
                 : ['success' => false, 'message' => 'Error inesperado, no se pudo eliminar el insumo'];
         }

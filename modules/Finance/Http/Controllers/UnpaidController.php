@@ -51,6 +51,8 @@ class UnpaidController extends Controller
 
     protected $sale_note;
     protected $company;
+    public $document;
+    public $configuration;
 
     public function index()
     {
@@ -150,6 +152,12 @@ class UnpaidController extends Controller
     }
 
     public function toPrint($external_id, $type, $format = 'a4') {
+        return \App\Support\Exact\ReadSnapshot::run(DB::connection('tenant'), function () use ($external_id,$type,$format) {
+            return $this->printOutstandingWithinSnapshot($external_id,$type,$format);
+        });
+    }
+
+    private function printOutstandingWithinSnapshot($external_id, $type, $format) {
         if (in_array($type, ['sale', 'sale_note'], true)) {
             $saleNote = SaleNote::where('external_id', $external_id)->withoutEagerLoads()->firstOrFail();
             $this->authorizeOutstandingPrint($saleNote);
@@ -184,6 +192,15 @@ class UnpaidController extends Controller
     }
 
     public function createPdf($sale_note = null, $format_pdf = null, $filename = null) {
+        $record=$sale_note ?? $this->sale_note;
+        if (!$record instanceof Document && !$record instanceof SaleNote) throw new \InvalidArgumentException('Documento por cobrar no soportado.');
+        return \App\Support\Exact\ReadSnapshot::run($record->getConnection(), function () use ($record,$format_pdf,$filename) {
+            $record->unsetRelation('payments');
+            $this->renderOutstandingPdf($record,$format_pdf,$filename);
+        });
+    }
+
+    private function renderOutstandingPdf($sale_note, $format_pdf, $filename) {
 
         ini_set("pcre.backtrack_limit", "5000000");
         $template = new Template();
@@ -205,11 +222,11 @@ class UnpaidController extends Controller
             if(config('tenant.enabled_template_ticket_80')) $width = 76;
 
             $company_logo      = ($this->company->logo) ? 40 : 0;
-            $company_name      = (strlen($this->company->name) / 20) * 10;
-            $company_address   = (strlen($this->document->establishment->address) / 30) * 10;
+            $company_name      = (strlen((string)$this->company->name) / 20) * 10;
+            $company_address   = (strlen((string)$this->document->establishment->address) / 30) * 10;
             $company_number    = $this->document->establishment->telephone != '' ? '10' : '0';
-            $customer_name     = strlen($this->document->customer->name) > '25' ? '10' : '0';
-            $customer_address  = (strlen($this->document->customer->address) / 200) * 10;
+            $customer_name     = strlen((string)$this->document->customer->name) > '25' ? '10' : '0';
+            $customer_address  = (strlen((string)$this->document->customer->address) / 200) * 10;
             $p_order           = $this->document->purchase_order != '' ? '10' : '0';
 
             $total_exportation = $this->document->total_exportation != '' ? '10' : '0';
@@ -220,7 +237,7 @@ class UnpaidController extends Controller
             $discount_global = 0;
             $extra_by_item_description = 0;
             foreach ($this->document->items as $it) {
-                if(strlen($it->item->description)>100){
+                if(strlen((string)$it->item->description)>100){
                     $extra_by_item_description +=24;
                 }
                 if ($it->discounts) {
@@ -250,7 +267,7 @@ class UnpaidController extends Controller
                     $total_exportation +
                     $total_exonerated +
                     $extra_by_item_description +
-                    $total_taxed],
+                    $total_taxed + 6 + ($format_pdf === 'ticket_58' ? 45 + $quantity_rows * 6 + \App\Support\Exact\PdfQuantities::extraHeight58($this->document->items) : 0)],
                 'margin_top' => 2,
                 'margin_right' => 5,
                 'margin_bottom' => 0,

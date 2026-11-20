@@ -1,29 +1,29 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-/** Familias de impuestos de referencia para instalaciones nuevas.
- * - `id` varchar(16) NOT NULL, código de familia
- * - `description` varchar(255) NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: varchar(16)
+ * - description: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_taxes_types` (
-  `id` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_taxes_types', function (Blueprint $table) {
+            $table->string('id', 16)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->primary(['id']);
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_taxes_types`');
+        Schema::dropIfExists('cat_taxes_types');
     }
 };
-// ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+// ######### FIN CAMBIO POSTGRESQL 17

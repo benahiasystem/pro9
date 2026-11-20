@@ -69,6 +69,7 @@ class PadronController extends Controller
 
     public function charges_data()
     {
+        abort_unless(auth()->check() && auth()->user()->type==='admin',403);
         try{
 
             $history = ChargePadron::create([
@@ -101,31 +102,10 @@ class PadronController extends Controller
             $fin = str_replace(DIRECTORY_SEPARATOR, '/', public_path("padron_extract".DIRECTORY_SEPARATOR.""));
             $data = $this->extract($ini, $fin);
 
-            //LOAD DATA TXT TO MYSQL
-            DB::connection('tenant')->table('padrones')->truncate();
-           // $file = public_path();
-            $file =  str_replace(DIRECTORY_SEPARATOR, '/', public_path("padron_extract".DIRECTORY_SEPARATOR."padron_reducido_ruc.txt"));
-            $query = "LOAD DATA LOCAL INFILE '" . $file . "'
-            INTO TABLE padrones FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n' IGNORE 1 LINES
-                    (ruc,
-                    nombre_razon_social,
-                    estado_contribuyente,
-                    condicion_domicilio,
-                    ubigeo,
-                    tipo_via,
-                    codigo_zona,
-                    tipo_zona,
-                    numero,
-                    interior,
-                    lote,
-                    departamento,
-                    manzana,
-                    kilometro,
-                    @status,
-                    @created_at,
-                    @updated_at)
-            SET status=1,created_at=NOW(),updated_at=null";
-            DB::connection('tenant')->getpdo()->exec($query);
+            // ########## INICIO CAMBIO POSTGRESQL 17
+            $file=public_path('padron_extract/padron_reducido_ruc.txt');
+            app(\Modules\Padron\Services\DelimitedPadronImporter::class)->import(DB::connection('tenant'),$file);
+            // ######### FIN CAMBIO POSTGRESQL 17
 
 
             $history->state = 1;
@@ -157,34 +137,12 @@ class PadronController extends Controller
 
     public function demo()
     {
+        abort_unless(auth()->check() && auth()->user()->type==='admin',403);
 
         try {
-            DB::connection('tenant')->table('padrones')->truncate();
-            //$file = public_path();
-           
-            $file =  str_replace(DIRECTORY_SEPARATOR, '/', public_path("padron_extract".DIRECTORY_SEPARATOR."demo.txt"));
-            $query = "LOAD DATA LOCAL INFILE '" . $file . "'
-            INTO TABLE padrones FIELDS TERMINATED BY '|' LINES TERMINATED BY '\n' IGNORE 1 LINES
-                    (ruc,
-                    nombre_razon_social,
-                    estado_contribuyente,
-                    condicion_domicilio,
-                    ubigeo,
-                    tipo_via,
-                    codigo_zona,
-                    tipo_zona,
-                    numero,
-                    interior,
-                    lote,
-                    departamento,
-                    manzana,
-                    kilometro,
-                    @status,
-                    @created_at,
-                    @updated_at)
-            SET status=1,created_at=NOW(),updated_at=null";
-            DB::connection('tenant')->getPdo()->exec($query);
-    
+            // ########## INICIO CAMBIO POSTGRESQL 17
+            app(\Modules\Padron\Services\DelimitedPadronImporter::class)->import(DB::connection('tenant'),public_path('padron_extract/demo.txt'));
+            // ######### FIN CAMBIO POSTGRESQL 17
             return 'ok';
         }
         catch(\PDOException $Exception ) {

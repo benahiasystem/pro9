@@ -144,6 +144,14 @@ test('a replacement draft cannot display the previous draft paid amount while lo
     instance.$destroy()
 })
 
+test('large exact VES invoice amounts preserve a one cent balance', () => {
+    const instance = view({document:{currency_type_id:'VES', total_payable:'9007199254740993.13', payments:[]},
+        quote:{principal_applied:'9007199254740993.12', tax_in_document_currency:'0', balance:'0.01'}})
+    assert.equal(value(instance, 'invoice-paid'), 'Bs. 9007199254740993.12')
+    assert.equal(value(instance, 'invoice-missing'), 'Bs. 0.01')
+    instance.$destroy()
+})
+
 test('large exact amounts and a fractional conversion keep their cents', async () => {
     const instance = view({document:{currency_type_id:'VES', total_payable:'9007199254740993.13', payments:[]},
         quote:{principal_applied:'9007199254740993.12', tax_in_document_currency:'0', balance:'0.01'}})

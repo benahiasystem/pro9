@@ -5,7 +5,7 @@ import { exactAmount, exactSnapshot, exactValue } from "./exchange-rate-math"
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 // ########## INICIO CAMBIO AFECTACIÓN IVA
 // ######## INICIO CALCULOS EXACTOS SAB ########
-function calculateRowItem(old, currency, rate, pigv = '0.16', exportation = false) {
+function calculateRowItem(old, currency, rate, pigv = '0.16', exportation = false, initialQuantity = null) {
 // ######### FIN CAMBIO AFECTACIÓN IVA
     if (!(exportation ? ['EXP'] : ['10', '20']).includes(old.affectation_igv_type_id)) throw new Error('Seleccione una afectación de IVA vigente: Gravado o Exento.')
     const inputs = old.calculation_snapshot?.inputs || {}
@@ -22,8 +22,9 @@ function calculateRowItem(old, currency, rate, pigv = '0.16', exportation = fals
     if (sourceCurrency !== currency) price = sourceCurrency === 'VES' ? price.dividedBy(rate) : price.times(rate)
     const quantity = quantityInput
         ? exactAmount(quantityInput.amount).dividedBy(quantityInput.unit_price)
-        : unchangedQuantity
-            ? exactValue(old, 'quantity') : exactAmount(old.quantity)
+        : initialQuantity !== null
+            ? exactAmount(initialQuantity)
+            : unchangedQuantity ? exactValue(old, 'quantity') : exactAmount(old.quantity)
     const percentage = old.affectation_igv_type_id === '10' ? exactAmount(pigv).times(100) : exactAmount(0)
     const unit = price.dividedBy(exactAmount(1).plus(percentage.dividedBy(100)))
     const gross = unit.times(quantity)
@@ -56,7 +57,7 @@ function calculateRowItem(old, currency, rate, pigv = '0.16', exportation = fals
     const result = {...old, item_id: old.item.id, currency_type_id: currency, discounts, charges: lineCharges,
         quantity_input: quantityInput, price_input: priceInput,
         price_type_id: '01', record_id: old.record_id || old.id || null,
-        calculation_snapshot: exactSnapshot(values, {quantity: String(old.quantity), unit_price: String(old.unit_price ?? old.item.unit_price), quantity_input: quantityInput, price_input: priceInput}),
+        calculation_snapshot: exactSnapshot(values, {quantity: initialQuantity !== null ? quantity.decimal() : String(old.quantity), unit_price: String(old.unit_price ?? old.item.unit_price), quantity_input: quantityInput, price_input: priceInput}),
         data_item_lot_group: getDataItemLotGroup(old)}
     for (const [field, value] of Object.entries(values)) result[field] = value.decimal()
     for (const field of ['total_value', 'total_base_igv', 'total_igv', 'total_taxes', 'total']) result[field + '_without_rounding'] = result[field]

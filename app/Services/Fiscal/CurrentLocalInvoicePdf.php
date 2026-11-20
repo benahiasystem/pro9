@@ -27,8 +27,7 @@ final class CurrentLocalInvoicePdf
             return (new Facturalo())->createPdf($fresh, 'invoice', $format, 'string');
         };
         $connection = $document->getConnection();
-        // Rendering inside a caller's transaction retains its isolation/ownership.
-        return $connection->transactionLevel() > 0 ? $read() : \App\Support\Exact\ReadSnapshot::run($connection, $read);
+        return \App\Support\Exact\ReadSnapshot::run($connection, $read);
     }
 }
 // ######## FIN PRESENTACION FACTURA A4/A5 ########

@@ -9,7 +9,7 @@ module.exports = function auditVueTemplate(source, file, base, hooks) {
     function walk(node) {
         if (!node || visited.has(node)) return
         visited.add(node)
-        if (node.type === 2) hooks.analyze(node.expression, file, offset(node), '{template}', true)
+        if (node.type === 2) hooks.analyze(node.expression, file, offset(node), '{template}', true, 'vue_text_interpolation')
         if (node.type === 1) {
             const bound = [...(node.attrs || []), ...(node.props || []), ...(node.dynamicAttrs || [])]
             for (const attr of Object.values(node.rawAttrsMap || Object.fromEntries((node.attrsList || []).map(attr=>[attr.name, attr])))) {

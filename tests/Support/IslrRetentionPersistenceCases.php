@@ -8,6 +8,47 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 trait IslrRetentionPersistenceCases
 {
+    public function test_invoice_ticket_rounds_retention_forecasts_from_their_original_fractions(): void
+    {
+        [$db, $app, $input] = $this->bootIslrFixture();
+        $db->table('companies')->update(['fiscal_emission_mode' => 'free_form']);
+        $input['payment_condition_id'] = '02';
+        $input['payments'] = [];
+        $input['fee'] = [['date' => '2026-11-10', 'currency_type_id' => 'VES', 'amount' => '0.05']];
+        $input['islr_retention_prevision']['percentage'] = '12';
+        $input['islr_retention_prevision']['subtrahend'] = '0';
+        $input['items'][0] = array_replace($input['items'][0], [
+            'quantity' => '0.333333333333',
+            'quantity_input' => ['unit_price' => '3', 'amount' => '1'],
+            'unit_price' => '0.144999999988',
+            'price_input' => ['amount' => '0.12499999999', 'currency_type_id' => 'VES', 'includes_iva' => false],
+        ]);
+
+        $document = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
+        foreach (['iva_retention_prevision', 'islr_retention_prevision'] as $field) {
+            $forecast = $document->fiscal_data->{$field};
+            self::assertSame('0.005', $forecast['amount']);
+            self::assertTrue(\App\Support\Exact\Decimal::readRequired($forecast, 'amount')->isEqualTo('0.0049999999996'));
+        }
+
+        $directory = sys_get_temp_dir().'/'.$this->database;
+        config(['view.compiled' => $directory.'/retention-ticket-views', 'view.paths' => [base_path('resources/views')]]);
+        mkdir(config('view.compiled'), 0777, true);
+        $app->register(\Illuminate\View\ViewServiceProvider::class);
+        $pdf = (new \App\CoreFacturalo\Facturalo())->createPdf($document, 'invoice', 'ticket', 'string');
+        self::assertStringStartsWith('%PDF-', $pdf);
+        $path = $directory.'/retention-forecast.pdf';
+        file_put_contents($path, $pdf);
+        try {
+            $text = new \Symfony\Component\Process\Process(['pdftotext', '-layout', $path, '-']);
+            $text->mustRun();
+            self::assertMatchesRegularExpression('/Retención IVA prevista(?:\h*\(informativa\))?\s+0\.00\h*$/m', $text->getOutput());
+            self::assertMatchesRegularExpression('/Retención ISLR prevista(?:\h*\(informativa\))?\s+0\.00\h*$/m', $text->getOutput());
+        } finally {
+            unlink($path);
+        }
+    }
+
     public function test_free_form_cash_collection_respects_both_retention_forecasts(): void
     {
         [$db,$app,$input,$state]=$this->bootIslrFixture();
@@ -50,7 +91,7 @@ trait IslrRetentionPersistenceCases
         // ISLR authority does not require SPE or authority to withhold IVA.
         FiscalProfileService::store(Person::findOrFail($input['customer_id']),SpeProfiles::profile(['rif'=>'V-12345678-9','nature'=>'natural','personal_firm'=>true]));
         $input['payments'][0]['payment']=202;
-        $input['payments'][0]['financial_intermediation']='financial_institution';
+        $input['payments'][0]['financial_intermediation']='none';
         $input['iva_retention_prevision']=['enabled'=>true];
         $input['islr_retention_prevision']=['enabled'=>true,'concept_id'=>'055','percentage'=>4,'subtrahend'=>2,'currency_type_id'=>'VES','exchange_rate'=>'1.00000000',
             'fiscal_context'=>['concept_basis'=>'DEMO comprobante acreditado','evidence_reference'=>'DEMO soporte privado']];
@@ -297,7 +338,9 @@ trait IslrRetentionPersistenceCases
     public function test_islr_different_rates_declared_authority_and_net_capability():void
     {
         [$db,$app,$input,$state]=$this->bootIslrFixture();
-        unset($input['iva_retention_prevision']);$input['currency_type_id']='USD';$input['payments'][0]['payment_method_type_id']='10';$input['exchange_rate_sale']='10.12345678';
+        $bank=$this->enableUsdRetentionBank($db);
+        $input['payments'][0]['financial_intermediation']='financial_institution';$input['payments'][0]['payment_destination_id']=$bank;
+        unset($input['iva_retention_prevision']);$input['currency_type_id']='USD';$input['payments'][0]['payment_method_type_id']='13';$input['exchange_rate_sale']='10.12345678';
         $input['payments'][0]['payment']=220;$input['islr_retention_prevision']['percentage']=4;
         $doc=(new Facturalo)->save($input)->getDocument()->fresh();
         $row=IslrRetentionService::store($doc,$this->islrVoucher($doc,['base'=>2000,'percentage'=>4,'subtrahend'=>20,'amount'=>60,'exchange_rate'=>'20.00000000']));
@@ -307,6 +350,25 @@ trait IslrRetentionPersistenceCases
         $profile=SpeProfiles::profile(['rif'=>'V-12345678-9','nature'=>'natural','personal_firm'=>true,'spe'=>false,'iva_agent_basis'=>'none']);FiscalProfileService::store(Person::findOrFail($input['customer_id']),$profile);
         $p=IslrRetentionService::proposal($input['customer_id'],'2026-09-10',200,'VES',$input['islr_retention_prevision']);self::assertTrue($p['eligible']);
     }
+    public function test_islr_conversion_keeps_frozen_fiscal_currency_through_submission_and_reconciliation(): void
+    {
+        [$db, $app, $input, $state] = $this->bootIslrFixture();
+        $document = (new Facturalo)->save($input)->getDocument()->fresh();
+        self::assertSame('VES', $document->currency_type_id);
+        self::assertSame('VES', $document->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento']['moneda']);
+
+        $row = IslrRetentionService::store($document, $this->islrVoucher($document, [
+            'base'=>'2', 'subtrahend'=>'0.03', 'amount'=>'0.05', 'currency_type_id'=>'USD', 'exchange_rate'=>'100.00000000',
+        ]))->fresh();
+        $operation = $row->islr_operations()->firstOrFail();
+        self::assertTrue($row->exactValue('amount')->isEqualTo('0.05'));
+        self::assertSame('100.00000000', $row->exchange_rate);
+        self::assertSame('25', (string) $document->fresh()->exactBalance());
+        self::assertSame('confirmed', $operation->status);
+        self::assertSame('5.00', $operation->payload['detallesRetencionISLR']['impuestoRetenido']);
+        self::assertSame('5.00', $state->remote['ISLR'.$document->control_number]['impuestoRetenido']);
+    }
+
     public function test_islr_voucher_creation_upload_scope_and_activation_savepoint():void
     {
         [$db,$app,$input,$state]=$this->bootIslrFixture();
@@ -395,7 +457,7 @@ trait IslrRetentionPersistenceCases
         $row=DocumentReceivedRetention::findOrFail($result[0]['id']);
         $reverse=['action'=>'reverse','retention_id'=>$row->id,'input'=>['operation_key'=>(string)Str::uuid(),'reason'=>'Corrección concurrente']];
         $result=$this->runFiscalWorkers($doc->id,'iva-mutations',[$reverse,$reverse]);self::assertCount(2,array_filter($result,fn($r)=>isset($r['id'])));self::assertEquals(30,$doc->fresh()->balance);
-        $payment=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','original_amount'=>30,'currency_type_id'=>'VES','exchange_rate'=>1,'operation_key'=>(string)Str::uuid(),'financial_intermediation'=>'financial_institution'];
+        $payment=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','original_amount'=>30,'currency_type_id'=>'VES','exchange_rate'=>1,'operation_key'=>(string)Str::uuid(),'financial_intermediation'=>'none'];
         $voucher=$this->islrVoucher($doc);
         $result=$this->runFiscalWorkers($doc->id,'iva-mutations',[['action'=>'register','input'=>$voucher],['action'=>'payment','input'=>$payment]]);
         self::assertCount(1,array_filter($result,fn($r)=>isset($r['id'])));self::assertGreaterThanOrEqual(0,$doc->fresh()->balance);

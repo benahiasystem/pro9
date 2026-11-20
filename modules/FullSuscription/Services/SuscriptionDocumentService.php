@@ -15,6 +15,7 @@ use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
 use Illuminate\Support\Str;
 use App\Services\ExchangeRates\TenantExchangeRateService;
+use App\Services\Fiscal\FiscalAmounts;
 use Modules\FullSuscription\Models\Tenant\UserRelSuscriptionPlan;
 
 trait SuscriptionDocumentService
@@ -89,7 +90,9 @@ trait SuscriptionDocumentService
         ]), null)->first();
 
         // ######## INICIO API BCV ########
-        $service = app(TenantExchangeRateService::class)->exchange(now()->format('Y-m-d'));
+        $issuedAt = now();
+        $issueDate = $issuedAt->toDateString();
+        $service = app(TenantExchangeRateService::class)->exchange($issueDate);
         // ######## FIN API BCV ########
 
         return [
@@ -112,13 +115,13 @@ trait SuscriptionDocumentService
             'number'                  => '#',
             'fiscal_environment'            => $fiscal_environment,
             'state_type_id'           => '01',
-            'date_of_issue'           => now()->format('Y-m-d'),
-            'time_of_issue'           => now()->format('H:i:s'),
+            'date_of_issue'           => $issueDate,
+            'time_of_issue'           => $issuedAt->toTimeString(),
             'customer_id'             => $customer->id,
             'customer'                => PersonInput::set($customer->id),
             'invoice'                 => [
                 'operation_type_id' => '0101',
-                'date_of_due'       => now()->format('Y-m-d'),
+                'date_of_due'       => $issueDate,
             ],
             'exchange_rate_sale'      => $service['sale'],
             'currency_type_id'        => $currency,
@@ -154,6 +157,9 @@ trait SuscriptionDocumentService
 
         foreach ($items as $row) {
             $item = Item::find($row->item_id);
+            if ($item->lots_enabled || $item->series_enabled) {
+                FiscalAmounts::error('items', 'El producto de suscripción requiere seleccionar lotes o seriales antes de facturarlo.');
+            }
             $rowItem = $row->item ?? null;
 
             $_items[] = [
@@ -168,7 +174,7 @@ trait SuscriptionDocumentService
                     'presentation'             => optional($rowItem)->presentation ?? [],
                     'is_set'                   => $item->is_set,
                     'lots'                     => [],
-                    'IdLoteSelected'           => false,
+                    'IdLoteSelected'           => null,
                     'model'                    => $item->model,
                     'sanitary'                 => $item->sanitary,
                     'date_of_due'              => !empty($item->date_of_due) ? $item->date_of_due->format('Y-m-d') : null,

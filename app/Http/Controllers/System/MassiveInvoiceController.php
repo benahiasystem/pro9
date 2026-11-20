@@ -241,7 +241,8 @@ class MassiveInvoiceController extends Controller
         $query = MassiveInvoice::query();
 
         if ($request->month) {
-            $query->whereRaw('DATE_FORMAT(fecha_emision, "%Y-%m") = ?', [$request->month]);
+            $month = \Carbon\Carbon::createFromFormat('!Y-m', $request->month);
+            $query->where('fecha_emision', '>=', $month->format('Y-m-d'))->where('fecha_emision', '<', $month->copy()->addMonth()->format('Y-m-d'));
         }
 
         if ($request->date) {

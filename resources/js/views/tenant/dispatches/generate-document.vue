@@ -474,7 +474,7 @@ import IgtfPaymentFields from "@views/documents/partials/igtf_fields.vue";
 import ReceiptCurrencyFields from "@components/ReceiptCurrencyFields.vue";
 import {paymentConditionPayload, suggestInstallments, suggestRemainingPayment} from "../../../helpers/document-creation";
 import {commercialTotals} from "../../../helpers/exact-commercial";
-import {exactAmount, exactSum, normalizeExchangeRate} from "../../../helpers/exchange-rate-math";
+import {exactAmount, exactSum, exactValue, normalizeExchangeRate} from "../../../helpers/exchange-rate-math";
 import {defaultCashForCurrency, paymentValidationMessage} from "../../../helpers/payment-classification";
 
 export default {
@@ -598,6 +598,9 @@ export default {
             if(this.document.payment_condition_id === '02' && !this.document.fee.length) {
                 this.clickAddFee()
             }
+            if (this.document.document_type_id === '01' && this.document.has_retention) {
+                this.changeRetention();
+            }
         },
         markDefaultReceiptEdited(row) {
             if (this.automaticReceipt && this.automaticReceipt.row === row) this.automaticReceipt = null;
@@ -687,6 +690,23 @@ export default {
 
         },
         changeRetention() {
+            if (this.document.document_type_id === '01' && this.document.has_retention) {
+                const base = this.document.total;
+                let percentage;
+                let amount;
+                try {
+                    percentage = exactAmount(this.configuration.igv_retention_percentage).dividedBy('100').final(5);
+                    amount = exactAmount(base).times(percentage).final(2);
+                } catch (_) {
+                    this.document.has_retention = false;
+                    this.$message.error('No se pudo calcular la retención. Revise el porcentaje configurado y el importe de la factura.');
+                }
+                if (this.document.has_retention) {
+                    this.document.retention = {base, code: '62', amount, percentage};
+                    this.setTotalPendingAmountRetention(amount);
+                    return;
+                }
+            }
 
             if (this.document.has_retention) {
 
@@ -718,6 +738,13 @@ export default {
             this.calculateFee()
         },
         setTotalPendingAmountRetention(amount) {
+            if (this.document.document_type_id === '01') {
+                this.document.total_pending_payment = ['02', '03'].includes(this.document.payment_condition_id)
+                    ? exactAmount(this.document.total).minus(amount).decimal()
+                    : 0;
+                this.calculateAmountToPayments();
+                return;
+            }
 
             //monto neto pendiente aplica si la condicion de pago es credito
             this.form.total_pending_payment = ['02', '03'].includes(this.form.payment_condition_id) ? this.form.total - amount : 0
@@ -766,6 +793,7 @@ export default {
                 total_taxes: 0,
                 total_value: 0,
                 total: 0,
+                total_pending_payment: 0,
                 operation_type_id: null,
                 date_of_due: moment().format("YYYY-MM-DD"),
                 delivery_date: moment().format("YYYY-MM-DD"),
@@ -824,7 +852,11 @@ export default {
         },
         onCalculateTotals() {
             Object.assign(this.document, commercialTotals(this.document));
-            if (this.document.payment_condition_id === '02') suggestInstallments(this.document);
+            if (this.document.document_type_id === '01' && this.document.has_retention) {
+                this.changeRetention();
+            } else if (this.document.payment_condition_id === '02') {
+                suggestInstallments(this.document);
+            }
         },
         setTotalDefaultPayment() {
             if (this.document.payments.length > 0) {
@@ -919,9 +951,15 @@ export default {
                     this.axiosError(error);
                 });
         },
-        onGetItems(item) {
+        onGetItems(item, dispatchLines = []) {
             const affectationId = item.sale_affectation_igv_type_id || '10';
             const affectation = (this.affectation_igv_types || []).find(row => row.id === affectationId) || this.affectation_igv_type;
+            const invoice = this.document?.document_type_id === '01';
+            const sourceLines = dispatchLines.filter(line => String(line.item_id) === String(item.id));
+            const quantity = sourceLines.length
+                ? exactSum(sourceLines.map(line => invoice ? exactValue(line, 'quantity') : line.quantity))
+                : null;
+            const price = invoice && item.sale_unit_price_exact ? item.sale_unit_price_exact : String(item.sale_unit_price);
             const it = {
                 IdLoteSelected: null,
                 affectation_igv_type: affectation,
@@ -934,14 +972,14 @@ export default {
 
 
                 input_unit_price_value: item.sale_unit_price,
-                price_input: {amount: String(item.sale_unit_price), currency_type_id: item.currency_type_id, includes_iva: !!item.has_igv},
-                item: item,
+                price_input: {amount: price, currency_type_id: item.currency_type_id, includes_iva: !!item.has_igv},
+                item: {...item, unit_price: item.sale_unit_price},
                 item_id: item.id,
                 item_unit_type_id: null,
                 item_unit_types: [],
                 lots_group: [],
 
-                quantity: item.quantity,
+                quantity: quantity?.decimal() ?? item.quantity,
                 suggested_price: 0,
 
                 unit_price: item.sale_unit_price,
@@ -952,7 +990,9 @@ export default {
                 it,
                 this.currencyTypeIdActive,
                 this.exchangeRateSale,
-                this.percentage_igv
+                this.percentage_igv,
+                false,
+                invoice && quantity ? quantity.fraction() : null
             );
         },
         assignDocument() {
@@ -1009,17 +1049,6 @@ export default {
             await this.getPercentageIgv();
             this.payment_conditions = await data.payment_conditions;
 
-            const items = await data.items.map((i) => {
-
-                const quantity = exactSum(this.form.dispatch.items.filter((ite)=>ite.item_id==i.id).map(line=>line.quantity)).decimal();
-
-                i.quantity = quantity;
-                i.unit_price = i.sale_unit_price;
-                // i.unit_price = i.sale_unit_price;
-
-                return i;
-            });
-
             await this.getCustomer();
             await this.validateIdentityDocumentType();
             this.items = [];
@@ -1036,7 +1065,7 @@ export default {
                 this.$message.error(this.rateError);
                 return;
             }
-            this.items = items.map((item) => this.onGetItems(item));
+            this.items = data.items.map(item => this.onGetItems(item, this.form.dispatch.items));
             this.document.items = this.items;
             this.titleDialog = `Orden de entrega ${documentNumberFull(this.form.dispatch.series, this.form.dispatch.number)}: Crear comprobante`;
 

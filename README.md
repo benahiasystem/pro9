@@ -122,6 +122,45 @@ Fallos de API o guardado no inventan una tasa (`503`). No hay tareas programadas
 actualizaciones masivas ni cambios en snapshots de documentos.
 <!-- ######## FIN API BCV EN DOCKER ######## -->
 
+### Instalación PostgreSQL 17.11
+
+Pro9 usa PostgreSQL 17.11 de Supabase (`17.11.0.019`, digest fijado en Compose),
+con una base central y una base por empresa. El despliegue local utiliza
+`linux/amd64`, correspondiente al Intel i7. La cadena ARM64 de Supabase es una
+referencia del servicio remoto; no requiere emulación ARM en este equipo.
+
+Seguir el [manual de instalación y recuperación](informes/postgresql_17/operacion.md).
+Copiar `.env.example` y definir las claves independientes de inicialización,
+propietario, operación y aprovisionamiento. API BCV conserva su configuración
+indicada arriba. Preparar una instalación nueva:
+
+```bash
+docker compose config --quiet
+docker compose build php
+docker compose up -d --wait postgres
+docker compose run --rm --no-deps php composer install --no-interaction
+docker compose run --rm --no-deps php php artisan key:generate
+docker compose run --rm --no-deps php php artisan pro9:install-postgres
+docker compose up -d php nginx redis api-bcv
+```
+
+La base queda en la red interna. Para un cliente local, añadir
+`-f docker-compose.postgresql.local.yml` al Compose; publica únicamente
+`127.0.0.1:${SUPABASE_POSTGRES_PORT:-54322}`. Usar credenciales de operación
+y la base central configurada; el usuario de inicialización queda reservado.
+Mantener tanto `postgres_data` como `postgres_config` para conservar datos,
+configuración y claves al recrear contenedores.
+
+La verificación automatizada crea su propio proyecto, servidor y credenciales:
+
+```bash
+php scripts/test_postgresql.php
+```
+
+No lee conexiones de `.env` ni utiliza bases del sistema en operación. El ejecutor
+retira sus recursos temporales y guarda resultados en
+`informes/evidencias/postgresql_17_implementacion/resultados/`.
+
 [Windows ](https://manual.pro8.uio.la/devs/despliegue/plataformas/windows "Clic")
 <br>
 [Docker - Linux](https://git.buho.la/-/snippets/79 "Clic")
@@ -274,6 +313,43 @@ docker compose exec -T php php artisan exchange-rates:upgrade-precision --all-te
 ```
 
 El comando es idempotente y preserva nulabilidad y defaults. Las tasas antiguas reciben
-ceros finales; los decimales perdidos no se recuperan. Probar primero en MySQL temporal.
+ceros finales; los decimales perdidos no se recuperan. Probar primero en PostgreSQL 17 temporal.
 Los cambios de fuentes frontend requieren la compilación que ejecuta el usuario.
 <!-- ######## FIN TASAS OCHO DECIMALES ######## -->
+
+
+### PostgreSQL 17.11: dashboard compilado y verificado
+
+El build 08 del worktree autorizado aprobó junto con 111 pruebas PHP/553 aserciones, 857 JavaScript, 35 comprobaciones del dashboard Vue/Apex/Chart.js montado y 17 del catálogo/checkout compilado. Se verificó una misma fuente fija con PostgreSQL temporal y limpieza. Las auditorías estrictas siguen abiertas: 11.938 PHP y 13.451 JavaScript pendientes, sin errores de registro/análisis/cobertura. El cambio completo aún no se declara terminado. Véanse [evidencias](informes/evidencias/postgresql_17_implementacion/resultados/dashboard_frontend_resumen_20261112.json) y [trabajo pendiente](informes/postgresql_17/pendientes_verificacion.md).
+
+
+La batería completa `pro9-pgtest-e8e32958907e` aprobó 1.952 pruebas funcionales/81.256 aserciones, 857 JavaScript, ambos navegadores, SQL, sintaxis y Git, con fuente fija y limpieza de PostgreSQL temporal. El resultado global continúa en 1 por el presupuesto del POS de 1.000 documentos y las dos auditorías estrictas abiertas. [Última evidencia completa](informes/evidencias/postgresql_17_implementacion/resultados/validacion_completa_resumen_20261112_02.json).
+
+El build 09 del worktree también está compilado y verificado: 313 pruebas PHP/3.376 aserciones, 864 JavaScript y 22 + 35 comprobaciones de navegador. Corrige el transporte de claves grandes y los precios de recomendaciones, incluida su ocultación. Los controles estrictos mantienen 11.696 PHP/13.412 JavaScript pendientes, sin errores de registro/análisis/cobertura; continúa pendiente la batería completa sobre la fuente final. [Evidencia del bloque](informes/evidencias/postgresql_17_implementacion/resultados/transporte_bigint_resumen_20261112.json).
+
+La validación posterior de IDs y límites del servidor aprobó 56 casos/231 aserciones en PostgreSQL temporal. Los controles estrictos actuales mantienen 11.676 PHP/13.412 JavaScript pendientes, sin errores de registro/análisis/cobertura. El build 09 continúa vigente; la implementación sigue abierta. [Evidencia](informes/evidencias/postgresql_17_implementacion/resultados/ids_recomendados_resumen_20261112.json).
+
+La repetición completa posterior aprobó rendimiento, pero se interrumpió por memoria durante un XLSX. La liberación de referencias de los fixtures ya aprobó cinco casos/1.994 aserciones con los mismos 768 MiB; falta repetir la suite completa. Las auditorías actuales mantienen 11.660 PHP/13.412 JavaScript pendientes, sin errores de registro/análisis/cobertura. El build 09 continúa vigente y la implementación permanece abierta. [Diagnóstico y corrección](informes/evidencias/postgresql_17_implementacion/resultados/liberacion_fixture_resumen_20261112.json).
+
+El ejecutor completo separa ahora los grupos funcionales en procesos PHP y contrasta todos los casos/datasets con el inventario descubierto. Mantiene 768 MiB y los presupuestos originales. Aprobaron 60 casos/380 aserciones dirigidos; falta aprobar el modo completo nuevo. Las auditorías mantienen 11.431 PHP/13.412 JavaScript pendientes, sin errores de registro/análisis/cobertura. [Evidencia de la corrección](informes/evidencias/postgresql_17_implementacion/resultados/fases_funcionales_resumen_20261112.json).
+
+
+La última batería completa restante ejecutó **2.135 casos/82.212 aserciones**, con inventario exacto: 1.812 generales aprobaron y el bloque fiscal detectó un error de edición de ajustes. Aprobaron JavaScript (912), SQL, sintaxis y navegador (22 + 35), con fuente fija y limpieza temporal. La regresión se corrigió después y aprobó 36 casos/188 aserciones, conservando las aserciones anteriores. Falta una nueva aceptación completa. El POS de rendimiento siguió aplazado y no se ejecutó. [Batería 08](informes/evidencias/postgresql_17_implementacion/resultados/validacion_completa_resumen_20261112_08.json).
+
+Los anticipos conservan ahora sus fracciones desde el listado y la selección hasta la factura, el consumo y la restitución. Se evita el saldo inicial inflado y los snapshots inválidos devuelven validación. Aprobaron **90 casos/1.668 aserciones**, **895 JavaScript**, **22 + 35 comprobaciones de navegador**, SQL y sintaxis PHP 8.2; el build 10 fue compilado en el worktree autorizado. La fuente permaneció fija y PostgreSQL fue temporal, con limpieza comprobada. [Corrección y evidencias](informes/evidencias/postgresql_17_implementacion/resultados/anticipos_seleccion_resumen_20261112.json).
+
+La implementación sigue abierta: las auditorías estrictas mantienen **11.224 PHP/11.410 JavaScript pendientes**, sin errores de registro, análisis ni cobertura. Se corrigieron también tres normalizadores que descartaban originales de descuentos/cargos: aprobaron 37 casos/183 aserciones, incluidas las siete reproducciones sin cambiar sus entradas. La batería completa ya incluye las correcciones de anticipos y ajustes. Falta cerrar la revisión global de precisión. El rendimiento del POS permanece aplazado por el usuario.
+
+[Conservación de descuentos y cargos](informes/evidencias/postgresql_17_implementacion/resultados/ajustes_cabecera_resumen_20261112.json).
+
+Se revisaron individualmente 252 expresiones de color y clases CSS con pruebas del consumidor real; no cambian las reglas globales ni se aprueban cálculos financieros por archivo. Se descartó una aprobación automática de sumas racionales porque no demostraba que sus operandos conservaran los originales. [Revisión y decisión](informes/evidencias/postgresql_17_implementacion/resultados/revisiones_visuales_tecnicas_resumen_20261112.json).
+
+El guardado de servicios técnicos conserva ahora los originales de descuentos y cargos manuales: aprobaron 36 casos/1.158 aserciones y el suplemento de originales históricos (12/62, con diez casos solapados). Se revisaron 180 expresiones de fecha en 129 plantillas contra modelos y columnas PostgreSQL temporales. Estas revisiones son individuales. La pérdida de precisión al cargar/restar anticipos en tres formularios se corrigió y verificó después. [Servicio](informes/evidencias/postgresql_17_implementacion/resultados/servicio_ajustes_resumen_20261112.json), [fechas](informes/evidencias/postgresql_17_implementacion/resultados/fechas_pdf_resumen_20261112.json).
+
+Los cinco fallos de carga y resta de anticipos ya pasan con las mismas entradas. La validación posterior aprobó **912 JavaScript, 40 casos PostgreSQL/226 aserciones, build 11, SQL, sintaxis y 57 comprobaciones del navegador**, con fuente fija y limpieza temporal. Los 103 archivos de pruebas JavaScript anteriores son idénticos. Las auditorías siguen abiertas y queda repetir la aceptación completa de estos cambios; el POS de rendimiento permanece aplazado. [Corrección y pruebas](informes/evidencias/postgresql_17_implementacion/resultados/anticipos_cabecera_formulario_resumen_20261112.json).
+
+La corrección de edición conserva una fracción válida si no cambió su decimal y usa el nuevo importe validado al editarlo. Las reproducciones de links de pago se corrigieron después; la revisión global continúa y 135 revisiones técnicas siguen preparadas sin aplicar. [Corrección](informes/evidencias/postgresql_17_implementacion/resultados/servicio_ajustes_edicion_resumen_20261112.json), [links de pago](informes/evidencias/postgresql_17_implementacion/resultados/diagnostico_links_pago_importes_20261112.json).
+
+El bloque de links de pago aprobó **89 pruebas PHP/206 aserciones, 933 JavaScript, 15 comprobaciones del bundle compilado, build 12, SQL y sintaxis PHP 8.2** en recursos temporales. Las auditorías estrictas mantienen **11.194 PHP/11.409 JavaScript pendientes**, sin errores de registro/análisis/cobertura. Por instrucción del usuario, se detiene el trabajo antes de completar la revisión de PDF y lanzar la batería final, reservadas para **GPT-6.1 Terra en alto**. La implementación sigue abierta y el rendimiento del POS continúa aplazado. [Punto de continuación](informes/postgresql_17/pendientes_verificacion.md), [evidencia del bloque](informes/evidencias/postgresql_17_implementacion/resultados/links_pago_resumen_20261112.json).
+
+La batería completa posterior a las últimas correcciones de facturación aprobó **2.281 pruebas funcionales/82.755 aserciones**, SQL, sintaxis, JavaScript y ambos navegadores, con PostgreSQL temporal y limpieza correcta. El resultado global sigue en error por **11.145 candidatos PHP y 11.409 JavaScript** de las auditorías estrictas de todo el sistema; el usuario limitó los cambios de exactitud a facturación. El rendimiento del POS continúa aplazado. [Estado y evidencia](informes/postgresql_17/pendientes_verificacion.md).

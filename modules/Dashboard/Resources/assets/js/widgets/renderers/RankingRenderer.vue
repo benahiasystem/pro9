@@ -18,6 +18,8 @@
 
 <script>
 import { formatValue } from '../registry'
+import { readVector, compareOriginal, relativeWidth } from '../../../../../../../resources/js/helpers/dashboard-originals'
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
 
 /** Ranking con barras de progreso relativo al mayor valor. */
 export default {
@@ -29,17 +31,18 @@ export default {
   computed: {
     rows() {
       const labels = this.dataset.breakdown.labels || []
-      const values = this.dataset.breakdown.values || []
-      const max = values.reduce((m, v) => Math.max(m, Number(v) || 0), 0)
+      const values = readVector(this.dataset.breakdown, 'values_fractions')
+      const max = values.reduce((maximum, value) => compareOriginal(value, maximum) > 0 ? value : maximum, {n: '0', d: '1'})
 
       return labels.slice(0, this.limit).map((label, i) => ({
         label,
         valueStr: formatValue(values[i], this.dataset.unit),
-        pct: max > 0 ? Math.max(4, Math.round(((Number(values[i]) || 0) / max) * 100)) : 0,
+        pct: relativeWidth(values[i], max, 4),
       }))
     },
   },
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

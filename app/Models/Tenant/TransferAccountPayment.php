@@ -20,7 +20,7 @@
      * @property string|null $origin_type
      * @property int|null    $destiny_id
      * @property string|null $destiny_type
-     * @property float|null  $amount
+     * @property string|null $amount
      * @property Carbon|null $date_of_movement
      * @property int|null    $user_id
      * @property Carbon|null $created_at
@@ -35,7 +35,7 @@
         protected $casts = [
             'origin_id' => 'int',
             'destiny_id' => 'int',
-            'amount' => 'float',
+            'amount' => 'string',
             'user_id' => 'int'
         ];
         protected $dates = [
@@ -167,21 +167,21 @@
         }
 
         /**
-         * @return float|null
+         * @return string|null
          */
-        public function getAmount(): ?float
+        public function getAmount(): ?string
         {
             return $this->amount;
         }
 
         /**
-         * @param float|null $amount
+         * @param string|int|null $amount
          *
          * @return TransferAccountPayment
          */
-        public function setAmount(?float $amount): TransferAccountPayment
+        public function setAmount($amount): TransferAccountPayment
         {
-            $this->amount = $amount;
+            $this->amount = $amount === null ? null : \App\Services\Payments\TransferAmounts::decimal($amount);
             return $this;
         }
 
@@ -249,9 +249,9 @@
                 'origin_type' => $origin_type,
                 'destiny_id' => (int)$destiny_id,
                 'destiny_type' => $destiny_type,
-                // ######## INICIO CALCULOS EXACTOS SAB ########
-                'amount' => \App\Support\Exact\Decimal::input($amount, 'amount'),
-                // ######## FIN CALCULOS EXACTOS SAB ########
+                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                'amount' => \App\Services\Payments\TransferAmounts::decimal($amount),
+                // ######## FIN CALCULOS EXACTOS PRO9 ########
                 'date_of_movement' => Carbon::now(),
                 'user_id' => Auth::user()->id,
             ];

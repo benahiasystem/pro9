@@ -131,7 +131,7 @@ for (const moduleName of ['Suscription', 'FullSuscription']) {
     })
     test(`${moduleName} blocks conversion when no valid exchange rate is available`, async () => {
         const errors=[],requests=[]
-        const ctx={...component.data(),document:{date_of_issue:'2026-10-01',currency_type_id:'USD',exchange_rate_sale:0,payments:[]},
+        const ctx={...component.data(),document:{date_of_issue:'2026-10-01',currency_type_id:'VES',exchange_rate_sale:0,payments:[]},
             ensureFiscalPaymentsReady:async()=>true,$message:{error:m=>errors.push(m)},
             $http:{get:async url=>{requests.push(url);return {data:{sale:0}}},post:async()=>{throw Error('must not post')}}}
         for(const [name,method] of Object.entries(component.methods)) ctx[name]=method.bind(ctx)

@@ -4,6 +4,8 @@ namespace App\Services\Tenant;
 
 use App\Models\Tenant\Item;
 use App\Models\Tenant\Order;
+use App\Database\IntegerTransport;
+use App\Support\Exact\Decimal;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -62,11 +64,13 @@ class FrequentlyBoughtTogetherService
                     continue;
                 }
 
+                $price=Decimal::readRequired($item,'sale_unit_price');
                 $result[] = [
                     'id' => $item->id,
                     'description' => $item->description,
                     'slug' => Str::slug($item->description),
-                    'sale_unit_price' => (float) $item->sale_unit_price,
+                    'sale_unit_price' => Decimal::represent($price),
+                    'calculation_snapshot' => Decimal::snapshot(['sale_unit_price'=>$price]),
                     'currency_symbol' => optional($item->currency_type)->symbol ?: 'Bs.',
                     'image' => $item->image ?: 'imagen-no-disponible.jpg',
                     'image_url' => $this->resolveImageUrl($item->image),
@@ -87,9 +91,10 @@ class FrequentlyBoughtTogetherService
      */
     public function forItems(array $itemIds, int $limit = self::DEFAULT_LIMIT): array
     {
+        $limit=max(1,min(16,$limit));
         $itemIds = collect($itemIds)
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn ($id) => $id > 0)
+            ->map([IntegerTransport::class,'positiveKey'])
+            ->filter(fn ($id) => $id !== null)
             ->unique()
             ->values()
             ->all();
@@ -182,8 +187,8 @@ class FrequentlyBoughtTogetherService
             if (! is_array($row)) {
                 continue;
             }
-            $id = (int) ($row['id'] ?? $row['item_id'] ?? 0);
-            if ($id > 0) {
+            $id = IntegerTransport::positiveKey($row['id'] ?? $row['item_id'] ?? null);
+            if ($id !== null) {
                 $ids[] = $id;
             }
         }

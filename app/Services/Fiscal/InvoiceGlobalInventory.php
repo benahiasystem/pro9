@@ -45,4 +45,25 @@ final class InvoiceGlobalInventory
         $reverse=new Kardex(['type'=>'sale','date_of_issue'=>now()->toDateString(),'item_id'=>$item->id,'document_id'=>$line->document_id]);
         $reverse->quantity=$quantity->negated(); $reverse->save();
     }
+
+    /** The editor holds the invoice lock and reverses only its recorded movement. */
+    public static function reverseForEdit(DocumentItem $line): void
+    {
+        $record=$line->calculation_snapshot['inputs']['invoice_global_inventory'] ?? null;
+        if ($record === null) return;
+        $movement=Kardex::whereKey($record['kardex_id'] ?? null)->lockForUpdate()->first();
+        $quantity=D::of($record['quantity'] ?? 0);
+        if (!$movement || $quantity->isNegative()
+            || (string)$line->item_id!==(string)($record['item_id'] ?? '')
+            || (string)$line->document_id!==(string)($record['document_id'] ?? '')
+            || (string)$movement->item_id!==(string)$line->item_id || (string)$movement->document_id!==(string)$line->document_id
+            || !$movement->exactValue('quantity')->isEqualTo($quantity)
+            || !$line->exactValue('quantity')->isEqualTo(D::of($record['source_quantity'] ?? -1))) {
+            FiscalAmounts::error('inventory','No se pudo verificar el movimiento global original antes de editar la factura.');
+        }
+        $item=Item::whereKey($line->item_id)->lockForUpdate()->firstOrFail();
+        $item->stock=$item->exactValue('stock')->plus($quantity);$item->save();
+        $reverse=new Kardex(['type'=>'sale','date_of_issue'=>now()->toDateString(),'item_id'=>$line->item_id,'document_id'=>$line->document_id]);
+        $reverse->quantity=$quantity->negated();$reverse->save();
+    }
 }

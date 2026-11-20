@@ -24,6 +24,8 @@ use App\Models\Tenant\Person;
 use App\Models\Tenant\Quotation;
 use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\Series;
+use App\Services\Fiscal\DeliveryOrderInvoiceReference;
+use App\Support\Exact\Decimal;
 use App\Services\SeriesResolver;
 use Exception;
 use Illuminate\Http\Request;
@@ -195,6 +197,9 @@ class DispatchController extends Controller
         $document = $query->findOrFail($parentId);
         \App\Services\Fiscal\DeliveryOrderInput::authorize((int)$document->establishment_id);
         if ($parentTable==='dispatch') \App\Services\Fiscal\DeliveryOrderPersistence::assertEditable($document);
+        if ($parentTable === 'document') {
+            DeliveryOrderInvoiceReference::assertDocument($document, $document->establishment_id, $document->customer_id);
+        }
         $configuration = Configuration::query()->first();
         $items = [];
         foreach ($document->items as $item) {
@@ -204,7 +209,7 @@ class DispatchController extends Controller
             $unit_type = !empty($item->item->presentation) ? $item->item->presentation->unit_type_id : $item->item->unit_type_id;
             $IdLoteSelected = !empty($item->item->IdLoteSelected) ? $item->item->IdLoteSelected : null;
             $weight = $item->item->weight ?? 0;
-            $items[] = [
+            $row = [
                 'item_id' => $item->item_id,
                 'item' => $item,
                 'quantity' => $item->quantity,
@@ -216,6 +221,19 @@ class DispatchController extends Controller
                 'unit_price' => $item->item->unit_price ?? 0,
                 'total' => $item->item->total ?? 0,
             ];
+            if ($parentTable === 'document') {
+                foreach (DeliveryOrderInvoiceReference::allocations($item) as $allocation) {
+                    $items[] = array_replace($row, [
+                        'quantity' => Decimal::represent($allocation['quantity']),
+                        'description' => $description,
+                        'unit_type_id' => $item->item->unit_type_id,
+                        'IdLoteSelected' => $allocation['lot'],
+                        'lots' => $allocation['serials'],
+                    ]);
+                }
+            } else {
+                $items[] = $row;
+            }
         }
 
         if ($parentTable === 'dispatch') {
@@ -629,8 +647,8 @@ class DispatchController extends Controller
                 'description' => $row->description,
                 'currency_type_id' => $row->currency_type_id,
                 'currency_type_symbol' => $row->currency_type->symbol,
-                'sale_unit_price' => number_format($sale_unit_price, 4, '.', ''),
-                // 'sale_unit_price'                  => number_format($row->sale_unit_price, 4, '.', ''),
+                'sale_unit_price' => Decimal::represent($sale_unit_price, 4, true),
+                'sale_unit_price_exact' => Decimal::fraction($sale_unit_price),
                 'purchase_unit_price' => $row->purchase_unit_price,
                 'unit_type_id' => $row->unit_type_id,
                 'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
@@ -708,16 +726,16 @@ class DispatchController extends Controller
      * @param Dispatch $dispatch
      * @param mixed $relation_external_document
      * @param bool $set_unit_price_dispatch_related_record
-     * @return float
+     * @return \Brick\Math\BigRational
      */
     public function getDispatchSaleUnitPrice($item, $dispatch, $relation_external_document, $set_unit_price_dispatch_related_record)
     {
         if ($dispatch->isGeneratedFromExternalDocument($relation_external_document) && $set_unit_price_dispatch_related_record) {
             $exist_item = $relation_external_document->items->where('item_id', $item->id)->first();
-            if ($exist_item) return $exist_item->unit_price;
+            if ($exist_item) return Decimal::readRequired($exist_item, 'unit_price');
         }
 
-        return $item->sale_unit_price;
+        return Decimal::readRequired($item, 'sale_unit_price');
     }
 
     public function setDocumentId($id)
@@ -784,9 +802,17 @@ class DispatchController extends Controller
             \App\Services\Fiscal\DeliveryOrderInput::authorize((int)$order->establishment_id);
             if ($order->customer_id!==$customer || $order->establishment_id!==$branch || $order->reference_document_id || in_array($order->state_type_id,['09','11'],true)) \App\Services\Fiscal\FiscalAmounts::error('dispatches_id','Seleccione órdenes vigentes del mismo cliente y sucursal, pendientes de facturación.');
         }
-        $items = DispatchItem::whereIn('dispatch_id', $request->dispatches_id)
-            ->select('item_id', 'quantity')
-            ->get()->groupBy('item_id')->map(fn($rows,$itemId)=>['item_id'=>(int)$itemId,'quantity'=>$rows->sum('quantity')])->values();
+        $items = DispatchItem::withoutEagerLoads()->whereIn('dispatch_id', $request->dispatches_id)
+            ->get(['item_id', 'quantity', 'calculation_snapshot'])
+            ->groupBy('item_id')
+            ->map(static function ($rows) {
+                $quantity = Decimal::sum($rows->map(static fn ($row) => Decimal::readRequired($row, 'quantity')));
+                return [
+                    'item_id' => $rows->first()->item_id,
+                    'quantity' => Decimal::represent($quantity),
+                    'calculation_snapshot' => Decimal::snapshot(['quantity' => $quantity]),
+                ];
+            })->values();
 
         return response()->json([
             'success' => true,

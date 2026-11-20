@@ -8,14 +8,14 @@ class AddCustomFilenameToSystemSkinsTable extends Migration
 {
     public function up()
     {
-        Schema::connection('system')->table('system_skins', function (Blueprint $table) {
+        Schema::table('system_skins', function (Blueprint $table) {
             $table->string('custom_filename')->nullable()->after('filename');
         });
     }
 
     public function down()
     {
-        Schema::connection('system')->table('system_skins', function (Blueprint $table) {
+        Schema::table('system_skins', function (Blueprint $table) {
             $table->dropColumn('custom_filename');
         });
     }

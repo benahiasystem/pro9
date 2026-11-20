@@ -172,14 +172,14 @@ class HeaderNotifications
             ->whereIn('documents.state_type_id', ['01', '03', '05', '07', '13'])
             ->whereIn('documents.document_type_id', ['01', '08'])
             ->whereDate('invoices.date_of_due', $today)
-            ->whereRaw('documents.total > IFNULL(payments.total_payment, 0)')
+            ->whereRaw('documents.total > COALESCE(payments.total_payment, 0)')
             ->select(
                 'documents.id',
                 'documents.total',
                 'documents.updated_at',
                 'persons.name as customer_name',
                 DB::raw("CONCAT(documents.series, '-', documents.number) AS number_full"),
-                DB::raw('IFNULL(payments.total_payment, 0) as total_payment')
+                DB::raw('COALESCE(payments.total_payment, 0) as total_payment')
             )
             ->orderBy('documents.updated_at', 'desc')
             ->first();

@@ -241,7 +241,7 @@ use App\Http\Controllers\Tenant\SaleNoteController;
                 $items = json_decode(json_encode($plan->items), true);
                 $item = [];
                 foreach ($items as $it) {
-                    $time = self::setSpanishDate($date->formatLocalized('%B'));
+                    $time = self::setSpanishDate($date->format('F'));
                     if (isset($it['name_product_pdf'])) {
                         if (!empty($item['name_product_pdf'])) {
                             $it['name_product_pdf'] .= " - $time";

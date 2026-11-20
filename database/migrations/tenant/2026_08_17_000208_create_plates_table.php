@@ -1,34 +1,31 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `plates` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `value` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `person_id` int(10) unsigned NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - value: varchar(255)
+ * - person_id: bigint
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `plates` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `value` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `person_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `plates_person_id_foreign` (`person_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('plates', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('value', 255)->collation('pro9_ci_ai');
+            $table->bigInteger('person_id');
+            $table->index(['person_id'], 'plates_person_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `plates`');
+        Schema::dropIfExists('plates');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

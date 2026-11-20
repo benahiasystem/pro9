@@ -33,7 +33,7 @@ class ProcessReportGeneralItems implements ShouldQueue
     public $limit;
     public $is_batching;
 
-    public function __construct($tray_id, $website_id,$request, $user_id , $offset = 0 , $limit = 0, $is_batching)
+    public function __construct($tray_id, $website_id,$request, $user_id , $offset, $limit, $is_batching)
     {
         $this->tray_id = $tray_id;
         $this->website_id = $website_id;

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\{Document, DocumentReceivedRetention, ReceivedRetentionUpload, User};
-use App\Services\Fiscal\{IvaRetentionService, IslrRetentionService, HkaIvaRetention, HkaIslrRetention, FiscalAmounts};
+use App\Services\Fiscal\{IvaRetentionService, IslrRetentionService, HkaIvaRetention, HkaIslrRetention, FiscalAmounts, FiscalNote};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -32,13 +32,16 @@ class IvaRetentionController extends Controller
         if (($data['tax_kind'] ?? 'IVA') === 'ISLR') {
             if (!IslrRetentionService::available($document)) FiscalAmounts::error('tax_kind','Esta instalación no tiene habilitado el flujo ISLR.');
             $request->validate(['total_value'=>'required_without:document_id|numeric|min:0','exchange_rate_sale'=>'required_without:document_id|numeric|gt:0']);
+            $net = $document ? FiscalNote::remainingExact($document, 'total_value') : $request->total_value;
             $proposal=IslrRetentionService::proposal($id,$data['date'],
-                $document->total_value ?? $request->total_value,$document->currency_type_id ?? ($data['document_currency_type_id'] ?? $data['currency_type_id']),
+                $net,$document->currency_type_id ?? ($data['document_currency_type_id'] ?? $data['currency_type_id']),
                 $request->all(),$document->exchange_rate_sale ?? $request->exchange_rate_sale);
             return ['hka_net_collection_blocked'=>$digitalDemo && !config('islr_retention.demo_net_collection_verified',false),'hka_net_collection_verified'=>(bool)config('islr_retention.demo_net_collection_verified',false),'concepts'=>IslrRetentionService::concepts(),'data'=>$proposal];
         }
-        return ['hka_net_collection_blocked'=>$digitalDemo && !config('iva_retention.demo_net_collection_verified',false), 'hka_net_collection_verified'=>(bool)config('iva_retention.demo_net_collection_verified',false), 'data'=>IvaRetentionService::proposal($id,$data['date'], $document->total_igv ?? $data['total_igv'],
-            $document->total_taxed ?? $data['total_taxed'],$document->currency_type_id ?? $data['currency_type_id'],$data['fiscal_context'] ?? [])];
+        $iva = $document ? FiscalNote::remainingExact($document, 'total_igv') : $data['total_igv'];
+        $taxable = $document ? FiscalNote::remainingExact($document, 'total_taxed') : $data['total_taxed'];
+        return ['hka_net_collection_blocked'=>$digitalDemo && !config('iva_retention.demo_net_collection_verified',false), 'hka_net_collection_verified'=>(bool)config('iva_retention.demo_net_collection_verified',false), 'data'=>IvaRetentionService::proposal($id,$data['date'],
+            $iva,$taxable,$document->currency_type_id ?? $data['currency_type_id'],$data['fiscal_context'] ?? [])];
     }
 
     public function upload(Request $request)

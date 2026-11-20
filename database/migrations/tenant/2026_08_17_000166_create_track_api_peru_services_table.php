@@ -1,33 +1,31 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `track_api_peru_services` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `service` int(10) unsigned DEFAULT '0' COMMENT 'Tipo de servicio  1 => sunat/dni, 2 => validacion_multiple_cpe, 3 => CPE, 4 => tipo_de_cambio, 5 => printer_ticket'
- * - `date_of_issue` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - service: bigint
+ * - date_of_issue: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `track_api_peru_services` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `service` int(10) unsigned DEFAULT '0' COMMENT 'Tipo de servicio  1 => sunat/dni, 2 => validacion_multiple_cpe, 3 => CPE, 4 => tipo_de_cambio, 5 => printer_ticket',
-  `date_of_issue` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('track_api_peru_services', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('service')->nullable()->default('0')->comment('Tipo de servicio  1 => sunat/dni, 2 => validacion_multiple_cpe, 3 => CPE, 4 => tipo_de_cambio, 5 => printer_ticket');
+            $table->timestamp('date_of_issue')->nullable();
+        });
+        DB::statement('ALTER TABLE "track_api_peru_services" ADD CONSTRAINT "track_api_peru_services_service_range" CHECK ("service" BETWEEN 0 AND 4294967295)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `track_api_peru_services`');
+        Schema::dropIfExists('track_api_peru_services');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

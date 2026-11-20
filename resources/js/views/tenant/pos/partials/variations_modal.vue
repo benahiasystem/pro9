@@ -25,7 +25,7 @@
                     {{ parent.description }}<template v-if="currentLabel"> · {{ currentLabel }}</template>
                 </h4>
                 <div class="variation-gallery__price">
-                    {{ currencySymbol }} {{ formatPrice(currentPrice) }}
+                    {{ currencySymbol }} {{ formatPrice(current || parent) }}
                 </div>
 
                 <div v-for="variable in variables"
@@ -79,7 +79,7 @@
                         <small class="text-muted d-block">{{ variation.internal_id }}<template v-if="variation.barcode"> · {{ variation.barcode }}</template></small>
                     </div>
                     <div class="text-end">
-                        <span class="fw-semibold text-primary d-block">{{ currencySymbol }} {{ formatPrice(variation.sale_unit_price) }}</span>
+                        <span class="fw-semibold text-primary d-block">{{ currencySymbol }} {{ formatPrice(variation) }}</span>
                         <small :class="variation.stock > 0 ? 'text-success' : 'text-danger'">
                             Stock: {{ formatStock(variation.stock) }}
                         </small>
@@ -106,6 +106,8 @@
 </template>
 
 <script>
+import {posPriceAmount} from '../../../../helpers/pos-invoice-line'
+
 const VIEW_STORAGE_KEY = 'pos_variations_view'
 
 export default {
@@ -183,9 +185,6 @@ export default {
         currentLabel() {
             return this.current ? (this.current.variation_label || '') : ''
         },
-        currentPrice() {
-            return this.current ? this.current.sale_unit_price : (this.parent ? this.parent.sale_unit_price : 0)
-        },
         currentImage() {
             if (this.current && this.current.image_url) return this.current.image_url
             return this.parent ? this.parent.image_url : ''
@@ -245,8 +244,9 @@ export default {
             })
             if (fallback) this.selection = this.selectionOf(fallback)
         },
-        formatPrice(price) {
-            return parseFloat(price || 0).toFixed(2)
+        formatPrice(item) {
+            try { return posPriceAmount(item).final(2) }
+            catch (_) { return item?.sale_unit_price ?? '0.00' }
         },
         formatStock(stock) {
             return parseFloat(stock || 0)

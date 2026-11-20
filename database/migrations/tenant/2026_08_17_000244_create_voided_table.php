@@ -1,54 +1,51 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `voided` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `user_id` int(10) unsigned NOT NULL
- * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `date_of_issue` date NOT NULL
- * - `date_of_reference` date NOT NULL
- * - `identifier` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - user_id: bigint
+ * - external_id: char(36)
+ * - fiscal_environment: varchar(16)
+ * - state_type_id: char(2)
+ * - ubl_version: varchar(255)
+ * - date_of_issue: date
+ * - date_of_reference: date
+ * - identifier: varchar(255)
+ * - filename: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `voided` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date_of_issue` date NOT NULL,
-  `date_of_reference` date NOT NULL,
-  `identifier` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `voided_user_id_foreign` (`user_id`),
-  KEY `voided_fiscal_environment_foreign` (`fiscal_environment`),
-  KEY `voided_state_type_id_foreign` (`state_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('voided', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id');
+            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
+            $table->char('state_type_id', 2)->collation('pro9_ci_ai');
+            $table->string('ubl_version', 255)->collation('pro9_ci_ai');
+            $table->date('date_of_issue');
+            $table->date('date_of_reference');
+            $table->string('identifier', 255)->collation('pro9_ci_ai');
+            $table->string('filename', 255)->collation('pro9_ci_ai');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['user_id'], 'voided_user_id_foreign');
+            $table->index(['fiscal_environment'], 'voided_fiscal_environment_foreign');
+            $table->index(['state_type_id'], 'voided_state_type_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `voided`');
+        Schema::dropIfExists('voided');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

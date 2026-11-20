@@ -10,6 +10,7 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Person;
+use App\Support\Exact\Decimal;
 use Hyn\Tenancy\Contracts\CurrentHostname;
 use Hyn\Tenancy\Environment;
 use Hyn\Tenancy\Models\Hostname;
@@ -280,7 +281,10 @@ JS;
             'series' => ['nullable', 'string', 'max:20', 'regex:/\A[A-Za-z0-9-]*\z/'],
             'number' => ['required', 'string', 'max:20'],
             'customer_number' => ['required', 'string', 'max:15'],
-            'total' => ['required', 'numeric', 'min:0'],
+            // Bound the mantissa and exponent before Laravel's numeric min rule parses them.
+            'total' => ['bail', 'required', 'numeric',
+                'regex:/\A[+-]?(?:[0-9]{1,30}(?:\.[0-9]{0,30})?|\.[0-9]{1,30})(?:[eE][+-]?[0-9]{1,2})?\z/',
+                'min:0'],
             'date_of_issue' => ['required', 'date_format:Y-m-d'],
         ]);
 
@@ -330,7 +334,7 @@ JS;
                             'customer' => $document->customer->number,
                             'number' => $document->number_full,
                             'establishment_id' => $document->establishment_id,
-                            'total' => number_format((float) $document->total, 2, '.', ''),
+                            'total' => Decimal::represent($document->getRawOriginal('total'), 2, true),
                             'download_pdf' => $baseUrl . '/downloads/document/pdf/' . $document->external_id,
                         ];
                     })->values()->all();
@@ -567,13 +571,15 @@ JS;
     {
         $series = \App\Services\SeriesNumbering::normalizeCode($validated['series'] ?? null);
         $number = (int) $validated['number'];
-        $total = round((float) $validated['total'], 2);
+        $total = Decimal::of(Decimal::represent($validated['total'], 2, true));
+        $lower = Decimal::represent($total->minus('0.01'), 2, true);
+        $upper = Decimal::represent($total->plus('0.01'), 2, true);
 
         return Document::query()
             ->where('date_of_issue', $validated['date_of_issue'])
             ->where('series', $series)
             ->where('number', $number)
-            ->whereBetween('total', [$total - 0.01, $total + 0.01])
+            ->whereBetween('total', [$lower, $upper])
             ->where('customer_id', $customerId)
             ->orderBy('id')
             ->get();

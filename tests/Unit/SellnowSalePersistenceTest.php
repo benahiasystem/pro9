@@ -18,14 +18,14 @@ class SellnowSalePersistenceTest extends TestCase
 
     protected function setUp(): void
     {
-        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere una base MySQL descartable.');
+        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal descartable.');
         $this->fixture = new class extends FiscalEmissionSchemaTest {
             public bool $ready = false;
             public function start(): array { parent::setUp(); $this->ready=true; return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
             public function stop(): void { parent::tearDown(); }
         };
         [$this->db,$this->app,$this->input] = $this->fixture->start();
-        $migration = require base_path('database/migrations/tenant/2026_11_12_000001_create_sellnow_sales_table.php');
+        $migration = require base_path('database/migrations/tenant/2026_08_17_000346_create_sellnow_sales_table.php');
         $migration->up();
         $this->db->table('configurations')->update(['auto_send_hka'=>false,'auto_send_pdf_email'=>false]);
         \Carbon\Carbon::setTestNow('2026-09-10 12:00:00');
@@ -257,6 +257,31 @@ class SellnowSalePersistenceTest extends TestCase
         }
     }
 
+    public function test_vendeya_invoice_preserves_declared_decimals_in_the_stored_payload(): void
+    {
+        $total = '9007199.254740993001';
+        $body = $this->envelope();
+        $body['payload']['items'][0] = array_replace($body['payload']['items'][0], [
+            'cantidad'=>'1', 'precio_unitario'=>$total, 'total_item'=>$total, 'codigo_tipo_afectacion_igv'=>'20',
+        ]);
+        $body['payload']['totales']['total_venta'] = $total;
+        $body['payload']['pagos'][0]['monto'] = '9007199.25';
+        $body['payload']['pagos'][0]['original_amount'] = '9007199.25';
+
+        $operations = new SaleOperations();
+        $sale = $operations->submit($body);
+        self::assertSame('confirmed', $sale->status, json_encode($sale->error));
+        $document = Document::findOrFail($sale->result['data']['id']);
+        self::assertTrue($document->exactValue('total')->isEqualTo($total));
+        self::assertSame($total, (string) $document->data_json->items[0]->total_item);
+        self::assertSame($total, (string) $document->data_json->totales->total_venta);
+        self::assertSame($body['payload'], $sale->envelope['payload']);
+
+        $snapshot = $this->snapshot();
+        self::assertSame($sale->result['data']['id'], $operations->submit($body)->result['data']['id']);
+        self::assertSame($snapshot, $this->snapshot());
+    }
+
     public function test_recovery_limit_does_not_starve_newer_work_behind_a_permanent_failure(): void
     {
         $this->app->instance(SaleEffects::class,new class extends SaleEffects { public function run($sale): void {} });
@@ -406,7 +431,7 @@ class SellnowSalePersistenceTest extends TestCase
         $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);
         if (!$socket) throw new \RuntimeException($error);
         $address=stream_socket_get_name($socket,false);fclose($socket);
-        $environment=getenv();$environment['SAB_EXACT_HTTP_FIXTURE']=$private;$environment['APP_ENV']='testing';
+        $environment=getenv();$environment['PRO9_EXACT_HTTP_FIXTURE']=$private;$environment['APP_ENV']='testing';
         $server=proc_open([PHP_BINARY,'-S',$address,dirname(__DIR__).'/Support/exact_http_router.php'],
             [0=>['pipe','r'],1=>['file',$temp.'/server.log','a'],2=>['file',$temp.'/server.log','a']],$pipes,dirname(__DIR__,2),$environment);
         if (!is_resource($server)) throw new \RuntimeException('No se pudo iniciar HTTP temporal.');
@@ -416,7 +441,7 @@ class SellnowSalePersistenceTest extends TestCase
                 $probe=@stream_socket_client('tcp://'.$address,$errno,$error,0.1);
                 if ($probe) { fclose($probe);break; } usleep(50000);
             }
-            $call=static function (string $method,string $path,?array $payload=null,?string $authToken=null) use ($address,$token): array {
+            $call=static function (string $method,string $path,?array $payload=null,?string $authToken=null) use ($address,$token,$temp): array {
                 $curl=curl_init('http://'.$address.$path);
                 curl_setopt_array($curl,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>60,CURLOPT_CUSTOMREQUEST=>$method,
                     CURLOPT_HTTPHEADER=>array_filter(['Host: exact-http.example.test','Accept: application/json','Content-Type: application/json',
@@ -424,6 +449,12 @@ class SellnowSalePersistenceTest extends TestCase
                 if ($payload !== null) curl_setopt($curl,CURLOPT_POSTFIELDS,json_encode($payload,JSON_THROW_ON_ERROR));
                 $body=curl_exec($curl);$status=curl_getinfo($curl,CURLINFO_HTTP_CODE);$error=curl_error($curl);curl_close($curl);
                 if ($body === false) throw new \RuntimeException($error);
+                if ($status >= 500) {
+                    $report=base_path('informes/evidencias/postgresql_17_implementacion/resultados/'.getenv('PRO9_POSTGRES_RUN_ID').'-sellnow-http-500');
+                    $details=json_decode($body,true);
+                    file_put_contents($report.'.json',json_encode(['status'=>$status,'message'=>$details['message'] ?? null,'exception'=>$details['exception'] ?? null],JSON_THROW_ON_ERROR));
+                    foreach (['server.log','logs/laravel.log'] as $log) if (is_file($temp.'/'.$log)) copy($temp.'/'.$log,$report.'-'.basename($log));
+                }
                 return [$status,json_decode($body,true),$body];
             };
             [$status]=$call('GET','/api/sellnow/offline-context',null,'');self::assertSame(401,$status);

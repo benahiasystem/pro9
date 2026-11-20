@@ -1,43 +1,41 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `machines` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `machine_type_id` int(10) unsigned NOT NULL
- * - `name` text COLLATE utf8mb4_unicode_ci
- * - `brand` text COLLATE utf8mb4_unicode_ci
- * - `model` text COLLATE utf8mb4_unicode_ci
- * - `closing_force` text COLLATE utf8mb4_unicode_ci
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - machine_type_id: bigint
+ * - name: text
+ * - brand: text
+ * - model: text
+ * - closing_force: text
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `machines` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `machine_type_id` int(10) unsigned NOT NULL,
-  `name` text COLLATE utf8mb4_unicode_ci,
-  `brand` text COLLATE utf8mb4_unicode_ci,
-  `model` text COLLATE utf8mb4_unicode_ci,
-  `closing_force` text COLLATE utf8mb4_unicode_ci,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('machines', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('machine_type_id');
+            $table->text('name')->collation('pro9_ci_ai')->nullable();
+            $table->text('brand')->collation('pro9_ci_ai')->nullable();
+            $table->text('model')->collation('pro9_ci_ai')->nullable();
+            $table->text('closing_force')->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "machines" ADD CONSTRAINT "machines_machine_type_id_range" CHECK ("machine_type_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `machines`');
+        Schema::dropIfExists('machines');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

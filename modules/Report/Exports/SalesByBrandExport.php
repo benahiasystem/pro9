@@ -12,6 +12,11 @@ use Maatwebsite\Excel\Events\AfterSheet;
 class SalesByBrandExport implements FromView, ShouldAutoSize, WithEvents
 {
     use Exportable;
+    public $records;
+    public $company;
+    public $establishment;
+    public $date_start;
+    public $date_end;
 
     public function records($records) {
         $this->records = $records;

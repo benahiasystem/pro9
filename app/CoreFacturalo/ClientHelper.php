@@ -19,13 +19,13 @@ class ClientHelper
      * @param  string $start_date
      * @param  string $end_date
      * @param  Plan $plan
-     * @return float
+     * @return string
      */
     public function getSalesTotal($start_date, $end_date, $plan)
     {
         $totals = $this->getTotalsDocumentSaleNote($start_date, $end_date, $plan->includeSaleNotesSalesLimit());
 
-        return $totals['total'];
+        return \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($totals,'total'),2,'.','');
     }
 
 }

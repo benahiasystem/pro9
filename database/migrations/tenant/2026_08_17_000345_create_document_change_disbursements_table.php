@@ -1,37 +1,40 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-// ######## INICIO DESEMBOLSOS DE VUELTO ########
-/** Instalaciones nuevas: una salida individual por cobro y posición, con fracciones exactas. */
+/** Instalaciones nuevas: desembolsos de vuelto, con referencias bigint y fracciones exactas.
+ * Importes numeric(30,12), tasa numeric(18,8), posición entera de 0 a 65535,
+ * JSON original, fechas locales y una fila por cobro/posición. FKs en 000999.
+ */
 return new class extends Migration {
-    public function up(): void {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `document_change_disbursements` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `document_id` int unsigned NOT NULL,
-  `document_payment_id` int unsigned NOT NULL,
-  `position` smallint unsigned NOT NULL,
-  `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `original_amount` decimal(30,12) NOT NULL,
-  `exchange_rate` decimal(18,8) NOT NULL,
-  `date_of_payment` date NOT NULL,
-  `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `calculation_snapshot` json NOT NULL,
-  `context` json NOT NULL,
-  `reversed_at` timestamp NULL DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `document_change_payment_position_unique` (`document_payment_id`,`position`),
-  KEY `document_change_document_index` (`document_id`),
-  KEY `document_change_method_index` (`payment_method_type_id`),
-  KEY `document_change_currency_index` (`currency_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+    public function up(): void
+    {
+        Schema::create('document_change_disbursements', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('document_id');
+            $table->unsignedBigInteger('document_payment_id');
+            $table->unsignedSmallInteger('position');
+            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->decimal('original_amount', 30, 12);
+            $table->decimal('exchange_rate', 18, 8);
+            $table->date('date_of_payment');
+            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->json('calculation_snapshot');
+            $table->json('context');
+            $table->timestamp('reversed_at')->nullable();
+            $table->timestamps();
+            $table->unique(['document_payment_id', 'position'], 'document_change_payment_position_unique');
+            $table->index('document_id', 'document_change_document_index');
+            $table->index('payment_method_type_id', 'document_change_method_index');
+            $table->index('currency_type_id', 'document_change_currency_index');
+        });
     }
-    public function down(): void { DB::unprepared('DROP TABLE IF EXISTS `document_change_disbursements`'); }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('document_change_disbursements');
+    }
 };
-// ######## FIN DESEMBOLSOS DE VUELTO ########

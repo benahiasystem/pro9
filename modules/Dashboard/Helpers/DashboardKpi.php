@@ -8,6 +8,7 @@ use App\Models\Tenant\Document;
 use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\Purchase;
 use Carbon\Carbon;
+use App\Support\Exact\{Decimal as D, DashboardSales, DashboardSeries};
 
 /**
  * Clase DashboardKpi
@@ -35,33 +36,26 @@ class DashboardKpi
 
     public function data($request)
     {
-        return \App\Support\Exact\ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
-        $establishment_id = isset($request['establishment_id']) ? $request['establishment_id'] : null;
-        $compare = isset($request['compare']) ? $request['compare'] : 'none';
-
-        [$start, $end] = $this->resolveRange($request);
-
-        // Totales para el rango seleccionado.
-        $sales = $this->salesTotal($establishment_id, $start, $end);
-        $purchases = $this->purchasesTotal($establishment_id, $start, $end);
-
-        [$cmp_start, $cmp_end] = $this->resolveCompareRange($start, $end, $compare);
-
-        $prev_sales = $cmp_start ? $this->salesTotal($establishment_id, $cmp_start, $cmp_end) : 0;
-        $prev_purchases = $cmp_start ? $this->purchasesTotal($establishment_id, $cmp_start, $cmp_end) : 0;
-
-        $year = Carbon::parse($end);
-        $year_start = $year->copy()->startOfYear()->format('Y-m-d');
-        $year_end = $year->copy()->endOfYear()->format('Y-m-d');
-
-        return [
-            'month_sales' => $this->formatNumber($sales),
-            'month_purchases' => $this->formatNumber($purchases),
-            'accumulated_sales' => $this->formatNumber($this->salesTotal($establishment_id, $year_start, $year_end)),
-            'accumulated_year' => $year->format('Y'),
-            'month_sales_variation' => $compare === 'none' ? 0 : $this->variation($sales, $prev_sales),
-            'month_purchases_variation' => $compare === 'none' ? 0 : $this->variation($purchases, $prev_purchases),
-        ];
+        return \App\Support\Exact\ReadSnapshot::run((new Document)->getConnection(),function () use ($request) {
+            $establishment=$request['establishment_id'] ?? null; $compare=$request['compare'] ?? 'none';
+            [$start,$end]=$this->resolveRange($request);
+            $sales=$this->salesAmount($establishment,$start,$end);
+            $purchases=$this->purchasesAmount($establishment,$start,$end);
+            [$previousStart,$previousEnd]=$this->resolveCompareRange($start,$end,$compare);
+            $priorSales=$previousStart ? $this->salesAmount($establishment,$previousStart,$previousEnd) : D::of(0);
+            $priorPurchases=$previousStart ? $this->purchasesAmount($establishment,$previousStart,$previousEnd) : D::of(0);
+            $year=Carbon::parse($end);
+            $values=['month_sales'=>$sales,'month_purchases'=>$purchases,
+                'accumulated_sales'=>$this->salesAmount($establishment,$year->copy()->startOfYear()->format('Y-m-d'),$year->copy()->endOfYear()->format('Y-m-d'))];
+            $result=['accumulated_year'=>$year->format('Y')];
+            foreach ($values as $key=>$amount) $result[$key]=$this->formatNumber($amount);
+            $values['previous_sales']=$priorSales; $values['previous_purchases']=$priorPurchases;
+            foreach (['month_sales_variation'=>[$sales,$priorSales],'month_purchases_variation'=>[$purchases,$priorPurchases]] as $key=>[$current,$previous]) {
+                $amount=$compare==='none' ? D::of(0) : $this->variationAmount($current,$previous);
+                $result[$key.'_exact']=D::format($amount,1,'.',''); $result[$key]=(float)$result[$key.'_exact'];
+                $values[$key]=$amount;
+            }
+            return $result+['calculation_snapshot'=>D::snapshot($values)];
         });
     }
 
@@ -73,6 +67,21 @@ class DashboardKpi
     {
         $start = isset($request['date_start']) && $request['date_start'] ? $request['date_start'] : null;
         $end = isset($request['date_end']) && $request['date_end'] ? $request['date_end'] : null;
+
+        if ((!$start || !$end) && ($request['period'] ?? null)==='all') {
+            $starts=$ends=[];$establishment=$request['establishment_id'] ?? null;
+            $documents=Document::withoutEagerLoads()->whereIn('state_type_id',$this->acceptedStates)
+                ->whereIn('document_type_id',['01','03','07','08']);
+            $notes=SaleNote::withoutEagerLoads()->whereStateTypeAccepted()
+                ->where(fn ($q)=>$q->where('changed',false)->orWhereNotNull('document_id'));
+            foreach ([$documents,$notes,Purchase::withoutEagerLoads()->whereStateTypeAccepted()] as $query) {
+                if ($establishment) $query->where('establishment_id',$establishment);
+                $first=(clone $query)->min('date_of_issue');$last=(clone $query)->max('date_of_issue');
+                if ($first!==null) $starts[]=(string)$first;
+                if ($last!==null) $ends[]=(string)$last;
+            }
+            $start=$start ?? ($starts ? min($starts) : null);$end=$end ?? ($ends ? max($ends) : null);
+        }
 
         if (!$start || !$end) {
             $now = Carbon::now();
@@ -131,6 +140,7 @@ class DashboardKpi
             case 'week':
                 return $this->bucketsByDay($establishment_id, $range_start, $range_end);
             case 'year':
+            case 'all':
                 return $this->bucketsByMonth($establishment_id, $range_start, $range_end);
             case 'month':
             default:
@@ -144,21 +154,13 @@ class DashboardKpi
      */
     private function bucketsByHour($establishment_id, $day)
     {
-        $categories = [];
-        $sales = [];
-        $purchases = [];
-        $sales_exact = [];
-        $purchases_exact = [];
-
-        for ($h = 0; $h < 24; $h++) {
-            $categories[] = str_pad($h, 2, '0', STR_PAD_LEFT) . 'h';
-            $sales_exact[] = $this->salesTotal($establishment_id, $day, $day, $h);
-            $sales[] = (float) end($sales_exact);
-            $purchases_exact[] = $this->purchasesTotal($establishment_id, $day, $day, $h);
-            $purchases[] = (float) end($purchases_exact);
+        $categories=$sales=$purchases=[];
+        for ($hour=0;$hour<24;$hour++) {
+            $categories[]=str_pad($hour,2,'0',STR_PAD_LEFT).'h';
+            $sales[]=$this->salesAmount($establishment_id,$day,$day,$hour);
+            $purchases[]=$this->purchasesAmount($establishment_id,$day,$day,$hour);
         }
-
-        return compact('categories', 'sales', 'purchases', 'sales_exact', 'purchases_exact');
+        return $this->comparisonResult($categories,$sales,$purchases);
     }
 
     /**
@@ -167,28 +169,15 @@ class DashboardKpi
      */
     private function bucketsByDay($establishment_id, $start, $end)
     {
-        $dayLabels = [1 => 'Lun', 2 => 'Mar', 3 => 'Mié', 4 => 'Jue', 5 => 'Vie', 6 => 'Sáb', 7 => 'Dom'];
-
-        $cursor = Carbon::parse($start);
-        $last = Carbon::parse($end);
-
-        $categories = [];
-        $sales = [];
-        $purchases = [];
-        $sales_exact = [];
-        $purchases_exact = [];
-
+        $dayLabels=[1=>'Lun',2=>'Mar',3=>'Mié',4=>'Jue',5=>'Vie',6=>'Sáb',7=>'Dom'];
+        $cursor=Carbon::parse($start)->startOfDay(); $last=Carbon::parse($end)->startOfDay();
+        $categories=$sales=$purchases=[];
         while ($cursor->lessThanOrEqualTo($last)) {
-            $d = $cursor->format('Y-m-d');
-            $categories[] = isset($dayLabels[$cursor->dayOfWeekIso]) ? $dayLabels[$cursor->dayOfWeekIso] : $cursor->format('d/m');
-            $sales_exact[] = $this->salesTotal($establishment_id, $d, $d);
-            $sales[] = (float) end($sales_exact);
-            $purchases_exact[] = $this->purchasesTotal($establishment_id, $d, $d);
-            $purchases[] = (float) end($purchases_exact);
-            $cursor->addDay();
+            $day=$cursor->format('Y-m-d'); $categories[]=$dayLabels[$cursor->dayOfWeekIso];
+            $sales[]=$this->salesAmount($establishment_id,$day,$day);
+            $purchases[]=$this->purchasesAmount($establishment_id,$day,$day); $cursor->addDay();
         }
-
-        return compact('categories', 'sales', 'purchases', 'sales_exact', 'purchases_exact');
+        return $this->comparisonResult($categories,$sales,$purchases);
     }
 
     /**
@@ -197,36 +186,16 @@ class DashboardKpi
      */
     private function bucketsByWeek($establishment_id, $start, $end)
     {
-        $month_start = Carbon::parse($start)->startOfMonth();
-        $month_end = Carbon::parse($end)->endOfMonth();
-
-        $cursor = $month_start->copy();
-        $week = 1;
-
-        $categories = [];
-        $sales = [];
-        $purchases = [];
-        $sales_exact = [];
-        $purchases_exact = [];
-
-        while ($cursor->lessThanOrEqualTo($month_end)) {
-            $w_start = $cursor->copy();
-            $w_end = $cursor->copy()->addDays(6);
-            if ($w_end->greaterThan($month_end)) {
-                $w_end = $month_end->copy();
-            }
-
-            $categories[] = 'Sem ' . $week;
-            $sales_exact[] = $this->salesTotal($establishment_id, $w_start->format('Y-m-d'), $w_end->format('Y-m-d'));
-            $sales[] = (float) end($sales_exact);
-            $purchases_exact[] = $this->purchasesTotal($establishment_id, $w_start->format('Y-m-d'), $w_end->format('Y-m-d'));
-            $purchases[] = (float) end($purchases_exact);
-
-            $cursor = $w_end->copy()->addDay();
-            $week++;
+        $cursor=Carbon::parse($start)->startOfDay(); $last=Carbon::parse($end)->startOfDay(); $week=1;
+        $categories=$sales=$purchases=[];
+        while ($cursor->lessThanOrEqualTo($last)) {
+            $until=$cursor->copy()->addDays(6); if ($until->greaterThan($last)) $until=$last->copy();
+            $categories[]='Sem '.$week;
+            $sales[]=$this->salesAmount($establishment_id,$cursor->format('Y-m-d'),$until->format('Y-m-d'));
+            $purchases[]=$this->purchasesAmount($establishment_id,$cursor->format('Y-m-d'),$until->format('Y-m-d'));
+            $cursor=$until->copy()->addDay();$week++;
         }
-
-        return compact('categories', 'sales', 'purchases', 'sales_exact', 'purchases_exact');
+        return $this->comparisonResult($categories,$sales,$purchases);
     }
 
     /**
@@ -235,29 +204,26 @@ class DashboardKpi
      */
     private function bucketsByMonth($establishment_id, $start, $end)
     {
-        $cursor = Carbon::parse($start)->startOfMonth();
-        $last = Carbon::parse($end)->startOfMonth();
-
-        $categories = [];
-        $sales = [];
-        $purchases = [];
-        $sales_exact = [];
-        $purchases_exact = [];
-
+        $first=Carbon::parse($start)->startOfDay();$last=Carbon::parse($end)->startOfDay();$cursor=$first->copy()->startOfMonth();
+        $sameYear=$first->year===$last->year; $categories=$sales=$purchases=[];
         while ($cursor->lessThanOrEqualTo($last)) {
-            $m_start = $cursor->copy()->startOfMonth()->format('Y-m-d');
-            $m_end = $cursor->copy()->endOfMonth()->format('Y-m-d');
-
-            $categories[] = $this->monthLabels[$cursor->month];
-            $sales_exact[] = $this->salesTotal($establishment_id, $m_start, $m_end);
-            $sales[] = (float) end($sales_exact);
-            $purchases_exact[] = $this->purchasesTotal($establishment_id, $m_start, $m_end);
-            $purchases[] = (float) end($purchases_exact);
-
+            $from=$cursor->lessThan($first) ? $first->copy() : $cursor->copy();
+            $until=$cursor->copy()->endOfMonth(); if ($until->greaterThan($last)) $until=$last->copy();
+            $categories[]=$this->monthLabels[$cursor->month].($sameYear ? '' : ' '.$cursor->format('Y'));
+            $sales[]=$this->salesAmount($establishment_id,$from->format('Y-m-d'),$until->format('Y-m-d'));
+            $purchases[]=$this->purchasesAmount($establishment_id,$from->format('Y-m-d'),$until->format('Y-m-d'));
             $cursor->addMonthNoOverflow();
         }
+        return $this->comparisonResult($categories,$sales,$purchases);
+    }
 
-        return compact('categories', 'sales', 'purchases', 'sales_exact', 'purchases_exact');
+    private function comparisonResult(array $categories, array $sales, array $purchases): array
+    {
+        $sale=DashboardSeries::project($sales);$purchase=DashboardSeries::project($purchases);
+        return ['categories'=>$categories,'sales'=>$sale['data'],'purchases'=>$purchase['data'],
+            'sales_exact'=>$sale['exact'],'purchases_exact'=>$purchase['exact'],
+            'sales_fractions'=>$sale['fractions'],'purchases_fractions'=>$purchase['fractions']]
+            + DashboardSales::numericProjection(['sales_total'=>$sale['total'],'purchases_total'=>$purchase['total']]);
     }
 
     /**
@@ -266,52 +232,23 @@ class DashboardKpi
      */
     public function salesGrowth($request)
     {
-        return \App\Support\Exact\ReadSnapshot::run((new Document)->getConnection(), function () use ($request) {
-        $establishment_id = isset($request['establishment_id']) ? $request['establishment_id'] : null;
-
-        [, $range_end] = $this->resolveRange($request);
-
-        $now = Carbon::now();
-        $end_date = Carbon::parse($range_end);
-        $current_year = (int) $end_date->format('Y');
-        $previous_year = $current_year - 1;
-
-        // En el año en curso solo se llega hasta el mes actual; los años pasados son completos.
-        $current_month = $current_year === (int) $now->format('Y')
-            ? (int) $now->format('n')
-            : 12;
-
-        $categories = [];
-        $current = [];
-        $previous = [];
-        $current_exact = [];
-        $previous_exact = [];
-
-        for ($m = 1; $m <= $current_month; $m++) {
-            $mm = str_pad($m, 2, '0', STR_PAD_LEFT);
-
-            $cur_start = "{$current_year}-{$mm}-01";
-            $cur_end = Carbon::parse($cur_start)->endOfMonth()->format('Y-m-d');
-
-            $prev_start = "{$previous_year}-{$mm}-01";
-            $prev_end = Carbon::parse($prev_start)->endOfMonth()->format('Y-m-d');
-
-            $categories[] = $this->monthLabels[$m];
-            $current_exact[] = $this->salesTotal($establishment_id, $cur_start, $cur_end);
-            $current[] = (float) end($current_exact);
-            $previous_exact[] = $this->salesTotal($establishment_id, $prev_start, $prev_end);
-            $previous[] = (float) end($previous_exact);
-        }
-
-        return [
-            'categories' => $categories,
-            'current' => $current,
-            'previous' => $previous,
-            'current_exact' => $current_exact,
-            'previous_exact' => $previous_exact,
-            'current_label' => (string) $current_year,
-            'previous_label' => (string) $previous_year,
-        ];
+        return \App\Support\Exact\ReadSnapshot::run((new Document)->getConnection(),function () use ($request) {
+            $establishment=$request['establishment_id'] ?? null;[, $rangeEnd]=$this->resolveRange($request);
+            $now=Carbon::now();$endDate=Carbon::parse($rangeEnd);$currentYear=$endDate->year;$previousYear=$currentYear-1;
+            $lastMonth=$currentYear===$now->year ? $now->month : 12;
+            $categories=$current=$previous=[];
+            for ($month=1;$month<=$lastMonth;$month++) {
+                $currentStart=Carbon::create($currentYear,$month,1)->startOfDay();$previousStart=Carbon::create($previousYear,$month,1)->startOfDay();
+                $categories[]=$this->monthLabels[$month];
+                $current[]=$this->salesAmount($establishment,$currentStart->format('Y-m-d'),$currentStart->copy()->endOfMonth()->format('Y-m-d'));
+                $previous[]=$this->salesAmount($establishment,$previousStart->format('Y-m-d'),$previousStart->copy()->endOfMonth()->format('Y-m-d'));
+            }
+            $cur=DashboardSeries::project($current);$prev=DashboardSeries::project($previous);
+            return ['categories'=>$categories,'current'=>$cur['data'],'previous'=>$prev['data'],
+                'current_exact'=>$cur['exact'],'previous_exact'=>$prev['exact'],
+                'current_fractions'=>$cur['fractions'],'previous_fractions'=>$prev['fractions'],
+                'current_label'=>(string)$currentYear,'previous_label'=>(string)$previousYear]
+                + DashboardSales::numericProjection(['current_total'=>$cur['total'],'previous_total'=>$prev['total']]);
         });
     }
 
@@ -335,7 +272,7 @@ class DashboardKpi
      * USD convertido a VES.
      * Pasa $hour (0-23) para limitar a una sola hora del día indicado.
      */
-    private function salesTotal($establishment_id, $start, $end, $hour = null)
+    private function salesAmount($establishment_id, $start, $end, $hour = null)
     {
         return \App\Support\Exact\ReadSnapshot::run((new Document)->getConnection(), function () use ($establishment_id,$start,$end,$hour) {
         $D = \App\Support\Exact\Decimal::class;
@@ -356,13 +293,13 @@ class DashboardKpi
         foreach ([$documents,$notes] as $query) {
             foreach ($query->lazyById(500) as $record) {
                 $currency=$record->currency_type_id;
-                $rate=$currency === 'USD' ? $D::represent($D::readRequired($record,'exchange_rate_sale'),8) : '1';
+                $rate=$currency === 'USD' ? \App\Support\Exact\DashboardSales::historicalRate($record) : '1';
                 $amount=$D::convert($D::readRequired($record,'total'),$currency,'VES',$rate);
                 if ($record instanceof Document && $record->document_type_id === '07') $amount=$amount->negated();
                 $sum=$sum->plus($amount)->simplified();
             }
         }
-        return $D::format($sum,2,'.','');
+        return $sum;
         });
     }
 
@@ -370,7 +307,7 @@ class DashboardKpi
      * Compras = total + percepción, con USD convertido a VES.
      * Pasa $hour (0-23) para limitar a una sola hora del día indicado.
      */
-    private function purchasesTotal($establishment_id, $start, $end, $hour = null)
+    private function purchasesAmount($establishment_id, $start, $end, $hour = null)
     {
         return \App\Support\Exact\ReadSnapshot::run((new Purchase)->getConnection(), function () use ($establishment_id,$start,$end,$hour) {
             $D=\App\Support\Exact\Decimal::class;
@@ -380,12 +317,29 @@ class DashboardKpi
                 ->when(!is_null($hour),$this->hourFilter($hour));
             foreach ($purchases->lazyById(500) as $purchase) {
                 $currency=$purchase->currency_type_id;
-                $rate=$currency === 'USD' ? $D::represent($D::readRequired($purchase,'exchange_rate_sale'),8) : '1';
+                $rate=$currency === 'USD' ? \App\Support\Exact\DashboardSales::historicalRate($purchase) : '1';
                 $amount=$D::readRequired($purchase,'total')->plus($D::read($purchase,'total_perception'));
                 $sum=$sum->plus($D::convert($amount,$currency,'VES',$rate))->simplified();
             }
-            return $D::format($sum,2,'.','');
+            return $sum;
         });
+    }
+
+    private function salesTotal($establishment_id, $start, $end, $hour = null)
+    {
+        return $this->formatNumber($this->salesAmount($establishment_id,$start,$end,$hour));
+    }
+
+    private function purchasesTotal($establishment_id, $start, $end, $hour = null)
+    {
+        return $this->formatNumber($this->purchasesAmount($establishment_id,$start,$end,$hour));
+    }
+
+    private function variationAmount($current, $previous): \Brick\Math\BigRational
+    {
+        $current=D::of($current);$previous=D::of($previous);
+        if ($previous->isZero()) return D::of($current->isPositive() ? 100 : 0);
+        return $current->minus($previous)->dividedBy($previous)->multipliedBy(100)->simplified();
     }
 
     /**

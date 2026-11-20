@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\PriceLabel;
 use App\Services\PosCatalogStock;
+use App\Support\Exact\Decimal as D;
+use App\Support\Exact\PosCatalogPrice;
 
 class PosCollection extends ResourceCollection
 {
@@ -30,7 +32,8 @@ class PosCollection extends ResourceCollection
 
     private function formatItem($row, $configuration, $allPricesLabel, array $stock, bool $includeVariations = true): array
     {
-        $sale_unit_price = $this->getSaleUnitPrice($row, $configuration);
+        $price = PosCatalogPrice::values($row, $this->getSaleUnitPrice($row, $configuration));
+        $sale_unit_price = $price['sale_unit_price'];
 
         $currency = $row->currency_type;
         if(empty($currency )){
@@ -61,7 +64,8 @@ class PosCollection extends ResourceCollection
                         'barcode' => $variation->barcode,
                         'stock' => $variation->getStockByWarehouse(),
                         'stock_min' => (float) $variation->stock_min,
-                        'sale_unit_price' => (float) $variation->sale_unit_price,
+                        'sale_unit_price' => D::represent(D::readRequired($variation, 'sale_unit_price')),
+                        'calculation_snapshot' => PosCatalogPrice::values($variation)['calculation_snapshot'],
                         'sale_item' => $this->formatItem($variation, $configuration, $allPricesLabel, $stock, false),
                         'image_url' => ($variation->image && $variation->image !== 'imagen-no-disponible.jpg')
                             ? asset('storage/uploads/items/' . $variation->image)
@@ -77,6 +81,7 @@ class PosCollection extends ResourceCollection
             'internal_id' => $row->internal_id,
             'currency_type_symbol' => $currency->symbol,
             'sale_unit_price' => $sale_unit_price,
+            'calculation_snapshot' => $price['calculation_snapshot'],
             'purchase_unit_price' => $row->purchase_unit_price,
             'unit_type_id' => $row->unit_type_id,
             'aux_unit_type_id' => $row->unit_type_id,
@@ -122,20 +127,20 @@ class PosCollection extends ResourceCollection
 
     private function getSaleUnitPrice($row, $configuration){
 
-        $sale_unit_price = number_format($row->sale_unit_price, $configuration->decimal_quantity, ".", "");
+        $sale_unit_price = D::readRequired($row, 'sale_unit_price');
 
         if($configuration->active_warehouse_prices){
 
-            $warehouse_price = $row->warehousePrices()->where('warehouse_id', auth()->user()->establishment->warehouse->id)->first();
+            $warehouse_price = $row->warehousePrices()->addSelect('calculation_snapshot')->where('warehouse_id', auth()->user()->establishment->warehouse->id)->first();
 
             if($warehouse_price){
 
-                $sale_unit_price = number_format($warehouse_price->price, $configuration->decimal_quantity, ".", "");
+                $sale_unit_price = D::readRequired($warehouse_price, 'price');
 
             }else{
 
                 if($row->warehousePrices()->count() > 0){
-                    $sale_unit_price = number_format($row->warehousePrices()->first()->price, $configuration->decimal_quantity, ".", "");
+                    $sale_unit_price = D::readRequired($row->warehousePrices()->addSelect('calculation_snapshot')->first(), 'price');
                 }
 
             }

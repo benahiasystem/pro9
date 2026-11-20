@@ -52,6 +52,11 @@ function sanitizeLayout(rawLayout) {
   }))
 }
 
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+let initVersion = 0
+let filterVersion = 0
+let requestVersion = 0
+const latestByKey = Object.create(null)
 let persistTimer = null
 
 function persistLocal() {
@@ -79,6 +84,9 @@ function loadLocal() {
 }
 
 async function fetchDatasets(widgets) {
+  const version = filterVersion
+  const request = ++requestVersion
+  const filters = JSON.parse(JSON.stringify(state.filters))
   const pending = []
   const seen = {}
 
@@ -86,7 +94,8 @@ async function fetchDatasets(widgets) {
     const key = dataKey(widget)
     if (seen[key]) return
     seen[key] = true
-    pending.push({ key, source: widget.source, options: widget.options || {} })
+    pending.push({ key, source: widget.source, options: JSON.parse(JSON.stringify(widget.options || {})) })
+    latestByKey[key] = request
     Vue.set(state.loading, key, true)
   })
 
@@ -95,17 +104,22 @@ async function fetchDatasets(widgets) {
   try {
     const response = await http().post('/dashboard/widgets/data', {
       widgets: pending.map(p => ({ key: p.key, source: p.source, options: p.options })),
-      filters: state.filters,
+      filters,
     })
 
+    if (version !== filterVersion) return
     const data = response.data.data || {}
     pending.forEach(p => {
-      Vue.set(state.datasets, p.key, data[p.key] || { error: 'empty' })
+      if (latestByKey[p.key] === request) Vue.set(state.datasets, p.key, data[p.key] || { error: 'empty' })
     })
   } catch (e) {
-    pending.forEach(p => Vue.set(state.datasets, p.key, { error: 'request_failed' }))
+    if (version === filterVersion) pending.forEach(p => {
+      if (latestByKey[p.key] === request) Vue.set(state.datasets, p.key, { error: 'request_failed' })
+    })
   } finally {
-    pending.forEach(p => Vue.set(state.loading, p.key, false))
+    if (version === filterVersion) pending.forEach(p => {
+      if (latestByKey[p.key] === request) Vue.set(state.loading, p.key, false)
+    })
   }
 }
 
@@ -113,9 +127,15 @@ export const widgetStore = {
   state,
 
   async init(filters) {
+    const version = ++initVersion
+    filterVersion++
+    state.ready = false
+    state.datasets = {}
+    state.loading = {}
     state.filters = Object.assign({}, filters)
 
     const response = await http().get('/dashboard/widgets/catalog')
+    if (version !== initVersion) return
     state.catalog = response.data
 
     // Prioridad: layout del usuario (backend) > cache local > réplica por defecto.
@@ -125,6 +145,7 @@ export const widgetStore = {
       layout = sanitizeLayout(saved.data.layout)
     } catch (e) { /* sin backend de layout: cae a local */ }
 
+    if (version !== initVersion) return
     if (!layout.length) layout = loadLocal()
     state.layout = layout.length ? layout : defaultLayout(state.catalog.sources)
     state.ready = true
@@ -133,8 +154,10 @@ export const widgetStore = {
   },
 
   async setFilters(filters) {
+    filterVersion++
     state.filters = Object.assign({}, filters)
     state.datasets = {}
+    state.loading = {}
     await this.refresh()
   },
 
@@ -237,3 +260,5 @@ export const widgetStore = {
     return this.dataset(widget)
   },
 }
+
+// ######## FIN CALCULOS EXACTOS PRO9 ########

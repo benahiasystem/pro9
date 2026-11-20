@@ -12,6 +12,11 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ReportHotelExport implements  FromView, ShouldAutoSize, WithEvents
 {
+    // Explicit properties preserve the public export contract on PHP 8.2.
+    public $company;
+    public $records;
+    public $rooms;
+
     use Exportable;
 
     public function records($records) {

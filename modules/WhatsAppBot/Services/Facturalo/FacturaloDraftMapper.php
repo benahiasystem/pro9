@@ -15,7 +15,6 @@ use App\Support\Exact\Decimal as D;
 
 class FacturaloDraftMapper
 {
-    private const AFFECTATION_TAXED = '10';
     private const PRICE_TYPE_UNIT = '01';
 
     public function map(array $draft, User $user): array
@@ -27,6 +26,12 @@ class FacturaloDraftMapper
         $pricing = DraftPricing::calculate($draft['items'] ?? [], $draft['exchange_rate_sale'] ?? null, $draft['discount_amount'] ?? '0');
         if (!isset($draft['total']) || !D::of(D::input($draft['total'], 'total'))->isEqualTo(D::of($pricing['total_payable']))) {
             \App\Services\Payments\Classification::error('total', 'El importe confirmado cambió; prepare y confirme nuevamente el borrador.');
+        }
+        foreach (['subtotal' => 'total_value', 'igv' => 'total_igv'] as $confirmedField => $calculatedField) {
+            if (isset($draft[$confirmedField])
+                && !D::of(D::input($draft[$confirmedField], $confirmedField))->isEqualTo($pricing[$calculatedField])) {
+                \App\Services\Payments\Classification::error('total', 'La base imponible o el IVA cambió; prepare y confirme nuevamente el borrador.');
+            }
         }
         // ######## FIN CALCULOS EXACTOS SAB ########
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
@@ -62,7 +67,7 @@ class FacturaloDraftMapper
             $item = Item::findOrFail($line['item_id']);
             $mappedItems[] = $this->mapItem($item, $line);
         }
-        $totalTaxed = $pricing['total_value'];
+        $totalTaxed = $pricing['total_taxed'];
         $totalValueRounded = $pricing['total_value'];
         $totalIgv = $pricing['total_igv'];
         $total = $pricing['total'];
@@ -108,7 +113,7 @@ class FacturaloDraftMapper
             'total_charge' => 0,
             'total_exportation' => 0,
             'total_taxed' => $totalTaxed,
-            'total_exonerated' => 0,
+            'total_exonerated' => $pricing['total_exonerated'],
             'total_igv' => $totalIgv,
             'total_base_other_taxes' => 0,
             'total_other_taxes' => 0,
@@ -168,13 +173,14 @@ class FacturaloDraftMapper
                 'sale_unit_price' => $line['price'],
                 'has_igv' => (bool) $line['includes_iva'],
                 'calculate_quantity' => false,
-                'percentage_igv' => 16,
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                'percentage_igv' => $line['percentage_igv'],
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 'is_set' => (bool) $item->is_set,
                 'IdLoteSelected' => null, 'lots' => [], 'presentation' => null,
                 'used_points_for_exchange' => null, 'exchanged_for_points' => false,
             ]),
             'price_type_id' => self::PRICE_TYPE_UNIT,
-            'affectation_igv_type_id' => self::AFFECTATION_TAXED,
             'attributes' => [], 'charges' => [], 'discounts' => [],
             'discount' => null, 'attribute' => null, 'name_product_pdf' => null,
         ]);

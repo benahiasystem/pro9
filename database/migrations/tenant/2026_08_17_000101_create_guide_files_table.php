@@ -1,45 +1,47 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `guide_files` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `filename` text COLLATE utf8mb4_unicode_ci COMMENT 'Nombre de archivo'
- * - `purchase_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con purchases'
- * - `document_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con documents'
- * - `order_note_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con order_notes'
- * - `quotation_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con quotations'
- * - `sale_note_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con sale_notes'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - filename: text
+ * - purchase_id: bigint
+ * - document_id: bigint
+ * - order_note_id: bigint
+ * - quotation_id: bigint
+ * - sale_note_id: bigint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `guide_files` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `filename` text COLLATE utf8mb4_unicode_ci COMMENT 'Nombre de archivo',
-  `purchase_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con purchases',
-  `document_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con documents',
-  `order_note_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con order_notes',
-  `quotation_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con quotations',
-  `sale_note_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con sale_notes',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('guide_files', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->text('filename')->collation('pro9_ci_ai')->nullable()->comment('Nombre de archivo');
+            $table->bigInteger('purchase_id')->nullable()->default('0')->comment('Relacion con purchases');
+            $table->bigInteger('document_id')->nullable()->default('0')->comment('Relacion con documents');
+            $table->bigInteger('order_note_id')->nullable()->default('0')->comment('Relacion con order_notes');
+            $table->bigInteger('quotation_id')->nullable()->default('0')->comment('Relacion con quotations');
+            $table->bigInteger('sale_note_id')->nullable()->default('0')->comment('Relacion con sale_notes');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "guide_files" ADD CONSTRAINT "guide_files_purchase_id_range" CHECK ("purchase_id" >= 0)');
+        DB::statement('ALTER TABLE "guide_files" ADD CONSTRAINT "guide_files_document_id_range" CHECK ("document_id" >= 0)');
+        DB::statement('ALTER TABLE "guide_files" ADD CONSTRAINT "guide_files_order_note_id_range" CHECK ("order_note_id" >= 0)');
+        DB::statement('ALTER TABLE "guide_files" ADD CONSTRAINT "guide_files_quotation_id_range" CHECK ("quotation_id" >= 0)');
+        DB::statement('ALTER TABLE "guide_files" ADD CONSTRAINT "guide_files_sale_note_id_range" CHECK ("sale_note_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `guide_files`');
+        Schema::dropIfExists('guide_files');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

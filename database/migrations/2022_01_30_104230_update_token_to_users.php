@@ -15,7 +15,7 @@ class UpdateTokenToUsers extends Migration
     public function up()
     {
         // admin es el unico usuario
-        DB::connection('system')->table('users')->where('id', 1)->update(['api_token' => Str::random(60)]);
+        DB::connection()->table('users')->where('id', 1)->update(['api_token' => Str::random(60)]);
     }
 
     /**

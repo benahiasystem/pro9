@@ -11,6 +11,12 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ItemExport implements  FromView, ShouldAutoSize, WithEvents
 {
+    // Explicit properties preserve the public export contract on PHP 8.2.
+    public $company;
+    public $establishment;
+    public $records;
+    public $type;
+
 
     use Exportable;
     protected $withExtraData;

@@ -153,10 +153,10 @@ class ReportSaleConsolidatedController extends Controller
                 $request['document_type_id'] = '80';
                 $nota_venta = SaleNoteItem::whereDefaultDocumentType($request);
             }
-            $data = ($nota_venta != null) ? $document_items->union($nota_venta) : $document_items;
+            $data = ($nota_venta != null) ? $document_items->unionAll($nota_venta) : $document_items;
         } else {
             $sale_note_items = SaleNoteItem::whereDefaultDocumentType($request);
-            $data = $document_items->union($sale_note_items);
+            $data = $document_items->unionAll($sale_note_items);
         }
 
 

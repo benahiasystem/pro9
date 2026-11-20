@@ -1,72 +1,74 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `ecommerce_campaigns` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `discount_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'percentage'
- * - `discount_value` decimal(30,12) NOT NULL DEFAULT '0.0000'
- * - `start_date` datetime DEFAULT NULL
- * - `end_date` datetime DEFAULT NULL
- * - `sp_product_ids` json DEFAULT NULL
- * - `status` tinyint(1) NOT NULL DEFAULT '1'
- * - `sp_countdown` tinyint(1) NOT NULL DEFAULT '0'
- * - `sp_discount_price` tinyint(1) NOT NULL DEFAULT '0'
- * - `sp_purchase_count` tinyint(1) NOT NULL DEFAULT '0'
- * - `sp_views_count` tinyint(1) NOT NULL DEFAULT '0'
- * - `sp_stock_alert` tinyint(1) NOT NULL DEFAULT '0'
- * - `sp_rating` tinyint(1) NOT NULL DEFAULT '0'
- * - `sp_stock_threshold` int(10) unsigned NOT NULL DEFAULT '10'
- * - `sp_views_min` int(11) NOT NULL DEFAULT '10'
- * - `sp_views_max` int(11) NOT NULL DEFAULT '50'
- * - `sp_purchase_min` int(11) NOT NULL DEFAULT '5'
- * - `sp_purchase_max` int(11) NOT NULL DEFAULT '30'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - title: varchar(255)
+ * - discount_type: varchar(255)
+ * - discount_value: numeric(30,12)
+ * - start_date: timestamp
+ * - end_date: timestamp
+ * - sp_product_ids: json
+ * - status: boolean
+ * - sp_countdown: boolean
+ * - sp_discount_price: boolean
+ * - sp_purchase_count: boolean
+ * - sp_views_count: boolean
+ * - sp_stock_alert: boolean
+ * - sp_rating: boolean
+ * - sp_stock_threshold: bigint
+ * - sp_views_min: integer
+ * - sp_views_max: integer
+ * - sp_purchase_min: integer
+ * - sp_purchase_max: integer
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `ecommerce_campaigns` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `discount_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'percentage',
-  `discount_value` decimal(30,12) NOT NULL DEFAULT '0.0000',
-  `start_date` datetime DEFAULT NULL,
-  `end_date` datetime DEFAULT NULL,
-  `sp_product_ids` json DEFAULT NULL,
-  `status` tinyint(1) NOT NULL DEFAULT '1',
-  `sp_countdown` tinyint(1) NOT NULL DEFAULT '0',
-  `sp_discount_price` tinyint(1) NOT NULL DEFAULT '0',
-  `sp_purchase_count` tinyint(1) NOT NULL DEFAULT '0',
-  `sp_views_count` tinyint(1) NOT NULL DEFAULT '0',
-  `sp_stock_alert` tinyint(1) NOT NULL DEFAULT '0',
-  `sp_rating` tinyint(1) NOT NULL DEFAULT '0',
-  `sp_stock_threshold` int(10) unsigned NOT NULL DEFAULT '10',
-  `sp_views_min` int(11) NOT NULL DEFAULT '10',
-  `sp_views_max` int(11) NOT NULL DEFAULT '50',
-  `sp_purchase_min` int(11) NOT NULL DEFAULT '5',
-  `sp_purchase_max` int(11) NOT NULL DEFAULT '30',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `ecommerce_campaigns_status_end_idx` (`status`,`end_date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('ecommerce_campaigns', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('title', 255)->collation('pro9_ci_ai');
+            $table->string('discount_type', 255)->collation('pro9_ci_ai')->default('percentage');
+            $table->decimal('discount_value', 30, 12)->default('0.0000');
+            $table->timestamp('start_date')->nullable();
+            $table->timestamp('end_date')->nullable();
+            $table->json('sp_product_ids')->nullable();
+            $table->boolean('status')->default(true);
+            $table->boolean('sp_countdown')->default(false);
+            $table->boolean('sp_discount_price')->default(false);
+            $table->boolean('sp_purchase_count')->default(false);
+            $table->boolean('sp_views_count')->default(false);
+            $table->boolean('sp_stock_alert')->default(false);
+            $table->boolean('sp_rating')->default(false);
+            $table->bigInteger('sp_stock_threshold')->default('10');
+            $table->integer('sp_views_min')->default('10');
+            $table->integer('sp_views_max')->default('50');
+            $table->integer('sp_purchase_min')->default('5');
+            $table->integer('sp_purchase_max')->default('30');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['status', 'end_date'], 'ecommerce_campaigns_status_end_idx');
+        });
+        DB::statement('ALTER TABLE "ecommerce_campaigns" ADD CONSTRAINT "ecommerce_campaigns_sp_stock_threshold_range" CHECK ("sp_stock_threshold" BETWEEN 0 AND 4294967295)');
+        DB::statement('ALTER TABLE "ecommerce_campaigns" ADD CONSTRAINT "ecommerce_campaigns_sp_views_min_range" CHECK ("sp_views_min" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "ecommerce_campaigns" ADD CONSTRAINT "ecommerce_campaigns_sp_views_max_range" CHECK ("sp_views_max" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "ecommerce_campaigns" ADD CONSTRAINT "ecommerce_campaigns_sp_purchase_min_range" CHECK ("sp_purchase_min" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "ecommerce_campaigns" ADD CONSTRAINT "ecommerce_campaigns_sp_purchase_max_range" CHECK ("sp_purchase_max" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `ecommerce_campaigns`');
+        Schema::dropIfExists('ecommerce_campaigns');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

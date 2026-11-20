@@ -10,6 +10,7 @@ use App\Services\SalesCustomerIdentityPolicy;
 use Illuminate\Validation\ValidationException;
 use Modules\WhatsAppBot\Services\Facturalo\DraftPricing;
 use App\Support\Exact\Decimal as D;
+use App\Support\Venezuela\Localization;
 use App\Models\Tenant\ExchangeRate;
 
 class CreateDocumentTool implements ToolInterface
@@ -119,7 +120,12 @@ class CreateDocumentTool implements ToolInterface
             // de armar un draft invalido. El LLM al ver el error reintenta con
             // un id correcto del search_items previo.
             $itemDisplayName = $item->description ?: $item->name;
-            if ((float) $item->sale_unit_price <= 0 || empty(trim($itemDisplayName ?? ''))) {
+            $storedPrice = D::canonical($item->getRawOriginal('sale_unit_price') ?? '0');
+            $price = D::read($item, 'sale_unit_price');
+            if (D::represent($price) !== $storedPrice) {
+                $price = D::of($storedPrice);
+            }
+            if (!$price->isPositive() || empty(trim($itemDisplayName ?? ''))) {
                 return [
                     'status' => 'error',
                     'error' => "Item id={$item->id} tiene precio en 0 o sin nombre — no es un producto vendible. Llama search_items primero y usa el item_id correcto del producto que pidio el vendedor.",
@@ -131,6 +137,11 @@ class CreateDocumentTool implements ToolInterface
                     'error' => "Item id={$item->id} no es un producto vendible (tipo={$item->item_type_id}). Llama search_items primero.",
                 ];
             }
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            if (!in_array($item->sale_affectation_igv_type_id, Localization::SELECTABLE_AFFECTATION_IDS, true)) {
+                return ['status' => 'error', 'error' => 'El producto no tiene una afectación de IVA vigente para la venta.'];
+            }
+            // ######### FIN CAMBIO AFECTACIÓN IVA
             // La descripción es necesaria para identificar la partida en el PDF.
             if (empty(trim($item->name ?? ''))) {
                 $shownName = $item->description ?: ('id=' . $item->id);
@@ -144,8 +155,10 @@ class CreateDocumentTool implements ToolInterface
                 'item_name' => $item->description ?: $item->name,
                 'item_code' => $item->item_code ?: $item->internal_id,
                 'quantity' => $line['quantity'] ?? '1',
-                'price' => (string) $item->sale_unit_price,
+                'price' => D::represent($price),
+                'price_exact' => D::fraction($price),
                 'price_currency' => $item->currency_type_id,
+                'affectation_igv_type_id' => $item->sale_affectation_igv_type_id,
                 'includes_iva' => (bool) $item->has_igv,
             ];
         }
@@ -177,10 +190,11 @@ class CreateDocumentTool implements ToolInterface
             'total' => $pricing['total_payable'],
             'discount_amount' => $pricing['discount_amount'],
             'discount_base' => $pricing['discount_base'],
+            'subtotal_before_discount' => $pricing['subtotal_before_discount'],
             'observations' => $observations !== '' ? $observations : null,
         ];
 
-        $summary = $this->buildSummaryText($draft);
+        $summary = $this->buildSummaryText($draft, $pricing);
 
         return [
             'status' => 'ready_for_confirmation',
@@ -190,7 +204,7 @@ class CreateDocumentTool implements ToolInterface
         ];
     }
 
-    private function buildSummaryText(array $draft): string
+    private function buildSummaryText(array $draft, array $pricing): string
     {
         $type = ucfirst($draft['document_type_label']);
         $lines = [];
@@ -202,17 +216,18 @@ class CreateDocumentTool implements ToolInterface
         $lines[] = 'Items:';
         foreach ($draft['items'] as $line) {
             $lines[] = '  - ' . $line['quantity'] . ' x ' . $line['item_name']
-                . ' (Bs. ' . D::format($line['unit_price_with_igv'], 2) . ')'
-                . ' = Bs. ' . D::format($line['line_total'], 2);
+                . ' (Bs. ' . D::format(D::read($line, 'unit_price'), 2) . ')'
+                . ' = Bs. ' . D::format(D::read($line, 'total'), 2);
         }
         $lines[] = '';
-        if (!empty($draft['discount_amount']) && $draft['discount_amount'] > 0) {
-            $lines[] = 'Subtotal sin descuento: Bs. ' . D::format($draft['discount_base'], 2);
-            $lines[] = 'Descuento: -Bs. ' . D::format($draft['discount_amount'], 2);
+        $discount = D::read($pricing, 'discount_amount');
+        if ($discount->isPositive()) {
+            $lines[] = 'Subtotal sin descuento: Bs. ' . D::format(D::read($pricing, 'subtotal_before_discount'), 2);
+            $lines[] = 'Descuento: -Bs. ' . D::format($discount, 2);
         }
-        $lines[] = 'Subtotal: Bs. ' . D::format($draft['subtotal'], 2);
+        $lines[] = 'Subtotal: Bs. ' . D::format(D::read($pricing, 'total_value'), 2);
         // ########## INICIO CAMBIO IGV A IVA
-        $lines[] = 'IVA: Bs. ' . D::format($draft['igv'], 2);
+        $lines[] = 'IVA: Bs. ' . D::format(D::read($pricing, 'total_igv'), 2);
         // ######### FIN CAMBIO IGV A IVA
         $lines[] = 'Total: Bs. ' . D::format($draft['total'], 2);
         if ($draft['observations']) {

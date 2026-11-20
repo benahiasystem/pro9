@@ -12,6 +12,11 @@ use Modules\Report\Services\CustomerReportAmounts;
 
 class CustomerExport implements FromView, ShouldAutoSize, WithEvents
 {
+    // Explicit properties preserve the public export contract on PHP 8.2.
+    public $company;
+    public $establishment;
+    public $records;
+
     use Exportable;
     
     public function records($records) {

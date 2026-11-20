@@ -2214,6 +2214,10 @@
 </script>
 
 <div id="app" class="checkout-page-root">
+    <div v-if="cartCalculationError" class="alert alert-warning" role="alert" v-cloak>
+        @{{ cartCalculationError }}
+        <button type="button" class="btn btn-link" @click="resetInvalidCart">Vaciar carrito</button>
+    </div>
     <div class="row">
         <div class="col-12">
             <h2 class="my-4 mt-4" style="font-weight: 900;">@{{ isQuotationCheckout ? 'Solicitar cotización' : 'Finalizar compra' }}</h2>
@@ -2264,7 +2268,7 @@
                                     <a href="#">@{{ row.description }}</a>
                                 </h5>
                                 <span class="price text-muted text-decoration-line-through mr-1" v-if="showCartPrices && isQuotationCheckout && row.compare_at_price">
-                                    @{{ row.currency_type_symbol }} @{{ Number(row.compare_at_price).toFixed(2) }}
+                                    @{{ row.currency_type_symbol }} @{{ quoteOriginalPrice(row) }}
                                 </span>
                                 <span class="price text-muted" v-if="showCartPrices && isQuotationCheckout">
                                     @{{ row.currency_type_symbol }} @{{ row.sale_unit_price }}
@@ -2280,7 +2284,7 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
                                     </button>
                                 </div>
-                                <input class="input-quantity form-control text-center" :data-product="row.id" type="number" v-model.number="row.cantidad">
+                                <input class="input-quantity form-control text-center" :data-product="row.id" type="text" inputmode="decimal" v-model="row.cantidad" @change="onQuantityChange(row)">
                                 <div class="input-group-append">
                                     <button class="btn btn-outline-secondary btn-input-group" type="button" @click.stop.prevent="incrementQuantity(row)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
@@ -2288,7 +2292,7 @@
                                 </div>
                             </div>
 
-                            <strong class="total" v-if="showCartPrices && isQuotationCheckout">@{{ row.currency_type_symbol }} @{{ (row.sale_unit_price * row.cantidad).toFixed(2) }}</strong>
+                            <strong class="total" v-if="showCartPrices && isQuotationCheckout">@{{ row.currency_type_symbol }} @{{ quoteRowTotal(row) }}</strong>
                             <strong class="total" v-else-if="showCartPrices && checkoutPreviewItem(row.id)">Bs. @{{ checkoutPreviewItem(row.id).subtotal }}</strong>
                             <strong class="total text-muted" v-else>x @{{ row.cantidad }}</strong>
 
@@ -2712,14 +2716,14 @@
                                             >
                                             <span>@{{ zone.name }}</span>
                                         </span>
-                                        <strong class="option-card-price">Bs. @{{ parseFloat(zone.price).toFixed(2) }}</strong>
+                                        <strong class="option-card-price">Bs. @{{ formatAmount(zone.price) }}</strong>
                                     </label>
                                 </div>
 
                                 {{-- Una sola zona disponible: mostrar informativo --}}
                                 <div v-else-if="availableDeliveryZones.length === 1 && deliveryZone" class="ship-note ship-note--ok mt-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5 -5"/></svg>
-                                    Envío disponible: <strong>@{{ deliveryZone.name }}</strong> &mdash; Bs. @{{ parseFloat(deliveryZone.price).toFixed(2) }}
+                                    Envío disponible: <strong>@{{ deliveryZone.name }}</strong> &mdash; Bs. @{{ formatAmount(deliveryZone.price) }}
                                 </div>
                             </template>
                         </div>
@@ -3213,11 +3217,11 @@
                                 &minus; Bs. @{{ appliedCoupon.discount }}
                             </td>
                         </tr>
-                        <tr v-if="!isQuotationCheckout && parseFloat(campaignSavings) > 0">
+                        <tr v-if="!isQuotationCheckout && isPositiveAmount(campaignSavings)">
                             <td>Campaña de descuento</td>
-                            <td>&minus; Bs. @{{ parseFloat(campaignSavings).toFixed(2) }}</td>
+                            <td>&minus; Bs. @{{ formatCampaignSavings() }}</td>
                         </tr>
-                        <tr v-if="!isQuotationCheckout && deliveryZone && parseFloat(deliveryZone.price) > 0">
+                        <tr v-if="!isQuotationCheckout && deliveryZone && isPositiveAmount(deliveryZone.price)">
                             <td>Envío <small class="text-muted">(@{{ deliveryZone.name }})</small></td>
                             <td>Bs. @{{ summary.delivery }}</td>
                         </tr>
@@ -3810,6 +3814,9 @@
 @endphp
 <script>
     window.__ecommerce_config = {
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        tax_percentage: @json(\App\Support\Venezuela\Localization::exactTaxPercentage()),
+        // ######### FIN CAMBIO AFECTACIÓN IVA
         phone_whatsapp: {!! json_encode($phoneWhatsapp ?? '') !!},
         enable_whatsapp: {!! json_encode($showWhatsapp ?? false) !!},
         global_discount_type: {!! json_encode($global_discount_type ?? []) !!},
@@ -4637,8 +4644,9 @@
             return;
         }
 
-        const precio = Math.round(Number(jQuery('#total_amount').data('total')) * 100);
-        if (precio <= 0) {
+        if (!app_cart.gatewayPreviewMatches()) return;
+        const precio = Number(window.Pro9StorefrontAmounts.amount(app_cart.checkoutPreview.total).times('100').final(0));
+        if (!Number.isSafeInteger(precio) || precio <= 0) {
             window.mostrarMensaje('Monto inválido', 'El monto del pedido debe ser mayor a cero.', 'warning');
             return;
         }
@@ -4713,9 +4721,9 @@
                     : formpayment.purchase;
             }
 
-            const totalAmount = Number(app_cart.summary?.total ?? jQuery('#total_amount').data('total') ?? 0);
-            const precio = Math.round(totalAmount * 100);
-            const precio_culqi = Number(totalAmount.toFixed(2));
+            if (!app_cart.gatewayPreviewMatches()) throw new Error('El importe de la pasarela cambió. Revisa el carrito.');
+            const precio = formpayment.precio;
+            const precio_culqi = formpayment.precio_culqi;
             const culqiToken = window.Culqi.token;
             const culqiMetadata = culqiToken.metadata || {};
 

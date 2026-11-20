@@ -1,79 +1,76 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `fixed_asset_purchase_items` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `fixed_asset_purchase_id` int(10) unsigned NOT NULL
- * - `fixed_asset_item_id` int(10) unsigned NOT NULL
- * - `item` json NOT NULL
- * - `quantity` decimal(30,12) NOT NULL
- * - `unit_value` decimal(30,12) NOT NULL
- * - `affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `total_base_igv` decimal(30,12) NOT NULL
- * - `percentage_igv` decimal(30,12) NOT NULL
- * - `total_igv` decimal(30,12) NOT NULL
- * - `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `percentage_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_taxes` decimal(30,12) NOT NULL
- * - `price_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `unit_price` decimal(30,12) NOT NULL
- * - `total_value` decimal(30,12) NOT NULL
- * - `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total` decimal(30,12) NOT NULL
- * - `attributes` json DEFAULT NULL
- * - `discounts` json DEFAULT NULL
- * - `charges` json DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - fixed_asset_purchase_id: bigint
+ * - fixed_asset_item_id: bigint
+ * - item: json
+ * - quantity: numeric(30,12)
+ * - unit_value: numeric(30,12)
+ * - affectation_igv_type_id: varchar(255)
+ * - total_base_igv: numeric(30,12)
+ * - percentage_igv: numeric(30,12)
+ * - total_igv: numeric(30,12)
+ * - total_base_other_taxes: numeric(30,12)
+ * - percentage_other_taxes: numeric(30,12)
+ * - total_other_taxes: numeric(30,12)
+ * - total_taxes: numeric(30,12)
+ * - price_type_id: varchar(255)
+ * - unit_price: numeric(30,12)
+ * - total_value: numeric(30,12)
+ * - total_charge: numeric(30,12)
+ * - total_discount: numeric(30,12)
+ * - total: numeric(30,12)
+ * - attributes: json
+ * - discounts: json
+ * - charges: json
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `fixed_asset_purchase_items` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `fixed_asset_purchase_id` int(10) unsigned NOT NULL,
-  `fixed_asset_item_id` int(10) unsigned NOT NULL,
-  `item` json NOT NULL,
-  `quantity` decimal(30,12) NOT NULL,
-  `unit_value` decimal(30,12) NOT NULL,
-  `affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `total_base_igv` decimal(30,12) NOT NULL,
-  `percentage_igv` decimal(30,12) NOT NULL,
-  `total_igv` decimal(30,12) NOT NULL,
-  `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `percentage_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_taxes` decimal(30,12) NOT NULL,
-  `price_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `unit_price` decimal(30,12) NOT NULL,
-  `total_value` decimal(30,12) NOT NULL,
-  `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total` decimal(30,12) NOT NULL,
-  `attributes` json DEFAULT NULL,
-  `discounts` json DEFAULT NULL,
-  `charges` json DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `fixed_asset_purchase_items_fixed_asset_purchase_id_foreign` (`fixed_asset_purchase_id`),
-  KEY `fixed_asset_purchase_items_fixed_asset_item_id_foreign` (`fixed_asset_item_id`),
-  KEY `fixed_asset_purchase_items_affectation_igv_type_id_foreign` (`affectation_igv_type_id`),
-  KEY `fixed_asset_purchase_items_price_type_id_foreign` (`price_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('fixed_asset_purchase_items', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('fixed_asset_purchase_id');
+            $table->bigInteger('fixed_asset_item_id');
+            $table->json('item');
+            $table->decimal('quantity', 30, 12);
+            $table->decimal('unit_value', 30, 12);
+            $table->string('affectation_igv_type_id', 255)->collation('pro9_ci_ai');
+            $table->decimal('total_base_igv', 30, 12);
+            $table->decimal('percentage_igv', 30, 12);
+            $table->decimal('total_igv', 30, 12);
+            $table->decimal('total_base_other_taxes', 30, 12)->default('0.00');
+            $table->decimal('percentage_other_taxes', 30, 12)->default('0.00');
+            $table->decimal('total_other_taxes', 30, 12)->default('0.00');
+            $table->decimal('total_taxes', 30, 12);
+            $table->string('price_type_id', 255)->collation('pro9_ci_ai');
+            $table->decimal('unit_price', 30, 12);
+            $table->decimal('total_value', 30, 12);
+            $table->decimal('total_charge', 30, 12)->default('0.00');
+            $table->decimal('total_discount', 30, 12)->default('0.00');
+            $table->decimal('total', 30, 12);
+            $table->json('attributes')->nullable();
+            $table->json('discounts')->nullable();
+            $table->json('charges')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['fixed_asset_purchase_id'], 'fixed_asset_purchase_items_fixed_asset_purchase_id_foreign');
+            $table->index(['fixed_asset_item_id'], 'fixed_asset_purchase_items_fixed_asset_item_id_foreign');
+            $table->index(['affectation_igv_type_id'], 'fixed_asset_purchase_items_affectation_igv_type_id_foreign');
+            $table->index(['price_type_id'], 'fixed_asset_purchase_items_price_type_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `fixed_asset_purchase_items`');
+        Schema::dropIfExists('fixed_asset_purchase_items');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

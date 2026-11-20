@@ -4,11 +4,7 @@ namespace App\CoreFacturalo\Requests\Inputs\Common;
 
 use App\Models\Tenant\Person as PersonModel;
 use App\Models\Tenant\PersonAddress;
-use App\Models\Tenant\Catalogs\Country;
-use App\Models\Tenant\Catalogs\Department;
-use App\Models\Tenant\Catalogs\District;
-
-//dd($customer_address, $person->telephone, $customer_address->telephone ?? null);
+use App\Support\Venezuela\PersonLocation;
 
 class PersonInput
 {
@@ -21,20 +17,33 @@ class PersonInput
         }
 
         $customer_address = null;
+        $telephone = $person->telephone;
         if($address_id)
         {
             $customer_address = PersonAddress::where('person_id', $person->id)->find($address_id);
             if (!$customer_address) {
                 \App\Services\Fiscal\FiscalAmounts::error('customer_address_id', 'La dirección seleccionada no pertenece al cliente.');
             }
+            $telephone = $customer_address->telephone ?: $telephone;
         } else if($itinerant) {
-            $customer_address = ((object) $itinerant )?? null;
+            $itinerantAddress = validator((array) $itinerant, [
+                'address' => 'required|string|max:255',
+                'country_id' => 'required|in:VE',
+                'district_id' => 'nullable|string',
+                'telephone' => 'nullable|string',
+            ])->validate();
+            $territory = PersonLocation::resolve($person->getConnection(), $itinerantAddress['country_id'], $itinerantAddress['district_id'] ?? null);
+            $customer_address = new PersonAddress($territory + [
+                'address' => $itinerantAddress['address'],
+                'country_id' => $itinerantAddress['country_id'],
+            ]);
+            $telephone = ($itinerantAddress['telephone'] ?? null) ?: $telephone;
         }
+        $address = $customer_address ?? $person;
+        $location = $itinerant ? $address : $person;
 
         if ($person->identity_document_type_id === 'ND') {
-            $country = $customer_address ? $customer_address->country_id : $person->country_id;
-            $address = $customer_address ? $customer_address->address : $person->address;
-            if (!$country || $country === 'VE' || !trim((string) $address)) {
+            if (!$address->country_id || $address->country_id === 'VE' || !trim((string) $address->address)) {
                 \App\Services\Fiscal\FiscalAmounts::error('customer_address_id', 'Seleccione una dirección extranjera completa.');
             }
         }
@@ -49,29 +58,29 @@ class PersonInput
             'number' => $person->number,
             'name' => $person->name,
             'trade_name' => $person->trade_name,
-            'country_id' => ($customer_address) ? $customer_address->country_id : $person->country_id,
+            'country_id' => $address->country_id,
             'country' => [
-                'id' => ($customer_address) ? $customer_address->country_id : $person->country_id,
-                'description' => ($itinerant) == true ?  optional($customer_address->country)->description :  optional($person->country)->description,
+                'id' => $address->country_id,
+                'description' => optional($location->country)->description,
             ],
-            'department_id' =>  ($customer_address) ? $customer_address->department_id : $person->department_id,
+            'department_id' => $address->department_id,
             'department' => [
-                'id' =>  ($customer_address) ? $customer_address->department_id : $person->department_id,  //$person->department_id,
-                'description' => ($itinerant) == true ? optional($customer_address->department)->description :  optional($person->department)->description, // optional($person->department)->description,
+                'id' => $address->department_id,
+                'description' => optional($location->department)->description,
             ],
-            'province_id' => ($customer_address) ? $customer_address->province_id : $person->province_id, //$person->province_id,
+            'province_id' => $address->province_id,
             'province' => [
-                'id' => ($customer_address) ? $customer_address->province_id : $person->province_id, //$person->province_id,
-                'description' => ($itinerant) == true ?  optional($customer_address->province)->description :  optional($person->province)->description, //optional($person->province)->description,
+                'id' => $address->province_id,
+                'description' => optional($location->province)->description,
             ],
-            'district_id' =>  ($customer_address) ? $customer_address->district_id : $person->district_id, //$person->district_id,
+            'district_id' => $address->district_id,
             'district' => [
-                'id' => ($customer_address) ? $customer_address->district_id : $person->district_id, //$person->district_id,
-                'description' => ($itinerant) == true ?  optional($customer_address->district)->description :  optional($person->district)->description, //optional($person->district)->description,
+                'id' => $address->district_id,
+                'description' => optional($location->district)->description,
             ],
-            'address' =>  ($customer_address) ? $customer_address->address : $person->address,//$person->address,
-            'email' => ($itinerant) == true ? $customer_address  : $person->email,  //$person->email,
-            'telephone' => ($customer_address && $customer_address->telephone)? $customer_address->telephone : $person->telephone, //$person->telephone,
+            'address' => $address->address,
+            'email' => $person->email,
+            'telephone' => $telephone,
             'perception_agent' => $person->perception_agent,
             'address_id' => $address_id,
             'internal_code' => $person->internal_code,

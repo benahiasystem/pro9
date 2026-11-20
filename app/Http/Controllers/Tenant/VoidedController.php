@@ -44,7 +44,7 @@ class VoidedController extends Controller
         $voided = DB::connection('tenant')
                     ->table('voided')
                     ->where($request->column, 'like', "%{$request->value}%")
-                    ->select(DB::raw("id, external_id, date_of_reference, date_of_issue, identifier, state_type_id, 'voided' AS 'type'"));
+                    ->select(DB::raw("id, external_id, date_of_reference, date_of_issue, identifier, state_type_id, 'voided' AS type"));
 
         return new VoidedCollection($voided->orderBy('date_of_issue', 'DESC')->paginate(config('tenant.items_per_page')));
     }

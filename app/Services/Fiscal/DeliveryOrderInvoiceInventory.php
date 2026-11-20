@@ -1,8 +1,10 @@
 <?php
 namespace App\Services\Fiscal;
+use App\Database\IntegerTransport;
 use App\Models\Tenant\{Company,Dispatch,DocumentItem,Item,Kardex,SaleNote};
 use Modules\Inventory\Models\{Warehouse,ItemWarehouse};
 use App\Support\Exact\Decimal as D;
+use App\Support\Exact\LineCalculation;
 use Modules\Item\Models\{ItemLot,ItemLotsGroup};
 
 /** Server-owned movement snapshot for invoices sourced from one or more delivery orders. */
@@ -13,9 +15,18 @@ final class DeliveryOrderInvoiceInventory
         foreach ($input['items'] as &$line) unset($line['item']['dispatch_inventory_quantity'], $line['item']['dispatch_global_inventory_quantity']);unset($line);
         $refs=$input['dispatches_relateds'] ?? [];
         if (is_string($refs)) $refs=json_decode($refs,true) ?: [];
-        if (empty($input['dispatch_id']) && !$refs) return $input;
+        $dispatchId = null;
+        $dispatchKey = $input['dispatch_id'] ?? '';
+        if ($dispatchKey !== '') {
+            $dispatchId = IntegerTransport::positiveKey($dispatchKey);
+            if ($dispatchId === null) {
+                FiscalAmounts::error('dispatch_id', 'Identifique una orden de entrega válida.');
+            }
+            $input['dispatch_id'] = $dispatchId;
+        }
+        if ($dispatchId === null && !$refs) return $input;
         Company::lockForUpdate()->firstOrFail();$orders=[];
-        if (!empty($input['dispatch_id'])) $orders[]=Dispatch::lockForUpdate()->findOrFail($input['dispatch_id']);
+        if ($dispatchId !== null) $orders[]=Dispatch::lockForUpdate()->findOrFail($dispatchId);
         foreach ($refs as $reference) {
             $parts=FiscalIdentity::parseNumberFull((string)$reference);if (!$parts) FiscalAmounts::error('dispatches_relateds','Referencia de orden inválida.');
             $orders[]=Dispatch::where('establishment_id',$input['establishment_id'])->where('series',$parts[0])->where('number',$parts[1])->lockForUpdate()->firstOrFail();
@@ -33,6 +44,7 @@ final class DeliveryOrderInvoiceInventory
         $orderNotes=collect($orders)->pluck('reference_sale_note_id')->filter()->map(fn($id)=>(string)$id)->unique()->all();
         if (array_diff(array_unique($declared),$orderNotes)) FiscalAmounts::error('sale_notes_relateds','Las notas relacionadas deben ser origen de las órdenes seleccionadas.');
         $covered=[];$globalCovered=[];$tracked=[];$sourceAvailable=[];$sourceGlobalAvailable=[];
+        $originalQuantities = [];
         foreach (collect($orders)->unique('id') as $order) {
             DeliveryOrderInput::authorize((int)$order->establishment_id);
             if ((int)$order->establishment_id!==(int)$input['establishment_id'] || (int)$order->customer_id!==(int)$input['customer_id'] || $order->reference_document_id || in_array($order->state_type_id,['09','11'],true)) FiscalAmounts::error('dispatches_relateds','La orden debe estar vigente, sin facturar, y pertenecer al cliente y sucursal.');
@@ -69,6 +81,8 @@ final class DeliveryOrderInvoiceInventory
                 }
             }
             foreach ($order->items as $line) {
+                $originalQuantities[$line->item_id] = D::of($originalQuantities[$line->item_id] ?? 0)
+                    ->plus($line->exactValue('quantity'));
                 $global=(array) ($line->calculation_snapshot['inputs']['dispatch_global_inventory'] ?? []);
                 if ($global) {
                     if (!$order->discountsPhysicalStock() || !empty($global['reversed'])
@@ -101,15 +115,34 @@ final class DeliveryOrderInvoiceInventory
                 }
             }
         }
+        $rowCounts = collect($input['items'])->countBy('item_id');
         foreach ($input['items'] as &$line) {
             $item=Item::findOrFail($line['item_id']);
             if ($item->is_set) FiscalAmounts::error('items','La conversión de órdenes requiere líneas de bienes individuales.');
-            $factor=D::of($line['item']['presentation']['quantity_unit'] ?? 1);$quantity=D::of(D::input($line['quantity'], 'items.quantity'))->multipliedBy($factor);
+            $factor = D::of($line['item']['presentation']['quantity_unit'] ?? 1);
+            $quantity = LineCalculation::quantity($line);
+            $original = $originalQuantities[$item->id] ?? null;
+            if ($original !== null && $rowCounts[$item->id] === 1 && $factor->isEqualTo(1)
+                && empty($line['quantity_input']) && $quantity->isEqualTo(D::represent($original))
+                && !$quantity->isEqualTo($original)) {
+                $quantity = $original;
+                $snapshot = $line['calculation_snapshot'] ?? [];
+                $line['calculation_snapshot'] = array_replace_recursive($snapshot, D::snapshot(['quantity' => $quantity]));
+            }
+            $quantity = $quantity->multipliedBy($factor);
             if (isset($tracked[$item->id])) {
                 $source=$tracked[$item->id];
                 if (!empty($source['assigned']) || !$factor->isEqualTo(1) || !$quantity->isEqualTo(D::of($source['quantity']))) FiscalAmounts::error('items','Conserve la cantidad completa de cada producto con lotes o seriales en una línea, usando su unidad original.');
                 $tracked[$item->id]['assigned']=true;
-                $line['item']['IdLoteSelected']=array_map(fn($id,$amount)=>['id'=>$id,'compromise_quantity'=>D::represent($amount)],array_keys($source['groups']),array_values($source['groups']));
+                $line['item']['IdLoteSelected'] = array_map(
+                    static fn ($id, $amount) => [
+                        'id' => $id,
+                        'compromise_quantity' => D::represent($amount),
+                        'compromise_quantity_exact' => D::fraction($amount),
+                    ],
+                    array_keys($source['groups']),
+                    array_values($source['groups'])
+                );
                 $line['item']['lots']=array_values(array_map(fn($serial)=>array_replace($serial,['has_sale'=>true]),$source['serials']));
             }
             $taken=D::min($quantity,$covered[$item->id] ?? 0);$covered[$item->id]=D::max(0,D::of($covered[$item->id] ?? 0)->minus($taken));
@@ -126,9 +159,16 @@ final class DeliveryOrderInvoiceInventory
 
     public static function apply(DocumentItem $line,int $direction): bool
     {
-        if (($line->item->order_inventory_inherited ?? false) === true) return true;
+        if (($line->item->order_inventory_inherited ?? false) === true) {
+            if ($direction<0) InvoiceTrackedInventory::remember($line,[],[],D::of(0));
+            return true;
+        }
         if (!isset($line->item->dispatch_inventory_quantity)) return false;
-        $quantity=D::of($line->item->dispatch_inventory_quantity);if ($quantity->isLessThanOrEqualTo(0)) return true;
+        $quantity=D::of($line->item->dispatch_inventory_quantity);
+        if ($quantity->isLessThanOrEqualTo(0)) {
+            if ($direction<0) InvoiceTrackedInventory::remember($line,[],[],D::of(0));
+            return true;
+        }
         $document=$line->document;$db=$document->getConnection();
         $warehouse=$line->warehouse_id ? Warehouse::findOrFail($line->warehouse_id) : Warehouse::where('establishment_id',$document->establishment_id)->orderBy('id')->firstOrFail();
         if ((int)$warehouse->establishment_id!==(int)$document->establishment_id) FiscalAmounts::error('warehouse','El almacén debe pertenecer a la sucursal de la factura.');
@@ -137,19 +177,24 @@ final class DeliveryOrderInvoiceInventory
         if (!$stock || ($direction<0 && $stock->exactValue('stock')->isLessThan($quantity))) FiscalAmounts::error('items','Existencias insuficientes para la cantidad pendiente de traslado.');
         $delta=$quantity->multipliedBy($direction);$stock->stock=$stock->exactValue('stock')->plus($delta);$stock->save();
         $document->inventory_kardex()->create(['date_of_issue'=>$document->date_of_issue->format('Y-m-d'),'item_id'=>$line->item_id,'warehouse_id'=>$warehouse->id,'quantity'=>$delta]);
-        $lots=$line->item->IdLoteSelected ?? null;
+        $lots=$line->item->IdLoteSelected ?? null;$lotMovements=[];$serialMovements=[];
         if ($lots) {
             $groups=is_array($lots) ? $lots : [['id'=>$lots,'compromise_quantity'=>$quantity]];
             foreach ($groups as $group) {
-                $group=(array)$group;$lot=ItemLotsGroup::where('item_id',$line->item_id)->lockForUpdate()->findOrFail($group['id']);$amount=is_array($lots) ? D::of($group['compromise_quantity'] ?? 0)->multipliedBy($line->item->presentation->quantity_unit ?? 1) : $quantity;
+                $group=(array)$group;$lot=ItemLotsGroup::where('item_id',$line->item_id)->lockForUpdate()->findOrFail($group['id']);$amount=is_array($lots) ? D::of($group['compromise_quantity_exact'] ?? $group['compromise_quantity'] ?? 0)->multipliedBy(FiscalNoteInventory::presentationQuantity($line->item)) : $quantity;
                 if ($direction<0 && $lot->exactValue('quantity')->isLessThan($amount)) FiscalAmounts::error('items','El lote no tiene existencias suficientes.');
-                $lot->quantity=$lot->exactValue('quantity')->plus(D::of($amount)->multipliedBy($direction));$lot->save();
+                $lotDelta=D::of($amount)->multipliedBy($direction);
+                $lot->quantity=$lot->exactValue('quantity')->plus($lotDelta);$lot->save();
+                $lotMovements[]=['id'=>$lot->id,'quantity'=>D::fraction($lotDelta)];
             }
         }
         foreach ($line->item->lots ?? [] as $serial) {
             $serial=(array)$serial;$lot=ItemLot::where('item_id',$line->item_id)->where('warehouse_id',$warehouse->id)->lockForUpdate()->findOrFail($serial['id']);
-            if ($direction<0 && $lot->has_sale) FiscalAmounts::error('items','El serial ya fue utilizado.');$lot->has_sale=$direction<0;$lot->save();
+            if ($direction<0 && $lot->has_sale) FiscalAmounts::error('items','El serial ya fue utilizado.');
+            $before=$lot->has_sale;$lot->has_sale=$direction<0;$lot->save();
+            $serialMovements[]=['id'=>$lot->id,'before'=>$before,'after'=>$lot->has_sale];
         }
+        if ($direction<0) InvoiceTrackedInventory::remember($line,$lotMovements,$serialMovements,$delta);
         return true;
     }
 }

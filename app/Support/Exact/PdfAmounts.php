@@ -31,13 +31,17 @@ final class PdfAmounts
         return array_map(fn ($entry)=>(object)$entry, array_values((array)$raw));
     }
 
-    public static function adjustmentPercent($entry): string
+    public static function adjustmentPercentValue($entry): \Brick\Math\BigRational
     {
         $entry=(array)$entry;
-        $percent = array_key_exists('percentage',$entry) && $entry['percentage'] !== null
+        return array_key_exists('percentage',$entry) && $entry['percentage'] !== null
             ? Decimal::of($entry['percentage'])
             : Decimal::of($entry['factor'] ?? 0)->multipliedBy(100);
-        return Decimal::represent($percent);
+    }
+
+    public static function adjustmentPercent($entry): string
+    {
+        return Decimal::represent(self::adjustmentPercentValue($entry));
     }
 
     public static function adjustmentAmount($entry): string

@@ -98,7 +98,7 @@ class FixedAssetItemController extends Controller
 
         } catch (Exception $e) {
 
-            return ($e->getCode() == '23000') ? ['success' => false,'message' => 'El ítem esta siendo usado por otros registros, no puede eliminar'] : ['success' => false,'message' => 'Error inesperado, no se pudo eliminar el ítem'];
+            return (\App\Database\SqlErrors::reference($e)) ? ['success' => false,'message' => 'El ítem esta siendo usado por otros registros, no puede eliminar'] : ['success' => false,'message' => 'Error inesperado, no se pudo eliminar el ítem'];
 
         }
 

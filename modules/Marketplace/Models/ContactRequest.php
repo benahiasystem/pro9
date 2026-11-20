@@ -11,6 +11,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class ContactRequest extends Model
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     use UsesSystemConnection;
 
     public const TYPE_STORE = 'store';

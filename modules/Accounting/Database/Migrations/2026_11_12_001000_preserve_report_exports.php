@@ -4,6 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Modules\Accounting\Support\{TenantSchema as Schema, TenantDB as DB};
 
+use Modules\Accounting\Support\PostgresIntegrity as Integrity;
+
 return new class extends Migration
 {
     protected $connection = 'tenant';
@@ -33,12 +35,10 @@ return new class extends Migration
             $t->foreign(['organization_id', 'company_id', 'report_job_id'], 'accounting_report_artifact_job')->references(['organization_id', 'company_id', 'id'])->on('accounting_report_jobs')->restrictOnDelete();
             $t->foreign('created_by')->references('id')->on('users')->restrictOnDelete();
         });
-        if (DB::getDriverName() === 'mysql') {
-            DB::unprepared("CREATE TRIGGER accounting_report_job_upd BEFORE UPDATE ON accounting_report_jobs FOR EACH ROW BEGIN IF OLD.status='ready' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Informe congelado inmutable'; END IF; END");
-            DB::unprepared("CREATE TRIGGER accounting_report_job_del BEFORE DELETE ON accounting_report_jobs FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Informe conservado'");
-            DB::unprepared("CREATE TRIGGER accounting_report_artifact_upd BEFORE UPDATE ON accounting_report_artifacts FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Descarga verificada inmutable'");
-            DB::unprepared("CREATE TRIGGER accounting_report_artifact_del BEFORE DELETE ON accounting_report_artifacts FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Descarga verificada conservada'");
-        }
+        Integrity::reject('accounting_report_jobs', 'accounting_report_job_upd', 'UPDATE', 'Informe congelado inmutable', "OLD.status='ready'");
+        Integrity::reject('accounting_report_jobs', 'accounting_report_job_del', 'DELETE', 'Informe conservado');
+        Integrity::reject('accounting_report_artifacts', 'accounting_report_artifact_upd', 'UPDATE', 'Descarga verificada inmutable');
+        Integrity::reject('accounting_report_artifacts', 'accounting_report_artifact_del', 'DELETE', 'Descarga verificada conservada');
     }
 
     public function down(): void

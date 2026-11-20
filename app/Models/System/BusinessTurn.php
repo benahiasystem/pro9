@@ -12,6 +12,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class BusinessTurn extends Model
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     use UsesSystemConnection;
 
     public const CUSTOM_ID = 0;

@@ -7,6 +7,8 @@ use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\UnitType;
 use Illuminate\Support\Facades\Cache;
 use App\Helpers\CacheHelper;
+use App\Support\Exact\Decimal as D;
+use Brick\Math\RoundingMode;
 
 /**
  * App\Models\Tenant\ItemUnitType
@@ -95,24 +97,36 @@ class ItemUnitType extends ModelTenant
      *
      * @return array
      */
-    public function getCollectionData($decimal_units = 2){
+    public function getCollectionData($decimal_units = 2, bool $withExactAmounts = false){
+        $quantity = $withExactAmounts ? D::readRequired($this, 'quantity_unit') : null;
+        $scale = max(0, $decimal_units);
+        $quantityLabel = $withExactAmounts
+            ? (string) $quantity->toScale($scale, RoundingMode::HALF_UP)
+            : number_format($this->quantity_unit, $decimal_units, '.', '');
+
         return [
             'id'            => $this->id,
             'description'   => "{$this->description}",
             'item_id'       => $this->item_id,
             'unit_type_id'  => $this->unit_type_id,
-            'quantity_unit' => number_format($this->quantity_unit, $decimal_units, '.', ''),
+            'quantity_unit' => $quantityLabel,
+            ...($withExactAmounts ? ['calculation_snapshot' => D::snapshot(['quantity_unit' => $quantity])] : []),
             'price_default' => $this->price_default,
             'barcode'       => $this->barcode,
-            'prices'        => PriceLabel::all()->map(function($price_label) use ($decimal_units) {
+            'prices'        => PriceLabel::all()->map(function($price_label) use ($decimal_units, $quantityLabel, $quantity, $scale, $withExactAmounts) {
                 $price = $this->prices->firstWhere('price_label_id', $price_label->id);
+                $amount = $withExactAmounts && $price ? D::readRequired($price, 'price') : null;
+                $priceLabel = $amount !== null
+                    ? (string) $amount->toScale($scale, RoundingMode::HALF_UP)
+                    : ($price ? number_format($price->price, $decimal_units, '.', '') : 0);
                 return [
                     'id'             => $price ? $price->id : null,
                     'price_label_id' => $price_label->id,
                     'position'       => $price_label->position,
-                    'quantity_unit' => number_format($this->quantity_unit, $decimal_units, '.', ''),
+                    'quantity_unit' => $quantityLabel,
                     'label'          => $price_label->label,
-                    'price'          => $price ? number_format($price->price, $decimal_units, '.', '') : 0,
+                    'price'          => $priceLabel,
+                    ...($amount !== null ? ['calculation_snapshot' => D::snapshot(['price' => $amount, 'quantity_unit' => $quantity])] : []),
                     'is_active'      => $price ? (bool) $price->is_active : false,
                 ];
             })->toArray(),

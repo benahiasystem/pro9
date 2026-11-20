@@ -244,15 +244,15 @@
                             </div>
 
                             <div class="col-md-4">
-                                <p class="text-right" v-if="form.total_exportation > 0">OP.EXPORTACIÓN: {{ currency_type.symbol }} {{ form.total_exportation }}</p>
+                                <p class="text-right" v-if="hasPositiveInvoiceAmount('total_exportation')">OP.EXPORTACIÓN: {{ currency_type.symbol }} {{ form.total_exportation }}</p>
 
 
-                                <p class="text-right" v-if="form.total_exonerated > 0">OP.EXONERADAS: {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
-                                <p class="text-right" v-if="form.total_taxed > 0">OP.GRAVADA: {{ currency_type.symbol }} {{ form.total_taxed }}</p>
+                                <p class="text-right" v-if="hasPositiveInvoiceAmount('total_exonerated')">OP.EXONERADAS: {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
+                                <p class="text-right" v-if="hasPositiveInvoiceAmount('total_taxed')">OP.GRAVADA: {{ currency_type.symbol }} {{ form.total_taxed }}</p>
                                 <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
-                                <p class="text-right" v-if="form.total_igv > 0">IVA: {{ currency_type.symbol }} {{ form.total_igv }}</p>
+                                <p class="text-right" v-if="hasPositiveInvoiceAmount('total_igv')">IVA: {{ currency_type.symbol }} {{ form.total_igv }}</p>
                                 <!-- ########### FIN CAMBIO IVA VENEZUELA -->
-                                <h3 class="text-right" v-if="form.total > 0"><b>TOTAL A PAGAR: </b>{{ currency_type.symbol }} {{ form.total_payable }}</h3>
+                                <h3 class="text-right" v-if="hasPositiveInvoiceAmount('total')"><b>TOTAL A PAGAR: </b>{{ currency_type.symbol }} {{ form.total_payable }}</h3>
                             </div>
 
                         </div>
@@ -298,6 +298,7 @@ import { hasNamedSeries } from '@helpers/document-series';
     import DocumentOptions from '../documents/partials/options.vue'
     import {functions, exchangeRate} from '../../../mixins/functions'
     import {calculateRowItem} from '../../../helpers/functions'
+    import {exactValue} from '../../../helpers/exchange-rate-math'
     import {documentTotals} from '../../../helpers/exact-document'
     import Logo from '../companies/logo.vue'
 
@@ -693,6 +694,9 @@ import { hasNamedSeries } from '@helpers/document-series';
                 });
                 this.form.items = items
                 this.calculateTotal()
+            },
+            hasPositiveInvoiceAmount(field) {
+                return exactValue(this.form, field).compare(0) > 0
             },
             calculateTotal() {
                 const items = this.form.items.map(row => row.affectation_igv_type_id === '40'

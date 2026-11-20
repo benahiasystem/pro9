@@ -91,6 +91,7 @@
             <select-lots-group
                 :lots-group="lots_group"
                 :quantity="lots_group_quantity"
+                :exact-quantities="exactQuantities"
                 :showDialog.sync="showDialogLotsGroup"
                 @addRowLotGroup="addRowLotGroup">
             </select-lots-group>
@@ -111,9 +112,10 @@
         resolveIdLoteSelected,
         hydrateItemLots,
     } from '../../../../helpers/lotValidation'
+    import { rowNeedsLotAssignment as rowNeedsInvoiceLotAssignment } from '../../../../helpers/invoice-lots'
 
     export default {
-        props:['items','config'],
+        props: ['items', 'config', 'exactQuantities'],
         components:{SelectLotsForm, SelectWarehouses, SelectLotsGroup},
 
         data()
@@ -152,7 +154,7 @@
                 return itemRequiresLot(row);
             },
             rowNeedsLotAssignment(row) {
-                return rowNeedsLotAssignment(row);
+                return this.exactQuantities ? rowNeedsInvoiceLotAssignment(row) : rowNeedsLotAssignment(row);
             },
             resolveIdLoteSelected(row) {
                 return resolveIdLoteSelected(row);
@@ -195,7 +197,7 @@
                 await this.getLotsGroup(row.item_id)
                 await this.regularizeCompromiseQuantity(row)
                 this.current_index_item = index
-                this.lots_group_quantity = parseFloat(row.quantity) || 0
+                this.lots_group_quantity = this.exactQuantities ? row.quantity : (parseFloat(row.quantity) || 0)
                 this.showDialogLotsGroup = true
 
             },
@@ -205,7 +207,9 @@
                 {
                     this.lots_group.forEach(l_group => {
 
-                        const lot = _.find(row.IdLoteSelected, {id : l_group.id})
+                        const lot = this.exactQuantities
+                            ? row.IdLoteSelected.find(selected => String(selected.id) === String(l_group.id))
+                            : _.find(row.IdLoteSelected, {id : l_group.id})
 
                         if(lot) l_group.compromise_quantity = lot.compromise_quantity
 

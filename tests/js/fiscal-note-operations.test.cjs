@@ -8,6 +8,8 @@ const path=require('node:path');
 const load=require('./helpers/load-module.cjs');
 const fiscalNote=load(path.resolve('resources/js/helpers/fiscal-note.js'));
 const documentSeries=load(path.resolve('resources/js/helpers/document-series.js'));
+const exactMath=load(path.resolve('resources/js/helpers/exchange-rate-math.js'));
+const {calculateRowItem}=load(path.resolve('resources/js/helpers/functions.js'));
 let key=0;
 function component(file) {
     const parsed=compiler.parseComponent(fs.readFileSync(file,'utf8'));
@@ -18,6 +20,7 @@ function component(file) {
         moment:()=>({format:()=> '2026-10-13'}),require:name=>{
             if(name.includes('fiscal-note')) return {...fiscalNote,noteRequestId:()=>`request-${++key}`};
             if(name==='@helpers/document-series') return documentSeries;
+            if(name.endsWith('/exchange-rate-math')) return exactMath;
             return {};
         }});
     return module.exports.default;
@@ -150,4 +153,48 @@ test('submit always posts debits on credit without stale initial collections',as
     await state.submit();
     assert.equal(posted.payment_condition_id,'02');assert.deepEqual(posted.payments,[]);
     assert.equal(state.form.note_creation_key,'stable');assert.equal(state.busy,false);
+});
+
+test('debit service uses the calculated amount of all units and sends one fiscal unit', async () => {
+    let posted;
+    const state=bind(note,{credit:false,busy:false,form:{document_type_id:'08',items:[]},
+        $message:{error(){}},$http:{post:async(url,data)=>{posted=JSON.parse(JSON.stringify(data));throw new Error('response lost');}}});
+    const row=calculateRowItem({quantity:'3',item:{id:1,unit_type_id:'SERV',currency_type_id:'VES',unit_price:'10'},
+        affectation_igv_type_id:'20',discounts:[],charges:[]},'VES','1');
+    state.addService(row);
+    await state.submit();
+    assert.equal(posted.items[0].adjustment_amount,'30');
+    assert.equal(posted.items[0].quantity,1);
+    assert.equal(posted.items[0].item_id,row.item_id);
+});
+
+test('debit service includes the selected charge in the adjustment amount', () => {
+    const state=bind(note,{form:{document_type_id:'08',items:[]},$message:{error:message=>assert.fail(message)}});
+    const row=calculateRowItem({quantity:'1',item:{id:1,unit_type_id:'SERV',currency_type_id:'VES',unit_price:'116'},
+        affectation_igv_type_id:'10',discounts:[],charges:[{charge_type_id:'50',factor:'0.1'}]},'VES','1','0.16');
+    assert.equal(row.total_igv,'16');
+    state.addService(row);
+    assert.equal(state.form.items[0].adjustment_amount,'126');
+});
+
+test('debit service submits the original fraction until the amount is edited', async () => {
+    const posts=[];
+    const state=bind(note,{credit:false,busy:false,form:{document_type_id:'08',items:[]},
+        $message:{error(){}},$http:{post:async(url,data)=>{posts.push(JSON.parse(JSON.stringify(data)));throw new Error('response lost');}}});
+    const row=calculateRowItem({quantity:'1',item:{id:1,unit_type_id:'SERV',currency_type_id:'VES',unit_price:'1'},
+        affectation_igv_type_id:'20',discounts:[],charges:[]},'USD','3');
+    state.addService(row);
+    const adjustment=state.form.items[0];
+    await state.submit();
+    assert.equal(posts[0].items[0].adjustment_amount,'0.333333333333');
+    assert.deepEqual(posts[0].items[0].adjustment_amount_exact,{n:'1',d:'3'});
+
+    state.changeAdjustmentAmount(adjustment,'0.50');
+    await state.submit();
+    assert.equal(posts[1].items[0].adjustment_amount,'0.50');
+    assert.equal(posts[1].items[0].adjustment_amount_exact,null);
+
+    state.changeAdjustmentAmount(adjustment,'0.333333333333');
+    await state.submit();
+    assert.equal(posts[2].items[0].adjustment_amount_exact,null);
 });

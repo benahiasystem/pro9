@@ -64,7 +64,7 @@
          * @param array                                               $data
          * @param \Illuminate\Database\Eloquent\Collection|Collection $record
          */
-        public function setTotals($data = [], $record)
+        public function setTotals($data, $record)
         {
             $data['records'] = $record;
             $data['totals'] = [];
@@ -245,8 +245,9 @@
                 $data = $request->data;
                 $from = $data['from'];
                 $to = $data['to'];
-                $amount_transform = $data['amount_transform'];
-                $amount_transform_temp = $data['amount_transform_temp'];
+                $amounts = \App\Services\Payments\TransferAmounts::fromInput($data);
+                $amount_transform = $amounts['credit'];
+                $amount_transform_temp = $amounts['debit'];
                 $transfer = null;
                 $transfer_minus = null;
                 $origin = null;
@@ -300,7 +301,7 @@
                             $transfer_minus->TransforFromCashToCash(
                                 $destiny->id,
                                 $origin->id,
-                                \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($amount_transform_temp)->negated())
+                                $amount_transform_temp
                             );
                         } elseif (get_class($origin) == BankAccount::class) {
                             $transfer->TransforFromBankToBank(
@@ -311,7 +312,7 @@
                             $transfer_minus->TransforFromBankToBank(
                                 $destiny->id,
                                 $origin->id,
-                                \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($amount_transform_temp)->negated())
+                                $amount_transform_temp
                             );
                         }
                     } else {
@@ -324,7 +325,7 @@
                             $transfer_minus->TransforFromBankToCash(
                                 $destiny->id,
                                 $origin->id,
-                                \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($amount_transform_temp)->negated())
+                                $amount_transform_temp
                             );
                         } elseif (get_class($origin) == BankAccount::class) {
                             $transfer->TransforFromBankToCash(
@@ -335,7 +336,7 @@
                             $transfer_minus->TransforFromCashToBank(
                                 $destiny->id,
                                 $origin->id,
-                                \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($amount_transform_temp)->negated())
+                                $amount_transform_temp
                             );
                         }
                     }

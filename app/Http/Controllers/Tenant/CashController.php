@@ -280,7 +280,7 @@ class CashController extends Controller
         $cashDocumentCredit = $isCredit ? \App\Services\Payments\CashPaymentLink::upsert(CashDocumentCredit::query(), [
             'cash_id' => $cash->id,
             $documentField => $document->id,
-        ], $isDocument ? ['status'=>$document->balance <= 0.005 ? 'PROCESSED' : 'PENDING'] : []) : null;
+        ], $isDocument ? ['status'=>$document->exactBalance()->isLessThanOrEqualTo('0.005') ? 'PROCESSED' : 'PENDING'] : []) : null;
 
         // NOTA: Se esta colocando dentro de los eventos de los modelos para poder registrarlo en caja
         // Gracias al updateOrCreate la información que primero se creo dentro de evento del modelo, no duplicara la información sino solo

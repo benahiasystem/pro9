@@ -1,13 +1,14 @@
 {{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 @php
     $establishment = $document->establishment;
-    $payments = $document->payments;
+    $isUnpaidInvoice = $document instanceof \App\Models\Tenant\Document;
+    $payments = $isUnpaidInvoice ? $document->payments->filter(fn($row)=>!$row->reversed_at) : $document->payments;
     $left = $document->series;
     $tittle = \App\Services\Fiscal\FiscalIdentity::numberFull($left, $document->number);
     $tittle_unpaid = str_pad($payments->count(), 8, '0', STR_PAD_LEFT);
     $configuration_decimal_quantity = App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
-    $total_payment = $document->payments->sum('payment');
-    $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
+    $total_payment = $isUnpaidInvoice ? \App\Support\Exact\Decimal::sum($payments->map(fn($row)=>\App\Support\Exact\Decimal::readRequired($row,'payment'))) : $document->payments->sum('payment');
+    $balance = $isUnpaidInvoice ? $document->exactBalance() : (($document->total - $total_payment) - $document->payments->sum('change'));
     //dd($tittle_unpaid);
 @endphp
 <html>
@@ -34,9 +35,9 @@
         <td class="desc text-uppercase">
              <br>
             {{ ($establishment->address !== '-')? $establishment->address : '' }}
-            {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-            {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-            {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+            {{ (!empty($establishment->district->description))? ', '.$establishment->district->description : '' }}
+            {{ (!empty($establishment->province->description))? ', '.$establishment->province->description : '' }}
+            {{ (!empty($establishment->department->description))? '- '.$establishment->department->description : '' }}
         </td>
     </tr>
     <tr>
@@ -68,12 +69,12 @@
             @if($payments->count())
 
                     @php
-                        $payment = 0;
+                        $payment = $isUnpaidInvoice ? \App\Support\Exact\Decimal::of(0) : 0;
                     @endphp
                     @foreach($payments as $row)
                     Fecha de Emisión: {{ $row->date_of_payment->format('Y-m-d') }} <br>
                         @php
-                            $payment += (float) $row->payment;
+                            $payment = $isUnpaidInvoice ? $payment->plus(\App\Support\Exact\Decimal::readRequired($row,'payment')) : $payment + (float)$row->payment;
                         @endphp
                     @endforeach
             @endif
@@ -104,11 +105,15 @@
     @foreach($document->items as $row)
         <tr>
             <td class="text-left desc align-top">
-                @if(((int)$row->quantity != $row->quantity))
+                @if($isUnpaidInvoice)
+                    {{ \App\Support\Exact\PdfQuantities::line($row) }}
+                    @else
+                    @if(((int)$row->quantity != $row->quantity))
                     {{ $row->quantity }}
                 @else
                     {{ number_format($row->quantity, 0) }}
                 @endif
+                    @endif
             </td>
             <td class="text-left desc align-top">{{ $row->item->unit_type_id }}</td>
             <td class="text-left desc align-top text-uppercase">
@@ -137,16 +142,16 @@
                     @endforeach
                 @endif
                 @if($row->discounts)
-                    @foreach($row->discounts as $dtos)
+                    @foreach($isUnpaidInvoice ? \App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') : $row->discounts as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
-                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
+                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($isUnpaidInvoice ? \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos) : ($dtos->factor * 100)).'%' }} {{$dtos->description }}</small>
                         @endif
                     @endforeach
                 @endif
 
                 @if($row->charges)
-                    @foreach($row->charges as $charge)
-                        <br/><small>{{ $document->currency_type->symbol}} {{ $charge->amount}} ({{ $charge->factor * 100 }}%) {{$charge->description }}</small>
+                    @foreach($isUnpaidInvoice ? \App\Support\Exact\PdfAmounts::adjustments($row, 'charges') : $row->charges as $charge)
+                        <br/><small>{{ $document->currency_type->symbol}} {{ $charge->amount}} ({{ ($isUnpaidInvoice ? \App\Support\Exact\PdfAmounts::adjustmentPercent($charge) : $charge->factor * 100) }}%) {{$charge->description }}</small>
                     @endforeach
                 @endif
 
@@ -244,10 +249,10 @@
         @if($document->total_charge > 0)
             @if($document->charges)
                 @php
-                    $total_factor = 0;
+                    if ($isUnpaidInvoice) { $total_factor = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::sum(array_map([\App\Support\Exact\PdfAmounts::class, 'adjustmentPercentValue'], \App\Support\Exact\PdfAmounts::adjustments($document, 'charges')))); } else { $total_factor = 0;
                     foreach($document->charges as $charge) {
                         $total_factor = ($total_factor + $charge->factor) * 100;
-                    }
+                    } }
                 @endphp
                 <tr>
                     <td colspan="3" class="desc-ticket text-uppercase">CARGOS ({{$total_factor}}%):
@@ -271,13 +276,13 @@
 
 
 
-        @if($balance < 0)
+        @if($isUnpaidInvoice ? $balance->isNegative() : $balance < 0)
            <tr>
                <td colspan="3" class="desc-ticket text-uppercase">
                     VUELTO:
                     <span class="text-right">{{ $document->currency_type->symbol }}</span>
                 </td>
-               <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format(abs($balance),2, ".", "") }}</td>
+               <td colspan="2" class="text-right desc-ticket text-uppercase">{{ $isUnpaidInvoice ? \App\Support\Exact\Decimal::format($balance->abs(),2,".","") : number_format(abs($balance),2, ".", "") }}</td>
            </tr>
         @endif
 
@@ -304,15 +309,15 @@
     <td>
     <strong>PAGOS:</strong> </td></tr>
         @php
-            $payment = 0;
+            $payment = $isUnpaidInvoice ? \App\Support\Exact\Decimal::of(0) : 0;
         @endphp
         @foreach($payments as $row)
-            <tr><td>- {{ $row->date_of_payment->format('d/m/Y') }} - {{ $row->payment_method_type->description }} - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $row->payment + $row->change }}</td></tr>
+            <tr><td>- {{ $row->date_of_payment->format('d/m/Y') }} - {{ ($isUnpaidInvoice ? \App\Services\Payments\ReceiptPresentation::method($row) : $row->payment_method_type->description) }} - {{ $row->reference ? $row->reference.' - ':'' }} {{ $document->currency_type->symbol }} {{ $isUnpaidInvoice ? \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired($row,'payment')) : $row->payment + $row->change }}</td></tr>
             @php
-                $payment += (float) $row->payment;
+                $payment = $isUnpaidInvoice ? $payment->plus(\App\Support\Exact\Decimal::readRequired($row,'payment')) : $payment + (float)$row->payment;
             @endphp
         @endforeach
-        <tr><td class="pb-10"><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ number_format($document->total - $payment, 2) }}</td>
+        <tr><td class="pb-10"><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ $isUnpaidInvoice ? \App\Support\Exact\Decimal::format($balance, 2) : number_format($document->total - $payment, 2) }}</td>
     </tr>
 
 </table>

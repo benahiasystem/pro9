@@ -4,11 +4,13 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
+/** @group postgres-integration */
 class ExactHttpAcceptanceTest extends TestCase
 {
-    public function test_production_kernel_routes_and_api_authentication_run_against_disposable_mysql(): void
+    public function test_production_kernel_routes_and_api_authentication_run_against_disposable_postgresql(): void
     {
-        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere MySQL temporal aislado.');
+        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
+        $vesInvoicesOnly = getenv('PRO9_HTTP_ACCEPTANCE_VES_ONLY') === '1';
         $fixture=new class extends FiscalEmissionSchemaTest {
             public bool $ready=false;
             public function start(): array { parent::setUp();$this->ready=true;return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
@@ -23,10 +25,24 @@ class ExactHttpAcceptanceTest extends TestCase
             $db->table('websites')->insert(['id'=>1,'uuid'=>$db->getDatabaseName()]);
             $hostnameId=$db->table('hostnames')->insertGetId(['fqdn'=>'exact-http.example.test','website_id'=>1]);
             // Minimal central plan for the real document-limit check; both tables are disposable.
-            $schema->create('plans',function ($t) { $t->increments('id');$t->string('name');$t->integer('limit_documents');$t->boolean('include_sale_notes_limit_documents')->default(false); });
+            $schema->create('plans', function ($t) {
+                $t->increments('id');
+                $t->string('name');
+                $t->integer('limit_documents');
+                $t->boolean('include_sale_notes_limit_documents')->default(false);
+                $t->integer('whatsapp_messages_limit')->default(0);
+                $t->boolean('whatsapp_messages_unlimited')->default(true);
+            });
             $schema->create('clients',function ($t) { $t->increments('id');$t->unsignedBigInteger('hostname_id');$t->string('name');$t->unsignedInteger('plan_id');$t->integer('whatsapp_messages_limit_override')->nullable(); });
             $db->table('plans')->insert(['id'=>1,'name'=>'Plan HTTP temporal','limit_documents'=>0]);
             $db->table('clients')->insert(['hostname_id'=>$hostnameId,'name'=>'Cliente HTTP temporal','plan_id'=>1]);
+            $schema->create('public_search_customizations', function ($table) {
+                $table->bigIncrements('id');
+                $table->string('slug')->unique();
+                $table->string('background_color', 7)->nullable();
+                $table->string('background_image_path')->nullable();
+                $table->timestamps();
+            });
             $token=bin2hex(random_bytes(30));
             $db->table('users')->where('id',$input['user_id'])->update(['api_token'=>$token,'email_verified_at'=>'2026-10-19 12:00:00']);
             $db->table('configurations')->update(['auto_send_hka'=>false]);
@@ -40,11 +56,12 @@ class ExactHttpAcceptanceTest extends TestCase
             $encrypter=new \Illuminate\Encryption\Encrypter(str_repeat('k',32),'AES-256-CBC');
             $cookie=$encrypter->encrypt(\Illuminate\Cookie\CookieValuePrefix::create('sab_exact_http_session',str_repeat('k',32)).$sessionId,false);
             $private=$temp.'/fixture.json';
-            file_put_contents($private,json_encode(['connection'=>$db->getConfig(),'storage'=>$temp],JSON_THROW_ON_ERROR));chmod($private,0600);
+            $httpFixture=['connection'=>$db->getConfig(),'storage'=>$temp];
+            file_put_contents($private,json_encode($httpFixture,JSON_THROW_ON_ERROR));chmod($private,0600);
             $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);
             if (!$socket) throw new \RuntimeException($error);
             $address=stream_socket_get_name($socket,false);fclose($socket);
-            $env=getenv();$env['SAB_EXACT_HTTP_FIXTURE']=$private;$env['APP_ENV']='testing';
+            $env=getenv();$env['PRO9_EXACT_HTTP_FIXTURE']=$private;$env['APP_ENV']='testing';
             $server=proc_open([PHP_BINARY,'-S',$address,dirname(__DIR__).'/Support/exact_http_router.php'],
                 [0=>['pipe','r'],1=>['file',$temp.'/server.log','a'],2=>['file',$temp.'/server.log','a']],$pipes,dirname(__DIR__,2),$env);
             if (!is_resource($server)) throw new \RuntimeException('No se pudo abrir HTTP temporal.');
@@ -54,13 +71,13 @@ class ExactHttpAcceptanceTest extends TestCase
                 if ($probe) { fclose($probe);break; }
                 usleep(50000);
             }
-            $reference=getenv('SAB_EXACT_HTTP_REFERENCE_CONTROLLER');
+            $reference=getenv('PRO9_EXACT_HTTP_REFERENCE_CONTROLLER');
             if ($reference) {
                 if (!is_file($reference)) throw new \RuntimeException('Falta la fuente congelada del controlador.');
                 $privateReference=$temp.'/reference.json';
                 file_put_contents($privateReference,json_encode(['connection'=>$db->getConfig(),'storage'=>$temp,'controller_reference'=>$reference],JSON_THROW_ON_ERROR));chmod($privateReference,0600);
                 $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);$referenceAddress=stream_socket_get_name($socket,false);fclose($socket);
-                $referenceEnv=$env;$referenceEnv['SAB_EXACT_HTTP_FIXTURE']=$privateReference;
+                $referenceEnv=$env;$referenceEnv['PRO9_EXACT_HTTP_FIXTURE']=$privateReference;
                 $referenceServer=proc_open([PHP_BINARY,'-S',$referenceAddress,dirname(__DIR__).'/Support/exact_http_router.php'],
                     [0=>['pipe','r'],1=>['file',$temp.'/reference.log','a'],2=>['file',$temp.'/reference.log','a']],$referencePipes,dirname(__DIR__,2),$referenceEnv);
                 if (!is_resource($referenceServer)) throw new \RuntimeException('No se pudo abrir HTTP de referencia.');
@@ -89,9 +106,13 @@ class ExactHttpAcceptanceTest extends TestCase
             [$code,$body,$headers]=$get('/api/company');
             self::assertSame(200,$code,substr($body,0,3500));
             self::assertStringContainsString('Test fiscal',$body);
-            self::assertGreaterThan(0,(int)$headers['x-sab-test-queries']);
+            self::assertGreaterThan(0,(int)$headers['x-pro9-test-queries']);
             [$code,$body]=$get('/api/company',false);
             self::assertSame(401,$code,$body);
+            $this->assertInstalledModuleRoutes($db, $get, $input);
+            $this->assertSupplementalModuleRoutes($db, $get, $input['user_id']);
+            $this->assertLocalProviderModuleRoutes($db, $get);
+            $this->assertTemplateBankAccounts($db, $input['establishment_id']);
             $posItemId = $input['items'][0]['item_id'];
             $posItem = $db->table('items')->find($posItemId);
             $warehouseId = $db->table('warehouses')->where('establishment_id', $input['establishment_id'])->value('id');
@@ -367,7 +388,7 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertSame(5,$db->table('global_payments')->count());
             $db->table('hotel_rent_items')->where('id',$debtItem)->delete();
             // Reproduce the old integer-only schema in this disposable database.
-            $db->statement('ALTER TABLE hotel_rents DROP COLUMN calculation_snapshot, MODIFY arrears int(11) NOT NULL DEFAULT 0');
+            $db->statement('ALTER TABLE hotel_rents DROP COLUMN calculation_snapshot, ALTER COLUMN arrears TYPE integer USING arrears::integer, ALTER COLUMN arrears SET DEFAULT 0');
             [$code,$body]=$get('/hotels/reception/'.$rent.'/rent/finalized',true,['arrears'=>'0.25']);
             self::assertSame(422,$code,substr($body,0,1500));
             self::assertNotSame('FINALIZADO',$db->table('hotel_rents')->where('id',$rent)->value('status'));
@@ -379,7 +400,7 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertSame(0,(int)$db->table('hotel_rents')->where('id',$rent)->value('arrears'));
             $db->table('hotel_rents')->where('id',$rent)->update(['status'=>'INICIADO','arrears'=>0]);
             $db->table('hotel_rooms')->where('id',$room)->update(['status'=>'OCUPADO']);
-            $db->statement("ALTER TABLE hotel_rents MODIFY arrears decimal(30,12) NOT NULL DEFAULT '0.000000000000', ADD calculation_snapshot json DEFAULT NULL");
+            $db->statement("ALTER TABLE hotel_rents ALTER COLUMN arrears TYPE numeric(30,12), ALTER COLUMN arrears SET DEFAULT '0.000000000000', ADD calculation_snapshot json DEFAULT NULL");
             [$code,$body]=$get('/hotels/reception/'.$rent.'/rent/finalized',true,['arrears'=>'-0.25']);
             self::assertSame(422,$code,substr($body,0,1500));
             self::assertNotSame('FINALIZADO',$db->table('hotel_rents')->where('id',$rent)->value('status'));
@@ -407,6 +428,47 @@ class ExactHttpAcceptanceTest extends TestCase
                 'group_id'=>'01','state_type_id'=>'01','document_type_id'=>'01','series'=>'FF01','number'=>901,
                 'date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00','customer_id'=>$input['customer_id'],
                 'customer'=>json_encode($input['customer']),'currency_type_id'=>'VES','exchange_rate_sale'=>'100','total_value'=>'100','total'=>'100']);
+            $search = [
+                'tenant_slug' => 'exact-http.example.test', 'series' => 'ff01', 'number' => '901',
+                'customer_number' => $input['customer']['number'], 'date_of_issue' => '2026-10-26',
+            ];
+            [$code, $body] = $get('/api/consultas/search', false, $search + ['total' => '100']);
+            self::assertSame(404, $code, $body);
+            $invoiceRow = $db->table('documents')->where('id', $invoice);
+            try {
+                file_put_contents($private, json_encode($httpFixture + ['public_search_enabled' => true], JSON_THROW_ON_ERROR));
+                $invoiceRow->update(['total' => '9007199254740993.00']);
+                foreach ([
+                    '9007199254740993.00' => true, '9007199254740992.99' => true, '9007199254740993.01' => true,
+                    '9007199254740992.98' => false, '9007199254740993.02' => false,
+                ] as $amount => $found) {
+                    [$code, $body] = $get('/api/consultas/search', false, $search + ['total' => $amount]);
+                    self::assertSame(200, $code, substr($body, 0, 2500));
+                    $result = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+                    self::assertSame($found, $result['success'], $amount . ' ' . $body);
+                    if ($found) self::assertSame('9007199254740993.00', $result['data'][0]['total']);
+                }
+                $invoiceRow->update(['total' => '999999999999999999.99']);
+                [$code, $body] = $get('/api/consultas/search', false, $search + ['total' => '1000000000000000000.00']);
+                self::assertSame(200, $code, $body);
+                self::assertSame('999999999999999999.99', json_decode($body, true, 512, JSON_THROW_ON_ERROR)['data'][0]['total']);
+                foreach (['1e999999999', '1e-999999999', '-1', ['1']] as $invalid) {
+                    [$code, $body] = $get('/api/consultas/search', false, $search + ['total' => $invalid]);
+                    self::assertSame(422, $code, substr($body, 0, 2500));
+                    self::assertArrayHasKey('total', json_decode($body, true, 512, JSON_THROW_ON_ERROR)['message']);
+                }
+                $invoiceRow->update(['total' => '1.02']);
+                foreach (['+1.005' => true, '1005e-3' => true, '1.0049999999999' => false] as $amount => $found) {
+                    [$code, $body] = $get('/api/consultas/search', false, $search + ['total' => $amount]);
+                    self::assertSame(200, $code, substr($body, 0, 2500));
+                    $result = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+                    self::assertSame($found, $result['success'], $amount . ' ' . $body);
+                    if ($found) self::assertSame('1.02', $result['data'][0]['total']);
+                }
+            } finally {
+                file_put_contents($private, json_encode($httpFixture, JSON_THROW_ON_ERROR));
+                $invoiceRow->update(['total' => '100']);
+            }
             $attachment=$temp.'/receipt.pdf';
             file_put_contents($attachment,"%PDF-1.4\n% test receipt\n%%EOF\n");
             $invoiceInput=['document_id'=>$invoice,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'01',
@@ -520,7 +582,8 @@ class ExactHttpAcceptanceTest extends TestCase
             [$code,$body]=$get('/sale-notes/items',true,['notes_id'=>[$note->id]]);
             self::assertSame(200,$code,substr($body,0,2500));
             self::assertSame('500',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired(json_decode($body,true)['data'][0],'unit_price')));
-            if (getenv('SAB_EXACT_HTTP_PROFILE')==='1') {
+            self::assertSame((string)$line->id,(string)json_decode($body,true)['grouped_items'][0]['source_sale_note_items'][0]['sale_note_item_id']);
+            if (getenv('PRO9_EXACT_HTTP_PROFILE')==='1') {
                 $profileRow=$line->getAttributes();unset($profileRow['id']);
                 $db->table('sale_note_items')->where('sale_note_id',$note->id)->delete();
                 foreach ([500,500] as $count) $db->table('sale_note_items')->insert(array_fill(0,$count,$profileRow));
@@ -528,7 +591,7 @@ class ExactHttpAcceptanceTest extends TestCase
                 fwrite(STDERR,json_encode(['profile_headers'=>array_filter($headers,fn($key)=>str_starts_with($key,'x-sab'),ARRAY_FILTER_USE_KEY),'total_ms'=>(hrtime(true)-$start)/1000000,'body_bytes'=>strlen($body)]).PHP_EOL);
                 self::assertSame(200,$code,substr($body,0,1500));
             }
-            $output=getenv('SAB_EXACT_HTTP_BENCH_OUTPUT');
+            $output=getenv('PRO9_EXACT_HTTP_BENCH_OUTPUT');
             if ($output) {
                 $hashes=[];
                 foreach (['app/Http/Controllers/Tenant/SaleNoteController.php','app/Http/Kernel.php','routes/web.php','composer.lock','tests/Support/exact_http_router.php'] as $file) $hashes[$file]=hash_file('sha256',dirname(__DIR__,2).'/'.$file);
@@ -539,9 +602,9 @@ class ExactHttpAcceptanceTest extends TestCase
                         }
                     }
                 }
-                $result=['scope'=>'HTTP real: kernel, rutas, sesión cifrada, CSRF y MySQL 5.7 temporal. Sólo selección de partidas de notas; no acredita facturación/POS/caja ni central separado.',
-                    'reference_head'=>trim(shell_exec('git rev-parse HEAD')),'warmups'=>3,'samples'=>30,
-                    'php_version'=>PHP_VERSION,'mysql_version'=>$db->selectOne('SELECT VERSION() AS v')->v,'source_sha256'=>$hashes,
+                $result=['scope'=>'HTTP real: kernel, rutas, sesión cifrada, CSRF y PostgreSQL 17.11 temporal. Sólo selección de partidas de notas; no acredita facturación/POS/caja ni central separado.',
+                    'reference_head'=>\Tests\Support\PostgresTestEnvironment::source()['revision'],'warmups'=>3,'samples'=>30,
+                    'php_version'=>PHP_VERSION,'postgres_version'=>$db->selectOne('SELECT VERSION() AS v')->v,'source_sha256'=>$hashes,
                     'reference_controller_sha256'=>$reference ? hash_file('sha256',$reference):null,
                     'queries_scope'=>'SQL del kernel tras bootstrap; la latencia incluye también bootstrap y transporte HTTP.',
                     'cases'=>[]];
@@ -554,7 +617,7 @@ class ExactHttpAcceptanceTest extends TestCase
                         $start=hrtime(true);[$code,$body,$headers]=$get('/sale-notes/items',true,['notes_id'=>[$note->id]],$variant==='reference');$elapsed=(hrtime(true)-$start)/1000000;
                         self::assertSame(200,$code,substr($body,0,1500));
                         self::assertCount($size,json_decode($body,true)['data']);
-                        if ($sample>=0) {$times[$variant][]=$elapsed;$queries[$variant][]=(int)$headers['x-sab-test-queries'];$memory[$variant][]=(int)$headers['x-sab-test-peak-memory'];}
+                        if ($sample>=0) {$times[$variant][]=$elapsed;$queries[$variant][]=(int)$headers['x-pro9-test-queries'];$memory[$variant][]=(int)$headers['x-pro9-test-peak-memory'];}
                     }
                     foreach ($variants as $variant) {
                         $sorted=$times[$variant];sort($sorted);
@@ -566,7 +629,7 @@ class ExactHttpAcceptanceTest extends TestCase
                         $result['cases'][(string)$size]['allowed_p95_ms']=$limit;
                         $result['cases'][(string)$size]['passed']=$result['cases'][(string)$size]['current']['p95_ms']<=$limit;
                     }
-                    if ($initialPath=getenv('SAB_EXACT_HTTP_INITIAL_BASELINE')) {
+                    if ($initialPath=getenv('PRO9_EXACT_HTTP_INITIAL_BASELINE')) {
                         $initial=json_decode(file_get_contents($initialPath),true,512,JSON_THROW_ON_ERROR);
                         $base=$initial['cases'][(string)$size]['p95_ms'];$limit=$base+max($base*.2,100);
                         $result['cases'][(string)$size]['initial_allowed_p95_ms']=$limit;
@@ -576,7 +639,7 @@ class ExactHttpAcceptanceTest extends TestCase
                 foreach ($hashes as $file=>$hash) self::assertSame($hash,hash_file('sha256',dirname(__DIR__,2).'/'.$file),'Cambió una fuente durante la medición.');
                 file_put_contents($output,json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR).PHP_EOL);
                 if ($reference) foreach ($result['cases'] as $case) self::assertTrue($case['passed'],'El p95 excede el presupuesto HTTP.');
-                if (getenv('SAB_EXACT_HTTP_INITIAL_BASELINE')) foreach ($result['cases'] as $case) self::assertTrue($case['initial_passed'],'El p95 excede la referencia inicial de la continuación.');
+                if (getenv('PRO9_EXACT_HTTP_INITIAL_BASELINE')) foreach ($result['cases'] as $case) self::assertTrue($case['initial_passed'],'El p95 excede la referencia inicial de la continuación.');
             }
             // Re-resolve the sources on each request; a stale selection is not authority.
             [$code,$body]=$get('/sale-notes/items',true,['notes_id'=>[$note->id]]);
@@ -604,6 +667,7 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertSame(200,$code,substr($body,0,1500));
             $raw=json_decode($body)->data;
             self::assertInstanceOf(\stdClass::class,$raw[array_key_last($raw)]->item->presentation);
+            self::assertSame((string)$line->id,(string)$raw[0]->source_sale_note_items[0]->sale_note_item_id);
             $db->table('sale_notes')->where('id',$note->id)->update(['state_type_id'=>'11']);
             [$code]=$get('/sale-notes/items',true,['notes_id'=>[$note->id]]);self::assertSame(422,$code);
             $db->table('sale_notes')->where('id',$note->id)->update(['state_type_id'=>'01']);
@@ -866,7 +930,7 @@ class ExactHttpAcceptanceTest extends TestCase
                 [$pdfStatus,$templatePdf]=$get('/downloads/purchaseSettlement/pdf/'.$advanceExternal.'/a4');
                 self::assertSame(200,$pdfStatus,$settlementTemplate.': '.substr($templatePdf,0,1000));
                 self::assertStringStartsWith('%PDF-',$templatePdf);
-                if ($evidenceDir=getenv('SAB_SETTLEMENT_PDF_EVIDENCE_DIR')) file_put_contents($evidenceDir.'/'.$settlementTemplate.'.pdf',$templatePdf);
+                if ($evidenceDir=getenv('PRO9_SETTLEMENT_PDF_EVIDENCE_DIR')) file_put_contents($evidenceDir.'/'.$settlementTemplate.'.pdf',$templatePdf);
                 $templatePdfPath=$temp.'/settlement-'.$settlementTemplate.'.pdf';
                 $templateTextPath=$temp.'/settlement-'.$settlementTemplate.'.txt';
                 file_put_contents($templatePdfPath,$templatePdf);
@@ -1225,6 +1289,16 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertSame(200,$status,substr($body,0,2200)); self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
             $orderId=json_decode($body,true)['data']['id'];
             $orderExternalId=json_decode($body,true)['data']['external_id'];
+            $orderRow = $db->table('order_notes')->where('id', $orderId);
+            $originalState = $orderRow->value('state_type_id');
+            $updatedState = $originalState === '05' ? '01' : '05';
+            [$stateStatus, $stateBody] = $get('/order-notes/update/state', true, [
+                'id' => $orderId, 'state_type_id' => $updatedState,
+            ]);
+            self::assertSame(200, $stateStatus, substr($stateBody, 0, 1600));
+            self::assertTrue(json_decode($stateBody, true, 512, JSON_THROW_ON_ERROR)['success']);
+            self::assertSame($updatedState, $orderRow->value('state_type_id'));
+            $orderRow->update(['state_type_id' => $originalState]);
             self::assertSame('2/3',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($chainLot)->exactValue('quantity'));
             self::assertTrue($warehouseStock()->isEqualTo($chainStockBefore->minus(\App\Support\Exact\Decimal::of('1/3'))));
             [$pdfStatus,$pdfBody]=$get('/order-notes/print/'.$orderExternalId.'/a4');
@@ -1281,9 +1355,26 @@ class ExactHttpAcceptanceTest extends TestCase
             $db->table('item_sets')->where('id',$packSet)->update(['quantity'=>'4','calculation_snapshot'=>null]);
             $packInvoice=$fractionInvoice; $packInvoice['external_id']=(string)\Illuminate\Support\Str::uuid();
             $packInvoice['sale_note_id']=$packNote->id; $packInvoice['items']=$packSale['items'];
+            [$status,$body]=$get('/sale-notes/items',true,['notes_id'=>[$packNote->id],'select_all'=>true]);
+            self::assertSame(200,$status,substr($body,0,2200));
+            $originals=json_decode($body,true,512,JSON_THROW_ON_ERROR)['data'][0]['source_sale_note_items'];
+            self::assertSame((string)$packNote->items()->value('id'),(string)$originals[0]['sale_note_item_id']);
+            $invalidPackInvoice=$packInvoice;
+            $invalidPackInvoice['items'][0]['source_sale_note_items']=[['sale_note_item_id'=>'9223372036854775807']];
+            $invoiceCountBefore=$db->table('documents')->count();
+            [$status,$body]=$get('/documents',true,$invalidPackInvoice);
+            self::assertSame(422,$status,substr($body,0,2200));
+            $rejectedPack=json_decode($body,true,512,JSON_THROW_ON_ERROR);
+            self::assertFalse($rejectedPack['success']);
+            self::assertSame(['La partida de origen no pertenece a las notas seleccionadas o ya fue utilizada.'], $rejectedPack['message']['items'] ?? null, $body);
+            self::assertSame($invoiceCountBefore,$db->table('documents')->count());
+            self::assertNull($packNote->fresh()->document_id);
+            $packInvoice['items'][0]['source_sale_note_items']=$originals;
+            $packInvoice['items'][0]['calculation_snapshot']=\App\Support\Exact\Decimal::snapshot(['quantity'=>'2.0000000000001']);
             [$status,$body]=$get('/documents',true,$packInvoice);
             self::assertSame(200,$status,substr($body,0,2200)); self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
             $packDocument=\App\Models\Tenant\Document::findOrFail(json_decode($body,true)['data']['id']);
+            self::assertSame('2',(string)$packDocument->items()->firstOrFail()->exactValue('quantity'));
             self::assertTrue($warehouseStock()->isEqualTo($packStockBefore->minus(\App\Support\Exact\Decimal::of('2/3'))));
             self::assertSame('3',(string)$pack->fresh()->exactValue('stock'));
             $packCredit=array_replace($cancellation,['affected_document_id'=>$packDocument->id,
@@ -2103,13 +2194,15 @@ class ExactHttpAcceptanceTest extends TestCase
                 $deleteBody=curl_multi_getcontent($handles[1]);
                 self::assertSame(200,curl_getinfo($handles[1],CURLINFO_HTTP_CODE),$deleteBody);
                 self::assertTrue(json_decode($deleteBody,true)['success'] ?? false,$deleteBody);
-                self::assertContains(curl_getinfo($handles[0],CURLINFO_HTTP_CODE),[200,404]);
+                self::assertContains(curl_getinfo($handles[0],CURLINFO_HTTP_CODE),[200,404],substr(curl_multi_getcontent($handles[0]),0,1500));
             } finally {
                 if ($db->transactionLevel()) $db->rollBack();
                 foreach ($handles as $handle) { curl_multi_remove_handle($multi,$handle); curl_close($handle); }
                 curl_multi_close($multi);
             }
             self::assertFalse($db->table('purchases')->where('id',$raceId)->exists());
+            [$status,$body]=$get('/purchases/anular/'.$raceId);
+            self::assertSame(404,$status,substr($body,0,1500));
             self::assertTrue(\Modules\Inventory\Models\ItemWarehouse::where('item_id',$productId)->where('warehouse_id',$warehouseId)->firstOrFail()->exactValue('stock')->isEqualTo($stockBeforeRace));
             self::assertTrue(\App\Models\Tenant\Item::findOrFail($productId)->exactValue('stock')->isEqualTo($globalBeforeRace));
             $itemRacePurchase=array_replace($racePurchase,['number'=>905]);
@@ -2414,18 +2507,22 @@ class ExactHttpAcceptanceTest extends TestCase
             $sales=json_decode($body,true)['sales'];
             self::assertSame('Bs. '.$D::format($baselineAmount->plus('9007199254740993.01')),$sales['total']);
             self::assertSame($sales['total'],$sales['facturas']);
-            $db->table('documents')->where('id',$kpiId)->update(['currency_type_id'=>'USD']);
+            $includedCurrency = $vesInvoicesOnly ? 'VES' : 'USD';
+            $emptyCurrency = $vesInvoicesOnly ? 'USD' : 'VES';
+            $includedPrefix = $vesInvoicesOnly ? 'Bs.' : '$';
+            $emptyPrefix = $vesInvoicesOnly ? '$' : 'Bs.';
+            if (!$vesInvoicesOnly) $db->table('documents')->where('id',$kpiId)->update(['currency_type_id'=>$includedCurrency]);
             $totalUrl='/documents/recordsTotal?series='.rawurlencode($kpiRow['series']).'&number='.rawurlencode((string)$kpiRow['number']);
             [$status,$body]=$get($totalUrl); self::assertSame(200,$status,substr($body,0,1500));
             $totals=collect(json_decode($body,true))->keyBy(fn($row)=>$row['document_type_id'].':'.$row['currency_type_id']);
             self::assertCount(6,$totals);
-            self::assertSame('$ 9,007,199,254,740,993.01',$totals['01:USD']['total']);
-            self::assertSame('Bs. 0.00',$totals['01:VES']['total']);
-            self::assertSame(['n'=>'900719925474099301','d'=>'100'],$totals['01:USD']['calculation_snapshot']['values']['total']);
+            self::assertSame($includedPrefix.' 9,007,199,254,740,993.01',$totals['01:'.$includedCurrency]['total']);
+            self::assertSame($emptyPrefix.' 0.00',$totals['01:'.$emptyCurrency]['total']);
+            self::assertSame(['n'=>'900719925474099301','d'=>'100'],$totals['01:'.$includedCurrency]['calculation_snapshot']['values']['total']);
             $db->table('documents')->where('id',$kpiId)->update(['state_type_id'=>'11']);
             [$status,$body]=$get($totalUrl); self::assertSame(200,$status,substr($body,0,1500));
             $totals=collect(json_decode($body,true))->keyBy(fn($row)=>$row['document_type_id'].':'.$row['currency_type_id']);
-            self::assertSame('$ 0.00',$totals['01:USD']['total']);
+            self::assertSame($includedPrefix.' 0.00',$totals['01:'.$includedCurrency]['total']);
             $db->table('documents')->where('id',$kpiId)->delete();
             // The list and its totals share one uncached database snapshot.
             $db->table('configurations')->update(['show_totals_on_cpe_list'=>true]);
@@ -2439,6 +2536,13 @@ class ExactHttpAcceptanceTest extends TestCase
             $listedDocument=\App\Models\Tenant\Document::findOrFail($fractionId);
             $expected=\App\Support\Venezuela\Localization::currencySymbol($listed['currency_type_id']).' '.$D::format($listedDocument->exactValue('total'));
             self::assertSame($expected,$listTotals[$listed['document_type_id'].':'.$listed['currency_type_id']]['total']);
+            $this->assertEditorPreservesOriginalDiscountFractions($get,$db,$input,$temp);
+            $this->assertSpreadsheetInvoicesReachTheRealApi($get,$db,$app,$input,$token,$temp);
+            $this->assertPosCatalogPreservesOriginalFractions($get,$db,$input);
+            $this->assertApiInvoiceDetailProjectsExactAmounts($get,$input,$newService->id,$temp,$vesInvoicesOnly);
+            if ($vesInvoicesOnly) {
+                self::assertSame(0, $db->table('documents')->where('document_type_id','01')->where('currency_type_id','USD')->count());
+            }
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
         } finally {
             if (is_resource($server)) { proc_terminate($server);proc_close($server); }
@@ -2451,6 +2555,647 @@ class ExactHttpAcceptanceTest extends TestCase
             if ($fixture->ready) $fixture->stop();
         }
     }
+
+    private function assertInstalledModuleRoutes($db, callable $get, array $input): void
+    {
+        $modules = json_decode(file_get_contents(dirname(__DIR__, 2).'/modules_statuses.json'), true, 512, JSON_THROW_ON_ERROR);
+        $menus = [
+            'DocumentaryProcedure' => 'documentary-procedure',
+            'Production' => 'production_app',
+            'ClaimsBook' => 'claims_book',
+            'Suscription' => 'full_suscription_app',
+            'Digemid' => 'digemid',
+        ];
+        $assigned = [];
+        foreach ($menus as $module => $menu) {
+            self::assertTrue($modules[$module], $module);
+            $id = $db->table('modules')->where('value', $menu)->value('id');
+            self::assertNotNull($id, $module);
+            $assignment = ['user_id' => $input['user_id'], 'module_id' => $id];
+            if (!$db->table('module_user')->where($assignment)->exists()) {
+                $db->table('module_user')->insert($assignment);
+                $assigned[] = $assignment;
+            }
+        }
+
+        $product = $db->table('items')->find($input['items'][0]['item_id']);
+        $office = $db->table('documentary_offices')->insertGetId(['name' => 'Área temporal de pruebas']);
+        try {
+            // The fixture uses a single connection for the temporary tenant and its
+            // minimal central tables. The layout reads these central settings.
+            $db->getSchemaBuilder()->table('configurations', function ($table) {
+                $table->boolean('use_login_global')->default(false);
+                $table->boolean('tenant_show_ads')->default(false);
+                $table->text('tenant_image_ads')->nullable();
+            });
+            $db->table('items')->where('id', $product->id)->update([
+                'is_for_production' => true, 'description' => 'Próducto temporal para producción',
+            ]);
+            $requests = [
+                ['DocumentaryProcedure', '/documentary-procedure/offices?name=area+temporal', null],
+                ['Production', '/item-production/records?column=description&value=producto+temporal', null],
+                ['ClaimsBook', '/claims/tables', null],
+                ['Suscription', '/suscription/client/records', ['column' => 'number', 'value' => $input['customer']['number']]],
+                ['Digemid', '/digemid', null],
+            ];
+            foreach ($requests as [$module, $path, $payload]) {
+                $authenticationPath = $payload === null ? $path : '/suscription/client/columns';
+                [$unauthenticated, $message] = $get($authenticationPath, false);
+                self::assertSame(401, $unauthenticated, $module.' '.substr($message, 0, 800));
+
+                [$status, $body, $headers] = $get($path, true, $payload);
+                self::assertSame(200, $status, $module.' '.substr($body, 0, 2000));
+                self::assertGreaterThan(0, (int) $headers['x-pro9-test-queries'], $module);
+                if ($module === 'Digemid') {
+                    self::assertStringContainsString('<tenant-digemid-index', $body);
+                    continue;
+                }
+                $result = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+                match ($module) {
+                    'DocumentaryProcedure' => self::assertContains($office, array_column($result['data'], 'id')),
+                    'Production' => self::assertContains($product->id, array_column($result['data'], 'id')),
+                    'ClaimsBook' => self::assertNotEmpty($result['status_claims']),
+                    'Suscription' => self::assertContains($input['customer_id'], array_column($result['data'], 'id')),
+                };
+            }
+        } finally {
+            $db->table('items')->where('id', $product->id)->update([
+                'is_for_production' => (bool) $product->is_for_production, 'description' => $product->description,
+            ]);
+            $db->table('documentary_offices')->where('id', $office)->delete();
+            foreach ($assigned as $assignment) $db->table('module_user')->where($assignment)->delete();
+        }
+    }
+
+    private function assertSupplementalModuleRoutes($db, callable $get, int $userId): void
+    {
+        $case = 'qa_'.bin2hex(random_bytes(5));
+        $businessTurn = $db->table('business_turns')->insertGetId([
+            'value' => $case, 'name' => 'Giro '.$case, 'active' => true,
+        ]);
+        foreach ([true, false] as $enabled) {
+            $slug = $case.($enabled ? '_enabled' : '_disabled');
+            $db->table('custom_fields')->insert([
+                'name' => $slug, 'slug' => $slug, 'type' => 'text', 'order' => $enabled ? 2 : 1,
+                'enabled_for_documents' => $enabled,
+            ]);
+        }
+        $layouts = [
+            'item_form_layouts' => ['standard', '/item-form-layout/standard', [
+                ['field_key' => 'description', 'width' => 6, 'order' => 0],
+            ]],
+            'document_form_layouts' => ['invoice', '/document-form-layout/invoice', [
+                ['field_key' => 'date_of_issue', 'width' => 6, 'order' => 2],
+                ['field_key' => 'customer_id', 'width' => 12, 'order' => 1],
+            ]],
+        ];
+        $previousLayouts = [];
+        foreach ($layouts as $table => [$variant, , $fields]) {
+            $previousLayouts[$table] = $db->table($table)->where('variant', $variant)->first();
+            $db->table($table)->updateOrInsert(['variant' => $variant], [
+                'pinned_fields' => json_encode($fields, JSON_THROW_ON_ERROR),
+            ]);
+        }
+        $secret = 'whsec_'.$case.bin2hex(random_bytes(20));
+        $webhook = $db->table('webhook_subscriptions')->insertGetId([
+            'name' => $case, 'url' => 'https://example.test/hook', 'secret' => $secret,
+            'events' => json_encode(['document.created'], JSON_THROW_ON_ERROR), 'is_active' => true,
+        ]);
+        $db->table('client_error_types')->insert(['id' => $case, 'name' => 'Tipo temporal']);
+        $error = $db->table('client_errors')->insertGetId([
+            'code' => $case, 'client_error_type_id' => $case,
+            'original_message' => 'Origen temporal', 'user_message' => 'Mensaje temporal',
+        ]);
+        $activity = [];
+        foreach (['198.51.100.93', '203.0.113.94'] as $ip) {
+            $activity[] = $db->table('system_activity_logs')->insertGetId([
+                'user_id' => $userId, 'system_activity_log_type_id' => 'login',
+                'date' => '2026-10-26', 'time' => '09:00:00', 'ip' => $ip,
+                'device_type' => 'desktop', 'route' => '/temporal',
+                'created_at' => '2026-10-26 09:00:00',
+            ]);
+        }
+        $offline = $db->table('offline_configurations')->first();
+        self::assertNotNull($offline, 'La instalación temporal siembra la configuración offline.');
+        $offlineValues = [
+            'is_client' => true, 'token_server' => 'offline_'.$case,
+            'url_server' => 'https://offline.example.test',
+        ];
+        $db->table('offline_configurations')->where('id', $offline->id)->update($offlineValues);
+
+        $request = static function (string $path, bool $authenticated = true, ?array $payload = null) use ($get): array {
+            [$status, $body, $headers] = $get($path, $authenticated, $payload);
+            self::assertSame(200, $status, $path.' '.substr($body, 0, 1500));
+            self::assertGreaterThan(0, (int) $headers['x-pro9-test-queries'], $path);
+            return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+        };
+        try {
+            $turn = collect($request('/bussiness_turns/records'))->firstWhere('id', $businessTurn);
+            self::assertSame('Giro '.$case, $turn['name']);
+            self::assertTrue($turn['active']);
+
+            $slugs = array_column($request('/configurations/custom-fields/documents')['data'], 'slug');
+            self::assertContains($case.'_enabled', $slugs);
+            self::assertNotContains($case.'_disabled', $slugs);
+
+            foreach ($layouts as [$variant, $path, $fields]) {
+                $response = $request($path);
+                self::assertTrue($response['success']);
+                self::assertSame($variant, $response['data']['variant']);
+                self::assertEquals($fields, $response['data']['pinned_fields']);
+            }
+
+            $response = $request('/configurations/webhooks/records', true, ['value' => $case]);
+            $subscription = collect($response['data'])->firstWhere('id', $webhook);
+            self::assertSame(['document.created'], $subscription['events']);
+            self::assertArrayNotHasKey('secret', $subscription);
+            self::assertStringNotContainsString($secret, json_encode($response, JSON_THROW_ON_ERROR));
+
+            $entry = collect($request('/client-errors/records', false)['data'])->firstWhere('id', $error);
+            self::assertSame($case, $entry['code']);
+            self::assertSame('Tipo temporal', $entry['client_error_type_name']);
+
+            $access = $request('/system-activity-logs/generals/records?column=ip&value=198.51.100.93')['data'];
+            self::assertCount(1, $access);
+            self::assertSame('198.51.100.93', $access[0]['ip']);
+            self::assertSame('login', $access[0]['system_activity_log_type_id']);
+            self::assertSame($userId, (int) $access[0]['user_id']);
+
+            $configuration = $request('/offline-configurations/record')['data'];
+            self::assertSame((int) $offline->id, (int) $configuration['id']);
+            self::assertSame($offlineValues, array_intersect_key($configuration, $offlineValues));
+
+            foreach (['/bussiness_turns/records', '/configurations/custom-fields/documents',
+                '/item-form-layout/standard', '/document-form-layout/invoice',
+                '/system-activity-logs/generals/records?column=ip&value=198.51.100.93',
+                '/offline-configurations/record'] as $path) {
+                [$status] = $get($path, false);
+                self::assertSame(401, $status, $path);
+            }
+        } finally {
+            $db->table('offline_configurations')->where('id', $offline->id)->update(
+                array_intersect_key((array) $offline, $offlineValues)
+            );
+            $db->table('system_activity_logs')->whereIn('id', $activity)->delete();
+            $db->table('client_errors')->where('id', $error)->delete();
+            $db->table('client_error_types')->where('id', $case)->delete();
+            $db->table('webhook_subscriptions')->where('id', $webhook)->delete();
+            foreach ($layouts as $table => [$variant]) {
+                $row = $db->table($table)->where('variant', $variant);
+                if ($previousLayouts[$table]) $row->update(['pinned_fields' => $previousLayouts[$table]->pinned_fields]);
+                else $row->delete();
+            }
+            $db->table('custom_fields')->whereIn('slug', [$case.'_enabled', $case.'_disabled'])->delete();
+            $db->table('business_turns')->where('id', $businessTurn)->delete();
+        }
+    }
+
+    private function assertLocalProviderModuleRoutes($db, callable $get): void
+    {
+        $rate = ['date' => '2020-01-06', 'purchase' => '33.12345678', 'sale' => '34.23456789'];
+        $db->table('exchange_rates')->insert($rate + [
+            'date_original' => $rate['date'], 'purchase_original' => $rate['purchase'], 'sale_original' => $rate['sale'],
+        ]);
+        $settings = [
+            'qrchat_url' => 'https://qrchat.example.test', 'qrchat_app_key' => 'temporal-app-key',
+            'qrchat_enable' => true, 'qr_api_enable' => true, 'qr_api_use_bot_instance' => true,
+            'qr_api_pdf_format' => 'a4', 'qr_api_instance' => 'temporal-instance', 'qr_api_connection_state' => 'disconnected',
+        ];
+        $configuration = $db->table('configurations')->first();
+        $db->table('configurations')->where('id', $configuration->id)->update($settings);
+        $company = $db->table('companies')->first(['ws_api_phone_number_id', 'ws_api_token']);
+        self::assertNull($company->ws_api_phone_number_id);
+        self::assertNull($company->ws_api_token);
+
+        $request = static function (string $path, ?array $payload = null) use ($get): array {
+            [$status, $body, $headers] = $get($path, true, $payload);
+            self::assertSame(200, $status, $path.' '.substr($body, 0, 1500));
+            self::assertGreaterThan(0, (int) $headers['x-pro9-test-queries'], $path);
+            return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+        };
+
+        try {
+            foreach (['/service/exchange/', '/services/exchange/'] as $path) {
+                self::assertSame($rate, $request($path.$rate['date']));
+            }
+            $chat = $request('/qrchat/configuration');
+            self::assertSame($settings['qrchat_url'], $chat['qrchat_url']);
+            self::assertSame($settings['qrchat_app_key'], $chat['qrchat_app_key']);
+            self::assertTrue((bool) $chat['qrchat_enable']);
+            self::assertArrayNotHasKey('qrchat_auth_key', $chat);
+
+            $api = $request('/qrapi/configuration');
+            self::assertTrue($api['qr_api_enable_ws']);
+            self::assertTrue($api['qr_api_use_bot_instance']);
+            self::assertSame($settings['qr_api_pdf_format'], $api['qr_api_pdf_format']);
+            self::assertSame($settings['qr_api_instance'], $api['qr_api_instance']);
+            self::assertSame($settings['qr_api_connection_state'], $api['qr_api_connection_state']);
+            self::assertTrue($api['whatsapp_messages_unlimited']);
+            self::assertNull($api['whatsapp_messages_limit']);
+
+            $message = $request('/api/whatsapp-cloud/send-message', [
+                'send_type' => 'text', 'phone_number' => '15550100000', 'message' => 'Prueba local sin credenciales',
+            ]);
+            self::assertFalse($message['success']);
+            self::assertSame('No tiene registrado correctamente el identificador de número de teléfono', $message['message']);
+        } finally {
+            $db->table('configurations')->where('id', $configuration->id)->update(
+                array_intersect_key((array) $configuration, $settings)
+            );
+            $db->table('exchange_rates')->where('date', $rate['date'])->delete();
+        }
+    }
+
+    private function assertTemplateBankAccounts($db, int $establishmentId): void
+    {
+        $from = (array) $db->table('establishments')->where('id', $establishmentId)->first();
+        unset($from['id']);
+        $other = $db->table('establishments')->insertGetId(array_replace($from, ['code' => 'QA-TEMPLATE']));
+        $previous = $db->table('configurations')->first(['id', 'select_establishment_bank_account']);
+        $configuration = $db->table('configurations')->where('id', $previous->id);
+        $bank = $db->table('banks')->orderBy('id')->value('id');
+        $accounts = [];
+        foreach ([[$establishmentId, true], [$other, true], [$establishmentId, false]] as $index => [$branch, $visible]) {
+            $accounts[] = $db->table('bank_accounts')->insertGetId([
+                'bank_id' => $bank, 'description' => 'Cuenta temporal '.$index,
+                'number' => 'qa-template-'.$index, 'currency_type_id' => 'VES',
+                'show_in_documents' => $visible, 'establishment_id' => $branch,
+            ]);
+        }
+        $template = new \Modules\Template\Helpers\TemplatePdf();
+        $getFixtureAccounts = static fn () => $template->getBankAccountsForPdf($establishmentId)
+            ->whereIn('id', $accounts)->pluck('id')->sort()->values()->all();
+        try {
+            $configuration->update(['select_establishment_bank_account' => true]);
+            self::assertSame([$accounts[0]], $getFixtureAccounts());
+            $configuration->update(['select_establishment_bank_account' => false]);
+            self::assertSame([$accounts[0], $accounts[1]], $getFixtureAccounts());
+        } finally {
+            $configuration->update(['select_establishment_bank_account' => $previous->select_establishment_bank_account]);
+            $db->table('bank_accounts')->whereIn('id', $accounts)->delete();
+            $db->table('establishments')->where('id', $other)->delete();
+        }
+    }
+
+    private function assertEditorPreservesOriginalDiscountFractions(callable $get,$db,array $input,string $temp): void
+    {
+        $fixturePath=$temp.'/fixture.json';$originalFixture=file_get_contents($fixturePath);
+        $diagnostic=json_decode($originalFixture,true,512,JSON_THROW_ON_ERROR);$diagnostic['strict_editor_diagnostics']=true;
+        file_put_contents($fixturePath,json_encode($diagnostic,JSON_THROW_ON_ERROR));
+        try {
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $input['external_id']=(string)\Illuminate\Support\Str::uuid();$input['payment_condition_id']='02';$input['payments']=[];
+        $input['operation_type_id']='0101';$input['date_of_due']=$input['date_of_issue'];$input['fee']=[];
+        $input['items'][0]['quantity']='1';$input['items'][0]['unit_price']='1';$input['items'][0]['affectation_igv_type_id']='20';
+        unset($input['items'][0]['price_input'],$input['items'][0]['quantity_input']);
+        $input['items'][0]['discounts']=[
+            ['discount_type_id'=>'01','description'=>'Propio','factor'=>'0','base'=>'1','amount_exact'=>['n'=>'1','d'=>'10'],'is_amount'=>true],
+            ['discount_type_id'=>'01','description'=>'Global','factor'=>'0','base'=>'1','amount_exact'=>['n'=>'1','d'=>'300'],
+                'is_amount'=>true,'from_global_distribution'=>true,'use_input_amount'=>true],
+        ];
+        [$status,$body]=$get('/documents',true,$input);
+        self::assertSame(200,$status,substr($body,0,2000));
+        $response=json_decode($body,true,512,JSON_THROW_ON_ERROR);
+        self::assertTrue($response['success'] ?? false,$body);
+        $document=\App\Models\Tenant\Document::findOrFail($response['data']['id']);
+        self::assertTrue($document->exactValue('total')->isEqualTo('269/300'));
+        $line=$document->items()->firstOrFail();$raw=$db->table('document_items')->where('id',$line->id)->value('discounts');
+        $before=\App\Support\Exact\Decimal::fraction($document->exactValue('total'));
+        [$status,$body]=$get('/documents/'.$document->id.'/show');self::assertSame(200,$status,substr($body,0,2000));
+        $data=json_decode($body,true,512,JSON_THROW_ON_ERROR)['data'];
+        $discounts=array_values($data['items'][0]['discounts']);self::assertCount(2,$discounts);
+        foreach ($discounts as $index=>$discount) {
+            self::assertSame($input['items'][0]['discounts'][$index]['amount_exact'],$discount['amount_exact']);
+            self::assertTrue($discount['is_amount']);self::assertArrayHasKey('discount_type',$discount);
+        }
+        self::assertTrue($discounts[1]['from_global_distribution']);self::assertTrue($discounts[1]['use_input_amount']);
+        self::assertSame($raw,$db->table('document_items')->where('id',$line->id)->value('discounts'));
+        $edit=array_replace($input,['id'=>$document->id,'series'=>$document->series,'number'=>$document->number,
+            'received_retentions'=>[],'guarantee_fund'=>null,'purchase_order'=>'',
+            'operation_type_id'=>'0101','date_of_due'=>$document->invoice->date_of_due->format('Y-m-d'),
+            'total_exonerated'=>\App\Support\Exact\Decimal::represent($document->exactValue('total_exonerated'))]);
+        $edit['items'][0]['record_id']=$line->id;$edit['items'][0]['discounts']=$discounts;
+        unset($edit['items'][0]['discounts'][0]['amount'], $edit['items'][0]['discounts'][1]['amount']);
+        $unchanged=[];
+        foreach (['documents','document_items','item_warehouse','document_payments'] as $table) {
+            $unchanged[$table]=$db->table($table)->orderBy('id')->get()->toArray();
+        }
+        $invalidEdits=[];
+        foreach ([(string)$line->item_id.'.9',(string)$line->item_id.'e0',true] as $value) {
+            $invalid=$edit;$invalid['items'][0]['item_id']=$value;$invalidEdits[]=$invalid;
+        }
+        foreach (['9223372036854775808','18446744073709551615'] as $value) {
+            $invalid=$edit;$invalid['items'][0]['record_id']=$value;$invalidEdits[]=$invalid;
+        }
+        $invalid=$edit;$invalid['items'][]=$invalid['items'][0];$invalidEdits[]=$invalid;
+        foreach ($invalidEdits as $invalid) {
+            [$status,$body]=$get('/documents/'.$document->id.'/update',true,$invalid);
+            self::assertSame(422,$status,substr($body,0,2000));
+            foreach ($unchanged as $table=>$rows) {
+                self::assertEquals($rows,$db->table($table)->orderBy('id')->get()->toArray(),$table.' tras clave inválida');
+            }
+        }
+        [$status,$body]=$get('/documents/'.$document->id.'/update',true,$edit);
+        self::assertSame(200,$status,substr($body,0,2000));self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
+        self::assertSame($before,\App\Support\Exact\Decimal::fraction($document->fresh()->exactValue('total')));
+        $stored=\App\Support\Exact\JsonDecimals::decode($document->fresh()->items()->firstOrFail()->getAttributes()['discounts']);
+        self::assertSame(['n'=>'1','d'=>'300'],$stored[1]['amount_exact']);self::assertTrue($stored[1]['from_global_distribution']);
+        $edit['items'][0]['discounts'][0]['amount']='0';
+        $edit['items'][0]['record_id']=$document->fresh()->items()->firstOrFail()->id;
+        [$status,$body]=$get('/documents/'.$document->id.'/update',true,$edit);
+        self::assertSame(200,$status,substr($body,0,2000));
+        self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
+        self::assertTrue($document->fresh()->exactValue('total')->isEqualTo('299/300'));
+        $stored=\App\Support\Exact\JsonDecimals::decode($document->fresh()->items()->firstOrFail()->getAttributes()['discounts']);
+        self::assertSame(['n'=>'0','d'=>'1'],$stored[0]['amount_exact']);
+        self::assertSame(['n'=>'1','d'=>'300'],$stored[1]['amount_exact']);
+        } finally {file_put_contents($fixturePath,$originalFixture);}
+    }
+
+    private function assertApiInvoiceDetailProjectsExactAmounts(callable $get, array $input, int $serviceId, string $temp, bool $vesInvoicesOnly): void
+    {
+        $inputs = array_replace($input, [
+            'payment_condition_id'=>'02', 'payments'=>[], 'fee'=>[], 'operation_type_id'=>'0101',
+            'date_of_due'=>$input['date_of_issue'], 'total'=>'41',
+            'legends'=>[
+                ['code'=>'2000','value'=>'LEYENDA-DE-PRUEBA-CONSERVADA'],
+                ['code'=>'1000.0','value'=>'LEYENDA-ANTERIOR-DEL-TOTAL'],
+            ],
+        ]);
+        $inputs['items'][0]['item_id'] = $serviceId;
+        $inputs['items'][0]['item']['unit_type_id'] = 'SERV';
+        $inputs['items'][0]['quantity'] = '0.333333333333';
+        $scenarios = [
+            ['VES', '20', '3', ['total_taxed'=>'0', 'total_exonerated'=>'1', 'total_igv'=>'0',
+                'total_discount_global'=>'0.003333333333', 'total'=>'0.896666666667'], '0.1', '0.90'],
+            ['USD', '10', '31345053406498655.64', ['total_taxed'=>'9007199254740992.896666666667',
+                'total_exonerated'=>'0', 'total_igv'=>'1441151880758558.863466666667',
+                'total_discount_global'=>'0.003866666667', 'total'=>'10448351135499551.760133333333'],
+                '0.116', '10448351135499551.76'],
+        ];
+        foreach ($scenarios as [$currency, $affectation, $price, $totals, $ownDiscount, $payable]) {
+            if ($vesInvoicesOnly && $currency !== 'VES') continue;
+            $payload = array_replace($inputs, [
+                'external_id'=>(string) \Illuminate\Support\Str::uuid(),
+                'currency_type_id'=>$currency, 'exchange_rate_sale'=>$currency==='USD' ? '40' : '1',
+            ]);
+            $item = &$payload['items'][0];
+            unset($item['price_input']);
+            $item['unit_price'] = $price;
+            $item['quantity_input'] = ['amount'=>$price, 'unit_price'=>\App\Support\Exact\Decimal::fraction(
+                \App\Support\Exact\Decimal::of($price)->multipliedBy(3))];
+            $item['affectation_igv_type_id'] = $affectation;
+            $code = $affectation==='10' ? '00' : '01';
+            $item['discounts'] = [
+                ['discount_type_id'=>$code, 'description'=>'Propio', 'factor'=>'0', 'base'=>'1',
+                    'amount_exact'=>['n'=>'1','d'=>'10'], 'is_amount'=>true],
+                ['discount_type_id'=>$code, 'description'=>'Global', 'factor'=>'0', 'base'=>'1',
+                    'amount_exact'=>['n'=>'1','d'=>'300'], 'is_amount'=>true, 'from_global_distribution'=>true],
+            ];
+            unset($item);
+
+            [$created,$body] = $get('/documents',true,$payload);
+            self::assertSame(200,$created,substr($body,0,2000));
+            $createdData = json_decode($body,true,512,JSON_THROW_ON_ERROR);
+            self::assertTrue($createdData['success'] ?? false,$body);
+            $invoice = \App\Models\Tenant\Document::findOrFail($createdData['data']['id']);
+            $url = '/api/documents/find/'.$invoice->id;
+            [$status,$body] = $get($url);
+            self::assertSame(200,$status,substr($body,0,2000));
+            $response = json_decode($body,true,512,JSON_THROW_ON_ERROR);
+            self::assertSame(['data'],array_keys($response));
+            $data = $response['data'];
+            self::assertSame($currency,$data['currency_type_id']);
+            foreach ($totals + ['subtotal'=>$totals['total'], 'total_exportation'=>'0'] as $key=>$value) {
+                self::assertSame($value,$data[$key],$currency.' '.$key);
+            }
+            self::assertCount(1,$data['items']);
+            foreach (['quantity'=>'0.333333333333','unit_price'=>$price,'total_discount'=>$ownDiscount,'total'=>$totals['total']] as $key=>$value) {
+                self::assertSame($value,$data['items'][0][$key],$currency.' partida '.$key);
+            }
+            $amountLegends = array_values(array_filter($data['legends'],static fn ($legend) => ($legend['code'] ?? null) == '1000'));
+            self::assertCount(1,$amountLegends,$currency.' Debe existir una sola leyenda de total en letras.');
+            self::assertSame(['code'=>'1000','value'=>\App\CoreFacturalo\Helpers\Number\NumberLetter::convertToLetter($payable)],$amountLegends[0]);
+            self::assertContains(['code'=>'2000','value'=>'LEYENDA-DE-PRUEBA-CONSERVADA'],$data['legends']);
+
+            if ($currency==='VES') {
+                self::assertSame(401,$get($url,false)[0]);
+                self::assertSame(404,$get('/api/documents/find/9223372036854775807')[0]);
+                [$pdfStatus,$pdf] = $get('/documents/'.$invoice->external_id.'/download-pdf/a4');
+                self::assertSame(200,$pdfStatus);
+                self::assertStringStartsWith('%PDF-',$pdf);
+                $proof = $temp.'/invoice-canonical-amount-legend.pdf';
+                file_put_contents($proof,$pdf);
+                $process = new \Symfony\Component\Process\Process(['pdftotext','-layout',$proof,'-']);
+                $process->mustRun();
+                self::assertSame(1,preg_match_all('/\bSON\s*:/iu',$process->getOutput()));
+                self::assertStringContainsString('LEYENDA-DE-PRUEBA-CONSERVADA',$process->getOutput());
+                self::assertStringNotContainsString('LEYENDA-ANTERIOR-DEL-TOTAL',$process->getOutput());
+            }
+        }
+    }
+
+    /** Connect the tested XLSX boundary to the actual API kernel; Guzzle cannot leave the fixture. */
+    private function assertSpreadsheetInvoicesReachTheRealApi(callable $get,$db,$app,array $input,string $token,string $temp): void
+    {
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $app['auth']->setUser(\App\Models\Tenant\User::findOrFail($input['user_id']));
+        $today=\Carbon\Carbon::instance(new \DateTimeImmutable('today',new \DateTimeZone('America/Caracas')));$excelDate=(string)\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel($today);
+        $request=$app['request'];$previous=$request->all();$request->merge(['document_type_id'=>'01','series'=>'FF01']);
+        $fixturePath=$temp.'/fixture.json';$originalFixture=file_get_contents($fixturePath);
+        $diagnosticFixture=json_decode($originalFixture,true,512,JSON_THROW_ON_ERROR);$diagnosticFixture['strict_import_diagnostics']=true;
+        file_put_contents($fixturePath,json_encode($diagnosticFixture,JSON_THROW_ON_ERROR));
+        try {
+            foreach (['excel'=>\App\Imports\DocumentImportExcelFormat::class,'first'=>\App\Imports\DocumentsImport::class,'second'=>\App\Imports\DocumentsImportTwoFormat::class] as $layout=>$class) {
+                $row=match ($layout) {
+                    'excel'=>[0=>'folio-api',1=>'orden-api',2=>'46000',3=>'12345678',4=>'Cliente ficticio API',5=>'Dirección de prueba',6=>'',7=>'',8=>'VES',9=>'Servicio importado API',10=>'SERV',11=>'1',12=>'0.116',13=>'0.1',14=>'0.016'],
+                    'first'=>[2=>'0001',3=>'FF01-700001',5=>'46000',9=>'12345678',10=>'Cliente ficticio API',11=>'VES',12=>'0.1',13=>'0.016',15=>'0.116',20=>'Dirección de prueba',21=>'',22=>'Servicio importado API',23=>'SERV',24=>'1',25=>'0.116',26=>'0.1',27=>'0.016'],
+                    'second'=>[0=>'01',1=>'FF01-700002',2=>'17/11/2026',3=>'12345678',4=>'Cliente ficticio API',5=>'VES',6=>'0.1',7=>'0.016',8=>'0.116',9=>'Dirección de prueba',10=>'',11=>'Servicio importado API',12=>'SERV',13=>'1',14=>'0.116',15=>'0.1',16=>'0.016'],
+                };
+                $row[$layout==='excel' ? 2 : ($layout==='first' ? 5 : 2)]=$layout==='second' ? $today->format('d/m/Y') : $excelDate;
+                $book=new \PhpOffice\PhpSpreadsheet\Spreadsheet();$sheet=$book->getActiveSheet();
+                $sheet->fromArray(array_fill(0,33,'Encabezado'),null,'A1');
+                foreach ($row as $column=>$value) $sheet->setCellValueExplicit(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($column+1).'2',$value,\PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $path=$temp.'/invoice-import-'.$layout.'.xlsx';(new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($book))->save($path);$book->disconnectWorksheets();
+                $book=\PhpOffice\PhpSpreadsheet\IOFactory::load($path);$last=[];
+                $client=new \GuzzleHttp\Client(['handler'=>function ($outgoing) use ($get,$token,&$last) {
+                    self::assertSame('POST',$outgoing->getMethod());self::assertSame('/api/documents',$outgoing->getUri()->getPath());
+                    self::assertSame('Bearer '.$token,$outgoing->getHeaderLine('Authorization'));
+                    $payload=json_decode((string)$outgoing->getBody(),true,512,JSON_THROW_ON_ERROR);
+                    self::assertArrayNotHasKey('codigo_condicion_de_pago',$payload);self::assertArrayNotHasKey('pagos',$payload);
+                    self::assertSame($payload['fecha_de_emision'],$payload['fecha_de_vencimiento']);
+                    [$code,$body]=$get('/api/documents',true,$payload);$last=[$code,$body];
+                    return \GuzzleHttp\Promise\Create::promiseFor(new \GuzzleHttp\Psr7\Response($code,[],$body));
+                }]);
+                $import=new $class($path,$client);
+                $event=new \Maatwebsite\Excel\Events\BeforeSheet(new \Maatwebsite\Excel\Sheet($book->getActiveSheet()),$import);
+                ($import->registerEvents()[\Maatwebsite\Excel\Events\BeforeSheet::class])($event);
+                $before=$db->table('documents')->count();
+                $import->collection(collect($book->getActiveSheet()->toArray(null,false,false,false)));$book->disconnectWorksheets();
+                // The unchanged formats contain no receipts. Preserve the API's
+                // existing cash-collection rule instead of inventing credit/payments.
+                self::assertSame(422,$last[0],$layout.': '.json_encode($last));
+                self::assertStringContainsString('Una factura al contado requiere cobrar el total',$last[1]);
+                self::assertSame(0,$import->getData()['registered']);
+                self::assertStringContainsString('Una factura al contado requiere cobrar el total',$import->getData()['data'][0]['message']);
+                self::assertSame($before,$db->table('documents')->count());
+            }
+        } finally { $request->replace($previous);file_put_contents($fixturePath,$originalFixture); }
+    }
+
+    private function assertPosCatalogPreservesOriginalFractions(callable $get,$db,array $input): void
+    {
+        $D=\App\Support\Exact\Decimal::class;
+        $db->table('configurations')->update(['show_service_on_pos'=>true,'active_warehouse_prices'=>false,'decimal_quantity'=>2]);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('inventory_configurations')->update(['stock_control'=>true]);
+        $warehouse=\Modules\Inventory\Models\Warehouse::where('establishment_id',$input['establishment_id'])->firstOrFail();
+        $template=\App\Models\Tenant\Item::where('internal_id','MOCK-ITEM-VES-001')->firstOrFail();
+        $definitions=[
+            ['9007199254740991',$D::of('1/3'),'UND','VES','20'],
+            ['9007199254740992',$D::of('9007199254740993.01'),'UND','USD','20'],
+            ['9007199254740993',$D::of('1.005'),'UND','VES','10'],
+            ['9007199254740994',$D::of('0.000000000001'),'UND','VES','20'],
+        ];
+        $items=[];
+        foreach ($definitions as $index=>[$id,$price,$unit,$currency,$affectation]) {
+            $item=$template->replicate();$item->id=$id;$item->internal_id='POSBIG-'.$index;
+            $item->description='POSBIG temporal '.$index;$item->barcode='POSBIG-ITEM-'.$index;
+            $item->unit_type_id=$unit;$item->currency_type_id=$currency;$item->sale_affectation_igv_type_id=$affectation;
+            $item->active=true;$item->has_igv=false;
+            $item->setExactValues(['sale_unit_price'=>$price,'purchase_unit_price'=>'0','stock'=>'100'])->save();
+            $stock=\Modules\Inventory\Models\ItemWarehouse::firstOrNew(['item_id'=>$item->id,'warehouse_id'=>$warehouse->id]);
+            $stock->setExactValues(['stock'=>'100'])->save();$items[]=$item;
+        }
+        $primary=$items[0];
+        $unit=new \App\Models\Tenant\ItemUnitType(['item_id'=>$primary->id,'description'=>'Presentación POS temporal',
+            'unit_type_id'=>'UND','price_default'=>2,'barcode'=>'POSBIG-PRESENTATION']);$unit->id=8000007;
+        $unit->setExactValues(['quantity_unit'=>$D::of('1/3'),'price1'=>$D::of('1/3'),'price2'=>$D::of('2/3'),'price3'=>'9007199254740993.01'])->save();
+        $position=\App\Models\Tenant\PriceLabel::max('position')+1;
+        $label=new \App\Models\Tenant\PriceLabel(['position'=>$position,'label'=>'POSBIG lista','is_active'=>true]);
+        $label->id='9007199254740993';$label->save();
+        $quote=new \App\Models\Tenant\ItemUnitTypePrice(['item_unit_type_id'=>$unit->id,'price_label_id'=>$label->id,'is_active'=>true]);$quote->id=8000019;
+        $quote->setExactValues(['price'=>$D::of('1/3')])->save();
+        $current=new \App\Models\Tenant\ItemWarehousePrice(['item_id'=>$primary->id,'warehouse_id'=>$warehouse->id]);
+        $current->setExactValues(['price'=>$D::of('2/3')])->save();
+        $other=\Modules\Inventory\Models\Warehouse::create(['description'=>'Almacén POS temporal','establishment_id'=>$input['establishment_id']]);
+        $fallback=new \App\Models\Tenant\ItemWarehousePrice(['item_id'=>$primary->id,'warehouse_id'=>$other->id]);
+        $fallback->setExactValues(['price'=>$D::of('7/3')])->save();
+        $corpus=['ids'=>array_column($definitions,0),'primary_id'=>(string)$primary->id,'label_id'=>(string)$label->id,'responses'=>[]];
+        foreach (['base','warehouse','fallback'] as $mode) {
+            $db->table('configurations')->update(['active_warehouse_prices'=>$mode!=='base']);
+            if ($mode==='fallback') $current->delete();
+            [$reloadStatus,$reloadBody]=$get('/pos/table/items?document_type_id=01');
+            self::assertSame(200,$reloadStatus,substr($reloadBody,0,2000));
+            $reloaded=collect(json_decode($reloadBody,true,512,JSON_THROW_ON_ERROR))
+                ->first(fn($row)=>(string)$row['id']===(string)$primary->id);
+            self::assertNotNull($reloaded);
+            $reloadPrice=$mode==='warehouse' ? '2/3' : '1/3';
+            self::assertSame($D::represent($reloadPrice),$reloaded['sale_unit_price']);
+            self::assertSame($D::fraction($reloadPrice),$reloaded['calculation_snapshot']['values']['sale_unit_price']);
+            foreach ([['list','/pos/items?input_item=POSBIG','data'],['search','/pos/search_items?input_item=POSBIG','items'],['single','/pos/item/'.$primary->id,'data']] as [$name,$path,$key]) {
+                [$status,$body]=$get($path);self::assertSame(200,$status,substr($body,0,2000));
+                $response=json_decode($body,true,512,JSON_THROW_ON_ERROR);$expected=[];
+                foreach ($definitions as [$id,$price,$unitType,$currency,$affectation]) {
+                    if ($name==='single' && $id!==(string)$primary->id) continue;
+                    $effective=$price;
+                    if ($id===(string)$primary->id) {
+                        if ($name==='search') $effective=$D::of($mode==='fallback'?'1/3':'2/3');
+                        elseif ($mode==='warehouse') $effective=$D::of('2/3');
+                        elseif ($mode==='fallback') $effective=$D::of('7/3');
+                    }
+                    $row=collect($response[$key])->first(fn($row)=>(string)$row['id']===$id);self::assertNotNull($row,$path.' id '.$id);
+                    self::assertIsString($row['sale_unit_price']);self::assertSame($D::represent($effective),$row['sale_unit_price']);
+                    self::assertSame($D::fraction($effective),$row['calculation_snapshot']['values']['sale_unit_price']);
+                    if ($row['item_unit_types']) self::assertSame(2,$row['item_unit_types'][0]['price_default']);
+                    $expected[]=['id'=>$id,'price'=>$D::fraction($effective)];
+                }
+                $corpus['responses'][]=['name'=>$mode.'-'.$name,'path'=>$path,'body'=>$body,'key'=>$key,'expected'=>$expected];
+            }
+        }
+        [$status,$body]=$get('/pos/search_items?input_item=POSBIG-PRESENTATION&search_item_by_barcode_presentation=true');
+        self::assertSame(200,$status,substr($body,0,2000));$corpus['barcode']=['body'=>$body];
+        $variation=$template->replicate();$variation->id='9007199254740995';$variation->parent_item_id=$items[1]->id;
+        $variation->internal_id='POSVAR';$variation->description='POSVAR temporal';$variation->unit_type_id='UND';
+        $variation->sale_affectation_igv_type_id='20';$variation->currency_type_id='VES';$variation->has_igv=true;
+        $variation->setExactValues(['sale_unit_price'=>$D::of('1/3'),'stock'=>'100'])->save();
+        $stock=\Modules\Inventory\Models\ItemWarehouse::firstOrNew(['item_id'=>$variation->id,'warehouse_id'=>$warehouse->id]);$stock->setExactValues(['stock'=>'100'])->save();
+        [$status,$body]=$get('/pos/item/'.$variation->id);self::assertSame(200,$status,substr($body,0,2000));$corpus['variation']=['body'=>$body];
+        [$status,$body]=$get('/pos/items?input_item=POSBIG-1&group_variations=1');
+        self::assertSame(200,$status,substr($body,0,2000));
+        $corpus['grouped_parent']=['body'=>$body];
+        $node=new \Symfony\Component\Process\Process(['node','tests/Support/pos_catalog_wire.cjs'],base_path());
+        $node->setInput(json_encode($corpus,JSON_THROW_ON_ERROR));$node->setTimeout(120);$node->run();
+        self::assertSame(0,$node->getExitCode(),$node->getErrorOutput());
+        $verified=json_decode($node->getOutput(),true,512,JSON_THROW_ON_ERROR);self::assertGreaterThan(60,$verified['checks']);
+        $invoiceLabelPrice = null;
+        foreach (['/documents/search-items?'.http_build_query(['items_id'=>[$primary->id]]), '/documents/search/item/'.$primary->id] as $path) {
+            [$catalogStatus, $catalogBody] = $get($path);
+            self::assertSame(200, $catalogStatus, substr($catalogBody, 0, 1600));
+            $catalog = json_decode($catalogBody, true, 512, JSON_THROW_ON_ERROR);
+            $invoiceItem = collect($catalog['items'])->firstWhere('id', $primary->id);
+            self::assertNotNull($invoiceItem);
+            $invoicePresentation = collect($invoiceItem['item_unit_types'])->firstWhere('id', $unit->id);
+            self::assertNotNull($invoicePresentation);
+            $invoiceLabel = collect($invoicePresentation['prices'])->firstWhere('price_label_id', $label->id);
+            self::assertSame('0.33', $invoiceLabel['price']);
+            $invoiceLabelPrice = $invoiceLabel['calculation_snapshot']['values']['price'] ?? null;
+            self::assertSame(['n'=>'1','d'=>'3'], $invoiceLabelPrice);
+        }
+        $verified['invoice_line']['quantity_input'] = ['amount'=>'1', 'unit_price'=>$invoiceLabelPrice];
+        $request=array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),'payment_condition_id'=>'02','payments'=>[],'fee'=>[],
+            'currency_type_id'=>'VES','operation_type_id'=>'0101','date_of_due'=>'2026-09-10',
+            'total'=>'1','total_value'=>'1','total_taxed'=>'0','total_exonerated'=>'1','total_igv'=>'0','total_taxes'=>'0','items'=>[$verified['invoice_line']]]);
+        [$status,$body]=$get('/documents',true,$request);self::assertSame(200,$status,substr($body,0,2500));
+        $created=json_decode($body,true,512,JSON_THROW_ON_ERROR);$document=\App\Models\Tenant\Document::findOrFail($created['data']['id']);
+        self::assertTrue($document->exactValue('total')->isEqualTo('1'));
+        self::assertSame(['n'=>'1','d'=>'3'],$document->items->first()->calculation_snapshot['values']['unit_price']);
+        self::assertSame($invoiceLabelPrice, $document->items->first()->calculation_snapshot['inputs']['quantity_input']['unit_price']);
+        self::assertTrue($primary->fresh()->exactValue('stock')->isEqualTo('97'));
+        self::assertTrue(\Modules\Inventory\Models\ItemWarehouse::where('item_id',$primary->id)->where('warehouse_id',$warehouse->id)->firstOrFail()->exactValue('stock')->isEqualTo('97'));
+        $stock=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$primary->id)->where('warehouse_id',$warehouse->id)->firstOrFail();
+        $stock->setExactValues(['stock'=>$D::of('1/3')])->save();
+        foreach (['0.333333333333'=>true,'0.333333333334'=>false] as $quantity=>$allowed) {
+            [$status,$body]=$get('/pos/validate_stock/'.$primary->id.'/'.$quantity);self::assertSame(200,$status,$body);
+            self::assertSame($allowed,json_decode($body,true,512,JSON_THROW_ON_ERROR)['success']);
+        }
+        $stock->setExactValues(['stock'=>'0.111111111111'])->save();
+        [$status,$body]=$get('/pos/validate_stock/'.$primary->id.'/0.111111111111?quantity_exact='.rawurlencode(json_encode(['n'=>'1','d'=>'9'])));
+        self::assertSame(200,$status,$body);self::assertFalse(json_decode($body,true,512,JSON_THROW_ON_ERROR)['success']);
+        foreach ([['n'=>'1','d'=>'0'],['n'=>'1','d'=>'2'],['n'=>1,'d'=>'9']] as $invalid) {
+            [$status,$body]=$get('/pos/validate_stock/'.$primary->id.'/0.111111111111?quantity_exact='.rawurlencode(json_encode($invalid)));
+            self::assertSame(422,$status,substr($body,0,1200));
+        }
+        $increment = $D::of('4/3');
+        $incrementPath = '/pos/validate_stock/'.$primary->id.'/1.333333333333?quantity_exact='
+            .rawurlencode(json_encode($D::fraction($increment), JSON_THROW_ON_ERROR));
+        foreach ([['1.333333333333', false], [$increment, true]] as [$available, $allowed]) {
+            $stock->setExactValues(['stock'=>$available])->save();
+            [$status, $body] = $get($incrementPath);
+            self::assertSame(200, $status, $body);
+            self::assertSame($allowed, json_decode($body, true, 512, JSON_THROW_ON_ERROR)['success']);
+        }
+        $pack = $template->replicate();
+        $pack->forceFill(['id'=>'9007199254740996','internal_id'=>'POSPACK','description'=>'Pack temporal','is_set'=>true]);
+        $pack->setExactValues(['sale_unit_price'=>'4','stock'=>'100'])->save();
+        $part = new \App\Models\Tenant\ItemSet(['item_id'=>$pack->id,'individual_item_id'=>$primary->id]);
+        $part->setExactValues(['quantity'=>$D::of('1/3')])->save();
+        $stock->setExactValues(['stock'=>$D::of('7/3')])->save();
+        [$status,$body]=$get('/pos/item/'.$pack->id);
+        self::assertSame(200,$status,substr($body,0,2000));
+        $component=json_decode($body,true,512,JSON_THROW_ON_ERROR)['data'][0]['pos_stock']['components'][0];
+        self::assertSame($primary->id,$component['item_id']);
+        self::assertSame(['n'=>'1','d'=>'3'],$component['quantity']);
+        self::assertSame(['n'=>'7','d'=>'3'],$component['stock']);
+
+        \Modules\Inventory\Models\ItemWarehouse::where('item_id',$variation->id)->where('warehouse_id',$warehouse->id)->delete();
+        [$status,$body]=$get('/pos/item/'.$variation->id);
+        self::assertSame(200,$status,substr($body,0,2000));
+        $missingStock=json_decode($body,true,512,JSON_THROW_ON_ERROR)['data'][0]['pos_stock']['components'][0];
+        self::assertSame($variation->id,$missingStock['item_id']);
+        self::assertNull($missingStock['stock']);
+    }
+
 
     private function assertPosCatalogExcludesServices($db, callable $get, object $product, int $warehouseId): void
     {

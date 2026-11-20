@@ -1,60 +1,57 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `devolutions` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `user_id` int(10) unsigned NOT NULL
- * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `establishment_id` int(10) unsigned NOT NULL
- * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `prefix` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `date_of_issue` date NOT NULL
- * - `time_of_issue` time NOT NULL
- * - `devolution_reason_id` int(10) unsigned NOT NULL
- * - `observation` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - user_id: bigint
+ * - external_id: char(36)
+ * - establishment_id: bigint
+ * - fiscal_environment: varchar(16)
+ * - state_type_id: char(2)
+ * - prefix: char(2)
+ * - date_of_issue: date
+ * - time_of_issue: time
+ * - devolution_reason_id: bigint
+ * - observation: varchar(500)
+ * - filename: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `devolutions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `establishment_id` int(10) unsigned NOT NULL,
-  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `prefix` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date_of_issue` date NOT NULL,
-  `time_of_issue` time NOT NULL,
-  `devolution_reason_id` int(10) unsigned NOT NULL,
-  `observation` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `devolutions_user_id_foreign` (`user_id`),
-  KEY `devolutions_establishment_id_foreign` (`establishment_id`),
-  KEY `devolutions_devolution_reason_id_foreign` (`devolution_reason_id`),
-  KEY `devolutions_fiscal_environment_foreign` (`fiscal_environment`),
-  KEY `devolutions_state_type_id_foreign` (`state_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('devolutions', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id');
+            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->bigInteger('establishment_id');
+            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
+            $table->char('state_type_id', 2)->collation('pro9_ci_ai');
+            $table->char('prefix', 2)->collation('pro9_ci_ai');
+            $table->date('date_of_issue');
+            $table->time('time_of_issue');
+            $table->bigInteger('devolution_reason_id');
+            $table->string('observation', 500)->collation('pro9_ci_ai');
+            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['user_id'], 'devolutions_user_id_foreign');
+            $table->index(['establishment_id'], 'devolutions_establishment_id_foreign');
+            $table->index(['devolution_reason_id'], 'devolutions_devolution_reason_id_foreign');
+            $table->index(['fiscal_environment'], 'devolutions_fiscal_environment_foreign');
+            $table->index(['state_type_id'], 'devolutions_state_type_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `devolutions`');
+        Schema::dropIfExists('devolutions');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

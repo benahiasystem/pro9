@@ -1,39 +1,39 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `item_unit_business` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `item_id` int(10) unsigned NOT NULL
- * - `cat_item_unit_business_id` int(10) unsigned NOT NULL
- * - `active` tinyint(4) DEFAULT '1' COMMENT 'Define si se encuentra activo'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - item_id: bigint
+ * - cat_item_unit_business_id: bigint
+ * - active: smallint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `item_unit_business` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `item_id` int(10) unsigned NOT NULL,
-  `cat_item_unit_business_id` int(10) unsigned NOT NULL,
-  `active` tinyint(4) DEFAULT '1' COMMENT 'Define si se encuentra activo',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('item_unit_business', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('item_id');
+            $table->bigInteger('cat_item_unit_business_id');
+            $table->smallInteger('active')->nullable()->default('1')->comment('Define si se encuentra activo');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "item_unit_business" ADD CONSTRAINT "item_unit_business_item_id_range" CHECK ("item_id" >= 0)');
+        DB::statement('ALTER TABLE "item_unit_business" ADD CONSTRAINT "item_unit_business_cat_item_unit_business_id_range" CHECK ("cat_item_unit_business_id" >= 0)');
+        DB::statement('ALTER TABLE "item_unit_business" ADD CONSTRAINT "item_unit_business_active_range" CHECK ("active" BETWEEN -128 AND 127)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `item_unit_business`');
+        Schema::dropIfExists('item_unit_business');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -29,6 +29,18 @@ test('document sales report starts with an invoice type', () => {
     assert.equal(context.form.document_type_id, '01')
 })
 
+test('sales page totals sum displayed VES invoice decimals and exclude a rejected credit note', () => {
+    const context={resource:'reports/sales', salesTotalColumnKeys:['total'], initTotals() {this.totals={}}}
+    const invoice = {currency_type_id:'VES',document_type_id:'01',state_type_id:'01',total:'0.33',
+        report_total_fractions:{total:{n:'1',d:'3'}}}
+    method('getTotals').call(context, [
+        {...invoice}, {...invoice}, {...invoice},
+        {currency_type_id:'VES',document_type_id:'07',state_type_id:'09',total:'9'},
+    ])
+    assert.equal(context.totals.acum_total,'0.99')
+    assert.equal(method('salesFooterValue').call(context,'total','VES'),'0.99')
+})
+
 test('sales page totals sum displayed decimals by currency and exclude rejected credit notes', () => {
     const context={resource:'reports/sales', salesTotalColumnKeys:['total'], initTotals() {this.totals={}}}
     method('getTotals').call(context,[

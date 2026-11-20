@@ -14,6 +14,7 @@ class Department extends ModelCatalog
 
 //    protected $with = ['provinces'];
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 
     // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA

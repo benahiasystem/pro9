@@ -9,16 +9,16 @@ class AddIsTenantDefaultToSystemSkinsTable extends Migration
 {
     public function up()
     {
-        Schema::connection('system')->table('system_skins', function (Blueprint $table) {
+        Schema::table('system_skins', function (Blueprint $table) {
             $table->boolean('is_tenant_default')->default(false)->after('is_default');
         });
 
-        DB::connection('system')->table('system_skins')->where('id', 3)->update(['is_tenant_default' => true]);
+        DB::connection()->table('system_skins')->where('id', 3)->update(['is_tenant_default' => true]);
     }
 
     public function down()
     {
-        Schema::connection('system')->table('system_skins', function (Blueprint $table) {
+        Schema::table('system_skins', function (Blueprint $table) {
             $table->dropColumn('is_tenant_default');
         });
     }

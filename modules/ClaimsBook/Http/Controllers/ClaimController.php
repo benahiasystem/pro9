@@ -401,7 +401,7 @@ JS;
 
         $avgDays = Claim::where('is_closed', true)
                         ->whereNotNull('closed_at')
-                        ->selectRaw('AVG(DATEDIFF(closed_at, created_at)) as avg_days')
+                        ->selectRaw('AVG(closed_at::date - created_at::date) as avg_days')
                         ->value('avg_days');
 
         return response()->json([

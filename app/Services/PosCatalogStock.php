@@ -42,7 +42,7 @@ class PosCatalogStock
             if ($item->is_set) {
                 foreach ($item->sets as $set) {
                     if ($set->individual_item && $set->individual_item->unit_type_id !== 'SERV') {
-                        $components[] = $component($set->individual_item, $set->getRawOriginal('quantity') ?: 1);
+                        $components[] = $component($set->individual_item, Decimal::readRequired($set, 'quantity'));
                     }
                 }
             } elseif ($item->unit_type_id !== 'SERV') {

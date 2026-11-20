@@ -1,178 +1,177 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `items` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `name` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `preparation_area_id` int(10) unsigned DEFAULT NULL
- * - `second_name` varchar(600) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `description` varchar(600) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `text_filter` longtext COLLATE utf8mb4_unicode_ci
- * - `model` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `factory_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `barcode` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `technical_specifications` varchar(300) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `item_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `internal_id` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `item_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `date_of_due` date DEFAULT NULL
- * - `account_id` int(10) unsigned DEFAULT NULL
- * - `item_code_gs1` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `sale_unit_price` decimal(30,12) NOT NULL
- * - `purchase_has_igv` tinyint(1) NOT NULL DEFAULT '1'
- * - `has_igv` tinyint(1) NOT NULL DEFAULT '1'
- * - `purchase_unit_price` decimal(30,12) NOT NULL DEFAULT '0.000000'
- * - `restrict_sale_cpe` tinyint(1) NOT NULL DEFAULT '0'
- * - `exchange_points` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'sistema por puntos'
- * - `quantity_of_points` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'sistema por puntos'
- * - `commission_amount` decimal(30,12) DEFAULT NULL
- * - `line` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `commission_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `suggested_price` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `sale_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `purchase_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `calculate_quantity` tinyint(1) NOT NULL DEFAULT '0'
- * - `sale_unit_price_set` decimal(30,12) DEFAULT NULL
- * - `is_set` tinyint(1) NOT NULL DEFAULT '0'
- * - `parent_item_id` int(10) unsigned DEFAULT NULL
- * - `favorite` tinyint(1) NOT NULL DEFAULT '0'
- * - `category_id` int(10) unsigned DEFAULT NULL
- * - `brand_id` int(10) unsigned DEFAULT NULL
- * - `image` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg'
- * - `image_medium` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg'
- * - `image_small` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg'
- * - `stock` decimal(30,12) NOT NULL DEFAULT '0.0000'
- * - `stock_min` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `lots_enabled` tinyint(1) NOT NULL DEFAULT '0'
- * - `series_enabled` tinyint(1) NOT NULL DEFAULT '0'
- * - `percentage_of_profit` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `has_perception` tinyint(1) NOT NULL DEFAULT '0'
- * - `percentage_perception` decimal(30,12) DEFAULT NULL
- * - `attributes` json DEFAULT NULL
- * - `active` tinyint(1) NOT NULL DEFAULT '1'
- * - `hidden_search` tinyint(1) NOT NULL DEFAULT '0'
- * - `web_platform_id` int(10) unsigned DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `warehouse_id` int(10) unsigned DEFAULT NULL
- * - `status` tinyint(4) NOT NULL DEFAULT '1'
- * - `is_dish` tinyint(1) NOT NULL DEFAULT '0'
- * - `apply_store` tinyint(1) NOT NULL DEFAULT '0'
- * - `apply_restaurant` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'visible en menu restaurante'
- * - `restaurant_favorite` tinyint(4) NOT NULL DEFAULT '0'
- * - `cod_digemid` text COLLATE utf8mb4_unicode_ci COMMENT 'Codigo de producto DIGEMID'
- * - `sanitary` text COLLATE utf8mb4_unicode_ci COMMENT 'Registro sanitario'
- * - `is_for_production` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es compuesto para produccion'
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - name: varchar(1000)
+ * - preparation_area_id: bigint
+ * - second_name: varchar(600)
+ * - description: varchar(600)
+ * - text_filter: text
+ * - model: varchar(100)
+ * - factory_code: varchar(255)
+ * - barcode: varchar(150)
+ * - technical_specifications: varchar(300)
+ * - item_type_id: char(2)
+ * - internal_id: varchar(30)
+ * - item_code: varchar(255)
+ * - date_of_due: date
+ * - account_id: bigint
+ * - item_code_gs1: varchar(255)
+ * - unit_type_id: varchar(255)
+ * - currency_type_id: varchar(255)
+ * - sale_unit_price: numeric(30,12)
+ * - purchase_has_igv: boolean
+ * - has_igv: boolean
+ * - purchase_unit_price: numeric(30,12)
+ * - restrict_sale_cpe: boolean
+ * - exchange_points: boolean
+ * - quantity_of_points: numeric(30,12)
+ * - commission_amount: numeric(30,12)
+ * - line: varchar(255)
+ * - commission_type: varchar(255)
+ * - suggested_price: numeric(30,12)
+ * - sale_affectation_igv_type_id: varchar(255)
+ * - purchase_affectation_igv_type_id: varchar(255)
+ * - calculate_quantity: boolean
+ * - sale_unit_price_set: numeric(30,12)
+ * - is_set: boolean
+ * - parent_item_id: bigint
+ * - favorite: boolean
+ * - category_id: bigint
+ * - brand_id: bigint
+ * - image: varchar(255)
+ * - image_medium: varchar(255)
+ * - image_small: varchar(255)
+ * - stock: numeric(30,12)
+ * - stock_min: numeric(30,12)
+ * - lot_code: varchar(255)
+ * - lots_enabled: boolean
+ * - series_enabled: boolean
+ * - percentage_of_profit: numeric(30,12)
+ * - has_perception: boolean
+ * - percentage_perception: numeric(30,12)
+ * - attributes: json
+ * - active: boolean
+ * - hidden_search: boolean
+ * - web_platform_id: bigint
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - warehouse_id: bigint
+ * - status: smallint
+ * - is_dish: boolean
+ * - apply_store: boolean
+ * - apply_restaurant: boolean
+ * - restaurant_favorite: smallint
+ * - cod_digemid: text
+ * - sanitary: text
+ * - is_for_production: boolean
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `items` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `preparation_area_id` int(10) unsigned DEFAULT NULL,
-  `second_name` varchar(600) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `description` varchar(600) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `text_filter` longtext COLLATE utf8mb4_unicode_ci,
-  `model` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `factory_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `barcode` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `technical_specifications` varchar(300) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `item_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `internal_id` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `item_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `date_of_due` date DEFAULT NULL,
-  `account_id` int(10) unsigned DEFAULT NULL,
-  `item_code_gs1` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sale_unit_price` decimal(30,12) NOT NULL,
-  `purchase_has_igv` tinyint(1) NOT NULL DEFAULT '1',
-  `has_igv` tinyint(1) NOT NULL DEFAULT '1',
-  `purchase_unit_price` decimal(30,12) NOT NULL DEFAULT '0.000000',
-  `restrict_sale_cpe` tinyint(1) NOT NULL DEFAULT '0',
-  `exchange_points` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'sistema por puntos',
-  `quantity_of_points` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'sistema por puntos',
-  `commission_amount` decimal(30,12) DEFAULT NULL,
-  `line` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `commission_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `suggested_price` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `sale_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `purchase_affectation_igv_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `calculate_quantity` tinyint(1) NOT NULL DEFAULT '0',
-  `sale_unit_price_set` decimal(30,12) DEFAULT NULL,
-  `is_set` tinyint(1) NOT NULL DEFAULT '0',
-  `parent_item_id` int(10) unsigned DEFAULT NULL,
-  `favorite` tinyint(1) NOT NULL DEFAULT '0',
-  `category_id` int(10) unsigned DEFAULT NULL,
-  `brand_id` int(10) unsigned DEFAULT NULL,
-  `image` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg',
-  `image_medium` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg',
-  `image_small` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'imagen-no-disponible.jpg',
-  `stock` decimal(30,12) NOT NULL DEFAULT '0.0000',
-  `stock_min` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `lots_enabled` tinyint(1) NOT NULL DEFAULT '0',
-  `series_enabled` tinyint(1) NOT NULL DEFAULT '0',
-  `percentage_of_profit` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `has_perception` tinyint(1) NOT NULL DEFAULT '0',
-  `percentage_perception` decimal(30,12) DEFAULT NULL,
-  `attributes` json DEFAULT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT '1',
-  `hidden_search` tinyint(1) NOT NULL DEFAULT '0',
-  `web_platform_id` int(10) unsigned DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `warehouse_id` int(10) unsigned DEFAULT NULL,
-  `status` tinyint(4) NOT NULL DEFAULT '1',
-  `is_dish` tinyint(1) NOT NULL DEFAULT '0',
-  `apply_store` tinyint(1) NOT NULL DEFAULT '0',
-  `apply_restaurant` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'visible en menu restaurante',
-  `restaurant_favorite` tinyint(4) NOT NULL DEFAULT '0',
-  `cod_digemid` text COLLATE utf8mb4_unicode_ci COMMENT 'Codigo de producto DIGEMID',
-  `sanitary` text COLLATE utf8mb4_unicode_ci COMMENT 'Registro sanitario',
-  `is_for_production` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Define si es compuesto para produccion',
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `items_item_type_id_foreign` (`item_type_id`),
-  KEY `items_unit_type_id_foreign` (`unit_type_id`),
-  KEY `items_currency_type_id_foreign` (`currency_type_id`),
-  KEY `items_sale_affectation_igv_type_id_foreign` (`sale_affectation_igv_type_id`),
-  KEY `items_purchase_affectation_igv_type_id_foreign` (`purchase_affectation_igv_type_id`),
-  KEY `items_warehouse_id_foreign` (`warehouse_id`),
-  KEY `items_account_id_foreign` (`account_id`),
-  KEY `items_brand_id_foreign` (`brand_id`),
-  KEY `items_category_id_foreign` (`category_id`),
-  KEY `items_second_name_index` (`second_name`),
-  KEY `items_description_index` (`description`),
-  KEY `items_internal_id_index` (`internal_id`),
-  KEY `items_item_code_index` (`item_code`),
-  KEY `items_web_platform_id_foreign` (`web_platform_id`),
-  KEY `items_parent_item_id_index` (`parent_item_id`),
-  KEY `items_favorite_index` (`favorite`),
-  KEY `items_factory_code_index` (`factory_code`),
-  KEY `items_barcode_index` (`barcode`),
-  KEY `items_preparation_area_id_foreign` (`preparation_area_id`),
-  KEY `items_name_index` (`name`(191)),
-  FULLTEXT KEY `items_text_filter_fulltext` (`text_filter`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('items', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name', 1000)->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('preparation_area_id')->nullable();
+            $table->string('second_name', 600)->collation('pro9_ci_ai')->nullable();
+            $table->string('description', 600)->collation('pro9_ci_ai')->nullable();
+            $table->text('text_filter')->collation('pro9_ci_ai')->nullable();
+            $table->string('model', 100)->collation('pro9_ci_ai')->nullable();
+            $table->string('factory_code', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('barcode', 150)->collation('pro9_ci_ai')->nullable();
+            $table->string('technical_specifications', 300)->collation('pro9_ci_ai')->nullable();
+            $table->char('item_type_id', 2)->collation('pro9_ci_ai');
+            $table->string('internal_id', 30)->collation('pro9_ci_ai')->nullable();
+            $table->string('item_code', 255)->collation('pro9_ci_ai')->nullable();
+            $table->date('date_of_due')->nullable();
+            $table->bigInteger('account_id')->nullable();
+            $table->string('item_code_gs1', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('unit_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->decimal('sale_unit_price', 30, 12);
+            $table->boolean('purchase_has_igv')->default(true);
+            $table->boolean('has_igv')->default(true);
+            $table->decimal('purchase_unit_price', 30, 12)->default('0.000000');
+            $table->boolean('restrict_sale_cpe')->default(false);
+            $table->boolean('exchange_points')->default(false)->comment('sistema por puntos');
+            $table->decimal('quantity_of_points', 30, 12)->default('0.00')->comment('sistema por puntos');
+            $table->decimal('commission_amount', 30, 12)->nullable();
+            $table->string('line', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('commission_type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('suggested_price', 30, 12)->default('0.00');
+            $table->string('sale_affectation_igv_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('purchase_affectation_igv_type_id', 255)->collation('pro9_ci_ai');
+            $table->boolean('calculate_quantity')->default(false);
+            $table->decimal('sale_unit_price_set', 30, 12)->nullable();
+            $table->boolean('is_set')->default(false);
+            $table->bigInteger('parent_item_id')->nullable();
+            $table->boolean('favorite')->default(false);
+            $table->bigInteger('category_id')->nullable();
+            $table->bigInteger('brand_id')->nullable();
+            $table->string('image', 255)->collation('pro9_ci_ai')->default('imagen-no-disponible.jpg');
+            $table->string('image_medium', 255)->collation('pro9_ci_ai')->default('imagen-no-disponible.jpg');
+            $table->string('image_small', 255)->collation('pro9_ci_ai')->default('imagen-no-disponible.jpg');
+            $table->decimal('stock', 30, 12)->default('0.0000');
+            $table->decimal('stock_min', 30, 12)->default('0.00');
+            $table->string('lot_code', 255)->collation('pro9_ci_ai')->nullable();
+            $table->boolean('lots_enabled')->default(false);
+            $table->boolean('series_enabled')->default(false);
+            $table->decimal('percentage_of_profit', 30, 12)->default('0.00');
+            $table->boolean('has_perception')->default(false);
+            $table->decimal('percentage_perception', 30, 12)->nullable();
+            $table->json('attributes')->nullable();
+            $table->boolean('active')->default(true);
+            $table->boolean('hidden_search')->default(false);
+            $table->bigInteger('web_platform_id')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->bigInteger('warehouse_id')->nullable();
+            $table->smallInteger('status')->default('1');
+            $table->boolean('is_dish')->default(false);
+            $table->boolean('apply_store')->default(false);
+            $table->boolean('apply_restaurant')->default(false)->comment('visible en menu restaurante');
+            $table->smallInteger('restaurant_favorite')->default('0');
+            $table->text('cod_digemid')->collation('pro9_ci_ai')->nullable()->comment('Codigo de producto DIGEMID');
+            $table->text('sanitary')->collation('pro9_ci_ai')->nullable()->comment('Registro sanitario');
+            $table->boolean('is_for_production')->default(false)->comment('Define si es compuesto para produccion');
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['item_type_id'], 'items_item_type_id_foreign');
+            $table->index(['unit_type_id'], 'items_unit_type_id_foreign');
+            $table->index(['currency_type_id'], 'items_currency_type_id_foreign');
+            $table->index(['sale_affectation_igv_type_id'], 'items_sale_affectation_igv_type_id_foreign');
+            $table->index(['purchase_affectation_igv_type_id'], 'items_purchase_affectation_igv_type_id_foreign');
+            $table->index(['warehouse_id'], 'items_warehouse_id_foreign');
+            $table->index(['account_id'], 'items_account_id_foreign');
+            $table->index(['brand_id'], 'items_brand_id_foreign');
+            $table->index(['category_id'], 'items_category_id_foreign');
+            $table->index(['second_name'], 'items_second_name_index');
+            $table->index(['description'], 'items_description_index');
+            $table->index(['internal_id'], 'items_internal_id_index');
+            $table->index(['item_code'], 'items_item_code_index');
+            $table->index(['web_platform_id'], 'items_web_platform_id_foreign');
+            $table->index(['parent_item_id'], 'items_parent_item_id_index');
+            $table->index(['favorite'], 'items_favorite_index');
+            $table->index(['factory_code'], 'items_factory_code_index');
+            $table->index(['barcode'], 'items_barcode_index');
+            $table->index(['preparation_area_id'], 'items_preparation_area_id_foreign');
+            $table->index(['name'], 'items_name_index');
+            $table->fullText(['text_filter'], 'items_text_filter_fulltext')->language('simple');
+        });
+        DB::statement('ALTER TABLE "items" ADD CONSTRAINT "items_status_range" CHECK ("status" BETWEEN -128 AND 127)');
+        DB::statement('ALTER TABLE "items" ADD CONSTRAINT "items_restaurant_favorite_range" CHECK ("restaurant_favorite" BETWEEN -128 AND 127)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `items`');
+        Schema::dropIfExists('items');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

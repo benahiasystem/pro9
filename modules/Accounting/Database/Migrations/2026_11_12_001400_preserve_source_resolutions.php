@@ -4,6 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\{DB, Schema};
 
+use Modules\Accounting\Support\PostgresIntegrity as Integrity;
+
 return new class extends Migration {
     public function up(): void
     {
@@ -19,13 +21,13 @@ return new class extends Migration {
             }
             $t->foreign(['organization_id', 'company_id'], 'fk_source_resolution_company')->references(['organization_id', 'id'])->on('accounting_companies')->onDelete('restrict');
         });
-        foreach (['UPDATE', 'DELETE'] as $event) { DB::connection('tenant')->unprepared("CREATE TRIGGER accounting_source_resolutions_immutable_" . strtolower($event) . " BEFORE $event ON accounting_source_resolutions FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Resolución de origen inmutable'"); }
+        foreach (['UPDATE', 'DELETE'] as $event) { Integrity::reject('accounting_source_resolutions', 'accounting_source_resolutions_immutable_'.strtolower($event), $event, 'Resolución de origen inmutable'); }
     }
 
     public function down(): void
     {
         if (DB::connection('tenant')->table('accounting_source_resolutions')->exists()) { throw new RuntimeException('La reversión no puede eliminar resoluciones de origen conservadas.'); }
-        foreach (['update', 'delete'] as $event) { DB::connection('tenant')->unprepared('DROP TRIGGER IF EXISTS accounting_source_resolutions_immutable_' . $event); }
+        foreach (['update', 'delete'] as $event) { Integrity::drop('accounting_source_resolutions', 'accounting_source_resolutions_immutable_'.$event); }
         Schema::connection('tenant')->dropIfExists('accounting_source_resolutions');
         Schema::connection('tenant')->table('accounting_incidents', fn(Blueprint $t) => $t->dropColumn(['version', 'resolved_at']));
     }

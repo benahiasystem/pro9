@@ -78,7 +78,7 @@ class GlobalPaymentController extends Controller
         $payment_type = $request['payment_type'];
         $destination_type = $request['destination_type'];
         $id = 0;
-        $position = strpos($destination_type, BankAccount::class.'::');
+        $position = strpos($destination_type ?? '', BankAccount::class.'::');
         if ($position !== false) {
             $id = str_replace(BankAccount::class.'::','',$destination_type);
             $destination_type = BankAccount::class;

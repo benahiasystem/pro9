@@ -49,7 +49,7 @@ test('late catalog resolves only still-pending new rows and preserves selections
     assert.equal(historical.payment_method_type_id,null)
     assert.equal(vm.pendingDefaultPaymentRows.length,0)
     const noMatch=row(null,'1')
-    vm.form.payments=[noMatch]; vm.form.currency_type_id='USD'; vm.pendingDefaultPaymentRows=[noMatch]
+    vm.form.payments=[noMatch]; vm.payment_method_types[1].is_active=false; vm.pendingDefaultPaymentRows=[noMatch]
     restoreDeferredInvoiceCash(vm)
     assert.equal(noMatch.payment_method_type_id,null)
 })
@@ -66,6 +66,7 @@ for (const file of ['invoice.vue','invoiceupdate.vue','invoice_generate.vue']) {
         const run = vm.runInNewContext(`(${generate(fn).code})`,{validateInvoicePayments})
         const receipt = row('01','0.1',{source_sale_note_payment_id:3})
         const ctx = {form:{total:'0.3',payments:[receipt,row('04','0.2')]},payment_method_types:methods}
+        if(file==='invoice_generate.vue') Object.defineProperty(ctx,'activeInvoicePayments',{get:()=>require('./support/exact-runtime.cjs')('document-creation').invoicePaymentsForCondition(ctx.form)})
         assert.equal(run.call(ctx).error_by_item,0)
         assert.equal(ctx.form.payments[0],receipt)
         assert.doesNotMatch(component.script.content,/validate\.acum_total\s*>\s*parseFloat/)

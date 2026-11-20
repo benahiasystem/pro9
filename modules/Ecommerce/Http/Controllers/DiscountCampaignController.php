@@ -9,6 +9,7 @@ use Modules\Ecommerce\Models\Tenant\DiscountCampaign;
 use App\Models\Tenant\Item;
 use Modules\Item\Models\Category;
 use Modules\Ecommerce\Services\CampaignPriceService;
+use App\Support\Exact\Decimal as D;
 
 class DiscountCampaignController extends Controller
 {
@@ -57,12 +58,15 @@ class DiscountCampaignController extends Controller
             'expires_at.after' => 'La fecha de vencimiento debe ser posterior a la fecha y hora actual.',
         ]);
 
-        if ((float) $data['value'] > 100) {
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $data['value'] = D::input($data['value'], 'value');
+        if (D::of($data['value'])->isGreaterThan(100)) {
             return response()->json([
                 'message' => 'El porcentaje no puede ser mayor a 100%.',
                 'errors' => ['value' => ['El porcentaje no puede ser mayor a 100%.']],
             ], 422);
         }
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
 
         if (empty($data['product_ids']) && empty($data['category_ids'])) {
             return response()->json([
@@ -111,31 +115,59 @@ class DiscountCampaignController extends Controller
 
     public function validateCart(Request $request)
     {
+        if (!\App\Models\Tenant\ConfigurationEcommerce::storefrontShowsPrices()) {
+            abort(403,'La tienda no muestra precios en esta modalidad de cotización.');
+        }
         $data = $request->validate([
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'integer', 'exists:tenant.items,id'],
             'items.*.subtotal' => ['required', 'numeric', 'min:0'],
-            'items.*.quantity' => ['nullable', 'numeric', 'min:1'],
+            'items.*.quantity' => ['nullable', 'numeric', 'gt:0'],
         ]);
 
         $items = Item::whereIn('id', collect($data['items'])->pluck('item_id'))->get()->keyBy('id');
         $pricingService = app(CampaignPriceService::class);
 
         $details = [];
-        $totalDiscount = 0;
-        $cartSubtotal = 0;
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $totalDiscount = D::of(0);
+        $cartSubtotal = D::of(0);
+        $rate = null;
 
-        foreach ($data['items'] as $line) {
+        foreach ($data['items'] as $index=>$line) {
             $item = $items->get($line['item_id']);
-            $quantity = max(1, (float) ($line['quantity'] ?? 1));
+            $quantity = D::of(D::input($line['quantity'] ?? '1', 'items.'.$index.'.quantity'));
+            if (!$quantity->isPositive()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['items.'.$index.'.quantity'=>'La cantidad debe ser positiva.']);
+            }
             $pricing = $pricingService->forItem($item);
-            $cartSubtotal += $pricing['base_price'] * $quantity;
-            $discount = round($pricing['real_discount'] * $quantity, 2);
-            $totalDiscount += $discount;
-            $details[] = ['item_id' => $item->id, 'campaign_id' => $pricing['discount_campaign_id'], 'campaign' => $pricing['discount_campaign_name'], 'percentage' => $pricing['real_discount_percentage'], 'base_unit_price' => $pricing['base_price'], 'compare_at_price' => $pricing['compare_at_price'], 'final_unit_price' => $pricing['final_price'], 'discount' => $discount];
+            $currency=(string)$item->currency_type_id;
+            if (!in_array($currency,['VES','USD'],true)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['items.'.$index.'.item_id'=>'El producto requiere una moneda vigente.']);
+            }
+            if ($currency==='USD' && $rate===null) $rate=\Modules\Ecommerce\Services\StorefrontCheckoutCalculation::exchangeRate();
+            $base=D::readRequired($pricing,'base_price')->multipliedBy($quantity);
+            $cartSubtotal = $cartSubtotal->plus(D::convert($base,$currency,'VES',$rate ?? '1'));
+            $discount = D::readRequired($pricing,'real_discount')->multipliedBy($quantity);
+            $totalDiscount = $totalDiscount->plus(D::convert($discount,$currency,'VES',$rate ?? '1'));
+            $values = ['base_unit_price'=>D::readRequired($pricing,'base_price'),
+                'final_unit_price'=>D::readRequired($pricing,'final_price'),
+                'percentage'=>D::readRequired($pricing,'real_discount_percentage'),
+                'discount'=>$discount, 'quantity'=>$quantity];
+            if ($pricing['compare_at_price'] !== null) $values['compare_at_price']=D::readRequired($pricing,'compare_at_price');
+            $details[] = ['item_id'=>$item->id, 'campaign_id'=>$pricing['discount_campaign_id'],
+                'currency_type_id'=>$currency,
+                'campaign'=>$pricing['discount_campaign_name'], 'percentage'=>$pricing['real_discount_percentage'],
+                'quantity'=>D::represent($quantity), 'base_unit_price'=>$pricing['base_price'],
+                'compare_at_price'=>$pricing['compare_at_price'], 'final_unit_price'=>$pricing['final_price'],
+                'discount'=>D::represent($discount,2,true), 'calculation_snapshot'=>D::snapshot($values)];
         }
 
-        return ['success' => true, 'subtotal' => round($cartSubtotal, 2), 'discount' => round($totalDiscount, 2), 'total' => round(max(0, $cartSubtotal - $totalDiscount), 2), 'items' => $details];
+        $total=$cartSubtotal->minus($totalDiscount);
+        return ['success'=>true, 'currency_type_id'=>'VES', 'subtotal'=>D::represent($cartSubtotal,2,true),
+            'discount'=>D::represent($totalDiscount,2,true), 'total'=>D::represent($total,2,true),
+            'items'=>$details, 'calculation_snapshot'=>D::snapshot(['subtotal'=>$cartSubtotal,'discount'=>$totalDiscount,'total'=>$total])];
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
     private function serialize(DiscountCampaign $campaign): array
@@ -144,7 +176,7 @@ class DiscountCampaignController extends Controller
             'id' => $campaign->id,
             'name' => $campaign->name,
             'discount_type' => $campaign->discount_type,
-            'value' => (float) $campaign->value,
+            'value' => D::represent(D::readRequired($campaign,'value')),
             'starts_at' => optional($campaign->starts_at)->format('Y-m-d H:i:s'),
             'expires_at' => optional($campaign->expires_at)->format('Y-m-d H:i:s'),
             'is_active' => (bool) $campaign->is_active,

@@ -13,7 +13,7 @@ class AddModulePermissionsToPlansTable extends Migration
      */
     public function up()
     {
-        Schema::connection('system')->table('plans', function (Blueprint $table) {
+        Schema::table('plans', function (Blueprint $table) {
             $table->json('module_permissions')->nullable();
         });
     }
@@ -25,7 +25,7 @@ class AddModulePermissionsToPlansTable extends Migration
      */
     public function down()
     {
-        Schema::connection('system')->table('plans', function (Blueprint $table) {
+        Schema::table('plans', function (Blueprint $table) {
             $table->dropColumn('module_permissions');
         });
     }

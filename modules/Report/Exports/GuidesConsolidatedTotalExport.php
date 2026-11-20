@@ -12,6 +12,12 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class GuidesConsolidatedTotalExport implements FromView, ShouldAutoSize, WithEvents
 {
+    // Explicit properties preserve the public export contract on PHP 8.2.
+    public $company;
+    public $establishment;
+    public $params;
+    public $records;
+
     use Exportable;
 
     public function records($records) {

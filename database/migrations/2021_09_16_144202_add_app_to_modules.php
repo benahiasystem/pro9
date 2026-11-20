@@ -16,7 +16,7 @@ class AddAppToModules extends Migration
      */
     public function up()
     {
-        DB::connection('system')->table('modules')->insert([
+        DB::connection()->table('modules')->insert([
             ['value' => 'apps', 'description' => 'Apps']
         ]);
     }

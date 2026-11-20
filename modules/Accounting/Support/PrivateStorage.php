@@ -12,7 +12,7 @@ final class PrivateStorage
     {
         $connection = DB::connection('tenant');
         $database = $connection->getDatabaseName();
-        $selected = $connection->selectOne('SELECT DATABASE() AS name')->name;
+        $selected = $connection->selectOne('SELECT current_database() AS name')->name;
         if (!$database || $database !== $selected) { throw new \LogicException('La conexión no acredita el tenant de almacenamiento.'); }
         $key = hash('sha256', 'accounting-storage-v1:' . $database);
         $context = app(CompanyContext::class);

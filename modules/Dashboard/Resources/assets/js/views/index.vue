@@ -352,7 +352,7 @@
                                             </div>
                                             <div class="row">
                                                 <div class="col-md-12">
-                                                    <x-graph type="doughnut" :all-data="balance.graph"></x-graph>
+                                                    <x-graph type="doughnut" :all-data="balance.graph" :exact-total="originalTotal(balance, 'all_totals')" total-label="Balance"></x-graph>
                                                 </div>
                                             </div>
                                         </div>
@@ -372,7 +372,7 @@
                                                         </el-popover>
                                                         Totales
                                                     </td>
-                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ balance.totals.all_totals_payment }}</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ balance.totals.all_totals }}</td>
                                                 </tr>
                                                 <tr class="text-danger text-bold td-total">
                                                     <td class="d-flex align-items-center">
@@ -412,7 +412,7 @@
                                             </div>
                                             <div class="row">
                                                 <div class="col-md-12">
-                                                    <x-graph type="doughnut" :all-data="utilities.graph"></x-graph>
+                                                    <x-graph type="doughnut" :all-data="utilities.graph" :exact-total="originalTotal(utilities, 'utility')" total-label="Utilidad"></x-graph>
                                                 </div>
                                             </div>
                                         </div>
@@ -790,7 +790,9 @@
 </style>
 <script>
 // ######## INICIO TASAS OCHO DECIMALES ########
-import { exactAmount } from "../../../../../../resources/js/helpers/exchange-rate-math"
+import moment from "moment"
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { readOriginal, graphOriginals, chartCoordinate, compareOriginal, originalNumber, originalText, formatUnitOriginal, formatAxisTick } from "../../../../../../resources/js/helpers/dashboard-originals"
 // ######## FIN TASAS OCHO DECIMALES ########
 
 import DashboardStock from "./partials/dashboard_stock.vue";
@@ -816,6 +818,7 @@ export default {
   data() {
     return {
       widgetStore,
+      requestVersions: {data: 0, additional: 0, utilities: 0},
       showWelcomePanel: true,
       // Convivencia: el dashboard de widgets es el default; el usuario puede
       // volver al clásico desde el header y la elección persiste en localStorage.
@@ -988,17 +991,15 @@ export default {
       const labels = Array.isArray(graph.labels) ? graph.labels : [];
       return labels.length ? labels : ["Total cobrado", "Pendiente de cobro"];
     },
-    saleNoteValues() {
-      const data = Array.isArray(this.saleNoteDataset.data) ? this.saleNoteDataset.data : [];
-      return this.saleNoteLabels.map((label, index) => Number(data[index]) || 0);
-    },
+    saleNoteOriginals() { return graphOriginals(this.saleNoteDataset); },
+    saleNoteValues() { return this.saleNoteOriginals.map(chartCoordinate); },
     saleNoteColors() {
       return [this.themeColors.primary, this.themeColors.danger];
     },
     saleNoteLegendItems() {
       const items = this.saleNoteLabels.map((label, index) => ({
         label,
-        value: this.saleNoteValues[index] || 0,
+        value: this.saleNoteOriginals[index] ?? null,
         color: this.saleNoteColors[index % this.saleNoteColors.length],
       }));
 
@@ -1011,16 +1012,16 @@ export default {
       return items;
     },
     saleNotePaid() {
-      return Number(this.sale_note && this.sale_note.totals ? this.sale_note.totals.total_payment : 0) || 0;
+      return readOriginal(this.sale_note && this.sale_note.totals, 'total_payment');
     },
     saleNotePending() {
-      return Number(this.sale_note && this.sale_note.totals ? this.sale_note.totals.total_to_pay : 0) || 0;
+      return readOriginal(this.sale_note && this.sale_note.totals, 'total_to_pay');
     },
     saleNoteTotal() {
-      return Number(this.sale_note && this.sale_note.totals ? this.sale_note.totals.total : 0) || 0;
+      return readOriginal(this.sale_note && this.sale_note.totals, 'total');
     },
     saleNoteHasData() {
-      return this.saleNoteValues.some((value) => Number(value) > 0);
+      return this.saleNoteOriginals.some(value => value !== null && compareOriginal(value, '0') !== 0);
     },
     saleNoteChartOptions() {
       return {
@@ -1039,7 +1040,7 @@ export default {
                 value: {
                   fontSize: "18px",
                   fontWeight: 700,
-                  formatter: (val) => "Bs. " + this.formatSaleNoteK(val),
+                  formatter: () => this.saleNoteTotal === null ? "—" : "Bs. " + this.formatSaleNoteK(this.saleNoteTotal),
                 },
                 total: {
                   show: true,
@@ -1057,12 +1058,7 @@ export default {
           theme: "dark",
           style: { fontSize: "12px" },
           y: {
-            formatter: (val) =>
-              "Bs. " +
-              Number(val).toLocaleString("es-PE", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              }),
+            formatter: (_coordinate, options) => formatUnitOriginal(this.saleNoteOriginals[options && options.seriesIndex], 'money', 'en-US'),
           },
         },
       };
@@ -1077,17 +1073,15 @@ export default {
       const labels = Array.isArray(graph.labels) ? graph.labels : [];
       return labels.length ? labels : ["Total cobrado", "Pendiente de cobro"];
     },
-    documentValues() {
-      const data = Array.isArray(this.documentDataset.data) ? this.documentDataset.data : [];
-      return this.documentLabels.map((label, index) => Number(data[index]) || 0);
-    },
+    documentOriginals() { return graphOriginals(this.documentDataset); },
+    documentValues() { return this.documentOriginals.map(chartCoordinate); },
     documentColors() {
       return [this.themeColors.primary, this.themeColors.danger];
     },
     documentLegendItems() {
       const items = this.documentLabels.map((label, index) => ({
         label,
-        value: this.documentValues[index] || 0,
+        value: this.documentOriginals[index] ?? null,
         color: this.documentColors[index % this.documentColors.length],
       }));
 
@@ -1100,16 +1094,16 @@ export default {
       return items;
     },
     documentPaid() {
-      return Number(this.document && this.document.totals ? this.document.totals.total_payment : 0) || 0;
+      return readOriginal(this.document && this.document.totals, 'total_payment');
     },
     documentPending() {
-      return Number(this.document && this.document.totals ? this.document.totals.total_to_pay : 0) || 0;
+      return readOriginal(this.document && this.document.totals, 'total_to_pay');
     },
     documentTotal() {
-      return Number(this.document && this.document.totals ? this.document.totals.total : 0) || 0;
+      return readOriginal(this.document && this.document.totals, 'total');
     },
     documentHasData() {
-      return this.documentValues.some((value) => Number(value) > 0);
+      return this.documentOriginals.some(value => value !== null && compareOriginal(value, '0') !== 0);
     },
     documentChartOptions() {
       return {
@@ -1128,7 +1122,7 @@ export default {
                 value: {
                   fontSize: "18px",
                   fontWeight: 700,
-                  formatter: (val) => "Bs. " + this.formatSaleNoteK(val),
+                  formatter: () => this.documentTotal === null ? "—" : "Bs. " + this.formatSaleNoteK(this.documentTotal),
                 },
                 total: {
                   show: true,
@@ -1146,12 +1140,7 @@ export default {
           theme: "dark",
           style: { fontSize: "12px" },
           y: {
-            formatter: (val) =>
-              "Bs. " +
-              Number(val).toLocaleString("es-PE", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              }),
+            formatter: (_coordinate, options) => formatUnitOriginal(this.documentOriginals[options && options.seriesIndex], 'money', 'en-US'),
           },
         },
       };
@@ -1179,11 +1168,11 @@ export default {
         return fallback[index % fallback.length];
       });
     },
+    generalOriginalSeries() {
+      return this.generalDatasets.map(dataset => ({name: dataset.label || 'Total', data: graphOriginals(dataset)}));
+    },
     generalSeries() {
-      return this.generalDatasets.map((dataset) => ({
-        name: dataset.label || "Total",
-        data: Array.isArray(dataset.data) ? dataset.data.map((value) => Number(value) || 0) : [],
-      }));
+      return this.generalOriginalSeries.map(serie => ({name: serie.name, data: serie.data.map(chartCoordinate)}));
     },
     generalLegendItems() {
       return [
@@ -1205,16 +1194,16 @@ export default {
       ];
     },
     generalSaleNotesTotal() {
-      return Number(this.general && this.general.totals ? this.general.totals.total_sale_notes : 0) || 0;
+      return readOriginal(this.general && this.general.totals, 'total_sale_notes');
     },
     generalDocumentsTotal() {
-      return Number(this.general && this.general.totals ? this.general.totals.total_documents : 0) || 0;
+      return readOriginal(this.general && this.general.totals, 'total_documents');
     },
     generalTotal() {
-      return Number(this.general && this.general.totals ? this.general.totals.total : 0) || 0;
+      return readOriginal(this.general && this.general.totals, 'total');
     },
     generalHasData() {
-      return this.generalSeries.some((serie) => serie.data.some((value) => Number(value) > 0));
+      return this.generalOriginalSeries.some(serie => serie.data.some(value => value !== null && compareOriginal(value, '0') !== 0));
     },
     generalChartOptions() {
       return {
@@ -1238,19 +1227,15 @@ export default {
         yaxis: {
           labels: {
             style: { colors: "#9ca3af", fontSize: "12px" },
-            formatter: (val) => this.formatSaleNoteK(val),
+            formatter: val => formatAxisTick(val, 'count'),
           },
         },
         tooltip: {
           theme: "dark",
           style: { fontSize: "12px" },
           y: {
-            formatter: (val) =>
-              "Bs. " +
-              Number(val).toLocaleString("es-PE", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              }),
+            formatter: (_coordinate, options) => formatUnitOriginal(
+              this.generalOriginalSeries[options && options.seriesIndex]?.data[options && options.dataPointIndex], 'money', 'en-US'),
           },
         },
       };
@@ -1418,13 +1403,7 @@ export default {
     filterItems() {
       this.items = this.all_items;
     },
-    calculateTotalCurrency(currency_type_id, exchange_rate_sale, total) {
-      if (currency_type_id == "USD") {
-        return exactAmount(parseFloat(total)).times(exactAmount(exchange_rate_sale)).final(2);
-      } else {
-        return parseFloat(total);
-      }
-    },
+
     clickDownloadDispatch(download) {
       window.open(download, "_blank");
     },
@@ -1530,41 +1509,39 @@ export default {
       this.loaders.general = false;
       this.loaders.balance = false;
     },
-    loadData() {
+    async loadData() {
+      const version = ++this.requestVersions.data;
       this.showLoadersLoadData();
-
-      this.$http.post(`/${this.resource}/data`, this.form).then((response) => {
-        this.document = response.data.data.document;
-        // this.documents_quantity = response.data.data.quantity;
-        this.balance = response.data.data.balance;
-        this.sale_note = response.data.data.sale_note;
-        this.general = response.data.data.general;
-        this.customers = response.data.data.customers;
-        this.items = response.data.data.items;
-        this.hideLoadersLoadData();
-      });
+      for (const key of ['document', 'balance', 'sale_note', 'general']) this[key] = {totals: {}, graph: []};
+      try {
+        const response = await this.$http.post(`/${this.resource}/data`, JSON.parse(JSON.stringify(this.form)));
+        if (version !== this.requestVersions.data) return;
+        const data = response.data.data;
+        for (const key of ['document', 'balance', 'sale_note', 'general']) this[key] = data[key];
+        this.customers = data.customers || []; this.items = data.items || [];
+      } catch (_) { /* Unknown values remain absent after an unsuccessful read. */ }
+      finally { if (version === this.requestVersions.data) this.hideLoadersLoadData(); }
     },
-    loadDataAditional() {
+    async loadDataAditional() {
+      const version = ++this.requestVersions.additional;
       this.showLoadersLoadDataAditional();
-
-      this.$http
-        .post(`/${this.resource}/data_aditional`, this.form)
-        .then((response) => {
-          this.purchase = response.data.data.purchase;
-          this.items_by_sales = response.data.data.items_by_sales;
-          this.top_customers = response.data.data.top_customers;
-          this.hideLoadersLoadDataAditional();
-        });
+      this.purchase = {totals: {}, graph: []}; this.items_by_sales = []; this.top_customers = [];
+      try {
+        const response = await this.$http.post(`/${this.resource}/data_aditional`, JSON.parse(JSON.stringify(this.form)));
+        if (version !== this.requestVersions.additional) return;
+        this.purchase = response.data.data.purchase; this.items_by_sales = response.data.data.items_by_sales; this.top_customers = response.data.data.top_customers;
+      } catch (_) { /* Do not substitute a zero-valued result. */ }
+      finally { if (version === this.requestVersions.additional) this.hideLoadersLoadDataAditional(); }
     },
-    loadDataUtilities() {
-      this.loaders.utility = true;
-
-      this.$http
-        .post(`/${this.resource}/utilities`, this.form)
-        .then((response) => {
-          this.utilities = response.data.data.utilities;
-          this.loaders.utility = false;
-        });
+    async loadDataUtilities() {
+      const version = ++this.requestVersions.utilities;
+      this.loaders.utility = true; this.utilities = {totals: {}, graph: []};
+      try {
+        const response = await this.$http.post(`/${this.resource}/utilities`, JSON.parse(JSON.stringify(this.form)));
+        if (version !== this.requestVersions.utilities) return;
+        this.utilities = response.data.data.utilities;
+      } catch (_) { /* Do not display stale utility for another filter. */ }
+      finally { if (version === this.requestVersions.utilities) this.loaders.utility = false; }
     },
     showLoadersLoadDataAditional() {
       this.loaders.purchase = true;
@@ -1576,12 +1553,8 @@ export default {
       this.loaders.items_by_sales = false;
       this.loaders.top_customers = false;
     },
-    formatSaleNoteK(val) {
-      const num = Number(val) || 0;
-      if (Math.abs(num) >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-      if (Math.abs(num) >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-      return num.toFixed(0);
-    },
+    originalTotal(source, field) { return readOriginal(source && source.totals, field); },
+    formatSaleNoteK(val) { return originalNumber(val); },
     formatGeneralChartLabel(label, index) {
       const value = String(label || "");
 
@@ -1614,14 +1587,10 @@ export default {
     },
   },
   filters: {
-    saleNoteMoney(value) {
-      return (Number(value) || 0).toLocaleString("es-PE", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-    },
+    saleNoteMoney(value) { return originalText(value); },
   },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

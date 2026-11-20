@@ -31,10 +31,10 @@ class VenezuelaGeopoliticalContractTest extends TestCase
     public function consolidated_migrations_preserve_the_venezuelan_hierarchy(): void
     {
         $expectations = [
-            'countries' => ['`id` char(2)'],
-            'departments' => ['`id` char(2)'],
-            'provinces' => ['`id` char(4)', '`department_id` char(2)'],
-            'districts' => ['`id` char(6)', '`province_id` char(4)'],
+            'countries' => ['$table->char(\'id\', 2)'],
+            'departments' => ['$table->char(\'id\', 2)'],
+            'provinces' => ['$table->char(\'id\', 4)', '$table->char(\'department_id\', 2)'],
+            'districts' => ['$table->char(\'id\', 6)', '$table->char(\'province_id\', 4)'],
         ];
 
         foreach ($expectations as $table => $fragments) {
@@ -44,11 +44,11 @@ class VenezuelaGeopoliticalContractTest extends TestCase
             }
         }
 
-        self::assertStringContainsString("DEFAULT 'VE'", $this->migrationSource('origin_addresses'));
+        self::assertStringContainsString('->default(\'VE\')', $this->migrationSource('origin_addresses'));
 
         $foreignKeys = $this->foreignKeyMigrationSource();
-        self::assertStringContainsString('ALTER TABLE `provinces` ADD CONSTRAINT', $foreignKeys);
-        self::assertStringContainsString('ALTER TABLE `districts` ADD CONSTRAINT', $foreignKeys);
+        self::assertStringContainsString('ALTER TABLE "provinces" ADD CONSTRAINT', $foreignKeys);
+        self::assertStringContainsString('ALTER TABLE "districts" ADD CONSTRAINT', $foreignKeys);
     }
 
     /** @test */

@@ -6,6 +6,7 @@ use App\CoreFacturalo\Requests\Api\Transform\Common\EstablishmentTransform;
 use App\CoreFacturalo\Requests\Api\Transform\Common\PersonTransform;
 use App\CoreFacturalo\Requests\Api\Transform\Common\ActionTransform;
 use App\CoreFacturalo\Requests\Api\Transform\Common\LegendTransform;
+use App\Database\IntegerTransport;
 use App\Models\Tenant\User;
 use App\Support\Venezuela\VendeyaDocumentPayloadNormalizer;
 
@@ -13,6 +14,11 @@ class DocumentTransform
 {
     public static function transform($inputs)
     {
+        validator($inputs, [
+            'items' => 'sometimes|array',
+            'items.*' => 'array',
+            'items.*.unidad_de_medida' => 'required|string',
+        ])->validate();
         $inputs = \App\Support\Venezuela\RetiredDetractionFields::discard($inputs);
         // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
         // ########## INICIO CAMBIO AFECTACIÓN IVA
@@ -21,9 +27,9 @@ class DocumentTransform
         // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
 
         if (strtoupper((string) ($inputs['source_module'] ?? '')) === 'VENDEYA') {
-            $sellerId = $inputs['codigo_vendedor'] ?? null;
+            $sellerId = IntegerTransport::positiveKey($inputs['codigo_vendedor'] ?? null);
 
-            if (!$sellerId || !User::query()->whereKey($sellerId)->exists()) {
+            if ($sellerId === null || !User::query()->whereKey($sellerId)->exists()) {
                 $inputs['codigo_vendedor'] = auth()->id();
             }
         }
@@ -111,6 +117,7 @@ class DocumentTransform
         if(key_exists('items', $inputs)) {
             $items = [];
             foreach ($inputs['items'] as $row) {
+                $unitType = strtoupper($row['unidad_de_medida']);
                 $item = [
                     'internal_id' => isset($row['codigo_interno']) ? $row['codigo_interno']:'',
                     'description' => $row['descripcion'],
@@ -119,7 +126,7 @@ class DocumentTransform
                     'item_type_id' => Functions::valueKeyInArray($row, 'codigo_tipo_item', '01'),
                     'item_code' => Functions::valueKeyInArray($row, 'codigo_producto_sunat'),
                     'item_code_gs1' => Functions::valueKeyInArray($row, 'codigo_producto_gsl'),
-                    'unit_type_id' => strtoupper($row['unidad_de_medida']),
+                    'unit_type_id' => $unitType,
                     'currency_type_id' => $inputs['codigo_tipo_moneda'],
 
                     'quantity' => Functions::valueKeyInArray($row, 'cantidad'),
@@ -155,10 +162,14 @@ class DocumentTransform
                     'esFusionado' => Functions::valueKeyInArray($row, 'esFusionado', false),
                 ];
 
+                if (array_key_exists('source_sale_note_items', $row)) {
+                    $item['source_sale_note_items'] = $row['source_sale_note_items'];
+                }
+
                 $presentation = Functions::valueKeyInArray($row, 'presentacion');
                 if (!empty($presentation)) {
                     $item['item'] = [
-                        'unit_type_id' => strtoupper($row['unidad_de_medida']),
+                        'unit_type_id' => $unitType,
                         'presentation' => $presentation,
                     ];
                 }

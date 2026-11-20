@@ -105,7 +105,7 @@ class ProductVariableController extends Controller
                 try {
                     $removed->delete();
                 } catch (Exception $e) {
-                    if ($e->getCode() != '23000') {
+                    if (!\App\Database\SqlErrors::reference($e)) {
                         throw $e;
                     }
                     // Valor en uso por variaciones existentes: se desactiva en lugar de eliminar
@@ -165,7 +165,7 @@ class ProductVariableController extends Controller
                 'message' => 'Variable eliminada con éxito',
             ];
         } catch (Exception $e) {
-            return ($e->getCode() == '23000')
+            return (\App\Database\SqlErrors::reference($e))
                 ? ['success' => false, 'message' => 'La variable está siendo usada por variaciones de productos, no puede eliminarse. Puede desactivarla.']
                 : ['success' => false, 'message' => 'Error inesperado, no se pudo eliminar la variable'];
         }

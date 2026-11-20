@@ -16,9 +16,18 @@ class DatabaseSeeder extends Seeder
      *
      * @return void
      */
+    // ########## INICIO CAMBIO POSTGRESQL 17
     public function run()
     {
-        User::create([
+        $previous=config('tenancy.db.system-connection-name','system');
+        $connection=DB::getDefaultConnection();
+        if ($connection==='central_migrator') config(['tenancy.db.system-connection-name'=>$connection]);
+        try { DB::connection($connection)->transaction(fn ()=>$this->seedInitialData()); }
+        finally { config(['tenancy.db.system-connection-name'=>$previous]); }
+    }
+    private function seedInitialData(): void
+    {
+        User::firstOrCreate(['email'=>'admin@gmail.com'], [
             'name' => 'Administrador',
             'email' => 'admin@gmail.com',
             'password' => bcrypt('123456'),
@@ -26,16 +35,17 @@ class DatabaseSeeder extends Seeder
         ]);
 
 
-        DB::table('plan_documents')->insert([
+        $documents = [
             // ########## INICIO CAMBIO QUITAR BOLETA
             ['id' => 1, 'description' => 'Facturas, notas de débito y crédito y anulaciones' ],
             // ######### FIN CAMBIO QUITAR BOLETA
             ['id' => 2, 'description' => 'Órdenes de entrega' ],
             ['id' => 3, 'description' => 'Retenciones'],
             ['id' => 4, 'description' => 'Percepciones']
-        ]);
+        ];
+        foreach ($documents as $document) DB::table('plan_documents')->updateOrInsert(['id'=>$document['id']],$document);
 
-        Plan::create([
+        Plan::firstOrCreate(['name'=>'Ilimitado'], [
             'name' => 'Ilimitado',
             'pricing' =>  99,
             'limit_users' => 0,
@@ -45,7 +55,7 @@ class DatabaseSeeder extends Seeder
             'locked' => true
         ]);
 
-        Plan::create([
+        Plan::firstOrCreate(['name'=>'NRUS','locked'=>true], [
             'name' => 'NRUS',
             'pricing' => 49,
             'limit_users' => 0,
@@ -66,5 +76,7 @@ class DatabaseSeeder extends Seeder
             ],
         ]);
 
+        \App\Database\SequenceSynchronizer::sync(DB::connection());
     }
+    // ######### FIN CAMBIO POSTGRESQL 17
 }

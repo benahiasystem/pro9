@@ -50,7 +50,7 @@ final class DocumentPaymentQuoteController extends Controller
         $company = Company::firstOrFail();
         $currency = $document ? $document->currency_type_id : $data['currency_type_id'];
         $rate = $document ? $document->exchange_rate_sale : $data['exchange_rate_sale'];
-        $payable = $document ? D::represent($document->exactBalance(true)) : $data['principal_due'];
+        $payable = $document ? $document->exactBalance(true) : $data['principal_due'];
         foreach ($data['payments'] as $row) {
             if ($document && PaymentQuote::reused($row)) \App\Services\Payments\Classification::error('payment', 'El abono debe ser un cobro nuevo.');
             if (PaymentQuote::reused($row)) continue;

@@ -327,7 +327,7 @@ trait PaymentClassificationPersistenceCases
         self::assertMatchesRegularExpression('/TOTAL A PAGAR:\s*Bs\.\s*232\.00/u',$text);
         $pdf=(new \App\CoreFacturalo\Facturalo())->createPdf($invoice,'invoice','a4','string');
         self::assertStringStartsWith('%PDF-',$pdf);
-        if ($directory=getenv('SAB_CONVERSION_PDF_EVIDENCE_DIR')) file_put_contents($directory.'/'.$label.'.pdf',$pdf);
+        if ($directory=getenv('PRO9_CONVERSION_PDF_EVIDENCE_DIR')) file_put_contents($directory.'/'.$label.'.pdf',$pdf);
     }
 
     public function test_pos_manual_line_total_accepts_bounded_exact_price_and_persists_its_fraction(): void
@@ -384,7 +384,7 @@ trait PaymentClassificationPersistenceCases
     {
         [$db,$app,$input]=$this->bootHkaFixture();
         (new \Modules\Inventory\Providers\InventoryChangeServiceProvider($app))->boot();
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $row=['internal_id'=>'API-NEW-UND','description'=>'Producto API','name'=>null,'second_name'=>null,
             'item_type_id'=>'01','item_code'=>null,'item_code_gs1'=>null,'unit_type_id'=>'UND',
             'currency_type_id'=>'VES','unit_price'=>'1','affectation_igv_type_id'=>'20','quantity'=>'2.5'];
@@ -588,9 +588,9 @@ trait PaymentClassificationPersistenceCases
             }
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$worker->getErrorOutput(),$match));
             do {
-                $query=$this->capsule->getConnection('control')->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$this->capsule->getConnection('control')->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'payment_method_types') && str_contains($sql,'update')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'payment_method_types') && str_contains($sql,'update')) break;
                 if (!$worker->isRunning() || microtime(true)>$deadline) self::fail('La edición no esperó el bloqueo: '.$worker->getErrorOutput());
                 usleep(10000);
             } while (true);
@@ -991,9 +991,9 @@ trait PaymentClassificationPersistenceCases
                 }
                 self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
                 do {
-                    $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                    $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                     $sql=strtolower($query->INFO ?? '');
-                    if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'user_rel_suscription_plans') && str_contains($sql,'for update')) break;
+                    if (($query->COMMAND ?? null)==='active' && str_contains($sql,'user_rel_suscription_plans') && str_contains($sql,'for update')) break;
                     if (!$process->isRunning() || microtime(true)>$deadline) self::fail('La edición no alcanzó el bloqueo: '.$process->getErrorOutput().$process->getOutput());
                     usleep(10000);
                 } while (true);
@@ -1264,6 +1264,7 @@ trait PaymentClassificationPersistenceCases
         self::assertSame([],\App\CoreFacturalo\Requests\Inputs\Transform\DocumentWebTransform::transform($cashVariant)['cuotas']);
         self::assertCount(3,$cashVariant['fee']);
         $payload['codigo_nota_venta']=$note->id;
+        $payload['items'][0]['source_sale_note_items']=[['sale_note_item_id'=>$note->items()->value('id')]];
         $payload['pagos'][0]['source_sale_note_payment_id']=$source->id;
         $payload['pagos'][0]['date_of_payment']='2026-10-26';
         $db->table('payment_method_types')->where('id','13')->update(['is_active'=>0,'currency_type_id'=>'VES']);
@@ -1280,6 +1281,13 @@ trait PaymentClassificationPersistenceCases
         catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('payments',$error->errors()); }
         self::assertSame(0,$db->table('documents')->count());
         self::assertNull($note->fresh()->document_id);
+        $invalidOrigin=$payload;
+        $invalidOrigin['items'][0]['source_sale_note_items']=[['sale_note_item_id'=>'9223372036854775807']];
+        try { $send($invalidOrigin); self::fail('La API debe validar la partida de origen que recibió.'); }
+        catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('items',$error->errors()); }
+        self::assertSame(0,$db->table('documents')->count());
+        self::assertNull($note->fresh()->document_id);
+        self::assertSame(1,$db->table('global_payments')->count());
         $result=$send($payload);
         self::assertTrue($result['success']);
         $document=\App\Models\Tenant\Document::findOrFail($result['data']['id']);
@@ -1345,20 +1353,29 @@ trait PaymentClassificationPersistenceCases
             for ($i=0;$i<2;$i++) {
                 $process=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
                 $process->setInput(json_encode(['connection'=>$db->getConfig(),'operation'=>'cash-document-link','data'=>['document_id'=>$document->id]],JSON_THROW_ON_ERROR));
-                $process->setTimeout(30); $process->start(); $workers[]=$process;
+                $process->setTimeout(60);
+                $process->start();
+                $workers[]=$process;
             }
-            $deadline=microtime(true)+10; $control=$this->capsule->getConnection('control');
-            foreach ($workers as $process) {
+            // Keep the application bootstrap and the lock barrier on separate budgets.
+            $readyBy = hrtime(true) + 30_000_000_000;
+            $control=$this->capsule->getConnection('control');
+            foreach ($workers as $index => $process) {
                 while (!str_contains($process->getOutput(),"READY\n")) {
-                    if (!$process->isRunning() || microtime(true)>$deadline) self::fail('No inició el enlace de caja: '.$process->getErrorOutput());
+                    if (!$process->isRunning() || hrtime(true) > $readyBy) {
+                        self::fail(sprintf('El proceso de caja %d no emitió READY (%s, salida %s). %s',
+                            $index + 1, $process->getStatus(), $process->getExitCode() ?? 'pendiente', $process->getErrorOutput()));
+                    }
                     usleep(10000);
                 }
                 self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
+                $lockBy = hrtime(true) + 10_000_000_000;
                 do {
-                    $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                    $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO", wait_event_type FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                     $sql=strtolower($query->INFO ?? '');
-                    if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'cash') && str_contains($sql,'for update')) break;
-                    if (!$process->isRunning() || microtime(true)>$deadline) self::fail('El enlace no alcanzó el bloqueo de caja: '.$process->getErrorOutput().$process->getOutput());
+                    if (($query->COMMAND ?? null)==='active' && ($query->wait_event_type ?? null)==='Lock'
+                        && str_contains($sql,'cash') && str_contains($sql,'for update')) break;
+                    if (!$process->isRunning() || hrtime(true) > $lockBy) self::fail('El enlace no alcanzó el bloqueo de caja: '.$process->getErrorOutput().$process->getOutput());
                     usleep(10000);
                 } while (true);
             }
@@ -1416,7 +1433,7 @@ trait PaymentClassificationPersistenceCases
             self::assertSame('cancelada', $model->calculateStatus());
         }
 
-        $db->unprepared("CREATE TRIGGER fail_subscription_order BEFORE INSERT ON suscription_orders FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Fallo de prueba'");
+        $db->unprepared("CREATE FUNCTION fail_subscription_order_fn() RETURNS trigger LANGUAGE plpgsql AS \$\$ BEGIN RAISE EXCEPTION 'Fallo de prueba' USING ERRCODE='23514'; END \$\$; CREATE TRIGGER fail_subscription_order BEFORE INSERT ON suscription_orders FOR EACH ROW EXECUTE FUNCTION fail_subscription_order_fn()");
         unset($payload['id']);
         $request->replace($payload);
         try {
@@ -1425,7 +1442,7 @@ trait PaymentClassificationPersistenceCases
         } catch (\Illuminate\Database\QueryException $error) {
             self::assertStringContainsString('Fallo de prueba', $error->getMessage());
         } finally {
-            $db->unprepared('DROP TRIGGER fail_subscription_order');
+            $db->unprepared('DROP TRIGGER fail_subscription_order ON suscription_orders');
         }
         self::assertSame(1, $db->table('user_rel_suscription_plans')->count());
         self::assertSame(1, $db->table('suscription_orders')->count());
@@ -1455,18 +1472,40 @@ trait PaymentClassificationPersistenceCases
             $httpCalls++;
             return \Illuminate\Support\Facades\Http::response([],500);
         });
-        $app->instance(\App\Services\ExchangeRates\TenantExchangeRateService::class, new class extends \App\Services\ExchangeRates\TenantExchangeRateService {
+        $exchange = new class extends \App\Services\ExchangeRates\TenantExchangeRateService {
+            public ?string $requestedDate = null;
+            public bool $crossMidnight = false;
             public function __construct() {}
-            public function exchange($date): array { return ['sale'=>'10.00000000']; }
-        });
+            public function exchange($date): array
+            {
+                $this->requestedDate = $date;
+                if ($this->crossMidnight) \Illuminate\Support\Carbon::setTestNow('2026-11-20 00:00:01');
+                return ['sale'=>'10.00000000'];
+            }
+        };
+        $app->instance(\App\Services\ExchangeRates\TenantExchangeRateService::class, $exchange);
         $db->table('payment_method_types')->where('collection_kind','cash')->update(['is_active'=>0]);
         $item=\App\Models\Tenant\Item::findOrFail($input['items'][0]['item_id']);
         $row=(object) array_replace($input['items'][0], ['item'=>$item]);
         $producer=new class { use \Modules\FullSuscription\Services\SuscriptionDocumentService; };
-        $data=$producer->transform($input, collect([$row]));
+        $previousClock = \Illuminate\Support\Carbon::getTestNow();
+        \Illuminate\Support\Carbon::setTestNow('2026-11-19 23:59:59');
+        $exchange->crossMidnight = true;
+        try {
+            $data = $producer->transform($input, collect([$row]));
+        } finally {
+            $exchange->crossMidnight = false;
+            \Illuminate\Support\Carbon::setTestNow($previousClock);
+        }
+        self::assertSame('2026-11-19', $exchange->requestedDate);
+        self::assertSame($exchange->requestedDate, $data['date_of_issue']);
+        self::assertSame($data['date_of_issue'], $data['invoice']['date_of_due']);
+        self::assertSame('23:59:59', $data['time_of_issue']);
         self::assertSame('01',$data['document_type_id']);
+        self::assertSame('01', $data['group_id']);
         self::assertSame('02',$data['payment_condition_id']);
         self::assertSame([],$data['payments']);
+        self::assertNull($data['items'][0]['item']['IdLoteSelected']);
         $plan=$db->table('suscription_plans')->insertGetId(['name'=>'Plan de prueba','description'=>'Plan aislado','total'=>'232']);
         $line=$input['items'][0];
         $db->table('item_rel_suscription_plans')->insert(array_intersect_key($line,array_flip([
@@ -1478,7 +1517,7 @@ trait PaymentClassificationPersistenceCases
             'total'=>'232','total_taxed'=>'200','total_igv'=>'32','total_taxes'=>'32','total_value'=>'200']);
         $order=\Modules\FullSuscription\Models\Tenant\SuscriptionOrder::create(['suscription_id'=>$subscription,
             'type'=>'suscription_order','status'=>'pending','amount'=>'232','date_of_issue'=>now()]);
-        $db->statement('CREATE TABLE plans (id INT PRIMARY KEY, name VARCHAR(100), limit_documents INT, include_sale_notes_limit_documents TINYINT)');
+        $db->statement('CREATE TABLE plans (id INT PRIMARY KEY, name VARCHAR(100), limit_documents INT, include_sale_notes_limit_documents BOOLEAN)');
         $db->statement('CREATE TABLE clients (id INT PRIMARY KEY, hostname_id INT, name VARCHAR(100), plan_id INT, whatsapp_messages_limit_override INT NULL)');
         $db->table('plans')->insert(['id'=>1,'name'=>'Prueba','limit_documents'=>0,'include_sale_notes_limit_documents'=>0]);
         $db->table('clients')->insert(['id'=>1,'hostname_id'=>1,'name'=>'Prueba','plan_id'=>1]);
@@ -1521,6 +1560,20 @@ trait PaymentClassificationPersistenceCases
         if ($fiscalMode === 'free_form') self::assertSame('local',$pdfView['provider']);
         self::assertTrue($controller->generate($order->id)->getData(true)['success']);
         self::assertSame(1,$db->table('documents')->count());
+        $trackedOrder = \Modules\FullSuscription\Models\Tenant\SuscriptionOrder::create([
+            'suscription_id'=>$subscription, 'type'=>'suscription_order',
+            'status'=>'pending', 'amount'=>'232', 'date_of_issue'=>now(),
+        ]);
+        $catalogProduct = $db->table('items')->where('id', $item->id);
+        foreach (['lots_enabled', 'series_enabled'] as $tracking) {
+            $catalogProduct->update([$tracking => true]);
+            $response = $controller->generate($trackedOrder->id)->getData(true);
+            self::assertFalse($response['success']);
+            self::assertStringContainsString('requiere seleccionar lotes o seriales', $response['message']);
+            self::assertNull($trackedOrder->fresh()->documentable_id);
+            self::assertSame(1, $db->table('documents')->count());
+            $catalogProduct->update([$tracking => false]);
+        }
         $failedOrder=\Modules\FullSuscription\Models\Tenant\SuscriptionOrder::create(['suscription_id'=>$subscription,
             'type'=>'suscription_order','status'=>'pending','amount'=>'232','date_of_issue'=>now()]);
         $app->instance(\App\Http\Controllers\Tenant\DocumentController::class,$failingController);
@@ -1556,6 +1609,12 @@ trait PaymentClassificationPersistenceCases
         $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'cash','currency_type_id'=>'VES','cash_currency_type_id'=>'VES','is_cash'=>1]);
         self::assertSame('account',Movement::row($movement->fresh())['method']['collection_kind']);
         self::assertSame('USD',Movement::row($movement->fresh())['currency_type_id']);
+
+        if (getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1') {
+            self::assertSame('VES', $document->currency_type_id);
+            self::assertSame(1, $db->table('documents')->count());
+            return;
+        }
 
         $db->table('user_rel_suscription_plans')->where('id',$subscription)->update(['currency_type_id'=>'USD','items'=>json_encode([$line])]);
         $db->table('suscription_plans')->where('id',$plan)->update(['currency_type_id'=>'USD']);
@@ -1773,13 +1832,15 @@ trait PaymentClassificationPersistenceCases
         $db->table('payment_method_types')->where('id','13')->update(['bank_account_id'=>$bank->id]);
         $otherBank=BankAccount::create(['bank_id'=>$db->table('banks')->value('id'),'description'=>'USD 2',
             'number'=>'INVOICE-RACE-2','currency_type_id'=>'USD','initial_balance'=>'0']);
-        foreach (['different', 'same', 'different_destination'] as $case) {
-            $sameKey=$case !== 'different';
+        $cases = ['different', 'same', 'different_destination', 'invalid_destination_first'];
+        foreach ($cases as $index => $case) {
+            $sameKey = $case !== 'different';
+            $differentDestination = in_array($case, ['different_destination', 'invalid_destination_first'], true);
             $id=$db->table('documents')->insertGetId(['user_id'=>$input['user_id'],'external_id'=>(string)\Illuminate\Support\Str::uuid(),
                 'establishment_id'=>$input['establishment_id'],'establishment'=>json_encode($input['establishment']),
                 'issuer'=>json_encode(['name'=>'Test fiscal','number'=>'J123456789']),'fiscal_environment'=>'demo',
                 'fiscal_emission_mode'=>'digital','group_id'=>'01','state_type_id'=>'01','document_type_id'=>'01',
-                'series'=>'FF01','number'=>['different'=>1,'same'=>2,'different_destination'=>3][$case],'date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00',
+                'series'=>'FF01','number'=>$index+1,'date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00',
                 'customer_id'=>$input['customer_id'],'customer'=>json_encode($input['customer']),
                 'currency_type_id'=>'VES','exchange_rate_sale'=>'10','total_value'=>'100','total'=>'100']);
             $payload=['date_of_payment'=>'2026-10-26','payment_method_type_id'=>'13','payment_destination_id'=>$bank->id,
@@ -1789,45 +1850,55 @@ trait PaymentClassificationPersistenceCases
             $db->beginTransaction();
             try {
                 $db->table('companies')->where('id',1)->lockForUpdate()->first();
-                for ($i=0;$i<2;$i++) {
+                $deadline=microtime(true)+10; $control=$this->capsule->getConnection('control');
+                // Queue both requests at the company lock. Both orders matter when one destination is invalid.
+                foreach ($case === 'invalid_destination_first' ? [1, 0] : [0, 1] as $i) {
                     $process=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
                     $data=$payload+['operation_key'=>$sameKey ? $key : (string)\Illuminate\Support\Str::uuid()];
-                    if ($case === 'different_destination' && $i === 1) $data['payment_destination_id']=$otherBank->id;
+                    if ($differentDestination && $i === 1) $data['payment_destination_id']=$otherBank->id;
                     $process->setInput(json_encode(['connection'=>$db->getConfig(),'document_id'=>$id,'operation'=>'document-receipt','data'=>$data],JSON_THROW_ON_ERROR));
                     $process->setTimeout(30); $process->start(); $workers[]=$process;
-                }
-                $deadline=microtime(true)+10; $control=$this->capsule->getConnection('control');
-                foreach ($workers as $process) {
                     while (!str_contains($process->getOutput(),"READY\n")) {
                         if (!$process->isRunning() || microtime(true)>$deadline) self::fail('No se inició el cobro de factura: '.$process->getErrorOutput());
                         usleep(10000);
                     }
                     self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
                     do {
-                        $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                        $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO", wait_event_type FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                         $sql=strtolower($query->INFO ?? '');
-                        if (($query->COMMAND ?? null) === 'Execute' && str_contains($sql,'companies') && str_contains($sql,'for update')) break;
+                        if (($query->COMMAND ?? null) === 'active' && ($query->wait_event_type ?? null) === 'Lock'
+                            && str_contains($sql,'companies') && str_contains($sql,'for update')) break;
                         if (!$process->isRunning() || microtime(true)>$deadline) self::fail('El cobro no alcanzó el bloqueo de empresa: '.$process->getErrorOutput().$process->getOutput());
                         usleep(10000);
                     } while (true);
                 }
                 $db->commit();
-                $accepted=0; $rejected=0; $ids=[];
+                $accepted=0; $rejected=0; $ids=[]; $workerResponses = [];
+                $expectedError = match ($case) {
+                    'different_destination' => 'operation_key',
+                    'invalid_destination_first' => 'payment_destination_id',
+                    default => 'payment',
+                };
                 foreach ($workers as $process) {
                     self::assertSame(0,$process->wait(),$process->getErrorOutput().$process->getOutput());
                     $response=json_decode(substr($process->getOutput(),strlen("READY\n")),true,512,JSON_THROW_ON_ERROR);
+                    $workerResponses[] = $response;
                     if (isset($response['id'])) { $accepted++; $ids[]=$response['id']; }
-                    elseif (in_array($case === 'different_destination' ? 'operation_key' : 'payment',$response['rejected'] ?? [],true)) $rejected++;
+                    elseif (in_array($expectedError,$response['rejected'] ?? [],true)) $rejected++;
                 }
                 self::assertSame($case === 'same' ? 2 : 1,$accepted);
-                self::assertSame($case === 'same' ? 0 : 1,$rejected);
+                self::assertSame($case === 'same' ? 0 : 1,$rejected,json_encode([$case, $workerResponses], JSON_THROW_ON_ERROR));
                 if ($case === 'same') self::assertSame($ids[0],$ids[1]);
             } finally {
                 if ($db->transactionLevel()) $db->rollBack();
                 foreach ($workers as $process) if ($process->isRunning()) $process->stop();
             }
             self::assertSame(1,$db->table('document_payments')->where('document_id',$id)->count());
-            self::assertSame(['different'=>1,'same'=>2,'different_destination'=>3][$case],$db->table('global_payments')->count());
+            $payment = \App\Models\Tenant\DocumentPayment::where('document_id', $id)->sole();
+            $movement = $payment->global_payment()->sole();
+            self::assertSame(BankAccount::class, $movement->destination_type);
+            self::assertSame((string) $bank->id, (string) $movement->destination_id);
+            self::assertSame($index+1,$db->table('global_payments')->count());
             self::assertTrue((bool)$db->table('documents')->where('id',$id)->value('total_canceled'));
         }
     }
@@ -1868,9 +1939,9 @@ trait PaymentClassificationPersistenceCases
                 }
                 self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
                 do {
-                    $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                    $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                     $sql=strtolower($query->INFO ?? '');
-                    if (($query->COMMAND ?? null) === 'Execute' && str_contains($sql,'sale_notes') && str_contains($sql,'for update')) break;
+                    if (($query->COMMAND ?? null) === 'active' && str_contains($sql,'sale_notes') && str_contains($sql,'for update')) break;
                     if (!$process->isRunning() || microtime(true)>$deadline) self::fail('El cobro no alcanzó el bloqueo de la nota: '.$process->getErrorOutput().$process->getOutput());
                     usleep(10000);
                 } while (true);
@@ -1907,7 +1978,7 @@ trait PaymentClassificationPersistenceCases
         $autoPath=sys_get_temp_dir().'/'.$this->database.'/auto-after-delete.pdf'; file_put_contents($autoPath,$autoPdf);
         $autoExtract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$autoPath,'-']); $autoExtract->mustRun();
         $autoText=preg_replace('/\s+/u',' ',trim($autoExtract->getOutput()));
-        self::assertStringContainsString('OP. GRAVADA',$autoText);
+        self::assertStringContainsString('IVA: Bs. 32.00',$autoText);
         self::assertStringContainsString('SALDO: Bs. 116.00',$autoText);
         self::assertSame(1,substr_count($autoText,'Aplicado VES 116.00'));
         foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable'] as $design) foreach (['a4','a5'] as $format) {
@@ -1916,7 +1987,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($note->fresh(),$format,$note->filename);
             $pdf=$printer->getStorage($note->filename,'sale_note');
             $path=sys_get_temp_dir().'/'.$this->database.'/deleted-receipt-'.$design.'-'.$format.'.pdf'; file_put_contents($path,$pdf);
-            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/deleted-receipt-'.$design.'-'.$format.'.pdf',$pdf);
+            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/deleted-receipt-'.$design.'-'.$format.'.pdf',$pdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
             self::assertSame(1,substr_count($text,'Aplicado VES 116.00'),$design.' '.$format);
@@ -1940,7 +2011,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($note->fresh(),$format,$note->filename);
             $pdf=$printer->getStorage($note->filename,'sale_note');
             $path=sys_get_temp_dir().'/'.$this->database.'/no-receipts-'.$design.'-'.$format.'.pdf'; file_put_contents($path,$pdf);
-            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/no-receipts-'.$design.'-'.$format.'.pdf',$pdf);
+            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/no-receipts-'.$design.'-'.$format.'.pdf',$pdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
             self::assertStringContainsString('SALDO: Bs. 232.00',$text,$design.' '.$format);
@@ -1986,9 +2057,9 @@ trait PaymentClassificationPersistenceCases
                     }
                     self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
                     do {
-                        $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                        $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                         $sql=strtolower($query->INFO ?? '');
-                        if (($query->COMMAND ?? null) === 'Execute' && str_contains($sql,$table) && str_contains($sql,'for update')) break;
+                        if (($query->COMMAND ?? null) === 'active' && str_contains($sql,$table) && str_contains($sql,'for update')) break;
                         if (!$process->isRunning() || microtime(true)>$deadline) self::fail('El cobro no alcanzó el bloqueo del documento: '.$process->getErrorOutput().$process->getOutput());
                         usleep(10000);
                     } while (true);
@@ -1998,7 +2069,8 @@ trait PaymentClassificationPersistenceCases
                 foreach ($workers as $process) {
                     self::assertSame(0,$process->wait(),$process->getErrorOutput().$process->getOutput());
                     $response=json_decode(substr($process->getOutput(),strlen("READY\n")),true,512,JSON_THROW_ON_ERROR);
-                    if (!empty($response['success'])) $accepted++;
+                    $responses[]=$response;
+                if (!empty($response['success'])) $accepted++;
                     elseif (in_array('payment',$response['rejected'] ?? [],true)) $rejected++;
                 }
                 self::assertSame(1,$accepted,"{$table}: debe guardarse un solo cobro.");
@@ -2043,11 +2115,11 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             $control=$this->capsule->getConnection('control');
             do {
-                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null) === 'Execute' && str_contains($sql,'bank_accounts') && str_contains($sql,'for update')) break;
+                if (($query->COMMAND ?? null) === 'active' && str_contains($sql,'bank_accounts') && str_contains($sql,'for update')) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) {
-                    $state=$control->select('SELECT ID, COMMAND, STATE, INFO FROM information_schema.processlist WHERE DB = ?',[$db->getDatabaseName()]);
+                    $state=$control->select('SELECT pid AS "ID", state AS "COMMAND", wait_event AS "STATE", query AS "INFO" FROM pg_stat_activity WHERE datname = ?',[$db->getDatabaseName()]);
                     $diagnostic=$process->getErrorOutput().$process->getOutput().json_encode($state);
                     if ($process->isRunning()) $process->stop(1);
                     self::fail('El proceso no quedó esperando el bloqueo de la cuenta: '.$diagnostic);
@@ -2135,9 +2207,9 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             $control=$this->capsule->getConnection('control');
             do {
-                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'cat_currency_types') && str_contains($sql,'for update')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'cat_currency_types') && str_contains($sql,'for update')) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('El cobro no esperó el bloqueo de moneda: '.$process->getErrorOutput().$process->getOutput());
                 usleep(10000);
             } while (true);
@@ -2170,9 +2242,9 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             $control=$this->capsule->getConnection('control');
             do {
-                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'update') && str_contains($sql,'cat_currency_types')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'update') && str_contains($sql,'cat_currency_types')) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('La desactivación no esperó al cobro: '.$process->getErrorOutput().$process->getOutput());
                 usleep(10000);
             } while (true);
@@ -2210,9 +2282,9 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             $control=$this->capsule->getConnection('control');
             do {
-                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'payment_method_types') && str_contains($sql,'for update')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'payment_method_types') && str_contains($sql,'for update')) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('La activación no esperó el bloqueo: '.$process->getErrorOutput());
                 usleep(10000);
             } while (true);
@@ -2243,9 +2315,9 @@ trait PaymentClassificationPersistenceCases
             }
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             do {
-                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'payment_method_types') && str_contains($sql,'for update')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'payment_method_types') && str_contains($sql,'for update')) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('La edición no esperó el bloqueo: '.$process->getErrorOutput());
                 usleep(10000);
             } while (true);
@@ -2314,9 +2386,9 @@ trait PaymentClassificationPersistenceCases
             $deadline=microtime(true)+10;
             do {
                 if (preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match)) {
-                    $query=$this->capsule->getConnection('control')->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                    $query=$this->capsule->getConnection('control')->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                     $sql=strtolower($query->INFO ?? '');
-                    if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'quotation_payments') && str_contains($sql,'for update')) break;
+                    if (($query->COMMAND ?? null)==='active' && str_contains($sql,'quotation_payments') && str_contains($sql,'for update')) break;
                 }
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('La asociación no esperó el bloqueo del cobro: '.$process->getErrorOutput().$process->getOutput());
                 usleep(10000);
@@ -2380,9 +2452,9 @@ trait PaymentClassificationPersistenceCases
             }
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             do {
-                $query=$this->capsule->getConnection('control')->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$this->capsule->getConnection('control')->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'payment_method_types') && str_contains($sql,'for update')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'payment_method_types') && str_contains($sql,'for update')) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('El lote no esperó el método: '.$process->getErrorOutput());
                 usleep(10000);
             } while (true);
@@ -2411,9 +2483,9 @@ trait PaymentClassificationPersistenceCases
             }
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             do {
-                $query=$this->capsule->getConnection('control')->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$this->capsule->getConnection('control')->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'payment_method_types') && str_contains($sql,'update')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'payment_method_types') && str_contains($sql,'update')) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('La reclasificación no esperó el lote: '.$process->getErrorOutput());
                 usleep(10000);
             } while (true);
@@ -2462,10 +2534,10 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             $control=$this->capsule->getConnection('control');
             do {
-                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
                 $expected=$operation==='quotation-receipt' ? str_contains($sql,'for update') : str_contains($sql,'update');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'payment_method_types') && $expected) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'payment_method_types') && $expected) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('No esperó el bloqueo del método: '.$process->getErrorOutput().$process->getOutput());
                 usleep(10000);
             } while (true);
@@ -2593,9 +2665,9 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             $control=$this->capsule->getConnection('control');
             do {
-                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'cat_iva_rate_types') && str_contains($sql,'for update')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'cat_iva_rate_types') && str_contains($sql,'for update')) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('No esperó el bloqueo del impuesto: '.$process->getErrorOutput().$process->getOutput());
                 usleep(10000);
             } while (true);
@@ -2975,9 +3047,9 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             $control=$this->capsule->getConnection('control');
             do {
-                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'payment_method_types') && str_contains($sql,'for update')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'payment_method_types') && str_contains($sql,'for update')) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('La apertura no esperó el bloqueo del método: '.$process->getErrorOutput().$process->getOutput());
                 usleep(10000);
             } while (true);
@@ -3008,9 +3080,9 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
             $control=$this->capsule->getConnection('control');
             do {
-                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'payment_method_types') && str_contains($sql,'update')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'payment_method_types') && str_contains($sql,'update')) break;
                 if (!$process->isRunning() || microtime(true)>$deadline) self::fail('La desactivación no esperó la apertura: '.$process->getErrorOutput().$process->getOutput());
                 usleep(10000);
             } while (true);
@@ -3096,7 +3168,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('Recibido VES 0.20',$text);
         $pdf=(new \App\CoreFacturalo\Facturalo())->createPdf($saved,'sale_note','a4','string');
         self::assertStringStartsWith('%PDF-',$pdf);
-        if ($dir=getenv('SAB_HOTEL_PDF_EVIDENCE_DIR')) file_put_contents($dir.'/hotel-checkin-note.pdf',$pdf);
+        if ($dir=getenv('PRO9_HOTEL_PDF_EVIDENCE_DIR')) file_put_contents($dir.'/hotel-checkin-note.pdf',$pdf);
         $displayNote=clone $saved;
         $rows=[];
         foreach ([['1/3','KG'],['2/3','KG'],['0.000000000001','UND']] as [$quantity,$unit]) {
@@ -3119,7 +3191,7 @@ trait PaymentClassificationPersistenceCases
         $db->table('establishments')->where('id',$saved->establishment_id)->update(['template_ticket_pdf'=>'modern-2027']);
         $ticket=(new \App\CoreFacturalo\Facturalo())->createPdf($displayNote,'sale_note','ticket_58','string');
         self::assertStringStartsWith('%PDF-',$ticket);
-        if ($dir=getenv('SAB_HOTEL_PDF_EVIDENCE_DIR')) file_put_contents($dir.'/hotel-note-units-ticket.pdf',$ticket);
+        if ($dir=getenv('PRO9_HOTEL_PDF_EVIDENCE_DIR')) file_put_contents($dir.'/hotel-note-units-ticket.pdf',$ticket);
     }
 
     public function test_purchase_settlement_calculates_exact_lines_and_header_instead_of_trusting_input(): void
@@ -3159,7 +3231,7 @@ trait PaymentClassificationPersistenceCases
     public function test_service_purchase_and_settlement_do_not_create_or_reverse_inventory(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture();
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $service=\App\Models\Tenant\Item::where('internal_id','MOCK-SERV-VES-001')->firstOrFail();
         $warehouse=$input['items'][0]['warehouse_id'];
         $db->table('item_warehouse')->insert(['item_id'=>$service->id,'warehouse_id'=>$warehouse,'stock'=>'5']);
@@ -3270,7 +3342,7 @@ trait PaymentClassificationPersistenceCases
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
         $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $url=$this->createMock(\Illuminate\Contracts\Routing\UrlGenerator::class); $url->method('to')->willReturn('http://fiscal-schema.example.test');
         $app->instance(\Illuminate\Contracts\Routing\UrlGenerator::class,$url);
         $item=$input['items'][0]['item_id']; $warehouse=$input['items'][0]['warehouse_id'];
@@ -3365,7 +3437,7 @@ trait PaymentClassificationPersistenceCases
     public function test_purchase_lot_quantities_use_exact_presentation_and_prevent_void_after_partial_sale(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture();
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $controller=new class extends \App\Http\Controllers\Tenant\PurchaseController { public function createPdf($purchase=null,$format_pdf=null,$filename=null) {} };
         $line=$input['items'][0];
         $stockBefore=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$line['item_id'])->where('warehouse_id',$line['warehouse_id'])->firstOrFail()->exactValue('stock');
@@ -3466,7 +3538,7 @@ trait PaymentClassificationPersistenceCases
     {
         [$db,$app,$input]=$this->bootHkaFixture();
         // The production kernel also boots these legacy listeners.
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         (new \App\Providers\AnulationServiceProvider($app))->boot();
         $service=\App\Models\Tenant\Item::where('internal_id','MOCK-SERV-VES-001')->firstOrFail();
         $legacyStock=$db->table('items')->where('id',$service->id)->value('stock');
@@ -3555,11 +3627,17 @@ trait PaymentClassificationPersistenceCases
             $app->instance('request',\Illuminate\Http\Request::create('/','POST',$data));
             return $controller->finalizeRent($rent);
         };
-        foreach ([['arrears'=>'0'],['arrears'=>'0','checkout_document_type'=>'80','checkout_document_id'=>999999]] as $invalid) {
+        foreach ([
+            ['arrears'=>'0'],
+            ['arrears'=>'0','checkout_document_type'=>'80','checkout_document_id'=>999999],
+            ['arrears'=>'0','checkout_document_type'=>'01','checkout_document_id'=>'9223372036854775808'],
+            ['arrears'=>'0','checkout_document_type'=>'01','checkout_document_id'=>'9223372036854775807'],
+        ] as $invalid) {
             try { $request($invalid); self::fail('Debe exigir un comprobante válido para la deuda.'); }
             catch (\Illuminate\Validation\ValidationException $e) { self::assertArrayHasKey('checkout_document',$e->errors()); }
             self::assertSame('DEBT',$db->table('hotel_rent_items')->where('id',$item)->value('payment_status'));
             self::assertSame('OCUPADO',$db->table('hotel_rooms')->where('id',$room)->value('status'));
+            self::assertNotSame('FINALIZADO',$db->table('hotel_rents')->where('id',$rent)->value('status'));
         }
         $db->table('hotel_rent_items')->where('id',$item)->update(['payment_status'=>'INVALID']);
         try { $request(['arrears'=>'0']); self::fail('No se puede marcar pagado un estado desconocido.'); }
@@ -3676,7 +3754,7 @@ trait PaymentClassificationPersistenceCases
         $responses=$this->createMock(\Illuminate\Contracts\Routing\ResponseFactory::class);
         $responses->method('json')->willReturnCallback(fn($data,$status=200)=>new \Illuminate\Http\JsonResponse($data,$status));
         $app->instance(\Illuminate\Contracts\Routing\ResponseFactory::class,$responses);
-        self::assertSame(0,(int)$db->select("SHOW INDEX FROM hotel_rent_orders WHERE Key_name = 'hotel_rent_orders_operation_key_unique'")[0]->Non_unique);
+        self::assertSame(0,(int)\App\Database\SchemaInspector::indexes($db, 'hotel_rent_orders', 'hotel_rent_orders_operation_key_unique')[0]->non_unique);
         $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1]);
         $rentId=$db->table('hotel_rents')->insertGetId(['customer_id'=>$input['customer_id'], 'customer'=>json_encode($input['customer']),
             'hotel_room_id'=>1,'payment_status'=>'PAID','output_date'=>'2026-10-27','output_time'=>'12:00','establishment_id'=>$input['establishment_id']]);
@@ -3770,7 +3848,7 @@ trait PaymentClassificationPersistenceCases
     public function test_hotel_reuses_its_sale_note_receipt_without_creating_another_movement(string $fiscalMode): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $input['payment_condition_id']='02';
         $input['fee']=[['date'=>'2026-11-26','currency_type_id'=>'VES','amount'=>'182']];
         $input['invoice']['date_of_due']='2026-11-26';
@@ -3962,7 +4040,7 @@ trait PaymentClassificationPersistenceCases
         $app->bind('dompdf.wrapper',fn($app)=>new \Barryvdh\DomPDF\PDF(new \Dompdf\Dompdf(),$app['config'],$app['files'],$app['view']));
         \Barryvdh\DomPDF\Facade\Pdf::clearResolvedInstance('dompdf.wrapper');
         $pdf=$controller->pdf($request)->getContent(); self::assertStringStartsWith('%PDF-',$pdf);
-        if ($path=getenv('SAB_OCCUPANCY_REPORT_PDF_PATH')) file_put_contents($path,$pdf);
+        if ($path=getenv('PRO9_OCCUPANCY_REPORT_PDF_PATH')) file_put_contents($path,$pdf);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\ReportHotelExport())->records($records)->rooms($localRooms)->company($company);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
@@ -4025,7 +4103,7 @@ trait PaymentClassificationPersistenceCases
         $app->bind('dompdf.wrapper',fn($app)=>new \Barryvdh\DomPDF\PDF(new \Dompdf\Dompdf(),$app['config'],$app['files'],$app['view']));
         \Barryvdh\DomPDF\Facade\Pdf::clearResolvedInstance('dompdf.wrapper');
         $pdf=$controller->pdf($request)->getContent(); self::assertStringStartsWith('%PDF-',$pdf);
-        if ($path=getenv('SAB_HOTEL_REPORT_PDF_PATH')) file_put_contents($path,$pdf);
+        if ($path=getenv('PRO9_HOTEL_REPORT_PDF_PATH')) file_put_contents($path,$pdf);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\DocumentHotelExport())->records($records)->company($company);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
@@ -4189,7 +4267,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('0.87',$html); self::assertStringContainsString('Proveedor',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('A4','landscape'); $pdf->loadHtml($html); $pdf->render();
         $pdfBytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$pdfBytes);
-        if ($path=getenv('SAB_FIXED_ASSET_REPORT_PDF_PATH')) file_put_contents($path,$pdfBytes);
+        if ($path=getenv('PRO9_FIXED_ASSET_REPORT_PDF_PATH')) file_put_contents($path,$pdfBytes);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\FixedAssetPurchaseExport())->records($records)->company($company)->establishment($establishment)->filters($filters);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
@@ -4244,7 +4322,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('USD',$html); self::assertStringContainsString('0.12',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->loadHtml($html); $pdf->render(); $pdfBytes=$pdf->output();
         self::assertStringStartsWith('%PDF-',$pdfBytes);
-        if ($path=getenv('SAB_TIP_REPORT_PDF_PATH')) file_put_contents($path,$pdfBytes);
+        if ($path=getenv('PRO9_TIP_REPORT_PDF_PATH')) file_put_contents($path,$pdfBytes);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\ReportTipExport())->data(compact('records','company','establishment'));
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
@@ -4267,16 +4345,31 @@ trait PaymentClassificationPersistenceCases
         $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);$input['payments']=[]; $input['payment_condition_id']='02';
         $document=(new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
         $item=$document->items()->firstOrFail();
+        $currentPlatform=$db->table('web_platforms')->insertGetId(['name'=>'Mostrador']);
+        $nextPlatform=$db->table('web_platforms')->insertGetId(['name'=>'Tienda']);
+        $db->table('items')->where('id',$item->item_id)->update(['web_platform_id'=>$currentPlatform]);
+        $duplicate=(array)$db->table('document_items')->where('id',$item->id)->first();
+        unset($duplicate['id']);
+        $db->table('document_items')->insert($duplicate);
+        $otherProduct=\App\Models\Tenant\Item::findOrFail($item->item_id)->replicate();
+        $otherProduct->forceFill(['internal_id'=>'ITEM-PLATAFORMA-DIFERENTE'])->save();
+        $duplicate['item_id']=$otherProduct->id;
+        $db->table('document_items')->insert($duplicate);
+        $otherProductWithoutPlatform=$otherProduct->replicate();
+        $otherProductWithoutPlatform->forceFill(['internal_id'=>'ITEM-SIN-PLATAFORMA','web_platform_id'=>null])->save();
+        $duplicate['item_id']=$otherProductWithoutPlatform->id;
+        $db->table('document_items')->insert($duplicate);
         config(['tenant.items_per_page'=>20,'view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/snapshot-views',
             'view.paths'=>[base_path('resources/views')]]);
         mkdir(config('view.compiled'),0777,true);$app->register(\Illuminate\View\ViewServiceProvider::class);
         $app->register(\Illuminate\Translation\TranslationServiceProvider::class);
         $dispatcher=new \Illuminate\Events\Dispatcher($app);$db->setEventDispatcher($dispatcher);
         $updated=false;$other=$this->capsule->getConnection('system');
-        $db->listen(function ($event) use (&$updated,$other,$item) {
-            if (!$updated && str_contains(strtolower($event->sql),'select count(*) as aggregate from `documents`')) {
+        $db->listen(function ($event) use (&$updated,$other,$item,$nextPlatform) {
+            if (!$updated && str_contains(strtolower($event->sql),'select count(*) as aggregate from "documents"')) {
                 $updated=true;
                 $snapshot=$item->calculation_snapshot;$snapshot['values']['quantity']=['n'=>'9','d'=>'1'];
+                $other->table('items')->where('id',$item->item_id)->update(['web_platform_id'=>$nextPlatform]);
                 $other->table('document_items')->where('id',$item->id)->update(['quantity'=>'9','calculation_snapshot'=>json_encode($snapshot)]);
             }
         });
@@ -4284,9 +4377,18 @@ trait PaymentClassificationPersistenceCases
             'period'=>'date','date_start'=>'2026-09-10','date_end'=>'2026-09-10','document_type_id'=>'01']);
         $controller=new \Modules\Report\Http\Controllers\ReportDocumentController();
         $first=$controller->records($request)->getData(true)['data'];
-        self::assertTrue($updated);self::assertCount(1,$first);self::assertSame('2',$first[0]['items'][0]['quantity']);
+        self::assertTrue($updated);self::assertCount(1,$first);
+        self::assertSame('2',collect($first[0]['items'])->firstWhere('id',$item->id)['quantity']);
+        self::assertSame([
+            ['id'=>$currentPlatform,'name'=>'Mostrador'],
+            ['id'=>$currentPlatform,'name'=>'Mostrador'],
+        ],$first[0]['web_platforms']);
         $second=$controller->records($request)->getData(true)['data'];
-        self::assertSame('9',$second[0]['items'][0]['quantity']);
+        self::assertSame('9',collect($second[0]['items'])->firstWhere('id',$item->id)['quantity']);
+        self::assertEqualsCanonicalizing([
+            ['id'=>$nextPlatform,'name'=>'Tienda'],
+            ['id'=>$currentPlatform,'name'=>'Mostrador'],
+        ],$second[0]['web_platforms']);
     }
 
     public function test_sales_report_queued_workbook_is_generated_and_failures_propagate(): void
@@ -4337,7 +4439,7 @@ trait PaymentClassificationPersistenceCases
         $pdfPath=sys_get_temp_dir().'/'.$this->database.'/'.$pdfTray->path.'/'.$pdfTray->file_name.'.pdf';
         self::assertFileExists($pdfPath);$pdfBytes=file_get_contents($pdfPath);self::assertStringStartsWith('%PDF-',$pdfBytes);
         self::assertMatchesRegularExpression('/\/MediaBox\s*\[\s*0\s+0\s+1683\.7[0-9]+\s+1190\.5[0-9]+\s*\]/',$pdfBytes);
-        if ($dir=getenv('SAB_SALES_REPORT_EVIDENCE')) copy($pdfPath,$dir.'/ventas-encolado.pdf');
+        if ($dir=getenv('PRO9_SALES_REPORT_EVIDENCE')) copy($pdfPath,$dir.'/ventas-encolado.pdf');
         $smallColumns=clone $columns;foreach ($smallColumns as $name=>$column) $smallColumns->$name=(object)['visible'=>false,'title'=>$name];
         $smallTray=\App\Models\Tenant\DownloadTray::create(['user_id'=>$input['user_id'],'module'=>'REPORT','format'=>'pdf','type'=>'Ventas']);
         $smallJob=new class($smallTray->id,1,$filters,$smallColumns) extends \Modules\Report\Jobs\ProcessDocumentReport {
@@ -4605,7 +4707,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('209.13',$html);self::assertStringContainsString('no representan necesariamente dinero cobrado',$html);
         $pdf=new \Dompdf\Dompdf();$pdf->setPaper('A4','landscape');$pdf->loadHtml($html);$pdf->render();
         self::assertStringStartsWith('%PDF-',$pdf->output());
-        if ($dir=getenv('SAB_POS_CASH_REPORT_EVIDENCE')) file_put_contents($dir.'/documentos-caja.pdf',$pdf->output());
+        if ($dir=getenv('PRO9_POS_CASH_REPORT_EVIDENCE')) file_put_contents($dir.'/documentos-caja.pdf',$pdf->output());
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export(new \Modules\Report\Exports\PosCashDocumentsExport($report,$company),\Maatwebsite\Excel\Excel::XLSX);
@@ -4642,11 +4744,13 @@ trait PaymentClassificationPersistenceCases
         $db->table('documents')->where('id',$invoice->id)->update(['total'=>'0.333333333333','currency_type_id'=>'VES',
             'calculation_snapshot'=>json_encode($snapshot)]);
         $base=(array)$db->table('documents')->where('id',$invoice->id)->first(); unset($base['id']);
+        $vesOnly = getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1';
         $rows=[['01','VES','0.333333333333','01',$snapshot],['01','USD','0.333333333333','01',$snapshot],
-            ['07','VES','0.1','01',null],['08','USD','0.2','01',null],['01','VES','100','11',null]];
+            ['07','VES','0.1','01',null],['08',$vesOnly ? 'VES' : 'USD','0.2','01',null],['01','VES','100','11',null]];
         $ids=[];
         foreach ($rows as $index=>[$type,$currency,$total,$state,$stored]) {
-            $ids[]=$db->table('documents')->insertGetId(array_replace($base,['external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            if ($vesOnly && $currency === 'USD') continue;
+            $ids[$index]=$db->table('documents')->insertGetId(array_replace($base,['external_id'=>(string)\Illuminate\Support\Str::uuid(),
                 'filename'=>'qa-list-total-'.$index,'unique_filename'=>'qa-list-total-'.$index,'number'=>880+$index,
                 'document_type_id'=>$type,'currency_type_id'=>$currency,'total'=>$total,'state_type_id'=>$state,
                 'calculation_snapshot'=>$stored ? json_encode($stored) : null]));
@@ -4656,9 +4760,9 @@ trait PaymentClassificationPersistenceCases
         $totals=collect($controller->recordsTotal($request))->keyBy(fn($row)=>$row['document_type_id'].':'.$row['currency_type_id']);
         self::assertCount(6,$totals);
         self::assertSame('Bs. 0.67',$totals['01:VES']['total']);
-        self::assertSame('$ 0.33',$totals['01:USD']['total']);
+        self::assertSame($vesOnly ? '$ 0.00' : '$ 0.33',$totals['01:USD']['total']);
         self::assertSame('Bs. 0.10',$totals['07:VES']['total']);
-        self::assertSame('$ 0.20',$totals['08:USD']['total']);
+        self::assertSame($vesOnly ? 'Bs. 0.20' : '$ 0.20',$totals[$vesOnly ? '08:VES' : '08:USD']['total']);
         self::assertSame(['n'=>'2','d'=>'3'],$totals['01:VES']['calculation_snapshot']['values']['total']);
         $filtered=collect($controller->recordsTotal(\Illuminate\Http\Request::create('/','GET',['document_type_id'=>'07'])))
             ->keyBy(fn($row)=>$row['document_type_id'].':'.$row['currency_type_id']);
@@ -4676,13 +4780,21 @@ trait PaymentClassificationPersistenceCases
         self::assertSame('$ 0.00',$seller['01:USD']['total']);
         auth()->setUser($originalUser);
         $large=$snapshot; $large['values']['total']=['n'=>'900719925474099301','d'=>'100'];
-        $db->table('documents')->where('id',$ids[1])->update(['total'=>'9007199254740993.01','calculation_snapshot'=>json_encode($large)]);
+        $largeInvoiceId = $ids[$vesOnly ? 0 : 1];
+        $db->table('documents')->where('id',$largeInvoiceId)->update(['total'=>'9007199254740993.01','calculation_snapshot'=>json_encode($large)]);
         $largeRows=collect($controller->recordsTotal($request))->keyBy(fn($row)=>$row['document_type_id'].':'.$row['currency_type_id']);
-        self::assertSame('$ 9,007,199,254,740,993.01',$largeRows['01:USD']['total']);
+        if ($vesOnly) {
+            self::assertSame('Bs. 9,007,199,254,740,993.34',$largeRows['01:VES']['total']);
+            $db->table('documents')->where('id',$largeInvoiceId)->update([
+                'total'=>'0.333333333333','calculation_snapshot'=>json_encode($snapshot)]);
+            self::assertSame(0, $db->table('documents')->where('currency_type_id','USD')->count());
+        } else {
+            self::assertSame('$ 9,007,199,254,740,993.01',$largeRows['01:USD']['total']);
+        }
         $this->capsule->addConnection($db->getConfig(),'document_list_total_writer');
         $writer=$this->capsule->getConnection('document_list_total_writer'); $interleaved=false;
         $db->listen(function ($event) use (&$interleaved,$writer,$invoice) {
-            if ($interleaved || $event->connectionName!=='tenant' || !str_contains(strtolower($event->sql),'from `documents`')) return;
+            if ($interleaved || $event->connectionName!=='tenant' || !str_contains(strtolower($event->sql),'from "documents"')) return;
             $interleaved=true;
             $writer->table('documents')->where('id',$invoice->id)->update(['total'=>'5','calculation_snapshot'=>null]);
         });
@@ -4710,7 +4822,7 @@ trait PaymentClassificationPersistenceCases
         $this->capsule->addConnection($db->getConfig(),'document_list_combined_writer');
         $writer=$this->capsule->getConnection('document_list_combined_writer'); $interleaved=false;
         $db->listen(function ($event) use (&$interleaved,$writer,$invoice,$snapshot) {
-            if ($interleaved || $event->connectionName!=='tenant' || !str_contains(strtolower($event->sql),'from `documents`')) return;
+            if ($interleaved || $event->connectionName!=='tenant' || !str_contains(strtolower($event->sql),'from "documents"')) return;
             $interleaved=true;
             $writer->table('documents')->where('id',$invoice->id)->update(['total'=>'116','calculation_snapshot'=>json_encode($snapshot)]);
         });
@@ -4783,7 +4895,7 @@ trait PaymentClassificationPersistenceCases
         $this->capsule->addConnection($db->getConfig(),'document_kpi_writer');
         $writer=$this->capsule->getConnection('document_kpi_writer'); $interleaved=false;
         $db->listen(function ($event) use (&$interleaved,$writer,$invoice,$changed) {
-            if ($interleaved || $event->connectionName!=='tenant' || !str_contains(strtolower($event->sql),'from `documents`')) return;
+            if ($interleaved || $event->connectionName!=='tenant' || !str_contains(strtolower($event->sql),'from "documents"')) return;
             $interleaved=true;
             $writer->table('documents')->where('id',$invoice->id)->update(['total'=>'200','calculation_snapshot'=>json_encode($changed)]);
         });
@@ -4850,7 +4962,7 @@ trait PaymentClassificationPersistenceCases
         $changedSnapshot['values']['total']=['n'=>'4','d'=>'3'];
         $db->setEventDispatcher(new \Illuminate\Events\Dispatcher($app));
         $db->listen(function ($event) use (&$changed,$other,$invoice,$changedSnapshot) {
-            if (!$changed && str_contains(strtolower($event->sql),'from `documents`')) {
+            if (!$changed && str_contains(strtolower($event->sql),'from "documents"')) {
                 $changed=true;$other->table('documents')->where('id',$invoice->id)
                     ->update(['total'=>'1.333333333333','calculation_snapshot'=>json_encode($changedSnapshot)]);
             }
@@ -4909,7 +5021,7 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1001,$count);self::assertSame('232232',\App\Support\Exact\Decimal::represent($total));
             self::assertNotNull($book->getSheetByName('Fracciones exactas'));$book->disconnectWorksheets();
         } finally {$file->delete();}
-        if (getenv('SAB_FISCAL_TIMING')) fwrite(STDERR,sprintf("Cash documents 1001: %.2fs, peak %.1f MiB\n",microtime(true)-$started,memory_get_peak_usage(true)/1048576));
+        if (getenv('PRO9_FISCAL_TIMING')) fwrite(STDERR,sprintf("Cash documents 1001: %.2fs, peak %.1f MiB\n",microtime(true)-$started,memory_get_peak_usage(true)/1048576));
     }
 
     public function test_customer_report_keeps_notes_currencies_and_filters_in_list_and_excel(): void
@@ -5057,7 +5169,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('Totales VES',$html);self::assertStringContainsString('1.00',$html);
         $pdf=new \Dompdf\Dompdf();$pdf->setPaper('A4','landscape');$pdf->loadHtml($html);$pdf->render();
         self::assertStringStartsWith('%PDF-',$pdf->output());
-        if ($dir=getenv('SAB_SALE_NOTE_REPORT_EVIDENCE')) file_put_contents($dir.'/notas-venta.pdf',$pdf->output());
+        if ($dir=getenv('PRO9_SALE_NOTE_REPORT_EVIDENCE')) file_put_contents($dir.'/notas-venta.pdf',$pdf->output());
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\SaleNoteExport())->records($records)->company($company)->establishment($establishment)->filters($filters);
@@ -5119,7 +5231,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('0.33',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('A4','landscape'); $pdf->loadHtml($html); $pdf->render();
         $bytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$bytes);
-        if ($dir=getenv('SAB_QUOTATION_REPORT_EVIDENCE')) file_put_contents($dir.'/cotizaciones.pdf',$bytes);
+        if ($dir=getenv('PRO9_QUOTATION_REPORT_EVIDENCE')) file_put_contents($dir.'/cotizaciones.pdf',$bytes);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\QuotationExport())->records($records)->company($company)->establishment($establishment)->filters($filters);
@@ -5228,7 +5340,7 @@ trait PaymentClassificationPersistenceCases
     public function test_quotation_receipt_is_reused_through_sale_note_and_invoice(string $fiscalMode): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $input['payment_condition_id']='02';
         $input['fee']=[['date'=>'2026-11-26','currency_type_id'=>'VES','amount'=>'182']];
         $input['invoice']['date_of_due']='2026-11-26';
@@ -5507,9 +5619,9 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$worker->getErrorOutput(),$match));
             $control=$this->capsule->getConnection('control');
             do {
-                $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                 $sql=strtolower($query->INFO ?? '');
-                if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'quotations') && str_contains($sql,'for update')) break;
+                if (($query->COMMAND ?? null)==='active' && str_contains($sql,'quotations') && str_contains($sql,'for update')) break;
                 if (!$worker->isRunning() || microtime(true)>$deadline) self::fail('La conversión no alcanzó el bloqueo: '.$worker->getErrorOutput().$worker->getOutput());
                 usleep(10000);
             } while (true);
@@ -5566,22 +5678,22 @@ trait PaymentClassificationPersistenceCases
                 }
                 self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
                 do {
-                    $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                    $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                     $sql=strtolower($query->INFO ?? '');
-                    if (($query->COMMAND ?? null) === 'Execute' && str_contains($sql,'quotations') && str_contains($sql,'for update')) break;
+                    if (($query->COMMAND ?? null) === 'active' && str_contains($sql,'quotations') && str_contains($sql,'for update')) break;
                     if (!$process->isRunning() || microtime(true)>$deadline) self::fail('No alcanzó el bloqueo de la cotización: '.$process->getErrorOutput().$process->getOutput());
                     usleep(10000);
                 } while (true);
             }
             $db->commit();
-            $accepted=$rejected=0;
+            $accepted=$rejected=0;$responses=[];
             foreach ($workers as $process) {
                 self::assertSame(0,$process->wait(),$process->getErrorOutput().$process->getOutput());
                 $response=json_decode(substr($process->getOutput(),strlen("READY\n")),true,512,JSON_THROW_ON_ERROR);
                 if (!empty($response['success'])) $accepted++;
                 elseif (in_array('source_quotation_payment_id',$response['rejected'] ?? [],true)) $rejected++;
             }
-            self::assertSame(1,$accepted);
+            self::assertSame(1,$accepted,json_encode($responses));
             self::assertSame(1,$rejected);
         } finally {
             if ($db->transactionLevel()) $db->rollBack();
@@ -5635,10 +5747,10 @@ trait PaymentClassificationPersistenceCases
                 }
                 self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
                 do {
-                    $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                    $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                     $sql=strtolower($query->INFO ?? '');
-                    if (($query->COMMAND ?? null) === 'Execute' && ((str_contains($sql,'sale_notes') && str_contains($sql,'for update'))
-                        || (str_contains($sql,'insert into `documents`')))) break;
+                    if (($query->COMMAND ?? null) === 'active' && ((str_contains($sql,'sale_notes') && str_contains($sql,'for update'))
+                        || (str_contains($sql,'insert into "documents"')))) break;
                     if (!$process->isRunning() || microtime(true)>$deadline) self::fail('No alcanzó el bloqueo de la nota: '.$process->getErrorOutput().$process->getOutput());
                     usleep(10000);
                 } while (true);
@@ -5667,7 +5779,7 @@ trait PaymentClassificationPersistenceCases
     public function test_multiple_sale_notes_preserve_receipts_and_reject_omissions(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $db->table('configurations')->update(['auto_send_hka'=>false]);
         $db->table('payment_method_types')->where('id','10')->update(['is_active'=>1]);
         $cash=Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-10-26','time_opening'=>'09:00:00','beginning_balance'=>'0']);
@@ -5779,9 +5891,9 @@ trait PaymentClassificationPersistenceCases
                 }
                 self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
                 do {
-                    $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                    $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                     $sql=strtolower($query->INFO ?? '');
-                    if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'sale_notes') && str_contains($sql,'for update')) break;
+                    if (($query->COMMAND ?? null)==='active' && str_contains($sql,'sale_notes') && str_contains($sql,'for update')) break;
                     if (!$process->isRunning() || microtime(true)>$deadline) self::fail('No alcanzó el bloqueo de la nota. '.$process->getErrorOutput().$process->getOutput());
                     usleep(10000);
                 } while (true);
@@ -5939,9 +6051,9 @@ trait PaymentClassificationPersistenceCases
                 }
                 self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$process->getErrorOutput(),$match));
                 do {
-                    $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                    $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                     $sql=strtolower($query->INFO ?? '');
-                    if (($query->COMMAND ?? null) === 'Execute' && str_contains($sql,'technical_services') && str_contains($sql,'for update')) break;
+                    if (($query->COMMAND ?? null) === 'active' && str_contains($sql,'technical_services') && str_contains($sql,'for update')) break;
                     if (!$process->isRunning() || microtime(true)>$deadline) self::fail('No alcanzó el bloqueo del servicio: '.$process->getErrorOutput().$process->getOutput());
                     usleep(10000);
                 } while (true);
@@ -6125,7 +6237,7 @@ trait PaymentClassificationPersistenceCases
         [$db,$app,$input]=$this->bootHkaFixture(false);
         $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
         Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-09-10','time_opening'=>'09:00:00','beginning_balance'=>'0']);
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $url=$this->createMock(\Illuminate\Contracts\Routing\UrlGenerator::class); $url->method('to')->willReturn('http://fiscal-schema.example.test');
         $app->instance(\Illuminate\Contracts\Routing\UrlGenerator::class,$url);
         $item=$input['items'][0]['item_id']; $warehouse=$input['items'][0]['warehouse_id'];
@@ -6200,7 +6312,7 @@ trait PaymentClassificationPersistenceCases
         [$db,$app,$input]=$this->bootHkaFixture(false);
         $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
         Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-09-10','time_opening'=>'09:00:00','beginning_balance'=>'0']);
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         (new \App\Providers\AnulationServiceProvider($app))->boot();
         $url=$this->createMock(\Illuminate\Contracts\Routing\UrlGenerator::class); $url->method('to')->willReturn('http://fiscal-schema.example.test');
         $app->instance(\Illuminate\Contracts\Routing\UrlGenerator::class,$url);
@@ -6232,6 +6344,16 @@ trait PaymentClassificationPersistenceCases
         self::assertTrue($document->exactValue('total')->isEqualTo($note->exactValue('total')));
         self::assertSame('2/3',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($lot)->exactValue('quantity'));
         self::assertTrue($stock()->isEqualTo($stockBefore)); self::assertTrue($global()->isEqualTo($globalBefore));
+        $originalOrigins=$document->getRawOriginal('sale_notes_relateds');
+        $edit=array_replace($invoice,['id'=>$document->id,'series'=>$document->series,'number'=>$document->number,
+            'received_retentions'=>[],'guarantee_fund'=>null,'sale_notes_relateds'=>[]]);
+        $edit['items'][0]['record_id']=$document->items->first()->id;
+        (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->update($edit,$document->id);
+        $document=$document->fresh();
+        self::assertSame($originalOrigins,$document->getRawOriginal('sale_notes_relateds'),'La edición conserva también la forma JSON del origen consolidado.');
+        self::assertSame($order['data']['id'],$document->order_note_id);
+        self::assertTrue($stock()->isEqualTo($stockBefore));self::assertTrue($global()->isEqualTo($globalBefore));
+        self::assertSame('2/3',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($lot)->exactValue('quantity'));
         try { $notes->anulate($note->id); self::fail('No se debe anular la nota mientras su factura esté vigente.'); }
         catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('sale_note',$error->errors()); }
         self::assertSame('01',(string)$note->fresh()->state_type_id);
@@ -6252,7 +6374,7 @@ trait PaymentClassificationPersistenceCases
         [$db,$app,$input]=$this->bootHkaFixture(false);
         $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
         Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-09-10','time_opening'=>'09:00:00','beginning_balance'=>'0']);
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $url=$this->createMock(\Illuminate\Contracts\Routing\UrlGenerator::class);
         $url->method('to')->willReturn('http://fiscal-schema.example.test');
         $app->instance(\Illuminate\Contracts\Routing\UrlGenerator::class,$url);
@@ -6439,7 +6561,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($note->fresh(),'ticket_58',$note->filename);
             $pdf=$printer->getStorage($note->filename,'sale_note');
             $path=sys_get_temp_dir().'/'.$this->database.'/persisted-trace-'.$design.'.pdf'; file_put_contents($path,$pdf);
-            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/persisted-trace-'.$design.'.pdf',$pdf);
+            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/persisted-trace-'.$design.'.pdf',$pdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             foreach (['LOT-PERSISTIDO','2028-12-30','SERIE-PERSISTIDA-1','SERIE-PERSISTIDA-2','116.00','32.00','232.00'] as $expected) self::assertStringContainsString($expected,$extract->getOutput(),$design);
             if ($design==='modern-2027') self::assertStringContainsString('Subtotal: Bs. 200.00',$extract->getOutput());
@@ -6454,7 +6576,7 @@ trait PaymentClassificationPersistenceCases
                 $printer->createPdf($note->fresh(),$format,$note->filename);
                 $pdf=$printer->getStorage($note->filename,'sale_note');
                 $path=sys_get_temp_dir().'/'.$this->database.'/persisted-'.$design.'-'.$format.'.pdf'; file_put_contents($path,$pdf);
-                if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/persisted-'.$design.'-'.$format.'.pdf',$pdf);
+                if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/persisted-'.$design.'-'.$format.'.pdf',$pdf);
                 $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
                 $html=(new \App\CoreFacturalo\Template())->pdf($design,'sale_note',\App\Models\Tenant\Company::active(),$note->fresh(),$format,['is_preview'=>false]);
                 foreach (['LOT-PERSISTIDO','2028-12-30','SERIE-PERSISTIDA-1','SERIE-PERSISTIDA-2'] as $expected) self::assertStringContainsString($expected,$html,$design.' '.$format);
@@ -6489,7 +6611,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($balanceNote,$format,$balanceNote->filename);
             $balancePdf=$printer->getStorage($balanceNote->filename,'sale_note');
             $balancePath=sys_get_temp_dir().'/'.$this->database.'/balance-'.$design.'-'.$format.'.pdf'; file_put_contents($balancePath,$balancePdf);
-            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/balance-'.$design.'-'.$format.'.pdf',$balancePdf);
+            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/balance-'.$design.'-'.$format.'.pdf',$balancePdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$balancePath,'-']); $extract->mustRun();
             self::assertMatchesRegularExpression('/SALDO:\s*Bs\.\s*0\.01/',$extract->getOutput(),$format);
         }
@@ -6504,7 +6626,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($balanceNote,$format,$balanceNote->filename);
             $path=sys_get_temp_dir().'/'.$this->database.'/payable-'.$design.'-'.$format.'.pdf';
             $pdf=$printer->getStorage($balanceNote->filename,'sale_note'); file_put_contents($path,$pdf);
-            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/payable-'.$design.'-'.$format.'.pdf',$pdf);
+            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/payable-'.$design.'-'.$format.'.pdf',$pdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
             foreach (['AJUSTE DE LIQUIDACIÓN: Bs. 0.005','TOTAL LIQUIDABLE: Bs. 232.01','SALDO: Bs. 0.00'] as $expected) self::assertStringContainsString($expected,$text,$design.' '.$format);
@@ -6727,6 +6849,55 @@ trait PaymentClassificationPersistenceCases
         self::assertTrue($stock()->isEqualTo($before));
     }
 
+    public function test_order_with_no_selected_lot_only_reverses_its_warehouse_movement(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode' => 'free_form']);
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $url = $this->createMock(\Illuminate\Contracts\Routing\UrlGenerator::class);
+        $url->method('to')->willReturn('http://fiscal-schema.example.test');
+        $app->instance(\Illuminate\Contracts\Routing\UrlGenerator::class, $url);
+        $line = $input['items'][0];
+        $lotId = $db->table('item_lots_group')->insertGetId([
+            'item_id' => $line['item_id'], 'code' => 'ORDER-UNSELECTED', 'quantity' => '1',
+            'date_of_due' => '2027-11-30',
+        ]);
+        $lot = \Modules\Item\Models\ItemLotsGroup::findOrFail($lotId);
+        $warehouse = \Modules\Inventory\Models\ItemWarehouse::where('item_id', $line['item_id'])
+            ->where('warehouse_id', $line['warehouse_id'])->firstOrFail();
+        $initialStock = $warehouse->exactValue('stock');
+        $input['items'][0]['item']['IdLoteSelected'] = [];
+        $input['items'][0]['item']['lots_group'] = [['id' => $lotId, 'compromise_quantity' => '1']];
+        $input['prefix'] = 'PED';
+        $input['payments'] = [];
+        $input['prepayments'] = [];
+        $input['payment_condition_id'] = '02';
+        $controller = $this->getMockBuilder(\Modules\Order\Http\Controllers\OrderNoteController::class)->onlyMethods(['createPdf'])->getMock();
+        $store = static function () use ($controller, $input) {
+            $result = $controller->store(\Modules\Order\Http\Requests\OrderNoteRequest::create('/', 'POST', $input));
+            self::assertTrue($result['success']);
+            return \Modules\Order\Models\OrderNote::findOrFail($result['data']['id']);
+        };
+
+        $first = $store();
+        $item = $first->items()->sole();
+        self::assertSame([], $item->item->IdLoteSelected);
+        self::assertSame([], $item->item->lots_group);
+        self::assertSame('1', (string) $lot->fresh()->exactValue('quantity'));
+        self::assertTrue($warehouse->fresh()->exactValue('stock')->isEqualTo($initialStock->minus($line['quantity'])));
+        $controller->destroy_order_note_item($item->id);
+        self::assertSame('1', (string) $lot->fresh()->exactValue('quantity'));
+        self::assertTrue($warehouse->fresh()->exactValue('stock')->isEqualTo($initialStock));
+
+        $second = $store();
+        $invoiceInput = array_replace($input, ['order_note_id' => $second->id]);
+        $invoiceInput['items'][0]['item'] = (array) $second->items()->sole()->item;
+        $invoice = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($invoiceInput)->getDocument();
+        self::assertSame('VES', $invoice->currency_type_id);
+        self::assertSame('1', (string) $lot->fresh()->exactValue('quantity'));
+        self::assertTrue($warehouse->fresh()->exactValue('stock')->isEqualTo($initialStock->minus($line['quantity'])));
+    }
+
     public function test_order_pack_preserves_exact_components_for_edit_delete_and_void(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
@@ -6886,7 +7057,7 @@ trait PaymentClassificationPersistenceCases
         $printer->createPdf($printOrder,'ticket_58','qa-long-order');
         self::assertStringStartsWith('%PDF-',$pdf);
         self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$pdf));
-        if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/order-long.pdf',$pdf);
+        if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/order-long.pdf',$pdf);
     }
 
     public function test_order_consolidated_allocates_header_and_keeps_exact_usd_prices(): void
@@ -6944,7 +7115,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('Bs. 2.70',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->loadHtml($html); $pdf->render();
         $pdfBytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$pdfBytes);
-        if ($dir=getenv('SAB_ORDER_REPORT_EVIDENCE')) file_put_contents($dir.'/pedidos.pdf',$pdfBytes);
+        if ($dir=getenv('PRO9_ORDER_REPORT_EVIDENCE')) file_put_contents($dir.'/pedidos.pdf',$pdfBytes);
         $app->bind('dompdf.wrapper',fn($app)=>new \Barryvdh\DomPDF\PDF(new \Dompdf\Dompdf(),$app['config'],$app['files'],$app['view']));
         \Illuminate\Support\Facades\Facade::setFacadeApplication($app);
         $job=new \Modules\Report\Jobs\ProcessReportSalesConsolidated(1,1,$request->all(),$input['user_id'],'detail','pdf','order_notes');
@@ -6957,7 +7128,7 @@ trait PaymentClassificationPersistenceCases
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temporaryFiles);
         $file=(new \Maatwebsite\Excel\Writer($temporaryFiles))->export($export,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('SAB_ORDER_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/pedidos.xlsx');
+            if ($dir=getenv('PRO9_ORDER_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/pedidos.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
             self::assertContains(['item:'.$line['item_id'],'quantity','3','3','1'],
                 $book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false));
@@ -7031,11 +7202,11 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('No se encontraron registros',$emptyHtml);
         $generalPdf=new \Dompdf\Dompdf(); $generalPdf->setPaper('A4','landscape'); $generalPdf->loadHtml($generalHtml); $generalPdf->render();
         $generalPdfBytes=$generalPdf->output(); self::assertStringStartsWith('%PDF-',$generalPdfBytes);
-        if ($dir=getenv('SAB_ORDER_REPORT_EVIDENCE')) file_put_contents($dir.'/pedidos-generales.pdf',$generalPdfBytes);
+        if ($dir=getenv('PRO9_ORDER_REPORT_EVIDENCE')) file_put_contents($dir.'/pedidos-generales.pdf',$generalPdfBytes);
         $generalExport=(new \Modules\Report\Exports\ReportOrderGeneralExport())->records($records)->company($company);
         $generalFile=(new \Maatwebsite\Excel\Writer($temporaryFiles))->export($generalExport,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('SAB_ORDER_REPORT_EVIDENCE')) copy($generalFile->getLocalPath(),$dir.'/pedidos-generales.xlsx');
+            if ($dir=getenv('PRO9_ORDER_REPORT_EVIDENCE')) copy($generalFile->getLocalPath(),$dir.'/pedidos-generales.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($generalFile->getLocalPath());
             $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
             self::assertContains(['order:'.$order->id,'total','0.9','9','10'],$fractions);
@@ -7065,7 +7236,7 @@ trait PaymentClassificationPersistenceCases
         $interleaved=false;
         $db->listen(function ($query) use (&$interleaved,$writer,$order,$changed) {
             if ($interleaved || $query->connectionName!=='tenant'
-                || !str_contains($query->sql,'from `order_note_items`')) return;
+                || !str_contains($query->sql,'from "order_note_items"')) return;
             $interleaved=true;
             $writer->table('order_notes')->where('id',$order->id)->update(['total'=>'1.9','total_charge'=>'1',
                 'calculation_snapshot'=>json_encode($changed,JSON_THROW_ON_ERROR)]);
@@ -7084,7 +7255,9 @@ trait PaymentClassificationPersistenceCases
         $db->table('configurations')->update(['auto_send_hka'=>false]);
         $itemId=$input['items'][0]['item_id'];
         $stored=$db->table('items')->where('id',$itemId)->first();
-        $snapshot=json_decode($stored->calculation_snapshot,true) ?: \App\Support\Exact\Decimal::snapshot([]);
+        $snapshot=$stored->calculation_snapshot === null
+            ? \App\Support\Exact\Decimal::snapshot([])
+            : json_decode($stored->calculation_snapshot,true,512,JSON_THROW_ON_ERROR);
         $snapshot['values']['purchase_unit_price']=\App\Support\Exact\Decimal::fraction('0.1');
         $db->table('items')->where('id',$itemId)->update(['purchase_unit_price'=>'0.1','currency_type_id'=>'VES',
             'calculation_snapshot'=>json_encode($snapshot,JSON_THROW_ON_ERROR)]);
@@ -7139,7 +7312,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('0.27',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->loadHtml($html); $pdf->render();
         $bytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$bytes);
-        if ($dir=getenv('SAB_COMMISSION_REPORT_EVIDENCE')) file_put_contents($dir.'/comisiones.pdf',$bytes);
+        if ($dir=getenv('PRO9_COMMISSION_REPORT_EVIDENCE')) file_put_contents($dir.'/comisiones.pdf',$bytes);
         $export=(new \Modules\Report\Exports\UserCommissionExport())->records($records)->amounts($amounts)
             ->company($company)->establishment($establishment);
         $temporaryFiles=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
@@ -7157,7 +7330,7 @@ trait PaymentClassificationPersistenceCases
         $changed=$snapshot; $changed['values']['purchase_unit_price']=\App\Support\Exact\Decimal::fraction('0.2');
         $interleaved=false;
         $db->listen(function ($query) use (&$interleaved,$writer,$itemId,$changed) {
-            if ($interleaved || $query->connectionName!=='tenant' || !str_contains($query->sql,'from `users`')) return;
+            if ($interleaved || $query->connectionName!=='tenant' || !str_contains($query->sql,'from "users"')) return;
             $interleaved=true;
             $writer->table('items')->where('id',$itemId)->update(['purchase_unit_price'=>'0.2',
                 'calculation_snapshot'=>json_encode($changed,JSON_THROW_ON_ERROR)]);
@@ -7268,11 +7441,11 @@ trait PaymentClassificationPersistenceCases
         $db->enableQueryLog();
         $db->flushQueryLog();
         $first=$catalog->getPaymentDestinations();
-        $firstQueries=count(array_filter($db->getQueryLog(),fn($q)=>str_contains(strtolower($q['query']),'from `banks`')));
+        $firstQueries=count(array_filter($db->getQueryLog(),fn($q)=>str_contains(strtolower($q['query']),'from "banks"')));
         BankAccount::create(['bank_id'=>$bankId,'description'=>'Cuenta USD','number'=>'BATCH-USD','currency_type_id'=>'USD','initial_balance'=>'0']);
         $db->flushQueryLog();
         $both=$catalog->getPaymentDestinations();
-        $bothQueries=count(array_filter($db->getQueryLog(),fn($q)=>str_contains(strtolower($q['query']),'from `banks`')));
+        $bothQueries=count(array_filter($db->getQueryLog(),fn($q)=>str_contains(strtolower($q['query']),'from "banks"')));
         $db->disableQueryLog();
         self::assertCount(1,$first);
         self::assertCount(2,$both);
@@ -7756,7 +7929,7 @@ trait PaymentClassificationPersistenceCases
                 $pdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
                 $bytes=$pdf->Output('', 'S');
                 self::assertStringStartsWith('%PDF-',$bytes,"$design $format");
-                if (($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) && $design==='default' && $format==='a4') {
+                if (($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) && $design==='default' && $format==='a4') {
                     file_put_contents($dir.'/cotizacion.pdf',$bytes);
                 }
             }
@@ -7773,7 +7946,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringStartsWith('%PDF-',$mail->rawAttachments[0]['data']);
         self::assertSame('qa-quotation.pdf',$mail->rawAttachments[0]['name']);
         self::assertSame('195.6',\App\Support\Exact\Decimal::represent($mail->quotation->exactValue('total')));
-        if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-mail-current.pdf",$mail->rawAttachments[0]['data']);
+        if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-mail-current.pdf",$mail->rawAttachments[0]['data']);
         foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable'] as $design) {
             foreach (['a4','a5','ticket'] as $format) {
                 $html=$template->pdf($design,'quotation',$company,$quotation,$format);
@@ -7786,7 +7959,7 @@ trait PaymentClassificationPersistenceCases
                 $pdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
                 $bytes=$pdf->Output('', 'S');
                 self::assertStringStartsWith('%PDF-',$bytes,"$design $format con ajustes");
-                if (($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) && $design==='default' && $format==='a4') {
+                if (($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) && $design==='default' && $format==='a4') {
                     file_put_contents($dir.'/cotizacion-ajustes.pdf',$bytes);
                 }
             }
@@ -7802,7 +7975,7 @@ trait PaymentClassificationPersistenceCases
                 self::assertStringStartsWith('%PDF-',$bytes,"$design $format");
                 self::assertSame(1,preg_match('/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)/',$bytes,$pageBox),"$design $format page box");
                 self::assertEqualsWithDelta($width*72/25.4,(float)$pageBox[1],0.02,"$design $format width");
-                if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/$design-$format.pdf",$bytes);
+                if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/$design-$format.pdf",$bytes);
             }
         }
         $longQuotation=$quotation->fresh();
@@ -7826,7 +7999,7 @@ trait PaymentClassificationPersistenceCases
                 $printer->createPdf($longQuotation,$format,'qa-quotation-long-ticket');
                 self::assertStringStartsWith('%PDF-',$bytes,"$design $format");
                 self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$bytes),"$design $format paginación");
-                if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/$design-$format-long.pdf",$bytes);
+                if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/$design-$format-long.pdf",$bytes);
             }
         }
         \App\Models\Tenant\TemplateColumnsConfig::create([
@@ -7845,7 +8018,7 @@ trait PaymentClassificationPersistenceCases
         $printer->method('uploadFile')->willReturnCallback(function ($filename,$content) use (&$customPdf) {$customPdf=$content;});
         $printer->createPdf($quotation->fresh(),'ticket_58','qa-quotation-custom');
         self::assertStringStartsWith('%PDF-',$customPdf);
-        if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/custom-hidden-columns.pdf",$customPdf);
+        if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/custom-hidden-columns.pdf",$customPdf);
         $printer=new class extends \App\Http\Controllers\Tenant\QuotationController {
             public $beforeRender;
             protected function renderPdf($quotation,$format_pdf) {
@@ -7867,12 +8040,12 @@ trait PaymentClassificationPersistenceCases
         self::assertStringStartsWith('%PDF-',$preview->getContent());
         self::assertStringStartsWith('inline;',$preview->headers->get('Content-Disposition'));
         self::assertSame(0,$db->table('quotation_payments')->where('quotation_id',$quotation->id)->count());
-        if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-snapshot-preview.pdf",$preview->getContent());
+        if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-snapshot-preview.pdf",$preview->getContent());
         $printer->beforeRender=null;
         $download=$printer->download($quotation->external_id,'ticket_58');
         self::assertStringStartsWith('%PDF-',$download->getContent());
         self::assertStringStartsWith('attachment;',$download->headers->get('Content-Disposition'));
-        if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-snapshot-download.pdf",$download->getContent());
+        if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-snapshot-download.pdf",$download->getContent());
     }
 
     public function test_quotation_receipt_keeps_received_dollars_and_applied_bolivars(): void
@@ -8055,7 +8228,22 @@ trait PaymentClassificationPersistenceCases
         $discountedDocument=(new \App\CoreFacturalo\Facturalo())->save($discountedPayload)->getDocument();
         self::assertSame('1.84',\App\Support\Exact\Decimal::represent($discountedDocument->fresh()->exactValue('total')));
         self::assertSame('1.84',$discountedDocument->payments()->firstOrFail()->payment);
-        self::assertSame(2,$db->table('global_payments')->count());
+        self::assertSame(2, $db->table('global_payments')->count());
+
+        $db->table('items')->where('id', $itemId)->update(['sale_affectation_igv_type_id'=>'20', 'has_igv'=>false]);
+        unset($arguments['discount_amount']);
+        $exempt = $tool->execute($arguments);
+        self::assertSame('ready_for_confirmation', $exempt['status'], json_encode($exempt));
+        self::assertStringContainsString('IVA: Bs. 0.00', $exempt['summary_text']);
+        self::assertStringContainsString('Total: Bs. 3.00', $exempt['summary_text']);
+        $db->table('items')->where('id', $itemId)->update(['sale_affectation_igv_type_id'=>'10', 'has_igv'=>true]);
+        $payload = $mapper->map($exempt['draft'], $user);
+        $invoice = (new \App\CoreFacturalo\Facturalo())->save($payload)->getDocument()->fresh();
+        self::assertSame('20', $invoice->items()->firstOrFail()->affectation_igv_type_id);
+        self::assertTrue($invoice->exactValue('total_igv')->isZero());
+        self::assertTrue($invoice->exactValue('total_exonerated')->isEqualTo('3'));
+        self::assertSame('3', $invoice->payments()->firstOrFail()->payment);
+        self::assertSame(3, $db->table('global_payments')->count());
     }
 
     /** @dataProvider fiscalChannelModes */
@@ -8640,9 +8828,9 @@ trait PaymentClassificationPersistenceCases
                 }
                 self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$worker->getErrorOutput(),$match));
                 do {
-                    $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                    $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                     $sql=strtolower($query->INFO ?? '');
-                    if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'discount_coupons') && str_contains($sql,'for update')) break;
+                    if (($query->COMMAND ?? null)==='active' && str_contains($sql,'discount_coupons') && str_contains($sql,'for update')) break;
                     if (!$worker->isRunning() || microtime(true)>$deadline) self::fail('El pedido no alcanzó el bloqueo: '.$worker->getErrorOutput().$worker->getOutput());
                     usleep(10000);
                 } while (true);
@@ -8705,9 +8893,9 @@ trait PaymentClassificationPersistenceCases
                 }
                 self::assertSame(1,preg_match('/LOCK_TEST_CONNECTION=(\d+)/',$worker->getErrorOutput(),$match));
                 do {
-                    $query=$control->selectOne('SELECT COMMAND, INFO FROM information_schema.processlist WHERE ID = ?',[(int)$match[1]]);
+                    $query=$control->selectOne('SELECT state AS "COMMAND", query AS "INFO" FROM pg_stat_activity WHERE pid = ?',[(int)$match[1]]);
                     $sql=strtolower($query->INFO ?? '');
-                    if (($query->COMMAND ?? null)==='Execute' && str_contains($sql,'orders') && str_contains($sql,'for update')) break;
+                    if (($query->COMMAND ?? null)==='active' && str_contains($sql,'orders') && str_contains($sql,'for update')) break;
                     if (!$worker->isRunning() || microtime(true)>$deadline) self::fail('La generación no alcanzó el bloqueo: '.$worker->getErrorOutput().$worker->getOutput());
                     usleep(10000);
                 } while (true);
@@ -8818,7 +9006,7 @@ trait PaymentClassificationPersistenceCases
             self::assertTrue($document->items()->firstOrFail()->exactValue('unit_price')->isEqualTo(\App\Support\Exact\Decimal::of('38')->dividedBy(3)));
             self::assertStringStartsWith('%PDF-',$pdf);
             $path=sys_get_temp_dir().'/'.$this->database.'/store-'.$type.'.pdf'; file_put_contents($path,$pdf);
-            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/store-'.$type.'.pdf',$pdf);
+            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/store-'.$type.'.pdf',$pdf);
             $reader=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $reader->mustRun();
             self::assertStringContainsString('MOCK-PRODUCTO-VENEZUELA',$reader->getOutput());
             self::assertMatchesRegularExpression('/38[.,]00/',$reader->getOutput());
@@ -8839,7 +9027,7 @@ trait PaymentClassificationPersistenceCases
                     $bytes=$renderer->Output('','S');
                     $renderedPath=sys_get_temp_dir().'/'.$this->database.'/'.$type.'-'.$design.'-'.$format.'.pdf';
                     file_put_contents($renderedPath,$bytes);
-                    if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/'.$type.'-'.$design.'-'.$format.'.pdf',$bytes);
+                    if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/'.$type.'-'.$design.'-'.$format.'.pdf',$bytes);
                     $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$renderedPath,'-']); $extract->mustRun();
                     self::assertStringContainsString('precio unitario mostrado está redondeado',$extract->getOutput(),"$design $format $kind");
                     self::assertMatchesRegularExpression('/38[.,]00/',$extract->getOutput(),"$design $format $kind");
@@ -8877,7 +9065,7 @@ trait PaymentClassificationPersistenceCases
                     }
                     $ticketPath=sys_get_temp_dir().'/'.$this->database.'/'.$type.'-'.$design.'-'.$format.'.pdf';
                     file_put_contents($ticketPath,$ticket);
-                    if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/'.$type.'-'.$design.'-'.$format.'.pdf',$ticket);
+                    if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/'.$type.'-'.$design.'-'.$format.'.pdf',$ticket);
                     self::assertStringStartsWith('%PDF-',$ticket,"$design $format $type");
                     $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$ticketPath,'-']); $extract->mustRun();
                     $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
@@ -8929,7 +9117,7 @@ trait PaymentClassificationPersistenceCases
                         $bytes=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,'invoice','ticket','string');
                     } else $bytes=$renderer->Output('','S');
                     file_put_contents($path,$bytes);
-                    if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/grouped-'.$type.'-'.$design.'.pdf',$bytes);
+                    if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/grouped-'.$type.'-'.$design.'.pdf',$bytes);
                     $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
                     $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
                     foreach (['Por consumo','INDIVIDUAL QA','38.00','10.00','12.67','precio unitario mostrado está redondeado'] as $expected) {
@@ -8956,7 +9144,7 @@ trait PaymentClassificationPersistenceCases
                         $quantityPdf=$printer->getStorage($printDocument->filename,'sale_note');
                         $quantityPath=sys_get_temp_dir().'/'.$this->database.'/large-note-'.$design.'.pdf';
                         file_put_contents($quantityPath,$quantityPdf);
-                        if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-note-'.$design.'.pdf',$quantityPdf);
+                        if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-note-'.$design.'.pdf',$quantityPdf);
                         $extractQuantity=new \Symfony\Component\Process\Process(['pdftotext','-layout',$quantityPath,'-']); $extractQuantity->mustRun();
                         self::assertStringContainsString('9007199254740993',$extractQuantity->getOutput(),$design);
                         if (in_array($design,['default','modern-2027','nrus'],true)) self::assertStringContainsString('9007199254740996',$extractQuantity->getOutput(),$design);
@@ -8980,7 +9168,7 @@ trait PaymentClassificationPersistenceCases
                             $printer->createPdf($printDocument,'ticket_58',$printDocument->filename);
                             $tracePdf=$printer->getStorage($printDocument->filename,'sale_note');
                             $tracePath=sys_get_temp_dir().'/'.$this->database.'/trace-note-58.pdf'; file_put_contents($tracePath,$tracePdf);
-                            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/trace-note-58.pdf',$tracePdf);
+                            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/trace-note-58.pdf',$tracePdf);
                             $traceExtract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$tracePath,'-']); $traceExtract->mustRun();
                             foreach (['LOTE-CONGELADO-123','2031-06-30','SERIAL-CONGELADO-456'] as $expected) self::assertStringContainsString($expected,$traceExtract->getOutput());
                             self::assertStringNotContainsString('SERIAL-NO-SELECCIONADO',$traceExtract->getOutput());
@@ -8994,7 +9182,7 @@ trait PaymentClassificationPersistenceCases
                         $quantityPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,'invoice','ticket','string');
                         $quantityPath=sys_get_temp_dir().'/'.$this->database.'/large-quantity-'.$design.'.pdf';
                         file_put_contents($quantityPath,$quantityPdf);
-                        if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-quantity-'.$design.'.pdf',$quantityPdf);
+                        if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-quantity-'.$design.'.pdf',$quantityPdf);
                         $extractQuantity=new \Symfony\Component\Process\Process(['pdftotext','-layout',$quantityPath,'-']); $extractQuantity->mustRun();
                         self::assertStringContainsString('9007199254740993',$extractQuantity->getOutput(),$design);
                         if ($design==='Plantilla_personalizable') {
@@ -9015,7 +9203,7 @@ trait PaymentClassificationPersistenceCases
                     }
                     $groupPath=sys_get_temp_dir().'/'.$this->database.'/large-group-'.$type.'-'.$design.'.pdf';
                     file_put_contents($groupPath,$groupPdf);
-                    if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-group-'.$type.'-'.$design.'.pdf',$groupPdf);
+                    if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-group-'.$type.'-'.$design.'.pdf',$groupPdf);
                     $groupExtract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$groupPath,'-']); $groupExtract->mustRun();
                     self::assertStringContainsString('9007199254740993',$groupExtract->getOutput(),$design.' '.$type);
                     self::assertStringContainsString('Por consumo',$groupExtract->getOutput(),$design.' '.$type);
@@ -9030,7 +9218,7 @@ trait PaymentClassificationPersistenceCases
                     } else $narrowPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,'invoice','ticket_58','string');
                     $narrowPath=sys_get_temp_dir().'/'.$this->database.'/large-58-'.$type.'-'.$design.'.pdf';
                     file_put_contents($narrowPath,$narrowPdf);
-                    if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-58-'.$type.'-'.$design.'.pdf',$narrowPdf);
+                    if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-58-'.$type.'-'.$design.'.pdf',$narrowPdf);
                     $narrowExtract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$narrowPath,'-']); $narrowExtract->mustRun();
                     self::assertStringContainsString('9007199254740993',$narrowExtract->getOutput(),$design.' '.$type);
                     if (in_array($design,['default','marca_de_agua'],true) && $type==='80') {
@@ -9279,7 +9467,7 @@ trait PaymentClassificationPersistenceCases
         $url=$this->createMock(\Illuminate\Contracts\Routing\UrlGenerator::class);
         $url->method('to')->willReturn('http://fiscal-schema.example.test');
         $app->instance(\Illuminate\Contracts\Routing\UrlGenerator::class,$url);
-        $db->statement('CREATE TABLE plans (id INT PRIMARY KEY, name VARCHAR(100), limit_documents INT, include_sale_notes_limit_documents TINYINT)');
+        $db->statement('CREATE TABLE plans (id INT PRIMARY KEY, name VARCHAR(100), limit_documents INT, include_sale_notes_limit_documents BOOLEAN)');
         $db->statement('CREATE TABLE clients (id INT PRIMARY KEY, hostname_id INT, name VARCHAR(100), plan_id INT, whatsapp_messages_limit_override INT NULL)');
         $db->table('plans')->insert(['id'=>1,'name'=>'Prueba','limit_documents'=>0,'include_sale_notes_limit_documents'=>0]);
         $db->table('clients')->insert(['id'=>1,'hostname_id'=>1,'name'=>'Prueba','plan_id'=>1]);
@@ -9368,7 +9556,7 @@ trait PaymentClassificationPersistenceCases
         $db->table('payment_method_types')->where('id','01')->update(['collection_kind'=>'account','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>0]);
         $rows=\App\Http\Resources\Tenant\PurchaseResource::getTransformPayments(collect([$payment]))->all();
         $data=['id'=>$id,'supplier_id'=>$input['customer_id'],'document_type_id'=>'01','currency_type_id'=>'VES',
-            'items'=>[],'fee'=>[],'payments'=>$rows];
+            'exchange_rate_sale'=>'400','items'=>[],'fee'=>[],'payments'=>$rows];
         $controller=new class extends \App\Http\Controllers\Tenant\PurchaseController { public function createPdf($purchase=null,$format_pdf=null,$filename=null) {} };
         $request=\App\Http\Requests\Tenant\PurchaseRequest::create('/', 'POST', $data);
         self::assertTrue($controller->update($request)['success']);
@@ -9400,7 +9588,7 @@ trait PaymentClassificationPersistenceCases
         [$db,$app,$input]=$this->bootHkaFixture();
         $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
         $db->table('configurations')->update(['auto_send_hka'=>false]);
-        $db->table('items')->where('id',$input['items'][0]['item_id'])->update(['purchase_unit_price'=>'1','currency_type_id'=>'VES']);
+        \App\Models\Tenant\Item::findOrFail($input['items'][0]['item_id'])->update(['purchase_unit_price'=>'1','currency_type_id'=>'VES']);
         $input['seller_id']=$input['user_id']; $input['payment_condition_id']='02'; $input['payments']=[];
         $input['fee']=[['date'=>'2026-09-10','currency_type_id'=>'VES','amount'=>'232']];
         $ves=(new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
@@ -9419,16 +9607,23 @@ trait PaymentClassificationPersistenceCases
         $changed=false;$otherConnection=$this->capsule->getConnection('system');
         $db->setEventDispatcher(new \Illuminate\Events\Dispatcher($app));
         $db->listen(function ($event) use (&$changed,$otherConnection,$input) {
-            if (!$changed && str_contains(strtolower($event->sql),'from `document_items`')) {
+            if (!$changed && str_contains(strtolower($event->sql),'from "document_items"')) {
                 $changed=true;
-                $otherConnection->table('items')->where('id',$input['items'][0]['item_id'])->update(['purchase_unit_price'=>'2']);
+                // Hyn ignores Model::on(). Prepare the exact values, then publish both through the independent PDO.
+                $item=new \App\Models\Tenant\Item();$item->exists=true;
+                $item->setRawAttributes((array)$otherConnection->table('items')->find($input['items'][0]['item_id']),true);
+                $item->purchase_unit_price='2';\App\Support\Exact\Persistence::prepareValues($item);
+                $attributes=$item->getAttributes();
+                $otherConnection->table('items')->where('id',$item->id)->update([
+                    'purchase_unit_price'=>$attributes['purchase_unit_price'],'calculation_snapshot'=>$attributes['calculation_snapshot'],
+                ]);
             }
         });
         $during=collect($controller->records($request)->getData(true)['data'])->keyBy('currency_type_id');
         self::assertTrue($changed);self::assertSame('230.00',$during['VES']['display_profit']);
         $after=collect($controller->records($request)->getData(true)['data'])->keyBy('currency_type_id');
         self::assertSame('228.00',$after['VES']['display_profit']);
-        $db->table('items')->where('id',$input['items'][0]['item_id'])->update(['purchase_unit_price'=>'1']);
+        \App\Models\Tenant\Item::findOrFail($input['items'][0]['item_id'])->update(['purchase_unit_price'=>'1']);
         $rows=\Modules\Report\Services\DetailedProfitReport::rows($records)->keyBy('currency_type_id');
         self::assertSame('230',$rows['VES']['overall_profit']); self::assertSame('231.8',$rows['USD']['overall_profit']);
         self::assertSame('0.1',$rows['USD']['purchase_unit_price']);
@@ -9442,7 +9637,7 @@ trait PaymentClassificationPersistenceCases
         $html=view('report::commissions_detail.report_pdf',['records'=>$pdfRows,'company'=>$company])->render();
         self::assertStringContainsString('VES',$html); self::assertStringContainsString('USD',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('a4','landscape'); $pdf->loadHtml($html); $pdf->render(); self::assertStringStartsWith('%PDF-',$pdf->output());
-        if ($dir=getenv('SAB_DETAILED_PROFIT_EVIDENCE')) file_put_contents($dir.'/utilidades.pdf',$pdf->output());
+        if ($dir=getenv('PRO9_DETAILED_PROFIT_EVIDENCE')) file_put_contents($dir.'/utilidades.pdf',$pdf->output());
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\CommissionDetailExport())->records($records)->company($company)->establishment(null);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
@@ -9542,7 +9737,7 @@ trait PaymentClassificationPersistenceCases
         $changed=false;$otherConnection=$this->capsule->getConnection('system');
         $db->setEventDispatcher(new \Illuminate\Events\Dispatcher($app));
         $db->listen(function ($event) use (&$changed,$otherConnection,$input) {
-            if (!$changed && str_contains(strtolower($event->sql),'from `documents`')) {
+            if (!$changed && str_contains(strtolower($event->sql),'from "documents"')) {
                 $changed=true;$otherConnection->table('items')->where('id',$input['items'][0]['item_id'])->update(['commission_amount'=>'20']);
             }
         });
@@ -9552,7 +9747,7 @@ trait PaymentClassificationPersistenceCases
         self::assertSame('VES 46.40',$after[0]['total_commision']);
         $changedExport=false;
         $db->listen(function ($event) use (&$changedExport,$otherConnection,$input) {
-            if (!$changedExport && str_contains(strtolower($event->sql),'from `documents`')) {
+            if (!$changedExport && str_contains(strtolower($event->sql),'from "documents"')) {
                 $changedExport=true;$otherConnection->table('items')->where('id',$input['items'][0]['item_id'])->update(['commission_amount'=>'30']);
             }
         });
@@ -9699,7 +9894,7 @@ trait PaymentClassificationPersistenceCases
         $html=view('report::pending-account-commissions.report_pdf',compact('company','records'))->render();
         self::assertStringContainsString('Moneda del monto fijo no definida',$html); self::assertStringContainsString('VES',$html); self::assertStringContainsString('USD',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->loadHtml($html); $pdf->render(); $pdfBytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$pdfBytes);
-        if ($dir=getenv('SAB_PENDING_COMMISSION_EVIDENCE')) file_put_contents($dir.'/comisiones-pendientes.pdf',$pdfBytes);
+        if ($dir=getenv('PRO9_PENDING_COMMISSION_EVIDENCE')) file_put_contents($dir.'/comisiones-pendientes.pdf',$pdfBytes);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $branchRecords=collect([$branchRow]);
         $branchHtml=view('report::pending-account-commissions.report_pdf',['company'=>$company,'records'=>$branchRecords])->render();
@@ -9716,7 +9911,7 @@ trait PaymentClassificationPersistenceCases
         $export=(new \Modules\Report\Exports\PendingAccountCommissionExport())->records($records)->company($company)->establishment(null)->request($request);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('SAB_PENDING_COMMISSION_EVIDENCE')) copy($file->getLocalPath(),$dir.'/comisiones-pendientes.xlsx');
+            if ($dir=getenv('PRO9_PENDING_COMMISSION_EVIDENCE')) copy($file->getLocalPath(),$dir.'/comisiones-pendientes.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
             $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
             self::assertContains(['user:'.$input['user_id'].':VES','total_within_range','0.6','3','5'],$fractions);
@@ -9819,13 +10014,13 @@ trait PaymentClassificationPersistenceCases
             self::assertStringContainsString($display,$html); self::assertStringContainsString('Cliente de compra',$html);
             $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('A4','landscape'); $pdf->loadHtml($html); $pdf->render();
             $bytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$bytes);
-            if ($dir=getenv('SAB_PURCHASE_REPORT_EVIDENCE')) file_put_contents($dir.'/compras-'.$currency.'.pdf',$bytes);
+            if ($dir=getenv('PRO9_PURCHASE_REPORT_EVIDENCE')) file_put_contents($dir.'/compras-'.$currency.'.pdf',$bytes);
             $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
             $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
             $export=(new \Modules\Report\Exports\PurchaseExport())->records($records)->company($company)->establishment($establishment)->filters($filters);
             $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
             try {
-                if ($dir=getenv('SAB_PURCHASE_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/compras-'.$currency.'.xlsx');
+                if ($dir=getenv('PRO9_PURCHASE_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/compras-'.$currency.'.xlsx');
                 $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
                 $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
                 self::assertContains($display === '0.43' ? '0.43' : '173.33',$values);
@@ -9953,7 +10148,7 @@ trait PaymentClassificationPersistenceCases
             $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temporaryFiles);
             $file=(new \Maatwebsite\Excel\Writer($temporaryFiles))->export($export,\Maatwebsite\Excel\Excel::XLSX);
             try {
-                if ($dir=getenv('SAB_GENERAL_ITEM_EVIDENCE')) copy($file->getLocalPath(),$dir.'/compra-'.($isConverted ? 'ves' : 'usd').'.xlsx');
+                if ($dir=getenv('PRO9_GENERAL_ITEM_EVIDENCE')) copy($file->getLocalPath(),$dir.'/compra-'.($isConverted ? 'ves' : 'usd').'.xlsx');
                 $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
                 $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
                 self::assertContains($expected,$values);
@@ -9978,7 +10173,7 @@ trait PaymentClassificationPersistenceCases
             $pdf->setPaper('A4','landscape'); $pdf->loadHtml($pdfHtml); $pdf->render();
             $pdfBytes=$pdf->output();
             self::assertStringStartsWith('%PDF-',$pdfBytes);
-            if ($dir=getenv('SAB_GENERAL_ITEM_EVIDENCE')) file_put_contents($dir.'/compra-'.($isConverted ? 'ves' : 'usd').'.pdf',$pdfBytes);
+            if ($dir=getenv('PRO9_GENERAL_ITEM_EVIDENCE')) file_put_contents($dir.'/compra-'.($isConverted ? 'ves' : 'usd').'.pdf',$pdfBytes);
         }
         $backdated=(array)$db->table('purchases')->where('id',$id)->first();
         unset($backdated['id']);
@@ -10706,7 +10901,7 @@ trait PaymentClassificationPersistenceCases
         $legacyHtml=$app['view']->make('finance::movements.new_report_excel',['records'=>$legacy,'company'=>\App\Models\Tenant\Company::firstOrFail(),'establishment'=>$establishment])->render();
         self::assertStringContainsString('Sin moneda',$legacyHtml);
         // ######## FIN MONEDA DEL MEDIO DE COBRO ########
-        if ($directory=getenv('SAB_PAYMENTS_VISUAL_OUTPUT_DIR')) {
+        if ($directory=getenv('PRO9_PAYMENTS_VISUAL_OUTPUT_DIR')) {
             if (!is_dir($directory)) mkdir($directory,0777,true);
             foreach (['a4','ticket80','ticket58'] as $paper) file_put_contents($directory.'/cash-'.$paper.'.pdf',
                 (new \Modules\CashReport\Services\CashReportRenderer())->pdfContent('cash_summary',$cash,['paper'=>$paper]));
@@ -10793,7 +10988,7 @@ trait PaymentClassificationPersistenceCases
         self::assertSame('-8',\App\Support\Exact\Decimal::represent($controller->getTransferAccountPayment($bank)));
         self::assertSame('-8',$controller->getBalanceBySingleBankAcount($bank)['balance']);
         // ######## FIN MONEDA DEL MEDIO DE COBRO ########
-        self::assertNotEmpty($db->select("SHOW INDEX FROM transfer_account_payments WHERE Key_name = 'transfer_account_currency_fk'"));
+        self::assertNotEmpty(\App\Database\SchemaInspector::indexes($db, 'transfer_account_payments', 'transfer_account_currency_fk'));
     }
 
     public function test_payment_link_with_banking_method_does_not_create_a_cash_receipt(): void
@@ -11193,7 +11388,7 @@ trait PaymentClassificationPersistenceCases
             $db->flushQueryLog();
             $rows=\App\Models\Tenant\SaleNote::whereIn('id',$ids)->get();
             (new \Modules\Report\Http\Resources\SaleNoteCollection($rows))->toArray(\Illuminate\Http\Request::create('/'));
-            return count(array_filter($db->getQueryLog(),fn ($query)=>preg_match('/`(sale_note_payments|global_payments|payment_method_types|sale_note_fees|cat_currency_types)`/i',$query['query'])));
+            return count(array_filter($db->getQueryLog(),fn ($query)=>preg_match('/"(sale_note_payments|global_payments|payment_method_types|sale_note_fees|cat_currency_types)"/i',$query['query'])));
         };
         self::assertSame($measureNoteRelations([$note->id]),$measureNoteRelations([$note->id,$secondSale['data']['id']]),
             'El reporte debe cargar pagos, métodos, movimientos y cuotas por lote.');
@@ -11239,12 +11434,12 @@ trait PaymentClassificationPersistenceCases
             $pdf->WriteHTML($html,\Mpdf\HTMLParserMode::HTML_BODY);
             $bytes=$pdf->Output('','S');
             self::assertStringStartsWith('%PDF-',$bytes);
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-'.$template.'-'.$format.'.pdf',$bytes);
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-'.$template.'-'.$format.'.pdf',$bytes);
         }
         $db->table('establishments')->where('id',$note->establishment_id)->update(['template_ticket_pdf'=>'modern-2027']);
         $productionPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printNote,'sale_note','ticket_58','string');
         self::assertStringStartsWith('%PDF-',$productionPdf);
-        if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-modern-production-58.pdf',$productionPdf);
+        if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-modern-production-58.pdf',$productionPdf);
         $sourceRow=$printNote->payments->first();
         $displayPayments=collect([$sourceRow]);
         foreach ([1,2] as $i) {
@@ -11256,7 +11451,7 @@ trait PaymentClassificationPersistenceCases
         $printNote->setRelation('payments',new \Illuminate\Database\Eloquent\Collection($displayPayments->all()));
         $multiPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printNote,'sale_note','ticket_58','string');
         self::assertStringStartsWith('%PDF-',$multiPdf);
-        if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-modern-multiple-58.pdf',$multiPdf);
+        if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-modern-multiple-58.pdf',$multiPdf);
     }
 
     public function test_saved_credit_installments_preserve_cross_currency_receipt_through_conversion_and_pdf(): void
@@ -11555,11 +11750,11 @@ trait PaymentClassificationPersistenceCases
             $pdf->WriteHTML($html);
             $bytes=$pdf->Output('','S');
             self::assertStringStartsWith('%PDF-',$bytes);
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-03-'.$type.'.pdf',$bytes);
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-03-'.$type.'.pdf',$bytes);
             $production=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,$type,'ticket_58','string');
             self::assertStringStartsWith('%PDF-',$production);
             self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$production),$type.' debe caber en una página de ticket.');
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-03-'.$type.'-production.pdf',$production);
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-03-'.$type.'-production.pdf',$production);
             $longDocument=clone $printDocument;
             $longRows=[];
             for ($index=0;$index<8;$index++) {
@@ -11573,7 +11768,7 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(8,substr_count($html,'Cantidad: 0.333333333333'),$type);
             $longPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($longDocument,$type,'ticket_58','string');
             self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$longPdf),$type.' con cantidades largas debe caber en una página.');
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-long-'.$type.'.pdf',$longPdf);
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-long-'.$type.'.pdf',$longPdf);
             if ($type==='sale_note') {
                 $directPdf=null;
                 $direct=$this->getMockBuilder(\App\Http\Controllers\Tenant\SaleNoteController::class)->onlyMethods(['uploadFile'])->getMock();
@@ -11581,7 +11776,7 @@ trait PaymentClassificationPersistenceCases
                 $direct->createPdf($longDocument,'ticket_58','qa-long-sale-note');
                 self::assertStringStartsWith('%PDF-',$directPdf);
                 self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$directPdf));
-                if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-long-sale-note-direct.pdf',$directPdf);
+                if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-long-sale-note-direct.pdf',$directPdf);
             }
         }
         $app['view']->addNamespace('report',base_path('modules/Report/Resources/views'));
@@ -11618,18 +11813,19 @@ trait PaymentClassificationPersistenceCases
             $text=implode("\n",collect($book->getActiveSheet()->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all());
             foreach (['Recibido USD 5','Aplicado VES 50','Cuota #1 — VES 60 — Vence 2026-11-26',
                 'Cuota #2 — VES 122 — Vence 2026-12-26'] as $expected) self::assertStringContainsString($expected,$text);
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) copy($file->getLocalPath(),$dir.'/general-items-receipt.xlsx');
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) copy($file->getLocalPath(),$dir.'/general-items-receipt.xlsx');
             $book->disconnectWorksheets();
         } finally { $file->delete(); }
         $fraction=['n'=>'1','d'=>'3'];
         $fractionalLine=clone $itemRecords->first();
         $fractionalDocument=clone $fractionalLine->document;
-        $fractionalDocument->currency_type_id='USD';
+        $vesInvoicesOnly = getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1';
+        $fractionalDocument->currency_type_id=$vesInvoicesOnly ? 'VES' : 'USD';
         $fractionalDocument->exchange_rate_sale='400';
         $fractionalLine->setRelation('document',$fractionalDocument);
         $catalog=clone $fractionalLine->relation_item;
         $catalog->setRawAttributes(array_replace($catalog->getAttributes(),[
-            'currency_type_id'=>'USD','purchase_unit_price'=>'0.1',
+            'currency_type_id'=>$fractionalDocument->currency_type_id,'purchase_unit_price'=>'0.1',
             'calculation_snapshot'=>json_encode(\App\Support\Exact\Decimal::snapshot(['purchase_unit_price'=>'0.1'])),
         ]));
         $fractionalLine->setRelation('relation_item',$catalog);
@@ -11637,7 +11833,9 @@ trait PaymentClassificationPersistenceCases
             'quantity'=>'1','unit_value'=>$fraction,'unit_price'=>$fraction,'total_value'=>$fraction,
             'total_discount'=>'0','total_igv'=>'0','total'=>$fraction,
         ]);
-        foreach ([['false','0.333333333333'],['true','133.333333333333']] as [$convert,$expected]) {
+        foreach (['false','true'] as $convert) {
+            $convertedToVes = !$vesInvoicesOnly && $convert === 'true';
+            $expected = $convertedToVes ? '133.333333333333' : '0.333333333333';
             $synthetic=collect([$fractionalLine]);
             $syntheticExport=(new \Modules\Report\Exports\GeneralItemExport())->records($synthetic)->type('sale')
                 ->document_type_id('01')->request_apply_conversion_to_pen($convert);
@@ -11654,20 +11852,23 @@ trait PaymentClassificationPersistenceCases
                 self::assertGreaterThan(0,$matches);
                 $fractions=$syntheticBook->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
                 $key='document_item:'.$fractionalLine->id;
-                self::assertContains([$key,'total_item_purchase',$convert==='true' ? '40' : '0.1',$convert==='true' ? '40' : '1',$convert==='true' ? '1' : '10'],$fractions);
-                self::assertContains([$key,'utility_item',$convert==='true' ? '93.333333333333' : '0.233333333333',$convert==='true' ? '280' : '7',$convert==='true' ? '3' : '30'],$fractions);
+                self::assertContains([$key,'total_item_purchase',...($convertedToVes ? ['40','40','1'] : ['0.1','1','10'])],$fractions);
+                self::assertContains([$key,'utility_item',...($convertedToVes ? ['93.333333333333','280','3'] : ['0.233333333333','7','30'])],$fractions);
                 $syntheticBook->disconnectWorksheets();
             } finally { $syntheticFile->delete(); }
             $pdfHtml=view('report::general_items.report_pdf',['records'=>$synthetic,'type'=>'sale',
                 'document_type_id'=>'01','request_apply_conversion_to_pen'=>$convert])->render();
-            self::assertStringContainsString($convert==='true' ? '133.33' : '0.33',$pdfHtml);
-            self::assertStringContainsString($convert==='true' ? 'VES' : 'USD',$pdfHtml);
-            self::assertStringContainsString($convert==='true' ? '93.33' : '0.23',$pdfHtml);
+            self::assertStringContainsString($convertedToVes ? '133.33' : '0.33',$pdfHtml);
+            self::assertStringContainsString($convertedToVes ? 'VES' : $fractionalDocument->currency_type_id,$pdfHtml);
+            self::assertStringContainsString($convertedToVes ? '93.33' : '0.23',$pdfHtml);
             $rendered=new \Dompdf\Dompdf();
             $rendered->setPaper('A4','landscape'); $rendered->loadHtml($pdfHtml); $rendered->render();
             $pdfBytes=$rendered->output();
             self::assertStringStartsWith('%PDF-',$pdfBytes);
-            if ($dir=getenv('SAB_GENERAL_ITEM_EVIDENCE')) file_put_contents($dir.'/venta-'.($convert==='true' ? 'ves' : 'usd').'.pdf',$pdfBytes);
+            if ($dir=getenv('PRO9_GENERAL_ITEM_EVIDENCE')) {
+                $suffix = $vesInvoicesOnly ? ($convert === 'true' ? 'ves-con-bandera-de-conversion' : 'ves') : ($convertedToVes ? 'ves' : 'usd');
+                file_put_contents($dir.'/venta-'.$suffix.'.pdf',$pdfBytes);
+            }
         }
         $frozen=\App\Support\Exact\ReadSnapshot::run($db,fn()=>(new \Modules\Report\Exports\GeneralItemExport())
             ->records(collect([$fractionalLine]))->type('sale')->document_type_id('01')->request_apply_conversion_to_pen('false')->freeze());
@@ -11721,7 +11922,7 @@ trait PaymentClassificationPersistenceCases
         $bundlePdf->setPaper('A4','landscape'); $bundlePdf->loadHtml($bundleHtml); $bundlePdf->render();
         $bundleBytes=$bundlePdf->output();
         self::assertStringStartsWith('%PDF-',$bundleBytes);
-        if ($dir=getenv('SAB_GENERAL_ITEM_EVIDENCE')) file_put_contents($dir.'/venta-paquete.pdf',$bundleBytes);
+        if ($dir=getenv('PRO9_GENERAL_ITEM_EVIDENCE')) file_put_contents($dir.'/venta-paquete.pdf',$bundleBytes);
         $noteLines=(new \Modules\Report\Http\Controllers\ReportGeneralItemController())->getRecordsItems(array_replace($itemFilters,['document_type_id'=>'80']))->get();
         $noteExport=(new \Modules\Report\Exports\GeneralItemExport())->records($noteLines)->type('sale')
             ->document_type_id('80')->request_apply_conversion_to_pen('false');
@@ -11789,14 +11990,14 @@ trait PaymentClassificationPersistenceCases
             $jobFile=sys_get_temp_dir().'/'.$this->database.'/'.$tray->path.'/'.$tray->file_name.'.pdf';
             self::assertFileExists($jobFile);
             self::assertStringStartsWith('%PDF-',file_get_contents($jobFile));
-            if ($dir=getenv('SAB_GENERAL_ITEM_EVIDENCE')) copy($jobFile,$dir.'/job-'.($docType==='80' ? 'nota' : 'factura').'.pdf');
+            if ($dir=getenv('PRO9_GENERAL_ITEM_EVIDENCE')) copy($jobFile,$dir.'/job-'.($docType==='80' ? 'nota' : 'factura').'.pdf');
         }
     }
 
     public function test_credit_invoice_from_sale_note_reuses_cross_currency_receipt_and_keeps_balance(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $db->table('configurations')->update(['auto_send_hka'=>false]);
         $db->table('payment_method_types')->where('id','01')->update([
             'collection_kind'=>'account','currency_type_id'=>'USD','cash_currency_type_id'=>null,'is_cash'=>0,'is_active'=>1]);
@@ -11885,7 +12086,7 @@ trait PaymentClassificationPersistenceCases
             $pdf->WriteHTML($html);
             $bytes=$pdf->Output('','S');
             self::assertStringStartsWith('%PDF-',$bytes);
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$template.'-'.$format.'.pdf',$bytes);
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$template.'-'.$format.'.pdf',$bytes);
         }
         config(['filesystems.disks.public'=>['driver'=>'local','root'=>sys_get_temp_dir()]]);
         foreach ($printDocument->items as $item) {
@@ -11899,15 +12100,18 @@ trait PaymentClassificationPersistenceCases
             ['Plantilla_personalizable','a4'],['Plantilla_personalizable','a5'],['Plantilla_personalizable','ticket'],
             ['modern-2027','a4'],['modern-2027','a5'],['modern-2027','ticket'],['modern-2027','ticket_58']] as [$template,$format]) {
             $view=(new \App\CoreFacturalo\Template())->validate_template($template,'invoice',$format);
-            $html=view($view,['company'=>\App\Models\Tenant\Company::active(),'document'=>$printDocument,'configuration'=>['is_preview'=>false]])->render();
+            $renderDocument=clone $printDocument;
+            // Exercise local paper templates without bypassing the digital HKA route guard.
+            if (in_array($format,['a4','a5'],true)) $renderDocument->fiscal_emission_mode='free_form';
+            $html=(new \App\CoreFacturalo\Template())->pdf($template,'invoice',\App\Models\Tenant\Company::active(),$renderDocument,$format,['is_preview'=>false]);
             self::assertStringContainsString('Recibido USD 5.00',$html,$view);
             self::assertStringContainsString('Aplicado VES 50.00',$html,$view);
             self::assertStringContainsString('26-11-2026',$html,$view);
-            $printDocument->payment_condition_id='03';
-            $installmentHtml=view($view,['company'=>\App\Models\Tenant\Company::active(),'document'=>$printDocument,'configuration'=>['is_preview'=>false]])->render();
+            $renderDocument->payment_condition_id='03';
+            $installmentHtml=(new \App\CoreFacturalo\Template())->pdf($template,'invoice',\App\Models\Tenant\Company::active(),$renderDocument,$format,['is_preview'=>false]);
             self::assertStringContainsString('26-11-2026',$installmentHtml,$view.' crédito con cuotas');
             self::assertStringContainsString('Recibido USD 5.00',$installmentHtml,$view.' crédito con cuotas');
-            $printDocument->payment_condition_id='02';
+            $renderDocument->payment_condition_id='02';
             if ($template==='modern-2027' && str_starts_with($format,'ticket')) {
                 self::assertStringNotContainsString('Recibido:</td>',$html,$view);
                 self::assertStringNotContainsString('Vuelto:</td>',$html,$view);
@@ -11919,14 +12123,14 @@ trait PaymentClassificationPersistenceCases
             $pdf->WriteHTML($html);
             $bytes=$pdf->Output('','S');
             self::assertStringStartsWith('%PDF-',$bytes,$view);
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$template.'-'.$format.'.pdf',$bytes);
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$template.'-'.$format.'.pdf',$bytes);
         }
         foreach (['default','nrus','marca_de_agua','Plantilla_personalizable','modern-2027'] as $productionTemplate) {
             $db->table('establishments')->where('id',$document->establishment_id)->update(['template_ticket_pdf'=>$productionTemplate]);
             $productionPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,'invoice','ticket_58','string');
             self::assertStringStartsWith('%PDF-',$productionPdf,$productionTemplate);
             self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$productionPdf),$productionTemplate.' debe mantener esta muestra en una página.');
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$productionTemplate.'-production-58.pdf',$productionPdf);
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$productionTemplate.'-production-58.pdf',$productionPdf);
         }
         $secondInput=$input;
         $secondInput['sale_note_id']=null; $secondInput['payments']=[]; $secondInput['fee']=[];
@@ -11978,7 +12182,7 @@ trait PaymentClassificationPersistenceCases
                 $pdf->WriteHTML($html);
                 $bytes=$pdf->Output('','S');
                 self::assertStringStartsWith('%PDF-',$bytes);
-                if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/document-report.pdf',$bytes);
+                if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/document-report.pdf',$bytes);
             } else {
                 $workbook=(new \PhpOffice\PhpSpreadsheet\Reader\Html())->loadFromString($html);
                 $file=tempnam(sys_get_temp_dir(),'report-xlsx-');
@@ -12017,7 +12221,7 @@ trait PaymentClassificationPersistenceCases
                 $mixedPdf->WriteHTML($mixedHtml);
                 $bytes=$mixedPdf->Output('','S');
                 self::assertStringStartsWith('%PDF-',$bytes);
-                if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/mixed-currency-report.pdf',$bytes);
+                if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/mixed-currency-report.pdf',$bytes);
             }
         }
         foreach (['report_pdf_standard','report_pdf_simple'] as $reportView) {
@@ -12037,7 +12241,7 @@ trait PaymentClassificationPersistenceCases
             }
             $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('A4','landscape'); $pdf->loadHtml($mixedHtml); $pdf->render();
             $bytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$bytes);
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$reportView.'-mixed.pdf',$bytes);
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$reportView.'-mixed.pdf',$bytes);
         }
         $temporaryFiles=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temporaryFiles);
@@ -12046,7 +12250,7 @@ trait PaymentClassificationPersistenceCases
             ->establishment($establishment)->filters($filters)->categories($categories)->categories_services($categories_services);
         $standardFile=$writer->export($standard,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) copy($standardFile->getLocalPath(),$dir.'/mixed-currency-standard.xlsx');
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) copy($standardFile->getLocalPath(),$dir.'/mixed-currency-standard.xlsx');
             $standardWorkbook=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($standardFile->getLocalPath());
             $sheet=$standardWorkbook->getActiveSheet(); $found=[];
             foreach ($sheet->getRowIterator() as $row) {
@@ -12079,7 +12283,7 @@ trait PaymentClassificationPersistenceCases
         $writer=new \Maatwebsite\Excel\Writer($temporaryFiles);
         $itemFile=$writer->export($itemExport, \Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) copy($itemFile->getLocalPath(),$dir.'/items-report.xlsx');
+            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) copy($itemFile->getLocalPath(),$dir.'/items-report.xlsx');
             $reopened=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($itemFile->getLocalPath());
             $text=implode(' ',array_map(fn ($row)=>implode(' ',array_map(fn ($cell)=>(string)$cell,$row)),
                 $reopened->getActiveSheet()->toArray()));
@@ -12137,7 +12341,7 @@ trait PaymentClassificationPersistenceCases
     public function test_sale_note_reuses_a_cross_currency_bank_receipt_without_a_second_movement(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
-        (new \App\Providers\KardexServiceProvider($app))->boot();
+        $this->bootGlobalInventory($app);
         $db->table('configurations')->update(['auto_send_hka'=>false]);
         $db->table('payment_method_types')->where('id','13')->update(['is_active'=>1]);
         $cash=Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-10-26','time_opening'=>'09:00:00','beginning_balance'=>'0']);
@@ -12261,7 +12465,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($note->fresh(),$format,$note->filename);
             $notePdf=$printer->getStorage($note->filename,'sale_note');
             $path=sys_get_temp_dir().'/'.$this->database.'/partial-usd-'.$design.'-'.$format.'.pdf'; file_put_contents($path,$notePdf);
-            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/partial-usd-'.$design.'-'.$format.'.pdf',$notePdf);
+            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/partial-usd-'.$design.'-'.$format.'.pdf',$notePdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
             foreach (['Recibido USD 5.00','Aplicado VES 50.00'] as $expected) self::assertStringContainsString($expected,$text,$design.' '.$format);
@@ -12368,7 +12572,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($note->fresh(),$format,$note->filename);
             $balancePdf=$printer->getStorage($note->filename,'sale_note');
             $path=sys_get_temp_dir().'/'.$this->database.'/cross-currency-'.$design.'-'.$format.'.pdf'; file_put_contents($path,$balancePdf);
-            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/cross-currency-'.$design.'-'.$format.'.pdf',$balancePdf);
+            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/cross-currency-'.$design.'-'.$format.'.pdf',$balancePdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
             foreach (['Recibido USD 30.00','Aplicado VES 232.00','Vuelto USD 6.80'] as $expected) self::assertStringContainsString($expected,$text,$design.' '.$format);
@@ -12748,7 +12952,7 @@ trait PaymentClassificationPersistenceCases
 
     public function test_classified_cash_report_performance_against_legacy_at_1000_and_10000_receipts(): void
     {
-        if (getenv('SAB_PAYMENT_BENCHMARK') !== '1') $this->markTestSkipped('Medición explícita en MySQL temporal.');
+        if (getenv('PRO9_PAYMENT_BENCHMARK') !== '1') $this->markTestSkipped('Medición explícita en PostgreSQL temporal.');
         [$db,$app,$input]=$this->bootHkaFixture(false);
         $cash=Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-10-26','time_opening'=>'09:00:00','beginning_balance'=>'0']);
         $db->transaction(fn()=>CashLedger::open($cash,[]));
@@ -12775,7 +12979,7 @@ trait PaymentClassificationPersistenceCases
             $legacyMs=(hrtime(true)-$start)/1000000;$legacyQueries=$count;sort($times);
             self::assertTrue(\App\Support\Exact\Decimal::of($legacy['total_cash_payment_method_type_01'])->isEqualTo($report['balances_by_currency']['VES']['final_balance']));
             $results[]=['receipts'=>$target,'classified_p50_ms'=>$times[2],'classified_p95_ms'=>$times[4],'classified_queries'=>max($queries),
-                'legacy_ms'=>$legacyMs,'legacy_queries'=>$legacyQueries,'peak_memory_bytes'=>memory_get_peak_usage(true),'scope'=>'Datos de reporte PHP/MySQL, sin HTTP ni render PDF'];
+                'legacy_ms'=>$legacyMs,'legacy_queries'=>$legacyQueries,'peak_memory_bytes'=>memory_get_peak_usage(true),'scope'=>'Datos de reporte PHP/PostgreSQL, sin HTTP ni render PDF'];
             self::assertLessThanOrEqual($legacyMs+max($legacyMs*0.2,100),$times[4]);
         }
         file_put_contents(sys_get_temp_dir().'/sab-payment-benchmark.json',json_encode($results,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));

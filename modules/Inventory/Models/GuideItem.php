@@ -8,7 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class GuideItem extends Model
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     use UsesTenantConnection;
+    use \App\Support\Exact\HasExactValues;
+    use \App\Support\Exact\PersistsExactValues;
 
     public $timestamps = false;
     protected $fillable = [
@@ -21,9 +27,9 @@ class GuideItem extends Model
     ];
 
     protected $casts = [
-        'quantity' => 'float',
-        'unit_cost' => 'float',
-        'total' => 'float',
+        'quantity' => 'string',
+        'unit_cost' => 'string',
+        'total' => 'string',
     ];
 
     public function item()

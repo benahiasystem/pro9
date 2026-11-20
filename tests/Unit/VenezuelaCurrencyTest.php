@@ -54,7 +54,7 @@ class VenezuelaCurrencyTest extends TestCase
                 $source
             ) === 1;
             $hasLegacyLabel = preg_match(
-                '/' . preg_quote($legacySymbol, '/') . '(?=\s|[.<&{\d"\'`$]|$)/',
+                '/' . preg_quote($legacySymbol, '/') . '(?=\\s|[.<&{\\d"\'"$]|$)/',
                 $source
             ) === 1
                 || preg_match('/\\b' . $legacyName . '\\b/i', $source) === 1;

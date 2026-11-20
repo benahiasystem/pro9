@@ -1,6 +1,7 @@
 <?php
 // ######## INICIO API BCV ########
 require dirname(__DIR__, 2).'/vendor/autoload.php';
+\Illuminate\Database\Connection::resolverFor('pgsql', static fn ($pdo,$database,$prefix,$config) => new \App\Database\PostgresConnection($pdo,$database,$prefix,$config));
 $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 try {

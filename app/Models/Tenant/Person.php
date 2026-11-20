@@ -103,7 +103,11 @@ use Illuminate\Support\Facades\DB;
      */
     class Person extends Authenticatable
     {
-        // ######## INICIO CALCULOS EXACTOS SAB ########
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
         use \App\Support\Exact\HasExactValues;
         use \App\Support\Exact\PersistsExactValues;
         // ######## FIN CALCULOS EXACTOS SAB ########
@@ -725,7 +729,7 @@ use Illuminate\Support\Facades\DB;
          */
         public function getOptionalEmailArray(): array
         {
-            $data = unserialize($this->optional_email);
+            $data = $this->optional_email === null ? false : unserialize($this->optional_email);
             if ($data === false) {
                 $data = [];
             }

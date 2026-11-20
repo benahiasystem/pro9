@@ -134,11 +134,11 @@ class VenezuelaInitialCatalogContractTest extends TestCase
             self::assertSame(['id', 'description', 'active'], array_keys($productOrigin));
         }
         $productOriginMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000046_create_cat_product_origins_table.php'));
-        self::assertStringContainsString('`id` tinyint unsigned NOT NULL', $productOriginMigration);
-        self::assertStringContainsString('`description` varchar(255)', $productOriginMigration);
-        self::assertStringContainsString('`active` tinyint(1) NOT NULL', $productOriginMigration);
-        self::assertStringContainsString('PRIMARY KEY (`id`)', $productOriginMigration);
-        self::assertStringContainsString("DROP TABLE IF EXISTS `cat_product_origins`", $productOriginMigration);
+        self::assertStringContainsString('$table->smallInteger(\'id\')', $productOriginMigration);
+        self::assertStringContainsString('$table->string(\'description\', 255)', $productOriginMigration);
+        self::assertStringContainsString('$table->boolean(\'active\')', $productOriginMigration);
+        self::assertStringContainsString('$table->primary([\'id\'])', $productOriginMigration);
+        self::assertStringContainsString('Schema::dropIfExists(\'cat_product_origins\')', $productOriginMigration);
 
         $productTypes = $this->rows('cat_product_types');
         self::assertSame([1, 2], array_column($productTypes, 'id'));
@@ -147,11 +147,11 @@ class VenezuelaInitialCatalogContractTest extends TestCase
             self::assertSame(['id', 'description', 'active'], array_keys($productType));
         }
         $productTypeMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000045_create_cat_product_types_table.php'));
-        self::assertStringContainsString('`id` tinyint unsigned NOT NULL', $productTypeMigration);
-        self::assertStringContainsString('`description` varchar(255)', $productTypeMigration);
-        self::assertStringContainsString('`active` tinyint(1) NOT NULL', $productTypeMigration);
-        self::assertStringContainsString('PRIMARY KEY (`id`)', $productTypeMigration);
-        self::assertStringContainsString("DROP TABLE IF EXISTS `cat_product_types`", $productTypeMigration);
+        self::assertStringContainsString('$table->smallInteger(\'id\')', $productTypeMigration);
+        self::assertStringContainsString('$table->string(\'description\', 255)', $productTypeMigration);
+        self::assertStringContainsString('$table->boolean(\'active\')', $productTypeMigration);
+        self::assertStringContainsString('$table->primary([\'id\'])', $productTypeMigration);
+        self::assertStringContainsString('Schema::dropIfExists(\'cat_product_types\')', $productTypeMigration);
 
         $taxationProducts = $this->rows('cat_taxation_products');
         self::assertSame([1, 2], array_column($taxationProducts, 'id'));
@@ -160,11 +160,11 @@ class VenezuelaInitialCatalogContractTest extends TestCase
             self::assertSame(['id', 'description', 'active'], array_keys($taxationProduct));
         }
         $taxationProductMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000328_create_cat_taxation_products_table.php'));
-        self::assertStringContainsString('`id` tinyint unsigned NOT NULL', $taxationProductMigration);
-        self::assertStringContainsString('`description` varchar(255)', $taxationProductMigration);
-        self::assertStringContainsString('`active` tinyint(1) NOT NULL', $taxationProductMigration);
-        self::assertStringContainsString('PRIMARY KEY (`id`)', $taxationProductMigration);
-        self::assertStringContainsString("DROP TABLE IF EXISTS `cat_taxation_products`", $taxationProductMigration);
+        self::assertStringContainsString('$table->smallInteger(\'id\')', $taxationProductMigration);
+        self::assertStringContainsString('$table->string(\'description\', 255)', $taxationProductMigration);
+        self::assertStringContainsString('$table->boolean(\'active\')', $taxationProductMigration);
+        self::assertStringContainsString('$table->primary([\'id\'])', $taxationProductMigration);
+        self::assertStringContainsString('Schema::dropIfExists(\'cat_taxation_products\')', $taxationProductMigration);
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         $providers = $this->rows('cat_providers_types');
@@ -190,14 +190,14 @@ class VenezuelaInitialCatalogContractTest extends TestCase
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         $transferReasonMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000055_create_cat_transfer_reason_types_table.php'));
-        self::assertStringContainsString('`id` varchar(2)', $transferReasonMigration);
-        self::assertStringContainsString('PRIMARY KEY (`id`)', $transferReasonMigration);
+        self::assertStringContainsString('$table->string(\'id\', 2)', $transferReasonMigration);
+        self::assertStringContainsString('$table->primary([\'id\'])', $transferReasonMigration);
         self::assertStringNotContainsString('cat_transfer_reason_types_id_index', $transferReasonMigration);
-        self::assertStringContainsString('`transfer_reason_type_id` varchar(2)', file_get_contents(base_path('database/migrations/tenant/2026_08_17_000313_create_dispatches_table.php')));
-        self::assertStringContainsString('`discount_stock` tinyint(1) NOT NULL DEFAULT \'0\'', file_get_contents(base_path('database/migrations/tenant/2026_08_17_000313_create_dispatches_table.php')));
+        self::assertStringContainsString('$table->string(\'transfer_reason_type_id\', 2)', file_get_contents(base_path('database/migrations/tenant/2026_08_17_000313_create_dispatches_table.php')));
+        self::assertStringContainsString('$table->boolean(\'discount_stock\')->default(false)', file_get_contents(base_path('database/migrations/tenant/2026_08_17_000313_create_dispatches_table.php')));
         $orderFormMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000229_create_order_forms_table.php'));
-        self::assertStringContainsString('`transfer_reason_type_id` varchar(2)', $orderFormMigration);
-        self::assertStringContainsString('`transfer_reason_description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL', $orderFormMigration);
+        self::assertStringContainsString('$table->string(\'transfer_reason_type_id\', 2)', $orderFormMigration);
+        self::assertStringContainsString('$table->string(\'transfer_reason_description\', 255)->collation(\'pro9_ci_ai\')->nullable()', $orderFormMigration);
 
         $dispatchRequest = DispatchRequest::create('/', 'POST', [
             'transfer_reason_type_id' => '24',
@@ -271,19 +271,20 @@ class VenezuelaInitialCatalogContractTest extends TestCase
         // ######### INICIO CONTRATO MÉTODOS DE PAGO VENEZUELA #########
         self::assertSame([
             ['id' => '01', 'description' => 'Efectivo Bolivares', 'hka_code' => '08', 'collection_kind' => 'cash', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => 'VES', 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
-            ['id' => '02', 'description' => 'Tarjeta de crédito', 'hka_code' => '06', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
-            ['id' => '03', 'description' => 'Tarjeta de débito', 'hka_code' => '05', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
-            ['id' => '04', 'description' => 'Transferencia Bancaria', 'hka_code' => '03', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '02', 'description' => 'Tarjeta de crédito', 'hka_code' => '06', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
+            ['id' => '03', 'description' => 'Tarjeta de débito', 'hka_code' => '05', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
+            ['id' => '04', 'description' => 'Transferencia Bancaria', 'hka_code' => '03', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
             ['id' => '05', 'description' => 'Crédito a 30 días', 'hka_code' => '99', 'collection_kind' => 'credit', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => 30, 'is_credit' => 1, 'is_cash' => 0, 'is_active' => 1],
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             ['id' => '09', 'description' => 'Crédito', 'hka_code' => '99', 'collection_kind' => 'credit', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 1, 'is_cash' => 0, 'is_active' => 1],
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             ['id' => '10', 'description' => 'Efectivo Dólares', 'hka_code' => '09', 'collection_kind' => 'cash', 'currency_type_id' => 'USD', 'iva_rate_type_id' => null, 'cash_currency_type_id' => 'USD', 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
-            ['id' => '11', 'description' => 'Pago Móvil', 'hka_code' => '02', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
-            ['id' => '12', 'description' => 'Biopago', 'hka_code' => '99', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '11', 'description' => 'Pago Móvil', 'hka_code' => '02', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
+            ['id' => '12', 'description' => 'Biopago', 'hka_code' => '99', 'collection_kind' => 'account', 'currency_type_id' => 'VES', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
             ['id' => '13', 'description' => 'Zelle', 'hka_code' => '99', 'collection_kind' => 'account', 'currency_type_id' => 'USD', 'iva_rate_type_id' => null, 'cash_currency_type_id' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
-        ], $this->rows('payment_method_types'));
+        ], array_map(static fn ($row) => array_intersect_key($row,array_flip(['id','description','hka_code','collection_kind','currency_type_id','iva_rate_type_id','cash_currency_type_id','number_days','is_credit','is_cash','is_active'])), $this->rows('payment_method_types')));
         $methods = $this->rows('payment_method_types');
+        foreach ($methods as $method) { self::assertNull(($method['bank_account_id'] ?? null)); self::assertNull(($method['commission_percentage'] ?? null)); self::assertNull(($method['minimum_commission'] ?? null)); }
         $codes = array_values(array_unique(array_column($methods, 'hka_code')));
         sort($codes);
         self::assertSame(['02', '03', '05', '06', '08', '09', '99'], $codes);
@@ -291,7 +292,6 @@ class VenezuelaInitialCatalogContractTest extends TestCase
         self::assertSame([], array_filter($methods, static fn (array $row): bool => $row['collection_kind'] === 'unclassified' || array_key_exists('charge', $row)));
         // ######### FIN CONTRATO MÉTODOS DE PAGO VENEZUELA #########
     }
-
     /** @test */
     public function initial_venezuelan_payment_methods_cannot_be_deleted(): void
     {

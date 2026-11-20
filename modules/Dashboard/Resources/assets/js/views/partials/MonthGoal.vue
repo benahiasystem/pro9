@@ -18,15 +18,18 @@
 </template>
 
 <script>
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { readOriginal, relativeWidth, originalText } from "../../../../../../../resources/js/helpers/dashboard-originals";
 export default {
   name: "MonthGoal",
   data() {
     return {
-      goal: 0,
-      sales: 0,
-      percent: 0,
-      remaining: 0,
-      projected: 0,
+      fetchVersion: 0, loading: true, fetchFailed: false,
+      goal: null,
+      sales: null,
+      percent: null,
+      remaining: null,
+      projected: null,
       arcColor: "#0e2a33",
       themeObserver: null,
       themeRefreshTimer: null,
@@ -45,7 +48,7 @@ export default {
   },
   computed: {
     chartPercent() {
-      return Math.min(Number(this.percent) || 0, 100);
+      return relativeWidth(this.percent, '100');
     },
     chartOptions() {
       return {
@@ -63,7 +66,7 @@ export default {
                 offsetY: 6,
                 fontSize: "28px",
                 fontWeight: 700,
-                formatter: () => (Number(this.percent) || 0).toFixed(0) + "%",
+                formatter: () => this.percent === null ? "—" : originalText(this.percent, 1) + "%",
               },
             },
           },
@@ -115,26 +118,26 @@ export default {
         });
       }
     },
-    fetchData() {
-      this.$http.get("/dashboard/month-goal").then((response) => {
+    async fetchData() {
+      const version = ++this.fetchVersion; this.loading = true; this.fetchFailed = false;
+      for (const key of ["goal", "sales", "percent", "remaining", "projected"]) this[key] = null;
+      try {
+        const response = await this.$http.get("/dashboard/month-goal");
+        if (version !== this.fetchVersion) return;
         const data = response.data;
-        this.goal = data.goal || 0;
-        this.sales = data.sales || 0;
-        this.percent = data.percent || 0;
-        this.remaining = data.remaining || 0;
-        this.projected = data.projected || 0;
-      });
+        for (const key of ["goal", "sales", "percent", "remaining", "projected"]) this[key] = readOriginal(data, key);
+      } catch (_) {
+        if (version === this.fetchVersion) this.fetchFailed = true;
+      } finally {
+        if (version === this.fetchVersion) this.loading = false;
+      }
     },
   },
   filters: {
-    mgMoney(value) {
-      return (Number(value) || 0).toLocaleString("es-PE", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-    },
+    mgMoney(value) { return originalText(value); },
   },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

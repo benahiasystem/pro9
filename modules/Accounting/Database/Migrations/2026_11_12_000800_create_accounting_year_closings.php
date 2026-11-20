@@ -5,6 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Modules\Accounting\Support\TenantSchema as Schema;
 use Modules\Accounting\Support\TenantDB as DB;
 
+use Modules\Accounting\Support\PostgresIntegrity as Integrity;
+
 return new class extends Migration
 {
     protected $connection = 'tenant';
@@ -54,31 +56,30 @@ return new class extends Migration
                 $table->foreign($column)->references('id')->on('users')->restrictOnDelete();
             }
         });
-        if (DB::getDriverName() === 'mysql') {
-            DB::unprepared("CREATE TRIGGER accounting_year_closing_upd BEFORE UPDATE ON accounting_year_closings FOR EACH ROW BEGIN
-                IF NOT (OLD.fiscal_year_id <=> NEW.fiscal_year_id) OR NOT (OLD.result_account_id <=> NEW.result_account_id)
-                   OR NOT (OLD.prepared_by <=> NEW.prepared_by) OR NOT (OLD.reason <=> NEW.reason)
-                   OR NOT (OLD.basis <=> NEW.basis) OR NOT (OLD.basis_hash <=> NEW.basis_hash)
-                   OR NOT (OLD.proposal <=> NEW.proposal) OR NOT (OLD.attestations <=> NEW.attestations) OR NOT (OLD.exceptions <=> NEW.exceptions)
-                   OR (OLD.status <> 'building' AND NOT (OLD.entries <=> NEW.entries))
-                   OR (OLD.posted_snapshot IS NOT NULL AND NOT (OLD.posted_snapshot <=> NEW.posted_snapshot))
-                   OR (OLD.reopening_entries IS NOT NULL AND NOT (OLD.reopening_entries <=> NEW.reopening_entries))
-                   OR (OLD.reopening_reason IS NOT NULL AND NOT (OLD.reopening_reason <=> NEW.reopening_reason))
-                   OR (OLD.withdrawal_reason IS NOT NULL AND NOT (OLD.withdrawal_reason <=> NEW.withdrawal_reason))
-                   OR (OLD.reopened_snapshot IS NOT NULL AND NOT (OLD.reopened_snapshot <=> NEW.reopened_snapshot)) THEN
-                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Evidencia de cierre anual inmutable';
-                END IF;
-                IF OLD.status <> NEW.status AND NOT (
-                    (OLD.status='building' AND NEW.status='prepared') OR
-                    (OLD.status='prepared' AND NEW.status IN ('finalizing','cancelled')) OR
-                    (OLD.status='finalizing' AND NEW.status='posted') OR
-                    (OLD.status='posted' AND NEW.status='reopening') OR
-                    (OLD.status='reopening' AND NEW.status='reopen_finalizing') OR
-                    (OLD.status='reopen_finalizing' AND NEW.status='reopened')
-                ) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Transicion anual no permitida'; END IF;
-            END");
-            DB::unprepared("CREATE TRIGGER accounting_year_closing_del BEFORE DELETE ON accounting_year_closings FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Historial anual conservado'");
-        }
+        Integrity::install('accounting_year_closings', 'accounting_year_closing_upd', 'UPDATE', <<<'SQL'
+IF OLD.fiscal_year_id IS DISTINCT FROM NEW.fiscal_year_id OR OLD.result_account_id IS DISTINCT FROM NEW.result_account_id
+ OR OLD.prepared_by IS DISTINCT FROM NEW.prepared_by OR OLD.reason IS DISTINCT FROM NEW.reason
+ OR OLD.basis::jsonb IS DISTINCT FROM NEW.basis::jsonb OR OLD.basis_hash IS DISTINCT FROM NEW.basis_hash
+ OR OLD.proposal::jsonb IS DISTINCT FROM NEW.proposal::jsonb OR OLD.attestations::jsonb IS DISTINCT FROM NEW.attestations::jsonb
+ OR OLD.exceptions::jsonb IS DISTINCT FROM NEW.exceptions::jsonb
+ OR (OLD.status <> 'building' AND OLD.entries::jsonb IS DISTINCT FROM NEW.entries::jsonb)
+ OR (OLD.posted_snapshot IS NOT NULL AND OLD.posted_snapshot::jsonb IS DISTINCT FROM NEW.posted_snapshot::jsonb)
+ OR (OLD.reopening_entries IS NOT NULL AND OLD.reopening_entries::jsonb IS DISTINCT FROM NEW.reopening_entries::jsonb)
+ OR (OLD.reopening_reason IS NOT NULL AND OLD.reopening_reason IS DISTINCT FROM NEW.reopening_reason)
+ OR (OLD.withdrawal_reason IS NOT NULL AND OLD.withdrawal_reason IS DISTINCT FROM NEW.withdrawal_reason)
+ OR (OLD.reopened_snapshot IS NOT NULL AND OLD.reopened_snapshot::jsonb IS DISTINCT FROM NEW.reopened_snapshot::jsonb) THEN
+ RAISE EXCEPTION USING ERRCODE = '45000', MESSAGE = 'Evidencia de cierre anual inmutable';
+END IF;
+IF OLD.status <> NEW.status AND NOT (
+ (OLD.status='building' AND NEW.status='prepared') OR
+ (OLD.status='prepared' AND NEW.status IN ('finalizing','cancelled')) OR
+ (OLD.status='finalizing' AND NEW.status='posted') OR
+ (OLD.status='posted' AND NEW.status='reopening') OR
+ (OLD.status='reopening' AND NEW.status='reopen_finalizing') OR
+ (OLD.status='reopen_finalizing' AND NEW.status='reopened')
+) THEN RAISE EXCEPTION USING ERRCODE = '45000', MESSAGE = 'Transicion anual no permitida'; END IF;
+SQL);
+        Integrity::reject('accounting_year_closings', 'accounting_year_closing_del', 'DELETE', 'Historial anual conservado');
     }
 
     public function down(): void

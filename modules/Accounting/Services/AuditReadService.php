@@ -47,7 +47,7 @@ final class AuditReadService
             $q = $this->query()->where('e.sequence', '<=', $until)->where('e.created_at', '>=', $from . ' 00:00:00')->where('e.created_at', '<=', $to . ' 23:59:59');
             foreach (['action', 'user_id', 'resource_type', 'resource_id'] as $field) { if (isset($input[$field]) && $input[$field] !== '') { $q->where('e.' . $field, $input[$field]); } }
             $q->select($this->columns());
-            foreach (['version', 'source_revision', 'reason', 'comment', 'reference'] as $field) { $q->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(e.payload,'$." . $field . "')) as " . $field); }
+            foreach (['version', 'source_revision', 'reason', 'comment', 'reference'] as $field) { $q->selectRaw('e.payload ->> ? AS "'.$field.'"', [$field]); }
             $rows = $q->orderByDesc('e.sequence')->paginate($input['per_page'] ?? 25, ['*'], 'page', $input['page'] ?? 1);
             return ['data' => $rows->getCollection()->map(fn($row) => $this->resource($row))->all(), 'meta' => ['from' => $from, 'to' => $to, 'until_sequence' => (string) $until, 'current_sequence' => (string) $head, 'total' => $rows->total(), 'page' => $rows->currentPage(), 'last_page' => $rows->lastPage(), 'company_id' => app(CompanyContext::class)->id(), 'generated_at' => now()->toIso8601String()]];
         });
@@ -56,7 +56,7 @@ final class AuditReadService
     public function show(string $id): array
     {
         $query = $this->query()->where('e.id', $id)->select($this->columns(true));
-        foreach (['version', 'source_revision', 'reason', 'comment', 'reference'] as $field) { $query->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(e.payload,'$." . $field . "')) as " . $field); }
+        foreach (['version', 'source_revision', 'reason', 'comment', 'reference'] as $field) { $query->selectRaw('e.payload ->> ? AS "'.$field.'"', [$field]); }
         $row = $query->first();
         if (!$row) { throw (new \Illuminate\Database\Eloquent\ModelNotFoundException())->setModel(\Modules\Accounting\Models\AuditEvent::class, [$id]); }
         return $this->resource($row, true);

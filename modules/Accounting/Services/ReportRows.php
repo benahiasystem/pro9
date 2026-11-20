@@ -71,10 +71,10 @@ final class ReportRows
     private function documentsQuery(array $f): mixed
     {
         $c = app(CompanyContext::class);
-        $entries = DB::table('accounting_journal_entries as de')->where('de.company_id', $c->id())->where('de.organization_id', $c->organizationId())->whereNotNull('de.posted_at')->where('de.accounting_date', '<=', $f['to'])->whereNotNull('de.source_document_id')->select('de.source_document_id')->selectRaw('MIN(de.id) as entry_id, MAX(de.source_revision) as posted_source_revision, COUNT(DISTINCT de.source_revision) as posted_source_versions')->groupBy('de.source_document_id');
+        $entries = DB::table('accounting_journal_entries as de')->where('de.company_id', $c->id())->where('de.organization_id', $c->organizationId())->whereNotNull('de.posted_at')->where('de.accounting_date', '<=', $f['to'])->whereNotNull('de.source_document_id')->select('de.source_document_id')->selectRaw('MIN(de.id::text COLLATE "C") as entry_id, MAX(de.source_revision) as posted_source_revision, COUNT(DISTINCT de.source_revision) as posted_source_versions')->groupBy('de.source_document_id');
         $openingEntries = DB::table('accounting_open_items as oi')->join('accounting_journal_entries as oe', fn($j) => $j->on('oe.id', '=', 'oi.origin_entry_id')->on('oe.company_id', '=', 'oi.company_id')->on('oe.organization_id', '=', 'oi.organization_id'))
             ->where('oi.company_id', $c->id())->where('oi.organization_id', $c->organizationId())->where('oi.is_opening', true)->whereNotNull('oi.source_document_id')->whereNotNull('oe.posted_at')->where('oe.accounting_date', '<=', $f['to'])
-            ->select('oi.source_document_id')->selectRaw('MIN(oe.id) as entry_id')->groupBy('oi.source_document_id');
+            ->select('oi.source_document_id')->selectRaw('MIN(oe.id::text COLLATE "C") as entry_id')->groupBy('oi.source_document_id');
         $q = DB::table('accounting_source_documents as d')
             ->leftJoinSub($entries, 'posted', fn($j) => $j->on('posted.source_document_id', '=', 'd.id'))
             ->leftJoinSub($openingEntries, 'opening_posted', fn($j) => $j->on('opening_posted.source_document_id', '=', 'd.id'))
@@ -87,7 +87,7 @@ final class ReportRows
             $q->where('d.third_party_id', $f['third_party_id']);
         }
         return $q->select('d.id', 'd.kind', 'd.origin', 'd.number', 'd.fiscal_control', 'd.issue_date', 'd.fiscal_date', 'd.status', 'd.currency', 'd.version', 'd.source_revision', 'd.third_party_id', 'p.name as party_name', 'p.tax_id as party_tax_id', 'posted.posted_source_revision', 'posted.posted_source_versions')->selectRaw('COALESCE(posted.entry_id, opening_posted.entry_id) as entry_id')
-            ->selectRaw("JSON_UNQUOTE(JSON_EXTRACT(d.amounts, '$.total')) as total")
+            ->selectRaw("d.amounts ->> 'total' as total")
             ->orderBy('d.id');
     }
 

@@ -1,91 +1,89 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `perceptions` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `user_id` int(10) unsigned NOT NULL
- * - `establishment_id` int(10) unsigned NOT NULL
- * - `establishment` json NOT NULL
- * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `series` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `number` int(11) NOT NULL
- * - `date_of_issue` date NOT NULL
- * - `customer_id` int(10) unsigned NOT NULL
- * - `customer` json NOT NULL
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `perception_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `observations` text COLLATE utf8mb4_unicode_ci
- * - `total_perception` decimal(30,12) NOT NULL
- * - `total` decimal(30,12) NOT NULL
- * - `optional` json DEFAULT NULL
- * - `legends` json DEFAULT NULL
- * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `time_of_issue` time NOT NULL
- * - `has_pdf` tinyint(1) NOT NULL DEFAULT '0'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - user_id: bigint
+ * - establishment_id: bigint
+ * - establishment: json
+ * - external_id: char(36)
+ * - fiscal_environment: varchar(16)
+ * - state_type_id: char(2)
+ * - ubl_version: varchar(255)
+ * - document_type_id: varchar(255)
+ * - series: varchar(20)
+ * - number: integer
+ * - date_of_issue: date
+ * - customer_id: bigint
+ * - customer: json
+ * - currency_type_id: varchar(255)
+ * - perception_type_id: varchar(255)
+ * - observations: text
+ * - total_perception: numeric(30,12)
+ * - total: numeric(30,12)
+ * - optional: json
+ * - legends: json
+ * - filename: varchar(255)
+ * - time_of_issue: time
+ * - has_pdf: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `perceptions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `establishment_id` int(10) unsigned NOT NULL,
-  `establishment` json NOT NULL,
-  `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `series` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `number` int(11) NOT NULL,
-  `date_of_issue` date NOT NULL,
-  `customer_id` int(10) unsigned NOT NULL,
-  `customer` json NOT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `perception_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `observations` text COLLATE utf8mb4_unicode_ci,
-  `total_perception` decimal(30,12) NOT NULL,
-  `total` decimal(30,12) NOT NULL,
-  `optional` json DEFAULT NULL,
-  `legends` json DEFAULT NULL,
-  `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `time_of_issue` time NOT NULL,
-  `has_pdf` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `perceptions_user_id_foreign` (`user_id`),
-  KEY `perceptions_establishment_id_foreign` (`establishment_id`),
-  KEY `perceptions_fiscal_environment_foreign` (`fiscal_environment`),
-  KEY `perceptions_state_type_id_foreign` (`state_type_id`),
-  KEY `perceptions_document_type_id_foreign` (`document_type_id`),
-  KEY `perceptions_currency_type_id_foreign` (`currency_type_id`),
-  KEY `perceptions_perception_type_id_foreign` (`perception_type_id`),
-  KEY `perceptions_customer_id_foreign` (`customer_id`),
-  KEY `perceptions_number_index` (`number`),
-  KEY `perceptions_series_index` (`series`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('perceptions', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id');
+            $table->bigInteger('establishment_id');
+            $table->json('establishment');
+            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
+            $table->char('state_type_id', 2)->collation('pro9_ci_ai');
+            $table->string('ubl_version', 255)->collation('pro9_ci_ai');
+            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('series', 20)->collation('pro9_ci_ai');
+            $table->integer('number');
+            $table->date('date_of_issue');
+            $table->bigInteger('customer_id');
+            $table->json('customer');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('perception_type_id', 255)->collation('pro9_ci_ai');
+            $table->text('observations')->collation('pro9_ci_ai')->nullable();
+            $table->decimal('total_perception', 30, 12);
+            $table->decimal('total', 30, 12);
+            $table->json('optional')->nullable();
+            $table->json('legends')->nullable();
+            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->time('time_of_issue');
+            $table->boolean('has_pdf')->default(false);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['user_id'], 'perceptions_user_id_foreign');
+            $table->index(['establishment_id'], 'perceptions_establishment_id_foreign');
+            $table->index(['fiscal_environment'], 'perceptions_fiscal_environment_foreign');
+            $table->index(['state_type_id'], 'perceptions_state_type_id_foreign');
+            $table->index(['document_type_id'], 'perceptions_document_type_id_foreign');
+            $table->index(['currency_type_id'], 'perceptions_currency_type_id_foreign');
+            $table->index(['perception_type_id'], 'perceptions_perception_type_id_foreign');
+            $table->index(['customer_id'], 'perceptions_customer_id_foreign');
+            $table->index(['number'], 'perceptions_number_index');
+            $table->index(['series'], 'perceptions_series_index');
+        });
+        DB::statement('ALTER TABLE "perceptions" ADD CONSTRAINT "perceptions_number_range" CHECK ("number" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `perceptions`');
+        Schema::dropIfExists('perceptions');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -1,24 +1,40 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-/** New tenants only. Immutable versions: id, company/person, effective_from, profile, actor, created_at. */
-return new class extends Migration {
-    public function up(): void {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `fiscal_profile_versions` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `company_id` int unsigned DEFAULT NULL,
-  `person_id` int unsigned DEFAULT NULL,
-  `effective_from` date NOT NULL,
-  `profile` json NOT NULL,
-  `actor_id` int unsigned NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `profile_company_date` (`company_id`,`effective_from`),
-  KEY `profile_person_date` (`person_id`,`effective_from`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - company_id: bigint
+ * - person_id: bigint
+ * - effective_from: date
+ * - profile: json
+ * - actor_id: bigint
+ * - created_at: timestamp
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('fiscal_profile_versions', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('company_id')->nullable();
+            $table->bigInteger('person_id')->nullable();
+            $table->date('effective_from');
+            $table->json('profile');
+            $table->bigInteger('actor_id');
+            $table->timestamp('created_at')->useCurrent();
+            $table->index(['company_id', 'effective_from'], 'profile_company_date');
+            $table->index(['person_id', 'effective_from'], 'profile_person_date');
+        });
     }
-    public function down(): void { DB::unprepared('DROP TABLE IF EXISTS `fiscal_profile_versions`'); }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('fiscal_profile_versions');
+    }
 };
+// ######### FIN CAMBIO POSTGRESQL 17

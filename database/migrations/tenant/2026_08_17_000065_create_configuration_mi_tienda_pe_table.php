@@ -1,47 +1,50 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `configuration_mi_tienda_pe` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `establishment_id` int(10) unsigned DEFAULT '1'
- * - `series_order_note_id` int(10) unsigned DEFAULT '0'
- * - `series_document_ft_id` int(10) unsigned DEFAULT '0'
- * - `user_id` int(10) unsigned DEFAULT '0'
- * - `payment_destination_id` int(10) unsigned DEFAULT '0'
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `autogenerate` tinyint(3) unsigned DEFAULT '0'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - establishment_id: bigint
+ * - series_order_note_id: bigint
+ * - series_document_ft_id: bigint
+ * - user_id: bigint
+ * - payment_destination_id: bigint
+ * - currency_type_id: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - autogenerate: smallint
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `configuration_mi_tienda_pe` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `establishment_id` int(10) unsigned DEFAULT '1',
-  `series_order_note_id` int(10) unsigned DEFAULT '0',
-  `series_document_ft_id` int(10) unsigned DEFAULT '0',
-  `user_id` int(10) unsigned DEFAULT '0',
-  `payment_destination_id` int(10) unsigned DEFAULT '0',
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `autogenerate` tinyint(3) unsigned DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('configuration_mi_tienda_pe', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('establishment_id')->nullable()->default('1');
+            $table->bigInteger('series_order_note_id')->nullable()->default('0');
+            $table->bigInteger('series_document_ft_id')->nullable()->default('0');
+            $table->bigInteger('user_id')->nullable()->default('0');
+            $table->bigInteger('payment_destination_id')->nullable()->default('0');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->smallInteger('autogenerate')->nullable()->default('0');
+        });
+        DB::statement('ALTER TABLE "configuration_mi_tienda_pe" ADD CONSTRAINT "configuration_mi_tienda_pe_establishment_id_range" CHECK ("establishment_id" >= 0)');
+        DB::statement('ALTER TABLE "configuration_mi_tienda_pe" ADD CONSTRAINT "configuration_mi_tienda_pe_series_order_note_id_range" CHECK ("series_order_note_id" >= 0)');
+        DB::statement('ALTER TABLE "configuration_mi_tienda_pe" ADD CONSTRAINT "configuration_mi_tienda_pe_series_document_ft_id_range" CHECK ("series_document_ft_id" >= 0)');
+        DB::statement('ALTER TABLE "configuration_mi_tienda_pe" ADD CONSTRAINT "configuration_mi_tienda_pe_user_id_range" CHECK ("user_id" >= 0)');
+        DB::statement('ALTER TABLE "configuration_mi_tienda_pe" ADD CONSTRAINT "configuration_mi_tienda_pe_payment_destination_id_range" CHECK ("payment_destination_id" >= 0)');
+        DB::statement('ALTER TABLE "configuration_mi_tienda_pe" ADD CONSTRAINT "configuration_mi_tienda_pe_autogenerate_range" CHECK ("autogenerate" BETWEEN 0 AND 255)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `configuration_mi_tienda_pe`');
+        Schema::dropIfExists('configuration_mi_tienda_pe');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

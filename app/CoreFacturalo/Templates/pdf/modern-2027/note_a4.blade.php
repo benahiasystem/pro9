@@ -57,9 +57,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
-                        {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-                        {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-                        {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+                        {{ (!empty($establishment->district->description))? ', '.$establishment->district->description : '' }}
+                        {{ (!empty($establishment->province->description))? ', '.$establishment->province->description : '' }}
+                        {{ (!empty($establishment->department->description))? '- '.$establishment->department->description : '' }}
                     </h6>
                     <h6>{{ ($establishment->email !== '-')? $establishment->email : '' }}</h6>
                     <h6>{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</h6>
@@ -76,9 +76,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
-                        {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-                        {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-                        {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+                        {{ (!empty($establishment->district->description))? ', '.$establishment->district->description : '' }}
+                        {{ (!empty($establishment->province->description))? ', '.$establishment->province->description : '' }}
+                        {{ (!empty($establishment->department->description))? '- '.$establishment->department->description : '' }}
                     </h6>
                     <h6>{{ ($establishment->email !== '-')? $establishment->email : '' }}</h6>
                     <h6>{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</h6>
@@ -118,9 +118,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td>:</td>
         <td>
             {{ $customer->address }}
-            {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
-            {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
-            {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
+            {{ (!empty($customer->district->description))? ', '.$customer->district->description : '' }}
+            {{ (!empty($customer->province->description))? ', '.$customer->province->description : '' }}
+            {{ (!empty($customer->department->description))? '- '.$customer->department->description : '' }}
         </td>
     </tr>
     @endif
@@ -178,11 +178,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <tr>
             <td class="text-left align-top">{{ $row->relation_item->internal_id }}</td>
             <td class="text-center">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
+                {{ \App\Support\Exact\PdfQuantities::line($row) }}
             </td>
             <td class="text-center">{{ $row->item->unit_type_id }}</td>
             <td class="text-left">
@@ -198,9 +194,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @endforeach
                 @endif
                 @if($row->discounts)
-                    @foreach($row->discounts as $dtos)
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
-                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos).'%' }} {{$dtos->description }}</span>
                         @endif
                     @endforeach
                 @endif
@@ -251,7 +247,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
         </tr>
         <tr>
-            <td class="text-left font-bold">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
+            <td class="text-left font-bold">Productos: {{ \App\Support\Exact\InvoicePdfSummary::quantities($document->items) }}</td>
             <td colspan="5" class="text-right font-bold">{{ $document->document_type_id === '07' ? 'TOTAL NOTA DE CRÉDITO:' : 'TOTAL NOTA DE DÉBITO:' }} {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>

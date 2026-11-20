@@ -19,7 +19,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::connection('system')->create('marketplace_contact_requests', function (Blueprint $table) {
+        Schema::create('marketplace_contact_requests', function (Blueprint $table) {
             $table->id();
 
             $table->unsignedBigInteger('store_id')->index();
@@ -46,6 +46,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::connection('system')->dropIfExists('marketplace_contact_requests');
+        Schema::dropIfExists('marketplace_contact_requests');
     }
 };

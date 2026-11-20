@@ -45,6 +45,7 @@ class UpdateModulesTable extends Migration
         DB::table('modules')->where('value', 'apps')->update(['sort' => 24]);
         DB::table('modules')->where('value', 'configuration')->update(['sort' => 25]);
         DB::table('modules')->where('value', 'app_2_generator')->update(['sort' => 26]);
+        \App\Database\SequenceSynchronizer::sync(\Illuminate\Support\Facades\DB::connection());
     }
 
     /**

@@ -1,0 +1,6 @@
+# ########## INICIO CAMBIO POSTGRESQL 17
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:${SUPABASE_POSTGRES_PORT:-54322}:5432"
+# ######### FIN CAMBIO POSTGRESQL 17

@@ -129,7 +129,7 @@ final class NoteAnnulment
         $hash=hash('sha256',json_encode($data,JSON_THROW_ON_ERROR));
         $claim=$this->locked($note,function ($n,$e,$invoice,$company) use ($data,$hash) {
             $old=self::journal($n);
-            if (DocumentEmission::where('document_id','!=',$n->id)->where(function($q) use($data) { $q->where('response->annulment->operation_key',$data['operation_key'])->orWhereRaw("JSON_SEARCH(response, 'one', ?, NULL, '$.annulment.history[*].operation_key') IS NOT NULL",[$data['operation_key']]); })->exists()) abort(409,'La clave de anulación pertenece a otra nota.');
+            if (DocumentEmission::where('document_id','!=',$n->id)->where(function($q) use($data) { $q->where('response->annulment->operation_key',$data['operation_key'])->orWhereRaw("EXISTS (SELECT 1 FROM json_array_elements(CASE WHEN json_typeof(response->'annulment'->'history')='array' THEN response->'annulment'->'history' ELSE '[]'::json END) AS pro9_history(value) WHERE pro9_history.value->>'operation_key' = ?)",[$data['operation_key']]); })->exists()) abort(409,'La clave de anulación pertenece a otra nota.');
             if (($old['operation_key'] ?? null) === $data['operation_key']) {
                 if ($old['request_hash'] !== $hash) abort(409,'La clave de anulación pertenece a otra solicitud.');
                 return null;
@@ -212,7 +212,8 @@ final class NoteAnnulment
                 $j['status']='completed';$j['completed_at']=now()->toIso8601String();$j['diagnostic']=$j['remote'] ? 'Nota anulada en HKA; reversión comercial completada.':'Nota anulada localmente sin transmisión HKA.';
                 self::store($e,$j);FiscalDocumentPersistence::updateSettlementState($invoice);
                 // ######## INICIO CALCULOS EXACTOS SAB ########
-                \App\Models\Tenant\CashDocumentCredit::where('document_id',$invoice->id)->update(['status'=>$invoice->fresh()->exactBalance()->isPositive() ? 'PENDING':'PROCESSED']);
+                $cashStatus = $invoice->fresh()->exactBalance()->isLessThanOrEqualTo('0.005') ? 'PROCESSED' : 'PENDING';
+                \App\Models\Tenant\CashDocumentCredit::where('document_id', $invoice->id)->update(['status' => $cashStatus]);
                 // ######## FIN CALCULOS EXACTOS SAB ########
             });
         } catch (\Throwable $exception) {

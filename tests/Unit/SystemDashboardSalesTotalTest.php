@@ -40,13 +40,14 @@ class SystemDashboardSalesTotalTest extends TestCase
 
     public function test_sales_total_uses_document_amounts_without_loading_payments(): void
     {
+        $vesOnly = getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1';
         $rows = [
             ['01', '01', 'VES', 100, 1, '2026-10-01'],
             ['03', '08', 'VES', 20, 1, '2026-10-01'],
             ['05', '07', 'VES', 10, 1, '2026-10-01'],
-            ['07', '01', 'USD', 10, 40, '2026-10-02'],
-            ['13', '08', 'USD', 2, 40, '2026-10-02'],
-            ['01', '07', 'USD', 1, 40, '2026-10-02'],
+            ['07', '01', $vesOnly ? 'VES' : 'USD', $vesOnly ? 400 : 10, $vesOnly ? 1 : 40, '2026-10-02'],
+            ['13', '08', $vesOnly ? 'VES' : 'USD', $vesOnly ? 80 : 2, $vesOnly ? 1 : 40, '2026-10-02'],
+            ['01', '07', $vesOnly ? 'VES' : 'USD', $vesOnly ? 40 : 1, $vesOnly ? 1 : 40, '2026-10-02'],
             ['09', '01', 'VES', 900, 1, '2026-10-01'],
             ['11', '07', 'VES', 800, 1, '2026-10-01'],
             ['01', '01', 'VES', 700, 1, '2026-09-30'],

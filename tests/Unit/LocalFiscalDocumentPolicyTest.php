@@ -49,7 +49,7 @@ class LocalFiscalDocumentPolicyTest extends TestCase
     {
         config()->set('tenant.template_document_mail', 'default');
         config()->set('mail.username', 'fiscal-test@example.test');
-        $mail = new class((object) [], (object) ['filename' => 'invoice-test']) extends \App\Mail\Tenant\DocumentEmail {
+        $mail = new class((object) [], new \App\Models\Tenant\Document(['filename'=>'invoice-test','fiscal_emission_mode'=>'digital'])) extends \App\Mail\Tenant\DocumentEmail {
             public array $reads = [];
             public function getStorage($filename, $file_type, $root = null)
             {

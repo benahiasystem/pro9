@@ -1,33 +1,31 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `password_resets` para instalaciones nuevas.
- * Inventario de columnas:
- * - `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `token` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - email: varchar(255)
+ * - token: varchar(255)
+ * - created_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `password_resets` (
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `token` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  KEY `password_resets_email_index` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('password_resets', function (Blueprint $table) {
+            $table->string('email', 255)->collation('pro9_ci_ai');
+            $table->string('token', 255)->collation('C');
+            $table->timestamp('created_at')->nullable();
+            $table->index(['email'], 'password_resets_email_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `password_resets`');
+        Schema::dropIfExists('password_resets');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

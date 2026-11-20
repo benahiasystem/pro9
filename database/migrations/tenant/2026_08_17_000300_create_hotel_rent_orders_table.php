@@ -1,51 +1,49 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `hotel_rent_orders` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `hotel_rent_id` int(10) unsigned NOT NULL
- * - `order_number` int(11) NOT NULL
- * - `order_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `sale_note_id` int(10) unsigned DEFAULT NULL
- * - `establishment_id` int(10) unsigned DEFAULT NULL
- * - `operation_key` char(36) DEFAULT NULL, único
- * - `operation_hash` char(64) DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - hotel_rent_id: bigint
+ * - order_number: integer
+ * - order_status: varchar(255)
+ * - sale_note_id: bigint
+ * - establishment_id: bigint
+ * - operation_key: char(36)
+ * - operation_hash: char(64)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `hotel_rent_orders` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `hotel_rent_id` int(10) unsigned NOT NULL,
-  `order_number` int(11) NOT NULL,
-  `order_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `sale_note_id` int(10) unsigned DEFAULT NULL,
-  `establishment_id` int(10) unsigned DEFAULT NULL,
-  `operation_key` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `operation_hash` char(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `hotel_rent_orders_operation_key_unique` (`operation_key`),
-  KEY `hotel_rent_orders_hotel_rent_id_foreign` (`hotel_rent_id`),
-  KEY `hotel_rent_orders_sale_note_id_foreign` (`sale_note_id`),
-  KEY `hotel_rent_orders_establishment_id_foreign` (`establishment_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('hotel_rent_orders', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('hotel_rent_id');
+            $table->integer('order_number');
+            $table->string('order_status', 255)->collation('pro9_ci_ai');
+            $table->bigInteger('sale_note_id')->nullable();
+            $table->bigInteger('establishment_id')->nullable();
+            $table->char('operation_key', 36)->collation('pro9_ci_ai')->nullable();
+            $table->char('operation_hash', 64)->collation('C')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['operation_key'], 'hotel_rent_orders_operation_key_unique');
+            $table->index(['hotel_rent_id'], 'hotel_rent_orders_hotel_rent_id_foreign');
+            $table->index(['sale_note_id'], 'hotel_rent_orders_sale_note_id_foreign');
+            $table->index(['establishment_id'], 'hotel_rent_orders_establishment_id_foreign');
+        });
+        DB::statement('ALTER TABLE "hotel_rent_orders" ADD CONSTRAINT "hotel_rent_orders_order_number_range" CHECK ("order_number" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `hotel_rent_orders`');
+        Schema::dropIfExists('hotel_rent_orders');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -18,7 +18,7 @@ trait IvaRetentionPersistenceCases
         FiscalProfileService::store(Company::firstOrFail(),SpeProfiles::profile());
         FiscalProfileService::store(Person::findOrFail($input['customer_id']),SpeProfiles::profile(['rif'=>'V-12345678-9','nature'=>'natural','personal_firm'=>true]));
         $input['payments'][0]['payment'] = 208;
-        $input['payments'][0]['financial_intermediation'] = 'financial_institution';
+        $input['payments'][0]['financial_intermediation'] = 'none';
         $input['iva_retention_prevision'] = ['enabled'=>true];
         $state = (object)['remote'=>[], 'calls'=>[], 'mode'=>'normal'];
         $remote = &$state->remote; $calls = &$state->calls; $mode = &$state->mode;
@@ -209,13 +209,66 @@ trait IvaRetentionPersistenceCases
     }
     // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 
+    private function enableUsdRetentionBank($db): int
+    {
+        $id=$db->table('bank_accounts')->insertGetId(['bank_id'=>$db->table('banks')->value('id'),'description'=>'Retenciones USD','number'=>'TEMP-RETENCIONES-USD','currency_type_id'=>'USD','initial_balance'=>'0']);
+        $db->table('payment_method_types')->where('id','13')->update(['bank_account_id'=>$id,'is_active'=>true]);return $id;
+    }
+
+    public function test_invoice_ticket_rounds_the_iva_forecast_balance_directly_to_cents(): void
+    {
+        [$db, $app, $input] = $this->bootIvaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode' => 'free_form']);
+        $input['guarantee_fund'] = ['amount' => '0.005', 'base' => '0.49999999996', 'percentage' => '1'];
+        $document = (new Facturalo())->save($input)->getDocument()->fresh();
+        self::assertNotEmpty($document->fiscal_data->iva_retention_prevision);
+        self::assertTrue($document->exactGuaranteeAmount()->isEqualTo('0.0049999999996'));
+
+        $directory = sys_get_temp_dir().'/'.$this->database;
+        config(['view.compiled' => $directory.'/iva-ticket-views', 'view.paths' => [base_path('resources/views')]]);
+        mkdir(config('view.compiled'), 0777, true);
+        $app->register(\Illuminate\View\ViewServiceProvider::class);
+
+        $payment = $document->payments()->firstOrFail();
+        $decimal = \App\Support\Exact\Decimal::class;
+        foreach (['0.0049999999996' => '0.00', '0.0050000000004' => '0.01'] as $balance => $printed) {
+            $exactPayment = $document->exactValue('total_payable')->minus($document->exactGuaranteeAmount())->minus($decimal::of($balance));
+            $snapshot = $payment->calculation_snapshot;
+            $snapshot['values']['payment'] = $decimal::fraction($exactPayment);
+            $db->table('document_payments')->where('id', $payment->id)->update([
+                'payment' => $decimal::represent($exactPayment),
+                'calculation_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR),
+            ]);
+
+            $invoice = $document->fresh();
+            self::assertTrue($invoice->exactBalance()->isEqualTo($balance));
+            self::assertSame('0.005', $invoice->balance);
+            $pdf = (new Facturalo())->createPdf($invoice, 'invoice', 'ticket', 'string');
+            self::assertStringStartsWith('%PDF-', $pdf);
+            $path = $directory.'/iva-exact-balance.pdf';
+            file_put_contents($path, $pdf);
+            try {
+                $text = new \Symfony\Component\Process\Process(['pdftotext', '-layout', $path, '-']);
+                $text->mustRun();
+                self::assertStringContainsString('Retención IVA prevista', $text->getOutput());
+                self::assertMatchesRegularExpression('/Saldo pendiente[ \t]+'.preg_quote($printed, '/').'\h*$/m', $text->getOutput());
+                self::assertMatchesRegularExpression('/Fondo de garantía[ \t]+0\.00\h*$/m', $text->getOutput());
+            } finally {
+                unlink($path);
+            }
+        }
+    }
+
     public function test_iva_net_forecast_idempotence_hka_and_audited_replacement(): void
     {
         [$db,$app,$input] = $this->bootIvaFixture();
         $cashId=$db->table('cash')->where('user_id',auth()->id())->where('state',true)->value('id');
+        $bank=$this->enableUsdRetentionBank($db);
         foreach (['WEB','POS','VENDEYA'] as $source) foreach (['VES','USD'] as $currency) {
             $case = array_replace($input,['source_module'=>$source,'external_id'=>(string)Str::uuid(),'currency_type_id'=>$currency,'exchange_rate_sale'=>'10.12345678']);
-            $case['payments'][0]['payment_method_type_id']=$currency==='USD'?'10':'01';
+            $case['payments'][0]['payment_method_type_id']=$currency==='USD'?'13':'01';
+            $case['payments'][0]['financial_intermediation']=$currency==='USD'?'financial_institution':'none';
+            $case['payments'][0]['payment_destination_id']=$currency==='USD'?$bank:'cash';
             $doc = (new Facturalo)->save($case)->getDocument()->fresh();
             self::assertEquals(24,$doc->balance);self::assertEquals(208,$doc->payments->sum('payment'));self::assertEquals(232,$doc->total);
             self::assertEquals(24,$doc->fiscal_data->iva_retention_prevision['amount']);
@@ -410,7 +463,9 @@ trait IvaRetentionPersistenceCases
     public function test_iva_fiscal_ves_is_independent_from_usd_settlement_rate(): void
     {
         [$db,$app,$input] = $this->bootIvaFixture();
-        $input['currency_type_id']='USD';$input['exchange_rate_sale']='10.00000000';$input['payments'][0]['payment_method_type_id']='10';
+        $bank=$this->enableUsdRetentionBank($db);
+        $input['currency_type_id']='USD';$input['exchange_rate_sale']='10.00000000';$input['payments'][0]['payment_method_type_id']='13';
+        $input['payments'][0]['financial_intermediation']='financial_institution';$input['payments'][0]['payment_destination_id']=$bank;
         $doc=(new Facturalo)->save($input)->getDocument()->fresh();
         $row=IvaRetentionService::store($doc,$this->ivaVoucher($doc,['base'=>320,'amount'=>240,'currency_type_id'=>'VES','exchange_rate'=>'20.00000000']));
         self::assertEquals(12,$row->applied_amount);self::assertEquals(12,$doc->fresh()->balance);
@@ -420,6 +475,31 @@ trait IvaRetentionPersistenceCases
         self::assertSame('240.00',$payload['totalRetencion']['totalRetenido']);
         self::assertSame('2000.00',$payload['totalRetencion']['totalBaseImponible']);
         self::assertSame('20.00000000',$row->exchange_rate);self::assertSame('10.00000000',$doc->exchange_rate_sale);
+    }
+
+    public function test_iva_hka_converts_the_original_taxable_base_before_rounding_to_cents(): void
+    {
+        [, , $input] = $this->bootIvaFixture();
+        $input['items'][0]['unit_price'] = '1160000000';
+        $input['payments'][0]['payment'] = '2080000000';
+        $invoice = (new Facturalo)->save($input)->getDocument()->fresh();
+        self::assertTrue($invoice->exactValue('total_igv')->isEqualTo('320000000'));
+        self::assertSame('confirmed', $invoice->emission->status);
+
+        $retention = IvaRetentionService::store($invoice, $this->ivaVoucher($invoice, [
+            'currency_type_id' => 'USD',
+            'exchange_rate' => '9999999999.01',
+            'base' => '0.030000000001',
+            'amount' => '0.02',
+        ]))->fresh();
+        self::assertSame('applied', $retention->application_status);
+        self::assertSame('0.187500000006', $retention->taxable_base);
+        self::assertTrue($retention->exactValue('taxable_base')->isEqualTo('0.18750000000625'));
+        $operation = $retention->operations()->firstOrFail();
+        self::assertSame('confirmed', $operation->status);
+        self::assertSame('1874999999.88', $operation->payload['totalRetencion']['totalBaseImponible']);
+        self::assertSame('299999999.98', $operation->payload['totalRetencion']['totalIVA']);
+        self::assertSame('199999999.98', $operation->payload['totalRetencion']['totalRetenido']);
     }
 
 }

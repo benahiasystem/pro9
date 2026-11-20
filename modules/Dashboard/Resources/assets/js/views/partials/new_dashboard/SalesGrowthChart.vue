@@ -9,7 +9,8 @@
 </template>
 
 <script>
-import { formatMoneyExact } from "../../../../../../../../resources/js/helpers/format-money-exact";
+import { readVector, chartCoordinate, formatUnitOriginal } from "../../../../../../../../resources/js/helpers/dashboard-originals";
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
 export default {
     name: "SalesGrowthChart",
     props: {
@@ -25,6 +26,8 @@ export default {
             type: Array,
             default: () => [],
         },
+        currentFractions: {type: Array, default: () => []},
+        previousFractions: {type: Array, default: () => []},
         currentExact: { type: Array, default: () => [] },
         previousExact: { type: Array, default: () => [] },
         currentLabel: { type: String, default: "" },
@@ -33,12 +36,12 @@ export default {
     computed: {
         series() {
             return [
-                { name: this.currentLabel, data: this.current },
-                { name: this.previousLabel, data: this.previous },
+                { name: this.currentLabel, data: readVector(this, 'currentFractions').map(chartCoordinate) },
+                { name: this.previousLabel, data: readVector(this, 'previousFractions').map(chartCoordinate) },
             ];
         },
         chartOptions() {
-            const exact = [this.currentExact, this.previousExact];
+            const exact = [readVector(this, 'currentFractions'), readVector(this, 'previousFractions')];
             return {
                 chart: {
                     toolbar: { show: false },
@@ -66,15 +69,14 @@ export default {
                 yaxis: { show: false },
                 tooltip: {
                     y: {
-                        formatter: (val, context) => "Bs. " + formatMoneyExact(
-                            exact[context?.seriesIndex]?.[context?.dataPointIndex] ?? val
-                        ),
+                        formatter: (_coordinate, context) => formatUnitOriginal(exact[context?.seriesIndex]?.[context?.dataPointIndex], 'money', 'en-US'),
                     },
                 },
             };
         },
     },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -1,39 +1,39 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `documentary_processes_rel_req` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `doc_processes_id` int(10) unsigned DEFAULT '0' COMMENT 'Requerimiento relacionado'
- * - `doc_files_requirements_id` int(10) unsigned DEFAULT '0' COMMENT 'Proceso relacionado'
- * - `active` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Status de la relacion'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - doc_processes_id: bigint
+ * - doc_files_requirements_id: bigint
+ * - active: smallint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `documentary_processes_rel_req` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `doc_processes_id` int(10) unsigned DEFAULT '0' COMMENT 'Requerimiento relacionado',
-  `doc_files_requirements_id` int(10) unsigned DEFAULT '0' COMMENT 'Proceso relacionado',
-  `active` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Status de la relacion',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('documentary_processes_rel_req', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('doc_processes_id')->nullable()->default('0')->comment('Requerimiento relacionado');
+            $table->bigInteger('doc_files_requirements_id')->nullable()->default('0')->comment('Proceso relacionado');
+            $table->smallInteger('active')->default('0')->comment('Status de la relacion');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "documentary_processes_rel_req" ADD CONSTRAINT "documentary_processes_rel_req_doc_processes_id_range" CHECK ("doc_processes_id" >= 0)');
+        DB::statement('ALTER TABLE "documentary_processes_rel_req" ADD CONSTRAINT "documentary_processes_rel_req_doc_files_requirements_id_range" CHECK ("doc_files_requirements_id" >= 0)');
+        DB::statement('ALTER TABLE "documentary_processes_rel_req" ADD CONSTRAINT "documentary_processes_rel_req_active_range" CHECK ("active" BETWEEN 0 AND 255)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `documentary_processes_rel_req`');
+        Schema::dropIfExists('documentary_processes_rel_req');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

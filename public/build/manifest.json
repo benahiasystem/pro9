@@ -1,15 +1,17 @@
 {
   "FrequentlyBoughtTogether.css": {
-    "file": "assets/FrequentlyBoughtTogether-3176b238.css",
+    "file": "assets/FrequentlyBoughtTogether-c45394f2.css",
     "src": "FrequentlyBoughtTogether.css"
   },
-  "_FrequentlyBoughtTogether-418e6ba7.js": {
+  "_FrequentlyBoughtTogether-d4d8f717.js": {
     "css": [
-      "assets/FrequentlyBoughtTogether-3176b238.css"
+      "assets/FrequentlyBoughtTogether-c45394f2.css"
     ],
-    "file": "assets/FrequentlyBoughtTogether-418e6ba7.js",
+    "file": "assets/FrequentlyBoughtTogether-d4d8f717.js",
     "imports": [
-      "__plugin-vue2_normalizer-2bbd088e.js"
+      "__plugin-vue2_normalizer-2bbd088e.js",
+      "_storefront-cart-amounts-8effdbd3.js",
+      "_exchange-rate-math-d526ac5f.js"
     ]
   },
   "__plugin-vue2_normalizer-2bbd088e.js": {
@@ -24,8 +26,8 @@
       "__plugin-vue2_normalizer-2bbd088e.js"
     ]
   },
-  "_exchange-rate-math-033f1e5f.js": {
-    "file": "assets/exchange-rate-math-033f1e5f.js"
+  "_exchange-rate-math-d526ac5f.js": {
+    "file": "assets/exchange-rate-math-d526ac5f.js"
   },
   "_index-3744837a.js": {
     "assets": [
@@ -44,17 +46,23 @@
   "_index-e849b4f5.js": {
     "file": "assets/index-e849b4f5.js"
   },
-  "_vue-clipboard-1d445109.js": {
+  "_storefront-cart-amounts-8effdbd3.js": {
+    "file": "assets/storefront-cart-amounts-8effdbd3.js",
+    "imports": [
+      "_exchange-rate-math-d526ac5f.js"
+    ]
+  },
+  "_vue-clipboard-9c83a367.js": {
     "css": [
       "assets/vue-clipboard-a067d18e.css"
     ],
-    "file": "assets/vue-clipboard-1d445109.js",
+    "file": "assets/vue-clipboard-9c83a367.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "_index-e849b4f5.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-033f1e5f.js"
+      "_exchange-rate-math-d526ac5f.js"
     ]
   },
   "_vue.esm-340a2d96.js": {
@@ -81,21 +89,24 @@
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
-    "file": "assets/cart-app-bca1214b.js",
+    "file": "assets/cart-app-63375b68.js",
     "imports": [
-      "_exchange-rate-math-033f1e5f.js",
-      "_FrequentlyBoughtTogether-418e6ba7.js",
+      "_exchange-rate-math-d526ac5f.js",
+      "_storefront-cart-amounts-8effdbd3.js",
+      "_FrequentlyBoughtTogether-d4d8f717.js",
       "__plugin-vue2_normalizer-2bbd088e.js"
     ],
     "isEntry": true,
     "src": "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/product-social-app.js": {
-    "file": "assets/product-social-app-b46eea2e.js",
+    "file": "assets/product-social-app-eb8ca25f.js",
     "imports": [
       "_vue.esm-340a2d96.js",
-      "_FrequentlyBoughtTogether-418e6ba7.js",
-      "__plugin-vue2_normalizer-2bbd088e.js"
+      "_FrequentlyBoughtTogether-d4d8f717.js",
+      "__plugin-vue2_normalizer-2bbd088e.js",
+      "_storefront-cart-amounts-8effdbd3.js",
+      "_exchange-rate-math-d526ac5f.js"
     ],
     "isEntry": true,
     "src": "modules/Ecommerce/Resources/assets/js/frontend/product-social-app.js"
@@ -175,7 +186,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-04e56fc4.css",
+    "file": "assets/app-6cdf6740.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -185,20 +196,29 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-04e56fc4.css"
+      "assets/app-6cdf6740.css"
     ],
-    "file": "assets/app-9d8d9acc.js",
+    "file": "assets/app-f9bada13.js",
     "imports": [
-      "_vue-clipboard-1d445109.js",
+      "_vue-clipboard-9c83a367.js",
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-033f1e5f.js",
+      "_exchange-rate-math-d526ac5f.js",
       "_index-e849b4f5.js",
       "_claim_form-e14cd897.js"
     ],
     "isEntry": true,
     "src": "resources/js/app.js"
+  },
+  "resources/js/storefront-amounts.js": {
+    "file": "assets/storefront-amounts-526c3177.js",
+    "imports": [
+      "_exchange-rate-math-d526ac5f.js",
+      "_storefront-cart-amounts-8effdbd3.js"
+    ],
+    "isEntry": true,
+    "src": "resources/js/storefront-amounts.js"
   },
   "resources/js/system.css": {
     "file": "assets/system-d1646df0.css",
@@ -208,13 +228,13 @@
     "css": [
       "assets/system-d1646df0.css"
     ],
-    "file": "assets/system-1ec1e6b3.js",
+    "file": "assets/system-1afcf5d0.js",
     "imports": [
-      "_vue-clipboard-1d445109.js",
+      "_vue-clipboard-9c83a367.js",
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
-      "_exchange-rate-math-033f1e5f.js",
+      "_exchange-rate-math-d526ac5f.js",
       "_index-e849b4f5.js"
     ],
     "isEntry": true,

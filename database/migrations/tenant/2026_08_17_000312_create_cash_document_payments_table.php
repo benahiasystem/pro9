@@ -1,48 +1,45 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `cash_document_payments` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `cash_id` int(10) unsigned DEFAULT NULL
- * - `document_payment_id` int(10) unsigned DEFAULT NULL
- * - `sale_note_payment_id` int(10) unsigned DEFAULT NULL
- * - `cash_document_id` int(10) unsigned DEFAULT NULL
- * - `cash_document_credit_id` int(10) unsigned DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - cash_id: bigint
+ * - document_payment_id: bigint
+ * - sale_note_payment_id: bigint
+ * - cash_document_id: bigint
+ * - cash_document_credit_id: bigint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cash_document_payments` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `cash_id` int(10) unsigned DEFAULT NULL,
-  `document_payment_id` int(10) unsigned DEFAULT NULL,
-  `sale_note_payment_id` int(10) unsigned DEFAULT NULL,
-  `cash_document_id` int(10) unsigned DEFAULT NULL,
-  `cash_document_credit_id` int(10) unsigned DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `cash_document_payments_cash_id_foreign` (`cash_id`),
-  KEY `cash_document_payments_document_payment_id_foreign` (`document_payment_id`),
-  KEY `cash_document_payments_sale_note_payment_id_foreign` (`sale_note_payment_id`),
-  KEY `cash_document_payments_cash_document_id_foreign` (`cash_document_id`),
-  KEY `cash_document_payments_cash_document_credit_id_foreign` (`cash_document_credit_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cash_document_payments', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('cash_id')->nullable();
+            $table->bigInteger('document_payment_id')->nullable();
+            $table->bigInteger('sale_note_payment_id')->nullable();
+            $table->bigInteger('cash_document_id')->nullable();
+            $table->bigInteger('cash_document_credit_id')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['cash_id'], 'cash_document_payments_cash_id_foreign');
+            $table->index(['document_payment_id'], 'cash_document_payments_document_payment_id_foreign');
+            $table->index(['sale_note_payment_id'], 'cash_document_payments_sale_note_payment_id_foreign');
+            $table->index(['cash_document_id'], 'cash_document_payments_cash_document_id_foreign');
+            $table->index(['cash_document_credit_id'], 'cash_document_payments_cash_document_credit_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cash_document_payments`');
+        Schema::dropIfExists('cash_document_payments');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

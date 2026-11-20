@@ -2,6 +2,7 @@
 
 namespace App\Services\Fiscal;
 
+use App\Database\IntegerTransport;
 use App\Support\Exact\Decimal as D;
 use Modules\Inventory\Models\{InventoryConfiguration, ItemWarehouse};
 use Modules\Item\Models\ItemLotsGroup;
@@ -14,6 +15,12 @@ final class OrderLotInventory
         $item=$line->item;
         if (!empty($item->is_set)) return null;
         $selected=$item->IdLoteSelected ?? $item->lots_group ?? null;
+        if (($item->IdLoteSelected ?? null) === [] && !empty($item->lots_group)) {
+            // Una selección explícitamente vacía no reserva lotes del catálogo.
+            $itemData = (array) $item;
+            $itemData['lots_group'] = [];
+            $line->item = $itemData;
+        }
         if (empty($selected)) return null;
         $target=$line->exactValue('quantity');
         $factor=D::of($item->presentation->quantity_unit ?? 1);
@@ -21,8 +28,8 @@ final class OrderLotInventory
         if (!is_array($selected)) $selected=[['id'=>$selected,'compromise_quantity'=>D::represent($target)]];
         $entries=[]; $sum=D::of(0); $seen=[];
         foreach ($selected as $entry) {
-            $entry=(array)$entry; $id=(int)($entry['id'] ?? 0);
-            if ($id<=0 || isset($seen[$id])) FiscalAmounts::error('items','Los lotes deben ser válidos y no pueden repetirse.');
+            $entry=(array)$entry; $id=IntegerTransport::positiveKey($entry['id'] ?? null);
+            if ($id===null || isset($seen[$id])) FiscalAmounts::error('items','Los lotes deben ser válidos y no pueden repetirse.');
             $quantity=D::of(D::input($entry['compromise_quantity'] ?? '', 'items.lot_quantity'));
             if (!$quantity->isPositive()) FiscalAmounts::error('items','La cantidad del lote debe ser positiva.');
             $seen[$id]=true; $entries[]=['id'=>$id,'quantity'=>$quantity]; $sum=$sum->plus($quantity);

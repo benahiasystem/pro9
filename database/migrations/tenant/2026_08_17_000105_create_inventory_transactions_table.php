@@ -1,33 +1,33 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `inventory_transactions` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `type` enum('input','output') COLLATE utf8mb4_unicode_ci NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: varchar(255)
+ * - name: varchar(255)
+ * - type: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `inventory_transactions` (
-  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` enum('input','output') COLLATE utf8mb4_unicode_ci NOT NULL,
-  KEY `inventory_transactions_id_index` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('inventory_transactions', function (Blueprint $table) {
+            $table->string('id', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('type', 255)->collation('pro9_ci_ai');
+            $table->index(['id'], 'inventory_transactions_id_index');
+            $table->unique(['id'], 'inventory_transactions_id_pg_unique');
+        });
+        DB::statement('ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_type_check" CHECK ("type" IN (\'input\',\'output\'))');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `inventory_transactions`');
+        Schema::dropIfExists('inventory_transactions');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

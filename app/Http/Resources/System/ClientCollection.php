@@ -71,8 +71,8 @@ class ClientCollection extends ResourceCollection
                 'establishments_unlimited' => $row->plan->establishments_unlimited,
 
                 // para limite de ventas mensual
-                'monthly_sales_total' => number_format($row->monthly_sales_total, 2, '.', ''),
-                'max_sales_limit' => number_format($row->plan->sales_limit, 2, '.', ''),
+                'monthly_sales_total' => \App\Support\Exact\Decimal::format($row->monthly_sales_total, 2, '.', ''),
+                'max_sales_limit' => \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($row->plan,'sales_limit'), 2, '.', ''),
                 'sales_unlimited' => $row->plan->sales_unlimited,
                 'sale_notes_quantity_if_include' => $row->sale_notes_quantity_if_include ?? 0,
                 'enable_list_product' => $row->enable_list_product,

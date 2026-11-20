@@ -52,7 +52,7 @@
     <!-- ######## FIN PERSISTENCIA FISCAL VENEZUELA ######## -->
 </template>
 <script>
-import {exactAmount} from "@helpers/exchange-rate-math"
+import {exactAmount, exactValue} from "@helpers/exchange-rate-math"
 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
 export default {
     props: {
@@ -81,15 +81,20 @@ export default {
                 const islr = data.document.islr_retention || {};
                 this.records = data.data.map(row => ({...row,...[...(iva.records || []),...(islr.records || [])].find(info => info.id === row.id)}));
                 this.concepts = data.document.islr_concepts || [];
-                if (this.replacementEndpoint) data.document={...data.document,total_igv:data.document.effective_total_igv,total_taxed:data.document.effective_total_taxed,total_value:data.document.effective_total_value};
-                this.document=data.document;
+                const document = data.document;
+                this.document = {
+                    ...document,
+                    total_igv: document.effective_total_igv ?? document.total_igv,
+                    total_taxed: document.effective_total_taxed ?? document.total_taxed,
+                    total_value: document.effective_total_value ?? document.total_value,
+                };
                 const kind = this.replacementKind || 'IVA';
                 const summary = kind === 'ISLR' ? islr : iva;
                 this.prevision = summary.prevision;
                 this.canCreate = summary.can_create === true;
                 this.form = { agent_rif: '', invoice_control: data.document.control_number, invoice_number: data.document.number_full, fiscal_context: {concept_basis:null,iva_100_basis:null,evidence_reference:null,public_operation_scope:null,public_scope_reference:null}, document_id: this.documentId, agent_id: data.document.customer_id, tax_kind: kind, voucher_number: '',
                     voucher_date: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Caracas' }), currency_type_id: data.document.currency_type_id,
-                    exchange_rate: data.document.exchange_rate_sale, base: kind === 'ISLR' ? data.document.total_value : data.document.total_igv, percentage: '', subtrahend: 0, amount: '', concept_id: null, attachment: null, operation_key: this.newKey() }
+                    exchange_rate: data.document.exchange_rate_sale, base: kind === 'ISLR' ? this.document.total_value : this.document.total_igv, percentage: '', subtrahend: 0, amount: '', concept_id: null, attachment: null, operation_key: this.newKey() }
             } catch (e) { if (sequence === this.sequence) this.error = 'No se pudieron cargar las retenciones.' }
             finally { if (sequence === this.sequence) this.initializing = false }
         },
@@ -123,7 +128,12 @@ export default {
                     total_igv:this.document.total_igv,total_taxed:this.document.total_taxed,fiscal_context:this.form.fiscal_context})
                 if (sequence !== this.sequence || proposalSequence !== this.proposalSequence || form !== this.form) return;
                 this.proposal = data.data; this.form.agent_rif = data.data.agent_rif || ''
-                if (this.proposal.eligible) { this.form.percentage = this.proposal.percentage; this.form.amount = this.form.tax_kind === 'ISLR' ? this.proposal.voucher_amount : exactAmount(this.form.base).times(this.proposal.percentage).dividedBy(100).decimal() }
+                if (this.proposal.eligible) {
+                    this.form.percentage = this.proposal.percentage;
+                    this.form.amount = this.form.tax_kind === 'ISLR'
+                        ? exactValue(this.proposal, 'voucher_amount').final(2)
+                        : exactAmount(this.form.base).times(this.proposal.percentage).dividedBy(100).final(2);
+                }
             } catch (e) {if (sequence === this.sequence && proposalSequence === this.proposalSequence && form === this.form) this.error = 'No se pudo evaluar la retención.'}
             finally { if (sequence === this.sequence && proposalSequence === this.proposalSequence && form === this.form) this.evaluating = false }
         },

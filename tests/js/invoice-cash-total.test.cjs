@@ -22,9 +22,10 @@ function line(price, quantity = '1', affectation = '10') {
 function invoice() {
     const state = new Vue({data:()=>({form:{items:[], payments:[{payment:'0', reference:'ref', payment_destination_id:'cash', payment_method_type_id:'01'}],
         fee:[], discounts:[], charges:[], total_prepayment:'0', currency_type_id:'VES', payment_condition_id:'01', total:'0'},
-        config:{}, enabled_discount_global:false, isExportInvoice:false, total_global_charge:'0', isUpdateDocument:false}),
-        computed:{collectionTarget(){return creation.collectionTarget(this.form)}},
-        methods:{...Object.fromEntries(['calculateTotal','calculatePayments','setTotalDefaultPayment','chargeGlobal','setPendingAmount','calculateFee','getTotal','clickCancel','clickRemoveItem','markPaymentEdited'].map(k=>[k,component.methods[k]])), setTotalPointsBySale(){}}});
+        config:{}, enabled_discount_global:false, isExportInvoice:false, total_global_charge:'0', invoiceGlobalChargeSource:null, isUpdateDocument:false}),
+        computed:{collectionTarget(){return creation.collectionTarget(this.form)},activeInvoicePayments:component.computed.activeInvoicePayments},
+        methods:{...Object.fromEntries(['calculateTotal','calculatePayments','setTotalDefaultPayment','chargeGlobal','invoiceGlobalChargeExact','setInvoiceGlobalCharge',
+            'setPendingAmount','calculateFee','getTotal','clickCancel','clickRemoveItem','markPaymentEdited'].map(k=>[k,component.methods[k]])), setTotalPointsBySale(){}}});
     return state;
 }
 test('invoice totals and the suggested cash payment follow all lines, quantity edits and removals', async () => {
@@ -55,6 +56,7 @@ test('the reactive collection target follows successive changes to the same draf
     assert.equal(fiscal.methods.fiscalQuoteRequest.call(state,state.form.payments).principal_due,'0.40');
     state.form.payment_condition_id='02';
     state.form.payments[0].payment='0.10';
+    state.form.payments[0].source_sale_note_payment_id=3;
     state.form.fee.push({amount:'0'});
     state.calculateFee();
     assert.equal(state.form.fee[0].amount,'0.30');
@@ -108,6 +110,19 @@ test('suggestion tracking is private, updates matching-currency original amount 
     form.payments[0].payment='50'; form.total='200'; creation.suggestRemainingPayment(form,form.payments,{refreshSuggested:true});
     assert.equal(form.payments[0].payment,'50');
     assert.deepEqual(compiler.compile(componentSource.template.content).errors,[]);
-    assert.match(componentSource.template.content, /@input="updatePaymentPrincipal\(row, \$event\)"/);
+    assert.match(componentSource.template.content, /@input="fiscalPaymentsApplicable \? updateTenderedPayment\(row, \$event\) : updatePaymentPrincipal\(row, \$event\)"/);
     assert.match(componentSource.script.content, /updatePaymentPrincipal\(row, value\)\s*\{[\s\S]*?this\.markPaymentEdited\(row\)/);
+    for(const method of ['updatePaymentPrincipal','updateTenderedPayment']) {
+        const row={payment:'0',tendered_amount:'0'},called=[]
+        component.methods[method].call({$set:(o,k,v)=>o[k]=v,markPaymentEdited:r=>{creation.markPaymentEdited(r);called.push(r)}},row,'50')
+        assert.equal(called[0],row)
+        const field=method==='updatePaymentPrincipal' ? 'payment' : 'tendered_amount'
+        assert.equal(row[field],'50')
+    }
 });
+test('new credit drafts are excluded while previously recorded advances remain applied',()=>{
+    const state=invoice();state.form.items=[line('0.40')];state.form.payment_condition_id='02';state.form.payments=[{payment:'0.10'}];state.form.fee=[{amount:'0'}]
+    state.calculateTotal();state.calculateFee();assert.equal(state.form.fee[0].amount,'0.40')
+    assert.equal(state.form.payments[0].payment,'0.10')
+    state.$set(state.form.payments[0],'source_sale_note_payment_id',1);state.calculateFee();assert.equal(state.form.fee[0].amount,'0.30');state.$destroy()
+})

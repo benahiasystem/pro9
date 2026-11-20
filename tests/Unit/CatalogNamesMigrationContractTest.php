@@ -97,11 +97,11 @@ class CatalogNamesMigrationContractTest extends TestCase
         }
 
         $foreignKeys = $this->source('database/migrations/tenant/2026_08_17_000999_add_tenant_foreign_keys.php');
-        self::assertStringNotContainsString('REFERENCES `cat_system_isc_types`', $foreignKeys);
-        self::assertStringNotContainsString('REFERENCES `cat_perception_types`', $foreignKeys);
-        self::assertStringNotContainsString('REFERENCES `cat_summary_status_types`', $foreignKeys);
-        self::assertStringNotContainsString('REFERENCES `pse_providers`', $foreignKeys);
-        self::assertStringNotContainsString('ALTER TABLE `cat_detraction_types`', $foreignKeys);
+        self::assertStringNotContainsString('REFERENCES "cat_system_isc_types"', $foreignKeys);
+        self::assertStringNotContainsString('REFERENCES "cat_perception_types"', $foreignKeys);
+        self::assertStringNotContainsString('REFERENCES "cat_summary_status_types"', $foreignKeys);
+        self::assertStringNotContainsString('REFERENCES "pse_providers"', $foreignKeys);
+        self::assertStringNotContainsString('ALTER TABLE "cat_detraction_types"', $foreignKeys);
     }
 
     /** @test */

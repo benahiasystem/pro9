@@ -136,7 +136,7 @@ final class Pro9SourceReader
             $issues = $this->projectionIssues($snapshot);
             $latest = $doc ? SourceVersion::where('source_document_id', $doc->id)->orderByDesc('revision')->first() : null;
             if ($doc && ($latest?->hash ?? $doc->metadata['source_hash'] ?? null) === $snapshot['hash']) {
-                $incident = Incident::where('resource_type', 'source_document')->where('resource_id', $doc->id)->where('kind', 'source_changed')->where('status', 'open')->orderByRaw("CAST(JSON_UNQUOTE(JSON_EXTRACT(details, '$.revision')) AS UNSIGNED) DESC")->orderByDesc('created_at')->orderByDesc('id')->first();
+                $incident = Incident::where('resource_type', 'source_document')->where('resource_id', $doc->id)->where('kind', 'source_changed')->where('status', 'open')->orderByRaw("CAST(details ->> 'revision' AS bigint) DESC NULLS LAST")->orderByDesc('created_at')->orderByDesc('id')->first();
                 return ['data' => $doc, 'unchanged' => true, 'requires_reconciliation' => (bool) $incident, 'observed_revision' => $latest?->revision ?? $doc->source_revision, 'incident_id' => $incident?->id];
             }
             $revision = $doc ? max((int) ($latest?->revision ?? 0), (int) $doc->source_revision) + 1 : 1;

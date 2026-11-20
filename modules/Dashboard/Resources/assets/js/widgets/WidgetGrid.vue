@@ -90,7 +90,7 @@ export default {
     filters: {
       deep: true,
       handler(value) {
-        if (this.state.ready) this.store.setFilters(value)
+        return this.store.setFilters(value)
       },
     },
   },

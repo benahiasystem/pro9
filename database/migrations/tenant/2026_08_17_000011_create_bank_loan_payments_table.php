@@ -1,41 +1,39 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `bank_loan_payments` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `bank_loan_id` int(10) unsigned NOT NULL
- * - `date_of_payment` date NOT NULL
- * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `payment` decimal(30,12) NOT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - bank_loan_id: bigint
+ * - date_of_payment: date
+ * - payment_method_type_id: char(2)
+ * - reference: varchar(255)
+ * - payment: numeric(30,12)
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `bank_loan_payments` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `bank_loan_id` int(10) unsigned NOT NULL,
-  `date_of_payment` date NOT NULL,
-  `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `payment` decimal(30,12) NOT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('bank_loan_payments', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('bank_loan_id');
+            $table->date('date_of_payment');
+            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai');
+            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('payment', 30, 12);
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+        });
+        DB::statement('ALTER TABLE "bank_loan_payments" ADD CONSTRAINT "bank_loan_payments_bank_loan_id_range" CHECK ("bank_loan_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `bank_loan_payments`');
+        Schema::dropIfExists('bank_loan_payments');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -8,7 +8,7 @@ class AddOpenaiProviderToSystemConfigurations extends Migration
 {
     public function up()
     {
-        Schema::connection('system')->table('configurations', function (Blueprint $table) {
+        Schema::table('configurations', function (Blueprint $table) {
             // El proveedor de IA se ofrece desde el system (panel reseller).
             // Los tenants ya no configuran su propia key — heredan estos
             // valores. Por eso movemos los campos del tenant a system.
@@ -19,7 +19,7 @@ class AddOpenaiProviderToSystemConfigurations extends Migration
 
     public function down()
     {
-        Schema::connection('system')->table('configurations', function (Blueprint $table) {
+        Schema::table('configurations', function (Blueprint $table) {
             $table->dropColumn(['openai_api_key', 'openai_model']);
         });
     }

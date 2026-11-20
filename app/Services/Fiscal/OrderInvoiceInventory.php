@@ -2,7 +2,8 @@
 
 namespace App\Services\Fiscal;
 
-use App\Models\Tenant\Document;
+use App\Database\IntegerTransport;
+use App\Models\Tenant\{Document, SaleNoteItem};
 use App\Support\Exact\Decimal as D;
 use Modules\Item\Models\ItemLotsGroup;
 use Modules\Order\Models\OrderNote;
@@ -32,37 +33,67 @@ final class OrderInvoiceInventory
             if ($notes->exists()) FiscalAmounts::error('order_note_id','El pedido ya tiene una nota de venta vigente.');
         }
         $sources=$order->items()->lockForUpdate()->get()->values(); $used=[];
-        $saleSources=$sourceSaleNoteId ? \App\Models\Tenant\SaleNoteItem::where('sale_note_id',$sourceSaleNoteId)->lockForUpdate()->get()->values() : collect();
+        $saleSources=$sourceSaleNoteId ? SaleNoteItem::where('sale_note_id',$sourceSaleNoteId)->orderBy('id')->lockForUpdate()->get()->keyBy('id') : collect();
         $usedSaleSources=[];
         foreach ($input['items'] as &$row) {
             $quantity=D::of(D::input($row['quantity'] ?? '', 'items.quantity'));
             if (!empty($row['quantity_input'])) {
                 $q=$row['quantity_input'];
-                $price=D::of(D::input($q['unit_price'] ?? '', 'items.quantity_input.unit_price'));
+                $price=\App\Support\Exact\LineCalculation::priceInput($q['unit_price'] ?? '', 'items.quantity_input.unit_price');
                 if (!$price->isPositive()) FiscalAmounts::error('items','La cantidad de la partida no es válida.');
                 $quantity=D::of(D::input($q['amount'] ?? '', 'items.quantity_input.amount'))->dividedBy($price);
             }
             $factor=D::of(data_get($row,'item.presentation.quantity_unit',1)); $match=null;
+            $hintedId = null;
+            $hintedQuantity = null;
+            $hints = $row['source_sale_note_items'] ?? [];
+            if ($sourceSaleNoteId && $hints !== []) {
+                $hintedId = is_array($hints) && count($hints) === 1 && is_array($hints[0] ?? null)
+                    ? IntegerTransport::positiveKey($hints[0]['sale_note_item_id'] ?? null) : null;
+                $hinted = $hintedId === null ? null : $saleSources->get($hintedId);
+                if (!$hinted || isset($usedSaleSources[$hintedId]) || (int) $hinted->item_id !== (int) $row['item_id']
+                    || !$factor->isEqualTo(D::of(data_get($hinted->item, 'presentation.quantity_unit', 1)))) {
+                    FiscalAmounts::error('items','Identifique una partida original de la nota de venta para cada partida del pedido.');
+                }
+                $hintedQuantity = $hinted->exactValue('quantity');
+            }
             foreach ($sources as $index=>$source) {
                 if (isset($used[$index]) || (int)$source->item_id !== (int)($row['item_id'] ?? 0)) continue;
                 if (!$factor->isEqualTo(D::of(data_get($source->item,'presentation.quantity_unit',1)))) continue;
-                if (!empty($row['quantity_input']) ? !$quantity->isEqualTo($source->exactValue('quantity'))
-                    : D::represent($quantity)!==D::represent($source->exactValue('quantity'))) continue;
-                $match=$source; $used[$index]=true; break;
+                $sourceQuantity = $source->exactValue('quantity');
+                if (!empty($row['quantity_input']) ? !$quantity->isEqualTo($sourceQuantity)
+                    : D::represent($quantity)!==D::represent($sourceQuantity)) continue;
+                if ($hintedQuantity && !$hintedQuantity->isEqualTo($sourceQuantity)) continue;
+                if ($match) {
+                    if (!$match->exactValue('quantity')->isEqualTo($sourceQuantity)) {
+                        FiscalAmounts::error('items.quantity','Identifique la partida de origen cuando las cantidades del pedido sean ambiguas.');
+                    }
+                    continue;
+                }
+                $match=$source; $matchedIndex=$index;
+                if (!$sourceSaleNoteId || $hintedQuantity) break;
             }
             if (!$match) FiscalAmounts::error('items','La factura debe conservar las partidas y cantidades del pedido.');
+            $used[$matchedIndex]=true;
             if (!$saleNote) $row['item']['order_inventory_inherited']=true;
             $packSnapshot=$match->calculation_snapshot['inputs']['order_pack_inventory'] ?? null;
             if ($packSnapshot !== null) {
                 if (!\App\Models\Tenant\Item::findOrFail($match->item_id)->is_set) FiscalAmounts::error('items','El producto original ya no conserva su tipo de paquete.');
                 $row['warehouse_id']=$packSnapshot['warehouse_id'];
-                if (!$saleNote) $row['_order_components']=$packSnapshot['components'];
+                if (!$saleNote) {
+                    $row['_order_components']=$packSnapshot['components'];
+                    // Component provenance does not authorize presentation metadata from the request.
+                    $row['item']['presentation']=json_decode(json_encode($match->item->presentation ?? [],JSON_THROW_ON_ERROR),true,512,JSON_THROW_ON_ERROR);
+                    $row['item']['unit_type_id']=$match->item->unit_type_id;
+                }
             } elseif (\App\Models\Tenant\Item::findOrFail($match->item_id)->is_set) {
                 FiscalAmounts::error('items','El pedido no conserva la composición original del paquete.');
             }
             $matchedSale=null;
             foreach ($saleSources as $index=>$saleSource) {
                 if (isset($usedSaleSources[$index]) || (int)$saleSource->item_id !== (int)$match->item_id
+                    || ($hintedId !== null && $index !== $hintedId)
+                    || !$factor->isEqualTo(D::of(data_get($saleSource->item,'presentation.quantity_unit',1)))
                     || !$saleSource->exactValue('quantity')->isEqualTo($match->exactValue('quantity'))) continue;
                 $usedSaleSources[$index]=true;
                 $matchedSale=$saleSource;
@@ -76,6 +107,7 @@ final class OrderInvoiceInventory
                 && ($matchedSale->calculation_snapshot['inputs']['inventory_service_without_movement'] ?? false) !== true) {
                 FiscalAmounts::error('inventory','La nota de venta no conserva su movimiento global de origen.');
             }
+            if ($matchedSale) SaleNoteInvoiceInventory::restoreSourcePrice($row, $matchedSale);
             if (empty($row['quantity_input']) && !$quantity->isEqualTo($match->exactValue('quantity'))) {
                 $exactInput=$match->calculation_snapshot['inputs']['quantity_input'] ?? null;
                 if (!$exactInput) FiscalAmounts::error('items.quantity','La cantidad exacta del pedido no se puede recuperar.');

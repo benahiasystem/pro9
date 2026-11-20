@@ -231,7 +231,7 @@ test('reopening refreshes the proposal even when the enabled switch has not chan
 
 test('disabled IGTF does not silently classify a payment as subject; enabled IGTF still uses the server proposal', async () => {
     const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/igtf_fields.vue').default;
-    const ctx={payment:{payment:'100',igtf_status:'not_applicable'},documentCurrency:'USD',igtfEnabled:false,sequence:0,
+    const ctx={payment:{payment:'100',igtf_status:'not_applicable'},documentCurrency:'VES',igtfEnabled:false,sequence:0,
         $set:(o,k,v)=>o[k]=v,$http:{post:async()=>({data:{data:{payment:{igtf_status:'subject'}}}})}};
     await component.methods.evaluate.call(ctx); assert.equal(ctx.payment.igtf_status,'not_applicable');
     ctx.igtfEnabled=true; await component.methods.evaluate.call(ctx); assert.equal(ctx.payment.igtf_status,'subject');
@@ -268,7 +268,7 @@ test('restoring retired exception drafts clears a cached quote and requests a cu
 
 test('a same-currency amount stays current even while its proposal request is pending', async () => {
     const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/igtf_fields.vue').default,response=deferred();
-    const ctx={payment:{payment:'100',original_amount:'100',currency_type_id:'USD'},documentCurrency:'USD',sequence:0,lastApplied:null,
+    const ctx={payment:{payment:'100',original_amount:'100',currency_type_id:'VES'},documentCurrency:'VES',sequence:0,lastApplied:null,
         $set:(o,k,v)=>o[k]=v,$http:{post:()=>response.promise}};
     const request=component.methods.evaluate.call(ctx);
     ctx.payment.payment='50';
@@ -326,7 +326,7 @@ test('an invalid exchange rate identifies the missing rate and discards a pendin
 
 test('a proposal for another document or removed payment cannot change the current payment', async () => {
     const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/igtf_fields.vue').default, response=deferred();
-    const old={payment:'100',igtf_status:'not_applicable'},ctx={payment:old,documentCurrency:'USD',igtfEnabled:true,sequence:0,
+    const old={payment:'100',igtf_status:'not_applicable'},ctx={payment:old,documentCurrency:'VES',igtfEnabled:true,sequence:0,
         $set:(o,k,v)=>o[k]=v,$http:{post:()=>response.promise}};
     const request=component.methods.evaluate.call(ctx);
     ctx.payment={payment:'50',igtf_status:'not_applicable'};
@@ -336,7 +336,7 @@ test('a proposal for another document or removed payment cannot change the curre
 
 test('a changed document context invalidates a proposal before Vue flushes its watchers', async () => {
     const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/igtf_fields.vue').default,response=deferred();
-    const ctx={payment:{payment:'100',igtf_status:'not_applicable'},documentId:1,documentCurrency:'USD',igtfEnabled:true,sequence:0,
+    const ctx={payment:{payment:'100',igtf_status:'not_applicable'},documentId:1,documentCurrency:'VES',igtfEnabled:true,sequence:0,
         $set:(o,k,v)=>o[k]=v,$http:{post:()=>response.promise}};
     const request=component.methods.evaluate.call(ctx);ctx.documentId=2;
     response.resolve({data:{data:{payment:{igtf_status:'subject'}}}});await request;
@@ -417,10 +417,10 @@ test('checkout quotes the full receipt and requires review if the tax changes', 
     const {load,settings}=runtime(), mixin=load('resources/js/mixins/fiscal-payment-settings.js').default;
     settings.setIgtfSettings({enabled:true,rate:'3.00'});
     const row={date_of_payment:'2026-09-10',payment_method_type_id:'10',currency_type_id:'USD',
-        original_amount:'100',payment:'100',exchange_rate:'10',financial_intermediation:'none'};
+        original_amount:'100',payment:'1000',exchange_rate:'10',financial_intermediation:'none'};
     const messages=[];let tax='3.00';
-    const ctx={...mixin.data(), fiscalPaymentsApplicable:true, form:{document_type_id:'01',currency_type_id:'USD',
-        exchange_rate_sale:'10',total_payable:'100',payments:[row]},$set:(target,key,value)=>target[key]=value,
+    const ctx={...mixin.data(), fiscalPaymentsApplicable:true, form:{document_type_id:'01',currency_type_id:'VES',
+        exchange_rate_sale:'10',total_payable:'1000',payments:[row]},$set:(target,key,value)=>target[key]=value,
         $message:{error:value=>messages.push(value)},$http:{get:async()=>({data:{data:{enabled:true,rate:'3.00'}}}),
             post:async(url,body)=>{assert.equal(url,'/documents/payment-quote');assert.equal(body.payments[0].original_amount,'100');
                 return {data:{data:{payments:[{igtf_status:'subject',tax_amount:tax}]}}}}}};
@@ -513,13 +513,13 @@ test('a cross-currency quote does not invent a missing payment exchange rate', (
 test('a pending quote cannot update a payment after its amount changes', async () => {
     const {load,settings}=runtime(), mixin=load('resources/js/mixins/fiscal-payment-settings.js').default, response=deferred();
     settings.setIgtfSettings({enabled:true,rate:'3.00'});
-    const row={date_of_payment:'2026-09-10',payment_method_type_id:'10',currency_type_id:'USD',original_amount:'100',payment:'100',exchange_rate:'10'};
-    const ctx={...mixin.data(),fiscalPaymentsApplicable:true,form:{document_type_id:'01',currency_type_id:'USD',
-        exchange_rate_sale:'10',total_payable:'100',payments:[row]},$set:(target,key,value)=>target[key]=value,
+    const row={date_of_payment:'2026-09-10',payment_method_type_id:'10',currency_type_id:'USD',original_amount:'100',payment:'1000',exchange_rate:'10'};
+    const ctx={...mixin.data(),fiscalPaymentsApplicable:true,form:{document_type_id:'01',currency_type_id:'VES',
+        exchange_rate_sale:'10',total_payable:'1000',payments:[row]},$set:(target,key,value)=>target[key]=value,
         $http:{post:()=>response.promise}};
     for(const [key,fn] of Object.entries(mixin.methods))ctx[key]=fn.bind(ctx);
     const pending=ctx.refreshFiscalQuote(ctx.form.payments);
-    row.original_amount='50';row.payment='50';
+    row.original_amount='50';row.payment='500';
     response.resolve({data:{data:{payments:[{igtf_status:'subject',tax_amount:'3.00'}]}}});
     assert.equal(await pending,null);assert.equal(row.quoted_tax_amount,undefined);assert.equal(ctx.igtfQuote,null);
 });
@@ -527,9 +527,9 @@ test('a pending quote cannot update a payment after its amount changes', async (
 test('a pending quote cannot update a checkout whose payment list was replaced', async () => {
     const {load,settings}=runtime(), mixin=load('resources/js/mixins/fiscal-payment-settings.js').default, response=deferred();
     settings.setIgtfSettings({enabled:true,rate:'3.00'});
-    const old={date_of_payment:'2026-09-10',payment_method_type_id:'10',currency_type_id:'USD',original_amount:'100',payment:'100',exchange_rate:'10'};
-    const ctx={...mixin.data(),fiscalPaymentsApplicable:true,form:{document_type_id:'01',currency_type_id:'USD',
-        exchange_rate_sale:'10',total_payable:'100',payments:[old]},$set:(target,key,value)=>target[key]=value,
+    const old={date_of_payment:'2026-09-10',payment_method_type_id:'10',currency_type_id:'USD',original_amount:'100',payment:'1000',exchange_rate:'10'};
+    const ctx={...mixin.data(),fiscalPaymentsApplicable:true,form:{document_type_id:'01',currency_type_id:'VES',
+        exchange_rate_sale:'10',total_payable:'1000',payments:[old]},$set:(target,key,value)=>target[key]=value,
         $http:{post:()=>response.promise}};
     for(const [key,fn] of Object.entries(mixin.methods))ctx[key]=fn.bind(ctx);
     const pending=ctx.refreshFiscalQuote(ctx.form.payments);
@@ -542,9 +542,9 @@ test('a pending quote cannot update a checkout whose payment list was replaced',
 test('a pending conversion quote cannot update a replaced document receipt list', async () => {
     const {load,settings}=runtime(), mixin=load('resources/js/mixins/fiscal-payment-settings.js').default, response=deferred();
     settings.setIgtfSettings({enabled:true,rate:'3.00'});
-    const old={payment_method_type_id:'10',currency_type_id:'USD',original_amount:'50',payment:'50',exchange_rate:'10'};
+    const old={payment_method_type_id:'10',currency_type_id:'USD',original_amount:'50',payment:'500',exchange_rate:'10'};
     const ctx={...mixin.data(),fiscalPaymentsApplicable:true,form:{order_note:{}},
-        document:{customer_id:42,currency_type_id:'USD',exchange_rate_sale:'10',total:'100',payments:[old]},
+        document:{customer_id:42,currency_type_id:'VES',exchange_rate_sale:'10',total:'1000',payments:[old]},
         $set:(target,key,value)=>target[key]=value,$http:{post:()=>response.promise}};
     for(const [key,fn] of Object.entries(mixin.methods))ctx[key]=fn.bind(ctx);
     const pending=ctx.refreshFiscalQuote(ctx.document.payments);
@@ -557,9 +557,9 @@ test('a pending conversion quote cannot update a replaced document receipt list'
 test('closing the payment dialog discards a pending quote', async () => {
     const {load,settings}=runtime(), mixin=load('resources/js/mixins/fiscal-payment-settings.js').default, response=deferred();
     settings.setIgtfSettings({enabled:true,rate:'3.00'});
-    const row={date_of_payment:'2026-09-10',payment_method_type_id:'10',currency_type_id:'USD',original_amount:'100',payment:'100',exchange_rate:'10'};
-    const ctx={...mixin.data(),fiscalPaymentsApplicable:true,showDialog:true,form:{document_type_id:'01',currency_type_id:'USD',
-        exchange_rate_sale:'10',total_payable:'100',payments:[row]},$set:(target,key,value)=>target[key]=value,
+    const row={date_of_payment:'2026-09-10',payment_method_type_id:'10',currency_type_id:'USD',original_amount:'100',payment:'1000',exchange_rate:'10'};
+    const ctx={...mixin.data(),fiscalPaymentsApplicable:true,showDialog:true,form:{document_type_id:'01',currency_type_id:'VES',
+        exchange_rate_sale:'10',total_payable:'1000',payments:[row]},$set:(target,key,value)=>target[key]=value,
         $http:{post:()=>response.promise}};
     for(const [key,fn] of Object.entries(mixin.methods))ctx[key]=fn.bind(ctx);
     const pending=ctx.refreshFiscalQuote(ctx.form.payments);ctx.showDialog=false;
@@ -570,12 +570,12 @@ test('closing the payment dialog discards a pending quote', async () => {
 test('an already populated checkout displays a quote on creation', async () => {
     const {load,settings}=runtime(), mixin=load('resources/js/mixins/fiscal-payment-settings.js').default;
     settings.setIgtfSettings({enabled:true,rate:'3.00'});
-    const row={date_of_payment:'2026-09-10',payment_method_type_id:'10',currency_type_id:'USD',original_amount:'100',payment:'100',exchange_rate:'10'};
+    const row={date_of_payment:'2026-09-10',payment_method_type_id:'10',currency_type_id:'USD',original_amount:'100',payment:'1000',exchange_rate:'10'};
     let calls=0;
     const http={get:async()=>({data:{data:{enabled:true,rate:'3.00'}}}),post:async()=>{calls++;
         return {data:{data:{payments:[{igtf_status:'subject',tax_amount:'3.00'}]}}}}};
-    const instance=new Vue({mixins:[mixin],beforeCreate(){this.$http=http},data:()=>({form:{document_type_id:'01',currency_type_id:'USD',
-        exchange_rate_sale:'10',total_payable:'100',payments:[row]}})});
+    const instance=new Vue({mixins:[mixin],beforeCreate(){this.$http=http},data:()=>({form:{document_type_id:'01',currency_type_id:'VES',
+        exchange_rate_sale:'10',total_payable:'1000',payments:[row]}})});
     await new Promise(resolve=>setImmediate(resolve));await Vue.nextTick();
     assert.ok(calls>0);assert.equal(instance.igtfQuote.payments[0].tax_amount,'3.00');
     assert.equal(row.quoted_tax_amount,'3.00');instance.$destroy();

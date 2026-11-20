@@ -2,6 +2,8 @@
 
 namespace App\CoreFacturalo;
 
+use App\Database\IntegerTransport;
+use App\CoreFacturalo\Requests\Inputs\Common\EstablishmentInput;
 use App\Http\Controllers\Tenant\EmailController;
 use App\Models\Tenant\DispatchItem;
 use App\Services\SalesDocumentTypePolicy;
@@ -109,7 +111,7 @@ class Facturalo
     // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
     public function save($inputs)
     {
-        return \Illuminate\Support\Facades\DB::connection('tenant')->transaction(fn () => $this->saveWithinTransaction($inputs));
+        return \App\Database\SqlErrors::transaction(\Illuminate\Support\Facades\DB::connection('tenant'), fn () => $this->saveWithinTransaction($inputs));
     }
     // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
     private function saveWithinTransaction($inputs)
@@ -121,6 +123,10 @@ class Facturalo
         // ######## FIN VERIFICACION FINAL DE CALCULOS ########
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = $inputs['type'];
+        if ($this->type === 'invoice') {
+            $inputs['establishment_id'] = EstablishmentInput::validatedId($inputs['establishment_id'] ?? null);
+            $inputs = \App\Services\Fiscal\PrepaymentReference::prepare($inputs);
+        }
         // Acquire the serialization lock before any consistent read creates a MySQL snapshot.
         if (in_array($this->type,['credit','debit'],true)) \App\Models\Tenant\Company::query()->lockForUpdate()->firstOrFail();
         if (!in_array($this->type, ['invoice', 'credit', 'debit'], true)) {
@@ -172,10 +178,18 @@ class Facturalo
                 break;
             case 'invoice':
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                $requestedOrderId = null;
+                if (!empty($inputs['order_note_id'])) {
+                    $requestedOrderId = IntegerTransport::positiveKey($inputs['order_note_id']);
+                    if ($requestedOrderId === null) {
+                        \App\Services\Fiscal\FiscalAmounts::error('order_note_id', 'Seleccione un identificador de pedido válido.');
+                    }
+                    $inputs['order_note_id'] = $requestedOrderId;
+                }
                 $sourceNotes = \App\Services\Payments\SaleNoteReceiptsRequired::lockOwners($inputs);
                 if (count($sourceNotes) === 1) {
                     $sourceNote=\App\Models\Tenant\SaleNote::withoutEagerLoads()->findOrFail($sourceNotes[0]);
-                    if (!empty($inputs['order_note_id']) && (int)$inputs['order_note_id'] !== (int)$sourceNote->order_note_id) {
+                    if ($requestedOrderId !== null && (string) $requestedOrderId !== (string) $sourceNote->order_note_id) {
                         \App\Services\Fiscal\FiscalAmounts::error('order_note_id','El pedido no coincide con el origen de la nota de venta.');
                     }
                     if ($sourceNote->order_note_id) {
@@ -195,10 +209,20 @@ class Facturalo
                 \App\Services\Payments\SaleNoteReceiptsRequired::attach($sourceNotes, $document->id);
                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
                 $document->invoice()->create($inputs['invoice']);
-                foreach ($inputs['items'] as $row) {
+                $modifiers = \App\Services\Fiscal\InvoiceModifiers::byLine($document, $inputs['items']);
+                foreach ($inputs['items'] as $index => $row) {
+                    $row['_invoice_modifier_components'] = $modifiers[$index] ?? [];
 //                    $purchase_unit_price = $row['purchase_unit_price'];
 //                    $row['item']['purchase_unit_price'] = $purchase_unit_price;
-                    $prepared=\App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)), $row['_order_components'] ?? $row['_sale_note_components'] ?? null);
+                    $saleNoteComponents = $row['_sale_note_components'] ?? null;
+                    $saleNoteIsSet = $saleNoteComponents === null ? null : ($row['_sale_note_is_set'] ?? true);
+                    unset($row['_sale_note_components'], $row['_sale_note_is_set']);
+                    $prepared = \App\Services\Fiscal\FiscalDocumentPersistence::line(
+                        $row + ['currency_type_id' => $document->currency_type_id, 'exchange_rate_sale' => $document->exchange_rate_sale],
+                        \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)),
+                        $row['_order_components'] ?? $saleNoteComponents,
+                        $saleNoteIsSet
+                    );
                     if (isset($row['_order_legacy_inventory'])) $prepared['item']['legacy_order_note_inventory']=$row['_order_legacy_inventory'];
                     $document->items()->create($prepared);
                     // $row['document_id']=  $document->id;
@@ -208,7 +232,7 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 $this->savePayments($document, $inputs['payments']);
-                $this->updatePrepaymentDocuments($inputs);
+                $this->updatePrepaymentDocuments($inputs, $document);
                 if($inputs['hotel']) $document->hotel()->create($inputs['hotel']);
                 if($inputs['transport']) $document->transport()->create($inputs['transport']);
                 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
@@ -217,6 +241,7 @@ class Facturalo
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 \App\Services\Fiscal\FiscalDocumentPersistence::applySettlements($document, $inputs);
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
+                \App\Services\Fiscal\PrepaymentBalance::initializeNew($document);
                 $outstanding = \App\Support\Exact\Receivables::balancesForDocuments([$document])[$document->id];
                 \App\Support\Exact\Installments::save($document, array_values($inputs['fee'] ?? []), \App\Support\Exact\Decimal::max(0, $outstanding));
                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
@@ -523,7 +548,7 @@ class Facturalo
             $quotation_id = ($this->document->quotation_id) ? 15:0;
 
             // Calcular el height sobre terminos y condiciones
-            $terms_condition = preg_replace('/<\/[a-zA-Z0-9]+>/', "\n", $this->document->terms_condition);
+            $terms_condition = preg_replace('/<\/[a-zA-Z0-9]+>/', "\n", $this->document->terms_condition ?? '');
             $terms_condition = preg_replace('/<[^\/][^>]*>/', '', $terms_condition);
             $terms_condition = html_entity_decode($terms_condition);
             $terms_condition = preg_replace("/[\r\n]+/", "\n", $terms_condition);
@@ -1004,37 +1029,10 @@ class Facturalo
 
 
 
-    private function updatePrepaymentDocuments($inputs){
-        // dd($inputs);
-
-        if(isset($inputs['prepayments'])) {
-
-            foreach ($inputs['prepayments'] as $row) {
-
-                $fullnumber = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $row['number']);
-                if ($fullnumber === null) continue;
-                $series = $fullnumber[0];
-                $number = $fullnumber[1];
-
-                $doc = Document::where([['series',$series],['number',$number]])
-                    ->where('establishment_id', $this->document->establishment_id)
-                    ->where('fiscal_environment', $this->document->fiscal_environment)
-                    ->where('document_type_id', ($row['document_type_id'] ?? '02') === '03' ? '03' : '01')->first();
-
-                if($doc){
-
-                    $total = $row['total'];
-                    $balance = $doc->pending_amount_prepayment - $total;
-                    $doc->pending_amount_prepayment = $balance;
-
-                    if($balance <= 0){
-                        $doc->was_deducted_prepayment = true;
-                    }
-
-                    $doc->save();
-
-                }
-            }
+    private function updatePrepaymentDocuments($inputs, ?Document $context = null)
+    {
+        if (!empty($inputs['prepayments'])) {
+            \App\Services\Fiscal\PrepaymentBalance::deduct($context ?? $this->document, $inputs['prepayments']);
         }
     }
 
@@ -1124,7 +1122,7 @@ class Facturalo
     // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
     public function update($inputs,$id)
     {
-        return \Illuminate\Support\Facades\DB::connection('tenant')->transaction(fn () => $this->updateWithinTransaction($inputs, $id));
+        return \App\Database\SqlErrors::transaction(\Illuminate\Support\Facades\DB::connection('tenant'), fn () => $this->updateWithinTransaction($inputs, $id));
     }
     // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
     private function updateWithinTransaction($inputs,$id)
@@ -1132,11 +1130,13 @@ class Facturalo
 
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = @$inputs['type'];
+        if ($this->type === 'invoice') $inputs=\App\Services\Fiscal\PrepaymentReference::prepare($inputs);
         // dd($inputs);
         switch ($this->type) {
             case 'invoice':
                 Company::query()->lockForUpdate()->firstOrFail();
                 $document = Document::query()->lockForUpdate()->findOrFail($id);
+                $previousPrepayments = clone $document;
                 $emission = $document->emission()->lockForUpdate()->first();
                 $document->setRelation('emission', $emission);
                 \App\Services\Fiscal\DocumentEditPolicy::assertEditable($document);
@@ -1152,11 +1152,22 @@ class Facturalo
                 \App\Services\ThirdPartyInvoicePolicy::assertSameCategory($document, $inputs);
                 $inputs = \App\Services\ThirdPartyInvoicePolicy::resolveInput($inputs, $this->webDocuments);
                 \App\Services\Fiscal\DocumentEditSettlements::validateInput($document, $inputs);
-                \App\Services\Fiscal\DocumentEditPolicy::invalidate($document);
                 $inputs['series'] = \App\Services\SeriesNumbering::normalizeCode($inputs['series'] ?? null);
-                if ($inputs['series'] !== $document->series || $inputs['document_type_id'] !== $document->document_type_id || (isset($inputs['number']) && (string) $inputs['number'] !== (string) $document->number) || (isset($inputs['establishment_id']) && (int) $inputs['establishment_id'] !== (int) $document->establishment_id)) {
+                $establishmentId = IntegerTransport::positiveKey($document->establishment_id);
+                $requestedEstablishmentId = $establishmentId;
+                if (array_key_exists('establishment_id', $inputs)) {
+                    $requestedEstablishmentId = IntegerTransport::positiveKey($inputs['establishment_id']);
+                    if ($requestedEstablishmentId === null) {
+                        \App\Services\Fiscal\FiscalAmounts::error('establishment_id', 'Seleccione un identificador de sucursal válido.');
+                    }
+                }
+                if ($inputs['series'] !== $document->series || $inputs['document_type_id'] !== $document->document_type_id
+                    || (isset($inputs['number']) && (string) $inputs['number'] !== (string) $document->number)
+                    || $requestedEstablishmentId !== $establishmentId) {
                     throw \Illuminate\Validation\ValidationException::withMessages(['series' => 'No se puede cambiar la identidad de un documento registrado.']);
                 }
+                $inputs['establishment_id'] = $document->establishment_id;
+                \App\Services\Fiscal\DocumentEditPolicy::invalidate($document);
                 $this->document = $document;
                 $inputs['external_id'] = $document->external_id;
                 $inputs['issuer'] = $document->issuer;
@@ -1170,10 +1181,17 @@ class Facturalo
                 foreach (['user_id', 'payment_condition_id', 'fiscal_environment', 'state_type_id', 'is_editable', 'quotation_id', 'sale_note_id', 'technical_service_id', 'source_module', 'receipt_parent_id'] as $field) {
                     if (array_key_exists($field, $document->getAttributes())) $inputs[$field] = $document->getAttributes()[$field];
                 }
+                foreach (['order_note_id','dispatch_id','sale_notes_relateds','dispatches_relateds'] as $field) {
+                    if (!array_key_exists($field,$document->getAttributes())) continue;
+                    $original=$document->getAttributes()[$field];
+                    $inputs[$field]=in_array($field,['sale_notes_relateds','dispatches_relateds'],true) && is_string($original)
+                        ? json_decode($original,false,512,JSON_THROW_ON_ERROR) : $original;
+                }
                 $inputs['payments'] = [];
                 $inputs['exchange_rate_sale'] = \App\Services\ExchangeRates\ExchangeRateMath::rate($inputs['exchange_rate_sale'], 'exchange_rate_sale');
                 $document->fill($inputs);
                 $document->save();
+                $exchangeRateChanged = $document->wasChanged('exchange_rate_sale');
 
                 // Existing collection schedules and receipt references remain intact.
 
@@ -1181,6 +1199,8 @@ class Facturalo
                 $inputs['items']=\App\Services\Fiscal\DocumentEditSettlements::restoreLineSnapshots($document,$inputs['items']);
 
                 foreach ($document->items as $it) {
+                    \App\Services\Fiscal\InvoiceGlobalInventory::reverseForEdit($it);
+                    \App\Services\Fiscal\InvoiceTrackedInventory::reverseForEdit($it);
                     //se usa el evento deleted del modelo - InventoryKardexServiceProvider document_item_delete
                     $it->delete();
                     // $this->restoreStockInWarehpuse($it->item_id, $warehouse->id, $it->quantity);
@@ -1195,16 +1215,21 @@ class Facturalo
                 // $document->items()->delete();
 
                 foreach ($inputs['items'] as $row) {
-                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs))) : $row);
+                    $document->items()->create(in_array($this->type, ['invoice','credit','debit'], true) ? \App\Services\Fiscal\FiscalDocumentPersistence::line($row + ['currency_type_id'=>$document->currency_type_id, 'exchange_rate_sale'=>$document->exchange_rate_sale], \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)), $row['_invoice_components'] ?? null, $row['_invoice_is_set'] ?? null) : $row);
                 }
 
-                \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
+                if (isset($inputs['taxes'])) {
+                    \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes']);
+                } elseif ($exchangeRateChanged) {
+                    \App\Services\Fiscal\FiscalDocumentPersistence::revalueOtherTaxes($document);
+                }
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 \App\Services\Fiscal\IvaRetentionService::savePrevision($document, $inputs['iva_retention_prevision'] ?? null);
                 \App\Services\Fiscal\IvaRetentionService::refreshPrevision($document);
                 \App\Services\Fiscal\IslrRetentionService::savePrevision($document, $inputs['islr_retention_prevision'] ?? null);
                 \App\Services\Fiscal\IslrRetentionService::refreshPrevision($document);
-                $this->updatePrepaymentDocuments($inputs);
+                \App\Services\Fiscal\PrepaymentBalance::restore($previousPrepayments);
+                $this->updatePrepaymentDocuments($inputs, $document);
 
                 if($inputs['hotel']){
                     $document->hotel()->update($inputs['hotel']);
@@ -1214,7 +1239,6 @@ class Facturalo
                 $document->load('invoice');
                 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
                 \App\Services\Fiscal\FiscalDocumentPersistence::fiscalData($document, $inputs['fiscal_data'] ?? []);
-                \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
                 \App\Services\Fiscal\DocumentEditSettlements::validateTotals($document);
                 if ($cashShortfall !== null) \App\Services\Fiscal\FiscalDocumentPersistence::assertFreeFormCashCollection($document,$document->fresh()->exactBalance(true),$cashShortfall,true);
@@ -1370,7 +1394,7 @@ class Facturalo
             $document_retention     = ($this->document instanceof Document && $this->document->retention_amount > 0) ? 10 : 0;
 
             // Calcular el height sobre terminos y condiciones
-            $terms_condition = preg_replace('/<\/[a-zA-Z0-9]+>/', "\n", $this->document->terms_condition);
+            $terms_condition = preg_replace('/<\/[a-zA-Z0-9]+>/', "\n", $this->document->terms_condition ?? '');
             $terms_condition = preg_replace('/<[^\/][^>]*>/', '', $terms_condition);
             $terms_condition = html_entity_decode($terms_condition);
             $terms_condition = preg_replace("/[\r\n]+/", "\n", $terms_condition);

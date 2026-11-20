@@ -1,37 +1,35 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `documentary_files_requirements` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `name` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Nombre a mostrar'
- * - `file` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Define si tiene archivo'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - name: text
+ * - file: smallint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `documentary_files_requirements` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Nombre a mostrar',
-  `file` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Define si tiene archivo',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('documentary_files_requirements', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->text('name')->collation('pro9_ci_ai')->nullable()->comment('Nombre a mostrar');
+            $table->smallInteger('file')->default('0')->comment('Define si tiene archivo');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "documentary_files_requirements" ADD CONSTRAINT "documentary_files_requirements_file_range" CHECK ("file" BETWEEN 0 AND 255)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `documentary_files_requirements`');
+        Schema::dropIfExists('documentary_files_requirements');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

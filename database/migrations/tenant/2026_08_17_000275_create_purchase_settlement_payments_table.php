@@ -1,45 +1,42 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `purchase_settlement_payments` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `purchase_settlement_id` int(10) unsigned NOT NULL
- * - `date_of_payment` date NOT NULL
- * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `change` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `payment` decimal(30,12) NOT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - purchase_settlement_id: bigint
+ * - date_of_payment: date
+ * - payment_method_type_id: char(2)
+ * - reference: varchar(255)
+ * - change: numeric(30,12)
+ * - payment: numeric(30,12)
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `purchase_settlement_payments` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `purchase_settlement_id` int(10) unsigned NOT NULL,
-  `date_of_payment` date NOT NULL,
-  `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `change` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `payment` decimal(30,12) NOT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `purchase_settlement_payments_purchase_settlement_id_foreign` (`purchase_settlement_id`),
-  KEY `purchase_settlement_payments_payment_method_type_id_foreign` (`payment_method_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('purchase_settlement_payments', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('purchase_settlement_id');
+            $table->date('date_of_payment');
+            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai');
+            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('change', 30, 12)->default('0.00');
+            $table->decimal('payment', 30, 12);
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['purchase_settlement_id'], 'purchase_settlement_payments_purchase_settlement_id_foreign');
+            $table->index(['payment_method_type_id'], 'purchase_settlement_payments_payment_method_type_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `purchase_settlement_payments`');
+        Schema::dropIfExists('purchase_settlement_payments');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -16,6 +16,7 @@ class AddDataModuleForEstablishmentsUsers extends Migration
         DB::table('modules')->insert([ 
             ['id'=> 14, 'value' => 'establishments', 'description' => 'Usuarios/Locales & Series']
         ]);
+        \App\Database\SequenceSynchronizer::sync(\Illuminate\Support\Facades\DB::connection());
     }
 
     /**

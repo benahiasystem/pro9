@@ -2,7 +2,7 @@
 <table class="full-width invoice-a5-summary" data-invoice-a5-summary>
     <tr>
         <td width="62%" style="vertical-align: top;">
-            <p style="margin: 2px 0;"><strong>Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</strong></p>
+            <p style="margin: 2px 0;"><strong>Productos: {{ \App\Support\Exact\InvoicePdfSummary::quantities($document->items) }}</strong></p>
             @if(!isset($showColumns) || ($showColumns['nro_producto'] ?? false))
             <p style="margin: 2px 0;"><strong>N° DE PRODUCTOS: {{ $document->items->count() }}</strong></p>
             @endif

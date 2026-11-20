@@ -27,9 +27,9 @@ class HotelRentProductsTemplateContractTest extends TestCase
         );
         $this->assertFragmentsInOrder($totals, [
             '<strong>SUBTOTAL</strong>',
-            '<strong>{{ this.form.subtotal | toDecimals }}</strong>',
+            '<strong>{{ hotelAmount(form.subtotal) }}</strong>',
             '<strong>TOTAL</strong>',
-            '<strong>{{ this.form.total | toDecimals }}</strong>',
+            '<strong>{{ hotelAmount(form.total) }}</strong>',
             '<td colspan="5"></td>',
         ]);
     }

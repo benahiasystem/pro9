@@ -1,36 +1,32 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `payment_files` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `payment_id` int(11) NOT NULL
- * - `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - filename: varchar(255)
+ * - payment_id: bigint
+ * - payment_type: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `payment_files` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `payment_id` int(11) NOT NULL,
-  `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `payment_index` (`payment_id`,`payment_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('payment_files', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('filename', 255)->collation('pro9_ci_ai');
+            $table->bigInteger('payment_id');
+            $table->string('payment_type', 255)->collation('pro9_ci_ai');
+            $table->index(['payment_id', 'payment_type'], 'payment_files_payment_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `payment_files`');
+        Schema::dropIfExists('payment_files');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

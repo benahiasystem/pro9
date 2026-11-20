@@ -1,55 +1,54 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `accounting_ledger` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `month` smallint(5) unsigned DEFAULT '0' COMMENT 'Numero de mes'
- * - `year` mediumint(8) unsigned DEFAULT '0' COMMENT 'Numero de mes'
- * - `date_of_report` date DEFAULT NULL
- * - `code_account` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Codigo de plan de cuenta'
- * - `name` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre de cuenta'
- * - `last_month_total` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'Debe ser el valor del total del mes pasado'
- * - `credits` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'Créditos en el mes'
- * - `debs` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'Debitos en el mes'
- * - `final_total` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'Saldo Final de mes'
- * - `serialize_data` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'datos serialziados en bruto.'
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - month: integer
+ * - year: bigint
+ * - date_of_report: date
+ * - code_account: text
+ * - name: text
+ * - last_month_total: numeric(30,12)
+ * - credits: numeric(30,12)
+ * - debs: numeric(30,12)
+ * - final_total: numeric(30,12)
+ * - serialize_data: text
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `accounting_ledger` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `month` smallint(5) unsigned DEFAULT '0' COMMENT 'Numero de mes',
-  `year` mediumint(8) unsigned DEFAULT '0' COMMENT 'Numero de mes',
-  `date_of_report` date DEFAULT NULL,
-  `code_account` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Codigo de plan de cuenta',
-  `name` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre de cuenta',
-  `last_month_total` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'Debe ser el valor del total del mes pasado',
-  `credits` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'Créditos en el mes',
-  `debs` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'Debitos en el mes',
-  `final_total` decimal(30,12) NOT NULL DEFAULT '0.00' COMMENT 'Saldo Final de mes',
-  `serialize_data` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'datos serialziados en bruto.',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('accounting_ledger', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->integer('month')->nullable()->default('0')->comment('Numero de mes');
+            $table->bigInteger('year')->nullable()->default('0')->comment('Numero de mes');
+            $table->date('date_of_report')->nullable();
+            $table->text('code_account')->collation('pro9_ci_ai')->comment('Codigo de plan de cuenta');
+            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre de cuenta');
+            $table->decimal('last_month_total', 30, 12)->default('0.00')->comment('Debe ser el valor del total del mes pasado');
+            $table->decimal('credits', 30, 12)->default('0.00')->comment('Créditos en el mes');
+            $table->decimal('debs', 30, 12)->default('0.00')->comment('Debitos en el mes');
+            $table->decimal('final_total', 30, 12)->default('0.00')->comment('Saldo Final de mes');
+            $table->text('serialize_data')->collation('pro9_ci_ai')->comment('datos serialziados en bruto.');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+        });
+        DB::statement('ALTER TABLE "accounting_ledger" ADD CONSTRAINT "accounting_ledger_month_range" CHECK ("month" BETWEEN 0 AND 65535)');
+        DB::statement('ALTER TABLE "accounting_ledger" ADD CONSTRAINT "accounting_ledger_year_range" CHECK ("year" BETWEEN 0 AND 16777215)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `accounting_ledger`');
+        Schema::dropIfExists('accounting_ledger');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

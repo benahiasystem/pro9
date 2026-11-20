@@ -6,6 +6,7 @@
 namespace Modules\Payment\Traits;
 
 use Exception;
+use App\Support\Exact\Decimal as D;
 use Illuminate\Support\Facades\Log;
 use Modules\Payment\Models\{
     PaymentLink,
@@ -35,8 +36,8 @@ trait PaymentLinkTrait
     /**
      *
      * @param  PaymentLink $payment_link
-     * @param  float $input_total
-     * @return float
+     * @param  string $input_total
+     * @return string
      */
     public function getTotal($payment_link, $input_total, &$apply_conversion)
     {
@@ -50,11 +51,11 @@ trait PaymentLinkTrait
 
             $apply_conversion = true;
 
-            return round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($payment_link['total'])->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($associated_record_payment['exchange_rate_sale'])), 2), 2);
+            return \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($payment_link['total'])->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($associated_record_payment['exchange_rate_sale'])), 2);
         }
 
         // el monto a cobrar lo define el link, no la url
-        return round((float) $payment_link['total'], 2);
+        return D::represent($payment_link['total'], 2, true);
     }
 
 

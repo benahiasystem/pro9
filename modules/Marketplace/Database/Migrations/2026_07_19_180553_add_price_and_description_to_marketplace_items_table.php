@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -15,16 +16,19 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::connection('system')->table('marketplace_items', function (Blueprint $table) {
-            $table->decimal('price', 10, 2)->nullable()->after('source_category');
+        Schema::table('marketplace_items', function (Blueprint $table) {
+            $table->decimal('price', 30, 12)->nullable()->after('source_category');
+            $table->json('calculation_snapshot')->nullable();
             $table->string('description', 1000)->nullable()->after('price');
         });
+        DB::statement('ALTER TABLE marketplace_items ADD CONSTRAINT marketplace_items_price_range CHECK (price >= 0 AND price <= 99999999.99)');
     }
 
     public function down()
     {
-        Schema::connection('system')->table('marketplace_items', function (Blueprint $table) {
-            $table->dropColumn(['price', 'description']);
+        DB::statement('ALTER TABLE marketplace_items DROP CONSTRAINT marketplace_items_price_range');
+        Schema::table('marketplace_items', function (Blueprint $table) {
+            $table->dropColumn(['price', 'description', 'calculation_snapshot']);
         });
     }
 };

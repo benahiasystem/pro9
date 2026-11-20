@@ -588,6 +588,8 @@
     </el-dialog>
 </template>
 <script>
+import {selectPrepayment, updatePrepaymentInput, applyPrepaymentDiscount} from '@helpers/exact-prepayments'
+
 import {suggestRemainingPayment, suggestInstallments} from '@helpers/document-creation'
 import {exactAmount, exactInput, exactSum} from '@helpers/exchange-rate-math'
 import {technicalServiceTotals} from '@helpers/technical-service-totals'
@@ -913,15 +915,8 @@ export default {
                 else this.form.discounts.splice(index, 1, row);
             };
             if (this.prepayment_deduction) {
-                const prepayments = this.form.prepayments || [];
-                const amount = exactSum(prepayments.map(row => exactAmount(row.amount || 0)));
-                this.form.total_prepayment = exactSum(prepayments.map(row => exactAmount(row.total || 0))).decimal();
-                const type = String(this.form.affectation_type_prepayment) === '20' ? '05' : '04';
                 const original = technicalServiceTotals({...this.form, discounts: [], charges: [], total_prepayment: 0}, this.percentage_igv, true);
-                const base = exactAmount(type === '04' ? original.total_taxed : original.total_exonerated);
-                const factor = base.compare(0) === 0 ? exactAmount(0) : amount.dividedBy(base);
-                replaceAdjustment(type, {discount_type_id:type, description:'Descuento por anticipo',
-                    amount:amount.decimal(), base:base.decimal(), factor:factor.decimal()});
+                applyPrepaymentDiscount(this.form, original);
             }
             if (this.enabled_discount_global && exactAmount(this.total_global_discount || 0).compare(0) > 0) {
                 const original = technicalServiceTotals({...this.form, discounts: [], charges: [], total_prepayment: 0}, this.percentage_igv, true);
@@ -982,160 +977,8 @@ export default {
             // return unit_price.toFixed(6)
         },
         discountGlobalPrepayment() {
-            /* Extraido de resources/js/views/tenant/documents/invoice.vue */
-            let global_discount = 0;
-            let sum_total_prepayment = 0;
-
-            this.form.prepayments.forEach(item => {
-                global_discount += parseFloat(item.amount);
-                sum_total_prepayment += parseFloat(item.total);
-            });
-
-            // let base = (this.form.affectation_type_prepayment == 10) ? parseFloat(this.form.total_taxed):parseFloat(this.form.total_exonerated)
-            let base = 0;
-
-            switch (this.form.affectation_type_prepayment) {
-                case 10:
-                    base = parseFloat(this.form.total_taxed) + global_discount;
-                    // base = parseFloat(this.form.total_taxed)
-                    break;
-                case 20:
-                    base =
-                        parseFloat(this.form.total_exonerated) +
-                        global_discount;
-                    break;
-                case 30:
-                    base =
-                        parseFloat(this.form.total_unaffected) +
-                        global_discount;
-                    break;
-            }
-
-            let amount = _.round(global_discount, 2);
-            let factor = _.round(amount / base, 4);
-
-            this.form.total_prepayment = _.round(sum_total_prepayment, 2);
-            // this.form.total_prepayment = _.round(global_discount, 2)
-
-            if (this.form.affectation_type_prepayment == 10) {
-                let discount = _.find(this.form.discounts, {
-                    discount_type_id: "04"
-                });
-
-                if (global_discount > 0 && !discount) {
-                    this.form.total_discount = _.round(amount, 2);
-                    this.form.total_taxed = _.round(
-                        this.form.total_taxed - amount,
-                        2
-                    );
-                    this.form.total_igv = _.round(
-                        this.form.total_taxed * this.percentage_igv,
-                        2
-                    );
-                    this.form.total_taxes = _.round(this.form.total_igv, 2);
-                    this.form.total = _.round(
-                        this.form.total_taxed + this.form.total_taxes,
-                        2
-                    );
-
-                    this.form.discounts.push({
-                        discount_type_id: "04",
-                        description:
-                            // ########## INICIO CAMBIO IGV A IVA
-                            "Descuentos globales por anticipos gravados que afectan la base imponible del IVA",
-                            // ######### FIN CAMBIO IGV A IVA
-                        factor: factor,
-                        amount: amount,
-                        base: base
-                    });
-                } else {
-                    let pos = this.form.discounts.indexOf(discount);
-
-                    if (pos > -1) {
-                        this.form.total_discount = _.round(amount, 2);
-                        this.form.total_taxed = _.round(
-                            this.form.total_taxed - amount,
-                            2
-                        );
-                        this.form.total_igv = _.round(
-                            this.form.total_taxed * this.percentage_igv,
-                            2
-                        );
-                        this.form.total_taxes = _.round(this.form.total_igv, 2);
-                        this.form.total = _.round(
-                            this.form.total_taxed + this.form.total_taxes,
-                            2
-                        );
-
-                        this.form.discounts[pos].base = base;
-                        this.form.discounts[pos].amount = amount;
-                        this.form.discounts[pos].factor = factor;
-                    }
-                }
-            } else if (this.form.affectation_type_prepayment == 20) {
-                let exonerated_discount = _.find(this.form.discounts, {
-                    discount_type_id: "05"
-                });
-
-                this.form.total_discount = _.round(amount, 2);
-                this.form.total_exonerated = _.round(
-                    this.form.total_exonerated - amount,
-                    2
-                );
-                this.form.total = this.form.total_exonerated;
-
-                if (global_discount > 0 && !exonerated_discount) {
-                    this.form.discounts.push({
-                        discount_type_id: "05",
-                        description:
-                            "Descuentos globales por anticipos exonerados",
-                        factor: factor,
-                        amount: amount,
-                        base: base
-                    });
-                } else {
-                    let position = this.form.discounts.indexOf(
-                        exonerated_discount
-                    );
-
-                    if (position > -1) {
-                        this.form.discounts[position].base = base;
-                        this.form.discounts[position].amount = amount;
-                        this.form.discounts[position].factor = factor;
-                    }
-                }
-            } else if (this.form.affectation_type_prepayment == 30) {
-                let unaffected_discount = _.find(this.form.discounts, {
-                    discount_type_id: "06"
-                });
-
-                this.form.total_discount = _.round(amount, 2);
-                this.form.total_unaffected = _.round(
-                    this.form.total_unaffected - amount,
-                    2
-                );
-                this.form.total = this.form.total_unaffected;
-
-                if (global_discount > 0 && !unaffected_discount) {
-                    this.form.discounts.push({
-                        discount_type_id: "06",
-                        description:
-                            "Descuentos globales por anticipos inafectos",
-                        factor: factor,
-                        amount: amount,
-                        base: base
-                    });
-                } else {
-                    let position = this.form.discounts.indexOf(
-                        unaffected_discount
-                    );
-                    if (position > -1) {
-                        this.form.discounts[position].base = base;
-                        this.form.discounts[position].amount = amount;
-                        this.form.discounts[position].factor = factor;
-                    }
-                }
-            }
+            const original = technicalServiceTotals({...this.form, discounts: [], charges: [], total_prepayment: 0}, this.percentage_igv, true);
+            return applyPrepaymentDiscount(this.form, original);
         },
         discountGlobal() {
             /* Extraido de resources/js/views/tenant/documents/invoice.vue */
@@ -1955,28 +1798,13 @@ export default {
             });
         },
         inputAmountPrepayment(index) {
-            let prepayment = this.getPrepayment(index);
-
-            if (
-                parseFloat(this.form.prepayments[index].amount) >
-                parseFloat(prepayment.amount)
-            ) {
-                this.form.prepayments[index].amount = prepayment.amount;
-                this.$message.error(
-                    "El monto debe ser menor o igual al del anticipo"
-                );
-            }
-
-            this.form.prepayments[index].total =
-                this.form.affectation_type_prepayment == 10
-                    ? _.round(
-                          this.form.prepayments[index].amount *
-                              (1 + this.percentage_igv),
-                          2
-                      )
-                    : this.form.prepayments[index].amount;
-
-            this.changeTotalPrepayment();
+            try {
+                const result = updatePrepaymentInput(this.form.prepayments[index], this.getPrepayment(index),
+                    this.form.affectation_type_prepayment, this.percentage_igv);
+                this.$set(this.form.prepayments, index, result.row);
+                if (result.clamped) this.$message.error('El monto debe ser menor o igual al del anticipo');
+                this.changeTotalPrepayment();
+            } catch (error) { this.$message.error(error.message); }
         },
         changeDestinationSale() {
             if (
@@ -2032,17 +1860,11 @@ export default {
             }
         },
         async changeDocumentPrepayment(index) {
-            let prepayment = await _.find(this.prepayment_documents, {
-                id: this.form.prepayments[index].document_id
-            });
-
-            this.form.prepayments[index].number = prepayment.description;
-            this.form.prepayments[index].document_type_id =
-                prepayment.document_type_id;
-            this.form.prepayments[index].amount = prepayment.amount;
-            this.form.prepayments[index].total = prepayment.total;
-
-            await this.changeTotalPrepayment();
+            try {
+                const selected = this.getPrepayment(index);
+                this.$set(this.form.prepayments, index, selectPrepayment(this.form.prepayments[index], selected));
+                await this.changeTotalPrepayment();
+            } catch (error) { this.$message.error(error.message); }
         },
         clickAddPrepayment() {
             this.form.prepayments.push({

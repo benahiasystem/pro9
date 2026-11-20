@@ -20,6 +20,8 @@
 
 <script>
 import { formatValue } from '../registry'
+import { readOriginal, readVector } from '../../../../../../../resources/js/helpers/dashboard-originals'
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
 
 /** Tabla simple etiqueta/valor sobre el breakdown del dataset. */
 export default {
@@ -31,7 +33,7 @@ export default {
   computed: {
     rows() {
       const labels = this.dataset.breakdown.labels || []
-      const values = this.dataset.breakdown.values || []
+      const values = readVector(this.dataset.breakdown, 'values_fractions')
 
       return labels.slice(0, this.limit).map((label, i) => ({
         label,
@@ -39,11 +41,12 @@ export default {
       }))
     },
     totalStr() {
-      const total = this.dataset.totals.current
+      const total = readOriginal(this.dataset.totals, 'current')
       return total === null || total === undefined ? null : formatValue(total, this.dataset.unit)
     },
   },
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

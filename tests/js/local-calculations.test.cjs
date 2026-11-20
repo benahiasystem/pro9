@@ -137,13 +137,14 @@ test('closing a fractional balance preserves its exact applied payment in the ex
     const expected=calculationExpectation({...draft(),currency_type_id:'VES',exchange_rate_sale:'1',total:'1',total_payable:'1',payments},quote,'fractional',methods)
     assert.deepEqual({...expected.payments[1].payment_exact},{n:'1',d:'3'})
 })
-function stockView() {
+function stockView({unitPrice='100', documentType='01', calculateQuantity=false} = {}) {
     const {load}=runtime(),mixin=load('resources/js/mixins/pos-local-quantity.js').default
     const {calculateRowItem}=load('resources/js/helpers/functions.js'),{documentTotals}=load('resources/js/helpers/exact-document.js')
     const pending=[],messages=[]
-    const row=calculateRowItem({item:{id:1,currency_type_id:'VES',unit_price:'100',has_igv:true,aux_quantity:'1'},quantity:'1',affectation_igv_type_id:'10',unit_type_id:'UND'},'VES','100','0.16')
-    const view=new Vue({mixins:[mixin],data:()=>({form:{currency_type_id:'VES',exchange_rate_sale:'100',items:[row]},percentage_igv:'0.16'}),
-        methods:{calculateTotal(){Object.assign(this.form,documentTotals(this.form.items))},setFormPosLocalStorage(){},getStatusStock(){return new Promise((resolve,reject)=>pending.push({resolve,reject}))}},
+    const row=calculateRowItem({item:{id:1,currency_type_id:'VES',unit_price:unitPrice,has_igv:true,aux_quantity:'1',calculate_quantity:calculateQuantity},
+        quantity:'1',affectation_igv_type_id:'10',unit_type_id:'UND'},'VES','100','0.16')
+    const view=new Vue({mixins:[mixin],data:()=>({form:{document_type_id:documentType,currency_type_id:'VES',exchange_rate_sale:'100',items:[row]},percentage_igv:'0.16'}),
+        methods:{calculateTotal(){Object.assign(this.form,documentTotals(this.form.items))},setFormPosLocalStorage(){},getStatusStock(itemId, quantity){return new Promise((resolve,reject)=>pending.push({resolve,reject,itemId,quantity}))}},
         beforeCreate(){this.$message={error:message=>messages.push(message)}}})
     view.calculateTotal();return {view,pending,messages}
 }
@@ -177,16 +178,129 @@ test('price edits preserve exact fractions, do not wait for stock and keep inval
     assert.equal(view.posStockBlocked,true);assert.equal(view.posStockRetryable,false)
     assert.equal(view.form.items[0].total,'abc');view.$destroy()
 })
+test('invoice quantity derived from the entered total keeps valid operands instead of limiting its numerator',async()=>{
+    const amount='123456789.123456789012'
+    const {view,pending}=stockView({unitPrice:'0.987654321019',calculateQuantity:true})
+    view.form.items[0].total=amount
+    view.updateLocalPosTotal(0)
+    await flush()
+    assert.equal(view.posStockError,'')
+    const row=view.form.items[0]
+    assert.equal(row.quantity,'124999998.983532811407')
+    assert.deepEqual({...row.calculation_snapshot.values.quantity},{n:'123456789123456789012',d:'987654321019'})
+    assert.equal(row.quantity_input.amount,amount)
+    assert.deepEqual({...row.quantity_input.unit_price},{n:'987654321019',d:'1000000000000'})
+    assert.equal(view.form.total,amount)
+    assert.equal(pending.length,1)
+    pending[0].resolve({success:true})
+    await flush()
+    assert.equal(view.posStockBlocked,false)
+    view.$destroy()
+})
+test('quick checkout validates the exact physical demand for an edited invoice line', async () => {
+    const {view, pending} = stockView({unitPrice:'3', calculateQuantity:true})
+    const row = view.form.items[0]
+    view.$set(row.item, 'presentation', {id:7, quantity_unit:'2'})
+    const otherPrice = {...row, item:{...row.item, presentation:null}}
+    const otherProduct = {...otherPrice, item_id:2, item:{...otherPrice.item, id:2}}
+    view.form.items.push(otherPrice, otherProduct)
+    row.total = '1'
+    view.updateLocalPosTotal(0)
+    await flush()
+
+    assert.equal(view.form.items[0].total, '1')
+    assert.deepEqual({...view.form.items[0].calculation_snapshot.values.quantity}, {n:'1', d:'3'})
+    assert.equal(pending[0].itemId, 1)
+    assert.deepEqual({...pending[0].quantity}, {n:'5', d:'3'})
+    pending[0].resolve({success:false, message:'Sin existencias'})
+    await flush()
+    assert.equal(view.posStockBlocked, true)
+
+    view.retryPosStock()
+    await flush()
+    assert.deepEqual({...pending[1].quantity}, {n:'5', d:'3'})
+    const edited = view.form.items[0]
+    edited.item.aux_quantity = '2'
+    view.updateLocalPosQuantity(edited, 0)
+    await flush()
+    assert.equal(view.form.items[0].total, '6')
+    assert.equal(view.form.items[0].quantity_input, null)
+    assert.deepEqual({...pending[2].quantity}, {n:'5', d:'1'})
+    pending[1].resolve({success:false, message:'Respuesta anterior'})
+    pending[2].resolve({success:true})
+    await flush()
+    assert.equal(view.posStockBlocked, false)
+    view.$destroy()
+})
+
+test('quick checkout keeps existing stock validation of sale notes', async () => {
+    const {view, pending} = stockView({documentType:'80'})
+    const row = view.form.items[0]
+    view.$set(row.item, 'presentation', {id:7, quantity_unit:'2'})
+    row.item.aux_quantity = '3'
+    view.updateLocalPosQuantity(row, 0)
+    await flush()
+    assert.equal(pending[0].quantity, '3')
+    pending[0].resolve({success:true})
+    await flush()
+    view.$destroy()
+})
+
+test('quick checkout ignores an older stock result after another invoice line of the same product changes', async () => {
+    const {view, pending} = stockView({unitPrice:'3'})
+    const first = view.form.items[0]
+    const second = {...first, item:{...first.item}}
+    const unrelated = {...first, item_id:2, item:{...first.item, id:2}}
+    view.$set(first.item, 'presentation', {id:7, quantity_unit:'2'})
+    view.form.items.push(second, unrelated)
+
+    unrelated.item.aux_quantity = '2'
+    view.updateLocalPosQuantity(unrelated, 2)
+    first.item.aux_quantity = '2'
+    view.updateLocalPosQuantity(first, 0)
+    await flush()
+    assert.deepEqual({...pending[1].quantity}, {n:'5', d:'1'})
+
+    second.item.aux_quantity = '0.4'
+    view.updateLocalPosQuantity(second, 1)
+    await flush()
+    assert.deepEqual({...pending[2].quantity}, {n:'22', d:'5'})
+    pending[2].resolve({success:true})
+    pending[1].resolve({success:false, message:'Respuesta de una demanda anterior'})
+    await flush()
+    assert.equal(view.posStockPending, true)
+    assert.equal(view.posStockError, '')
+    pending[0].resolve({success:true})
+    await flush()
+    assert.equal(view.posStockBlocked, false)
+    view.$destroy()
+})
+
 test('switching invoice and sale note preserves the latest total delivered and invalidates stale tendered amounts',async()=>{
     const {load}=runtime(),mixin=load('resources/js/mixins/fiscal-payment-settings.js').default
-    const view=new Vue({localCalculations:true,mixins:[mixin],data:()=>({form:{...draft(),document_type_id:'01'},fiscalQuoteInline:true}),beforeCreate(){this.$http={post:async()=>({data:{data:context}})}}})
+    const current={...context,methods:[...context.methods,{id:'04',currency_type_id:'VES',collection_kind:'cash',is_active:true}]}
+    const bolivarCash={date_of_payment:'2026-09-10',payment_method_type_id:'04',currency_type_id:'VES',exchange_rate:'100',payment:'1000',original_amount:'1000',tendered_amount:'1000'}
+    const {payments:[dollarCash],...document}=draft()
+    const form={...document,document_type_id:'01',currency_type_id:'VES',total:'6000',total_payable:'6000',
+        payments:[bolivarCash,{...dollarCash,payment:'7000'}]}
+    const view=new Vue({localCalculations:true,mixins:[mixin],data:()=>({form,fiscalQuoteInline:true}),beforeCreate(){this.$http={post:async()=>({data:{data:current}})}}})
     await view.refreshLocalContext();await flush()
+    assert.equal(view.igtfQuote.payments[1].change,'18.50')
+    assert.equal(view.igtfQuote.payments[1].exchange_rate,'100.00000000')
+    assert.equal(view.igtfQuote.principal_applied,'6000.00')
+    assert.equal(view.igtfQuote.total_with_tax,'6150.00')
     view.form.document_type_id='80';await flush()
-    assert.equal(view.form.payments[0].tendered_amount,undefined);assert.equal(view.form.payments[0].original_amount,'70')
-    assert.equal(view.igtfQuote.payments[0].change,'10.00')
-    Object.assign(view.form.payments[0],{original_amount:'80',payment:'80'})
+    assert.equal(view.form.payments[1].tendered_amount,undefined)
+    assert.equal(view.form.payments[1].original_amount,'70')
+    assert.equal(view.igtfQuote.payments[0].change,'1000.00')
+    assert.equal(view.igtfQuote.payments[1].change,'10.00')
+    Object.assign(view.form.payments[1],{original_amount:'80',payment:'8000'})
     view.form.document_type_id='01';await flush()
-    assert.equal(view.form.payments[0].tendered_amount,'80');assert.equal(view.igtfQuote.payments[0].change,'18.20');view.$destroy()
+    assert.equal(view.form.payments[1].tendered_amount,'80')
+    assert.equal(view.igtfQuote.payments[1].change,'28.50')
+    assert.equal(view.form.currency_type_id,'VES')
+    assert.equal(view.form.total,'6000')
+    view.$destroy()
 })
 test('rebuilding a row for currency conversion preserves pending and failed availability checks',async()=>{
     const {view,pending}=stockView()

@@ -1,44 +1,42 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `product_variable_values` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `product_variable_id` bigint(20) unsigned NOT NULL
- * - `value` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `color` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `position` int(11) NOT NULL DEFAULT '0'
- * - `active` tinyint(1) NOT NULL DEFAULT '1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - product_variable_id: bigint
+ * - value: varchar(100)
+ * - color: varchar(7)
+ * - position: integer
+ * - active: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `product_variable_values` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `product_variable_id` bigint(20) unsigned NOT NULL,
-  `value` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `color` varchar(7) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `position` int(11) NOT NULL DEFAULT '0',
-  `active` tinyint(1) NOT NULL DEFAULT '1',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `pvv_variable_value_unique` (`product_variable_id`,`value`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('product_variable_values', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('product_variable_id');
+            $table->string('value', 100)->collation('pro9_ci_ai');
+            $table->string('color', 7)->collation('pro9_ci_ai')->nullable();
+            $table->integer('position')->default('0');
+            $table->boolean('active')->default(true);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['product_variable_id', 'value'], 'pvv_variable_value_unique');
+        });
+        DB::statement('ALTER TABLE "product_variable_values" ADD CONSTRAINT "product_variable_values_position_range" CHECK ("position" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `product_variable_values`');
+        Schema::dropIfExists('product_variable_values');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -1,66 +1,62 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `payment_links` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `uuid` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `user_id` int(10) unsigned NOT NULL
- * - `person_id` int(10) unsigned DEFAULT NULL
- * - `payment_link_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `payment_id` int(11) DEFAULT NULL
- * - `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `total` decimal(30,12) NOT NULL
- * - `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending'
- * - `paid_at` datetime DEFAULT NULL
- * - `uploaded_filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `query_transaction` tinyint(1) NOT NULL DEFAULT '0'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - fiscal_environment: varchar(16)
+ * - uuid: char(36)
+ * - user_id: bigint
+ * - person_id: bigint
+ * - payment_link_type_id: char(2)
+ * - payment_id: bigint
+ * - payment_type: varchar(255)
+ * - total: numeric(30,12)
+ * - status: varchar(20)
+ * - paid_at: timestamp
+ * - uploaded_filename: varchar(255)
+ * - query_transaction: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `payment_links` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `uuid` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_id` int(10) unsigned NOT NULL,
-  `person_id` int(10) unsigned DEFAULT NULL,
-  `payment_link_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `payment_id` int(11) DEFAULT NULL,
-  `payment_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `total` decimal(30,12) NOT NULL,
-  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
-  `paid_at` datetime DEFAULT NULL,
-  `uploaded_filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `query_transaction` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `payment_links_uuid_unique` (`uuid`),
-  KEY `payment_index` (`payment_id`,`payment_type`),
-  KEY `payment_links_user_id_foreign` (`user_id`),
-  KEY `payment_links_fiscal_environment_foreign` (`fiscal_environment`),
-  KEY `payment_links_payment_link_type_id_foreign` (`payment_link_type_id`),
-  KEY `payment_links_person_id_foreign` (`person_id`),
-  KEY `payment_links_status_index` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('payment_links', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
+            $table->char('uuid', 36)->collation('pro9_ci_ai');
+            $table->bigInteger('user_id');
+            $table->bigInteger('person_id')->nullable();
+            $table->char('payment_link_type_id', 2)->collation('pro9_ci_ai');
+            $table->bigInteger('payment_id')->nullable();
+            $table->string('payment_type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('total', 30, 12);
+            $table->string('status', 20)->collation('pro9_ci_ai')->default('pending');
+            $table->timestamp('paid_at')->nullable();
+            $table->string('uploaded_filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->boolean('query_transaction')->default(false);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->unique(['uuid'], 'payment_links_uuid_unique');
+            $table->index(['payment_id', 'payment_type'], 'payment_links_payment_index');
+            $table->index(['user_id'], 'payment_links_user_id_foreign');
+            $table->index(['fiscal_environment'], 'payment_links_fiscal_environment_foreign');
+            $table->index(['payment_link_type_id'], 'payment_links_payment_link_type_id_foreign');
+            $table->index(['person_id'], 'payment_links_person_id_foreign');
+            $table->index(['status'], 'payment_links_status_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `payment_links`');
+        Schema::dropIfExists('payment_links');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

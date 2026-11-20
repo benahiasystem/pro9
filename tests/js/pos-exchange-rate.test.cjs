@@ -8,6 +8,7 @@ const parser = require('@babel/parser')
 const generate = require('@babel/generator').default
 const load = require('./helpers/load-module.cjs')
 const {isValidPosRate, restorePosDraftRate, refreshPosRate, ensurePosRate} = load(path.resolve('resources/js/helpers/pos-exchange-rate.js'))
+const {applyPosScalePrices} = load(path.resolve('resources/js/helpers/pos-scale-prices.js'))
 const {withoutDraftRetentions} = load(path.resolve('resources/js/helpers/document-creation.js'))
 
 function deferred() {
@@ -106,7 +107,7 @@ for (const file of ['index.vue', 'fast.vue', 'garage.vue']) {
                 searchExchangeRateByDate(){const pending = requests.length ? retry : initial; requests.push(pending); return pending.promise},
                 changeExchangeRate(){return refreshPosRate(this)}})
             const storage = {getItem:() => JSON.stringify(draft), setItem(){}}
-            const scope = {localStorage:storage, withoutDraftRetentions, restorePosDraftRate, isValidPosRate}
+            const scope = {localStorage:storage, withoutDraftRetentions, restorePosDraftRate, isValidPosRate, applyPosScalePrices}
             function extract(name) {
                 const method = methods.properties.find(n => n.key?.name === name)
                 return vm.runInNewContext(`({${generate(method).code}})[${JSON.stringify(name)}]`, scope)
@@ -171,7 +172,7 @@ for (const file of ['index.vue', 'fast.vue', 'garage.vue']) {
             assert.equal(inputs.length, 1, `se esperaba el control visible ${model}`)
             assert.equal(inputs[0].attrsMap[':disabled'], 'posRateUnavailable')
         }
-        const buttons = nodes.filter(n => n.tag === 'button' && /changeCartQuantity\(|decrementItem\(|incrementPosLine\(/.test(n.attrsMap['@click'] || ''))
+        const buttons = nodes.filter(n => n.tag === 'button' && /changeCartQuantity\(|decrementItem\(|incrementPosLine\(|clickAddItem\(item, index\)/.test(n.attrsMap['@click'] || ''))
         if (file !== 'fast.vue') {
             assert.equal(buttons.length, 2)
             for (const button of buttons) assert.equal(button.attrsMap[':disabled'], 'posRateUnavailable')
@@ -221,7 +222,9 @@ test('Garage recalcula la línea en moneda documental después de restar una can
     const methods = ast.program.body.find(n => n.type === 'ExportDefaultDeclaration').declaration.properties.find(n => n.key.name === 'methods').value
     const math = load(path.resolve('resources/js/helpers/exchange-rate-math.js'))
     const {calculateRowItem} = load(path.resolve('resources/js/helpers/functions.js'))
-    const scope = {...math, ensurePosRate, calculateRowItem, _:require('lodash')}
+    const scope = {...math, ensurePosRate}
+    const localQuantity = load(path.resolve('resources/js/mixins/pos-local-quantity.js')).default
+    const cart = load(path.resolve('resources/js/mixins/pos-cart-additions.js')).default
     function extract(name) {
         const method = methods.properties.find(n => n.key?.name === name)
         return vm.runInNewContext(`({${generate(method).code}})[${JSON.stringify(name)}]`, scope)
@@ -233,18 +236,15 @@ test('Garage recalcula la línea en moneda documental después de restar una can
     const row = calculateRowItem(initial,'VES','12.5')
     row.item.aux_quantity = '1.5'
     const ctx = component('12.5')
-    const localQuantity = parser.parse(fs.readFileSync('resources/js/mixins/pos-local-quantity.js', 'utf8'), {sourceType:'module'})
-    const localMethods = localQuantity.program.body.find(n => n.type === 'ExportDefaultDeclaration').declaration.properties.find(n => n.key.name === 'methods').value
-    const quantityMethods = vm.runInNewContext(`let lineSequence = 0; (${generate(localMethods).code})`, scope)
     Object.assign(ctx, {form:{items:[row], currency_type_id:'VES', exchange_rate_sale:'12.5'}, items:[], percentage_igv:'0.16',
-        ...quantityMethods, localPosStockChecks:[], $set(target, key, value){target[key] = value},
-        $notify:() => ({close(){}}), async getStatusStock(id, qty){this.checkedQuantity=qty; return {success:true}},
-        cleanInput(){}, calculateTotal(){}, setFormPosLocalStorage(){}, setDefaultDataPriceSelected(){},
+        ...localQuantity.data(), ...localQuantity.methods, ...cart.data(), ...cart.methods,
+        $set(target, key, value){target[key] = value},
+        getStatusStock(){assert.fail('La edición debe comprobarse localmente')},
+        calculateTotal(){}, setFormPosLocalStorage(){},
         clickDeleteItem(){throw Error('No debe eliminar la partida')},
-        clickAddItem(...args){this.pending = extract('clickAddItem').apply(this,args)}})
+        clickAddItem:extract('clickAddItem')})
     extract('decrementItem').call(ctx,row,0)
-    await ctx.pending
-    assert.equal(ctx.checkedQuantity,'0.5')
+    assert.equal(ctx.localPosStockChecks[0].pending,false)
     assert.equal(ctx.form.items[0].quantity,'0.5')
     assert.equal(ctx.form.items[0].total,'62.5')
 })

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Database\IntegerTransport;
 use App\Models\Tenant\Catalogs\IdentityDocumentType;
 use App\Models\Tenant\Person;
 use Illuminate\Database\Eloquent\Builder;
@@ -45,9 +46,10 @@ final class SalesCustomerIdentityPolicy
 
     public static function assertCustomerAllowed($customerId, bool $exportation = false): Person
     {
-        $customer = Person::query()
+        $key = IntegerTransport::positiveKey($customerId);
+        $customer = $key === null ? null : Person::query()
             ->whereType('customers')
-            ->whereKey($customerId)
+            ->whereKey($key)
             ->first();
 
         if (! $customer) {

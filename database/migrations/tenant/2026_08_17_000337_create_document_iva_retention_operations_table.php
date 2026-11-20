@@ -1,56 +1,63 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
-/** Initial tenant schema; no conversion of existing tenants.
- * `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
- * `document_id` int(10) unsigned NOT NULL,
- * `retention_id` int(10) unsigned NOT NULL,
- * `operation_key` char(36) NOT NULL,
- * `action` varchar(8) NOT NULL,
- * `status` varchar(24) NOT NULL DEFAULT 'waiting',
- * `payload` json NOT NULL,
- * `context` json NOT NULL,
- * `attempt_id` char(36) DEFAULT NULL,
- * `attempts` int unsigned NOT NULL DEFAULT 0,
- * `failures` int unsigned NOT NULL DEFAULT 0,
- * `started_at` timestamp NULL DEFAULT NULL,
- * `next_attempt_at` timestamp NULL DEFAULT NULL,
- * `diagnostic` varchar(1000) DEFAULT NULL,
- * `actor_id` int(10) unsigned DEFAULT NULL,
- * `created_at` timestamp NULL DEFAULT NULL,
- * `updated_at` timestamp NULL DEFAULT NULL,
- * PRIMARY KEY (`id`),
- * UNIQUE KEY `iva_operation_key_unique` (`operation_key`),
- * UNIQUE KEY `iva_retention_action_unique` (`retention_id`,`action`),
- * KEY `iva_operations_due_index` (`status`,`next_attempt_at`)
+
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - document_id: bigint
+ * - retention_id: bigint
+ * - operation_key: char(36)
+ * - action: varchar(8)
+ * - status: varchar(24)
+ * - payload: json
+ * - context: json
+ * - attempt_id: char(36)
+ * - attempts: bigint
+ * - failures: bigint
+ * - started_at: timestamp
+ * - next_attempt_at: timestamp
+ * - diagnostic: varchar(1000)
+ * - actor_id: bigint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
-return new class extends Migration {
-    public function up(): void {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `document_iva_retention_operations` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `document_id` int(10) unsigned NOT NULL,
-  `retention_id` int(10) unsigned NOT NULL,
-  `operation_key` char(36) NOT NULL,
-  `action` varchar(8) NOT NULL,
-  `status` varchar(24) NOT NULL DEFAULT 'waiting',
-  `payload` json NOT NULL,
-  `context` json NOT NULL,
-  `attempt_id` char(36) DEFAULT NULL,
-  `attempts` int unsigned NOT NULL DEFAULT 0,
-  `failures` int unsigned NOT NULL DEFAULT 0,
-  `started_at` timestamp NULL DEFAULT NULL,
-  `next_attempt_at` timestamp NULL DEFAULT NULL,
-  `diagnostic` varchar(1000) DEFAULT NULL,
-  `actor_id` int(10) unsigned DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `iva_operation_key_unique` (`operation_key`),
-  UNIQUE KEY `iva_retention_action_unique` (`retention_id`,`action`),
-  KEY `iva_operations_due_index` (`status`,`next_attempt_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('document_iva_retention_operations', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('document_id');
+            $table->bigInteger('retention_id');
+            $table->char('operation_key', 36)->collation('pro9_ci_ai');
+            $table->string('action', 8)->collation('pro9_ci_ai');
+            $table->string('status', 24)->collation('pro9_ci_ai')->default('waiting');
+            $table->json('payload');
+            $table->json('context');
+            $table->char('attempt_id', 36)->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('attempts')->default('0');
+            $table->bigInteger('failures')->default('0');
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('next_attempt_at')->nullable();
+            $table->string('diagnostic', 1000)->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('actor_id')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['operation_key'], 'iva_operation_key_unique');
+            $table->unique(['retention_id', 'action'], 'iva_retention_action_unique');
+            $table->index(['status', 'next_attempt_at'], 'iva_operations_due_index');
+        });
+        DB::statement('ALTER TABLE "document_iva_retention_operations" ADD CONSTRAINT "document_iva_retention_operations_attempts_range" CHECK ("attempts" BETWEEN 0 AND 4294967295)');
+        DB::statement('ALTER TABLE "document_iva_retention_operations" ADD CONSTRAINT "document_iva_retention_operations_failures_range" CHECK ("failures" BETWEEN 0 AND 4294967295)');
     }
-    public function down(): void { DB::unprepared('DROP TABLE IF EXISTS `document_iva_retention_operations`'); }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('document_iva_retention_operations');
+    }
 };
+// ######### FIN CAMBIO POSTGRESQL 17

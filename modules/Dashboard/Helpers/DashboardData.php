@@ -6,6 +6,7 @@
 namespace Modules\Dashboard\Helpers;
 
 use App\Models\Tenant\Document;
+use App\Support\Exact\{Decimal as D, ReadSnapshot, DashboardSales, DashboardTotals, Receivables, OutstandingSummary};
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\DocumentPayment;
 use App\Models\Tenant\SaleNote;
@@ -27,57 +28,59 @@ class DashboardData
 
     public function data($request)
     {
-        $establishment_id = $request['establishment_id'];
-        $period = $request['period'];
-        $date_start = $request['date_start'];
-        $date_end = $request['date_end'];
-        $month_start = $request['month_start'];
-        $month_end = $request['month_end'];
+        return ReadSnapshot::run((new Document)->getConnection(),function () use ($request) {
+            $establishment_id = $request['establishment_id'];
+            $period = $request['period'];
+            $date_start = $request['date_start'];
+            $date_end = $request['date_end'];
+            $month_start = $request['month_start'];
+            $month_end = $request['month_end'];
 
-        $d_start = null;
-        $d_end = null;
+            $d_start = null;
+            $d_end = null;
 
-        switch ($period) {
-            case 'month':
-                $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
-                $d_end = Carbon::parse($month_start.'-01')->endOfMonth()->format('Y-m-d');
-                break;
-            case 'between_months':
-                $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
-                $d_end = Carbon::parse($month_end.'-01')->endOfMonth()->format('Y-m-d');
-                break;
-            case 'date':
-                $d_start = $date_start;
-                $d_end = $date_start;
-                break;
-            case 'between_dates':
-                $d_start = $date_start;
-                $d_end = $date_end;
-                break;
-            case 'last_week':
-                $d_start = $date_start;
-                $d_end = $date_end;
-                break;
-        }
+            switch ($period) {
+                case 'month':
+                    $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
+                    $d_end = Carbon::parse($month_start.'-01')->endOfMonth()->format('Y-m-d');
+                    break;
+                case 'between_months':
+                    $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
+                    $d_end = Carbon::parse($month_end.'-01')->endOfMonth()->format('Y-m-d');
+                    break;
+                case 'date':
+                    $d_start = $date_start;
+                    $d_end = $date_start;
+                    break;
+                case 'between_dates':
+                    $d_start = $date_start;
+                    $d_end = $date_end;
+                    break;
+                case 'last_week':
+                    $d_start = $date_start;
+                    $d_end = $date_end;
+                    break;
+            }
 
-        // $customers = Person::whereType('customers')->orderBy('name')->take(100)->get()->transform(function($row) {
-        //     return [
-        //         'id' => $row->id,
-        //         'description' => $row->number.' - '.$row->name,
-        //         'name' => $row->name,
-        //         'number' => $row->number,
-        //         'identity_document_type_id' => $row->identity_document_type_id,
-        //     ];
-        // });
+            // $customers = Person::whereType('customers')->orderBy('name')->take(100)->get()->transform(function($row) {
+            //     return [
+            //         'id' => $row->id,
+            //         'description' => $row->number.' - '.$row->name,
+            //         'name' => $row->name,
+            //         'number' => $row->number,
+            //         'identity_document_type_id' => $row->identity_document_type_id,
+            //     ];
+            // });
 
-        return [
-            'document' => $this->document_totals($establishment_id, $d_start, $d_end),
-            'sale_note' => $this->sale_note_totals($establishment_id, $d_start, $d_end),
-            'general' => $this->totals($establishment_id, $d_start, $d_end, $period, $month_start, $month_end),
-            'balance' => $this->balance($establishment_id, $d_start, $d_end),
-            'items' => $this->getItems(),
-            // 'quantity' => Configuration::first()->quantity_documents,
-        ];
+            return [
+                'document' => $this->document_totals($establishment_id, $d_start, $d_end),
+                'sale_note' => $this->sale_note_totals($establishment_id, $d_start, $d_end),
+                'general' => $this->totals($establishment_id, $d_start, $d_end, $period, $month_start, $month_end),
+                'balance' => $this->balance($establishment_id, $d_start, $d_end),
+                'items' => $this->getItems(),
+                // 'quantity' => Configuration::first()->quantity_documents,
+            ];
+        });
     }
 
     private function resolveFilters(array $request = [])
@@ -96,56 +99,41 @@ class DashboardData
 
     public function globalData(array $request = [])
     {
-        $filters = $this->resolveFilters($request);
-        $monthly_kpis = $this->monthlyKpis(6, $filters);
-
-        return array_merge([
-            'total_cpe' => Configuration::first()->quantity_documents,
-            'document_total_global' => $this->document_totals_globals($filters['date_start'], $filters['date_end']),
-            'sale_note_total_global' => $this->sale_note_totals_global($filters['date_start'], $filters['date_end']),
-        ], $monthly_kpis);
+        return ReadSnapshot::run((new Document)->getConnection(),function () use ($request) {
+            $filters=$this->resolveFilters($request);
+            $kpis=$this->monthlyKpis(6,$filters);
+            return array_merge(['total_cpe'=>Configuration::first()->quantity_documents,
+                'document_total_global'=>$this->document_totals_globals($filters['date_start'],$filters['date_end']),
+                'sale_note_total_global'=>$this->sale_note_totals_global($filters['date_start'],$filters['date_end'])],$kpis);
+        });
     }
 
     private function monthlyKpis($months = 6, array $filters = [])
     {
-        $months_es = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
-
-        $labels = [];
-        $trend = [
-            'monthly_sales' => [],
-            'average_ticket' => [],
-            'accounts_receivable' => [],
-            'net_utility' => [],
-        ];
-        $current = [];
-
+        $months_es=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
+        $periods=[];
         if (!empty($filters['date_start']) && !empty($filters['date_end']) && (($filters['period'] ?? null) !== 'month')) {
-            $current = $this->kpisForRange($filters['date_start'], $filters['date_end'], $filters['establishment_id'] ?? null);
-            $previous = $this->previousRange($filters['date_start'], $filters['date_end']);
-            $previous_data = $this->kpisForRange($previous['start'], $previous['end'], $filters['establishment_id'] ?? null);
-
-            $labels = ['Anterior', 'Actual'];
-            foreach ($trend as $key => $serie) {
-                $trend[$key][] = $previous_data[$key];
-                $trend[$key][] = $current[$key];
-            }
-
-            return array_merge($current, ['trend' => array_merge(['labels' => $labels], $trend)]);
-        }
-
-        $base = !empty($filters['date_start']) ? Carbon::parse($filters['date_start'])->startOfMonth() : Carbon::now()->startOfMonth();
-
-        for ($i = $months - 1; $i >= 0; $i--) {
-            $ref = $base->copy()->subMonths($i);
-            $current = $this->kpisForRange($ref->format('Y-m-d'), $ref->copy()->endOfMonth()->format('Y-m-d'), $filters['establishment_id'] ?? null);
-
-            $labels[] = $months_es[(int) $ref->format('n')];
-            foreach ($trend as $key => $serie) {
-                $trend[$key][] = $current[$key];
+            $previous=$this->previousRange($filters['date_start'],$filters['date_end']);
+            $periods=[['Anterior',$previous['start'],$previous['end']],['Actual',$filters['date_start'],$filters['date_end']]];
+        } else {
+            $base=!empty($filters['date_start']) ? Carbon::parse($filters['date_start'])->startOfMonth() : Carbon::now()->startOfMonth();
+            for ($i=$months-1;$i>=0;$i--) {
+                $ref=$base->copy()->subMonths($i);
+                $periods[]=[$months_es[$ref->month],$ref->format('Y-m-d'),$ref->copy()->endOfMonth()->format('Y-m-d')];
             }
         }
-
-        return array_merge($current, ['trend' => array_merge(['labels' => $labels], $trend)]);
+        $keys=['monthly_sales','average_ticket','accounts_receivable','net_utility'];
+        $trend=array_fill_keys($keys,[]); $trend['labels']=[]; $trend['exact']=array_fill_keys($keys,[]); $trend['calculation_snapshots']=[];
+        $current=[];
+        foreach ($periods as [$label,$start,$end]) {
+            $current=$this->kpisForRange($start,$end,$filters['establishment_id'] ?? null);
+            $trend['labels'][]=$label;
+            foreach ($keys as $key) {
+                $trend[$key][]=$current[$key]; $trend['exact'][$key][]=$current[$key.'_exact'];
+            }
+            $trend['calculation_snapshots'][]=$current['calculation_snapshot'];
+        }
+        return array_merge($current,['trend'=>$trend]);
     }
 
     /**
@@ -194,73 +182,19 @@ class DashboardData
 
     private function kpisForRange($date_start, $date_end, $establishment_id = null)
     {
-        $documents = Document::query()
-            ->whereBetween('date_of_issue', [$date_start, $date_end])
-            ->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
-            ->when($establishment_id, function ($query) use ($establishment_id) {
-                $query->where('establishment_id', $establishment_id);
-            })->get();
-
-        $documents_sales_total = 0;
-        $documents_note_credit = 0;
-        $documents_payment = 0;
-        $documents_count = 0;
-
-        foreach ($documents as $doc) {
-            $factor = ($doc->currency_type_id == 'USD') ? $doc->exchange_rate_sale : 1;
-
-            if (in_array($doc->document_type_id, ['01', '08'])) {
-                $documents_sales_total += $doc->total * $factor;
-                $documents_payment += collect($doc->payments)->sum('payment') * $factor;
-                $documents_count++;
-            } elseif ($doc->document_type_id == '07') {
-                $documents_note_credit += $doc->total * $factor;
-            }
-        }
-
-        $documents_total = $documents_sales_total - $documents_note_credit;
-
-        $sale_notes = SaleNote::query()
-            ->where('changed', false)
-            ->whereStateTypeAccepted()
-            ->whereBetween('date_of_issue', [$date_start, $date_end])
-            ->when($establishment_id, function ($query) use ($establishment_id) {
-                $query->where('establishment_id', $establishment_id);
-            })->get();
-
-        $sale_notes_total = 0;
-        $sale_notes_payment = 0;
-        $sale_notes_count = $sale_notes->count();
-
-        foreach ($sale_notes as $sn) {
-            $factor = ($sn->currency_type_id == 'USD') ? $sn->exchange_rate_sale : 1;
-            $sale_notes_total += $sn->total * $factor;
-            $sale_notes_payment += collect($sn->payments)->sum('payment') * $factor;
-        }
-
-        $monthly_sales = $documents_total + $sale_notes_total;
-        $sales_count = $documents_count + $sale_notes_count;
-        $average_ticket = $sales_count > 0 ? ($monthly_sales / $sales_count) : 0;
-        $accounts_receivable = max($monthly_sales - ($documents_payment + $sale_notes_payment), 0);
-
-        $utility_totals = (new DashboardUtility())->calculateUtilityTotals(
-            $establishment_id,
-            $date_start,
-            $date_end,
-            true,
-            null
-        );
-
-        $net_utility = (float) $utility_totals['totals']['utility'];
-
-        return [
-            'monthly_sales' => round($monthly_sales, 2),
-            'average_ticket' => round($average_ticket, 2),
-            'accounts_receivable' => round($accounts_receivable, 2),
-            'net_utility' => round($net_utility, 2),
-            'income' => round($monthly_sales, 2),
-            'egress' => (float) $utility_totals['totals']['total_egress'],
-        ];
+        return ReadSnapshot::run((new Document)->getConnection(),function () use ($date_start,$date_end,$establishment_id) {
+            $sales=DashboardSales::range($establishment_id,$date_start,$date_end)['total'];
+            $count=D::of(DashboardSales::documents($establishment_id,$date_start,$date_end)
+                ->whereIn('document_type_id',['01','08'])->count())->plus(DashboardSales::notes($establishment_id,$date_start,$date_end)->count());
+            $filters=['period'=>'between_dates','date_start'=>$date_start,'date_end'=>$date_end,
+                'establishment_id'=>$establishment_id,'stablishmentUnpaidAll'=>empty($establishment_id)];
+            $receivables=OutstandingSummary::summarize(Receivables::dataset($filters));
+            $utility=(new DashboardUtility())->calculateUtilityTotals($establishment_id,$date_start,$date_end,true,null)['totals'];
+            $values=['monthly_sales'=>$sales,'average_ticket'=>$count->isPositive() ? $sales->dividedBy($count) : D::of(0),
+                'accounts_receivable'=>D::readRequired($receivables,'consolidated_balance_ves'),
+                'net_utility'=>D::readRequired($utility,'utility'),'income'=>$sales,'egress'=>D::readRequired($utility,'total_egress')];
+            return DashboardSales::numericProjection($values)+['cost_is_estimated'=>true];
+        });
     }
 
     public function lowStock(array $request = [])
@@ -272,26 +206,21 @@ class DashboardData
 
     public function monthGoal()
     {
-        $configuration = Configuration::first();
-        $goal = (float) ($configuration->dashboard_goal_amount ?? 0);
-
-        $ref = Carbon::now();
-        $sales = $this->kpisForRange(
-            $ref->copy()->startOfMonth()->format('Y-m-d'),
-            $ref->copy()->endOfMonth()->format('Y-m-d')
-        )['monthly_sales'];
-
-        $day = (int) $ref->format('j');
-        $days_in_month = (int) $ref->format('t');
-
-        return [
-            'enabled' => (bool) ($configuration->dashboard_goal_enabled ?? false),
-            'goal' => round($goal, 2),
-            'sales' => $sales,
-            'percent' => $goal > 0 ? round(($sales / $goal) * 100, 1) : 0,
-            'remaining' => round(max($goal - $sales, 0), 2),
-            'projected' => $day > 0 ? round(($sales / $day) * $days_in_month, 2) : $sales,
-        ];
+        return ReadSnapshot::run((new Document)->getConnection(),function () {
+            $configuration=Configuration::first();
+            $goal=$configuration ? D::read($configuration,'dashboard_goal_amount') : D::of(0);
+            $ref=Carbon::now();
+            $sales=DashboardSales::range(null,$ref->copy()->startOfMonth()->format('Y-m-d'),$ref->copy()->endOfMonth()->format('Y-m-d'))['total'];
+            $values=['goal'=>$goal,'sales'=>$sales,'remaining'=>D::max($goal->minus($sales),0),
+                'projected'=>$sales->multipliedBy($ref->daysInMonth)->dividedBy($ref->day)->simplified()];
+            $percent=$goal->isPositive() ? $sales->dividedBy($goal)->multipliedBy(100) : D::of(0);
+            $result=DashboardSales::numericProjection($values);
+            $result['enabled']=(bool)($configuration->dashboard_goal_enabled ?? false);
+            $result['percent_exact']=D::format($percent,1,'.','');
+            $result['percent']=(float)$result['percent_exact'];
+            $result['calculation_snapshot']['values']['percent']=D::fraction($percent);
+            return $result;
+        });
     }
 
     public function debtors($request = [], $limit = 4)
@@ -319,219 +248,47 @@ class DashboardData
 
     public function paymentMethods(array $request = [])
     {
-        $filters = $this->resolveFilters($request);
-        $date_start = $filters['date_start'] ?: Carbon::now()->startOfMonth()->format('Y-m-d');
-        $date_end = $filters['date_end'] ?: Carbon::now()->endOfMonth()->format('Y-m-d');
-
-        $totals = [];
-
-        $documents = Document::query()
-            ->whereBetween('date_of_issue', [$date_start, $date_end])
-            ->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
-            ->whereIn('document_type_id', ['01', '08'])
-            ->when($filters['establishment_id'], function ($query) use ($filters) {
-                $query->where('establishment_id', $filters['establishment_id']);
-            })
-            ->get();
-
-        foreach ($documents as $doc) {
-            $factor = ($doc->currency_type_id == 'USD') ? $doc->exchange_rate_sale : 1;
-            foreach ($doc->payments as $payment) {
-                $label = optional($payment->payment_method_type)->description ?: 'Otros';
-                $totals[$label] = ($totals[$label] ?? 0) + $payment->payment * $factor;
-            }
-        }
-
-        $sale_notes = SaleNote::query()
-            ->where('changed', false)
-            ->whereStateTypeAccepted()
-            ->whereBetween('date_of_issue', [$date_start, $date_end])
-            ->when($filters['establishment_id'], function ($query) use ($filters) {
-                $query->where('establishment_id', $filters['establishment_id']);
-            })
-            ->get();
-
-        foreach ($sale_notes as $sn) {
-            $factor = ($sn->currency_type_id == 'USD') ? $sn->exchange_rate_sale : 1;
-            foreach ($sn->payments as $payment) {
-                $label = optional($payment->payment_method_type)->description ?: 'Otros';
-                $totals[$label] = ($totals[$label] ?? 0) + $payment->payment * $factor;
-            }
-        }
-
-        arsort($totals);
-
-        $labels = [];
-        $values = [];
-        $total = 0;
-
-        foreach ($totals as $label => $amount) {
-            $amount = round($amount, 2);
-            if ($amount <= 0) {
-                continue;
-            }
-            $labels[] = $label;
-            $values[] = $amount;
-            $total += $amount;
-        }
-
-        return [
-            'labels' => $labels,
-            'values' => $values,
-            'total' => round($total, 2),
-            'subtitle' => $this->paymentMethodsSubtitle($filters),
-        ];
+        $filters=$this->resolveFilters($request);
+        return \App\Support\Exact\DashboardPayments::range(
+            $filters['establishment_id'],$filters['date_start'],$filters['date_end'])
+            + ['subtitle'=>$this->paymentMethodsSubtitle($filters)];
     }
 
     public function salesWeek(array $request = [])
     {
-        $filters = $this->resolveFilters($request);
-
-        if (($filters['period'] ?? null) !== 'all' && !empty($filters['date_start']) && !empty($filters['date_end'])) {
-            $previous = $this->previousComparisonRange($filters);
-            $labels = $this->rangeLabels($filters['date_start'], $filters['date_end']);
-            $points = count($labels);
-
-            return [
-                'labels' => $labels,
-                'previous_labels' => $this->rangeLabels($previous['start'], $previous['end']),
-                'current' => $this->salesByRange($filters['date_start'], $filters['date_end'], $filters['establishment_id'], $points),
-                'previous' => $this->salesByRange($previous['start'], $previous['end'], $filters['establishment_id'], $points),
-                'subtitle' => 'Barras solidas = periodo filtrado - gris = periodo anterior',
-            ];
-        }
-
-        $start_current = Carbon::now()->startOfWeek(Carbon::MONDAY);
-        $start_previous = $start_current->copy()->subWeek();
-
-        $previous_labels = [];
-        for ($i = 0; $i < 7; $i++) {
-            $previous_labels[] = $start_previous->copy()->addDays($i)->format('d/m');
-        }
-
-        return [
-            'labels' => ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-            'previous_labels' => $previous_labels,
-            'current' => $this->dailySales($start_current, $filters['establishment_id']),
-            'previous' => $this->dailySales($start_previous, $filters['establishment_id']),
-            'subtitle' => 'Barras solidas = esta semana - gris = semana anterior',
-        ];
-    }
-
-    private function dailySales($week_start, $establishment_id = null)
-    {
-        $date_start = $week_start->format('Y-m-d');
-        $date_end = $week_start->copy()->addDays(6)->format('Y-m-d');
-
-        $documents = Document::query()
-            ->whereBetween('date_of_issue', [$date_start, $date_end])
-            ->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
-            ->when($establishment_id, function ($query) use ($establishment_id) {
-                $query->where('establishment_id', $establishment_id);
-            })
-            ->get();
-
-        $sale_notes = SaleNote::query()
-            ->where('changed', false)
-            ->whereStateTypeAccepted()
-            ->whereBetween('date_of_issue', [$date_start, $date_end])
-            ->when($establishment_id, function ($query) use ($establishment_id) {
-                $query->where('establishment_id', $establishment_id);
-            })
-            ->get();
-
-        $values = array_fill(0, 7, 0.0);
-
-        foreach ($documents as $doc) {
-            $factor = ($doc->currency_type_id == 'USD') ? $doc->exchange_rate_sale : 1;
-            $idx = Carbon::parse($doc->date_of_issue)->dayOfWeekIso - 1;
-
-            if (in_array($doc->document_type_id, ['01', '08'])) {
-                $values[$idx] += $doc->total * $factor;
-            } elseif ($doc->document_type_id == '07') {
-                $values[$idx] -= $doc->total * $factor;
+        return ReadSnapshot::run((new Document)->getConnection(),function () use ($request) {
+            $filters=$this->resolveFilters($request);
+            $filtered=($filters['period'] ?? null)!=='all' && !empty($filters['date_start']) && !empty($filters['date_end']);
+            if ($filtered) {
+                $start=$filters['date_start']; $end=$filters['date_end'];
+                $previous=$this->previousComparisonRange($filters);
+            } else {
+                $week=Carbon::now()->startOfWeek(Carbon::MONDAY);
+                $start=$week->format('Y-m-d'); $end=$week->copy()->addDays(6)->format('Y-m-d');
+                $previous=['start'=>$week->copy()->subWeek()->format('Y-m-d'),
+                    'end'=>$week->copy()->subDay()->format('Y-m-d')];
             }
-        }
-
-        foreach ($sale_notes as $sn) {
-            $factor = ($sn->currency_type_id == 'USD') ? $sn->exchange_rate_sale : 1;
-            $idx = Carbon::parse($sn->date_of_issue)->dayOfWeekIso - 1;
-            $values[$idx] += $sn->total * $factor;
-        }
-
-        return array_map(function ($value) {
-            return round(max($value, 0), 2);
-        }, $values);
-    }
-
-    private function rangeLabels($date_start, $date_end)
-    {
-        $start = Carbon::parse($date_start);
-        $end = Carbon::parse($date_end);
-        $days = $start->diffInDays($end) + 1;
-        $labels = [];
-
-        if ($days <= 31) {
-            while ($start <= $end) {
-                $labels[] = $start->format('d/m');
-                $start->addDay();
+            $current=\App\Support\Exact\DashboardSeries::sales($filters['establishment_id'],$start,$end);
+            $prior=\App\Support\Exact\DashboardSeries::sales($filters['establishment_id'],$previous['start'],$previous['end']);
+            if (!$filtered) $current['labels']=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+            $points=max(count($current['values']),count($prior['values']));
+            $labels=$previousLabels=$currentValues=$previousValues=[];
+            for ($i=0;$i<$points;$i++) {
+                $labels[]=$current['labels'][$i] ?? $prior['labels'][$i].' (anterior)';
+                $previousLabels[]=$prior['labels'][$i] ?? null;
+                $currentValues[]=$current['values'][$i] ?? null;
+                $previousValues[]=$prior['values'][$i] ?? null;
             }
-
-            return $labels;
-        }
-
-        while ($start <= $end) {
-            $labels[] = $start->format('m/Y');
-            $start = $start->copy()->endOfMonth()->addDay();
-        }
-
-        return $labels;
-    }
-
-    private function salesByRange($date_start, $date_end, $establishment_id = null, $points = null)
-    {
-        $start = Carbon::parse($date_start);
-        $end = Carbon::parse($date_end);
-        $days = $start->diffInDays($end) + 1;
-        $values = [];
-
-        if ($days <= 31) {
-            while ($start <= $end) {
-                $values[] = $this->kpisForRange($start->format('Y-m-d'), $start->format('Y-m-d'), $establishment_id)['monthly_sales'];
-                $start->addDay();
-            }
-
-            return $this->normalizeSeriesLength($values, $points);
-        }
-
-        while ($start <= $end) {
-            $bucket_end = $start->copy()->endOfMonth();
-            if ($bucket_end > $end) {
-                $bucket_end = $end->copy();
-            }
-
-            $values[] = $this->kpisForRange($start->format('Y-m-d'), $bucket_end->format('Y-m-d'), $establishment_id)['monthly_sales'];
-            $start = $bucket_end->copy()->addDay();
-        }
-
-        return $this->normalizeSeriesLength($values, $points);
-    }
-
-    private function normalizeSeriesLength(array $values, $points = null)
-    {
-        if (!$points) {
-            return $values;
-        }
-
-        if (count($values) > $points) {
-            return array_slice($values, 0, $points);
-        }
-
-        while (count($values) < $points) {
-            $values[] = 0;
-        }
-
-        return $values;
+            $currentProjection=\App\Support\Exact\DashboardSeries::project($currentValues);
+            $previousProjection=\App\Support\Exact\DashboardSeries::project($previousValues);
+            return ['labels'=>$labels,'previous_labels'=>$previousLabels,
+                'current'=>$currentProjection['data'],'previous'=>$previousProjection['data'],
+                'current_exact'=>$currentProjection['exact'],'previous_exact'=>$previousProjection['exact'],
+                'current_fractions'=>$currentProjection['fractions'],'previous_fractions'=>$previousProjection['fractions'],
+                'subtitle'=>$filtered ? 'Barras solidas = periodo filtrado - gris = periodo anterior'
+                    : 'Barras solidas = esta semana - gris = semana anterior']
+                + DashboardSales::numericProjection(['current_total'=>$currentProjection['total'],'previous_total'=>$previousProjection['total']]);
+        });
     }
 
     private function cashFlowSubtitle(array $filters)
@@ -550,64 +307,34 @@ class DashboardData
 
     public function cashFlow($request = [], $months = 6)
     {
-        if (is_numeric($request)) {
-            $months = (int) $request;
-            $request = [];
-        }
-
-        $filters = $this->resolveFilters((array) $request);
-        $months_es = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
-
-        $labels = [];
-        $income = [];
-        $egress = [];
-
-        if (($filters['period'] ?? null) !== 'all' && !empty($filters['date_start']) && !empty($filters['date_end'])) {
-            $labels = $this->rangeLabels($filters['date_start'], $filters['date_end']);
-            $start = Carbon::parse($filters['date_start']);
-            $end = Carbon::parse($filters['date_end']);
-            $days = $start->diffInDays($end) + 1;
-
-            if ($days <= 31) {
-                while ($start <= $end) {
-                    $kpis = $this->kpisForRange($start->format('Y-m-d'), $start->format('Y-m-d'), $filters['establishment_id']);
-                    $income[] = $kpis['income'];
-                    $egress[] = $kpis['egress'];
-                    $start->addDay();
-                }
+        if (is_numeric($request)) {$months=(int)$request;$request=[];}
+        return ReadSnapshot::run((new Document)->getConnection(),function () use ($request,$months) {
+            $filters=$this->resolveFilters((array)$request); $buckets=[];
+            if (($filters['period'] ?? null)!=='all' && !empty($filters['date_start']) && !empty($filters['date_end'])) {
+                $buckets=\App\Support\Exact\DashboardSeries::buckets($filters['date_start'],$filters['date_end']);
             } else {
-                while ($start <= $end) {
-                    $bucket_end = $start->copy()->endOfMonth();
-                    if ($bucket_end > $end) {
-                        $bucket_end = $end->copy();
-                    }
-
-                    $kpis = $this->kpisForRange($start->format('Y-m-d'), $bucket_end->format('Y-m-d'), $filters['establishment_id']);
-                    $income[] = $kpis['income'];
-                    $egress[] = $kpis['egress'];
-                    $start = $bucket_end->copy()->addDay();
+                $monthsEs=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
+                $base=!empty($filters['date_start']) ? Carbon::parse($filters['date_start'])->startOfMonth() : Carbon::now()->startOfMonth();
+                $first=$base->copy()->subMonths($months-1); $sameYear=$first->year===$base->year;
+                for ($i=$months-1;$i>=0;$i--) {
+                    $ref=$base->copy()->subMonths($i);
+                    $label=$monthsEs[$ref->month].($sameYear ? '' : ' '.$ref->format('Y'));
+                    $buckets[]=['label'=>$label,'start'=>$ref->format('Y-m-d'),'end'=>$ref->copy()->endOfMonth()->format('Y-m-d')];
                 }
             }
-
-            return array_merge(compact('labels', 'income', 'egress'), [
-                'subtitle' => $this->cashFlowSubtitle($filters),
-            ]);
-        }
-
-        $base = !empty($filters['date_start']) ? Carbon::parse($filters['date_start'])->startOfMonth() : Carbon::now()->startOfMonth();
-
-        for ($i = $months - 1; $i >= 0; $i--) {
-            $ref = $base->copy()->subMonths($i);
-            $kpis = $this->kpisForRange($ref->format('Y-m-d'), $ref->copy()->endOfMonth()->format('Y-m-d'), $filters['establishment_id']);
-
-            $labels[] = $months_es[(int) $ref->format('n')];
-            $income[] = $kpis['income'];
-            $egress[] = $kpis['egress'];
-        }
-
-        return array_merge(compact('labels', 'income', 'egress'), [
-            'subtitle' => $this->cashFlowSubtitle($filters),
-        ]);
+            $labels=$income=$egress=[];
+            foreach ($buckets as $bucket) {
+                $kpis=$this->kpisForRange($bucket['start'],$bucket['end'],$filters['establishment_id']);
+                $labels[]=$bucket['label']; $income[]=D::readRequired($kpis,'income'); $egress[]=D::readRequired($kpis,'egress');
+            }
+            $in=\App\Support\Exact\DashboardSeries::project($income); $out=\App\Support\Exact\DashboardSeries::project($egress);
+            return ['labels'=>$labels,'income'=>$in['data'],'egress'=>$out['data'],
+                'income_exact'=>$in['exact'],'egress_exact'=>$out['exact'],
+                'income_fractions'=>$in['fractions'],'egress_fractions'=>$out['fractions'],
+                'cost_is_estimated'=>true,'subtitle'=>$this->cashFlowSubtitle($filters)]
+                + DashboardSales::numericProjection(['income_total'=>$in['total'],'egress_total'=>$out['total'],
+                    'net_total'=>$in['total']->minus($out['total'])->simplified()]);
+        });
     }
 
     /**
@@ -616,77 +343,24 @@ class DashboardData
      * @param $date_end
      * @return array
      */
+    private function collectionGraph(string $label, array $source): array
+    {
+        $total=D::readRequired($source,'total'); $paid=D::readRequired($source,'total_payment');
+        $values=['total'=>$total,'total_payment'=>$paid,'total_to_pay'=>$total->minus($paid)->simplified()];
+        $text=array_map(static fn($value)=>D::format($value,2,'.',''),$values);
+        $projection=DashboardSales::numericProjection(['paid'=>$paid,'pending'=>$values['total_to_pay']]);
+        return ['totals'=>$text+['calculation_snapshot'=>D::snapshot($values)],
+            'graph'=>['labels'=>['Total cobrado','Pendiente de cobro'],'datasets'=>[[
+                'label'=>$label,'data'=>[$projection['paid'],$projection['pending']],
+                'data_exact'=>[$text['total_payment'],$text['total_to_pay']],
+                'calculation_snapshot'=>D::snapshot(['paid'=>$paid,'pending'=>$values['total_to_pay']]),
+                'backgroundColor'=>['rgb(36, 71, 232, .1)','rgb(254, 0, 108, .1)'],
+                'borderColor'=>['rgb(36, 71, 232)','rgb(254, 0, 108)']]]]];
+    }
+
     private function sale_note_totals($establishment_id, $date_start, $date_end)
     {
-
-        if($date_start && $date_end){
-            $sale_notes = $this->filterEstablishment(SaleNote::query(), $establishment_id)
-                                           ->where('changed', false)
-                                           ->whereStateTypeAccepted()
-                                           ->whereBetween('date_of_issue', [$date_start, $date_end])->get();
-        }else{
-            $sale_notes = $this->filterEstablishment(SaleNote::query(), $establishment_id)
-                                           ->where('changed', false)
-                                           ->whereStateTypeAccepted()
-                                           ->get();
-        }
-
-        //VES
-        $sale_note_total_pen = 0;
-        $sale_note_total_payment_pen = 0;
-
-        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'VES'))->sum('total');
-
-        //USD
-        $sale_note_total_usd = 0;
-        $sale_note_total_payment_usd = 0;
-
-        //TWO CURRENCY
-        foreach ($sale_notes as $sale_note)
-        {
-
-            if($sale_note->currency_type_id == 'VES'){
-
-                $sale_note_total_payment_pen += collect($sale_note->payments)->sum('payment');
-
-            }else{
-
-                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
-                $sale_note_total_payment_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_payment_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(collect($sale_note->payments)->sum('payment'))->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
-
-            }
-        }
-
-        //TOTALS
-        $sale_note_total = $sale_note_total_pen + $sale_note_total_usd;
-        $sale_note_total_payment = $sale_note_total_payment_pen + $sale_note_total_payment_usd;
-
-        $sale_note_total_to_pay = $sale_note_total - $sale_note_total_payment;
-
-        return [
-            'totals' => [
-                'total_payment' => number_format($sale_note_total_payment,2, ".", ""),
-                'total_to_pay' => number_format($sale_note_total_to_pay,2, ".", ""),
-                'total' => number_format($sale_note_total,2, ".", ""),
-            ],
-            'graph' => [
-                'labels' => ['Total cobrado', 'Pendiente de cobro'],
-                'datasets' => [
-                    [
-                        'label' => 'Notas de venta',
-                        'data' => [round($sale_note_total_payment,2), round($sale_note_total_to_pay,2)],
-                        'backgroundColor' => [
-                            'rgb(36, 71, 232, .1)',
-                            'rgb(254, 0, 108, .1)',
-                        ],
-                        'borderColor' => [
-                            'rgb(36, 71, 232)',
-                            'rgb(254, 0, 108)',
-                        ]
-                    ]
-                ],
-            ]
-        ];
+        return $this->collectionGraph('Notas de venta',$this->get_sale_note_totals($establishment_id,$date_start,$date_end)['totals']);
     }
 
 
@@ -694,57 +368,17 @@ class DashboardData
      *
      * Obtener totales de cpe
      *
-     * Usado en:
-     * App\Traits\LockedEmissionTrait - Control de limite de ventas mensual
+     * Presentación del panel. El límite de emisión usa App\Services\Plans\SalesLimit
+     * dentro de la escritura, con sus fracciones y bloqueo propios.
      *
      * @param  string $start_date
      * @param  string $end_date
-     * @return float
+     * @return string
      */
     public function sale_note_totals_global($start_date = null, $end_date = null)
     {
-        $sale_notes_query = SaleNote::without(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items'])
-            ->where('changed', false)
-            ->whereStateTypeAccepted()
-            ->select('id', 'currency_type_id', 'total', 'exchange_rate_sale');
-
-        if($start_date && $end_date)
-        {
-            $sale_notes_query->whereBetween('date_of_issue', [$start_date, $end_date]);
-        }
-
-        $sale_notes = $sale_notes_query->get();
-
-        //VES
-        $sale_note_total_pen = 0;
-        $sale_note_total_payment_pen = 0;
-
-        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'VES'))->sum('total');
-
-        //USD
-        $sale_note_total_usd = 0;
-        $sale_note_total_payment_usd = 0;
-
-        //TWO CURRENCY
-        foreach ($sale_notes as $sale_note)
-        {
-
-            if($sale_note->currency_type_id == 'VES'){
-
-                $sale_note_total_payment_pen += collect($sale_note->payments)->sum('payment');
-
-            }else{
-
-                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
-                $sale_note_total_payment_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_payment_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(collect($sale_note->payments)->sum('payment'))->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
-
-            }
-        }
-
-        //TOTALS
-        $sale_note_total = $sale_note_total_pen + $sale_note_total_usd;
-
-        return number_format($sale_note_total,2, ".", "");
+        $total=DashboardSales::sourceTotal('sale_note',null,$start_date,$end_date);
+        return D::format($total,2,'.','');
     }
 
     /**
@@ -755,100 +389,7 @@ class DashboardData
      */
     private function document_totals($establishment_id, $date_start, $date_end)
     {
-
-        if($date_start && $date_end){
-            $documents = $this->filterEstablishment(Document::query(), $establishment_id)
-                ->whereBetween('date_of_issue', [$date_start, $date_end])
-                ->whereIn('state_type_id', ['01','03','05','07','13'])
-                ->get();
-        }else{
-            $documents = $this->filterEstablishment(Document::query(), $establishment_id)
-                ->whereIn('state_type_id', ['01','03','05','07','13'])
-                ->get();
-        }
-        //VES
-        $document_total_pen = 0;
-        $document_total_payment_pen = 0;
-        $document_total_note_credit_pen = 0;
-
-        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','08']))->where('currency_type_id', 'VES')->sum('total');
-
-
-        //USD
-        $document_total_usd = 0;
-        $document_total_note_credit_usd = 0;
-        $document_total_payment_usd = 0;
-
-        $documents_usd = $documents->whereIn('state_type_id', ['01','03','05','07','13'])
-                                    ->whereIn('document_type_id', ['01','08'])
-                                    ->where('currency_type_id', 'USD');
-
-        foreach ($documents_usd as $dusd) {
-            $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->exchange_rate_sale)))->toBigDecimal();
-        }
-
-        //TWO CURRENCY
-
-        foreach ($documents as $document)
-        {
-            if($document->currency_type_id == 'VES'){
-
-                if(in_array($document->state_type_id,['01','03','05','07','13'])){
-
-                    $document_total_payment_pen += collect($document->payments)->sum('payment');
-                    $document_total_note_credit_pen += ($document->document_type_id == '07') ? $document->total:0; //nota de credito
-
-                }
-
-
-            }else{
-
-                if(in_array($document->state_type_id,['01','03','05','07','13'])){
-
-                    $document_total_payment_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_payment_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(collect($document->payments)->sum('payment'))->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($document->exchange_rate_sale)))->toBigDecimal();
-                    $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($document->document_type_id == '07') ? (\App\Services\ExchangeRates\ExchangeRateMath::rational($document->total)->multipliedBy($document->exchange_rate_sale))->toBigDecimal():0))->toBigDecimal(); //nota de credito
-
-                }
-
-            }
-
-        }
-
-        //TOTALS
-        $document_total = $document_total_pen + $document_total_usd;
-        $document_total_note_credit = $document_total_note_credit_pen + $document_total_note_credit_usd;
-        $document_total_payment = $document_total_payment_pen + $document_total_payment_usd;
-
-        $document_total = round(($document_total - $document_total_note_credit),2);
-        $document_total_to_pay = $document_total - $document_total_payment;
-
-        // dd($document_total , $document_total_payment);
-        // dd($document_total, $document_total_pen, $document_total_note_credit, $document_total_payment, $document_total_to_pay);
-
-        return [
-            'totals' => [
-                'total_payment' => number_format($document_total_payment,2, ".", ""),
-                'total_to_pay' => number_format($document_total_to_pay,2, ".", ""),
-                'total' => number_format($document_total,2, ".", ""),
-            ],
-            'graph' => [
-                'labels' => ['Total cobrado', 'Pendiente de cobro'],
-                'datasets' => [
-                    [
-                        'label' => 'Comprobantes',
-                        'data' => [round($document_total_payment,2), round($document_total_to_pay,2)],
-                        'backgroundColor' => [
-                            'rgb(36, 71, 232, .1)',
-                            'rgb(254, 0, 108, .1)',
-                        ],
-                        'borderColor' => [
-                            'rgb(36, 71, 232)',
-                            'rgb(254, 0, 108)',
-                        ],
-                    ]
-                ],
-            ]
-        ];
+        return $this->collectionGraph('Comprobantes',$this->get_document_totals($establishment_id,$date_start,$date_end)['totals']);
     }
 
 
@@ -856,77 +397,17 @@ class DashboardData
      *
      * Obtener totales de cpe
      *
-     * Usado en:
-     * App\Traits\LockedEmissionTrait - Control de limite de ventas mensual
+     * Presentación del panel. El límite de emisión usa App\Services\Plans\SalesLimit
+     * dentro de la escritura, con sus fracciones y bloqueo propios.
      *
      * @param  string $start_date
      * @param  string $end_date
-     * @return float
+     * @return string
      */
     public function document_totals_globals($start_date = null, $end_date = null)
     {
-        $documents_query = Document::query()->setEagerLoads([])
-                                    ->select('id', 'state_type_id', 'document_type_id', 'currency_type_id', 'total', 'exchange_rate_sale');
-
-
-        if($start_date && $end_date)
-        {
-            $documents_query->whereBetween('date_of_issue', [$start_date, $end_date]);
-        }
-
-        $documents = $documents_query->get();
-
-        //VES
-        $document_total_pen = 0;
-        $document_total_note_credit_pen = 0;
-
-        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','08']))->where('currency_type_id', 'VES')->sum('total');
-
-
-        //USD
-        $document_total_usd = 0;
-        $document_total_note_credit_usd = 0;
-
-        $documents_usd = $documents->whereIn('state_type_id', ['01','03','05','07','13'])
-                                    ->whereIn('document_type_id', ['01','08'])
-                                    ->where('currency_type_id', 'USD');
-
-        foreach ($documents_usd as $dusd) {
-            $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->exchange_rate_sale)))->toBigDecimal();
-        }
-
-        //TWO CURRENCY
-
-        foreach ($documents as $document)
-        {
-            if($document->currency_type_id == 'VES'){
-
-                if(in_array($document->state_type_id,['01','03','05','07','13'])){
-
-                    $document_total_note_credit_pen += ($document->document_type_id == '07') ? $document->total:0; //nota de credito
-
-                }
-
-
-            }else{
-
-                if(in_array($document->state_type_id,['01','03','05','07','13'])){
-
-                    $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($document->document_type_id == '07') ? (\App\Services\ExchangeRates\ExchangeRateMath::rational($document->total)->multipliedBy($document->exchange_rate_sale))->toBigDecimal():0))->toBigDecimal(); //nota de credito
-
-                }
-
-            }
-
-        }
-
-        //TOTALS
-        $document_total = $document_total_pen + $document_total_usd;
-        $document_total_note_credit = $document_total_note_credit_pen + $document_total_note_credit_usd;
-
-        $document_total = round(($document_total - $document_total_note_credit),2);
-
-        return number_format($document_total,2, ".", "");
+        $total=DashboardSales::sourceTotal('document',null,$start_date,$end_date);
+        return D::format($total,2,'.','');
     }
 
     /**
@@ -940,49 +421,8 @@ class DashboardData
      */
     public function salesTotalByRange($establishment_id, $date_start, $date_end)
     {
-        $documents_query = $this->filterEstablishment(Document::query(), $establishment_id)
-            ->whereIn('state_type_id', ['01','03','05','07','13']);
-
-        if ($date_start && $date_end) {
-            $documents_query->whereBetween('date_of_issue', [$date_start, $date_end]);
-        }
-
-        $documents = $documents_query->get();
-
-        $document_total = 0;
-        $document_note_credit = 0;
-        foreach ($documents as $doc) {
-            $factor = ($doc->currency_type_id == 'USD') ? $doc->exchange_rate_sale : 1;
-            if (in_array($doc->document_type_id, ['01','08'])) {
-                $document_total += $doc->total * $factor;
-            } elseif ($doc->document_type_id == '07') { // nota de crédito
-                $document_note_credit += $doc->total * $factor;
-            }
-        }
-        $documents_total = round($document_total - $document_note_credit, 2);
-
-        $sale_notes_query = $this->filterEstablishment(SaleNote::query(), $establishment_id)
-            ->where('changed', false)
-            ->whereStateTypeAccepted();
-
-        if ($date_start && $date_end) {
-            $sale_notes_query->whereBetween('date_of_issue', [$date_start, $date_end]);
-        }
-
-        $sale_notes = $sale_notes_query->get();
-
-        $sale_notes_total = 0;
-        foreach ($sale_notes as $sn) {
-            $factor = ($sn->currency_type_id == 'USD') ? $sn->exchange_rate_sale : 1;
-            $sale_notes_total += $sn->total * $factor;
-        }
-        $sale_notes_total = round($sale_notes_total, 2);
-
-        return [
-            'documents_total' => $documents_total,
-            'sale_notes_total' => $sale_notes_total,
-            'total' => round($documents_total + $sale_notes_total, 2),
-        ];
+        return \App\Support\Exact\DashboardSales::numericProjection(
+            \App\Support\Exact\DashboardSales::range($establishment_id,$date_start,$date_end));
     }
 
     /**
@@ -996,408 +436,68 @@ class DashboardData
      */
     private function totals($establishment_id, $date_start, $date_end, $period, $month_start, $month_end)
     {
-
-        if($date_start && $date_end){
-            $sale_notes = $this->filterEstablishment(SaleNote::query(), $establishment_id)
-                                           ->where('changed', false)
-                                           ->whereBetween('date_of_issue', [$date_start, $date_end])
-                                           ->whereStateTypeAccepted()
-                                           ->get();
-
-            $documents = $this->filterEstablishment(Document::query(), $establishment_id)->whereBetween('date_of_issue', [$date_start, $date_end])->get();
-
-        }else{
-            $sale_notes = $this->filterEstablishment(SaleNote::query(), $establishment_id)
-                                           ->where('changed', false)
-                                           ->whereStateTypeAccepted()
-                                           ->get();
-
-            $documents = $this->filterEstablishment(Document::query(), $establishment_id)->get();
-        }
-
-
-
-
-
-        //DOCUMENT
-        //VES
-        $document_total_pen = 0;
-        $document_total_note_credit_pen = 0;
-
-        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','08']))->where('currency_type_id', 'VES')->sum('total');
-
-        //USD
-        $document_total_usd = 0;
-        $document_total_note_credit_usd = 0;
-
-        $documents_usd = $documents->whereIn('state_type_id', ['01','03','05','07','13'])
-                                    ->whereIn('document_type_id', ['01','08'])
-                                    ->where('currency_type_id', 'USD');
-
-        foreach ($documents_usd as $dusd) {
-            $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($dusd->exchange_rate_sale)))->toBigDecimal();
-        }
-
-        //TWO CURRENCY
-
-        foreach ($documents as $document)
-        {
-
-            if(in_array($document->state_type_id, ['01','03','05','07','13'])){
-
-                if($document->currency_type_id == 'VES'){
-                    $document_total_note_credit_pen += ($document->document_type_id == '07') ? $document->total:0; //nota de credito
-                }else{
-                    $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($document->document_type_id == '07') ? (\App\Services\ExchangeRates\ExchangeRateMath::rational($document->total)->multipliedBy($document->exchange_rate_sale))->toBigDecimal():0))->toBigDecimal(); //nota de credito
-                }
-            }
-
-        }
-
-        $document_total = $document_total_pen + $document_total_usd;
-        $document_total_note_credit = $document_total_note_credit_pen + $document_total_note_credit_usd;
-
-        $documents_total = $document_total - $document_total_note_credit;
-
-        // dd($document_total_pen , $document_total_usd, $document_total_note_credit_pen);
-
-        //DOCUMENT
-
-        //SALE NOTE
-
-        //VES
-        $sale_note_total_pen = 0;
-
-        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'VES'))->sum('total');
-
-        //USD
-        $sale_note_total_usd = 0;
-
-        //TWO CURRENCY
-        foreach ($sale_notes as $sale_note)
-        {
-            if($sale_note->currency_type_id == 'USD'){
-                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note->exchange_rate_sale)))->toBigDecimal();
-            }
-        }
-
-        //TOTALS
-        $sale_notes_total = $sale_note_total_pen + $sale_note_total_usd;
-
-        //SALE NOTE
-
-        $total = $sale_notes_total + $documents_total;
-
-        // dd($period, $month_start, $month_end);
-
-        // if(in_array($period, ['month', 'between_months'])) {
-        //     if($month_start === $month_end) {
-        //         $data_array = $this->getDocumentsByDays($sale_notes, $documents, $date_start, $date_end);
-        //     } else {
-        //         $data_array = $this->getDocumentsByMonths($sale_notes, $documents, $month_start, $month_end);
-        //     }
-        // }
-
-        if($period == 'month')
-        {
-            $data_array = $this->getDocumentsByDays($sale_notes, $documents, $date_start, $date_end);
-        }
-        else if($period == 'between_months' && $month_start === $month_end)
-        {
-            $data_array = $this->getDocumentsByDays($sale_notes, $documents, $date_start, $date_end);
-        }
-        else if($period == 'between_months')
-        {
-            $data_array = $this->getDocumentsByMonths($sale_notes, $documents, $month_start, $month_end);
-        }
-        else
-        {
-            if($date_start === $date_end) {
-                $data_array = $this->getDocumentsByHours($sale_notes, $documents);
+        return ReadSnapshot::run((new Document)->getConnection(),function () use ($establishment_id,$date_start,$date_end,$period,$month_start,$month_end) {
+            $rows=DashboardSales::dataset($establishment_id,$date_start,$date_end);
+            $values=DashboardSales::datasetTotals($rows);
+            if ($period === 'month' || ($period === 'between_months' && $month_start === $month_end)) {
+                $series=$this->getDocumentsByDays($rows,$date_start,$date_end);
+            } elseif ($period === 'between_months') {
+                $series=$this->getDocumentsByMonths($rows,$month_start,$month_end);
+            } elseif ($date_start && $date_start === $date_end) {
+                $series=$this->getDocumentsByHours($rows);
+            } elseif ($date_start && $date_end) {
+                $series=$this->getDocumentsByDays($rows,$date_start,$date_end);
             } else {
-                $data_array = $this->getDocumentsByDays($sale_notes, $documents, $date_start, $date_end);
+                $first=$last=null;
+                foreach ($rows as $row) {
+                    $date=$row['date_of_issue'];
+                    if ($first === null || strcmp($date,$first)<0) $first=$date;
+                    if ($last === null || strcmp($date,$last)>0) $last=$date;
+                }
+                $first=$first ?? Carbon::now()->format('Y-m-d'); $last=$last ?? $first;
+                $series=$this->getDocumentsByMonths($rows,substr($first,0,7),substr($last,0,7));
             }
-        }
-
-        return [
-            'totals' => [
-                'total_documents' => number_format($documents_total,2, ".", ""),
-                'total_sale_notes' => number_format($sale_notes_total,2, ".", ""),
-                'total' => number_format($total,2, ".", ""),
-            ],
-            'graph' => [
-                'labels' => array_keys($data_array['total_array']),
-                'datasets' => [
-                    [
-                        'label' => 'Total notas de venta',
-                        'data' => array_values($data_array['sale_notes_array']),
-                        'backgroundColor' => 'rgba(254, 0, 108, .1)',
-                        'borderColor' => 'rgb(254, 0, 108)',
-                        'borderWidth' => 2,
-                        'fill' => true,
-                        'lineTension' => 0.3,
-                        'pointRadius' => 1
-                    ],
-                    [
-                        'label' => 'Total comprobantes',
-                        'data' => array_values($data_array['documents_array']),
-                        'backgroundColor' => 'rgba(36, 71, 232, .1)',
-                        'borderColor' => 'rgb(36, 71, 232)',
-                        'borderWidth' => 2,
-                        'fill' => true,
-                        'lineTension' => 0.3,
-                        'pointRadius' => 1
-                    ],
-                    [
-                        'label' => 'Total',
-                        'data' => array_values($data_array['total_array']),
-                        'backgroundColor' => 'rgba(177, 184, 194, .1)',
-                        'borderColor' => 'rgb(177, 184, 194)',
-                        'borderWidth' => 2,
-                        'fill' => true,
-                        'lineTension' => 0.3,
-                        'pointRadius' => 1
-                    ]
-
-                ],
-            ]
-        ];
+            $totals=['total_documents'=>$values['documents_total'],'total_sale_notes'=>$values['sale_notes_total'],'total'=>$values['total']];
+            return ['totals'=>array_map(static fn($value)=>D::format($value,2,'.',''),$totals)+['calculation_snapshot'=>D::snapshot($totals)],
+                'graph'=>['labels'=>array_keys($series['total_array']),'datasets'=>[[
+                    'label'=>'Total','data'=>array_values($series['total_array']),
+                    'data_exact'=>array_values($series['total_array_exact']),
+                    'calculation_snapshot'=>$series['total_array_snapshot'],
+                    'backgroundColor'=>'rgba(177, 184, 194, .1)','borderColor'=>'rgb(177, 184, 194)',
+                    'borderWidth'=>2,'fill'=>true,'lineTension'=>0.3,'pointRadius'=>1]]]];
+        });
     }
 
-    private function getDocumentsByHours($sale_notes, $documents)
+    private function getDocumentsByHours(\App\Support\Exact\ReportDataset $rows)
     {
-        $sale_notes_array = [];
-        $documents_array = [];
-        $total_array = [];
-        $document_total = 0;
-        $document_total_note_credit = 0;
-
-        $h_start = 0;
-        $h_end = 23;
-
-        for ($h = $h_start; $h <= $h_end; $h++)
-        {
-            $h_format = str_pad($h, 2, '0', STR_PAD_LEFT);
-
-            //SALE NOTE
-            $sale_note_total_pen = 0;
-            $sale_note_total_col_usd = [];
-            $sale_note_total_usd = 0;
-
-            $sale_note_total_pen = $sale_notes->filter(function ($row) use($h_format) {
-                return substr($row->time_of_issue, 0, 2) === $h_format;
-            })->where('currency_type_id', 'VES')->sum('total');
-
-            $sale_note_total_col_usd = $sale_notes->filter(function ($row) use($h_format) {
-                return substr($row->time_of_issue, 0, 2) === $h_format;
-            })->where('currency_type_id', 'USD');
-
-            foreach ($sale_note_total_col_usd as $sn) {
-                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sn->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sn->exchange_rate_sale)))->toBigDecimal();
-            }
-
-            $sale_note_total = $sale_note_total_pen + $sale_note_total_usd;
-            $sale_notes_array[$h_format.'h'] = round($sale_note_total, 2);
-
-            //SALE NOTE
-
-
-            //DOCUMENT
-            $document_total_pen = 0;
-            $document_total_col_usd = [];
-            $document_total_usd = 0;
-            $document_total_nc_col_usd = [];
-            $document_total_note_credit_usd = 0;
-
-            $document_total_pen = $documents->filter(function ($row) use($h_format) {
-                return substr($row->time_of_issue, 0, 2) === $h_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('currency_type_id', 'VES')->whereIn('document_type_id', ['01','08'])->sum('total');
-
-            $document_total_col_usd = $documents->filter(function ($row) use($h_format) {
-                return substr($row->time_of_issue, 0, 2) === $h_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('currency_type_id', 'USD')->whereIn('document_type_id', ['01','08']);
-
-            foreach ($document_total_col_usd as $doc) {
-                $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->exchange_rate_sale)))->toBigDecimal();
-            }
-
-            //NC
-            $document_total_note_credit_pen = $documents->filter(function ($row) use($h_format) {
-                return substr($row->time_of_issue, 0, 2) === $h_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('document_type_id', '07')->where('currency_type_id', 'VES')->sum('total');
-
-            $document_total_nc_col_usd = $documents->filter(function ($row) use($h_format) {
-                return substr($row->time_of_issue, 0, 2) === $h_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('document_type_id', '07')->where('currency_type_id', 'USD');
-
-            foreach ($document_total_nc_col_usd as $docnc) {
-                $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($docnc->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($docnc->exchange_rate_sale)))->toBigDecimal();
-            }
-
-            $d_total = $document_total_pen + $document_total_usd;
-            $d_total_nc = $document_total_note_credit_pen + $document_total_note_credit_usd;
-
-            $document_total = $d_total - $d_total_nc;
-            //DOCUMENT
-
-            $documents_array[$h_format.'h'] = round($document_total, 2);
-
-            $total_array[$h_format.'h'] = round($sale_note_total + $document_total,2);
+        $buckets=[];
+        for ($hour=0;$hour<24;$hour++) {
+            $key=str_pad((string)$hour,2,'0',STR_PAD_LEFT); $buckets[$key]=$key.'h';
         }
-
-        return compact('sale_notes_array', 'documents_array', 'total_array');
+        return DashboardSales::chart($rows,$buckets,'hour');
     }
 
-    private function getDocumentsByDays($sale_notes, $documents, $date_start, $date_end)
+    private function getDocumentsByDays(\App\Support\Exact\ReportDataset $rows, $date_start, $date_end)
     {
-        $sale_notes_array = [];
-        $documents_array = [];
-        $total_array = [];
-        $document_total = 0;
-        $document_total_note_credit = 0;
-
-        $d_start = Carbon::parse($date_start);
-        $d_end = Carbon::parse($date_end);
-
-        while ($d_start <= $d_end)
-        {
-
-            //SALE NOTE
-            $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'VES'))->where('date_of_issue', $d_start)->sum('total');
-
-            $sale_note_total_usd = collect($sale_notes->where('currency_type_id', 'USD'))->where('date_of_issue', $d_start)->map(function ($item, $key) {
-                return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->exchange_rate_sale)), 2);
-            })->sum();
-
-            $sale_note_total = round($sale_note_total_pen + $sale_note_total_usd, 2);
-            $sale_notes_array[$d_start->format('d').'d'] = $sale_note_total;
-
-            //DOCUMENT
-            $document_total_pen = collect($documents)->whereIn('state_type_id', ['01','03','05','07','13'])
-                                                 ->whereIn('document_type_id', ['01','08'])
-                                                 ->where('currency_type_id', 'VES')
-                                                 ->where('date_of_issue', $d_start)->sum('total');
-
-            $document_total_usd = collect($documents)->whereIn('state_type_id', ['01','03','05','07','13'])
-                                                 ->whereIn('document_type_id', ['01','08'])
-                                                 ->where('currency_type_id', 'USD')
-                                                 ->where('date_of_issue', $d_start)
-                                                 ->map(function ($item, $key) {
-                                                    return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->exchange_rate_sale)), 2);
-                                                 })->sum();
-
-            $document_total_note_credit_pen = collect($documents)->where('document_type_id', '07')
-                                                            ->whereIn('state_type_id', ['01','03','05','07','13'])
-                                                            ->where('currency_type_id', 'VES')
-                                                            ->where('date_of_issue', $d_start)
-                                                            ->sum('total');
-
-            $document_total_note_credit_usd = collect($documents)->where('document_type_id', '07')
-                                                            ->whereIn('state_type_id', ['01','03','05','07','13'])
-                                                            ->where('currency_type_id', 'USD')
-                                                            ->where('date_of_issue', $d_start)
-                                                            ->map(function ($item, $key) {
-                                                                return (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($item->exchange_rate_sale)), 2);
-                                                            })->sum();
-
-
-            $d_total = $document_total_pen + $document_total_usd;
-            $d_total_note_credit = $document_total_note_credit_pen + $document_total_note_credit_usd;
-
-            $document_total = round($d_total - $d_total_note_credit,2);
-
-            $documents_array[$d_start->format('d').'d'] = $document_total;
-
-            $total_array[$d_start->format('d').'d'] = round($sale_note_total + $document_total ,2);
-
-            $d_start = $d_start->addDay();
+        $cursor=Carbon::parse($date_start); $end=Carbon::parse($date_end);
+        $sameMonth=$cursor->format('Y-m') === $end->format('Y-m'); $buckets=[];
+        while ($cursor <= $end) {
+            $key=$cursor->format('Y-m-d'); $buckets[$key]=($sameMonth ? $cursor->format('d') : $key).'d';
+            $cursor->addDay();
         }
-
-        return compact('sale_notes_array', 'documents_array', 'total_array');
+        return DashboardSales::chart($rows,$buckets,'day');
     }
 
-    private function getDocumentsByMonths($sale_notes, $documents, $month_start, $month_end)
+    private function getDocumentsByMonths(\App\Support\Exact\ReportDataset $rows, $month_start, $month_end)
     {
-        $sale_notes_array = [];
-        $documents_array = [];
-        $total_array = [];
-        $document_total = 0;
-        $document_total_note_credit = 0;
-
-        $m_start = (int) substr($month_start, 5, 2);
-        $m_end = (int) substr($month_end, 5, 2);
-//        dd($m_start);
-        for ($m = $m_start; $m <= $m_end; $m++)
-        {
-            $m_format = str_pad($m, 2, '0', STR_PAD_LEFT);
-
-            //SALE NOTE
-            $sale_note_total_pen = 0;
-            $sale_note_total_col_usd = [];
-            $sale_note_total_usd = 0;
-
-            $sale_note_total_pen = $sale_notes->where('currency_type_id', 'VES')->filter(function ($row) use($m_format) {
-                return $row->date_of_issue->format('m') === $m_format;
-            })->sum('total');
-
-            $sale_note_total_col_usd = $sale_notes->filter(function ($row) use($m_format) {
-                return $row->date_of_issue->format('m') === $m_format;
-            })->where('currency_type_id', 'USD');
-
-            foreach ($sale_note_total_col_usd as $sn) {
-                $sale_note_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sn->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($sn->exchange_rate_sale)))->toBigDecimal();
-            }
-
-            $sale_note_total = round($sale_note_total_pen + $sale_note_total_usd, 2);
-
-            $sale_notes_array[$m_format.'m'] = $sale_note_total;
-
-
-            //DOCUMENT
-            $document_total_pen = 0;
-            $document_total_col_usd = [];
-            $document_total_usd = 0;
-            $document_total_nc_col_usd = [];
-            $document_total_note_credit_usd = 0;
-
-            $document_total_pen = $documents->filter(function ($row) use($m_format) {
-                return $row->date_of_issue->format('m') === $m_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('currency_type_id', 'VES')
-            ->whereIn('document_type_id', ['01','08'])->sum('total');
-
-            $document_total_col_usd = $documents->filter(function ($row) use($m_format) {
-                return $row->date_of_issue->format('m') === $m_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('currency_type_id', 'USD')->whereIn('document_type_id', ['01','08']);
-
-            foreach ($document_total_col_usd as $doc) {
-                $document_total_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($doc->exchange_rate_sale)))->toBigDecimal();
-            }
-
-            //NC
-            $document_total_note_credit_pen = $documents->filter(function ($row) use($m_format) {
-                return $row->date_of_issue->format('m') === $m_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('document_type_id', '07')->where('currency_type_id', 'VES')->sum('total');
-
-            $document_total_nc_col_usd = $documents->filter(function ($row) use($m_format) {
-                return $row->date_of_issue->format('m') === $m_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('document_type_id', '07')->where('currency_type_id', 'USD');
-
-            foreach ($document_total_nc_col_usd as $docnc) {
-                $document_total_note_credit_usd = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_total_note_credit_usd)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($docnc->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($docnc->exchange_rate_sale)))->toBigDecimal();
-            }
-
-            $d_total = $document_total_pen + $document_total_usd;
-            $d_total_nc = $document_total_note_credit_pen + $document_total_note_credit_usd;
-
-            $document_total = $d_total - $d_total_nc;
-            //DOCUMENT
-
-            $documents_array[$m_format.'m'] = round($document_total, 2);
-
-            $total_array[$m_format.'m'] = round($sale_note_total + $document_total, 2);
+        $cursor=Carbon::parse($month_start.'-01')->startOfMonth();
+        $end=Carbon::parse($month_end.'-01')->startOfMonth();
+        $sameYear=$cursor->format('Y') === $end->format('Y'); $buckets=[];
+        while ($cursor <= $end) {
+            $key=$cursor->format('Y-m'); $buckets[$key]=($sameYear ? $cursor->format('m') : $key).'m';
+            $cursor->addMonth();
         }
-
-        return compact('sale_notes_array', 'documents_array', 'total_array');
+        return DashboardSales::chart($rows,$buckets,'month');
     }
 
 
@@ -1405,66 +505,24 @@ class DashboardData
 
 
     private function balance($establishment_id, $date_start, $date_end){
-
-        $document = $this->get_document_totals($establishment_id, $date_start, $date_end);
-        $sale_note = $this->get_sale_note_totals($establishment_id, $date_start, $date_end);
-        $purchase = $this->get_purchase_totals($establishment_id, $date_start, $date_end);
-        $expense = $this->get_expense_totals($establishment_id, $date_start, $date_end);
-
-        $response_totals_document = $document['totals'];
-        $response_totals_sale_note = $sale_note['totals'];
-        $response_totals_purchase = $purchase['totals'];
-        $response_totals_expense = $expense['totals'];
-
-        // dd($response_totals_document, $response_totals_sale_note, $response_totals_purchase, $response_totals_expense);
-
-        $total_document =  $response_totals_document['total'];
-        $total_payment_document =  $response_totals_document['total_payment'];
-
-        $total_sale_note =  $response_totals_sale_note['total'];
-        $total_payment_sale_note =  $response_totals_sale_note['total_payment'];
-
-        $total_purchase = $response_totals_purchase['total'];
-        $total_payment_purchase = $response_totals_purchase['total_payment'];
-
-        $total_expense = $response_totals_expense['total'];
-        $total_payment_expense = $response_totals_expense['total_payment'];
-
-        $all_totals = $total_document + $total_sale_note - $total_expense - $total_purchase;
-        $all_totals_payment = $total_payment_document + $total_payment_sale_note - $total_payment_purchase - $total_payment_expense ;
-
-        return [
-            'totals' => [
-                'total_document' => number_format($total_document,2),
-                'total_payment_document' => number_format($total_payment_document,2),
-                'total_sale_note' => number_format($total_sale_note,2),
-                'total_payment_sale_note' => number_format($total_payment_sale_note,2),
-                'total_purchase' => number_format($total_purchase,2),
-                'total_payment_purchase' => number_format($total_payment_purchase,2),
-                'total_expense' => number_format($total_expense,2),
-                'total_payment_expense' => number_format($total_payment_expense,2),
-
-                'all_totals' => number_format($all_totals,2),
-                'all_totals_payment' => number_format($all_totals_payment,2),
-            ],
-            'graph' => [
-                'labels' => ['Totales', 'Total pagos'],
-                'datasets' => [
-                    [
-                        'label' => 'Grafico',
-                        'data' => [round($all_totals,2), round($all_totals_payment,2)],
-                        'backgroundColor' => [
-                            'rgb(36, 71, 232, .1)',
-                            'rgb(254, 0, 108, .1)',
-                        ],
-                        'borderColor' => [
-                            'rgb(36, 71, 232)',
-                            'rgb(254, 0, 108)',
-                        ],
-                    ]
-                ],
-            ]
-        ];
+        $values=[];
+        foreach (['document'=>$this->get_document_totals($establishment_id,$date_start,$date_end),
+            'sale_note'=>$this->get_sale_note_totals($establishment_id,$date_start,$date_end),
+            'purchase'=>$this->get_purchase_totals($establishment_id,$date_start,$date_end),
+            'expense'=>$this->get_expense_totals($establishment_id,$date_start,$date_end)] as $source=>$result) {
+            $values['total_'.$source]=D::readRequired($result['totals'],'total');
+            $values['total_payment_'.$source]=D::readRequired($result['totals'],'total_payment');
+        }
+        $values['all_totals']=$values['total_document']->plus($values['total_sale_note'])->minus($values['total_expense'])->minus($values['total_purchase'])->simplified();
+        $values['all_totals_payment']=$values['total_payment_document']->plus($values['total_payment_sale_note'])->minus($values['total_payment_purchase'])->minus($values['total_payment_expense'])->simplified();
+        $projection=DashboardSales::numericProjection(['total'=>$values['all_totals'],'paid'=>$values['all_totals_payment']]);
+        return ['totals'=>array_map(static fn($value)=>D::format($value,2,'.',','),$values)+['calculation_snapshot'=>D::snapshot($values)],
+            'graph'=>['labels'=>['Totales','Total pagos'],'datasets'=>[[
+                'label'=>'Grafico','data'=>[$projection['total'],$projection['paid']],
+                'data_exact'=>[$projection['total_exact'],$projection['paid_exact']],
+                'calculation_snapshot'=>D::snapshot(['total'=>$values['all_totals'],'paid'=>$values['all_totals_payment']]),
+                'backgroundColor'=>['rgb(36, 71, 232, .1)','rgb(254, 0, 108, .1)'],
+                'borderColor'=>['rgb(36, 71, 232)','rgb(254, 0, 108)']]]]];
     }
 
     public function getItems(){
@@ -1482,44 +540,46 @@ class DashboardData
 
     public function data_mobile($request)
     {
-        $establishment_id = $request['establishment_id'];
-        $period = $request['period'];
-        $date_start = $request['date_start'];
-        $date_end = $request['date_end'];
-        $month_start = $request['month_start'];
-        $month_end = $request['month_end'];
+        return ReadSnapshot::run((new Document)->getConnection(),function () use ($request) {
+            $establishment_id = $request['establishment_id'];
+            $period = $request['period'];
+            $date_start = $request['date_start'];
+            $date_end = $request['date_end'];
+            $month_start = $request['month_start'];
+            $month_end = $request['month_end'];
 
-        $d_start = null;
-        $d_end = null;
+            $d_start = null;
+            $d_end = null;
 
-        /** @todo: Eliminar periodo, fechas y cambiar por
+            /** @todo: Eliminar periodo, fechas y cambiar por
 
-        $date_start = $request['date_start'];
-        $date_end = $request['date_end'];
-        \App\CoreFacturalo\Helpers\Functions\FunctionsHelper\FunctionsHelper::setDateInPeriod($request, $date_start, $date_end);
-         */
-        switch ($period) {
-            case 'month':
-                $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
-                $d_end = Carbon::parse($month_start.'-01')->endOfMonth()->format('Y-m-d');
-                break;
-            case 'between_months':
-                $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
-                $d_end = Carbon::parse($month_end.'-01')->endOfMonth()->format('Y-m-d');
-                break;
-            case 'date':
-                $d_start = $date_start;
-                $d_end = $date_start;
-                break;
-            case 'between_dates':
-                $d_start = $date_start;
-                $d_end = $date_end;
-                break;
-        }
+            $date_start = $request['date_start'];
+            $date_end = $request['date_end'];
+            \App\CoreFacturalo\Helpers\Functions\FunctionsHelper\FunctionsHelper::setDateInPeriod($request, $date_start, $date_end);
+             */
+            switch ($period) {
+                case 'month':
+                    $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
+                    $d_end = Carbon::parse($month_start.'-01')->endOfMonth()->format('Y-m-d');
+                    break;
+                case 'between_months':
+                    $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
+                    $d_end = Carbon::parse($month_end.'-01')->endOfMonth()->format('Y-m-d');
+                    break;
+                case 'date':
+                    $d_start = $date_start;
+                    $d_end = $date_start;
+                    break;
+                case 'between_dates':
+                    $d_start = $date_start;
+                    $d_end = $date_end;
+                    break;
+            }
 
-        return [
-            'general' => $this->totals($establishment_id, $d_start, $d_end, $period, $month_start, $month_end),
-        ];
+            return [
+                'general' => $this->totals($establishment_id, $d_start, $d_end, $period, $month_start, $month_end),
+            ];
+        });
     }
 
 
@@ -1541,14 +601,16 @@ class DashboardData
      */
     public function getGeneralTotals($establishment_id, $d_start, $d_end, $period, $month_start, $month_end)
     {
-        $data = $this->totals($establishment_id, $d_start, $d_end, $period, $month_start, $month_end);
-
-        $total_order_notes = $this->getTotalsOrderNote($establishment_id, $d_start, $d_end);
-
-        $data['totals']['total_order_notes'] = $this->roundNumber($total_order_notes);
-        $data['totals']['total'] = $this->roundNumber($total_order_notes + (float) $data['totals']['total']);
-
-        return $data;
+        return ReadSnapshot::run((new Document)->getConnection(),function () use ($establishment_id,$d_start,$d_end,$period,$month_start,$month_end) {
+            $data=$this->totals($establishment_id,$d_start,$d_end,$period,$month_start,$month_end);
+            $orders=DashboardTotals::orderNotes($establishment_id,$d_start,$d_end);
+            $total=$orders->plus(D::readRequired($data['totals'],'total'))->simplified();
+            $data['totals']['total_order_notes']=D::format($orders,2,'.','');
+            $data['totals']['total']=D::format($total,2,'.','');
+            $data['totals']['calculation_snapshot']['values']['total_order_notes']=D::fraction($orders);
+            $data['totals']['calculation_snapshot']['values']['total']=D::fraction($total);
+            return $data;
+        });
     }
 
 

@@ -1,68 +1,68 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `packaging` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `item_id` int(10) unsigned NOT NULL
- * - `user_id` int(10) unsigned DEFAULT NULL
- * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `item_extra_data` json DEFAULT NULL
- * - `establishment_id` int(10) unsigned DEFAULT NULL
- * - `quantity` decimal(30,12) DEFAULT '0.00'
- * - `number_packages` decimal(30,12) DEFAULT '0.00'
- * - `item` json DEFAULT NULL
- * - `observation` longtext COLLATE utf8mb4_unicode_ci
- * - `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `date_start` date DEFAULT NULL
- * - `time_start` time DEFAULT NULL
- * - `date_end` date DEFAULT NULL
- * - `time_end` time DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `packaging_collaborator` text COLLATE utf8mb4_unicode_ci
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - item_id: bigint
+ * - user_id: bigint
+ * - fiscal_environment: varchar(16)
+ * - item_extra_data: json
+ * - establishment_id: bigint
+ * - quantity: numeric(30,12)
+ * - number_packages: numeric(30,12)
+ * - item: json
+ * - observation: text
+ * - lot_code: varchar(255)
+ * - name: varchar(255)
+ * - date_start: date
+ * - time_start: time
+ * - date_end: date
+ * - time_end: time
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - packaging_collaborator: text
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `packaging` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `item_id` int(10) unsigned NOT NULL,
-  `user_id` int(10) unsigned DEFAULT NULL,
-  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `item_extra_data` json DEFAULT NULL,
-  `establishment_id` int(10) unsigned DEFAULT NULL,
-  `quantity` decimal(30,12) DEFAULT '0.00',
-  `number_packages` decimal(30,12) DEFAULT '0.00',
-  `item` json DEFAULT NULL,
-  `observation` longtext COLLATE utf8mb4_unicode_ci,
-  `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `date_start` date DEFAULT NULL,
-  `time_start` time DEFAULT NULL,
-  `date_end` date DEFAULT NULL,
-  `time_end` time DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `packaging_collaborator` text COLLATE utf8mb4_unicode_ci,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `packaging_fiscal_environment_foreign` (`fiscal_environment`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('packaging', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('item_id');
+            $table->bigInteger('user_id')->nullable();
+            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai')->nullable();
+            $table->json('item_extra_data')->nullable();
+            $table->bigInteger('establishment_id')->nullable();
+            $table->decimal('quantity', 30, 12)->nullable()->default('0.00');
+            $table->decimal('number_packages', 30, 12)->nullable()->default('0.00');
+            $table->json('item')->nullable();
+            $table->text('observation')->collation('pro9_ci_ai')->nullable();
+            $table->string('lot_code', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('name', 255)->collation('pro9_ci_ai')->nullable();
+            $table->date('date_start')->nullable();
+            $table->time('time_start')->nullable();
+            $table->date('date_end')->nullable();
+            $table->time('time_end')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->text('packaging_collaborator')->collation('pro9_ci_ai')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['fiscal_environment'], 'packaging_fiscal_environment_foreign');
+        });
+        DB::statement('ALTER TABLE "packaging" ADD CONSTRAINT "packaging_item_id_range" CHECK ("item_id" >= 0)');
+        DB::statement('ALTER TABLE "packaging" ADD CONSTRAINT "packaging_user_id_range" CHECK ("user_id" >= 0)');
+        DB::statement('ALTER TABLE "packaging" ADD CONSTRAINT "packaging_establishment_id_range" CHECK ("establishment_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `packaging`');
+        Schema::dropIfExists('packaging');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

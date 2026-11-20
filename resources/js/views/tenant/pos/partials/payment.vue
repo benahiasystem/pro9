@@ -63,7 +63,7 @@
                 </div>
 
                 <span class="pos-checkout__item-total">
-                    {{ currencyTypeActive.symbol }} {{ money(item.total) }}
+                    {{ currencyTypeActive.symbol }} {{ money(checkoutValue(item, 'total')) }}
                 </span>
             </div>
         </div>
@@ -72,19 +72,19 @@
             <div class="pos-checkout__totals">
                 <div class="pos-checkout__total-row">
                     <span>Subtotal</span>
-                    <span>{{ currencyTypeActive.symbol }} {{ money(form.total_taxed) }}</span>
+                    <span>{{ currencyTypeActive.symbol }} {{ money(checkoutValue(form, 'total_taxed')) }}</span>
                 </div>
                 <div class="pos-checkout__total-row" v-if="!isNrus">
                     <!-- ########## INICIO CAMBIO IGV A IVA -->
                     <span>IVA</span>
                     <!-- ######### FIN CAMBIO IGV A IVA -->
-                    <span>{{ currencyTypeActive.symbol }} {{ money(form.total_igv) }}</span>
+                    <span>{{ currencyTypeActive.symbol }} {{ money(checkoutValue(form, 'total_igv')) }}</span>
                 </div>
                 <!-- ########## INICIO SIN DETRACCIONES E ISC -->
                 <!-- ######### FIN SIN DETRACCIONES E ISC -->
-                <div class="pos-checkout__total-row" v-if="form.total_discount > 0">
+                <div class="pos-checkout__total-row" v-if="checkoutHasDiscount()">
                     <span>Descuento</span>
-                    <span>- {{ currencyTypeActive.symbol }} {{ money(form.total_discount) }}</span>
+                    <span>- {{ currencyTypeActive.symbol }} {{ money(checkoutValue(form, 'total_discount')) }}</span>
                 </div>
 
 
@@ -95,7 +95,7 @@
                 <span>{{ currencyTypeActive.symbol }} {{ (localTotalPayable === null ? '—' : money(localTotalPayable)) }}</span>
             </div>
 
-            <button :disabled="stockBlocked || singleAmountInvalid || button_payment"
+            <button :disabled="stockBlocked || singleAmountInvalid || settlementPaymentBlocked"
                     class="pos-checkout__confirm"
                     type="button"
                     @click="clickPayment">
@@ -103,7 +103,7 @@
                 <span>CONFIRMAR PAGO</span>
             </button>
 
-            <p v-if="button_payment"
+            <p v-if="settlementPaymentBlocked && (!localInvoiceSettlement || localQuoteReady)"
                class="pos-checkout__confirm-hint">
                 Falta cubrir {{ currencyTypeActive.symbol }} {{ differenceText }} para completar el pago.
             </p>
@@ -129,10 +129,10 @@
 
                 <div class="pos-card__voucher-fields">
                     <div class="pos-field">
-                        <el-radio-group v-model="form.document_type_id"
+                        <el-radio-group :value="form.document_type_id"
                                         class="pos-doctype"
                                         size="small"
-                                        @change="filterSeries">
+                                        @input="selectDocumentType">
                             <el-radio-button v-if="!isNrus" label="01">FACTURA</el-radio-button>
                             <!-- ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
                             <el-radio-button label="80">N. VENTA</el-radio-button>
@@ -384,10 +384,10 @@ import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import paymentSettlementSummary from "@mixins/payment-settlement-summary"
 // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 import {withoutDraftRetentions, suggestRemainingPayment} from "@helpers/document-creation"
-import {checkoutTotals} from '../../../../helpers/exact-commercial'
+import {applyInvoiceCheckoutDiscount, checkoutTotals} from '../../../../helpers/exact-commercial'
 
 import {documentTotals} from "../../../../helpers/exact-document"
-import {exactAmount, exactSum} from "../../../../helpers/exchange-rate-math"
+import {exactAmount, exactSum, exactValue} from "../../../../helpers/exchange-rate-math"
 
 import documentCreationMixin from "@mixins/document-creation"
 import Keypress from 'vue-keypress'
@@ -398,9 +398,12 @@ import MultiplePaymentForm from './multiple_payment.vue'
 import {pointSystemFunctions} from '@mixins/functions'
 import { buhoprinter } from '@mixins/buhoprinter'
 import {calculateRowItem} from "@helpers/functions"
+import {applyPosScalePrices, withoutPosScalePrices} from '@helpers/pos-scale-prices'
 import DiscountPermissionForm from './discount_permission.vue'
 import SearchAgent from '@components/SearchAgent.vue'
 
+// El carrito conserva el borrador aunque se desmonte el diálogo de cobro.
+const invoiceDiscountByDraft = new WeakMap()
 
 export default {
     localCalculations: true,
@@ -431,9 +434,11 @@ export default {
     ],
 
     data() {
+        const savedDiscount = invoiceDiscountByDraft.get(this.form)
+        const invoiceDiscount = savedDiscount?.currency === this.form?.currency_type_id ? savedDiscount : undefined
         return {
-            enabled_discount: false,
-            discount_amount: 0,
+            enabled_discount: invoiceDiscount !== undefined,
+            discount_amount: invoiceDiscount?.amount ?? 0,
             loading_submit: false,
             showDialogOptions: false,
             showDialogMultiplePayment: false,
@@ -462,7 +467,7 @@ export default {
             global_discount_types: [],
             global_discount_type: {},
             error_global_discount: false,
-            is_discount_amount: false,
+            is_discount_amount: invoiceDiscount?.isAmount ?? false,
             payment_method_type_id: null,
             showDialogDiscountPermission: false,
             totalDiscountPercentage: 0,
@@ -557,6 +562,7 @@ export default {
          */
         differenceText()
         {
+            if (this.localInvoiceSettlement && this.localQuoteReady) return this.igtfQuote.balance;
             if (this.difference === '-') return '0.00';
             const value=exactAmount(this.difference || '0');
             return (value.compare(0) < 0 ? exactAmount(0).minus(value) : value).final(2);
@@ -582,13 +588,8 @@ export default {
             // if (this.default_series_type === undefined) this.default_series_type = null;
 
             if (this.default_document_type !== null) {
-                this.form.document_type_id = this.default_document_type;
-                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-                if (this.isNrus && this.form.document_type_id === '01') {
-                    this.form.document_type_id = '80';
-                }
-                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-                this.filterSeries()
+                const documentType = this.isNrus && this.default_document_type === '01' ? '80' : this.default_document_type
+                if (!this.selectDocumentType(documentType, false)) return
                 const defaultSeries = _.find(this.series, { id: this.default_series_type });
 
                 if (defaultSeries) {
@@ -605,10 +606,17 @@ export default {
             this.form.agent_id = agent_id
         },
         // ########### INICIO CAMBIO DOCUMENTOS POS VENEZUELA
-        selectDocumentType(documentTypeId)
+        selectDocumentType(documentTypeId, saveDraft = true)
         {
+            const previousType = this.form.document_type_id
             this.form.document_type_id = documentTypeId
+            if (!this.refreshScaleTotals()) {
+                this.form.document_type_id = previousType
+                return false
+            }
             this.filterSeries()
+            if (saveDraft && this.form.items?.some(row => row._pos_scale_prices)) this.inputAmount()
+            return true
         },
         // ########### FIN CAMBIO DOCUMENTOS POS VENEZUELA
         checkUsedPointsByItem()
@@ -640,20 +648,11 @@ export default {
         },
         handleFn113() {
             const code = this.form.document_type_id
-            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            if (this.isNrus) {
-                this.form.document_type_id = '80'
-                this.filterSeries()
-                return
-            }
-            this.form.document_type_id = code == '01' ? '80' : '01'
-            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-
-            this.filterSeries()
+            this.selectDocumentType(this.isNrus || code === '01' ? '80' : '01')
         },
         keyupEnterAmount() {
 
-            if (this.button_payment) {
+            if (this.settlementPaymentBlocked) {
                 return this.$message.warning("El monto a pagar es menor al total")
             }
 
@@ -716,8 +715,9 @@ export default {
 
             if (!this.enabled_discount) {
 
+                invoiceDiscountByDraft.delete(this.form)
                 this.discount_amount = 0
-                this.deleteDiscountGlobal()
+                if (this.form.document_type_id !== '01') this.deleteDiscountGlobal()
                 this.reCalculateTotal()
 
             }
@@ -727,6 +727,7 @@ export default {
             this.inputDiscountAmount()
         },
         inputDiscountAmount() {
+            if (this.form.document_type_id === '01') return applyInvoiceCheckoutDiscount(this)
 
             if (this.enabled_discount) {
 
@@ -749,7 +750,7 @@ export default {
 
                 }
 
-                // console.log(this.discount_amount)
+                invoiceDiscountByDraft.delete(this.form)
             }
         },
         isExonerated() {
@@ -786,6 +787,13 @@ export default {
         // ######## INICIO CALCULOS EXACTOS SAB ########
         reCalculateTotal() {
             checkoutTotals(this);
+            if (this.form.document_type_id === '01' && this.enabled_discount) {
+                invoiceDiscountByDraft.set(this.form, {
+                    amount: this.discount_amount,
+                    isAmount: this.is_discount_amount,
+                    currency: this.form.currency_type_id,
+                })
+            }
             this.calculatePayments();
         },
         // ######## FIN CALCULOS EXACTOS SAB ########
@@ -845,7 +853,9 @@ export default {
                     this.$set(this.form, 'payment_condition_id', '02')
                 }
                 if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
-                    this.amount = exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
+                    this.amount = this.localInvoiceSettlement
+                        ? this.appliedReceiptTotal(this.form.payments || [])
+                        : exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
                     this.enter_amount = this.useLocalCalculations ? this.enteredReceiptAmount(this.form.payments || []) : this.amount
                     this.inputAmount()
                 }
@@ -885,7 +895,7 @@ export default {
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         async enterAmount() {
             const rows = this.form.payments || []
-            if (rows.length !== 1 || this.singleAmountLocked) return
+            if (rows.length !== 1 || this.singleAmountLocked || this.singleAmountInvalid) return
             const text = String(this.enter_amount ?? '').trim()
             if (text && !/^\d+(?:\.\d*)?$/.test(text)) return
             const entered = exactAmount(!text ? '0' : (text.endsWith('.') ? text.slice(0, -1) : text)).decimal()
@@ -1036,11 +1046,18 @@ export default {
         {
             if(this.configuration.restrict_seller_discount && this.typeUser !== 'admin')
             {
-                const all_percentages = this.getDiscountPercentages()
+                const invoice = this.form.document_type_id === '01'
+                const percentage = invoice
+                    ? exactSum((this.form.discounts || []).map(discount => exactValue(discount, 'factor'))).times(100)
+                    : this.getDiscountPercentages()
+                const limit = this.configuration.sellers_discount_limit
+                const exceedsLimit = invoice
+                    ? limit != null && limit !== '' && percentage.compare(limit) > 0
+                    : percentage > parseFloat(limit)
 
-                if(all_percentages > parseFloat(this.configuration.sellers_discount_limit) && !this.form.token_validated_for_discount)
+                if(exceedsLimit && !this.form.token_validated_for_discount)
                 {
-                    this.totalDiscountPercentage = _.round(all_percentages, 2)
+                    this.totalDiscountPercentage = invoice ? percentage.decimal(2) : _.round(percentage, 2)
                     this.showDialogDiscountPermission = true
 
                     return {
@@ -1099,9 +1116,23 @@ export default {
                 this.$message.error('Error al enviar el correo');
             });
         },
+        refreshScaleTotals() {
+            const items = this.form.items
+            try {
+                if (applyPosScalePrices(this.form, this.percentageIgv)) this.reCalculateTotal()
+                return true
+            } catch (error) {
+                this.form.items = items
+                this.$message.error(error.message)
+                return false
+            }
+        },
         async clickPayment()
         {
             if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
+            if (!this.refreshScaleTotals()) return
+            const isInvoice = this.form.document_type_id === '01'
+            if (isInvoice && this.enabled_discount && !applyInvoiceCheckoutDiscount(this)) return
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             if (this.singleAmountInvalid) return this.$message.warning('Indique un monto válido.')
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
@@ -1113,7 +1144,7 @@ export default {
             const validate_restrict_seller_discount = this.validateRestrictSellerDiscount()
             if(!validate_restrict_seller_discount.success) return
 
-            if (this.form.payments == 0){
+            if (!isInvoice && this.form.payments?.length === 0) {
                 this.form.payment_condition_id = "02";
             }
 
@@ -1125,7 +1156,10 @@ export default {
             }
             else
             {
-                if(this.form.total <= 0) return this.$message.error('El total debe ser mayor a 0')
+                const invalidTotal = isInvoice
+                    ? exactValue(this.form, 'total').compare(0) <= 0
+                    : this.form.total <= 0
+                if (invalidTotal) return this.$message.error('El total debe ser mayor a 0')
             }
 
 
@@ -1162,11 +1196,13 @@ export default {
 
             if (!await this.ensureFiscalPaymentsReady(this.form.payments)) return
             if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
+            if (isInvoice && this.settlementPaymentBlocked) return this.$message.warning('El monto a pagar es menor al total')
 
             this.loading_submit = true
             this.locked_submit = true
 
-            await this.$http.post(`/${this.resource_documents}`, this.prepareCalculationSubmission(withoutDraftRetentions(this.form))).then(async (response) => {
+            const payload = withoutPosScalePrices(withoutDraftRetentions(this.form))
+            await this.$http.post(`/${this.resource_documents}`, this.prepareCalculationSubmission(payload)).then(async (response) => {
                 if (response.data.success) {
                     let response_sent = null
                     this.responseForm = response.data
@@ -1204,7 +1240,7 @@ export default {
                     this.$message.error(response.data.message);
                 }
             }).catch(error => {
-                if (this.handleCalculationChanged(error, withoutDraftRetentions(this.form))) return;
+                if (this.handleCalculationChanged(error, withoutPosScalePrices(withoutDraftRetentions(this.form)))) return;
                 console.log(error);
 
                 if (error.response && error.response.status === 422) {

@@ -18,12 +18,12 @@
           <div class="tp-body">
             <div class="tp-row">
               <span class="tp-name text-truncate">{{ row.description }}</span>
-              <span class="tp-total">Bs. {{ row.total | tpMoney }}</span>
+              <span class="tp-total">Bs. {{ totalOriginal(row) | tpMoney }}</span>
             </div>
             <div class="tp-bar">
-              <span class="tp-bar-fill" :style="{ width: barWidth(row.total) }"></span>
+              <span class="tp-bar-fill" :style="{ width: barWidth(row) }"></span>
             </div>
-            <small class="tp-meta text-muted">{{ row.move_quantity | tpUnits }} uds</small>
+            <small class="tp-meta text-muted">{{ readMovement(row) | tpUnits }} uds</small>
           </div>
         </li>
       </ul>
@@ -38,6 +38,8 @@
 </template>
 
 <script>
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { readOriginal, compareOriginal, relativeWidth, originalNumber, originalText } from "../../../../../../../resources/js/helpers/dashboard-originals";
 export default {
   name: "TopProducts",
   props: {
@@ -56,7 +58,7 @@ export default {
   },
   computed: {
     maxTotal() {
-      return this.items.reduce((max, row) => Math.max(max, Number(row.total) || 0), 0);
+      return this.items.reduce((max, row) => compareOriginal(readOriginal(row, 'total'), max) > 0 ? readOriginal(row, 'total') : max, {n: '0', d: '1'});
     },
   },
   methods: {
@@ -64,25 +66,16 @@ export default {
       this.$emit("input", val);
       this.$emit("order-change", val);
     },
-    barWidth(total) {
-      if (!this.maxTotal) return "0%";
-      return Math.max((Number(total) / this.maxTotal) * 100, 3) + "%";
-    },
+    totalOriginal(row) { return readOriginal(row, 'total'); },
+    readMovement(row) { return readOriginal(row, 'move_quantity'); },
+    barWidth(row) { return relativeWidth(readOriginal(row, 'total'), this.maxTotal, 3) + '%'; },
   },
   filters: {
-    tpMoney(value) {
-      const num = Number(value);
-      if (!Number.isFinite(num)) return "0.00";
-      if (Math.abs(num) >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-      if (Math.abs(num) >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-      return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    },
-    tpUnits(value) {
-      const num = Number(value) || 0;
-      return num.toLocaleString("es-PE", { maximumFractionDigits: 2 });
-    },
+    tpMoney(value) { return originalNumber(value); },
+    tpUnits(value) { return originalText(value, 12, 'es-VE', true); },
   },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

@@ -16,13 +16,15 @@ vm.runInNewContext(babel.transformSync(parsed.script.content, {
 const component = exported.default;
 
 function context() {
+    const fiscal=require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/fiscal-payment-settings.js')).default
     const warnings = [];
     const requests = [];
     const ctx = {
         form: {
             document_type_id: '01', series_id: 1, customer_id: 10,
             date_of_issue: moment().format('YYYY-MM-DD'),
-            items: [{quantity: 1, unit_type_id: 'UND'}],
+            currency_type_id:'VES',exchange_rate_sale:'1',payment_condition_id:'02',total:'1',total_payable:'1',payments:[],
+            items: [{item_id:1,quantity:'1',unit_type_id:'UND',unit_price:'1',affectation_igv_type_id:'20',total_value:'1',total_igv:'0',total:'1'}],
         },
         all_series: [
             {id: 1, document_type_id: '01', number: 'FF01'},
@@ -41,8 +43,8 @@ function context() {
         }},
         $eventHub: {$emit() {}},
         ensureFiscalPaymentsReady: async () => true,
-        prepareCalculationSubmission: form => form,
     };
+    for(const name of ['prepareCalculationSubmission','handleCalculationChanged'])ctx[name]=fiscal.methods[name].bind(ctx)
     for (const [name, method] of Object.entries(component.methods)) ctx[name] = method.bind(ctx);
     for (const name of ['setLocalStorageIndex', 'setFormPosLocalStorage', 'asignPlateNumberToItems',
         'autoSendPdfMail', 'saveCashDocument', 'cleanLocalStoragePayment', 'initDataComponent']) {
@@ -55,7 +57,7 @@ for (const id of [2, 3, 4]) {
     test(`customer changes and repeated filtering preserve selected invoice series ${id} through payment`, async () => {
         const {ctx, warnings, requests} = context();
         ctx.filterSeries();
-        ctx.form.series_id = id;
+        ctx.form.series_id = String(id);
         ctx.form.customer_id = 11;
         ctx.changeCustomer();
         ctx.filterSeries();
@@ -68,6 +70,18 @@ for (const id of [2, 3, 4]) {
         assert.equal(requests[0].form.customer_id, 11);
     });
 }
+
+test('Garage submits the chosen bigint series without coercing adjacent IDs', async () => {
+    const {ctx, requests} = context();
+    ctx.all_series = [
+        {id: '9007199254740992', document_type_id: '01', number: 'F092'},
+        {id: '9007199254740993', document_type_id: '01', number: 'F093'},
+    ];
+    ctx.form.series_id = '9007199254740993';
+    ctx.filterSeries();
+    await ctx.clickPayment();
+    assert.equal(requests[0].form.series_id, '9007199254740993');
+});
 
 test('switching document type replaces an incompatible series and preserves a compatible selection', () => {
     const {ctx} = context();

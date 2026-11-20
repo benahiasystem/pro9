@@ -5,6 +5,7 @@ namespace App\CoreFacturalo\Requests\Api\Validation;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\User;
 use App\Services\SalesDocumentTypePolicy;
+use App\CoreFacturalo\Requests\Inputs\Common\EstablishmentInput;
 use App\Services\SalesCustomerIdentityPolicy;
 
 class DocumentValidation
@@ -41,6 +42,9 @@ class DocumentValidation
         }
         //unset($inputs['establishment']);
 
+        if (in_array($inputs['document_type_id'], ['01', '07', '08'], true)) {
+            EstablishmentInput::validatedId($inputs['establishment_id'] ?? null);
+        }
         $inputs['series'] = Functions::validateSeries($inputs)->number;
 
         if (in_array($inputs['document_type_id'], ['07', '08'])) {

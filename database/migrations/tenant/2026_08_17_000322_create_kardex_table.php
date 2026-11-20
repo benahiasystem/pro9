@@ -1,56 +1,54 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `kardex` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `date_of_issue` date NOT NULL
- * - `type` enum('sale','purchase') COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `item_id` int(10) unsigned NOT NULL
- * - `document_id` int(10) unsigned DEFAULT NULL
- * - `purchase_id` int(10) unsigned DEFAULT NULL
- * - `purchase_settlement_id` int(10) unsigned DEFAULT NULL
- * - `sale_note_id` int(10) unsigned DEFAULT NULL
- * - `quantity` decimal(30,12) NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - date_of_issue: date
+ * - type: varchar(255)
+ * - item_id: bigint
+ * - document_id: bigint
+ * - purchase_id: bigint
+ * - purchase_settlement_id: bigint
+ * - sale_note_id: bigint
+ * - quantity: numeric(30,12)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `kardex` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `date_of_issue` date NOT NULL,
-  `type` enum('sale','purchase') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `item_id` int(10) unsigned NOT NULL,
-  `document_id` int(10) unsigned DEFAULT NULL,
-  `purchase_id` int(10) unsigned DEFAULT NULL,
-  `purchase_settlement_id` int(10) unsigned DEFAULT NULL,
-  `sale_note_id` int(10) unsigned DEFAULT NULL,
-  `quantity` decimal(30,12) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `kardex_purchase_id_foreign` (`purchase_id`),
-  KEY `kardex_document_id_foreign` (`document_id`),
-  KEY `kardex_item_id_foreign` (`item_id`),
-  KEY `kardex_sale_note_id_foreign` (`sale_note_id`),
-  KEY `kardex_purchase_settlement_id_foreign` (`purchase_settlement_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('kardex', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->date('date_of_issue');
+            $table->string('type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('item_id');
+            $table->bigInteger('document_id')->nullable();
+            $table->bigInteger('purchase_id')->nullable();
+            $table->bigInteger('purchase_settlement_id')->nullable();
+            $table->bigInteger('sale_note_id')->nullable();
+            $table->decimal('quantity', 30, 12);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['purchase_id'], 'kardex_purchase_id_foreign');
+            $table->index(['document_id'], 'kardex_document_id_foreign');
+            $table->index(['item_id'], 'kardex_item_id_foreign');
+            $table->index(['sale_note_id'], 'kardex_sale_note_id_foreign');
+            $table->index(['purchase_settlement_id'], 'kardex_purchase_settlement_id_foreign');
+        });
+        DB::statement('ALTER TABLE "kardex" ADD CONSTRAINT "kardex_type_check" CHECK ("type" IN (\'sale\',\'purchase\'))');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `kardex`');
+        Schema::dropIfExists('kardex');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

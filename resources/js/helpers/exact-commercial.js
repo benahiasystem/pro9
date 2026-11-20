@@ -1,4 +1,4 @@
-import {exactAmount, exactInput, exactValue, exactSum, allocateExact} from './exchange-rate-math'
+import {exactAmount, exactInput, exactValue, exactSum, allocateExact, exactSnapshot} from './exchange-rate-math'
 import {documentTotals} from './exact-document'
 import {isRecordedReceipt} from './payment-classification'
 
@@ -17,9 +17,17 @@ export function commercialTotals(form, options = {}) {
             amount = amount.dividedBy(exactAmount(1).plus(exactValue(raw, 'total_igv').dividedBy(base)))
         }
         if (amount.compare(0) < 0 || amount.compare(base) > 0) throw new Error('El descuento supera su base o es negativo.')
-        if (amount.compare(0) > 0) discounts.push({discount_type_id: type, description: options.discountDescription || 'Descuento global',
-            is_amount: true, amount: amount.decimal(), amount_exact: amount.fraction(),
-            base: base.decimal(), factor: amount.dividedBy(base).decimal()})
+        if (amount.compare(0) > 0) {
+            if (options.requireAmountBelowBase && options.discountIsAmount && amount.compare(base) === 0) {
+                throw new Error('El monto de descuento debe ser menor al total de venta')
+            }
+            const factor = amount.dividedBy(base)
+            const discount = {discount_type_id: type, description: options.discountDescription || 'Descuento global',
+                is_amount: true, amount: amount.decimal(), amount_exact: amount.fraction(),
+                base: base.decimal(), factor: factor.decimal()}
+            if (form.document_type_id === '01') discount.calculation_snapshot = exactSnapshot({factor})
+            discounts.push(discount)
+        }
     } else if (options.discount === undefined) discounts = form.discounts || []
     const base = exactValue(raw, 'total')
     const charge = options.chargePercentage !== undefined
@@ -29,7 +37,7 @@ export function commercialTotals(form, options = {}) {
         amount: charge.decimal(), amount_exact: charge.fraction(), base: base.decimal(),
         factor: base.compare(0) > 0 ? charge.dividedBy(base).decimal() : '0'})
     if (options.charge === undefined && options.chargePercentage === undefined) charges = form.charges || []
-    return {...documentTotals(form.items || [], discounts, charges, form.total_prepayment), discounts, charges}
+    return {...documentTotals(form.items || [], discounts, charges, form.total_prepayment, form.prepayments), discounts, charges}
 }
 
 export function applyCommercialTotals(vm) {
@@ -90,11 +98,38 @@ export function prepareCommercialPayments(payable, rows) {
 
 export function checkoutTotals(vm) {
     const config=vm.configuration || vm.config || {}
-    Object.assign(vm.form,commercialTotals(vm.form,{
-        discount: vm.enabled_discount ? vm.discount_amount || '0' : '0',
+    const invoice = vm.form.document_type_id === '01'
+    const input = vm.enabled_discount ? vm.discount_amount || '0' : '0'
+    const modeIsAmount = vm.discount_type !== '02'
+    const isAmount = invoice ? vm.is_discount_amount ?? modeIsAmount : modeIsAmount
+    const discount = invoice ? exactInput(String(input).trim().replace(/\.$/, '')) : input
+    const totals = commercialTotals(vm.form,{
+        discount,
         discountType:config.global_discount_type_id || '03',
-        discountIsAmount:vm.discount_type !== '02', discountIncludesIva:config.exact_discount,
-    }))
+        discountIsAmount:isAmount,
+        discountIncludesIva:config.exact_discount,
+        requireAmountBelowBase:invoice,
+    })
+    if (invoice && exactAmount(discount).compare(0) > 0) {
+        const fields = ['total', 'total_taxed', 'total_exonerated', 'total_igv']
+        if (fields.some(field => exactValue(totals, field).compare(0) < 0)) {
+            throw new Error('El descuento supera su base o es negativo.')
+        }
+        if (isAmount && exactValue(totals, 'total').compare(0) === 0) {
+            throw new Error('El monto de descuento debe ser menor al total de venta')
+        }
+    }
+    Object.assign(vm.form, totals)
     if (vm.setTotalPointsBySale) vm.setTotalPointsBySale(config)
+}
+
+export function applyInvoiceCheckoutDiscount(vm) {
+    try {
+        vm.reCalculateTotal()
+        return true
+    } catch (error) {
+        vm.$message.error(error.message)
+        return false
+    }
 }
 // ######## FIN CALCULOS EXACTOS SAB ########

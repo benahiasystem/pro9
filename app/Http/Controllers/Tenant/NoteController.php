@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Tenant;
 
+use App\Database\IntegerTransport;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Configuration;
@@ -29,7 +30,7 @@ class NoteController extends Controller
 
     private function snapshot(Document $document): array
     {
-        return $document->only(['id','document_type_id','series','number','date_of_issue','establishment_id','customer_id','currency_type_id','exchange_rate_sale','exchange_rate_source','exchange_rate_date','customer'])+['note_context'=>\App\Services\Fiscal\FiscalNote::context($document)];
+        return ['id'=>IntegerTransport::value($document->id)]+$document->only(['document_type_id','series','number','date_of_issue','establishment_id','customer_id','currency_type_id','exchange_rate_sale','exchange_rate_source','exchange_rate_date','customer'])+['note_context'=>\App\Services\Fiscal\FiscalNote::context($document)];
     }
 
     public function hasDocuments($document_id)

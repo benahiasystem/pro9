@@ -74,7 +74,8 @@
             <template v-if="!is_paid">
 
                 <div class="pl-actions">
-                    <checkout-tenant :form="form" @submit="onPaymentSubmit">
+                    <p class="text-danger" role="alert" v-if="amount_error">{{ amount_error }}</p>
+                    <checkout-tenant v-else :form="form" @submit="onPaymentSubmit">
                     </checkout-tenant>
                 </div>
 
@@ -88,6 +89,8 @@
 </template>
 
 <script>
+    import { exactAmount } from '@helpers/exchange-rate-math'
+    import { paymentLinkMinorUnits } from '@helpers/payment-link-amounts'
 
 
     export default {
@@ -104,6 +107,7 @@
                 form: {},
                 // se marca al confirmar el pago sin recargar la página
                 paid: false,
+                amount_error: null,
             }
         },
         created() {
@@ -147,8 +151,18 @@
              */
             initForm() {
 
+                this.amount_error = null
+                let amount
+                try {
+                    amount = paymentLinkMinorUnits(this.total)
+                } catch (error) {
+                    this.form = {}
+                    this.amount_error = error.message
+                    return
+                }
+
                 this.form = {
-                    amount: Math.round(parseFloat(this.total || 0) * 100),
+                    amount,
                     currency: 'VES',
                     order_id: `${this.payment_link.number_full}-${Date.now()}`,
                     description: this.description,
@@ -162,7 +176,7 @@
 
             },
             formatNumber(value) {
-                return parseFloat(value || 0).toFixed(2)
+                return exactAmount(value ?? 0).final(2)
             },
             /**
              * La pasarela devuelve el resultado del cobro

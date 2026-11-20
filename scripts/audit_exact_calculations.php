@@ -4,6 +4,7 @@ require dirname(__DIR__).'/vendor/autoload.php';
 require __DIR__.'/exact_audit_registry.php';
 require __DIR__.'/exact_guard_proof.php';
 require __DIR__.'/exact_source_coverage.php';
+require __DIR__.'/exact_audit_scope.php';
 $root=dirname(__DIR__);
 $inventory=require $root.'/config/exact_calculations.php';
 $central=require $root.'/config/exact_calculations_system.php';
@@ -60,9 +61,9 @@ $scan=function(string $source,string $file,int $lineOffset=-1,string $context='{
         public function leaveNode(PhpParser\Node $node){if($node instanceof PhpParser\Node\Stmt\Class_ || $node instanceof PhpParser\Node\Stmt\ClassMethod || $node instanceof PhpParser\Node\Stmt\Function_)array_pop($this->frames);return null;}
     };
     $traverser=new PhpParser\NodeTraverser();
-    $traverser->addVisitor(new PhpParser\NodeVisitor\NameResolver(null,['replaceNodes'=>false]));
+    $traverser->addVisitor(new PhpParser\NodeVisitor\ParentConnectingVisitor());
     $traverser->addVisitor($visitor);
-    try {$traverser->traverse($nodes);}
+    try {$traverser->traverse(exactAuditResolveNames($nodes));}
     catch (PhpParser\Error $error) {$errors[]=['file'=>$file,'line'=>$error->getStartLine()+$lineOffset,'message'=>$error->getRawMessage()];}
 };
 $policy=json_decode(file_get_contents($root.'/config/exact_audit_sources.json'),true,512,JSON_THROW_ON_ERROR);
@@ -80,6 +81,10 @@ $matches=exactAuditClassify($matches,$root);
 $registryErrors=exactAuditRegistryDiagnostics($matches,$root,'php');
 $pending=count(array_filter($matches,fn($row)=>$row['status']==='pending'));
 $result=['contract_version'=>1,'tables'=>count($inventory),'columns'=>array_sum(array_map('count',$inventory)),'decimal_columns'=>$inventory,'system_decimal_columns'=>$central,'scanned_php_files'=>$scanned,'php_review'=>$matches,'parse_errors'=>$errors,'registry_errors'=>$registryErrors,'coverage_missing'=>$missingSources,'scanned_files'=>$scannedFiles,'source_hashes'=>$sourceHashes,'source_policy'=>$policy,'pending'=>$pending];
+$scope=exactAuditScopeArgument($argv);
+if ($scope!==null) $result['scope']=exactAuditScopeSummary($matches,$registryErrors,$scannedFiles,exactAuditScopePolicy($root,$scope));
 echo json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR).PHP_EOL;
-if($errors || (in_array('--check',$argv,true) && ($pending || $registryErrors || $missingSources)))exit(1);
+$requiredPending=$result['scope']['pending'] ?? $pending;
+$requiredRegistry=$result['scope']['registry_errors'] ?? $registryErrors;
+if($errors || (in_array('--check',$argv,true) && ($requiredPending || $requiredRegistry || $missingSources)))exit(1);
 // ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

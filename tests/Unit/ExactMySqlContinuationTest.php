@@ -7,12 +7,13 @@ use App\Support\Exact\{Decimal as D, SaleNoteBalance};
 use Illuminate\Http\{JsonResponse, Request};
 use PHPUnit\Framework\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS SAB ########
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+/** @group postgres-integration */
 class ExactMySqlContinuationTest extends TestCase
 {
     public function test_tender_credit_check_and_reversal_use_the_same_mysql_fractions(): void
     {
-        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere MySQL temporal aislado.');
+        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
         $fixture=new class extends FiscalEmissionSchemaTest {
             public bool $ready=false;
             public function start(): array { parent::setUp();$this->ready=true;return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
@@ -25,6 +26,7 @@ class ExactMySqlContinuationTest extends TestCase
             $app->instance(\Illuminate\Contracts\Routing\ResponseFactory::class,$factory);
             \Carbon\Carbon::setTestNow('2026-10-19 12:00:00');
             $bankId=$db->table('bank_accounts')->insertGetId(['description'=>'Cuenta VES de prueba','number'=>'test-tender','bank_id'=>1,'currency_type_id'=>'VES']);
+            $db->table('payment_method_types')->where('id','04')->update(['bank_account_id'=>$bankId,'is_active'=>true]);
             $note=new SaleNote();$note->fill(array_intersect_key($input,array_flip($note->getFillable())));
             $note->forceFill(['prefix'=>'NV','document_type_id'=>'80','series'=>'NV01','number'=>'#','total'=>'0',
                 'external_id'=>(string)\Illuminate\Support\Str::uuid(),'user_id'=>auth()->id(),'state_type_id'=>'01',
@@ -61,8 +63,10 @@ class ExactMySqlContinuationTest extends TestCase
             // Closing a fraction whose twelve-place representation is 1 must not
             // compare that representation against the smaller authoritative debt.
             $db->table('configurations')->update(['auto_send_hka'=>false]);
+            $vesOnly = getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1';
+            $rate = $vesOnly ? '2.00000000' : '3.00000000';
             $closingInput=array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),
-                'currency_type_id'=>'USD','exchange_rate_sale'=>'3.00000000','payment_condition_id'=>'02','payments'=>[]]);
+                'currency_type_id'=>$vesOnly ? 'VES' : 'USD','exchange_rate_sale'=>$rate,'payment_condition_id'=>'02','payments'=>[]]);
             $closingInput['items'][0]=array_replace($closingInput['items'][0],['quantity'=>'1','unit_price'=>'1','affectation_igv_type_id'=>'20']);
             $closing=(new \App\CoreFacturalo\Facturalo())->save($closingInput)->getDocument()->fresh();
             $tiny=D::of(1)->dividedBy('100000000000000000000');
@@ -70,7 +74,7 @@ class ExactMySqlContinuationTest extends TestCase
             $closing->unsetRelation('guarantee_fund');
             self::assertTrue($closing->exactBalance()->isEqualTo(D::of(1)->minus($tiny)));
             $receipt=\App\Services\Fiscal\FiscalDocumentPersistence::payment($closing,[
-                'original_amount'=>'1','currency_type_id'=>'USD','exchange_rate'=>'3.00000000',
+                'original_amount'=>$vesOnly ? '0.5' : '1','currency_type_id'=>'USD','exchange_rate'=>$rate,
                 'payment_method_type_id'=>'10','date_of_payment'=>'2026-10-19','financial_intermediation'=>'none',
                 'operation_key'=>(string)\Illuminate\Support\Str::uuid(),
             ]);

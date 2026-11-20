@@ -1,45 +1,43 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `transaction_states` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `success` tinyint(1) NOT NULL
- * - `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `status_detail` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `original_message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `user_message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: varchar(255)
+ * - name: varchar(255)
+ * - success: boolean
+ * - status: varchar(255)
+ * - status_detail: varchar(255)
+ * - original_message: varchar(255)
+ * - user_message: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `transaction_states` (
-  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `success` tinyint(1) NOT NULL,
-  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status_detail` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `original_message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user_message` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `transaction_states_name_index` (`name`),
-  KEY `transaction_states_success_index` (`success`),
-  KEY `transaction_states_status_index` (`status`),
-  KEY `transaction_states_status_detail_index` (`status_detail`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('transaction_states', function (Blueprint $table) {
+            $table->string('id', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->boolean('success');
+            $table->string('status', 255)->collation('pro9_ci_ai');
+            $table->string('status_detail', 255)->collation('pro9_ci_ai');
+            $table->string('original_message', 255)->collation('pro9_ci_ai');
+            $table->string('user_message', 255)->collation('pro9_ci_ai');
+            $table->primary(['id']);
+            $table->index(['name'], 'transaction_states_name_index');
+            $table->index(['success'], 'transaction_states_success_index');
+            $table->index(['status'], 'transaction_states_status_index');
+            $table->index(['status_detail'], 'transaction_states_status_detail_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `transaction_states`');
+        Schema::dropIfExists('transaction_states');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

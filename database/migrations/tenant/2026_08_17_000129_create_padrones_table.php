@@ -1,66 +1,64 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `padrones` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `ruc` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `nombre_razon_social` varchar(155) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `estado_contribuyente` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `condicion_domicilio` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `ubigeo` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `tipo_via` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `nombre_via` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `codigo_zona` varchar(155) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `tipo_zona` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `numero` varchar(155) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `interior` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `lote` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `departamento` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `manzana` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `kilometro` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `status` tinyint(4) NOT NULL DEFAULT '1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - ruc: varchar(255)
+ * - nombre_razon_social: varchar(155)
+ * - estado_contribuyente: varchar(100)
+ * - condicion_domicilio: varchar(100)
+ * - ubigeo: varchar(50)
+ * - tipo_via: varchar(20)
+ * - nombre_via: varchar(50)
+ * - codigo_zona: varchar(155)
+ * - tipo_zona: varchar(20)
+ * - numero: varchar(155)
+ * - interior: varchar(50)
+ * - lote: varchar(20)
+ * - departamento: varchar(100)
+ * - manzana: varchar(20)
+ * - kilometro: varchar(20)
+ * - status: smallint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `padrones` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `ruc` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `nombre_razon_social` varchar(155) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `estado_contribuyente` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `condicion_domicilio` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `ubigeo` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `tipo_via` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `nombre_via` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `codigo_zona` varchar(155) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `tipo_zona` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `numero` varchar(155) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `interior` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `lote` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `departamento` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `manzana` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `kilometro` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` tinyint(4) NOT NULL DEFAULT '1',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `padrones_ruc_index` (`ruc`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('padrones', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('ruc', 255)->collation('pro9_ci_ai');
+            $table->string('nombre_razon_social', 155)->collation('pro9_ci_ai');
+            $table->string('estado_contribuyente', 100)->collation('pro9_ci_ai');
+            $table->string('condicion_domicilio', 100)->collation('pro9_ci_ai');
+            $table->string('ubigeo', 50)->collation('pro9_ci_ai');
+            $table->string('tipo_via', 20)->collation('pro9_ci_ai');
+            $table->string('nombre_via', 50)->collation('pro9_ci_ai');
+            $table->string('codigo_zona', 155)->collation('pro9_ci_ai');
+            $table->string('tipo_zona', 20)->collation('pro9_ci_ai');
+            $table->string('numero', 155)->collation('pro9_ci_ai');
+            $table->string('interior', 50)->collation('pro9_ci_ai');
+            $table->string('lote', 20)->collation('pro9_ci_ai');
+            $table->string('departamento', 100)->collation('pro9_ci_ai');
+            $table->string('manzana', 20)->collation('pro9_ci_ai');
+            $table->string('kilometro', 20)->collation('pro9_ci_ai');
+            $table->smallInteger('status')->default('1');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['ruc'], 'padrones_ruc_index');
+        });
+        DB::statement('ALTER TABLE "padrones" ADD CONSTRAINT "padrones_status_range" CHECK ("status" BETWEEN -128 AND 127)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `padrones`');
+        Schema::dropIfExists('padrones');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -300,7 +300,7 @@
         public function getAdditionalInformationAttribute($value)
         {
             // if($value){
-            $arr = explode('|', $value);
+            $arr = explode('|', $value ?? '');
             return $arr;
             // }
 

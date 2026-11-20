@@ -116,6 +116,9 @@
 </template>
 
 <script>
+import {documentNumberFull} from "@helpers/document-number";
+import {storeSaleNoteConversion} from "@helpers/sale-note-conversion";
+
 export default {
     props: {
         show: {
@@ -142,7 +145,7 @@ export default {
         };
     },
     methods: {
-        onFetchNoteItems() {
+        async onFetchNoteItems() {
             if (this.form.selecteds.length === 0) {
                 this.$message({
                     message: "Seleccione una o más Recibos de pago por favor",
@@ -150,86 +153,37 @@ export default {
                 });
                 return;
             }
+
             this.loading = true;
-
-            if (this.group_items_generate_document) {
-
-                const data = {
+            try {
+                const grouped = this.group_items_generate_document;
+                const {data} = await this.$http.post("/sale-notes/items", {
                     notes_id: this.form.selecteds,
-                };
+                    select_all: !grouped,
+                });
+                const items = grouped ? data.grouped_items : data.data;
+                if (!Array.isArray(items)) throw new Error("No se recibieron las partidas de las notas.");
 
-                this.$http
-                    .post("/sale-notes/items", data)
-                    .then((response) => {
-                        const notes = [];
-                        this.notes.map((d) => {
-                            if (d.selected) {
-                                notes.push(`${d.series}-${d.number}`);
-                            }
-                        });
-                        const items = response.data.data;
-                        const data = [];
-                        items.map((i) => {
-                            const it = {
-                                id: i.item_id,
-                                quantity: 0,
-                            };
-                            items.map((ite) => {
-                                if (ite.item_id === it.id) {
-                                    it.quantity = it.quantity + parseFloat(ite.quantity);
-                                }
-                            });
-                            const itemIsDuplicated = data.find((item) => item.id === it.id);
-                            if (itemIsDuplicated) {
-                                itemIsDuplicated.quantity = it.quantity;
-                            } else {
-                                data.push(it);
-                            }
-                        });
-                        const client = this.clients.find((c) => c.id === this.form.client_id);
-                        localStorage.setItem("client", JSON.stringify(client));
-                        localStorage.setItem("itemsForNotes", JSON.stringify(data));
-                        localStorage.setItem("notes", JSON.stringify(notes));
-                        this.onClose();
-                        window.location.href = "/documents/create";
-                    })
-                    .catch((error) => this.axiosError(error))
-                    .finally(() => (this.loading = false));
-
-            } else {
-                this.processNotGroupItems()
+                const notes = this.notes.filter(note => note.selected).map(note => ({
+                    id: note.id,
+                    number_full: documentNumberFull(note.series, note.number),
+                }));
+                const client = this.clients.find((c) => c.id === this.form.client_id);
+                storeSaleNoteConversion(localStorage, {
+                    context: data.conversion_context,
+                    client,
+                    items,
+                    notes,
+                    payments: data.payments,
+                });
+                this.onClose();
+                window.location.href = "/documents/create";
+            } catch (error) {
+                if (error.response) this.axiosError(error);
+                else this.$message.error(error.message || "No se pudieron preparar las notas de venta.");
+            } finally {
+                this.loading = false;
             }
-        },
-        processNotGroupItems() {
-
-            const data = {
-                notes_id: this.form.selecteds,
-                select_all: true
-            };
-
-            this.$http.post("/sale-notes/items", data)
-                .then((response) => {
-
-                    const notes = [];
-                    this.notes.map((d) => {
-                        if (d.selected) {
-                            notes.push(`${d.series}-${d.number}`);
-                        }
-                    });
-
-                    const items = response.data.data;
-
-                    const client = this.clients.find((c) => c.id === this.form.client_id);
-                    localStorage.setItem("client", JSON.stringify(client));
-                    localStorage.setItem("itemsNotGroupForNotes", JSON.stringify(items));
-                    localStorage.setItem("notes", JSON.stringify(notes));
-                    this.onClose();
-                    window.location.href = "/documents/create";
-                })
-                .catch((error) => this.axiosError(error))
-                .finally(() => (this.loading = false));
-
-
         },
         onFillSelectedNotes() {
             this.form.selecteds = [];

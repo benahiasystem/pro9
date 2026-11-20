@@ -1,48 +1,45 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `hotel_rent_items` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `type` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `hotel_rent_id` int(10) unsigned NOT NULL
- * - `item_id` int(10) unsigned NOT NULL
- * - `item` text COLLATE utf8mb4_unicode_ci
- * - `payment_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `hotel_rent_order_id` int(10) unsigned DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - type: varchar(3)
+ * - hotel_rent_id: bigint
+ * - item_id: bigint
+ * - item: text
+ * - payment_status: varchar(255)
+ * - hotel_rent_order_id: bigint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `hotel_rent_items` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `type` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `hotel_rent_id` int(10) unsigned NOT NULL,
-  `item_id` int(10) unsigned NOT NULL,
-  `item` text COLLATE utf8mb4_unicode_ci,
-  `payment_status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `hotel_rent_order_id` int(10) unsigned DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `hotel_rent_items_hotel_rent_id_foreign` (`hotel_rent_id`),
-  KEY `hotel_rent_items_item_id_foreign` (`item_id`),
-  KEY `hotel_rent_items_hotel_rent_order_id_foreign` (`hotel_rent_order_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('hotel_rent_items', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('type', 3)->collation('pro9_ci_ai');
+            $table->bigInteger('hotel_rent_id');
+            $table->bigInteger('item_id');
+            $table->text('item')->collation('pro9_ci_ai')->nullable();
+            $table->string('payment_status', 255)->collation('pro9_ci_ai');
+            $table->bigInteger('hotel_rent_order_id')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['hotel_rent_id'], 'hotel_rent_items_hotel_rent_id_foreign');
+            $table->index(['item_id'], 'hotel_rent_items_item_id_foreign');
+            $table->index(['hotel_rent_order_id'], 'hotel_rent_items_hotel_rent_order_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `hotel_rent_items`');
+        Schema::dropIfExists('hotel_rent_items');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

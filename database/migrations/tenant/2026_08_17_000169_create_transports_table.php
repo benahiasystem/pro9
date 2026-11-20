@@ -1,45 +1,42 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `transports` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `plate_number` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `model` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `brand` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `tuc` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `is_default` tinyint(1) NOT NULL DEFAULT '0'
- * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - plate_number: varchar(50)
+ * - model: varchar(255)
+ * - brand: varchar(255)
+ * - tuc: varchar(255)
+ * - is_default: boolean
+ * - is_active: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `transports` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `plate_number` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `model` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `brand` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `tuc` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `is_default` tinyint(1) NOT NULL DEFAULT '0',
-  `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('transports', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('plate_number', 50)->collation('pro9_ci_ai');
+            $table->string('model', 255)->collation('pro9_ci_ai');
+            $table->string('brand', 255)->collation('pro9_ci_ai');
+            $table->string('tuc', 255)->collation('pro9_ci_ai')->nullable();
+            $table->boolean('is_default')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `transports`');
+        Schema::dropIfExists('transports');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

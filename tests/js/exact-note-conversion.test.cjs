@@ -37,7 +37,7 @@ test('note modal transports the server groups without regrouping products or fet
     const ctx={form:{selecteds:[1],client_id:1},group_items_generate_document:true,
         notes:[{id:1,selected:true}],clients:[{id:1}],getObjectForNote:v=>v,onClose:()=>{},
         $http:{post:(path,data)=>{requests++;assert.equal(path,'/sale-notes/items');return Promise.resolve({data:{data:[],grouped_items:expected,payments:receipts,
-            conversion_context:{currency_type_id:'USD',exchange_rate_sale:'40.12345678',customer_id:1,establishment_id:2}}})}},
+            conversion_context:{currency_type_id:'VES',exchange_rate_sale:'40.12345678',customer_id:1,establishment_id:2}}})}},
         $message:()=>{throw new Error('La selección es válida')}}
     component.methods.onFetchNoteItems.call(ctx)
     await new Promise(setImmediate)
@@ -49,9 +49,9 @@ test('note modal transports the server groups without regrouping products or fet
     assert.equal(stored.has('lotsItems'),false)
     assert.equal(location.href,'/documents/create')
     assert.equal(requests,1)
-    const view={form:{currency_type_id:'VES'}}
+    const view={form:{currency_type_id:null}}
     restoreSaleNoteContext(view,{getItem:key=>stored.get(key),removeItem:key=>stored.delete(key)})
-    assert.equal(view.form.currency_type_id,'USD')
+    assert.equal(view.form.currency_type_id,'VES')
     assert.equal(view.form.exchange_rate_sale,'40.12345678')
     assert.equal(view.form.establishment_id,2)
     assert.deepEqual(JSON.parse(JSON.stringify(view.form.payments)),receipts)
@@ -90,7 +90,7 @@ for (const grouped of [true,false]) {
             notes:[{id:1,selected:true}],clients:[{id:1}],getObjectForNote:v=>v,
             onClose:()=>{throw Error('Una transferencia incompleta no cierra el modal')},
             $http:{post:()=>Promise.resolve({data:{data:rows(),grouped_items:rows(),conversion_context:{
-                currency_type_id:'USD',exchange_rate_sale:'40.12345678',customer_id:1,establishment_id:2,
+                currency_type_id:'VES',exchange_rate_sale:'40.12345678',customer_id:1,establishment_id:2,
             }}})},$message:{error:value=>{shown=value}},axiosError:()=>{throw Error('No es un error HTTP')}}
         ctx.processNotGroupItems=component.methods.processNotGroupItems.bind(ctx)
         component.methods.onFetchNoteItems.call(ctx)
@@ -137,16 +137,16 @@ for (const file of ['invoice_generate.vue','invoice.vue','invoiceupdate.vue']) {
 
 test('missing or malformed historical conversion context is not replaced with zero or a current rate',()=>{
     const view={form:{exchange_rate_sale:'1.00000000'}}
-    for (const context of [{currency_type_id:'USD',customer_id:1,establishment_id:1},
+    for (const context of [{currency_type_id:'VES',customer_id:1,establishment_id:1},
         {currency_type_id:'PEN',exchange_rate_sale:'1',customer_id:1,establishment_id:1},
-        {currency_type_id:'USD',exchange_rate_sale:40.1,customer_id:1,establishment_id:1}]) {
+        {currency_type_id:'VES',exchange_rate_sale:40.1,customer_id:1,establishment_id:1}]) {
         assert.throws(()=>restoreSaleNoteContext(view,{getItem:()=>JSON.stringify(context),removeItem:()=>{throw Error('No debe consumir una entrada inválida')}}))
         assert.equal(view.form.exchange_rate_sale,'1.00000000')
     }
 })
 
 test('missing or malformed note receipts cannot partially restore a conversion',()=>{
-    const context=JSON.stringify({currency_type_id:'USD',exchange_rate_sale:'10',customer_id:1,establishment_id:2})
+    const context=JSON.stringify({currency_type_id:'VES',exchange_rate_sale:'10',customer_id:1,establishment_id:2})
     for (const badPayments of [null,'{}','[']) {
         const view={form:{currency_type_id:'VES',exchange_rate_sale:'20',payments:[{id:42}]}}
         assert.throws(()=>restoreSaleNoteContext(view,{getItem:key=>key==='noteConversionContext' ? context : badPayments,removeItem:()=>assert.fail('No debe consumir datos incompletos')}))
@@ -179,3 +179,13 @@ test('the grouped conversion shows a source validation error instead of silently
     assert.equal(shown,error)
     assert.equal(ctx.loading,false)
 })
+
+test('a conversion keeps adjacent PostgreSQL identifiers as exact text in the invoice', () => {
+    const context = {currency_type_id: 'VES', exchange_rate_sale: '1.00000000',
+        customer_id: '9007199254740993', establishment_id: '9007199254740995'};
+    const stored = new Map([['noteConversionContext', JSON.stringify(context)], ['noteConversionPayments', '[]']]);
+    const view = {form: {}};
+    restoreSaleNoteContext(view, {getItem: key => stored.get(key), removeItem: key => stored.delete(key)});
+    assert.equal(view.form.customer_id, '9007199254740993');
+    assert.equal(view.form.establishment_id, '9007199254740995');
+});

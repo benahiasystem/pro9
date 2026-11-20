@@ -131,7 +131,7 @@
          *
          * @return array|string[]
          */
-        public static function getLocationData($value)
+        public static function getLocationData($value, ?array $customers = null)
         {
             $customer = null;
             $district = '';
@@ -148,7 +148,7 @@
             if ($customer !== null && !($customer instanceof \Illuminate\Database\Eloquent\Model)) {
                 $customer_id = $type_doc->customer_id ?? null;
                 if ($customer_id) {
-                    $customer = \App\Models\Tenant\Person::find($customer_id) ?? $customer;
+                    $customer = $customers !== null ? ($customers[$customer_id] ?? $customer) : (\App\Models\Tenant\Person::find($customer_id) ?? $customer);
                 }
             }
 

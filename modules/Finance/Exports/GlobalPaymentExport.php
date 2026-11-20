@@ -11,6 +11,9 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 class GlobalPaymentExport implements  FromView, ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithEvents
 {
     use Exportable;
+    public $records;
+    public $company;
+    public $establishment;
     
     public function records($records) {
         $this->records = $records;

@@ -27,6 +27,7 @@ use App\Models\Tenant\Catalogs\DocumentType;
 use App\Models\Tenant\Establishment;
 use Illuminate\Support\Collection;
 use Modules\Account\Exports\ReportAccountingConcarSimpleExport;
+use App\Support\Exact\Decimal;
 
 
 class AccountController extends Controller
@@ -1480,13 +1481,13 @@ class AccountController extends Controller
                 'customer_number' => format_person_identity_document($row->customer),
                 'customer_name' => $row->customer->name,
 
-                'total_exportation' => number_format($row->total_exportation, 2, ".", ""),
-                'total_taxed' => number_format($row->total_taxed, 2, ".", ""),
-                'total_exonerated' => number_format($row->total_exonerated, 2, ".", ""),
-                'total_unaffected' => number_format(0, 2, ".", ""),
-                'total_igv' => number_format($row->total_igv, 2, ".", ""),
-                'total_other_taxes' => number_format($row->total_total_other_taxes, 2, ".", ""),
-                'total' => number_format($row->total, 2, ".", ""),
+                'total_exportation' => Decimal::format(Decimal::readRequired($row, 'total_exportation'), 2, '.', ''),
+                'total_taxed' => Decimal::format(Decimal::readRequired($row, 'total_taxed'), 2, '.', ''),
+                'total_exonerated' => Decimal::format(Decimal::readRequired($row, 'total_exonerated'), 2, '.', ''),
+                'total_unaffected' => '0.00',
+                'total_igv' => Decimal::format(Decimal::readRequired($row, 'total_igv'), 2, '.', ''),
+                'total_other_taxes' => Decimal::format(Decimal::readRequired($row, 'total_other_taxes'), 2, '.', ''),
+                'total' => Decimal::format(Decimal::readRequired($row, 'total'), 2, '.', ''),
                 'exchange_rate_sale' => \App\Services\ExchangeRates\ExchangeRateMath::rate($row->exchange_rate_sale),
                 'db_date_issue' => ($document_base) ? $document_base->affected_document->date_of_issue->format('d/m/Y') : '',
                 'db_document_type_id' => ($document_base) ? $document_base->affected_document->document_type_id : '',

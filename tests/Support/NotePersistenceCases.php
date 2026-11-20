@@ -8,6 +8,98 @@ use Illuminate\Support\Str;
 
 trait NotePersistenceCases
 {
+    public function test_retention_proposals_use_exact_remaining_ves_invoice_amounts_after_credit_note(): void
+    {
+        [$db, , $input] = $this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode' => 'free_form']);
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        SpeProfiles::versions($db, 1, $input['customer_id']);
+        $input['payment_condition_id'] = '02';
+        $input['payments'] = [];
+        $invoice = (new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
+        self::assertSame('VES', $invoice->currency_type_id);
+
+        $credit = (new Facturalo)->forWebDocuments()->save($this->noteInput($input, $invoice, '07', '09', [[
+            'affected_document_item_id' => $invoice->items->first()->id,
+            'adjustment_amount' => '1',
+        ]]))->getDocument()->fresh();
+        $remainingNet = $invoice->exactValue('total_value')->minus($credit->exactValue('total_value'));
+        $remainingIva = $invoice->exactValue('total_igv')->minus($credit->exactValue('total_igv'));
+        $remainingTaxed = $invoice->exactValue('total_taxed')->minus($credit->exactValue('total_taxed'));
+        self::assertSame('4/29', (string) $credit->exactValue('total_igv'));
+        $decimal = \App\Support\Exact\Decimal::class;
+        $document = (new \App\Http\Controllers\Tenant\DocumentFiscalController())->retentions($invoice->id)['document'];
+        self::assertSame('VES', $document['currency_type_id']);
+        self::assertSame($decimal::represent($remainingNet), $document['effective_total_value']);
+        self::assertSame($decimal::represent($remainingIva), $document['effective_total_igv']);
+        self::assertSame($decimal::represent($remainingTaxed), $document['effective_total_taxed']);
+
+        \Illuminate\Http\Request::macro('validate', function ($rules) {
+            return validator($this->all(), $rules)->validate();
+        });
+        $controller = new \App\Http\Controllers\Tenant\IvaRetentionController();
+        $proposal = static function (array $fields) use ($controller, $invoice): array {
+            $request = \Illuminate\Http\Request::create('/documents/retention/proposal', 'POST', $fields + [
+                'document_id' => $invoice->id, 'date' => '2026-09-10', 'currency_type_id' => 'VES',
+                'total_value' => '200', 'total_taxed' => '200', 'total_igv' => '32',
+            ]);
+            return $controller->proposal($request)['data'];
+        };
+        $iva = $proposal(['tax_kind' => 'IVA']);
+        $islrInput = [
+            'tax_kind' => 'ISLR', 'concept_id' => '055', 'percentage' => '3',
+            'exchange_rate' => '1',
+            'fiscal_context' => ['concept_basis' => 'Concepto de prueba', 'evidence_reference' => 'Soporte de prueba'],
+        ];
+        $islr = $proposal($islrInput + ['base_mode' => 'full_net']);
+        self::assertTrue($iva['eligible']);
+        self::assertTrue($islr['eligible']);
+        self::assertTrue($decimal::read($iva, 'iva_amount')->isEqualTo($remainingIva));
+        self::assertTrue($decimal::read($iva, 'taxable_base')->isEqualTo($remainingTaxed));
+        self::assertTrue($decimal::read($iva, 'amount')->isEqualTo($remainingIva->multipliedBy('0.75')));
+        self::assertTrue($decimal::read($islr, 'base')->isEqualTo($remainingNet));
+        self::assertTrue($decimal::read($islr, 'voucher_amount')->isEqualTo($remainingNet->multipliedBy('0.03')));
+        try {
+            $proposal($islrInput + ['base_mode' => 'declared', 'base' => '200']);
+            self::fail('La base original supera el saldo fiscal después de la nota de crédito.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('base', $error->errors());
+        }
+    }
+
+    public function test_note_context_and_series_preserve_bigint_branch_ids_on_postgresql(): void
+    {
+        [$db, , , $invoice] = $this->noteFixture();
+        $controller = new \App\Http\Controllers\Tenant\NoteController();
+        $small = $controller->record($invoice->id);
+        self::assertSame($invoice->establishment_id, $small['establishment_id']);
+        self::assertIsInt($small['establishment_id']);
+
+        $branches = ['9007199254740992', '9007199254740993'];
+        $seriesIds = ['9007199254741002', '9007199254741003'];
+        foreach ($branches as $index => $branch) {
+            $db->table('establishments')->insert([
+                'id' => $branch, 'description' => 'Sucursal de prueba '.$index, 'country_id' => 'VE',
+                'department_id' => '14', 'province_id' => '0229', 'district_id' => '000619',
+                'address' => 'Test', 'telephone' => '04121234567', 'code' => '010'.$index,
+            ]);
+            $db->table('series')->insert([
+                'id' => $seriesIds[$index], 'establishment_id' => $branch, 'document_type_id' => '07',
+                'number' => 'FN0'.$index,
+            ]);
+        }
+        $db->table('documents')->where('id', $invoice->id)->update(['establishment_id' => $branches[1]]);
+
+        $catalog = \App\Models\Tenant\Series::whereIn('id', $seriesIds)->orderBy('id')->get()
+            ->map(static fn ($row) => $row->getCollectionData())->all();
+        $payload = json_decode(json_encode([
+            'record' => $controller->record($invoice->id), 'series' => $catalog,
+        ], JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame($branches[1], $payload['record']['establishment_id']);
+        self::assertSame($branches, array_column($payload['series'], 'establishment_id'));
+        self::assertSame($seriesIds, array_column($payload['series'], 'id'));
+    }
+
     public function test_note_adjustments_persist_fractional_fund_and_igtf_amounts(): void
     {
         [$db,$app,$input,$invoice]=$this->noteFixture(true);
@@ -254,7 +346,7 @@ trait NotePersistenceCases
         $formats=[];
         foreach (['default','Plantilla_personalizable','modern-2027','marca_de_agua'] as $theme) foreach (['a4','a5','ticket'] as $format) $formats[]=[$theme,$format];
         $formats[]=['default','ticket_58'];
-        $dir=getenv('SAB_NOTE_LOT_PDF_DIR') ?: sys_get_temp_dir().'/sab-note-lots-'.bin2hex(random_bytes(5));
+        $dir=getenv('PRO9_NOTE_LOT_PDF_DIR') ?: sys_get_temp_dir().'/sab-note-lots-'.bin2hex(random_bytes(5));
         if (!is_dir($dir)) mkdir($dir,0700,true);
         try {
             foreach ($formats as [$theme,$format]) {
@@ -310,7 +402,7 @@ trait NotePersistenceCases
                 if (in_array($format,['ticket','ticket_58'],true)) self::assertSame(1,substr_count($text,"\f"),$theme.'/'.$format.' no debe cortar el ticket de muestra.');
             }
         } finally {
-            if (!getenv('SAB_NOTE_LOT_PDF_DIR')) (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($dir);
+            if (!getenv('PRO9_NOTE_LOT_PDF_DIR')) (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($dir);
         }
     }
 
@@ -358,6 +450,71 @@ trait NotePersistenceCases
             self::assertSame('11.6',\App\Support\Exact\Decimal::represent($note->exactValue('total')));
             self::assertSame('0',\App\Support\Exact\Decimal::represent($note->items->first()->exactValue('inventory_quantity')));
         }
+    }
+
+    /** @dataProvider debitServiceAdjustments */
+    public function test_debit_service_uses_the_exact_adjustment_operand_on_postgresql(
+        string $currency,
+        string $reason,
+        string $amount,
+        ?array $fraction,
+        string $affectation,
+        string $expected,
+        string $base,
+        string $iva,
+    ): void {
+        [$db, , $input] = $this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode' => 'free_form']);
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $input['currency_type_id'] = $currency;
+        $input['exchange_rate_sale'] = '3';
+        $input['payment_condition_id'] = '02';
+        $input['payments'] = [];
+        $invoice = (new Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $service = \App\Models\Tenant\Item::where('unit_type_id', 'SERV')->firstOrFail();
+        $row = [
+            'item_id' => $service->id, 'adjustment_amount' => $amount, 'adjustment_amount_exact' => $fraction,
+            'affectation_igv_type_id' => $affectation, 'price_type_id' => '01', 'additional_information' => '',
+            'currency_type_id' => $currency === 'VES' ? 'USD' : 'VES', 'exchange_rate_sale' => '99',
+            'calculation_snapshot' => \App\Support\Exact\Decimal::snapshot(['total' => 999, 'unit_price' => 999]),
+        ];
+        $data = $this->noteInput($input, $invoice, '08', $reason, [$row]);
+        $data['items'] = \App\CoreFacturalo\Requests\Inputs\DocumentInput::items($data);
+        $note = (new Facturalo())->forWebDocuments()->save($data)->getDocument()->fresh();
+        $line = $note->items()->firstOrFail();
+        self::assertTrue($note->exactValue('total')->isEqualTo($expected));
+        self::assertTrue($line->exactValue('unit_price')->isEqualTo($expected));
+        self::assertTrue($line->exactValue('total_base_igv')->isEqualTo($base));
+        self::assertTrue($line->exactValue('total_igv')->isEqualTo($iva));
+        self::assertTrue($line->exactValue('quantity')->isEqualTo(1));
+        self::assertTrue($line->exactValue('inventory_quantity')->isZero());
+        self::assertSame('3.00000000', $note->exchange_rate_sale);
+        self::assertSame($currency, $note->currency_type_id);
+        self::assertCount(0, $note->payments);
+
+        $bad = $this->noteInput($input, $invoice, '08', $reason, [array_replace($row, [
+            'adjustment_amount_exact' => ['n' => '1', 'd' => '0'],
+        ])]);
+        try {
+            (new Facturalo())->forWebDocuments()->save($bad);
+            self::fail('La fracción con denominador cero se debe rechazar.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('items.0.adjustment_amount', $error->errors());
+        }
+        self::assertSame(1, $db->table('documents')->where('document_type_id', '08')->count());
+    }
+
+    public static function debitServiceAdjustments(): array
+    {
+        return [
+            'varias unidades capturadas' => ['VES', '01', '30', ['n' => '30', 'd' => '1'], '20', '30', '30', '0'],
+            'convertido a USD' => ['USD', '01', '0.333333333333', ['n' => '1', 'd' => '3'], '20', '1/3', '1/3', '0'],
+            'edición con fracción desactualizada' => ['USD', '03', '0.50', ['n' => '1', 'd' => '3'], '20', '0.5', '0.5', '0'],
+            'importe manual igual al decimal visible' => ['USD', '01', '0.333333333333', null, '20', '0.333333333333', '0.333333333333', '0'],
+            'importe de servicio gravado' => ['VES', '03', '104.4', ['n' => '522', 'd' => '5'], '10', '104.4', '90', '14.4'],
+            'el cargo pasa a integrar el importe de la unidad fiscal' => ['VES', '03', '126', ['n' => '126', 'd' => '1'], '10', '126', '3150/29', '504/29'],
+            'fracción positiva menor a doce decimales' => ['USD', '01', '0', ['n' => '1', 'd' => '3000000000000'], '20', '1/3000000000000', '1/3000000000000', '0'],
+        ];
     }
 
     public function test_contingency_listing_matches_series_branch_type_and_user_scope(): void
@@ -716,11 +873,11 @@ trait NotePersistenceCases
         self::assertSame(2,substr_count($readText($bulk),'00-00000034'));
         self::assertSame('%PDF-stored-before-a4-design',\Illuminate\Support\Facades\Storage::disk('tenant')->get($path));
         $configuration=$db->getConfig();
-        $writer=new \PDO('mysql:host='.$configuration['host'].';port='.$configuration['port'].';dbname='.$configuration['database'],
+        $writer=new \PDO('pgsql:host='.$configuration['host'].';port='.$configuration['port'].';dbname='.$configuration['database'],
             $configuration['username'],$configuration['password'],[\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);
         $reversed=false;
         $db->listen(function ($query) use ($db,$writer,$invoice,&$reversed) {
-            if ($reversed || $db->transactionLevel() === 0 || !preg_match('/^select .*from `document_payments`/i',$query->sql)) return;
+            if ($reversed || $db->transactionLevel() === 0 || !preg_match('/^select .*from "document_payments"/i',$query->sql)) return;
             $reversed=true;
             $statement=$writer->prepare('UPDATE document_payments SET reversed_at = ? WHERE document_id = ? AND receipt_parent_id IS NULL');
             $statement->execute(['2026-11-16 12:00:00',$invoice->id]);
@@ -751,12 +908,15 @@ trait NotePersistenceCases
         $brand=\Modules\Item\Models\Brand::create(['name'=>'Marca de prueba']);
         $itemId=$input['items'][0]['item_id'];
         $itemRow=$db->table('items')->where('id',$itemId)->first();
-        $itemSnapshot=json_decode($itemRow->calculation_snapshot,true) ?: \App\Support\Exact\Decimal::snapshot([]);
+        $itemSnapshot=$itemRow->calculation_snapshot === null
+            ? \App\Support\Exact\Decimal::snapshot([])
+            : json_decode($itemRow->calculation_snapshot,true,512,JSON_THROW_ON_ERROR);
         $itemSnapshot['values']['purchase_unit_price']=\App\Support\Exact\Decimal::fraction('0.1');
         $db->table('items')->where('id',$itemId)->update(['brand_id'=>$brand->id,'currency_type_id'=>'VES','purchase_unit_price'=>'0.1',
             'calculation_snapshot'=>json_encode($itemSnapshot,JSON_THROW_ON_ERROR)]);
         $documents=[];
-        foreach (['VES','USD'] as $currency) {
+        $mixedCurrencies = count($this->invoiceTestCurrencies()) > 1;
+        foreach (['VES',$mixedCurrencies ? 'USD' : 'VES'] as $currency) {
             $source=$input;
             $source['external_id']=(string)Str::uuid();
             $source['currency_type_id']=$currency; $source['exchange_rate_sale']='10.12345678';
@@ -817,11 +977,11 @@ trait NotePersistenceCases
         }
         try { \App\Services\Fiscal\FreeFormControl::register($printedCredit->fresh(),['control_number'=>'00-4','evidence_reference'=>'Otra referencia']); self::fail('El control no se reemplaza.'); }
         catch (\Illuminate\Validation\ValidationException $error) { self::assertArrayHasKey('control_number',$error->errors()); }
-        $usdInvoice=collect($documents)->first(fn($row)=>$row->document_type_id==='01' && $row->currency_type_id==='USD');
-        $usdCredit=collect($documents)->first(fn($row)=>$row->document_type_id==='07' && $row->currency_type_id==='USD');
-        \App\Services\Fiscal\FreeFormControl::register($usdInvoice,['control_number'=>'00-4','evidence_reference'=>'Factura USD física de prueba']);
-        self::assertNull($usdCredit->fresh()->control_number);
-        self::assertEmpty($usdCredit->fresh()->note->data_affected_document->control_number ?? null);
+        $comparisonInvoice=$documents[3];
+        $comparisonCredit=$documents[4];
+        \App\Services\Fiscal\FreeFormControl::register($comparisonInvoice,['control_number'=>'00-4','evidence_reference'=>'Segunda factura física de prueba']);
+        self::assertNull($comparisonCredit->fresh()->control_number);
+        self::assertEmpty($comparisonCredit->fresh()->note->data_affected_document->control_number ?? null);
         $debitPayment=\App\Services\Fiscal\FiscalDocumentPersistence::payment($printedDebit->fresh(),[
             'operation_key'=>(string)Str::uuid(),'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10',
             'payment_destination_id'=>'cash','currency_type_id'=>'USD','original_amount'=>'1','exchange_rate'=>'10.12345678',
@@ -830,9 +990,10 @@ trait NotePersistenceCases
         self::assertSame('1.48',\App\Support\Exact\Decimal::represent($printedDebit->fresh()->exactBalance()));
         $rows=(new \Modules\CashReport\Services\Builders\ProductsBuilder())->getDataReport($cash->id)['documents'];
         $sold=\Modules\CashReport\Services\ProductsAmounts::sold($rows);
-        foreach (['VES','USD'] as $currency) {
+        foreach ($this->invoiceTestCurrencies() as $currency) {
             $sum=\App\Support\Exact\Decimal::sum(collect($sold)->where('currency_type_id',$currency)->pluck('total'));
-            self::assertSame('220.4',\App\Support\Exact\Decimal::represent($sum));
+            $expectedTotal = $mixedCurrencies ? '220.4' : ($currency==='VES' ? '440.8' : '0');
+            self::assertSame($expectedTotal,\App\Support\Exact\Decimal::represent($sum));
         }
         config(['view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/free-form-note-views',
             'tenant.pdf_template_footer' => true, 'tenant.public_document_search_enabled' => false,
@@ -886,9 +1047,9 @@ trait NotePersistenceCases
                 $credit=$printedCredit->fresh(); $credit->customer=$customer; $credit->establishment=$establishment;
                 $ticket=(new Facturalo())->createPdf($credit,'credit','ticket_58','string');
                 self::assertStringStartsWith('%PDF-',$ticket);
-                if ($dir=getenv('SAB_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/control-ticket-58.pdf',$ticket);
+                if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/control-ticket-58.pdf',$ticket);
             }
-            if ($print->id===$usdCredit->id) {
+            if ($print->id===$comparisonCredit->id) {
                 self::assertStringContainsString('Control actual de factura afectada',$html);
                 self::assertStringContainsString('00-00000004',$html);
                 $original=$db->table('documents')->where('id',$print->id)->first(['customer','establishment']);
@@ -929,10 +1090,10 @@ trait NotePersistenceCases
                     self::assertStringStartsWith('%PDF-',$mail->rawAttachments[0]['data']);
                     self::assertNotSame('%PDF-original-before-control',$mail->rawAttachments[0]['data']);
                     self::assertSame('%PDF-original-before-control',\Illuminate\Support\Facades\Storage::disk('tenant')->get($path));
-                    if ($dir=getenv('SAB_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/control-current-'.$type.'.pdf',$current);
+                    if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/control-current-'.$type.'.pdf',$current);
                 } finally { $db->table('documents')->where('id',$print->id)->update((array)$original); }
             }
-            if ($dir=getenv('SAB_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/'.$type.'-'.$print->currency_type_id.'.pdf',$bytes);
+            if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/'.$type.'-'.$print->currency_type_id.'.pdf',$bytes);
         }
         \App\Services\Fiscal\FiscalDocumentPersistence::reverse($debitPayment,'Reversión sintética');
         self::assertSame('11.6',\App\Support\Exact\Decimal::represent($printedDebit->fresh()->exactBalance()));
@@ -943,11 +1104,11 @@ trait NotePersistenceCases
             self::assertStringNotContainsString('Cobro recibido (USD)',$html,"$format sin resumen revertido");
         }
         // Even a third matching filename with a registered control must block ambiguous legacy lookup.
-        $usdDebit=collect($documents)->first(fn($row)=>$row->document_type_id==='08' && $row->currency_type_id==='USD');
-        \App\Services\Fiscal\FreeFormControl::register($usdDebit,['control_number'=>'00-5','evidence_reference'=>'Nota física de prueba']);
-        $invoiceEmission=$usdInvoice->fresh()->emission; $originalResponse=$invoiceEmission->response; $temporaryResponse=$originalResponse;
+        $comparisonDebit=$documents[5];
+        \App\Services\Fiscal\FreeFormControl::register($comparisonDebit,['control_number'=>'00-5','evidence_reference'=>'Nota física de prueba']);
+        $invoiceEmission=$comparisonInvoice->fresh()->emission; $originalResponse=$invoiceEmission->response; $temporaryResponse=$originalResponse;
         unset($temporaryResponse['free_form_control']); $invoiceEmission->update(['response'=>$temporaryResponse]);
-        $ambiguous=[$usdInvoice,$usdCredit,$usdDebit]; $names=[];
+        $ambiguous=[$comparisonInvoice,$comparisonCredit,$comparisonDebit]; $names=[];
         try {
             foreach ($ambiguous as $candidate) { $names[$candidate->id]=$candidate->filename; $db->table('documents')->where('id',$candidate->id)->update(['filename'=>'ambiguous-free-form-test']); }
             try { \App\Services\Fiscal\CurrentFreeFormPdf::bytesForFilename('ambiguous-free-form-test'); self::fail('No se debe resolver un nombre ambiguo.'); }
@@ -961,7 +1122,8 @@ trait NotePersistenceCases
         $reportMethod=new \ReflectionMethod($reportController,'getRecordsByBrand'); $reportMethod->setAccessible(true);
         $brandRows=$reportMethod->invoke($reportController,$filters);
         self::assertCount(1,$brandRows);
-        $expected=\App\Support\Exact\Decimal::of('220.4')->plus(\App\Support\Exact\Decimal::of('220.4')->multipliedBy('10.12345678'));
+        $expected=\App\Support\Exact\Decimal::of('220.4');
+        $expected=$expected->plus($expected->multipliedBy($mixedCurrencies ? '10.12345678' : '1'));
         self::assertTrue(\App\Support\Exact\Decimal::readRequired($brandRows->first(),'total_sale_value')->isEqualTo($expected));
         self::assertTrue(\App\Support\Exact\Decimal::readRequired($brandRows->first(),'total_profit')->isEqualTo($expected->minus('0.4')));
         self::assertSame('4',$brandRows->first()['quantity_sold']);
@@ -1000,7 +1162,7 @@ trait NotePersistenceCases
         $brandPdf=new \Dompdf\Dompdf(); $brandPdf->loadHtml($brandHtml); $brandPdf->render();
         $brandBytes=$brandPdf->output();
         self::assertStringStartsWith('%PDF-',$brandBytes);
-        if ($dir=getenv('SAB_BRAND_REPORT_EVIDENCE')) file_put_contents($dir.'/marcas.pdf',$brandBytes);
+        if ($dir=getenv('PRO9_BRAND_REPORT_EVIDENCE')) file_put_contents($dir.'/marcas.pdf',$brandBytes);
         config(['excel'=>require base_path('config/excel.php')]);
         $export=(new \Modules\Report\Exports\SalesByBrandExport())->records($records)->company($company)
             ->establishment($establishment)->dateStart($date_start)->dateEnd($date_end);
@@ -1008,7 +1170,7 @@ trait NotePersistenceCases
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('SAB_BRAND_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/marcas.xlsx');
+            if ($dir=getenv('PRO9_BRAND_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/marcas.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
             $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
             $fraction=\App\Support\Exact\Decimal::fraction($expected);
@@ -1019,14 +1181,14 @@ trait NotePersistenceCases
             ->establishment($establishment)->filters(['user_type'=>'VENDEDOR'])->categories(collect())->categories_services(collect());
         $accountFile=(new \Maatwebsite\Excel\Writer($temp))->export($accountExport,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('SAB_FREE_FORM_NOTE_EVIDENCE')) copy($accountFile->getLocalPath(),$dir.'/estado-cuenta.xlsx');
+            if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) copy($accountFile->getLocalPath(),$dir.'/estado-cuenta.xlsx');
             $accountBook=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($accountFile->getLocalPath());
             $sheet=$accountBook->getActiveSheet(); $totals=[];
             foreach ($sheet->getRowIterator() as $row) {
                 $index=$row->getRowIndex(); $label=(string)$sheet->getCell('O'.$index)->getValue();
                 if (in_array($label,['Totales VES','Totales USD'],true)) $totals[$label]=(string)$sheet->getCell('U'.$index)->getValue();
             }
-            self::assertSame(['Totales VES'=>'220.40','Totales USD'=>'220.40'],$totals);
+            self::assertSame($mixedCurrencies ? ['Totales VES'=>'220.40','Totales USD'=>'220.40'] : ['Totales VES'=>'440.80'],$totals);
             self::assertSame(\PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING,$sheet->getCell('U7')->getDataType());
             $accountFractions=$accountBook->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
             self::assertContains(['document:'.$documents[1]->id,'total','-23.2','-116','5'],$accountFractions);
@@ -1034,19 +1196,19 @@ trait NotePersistenceCases
         } finally { $accountFile->delete(); }
         $category=\Modules\Item\Models\Category::create(['name'=>'Repuestos QA']);
         $db->table('items')->where('id',$itemId)->update(['category_id'=>$category->id]);
-        $usdInvoice=collect($documents)->first(fn($d)=>$d->currency_type_id==='USD' && $d->document_type_id==='01');
-        $db->table('documents')->where('id',$usdInvoice->id)->update(['date_of_issue'=>'2026-09-12']);
-        $usdLine=$db->table('document_items')->where('document_id',$usdInvoice->id)->first();
-        $historicItem=json_decode($usdLine->item,true); $historicItem['unit_type_id']='KG';
-        $db->table('document_items')->where('id',$usdLine->id)->update(['item'=>json_encode($historicItem)]);
+        $db->table('documents')->where('id',$comparisonInvoice->id)->update(['date_of_issue'=>'2026-09-12']);
+        $comparisonLine=$db->table('document_items')->where('document_id',$comparisonInvoice->id)->first();
+        $historicItem=json_decode($comparisonLine->item,true); $historicItem['unit_type_id']='KG';
+        $db->table('document_items')->where('id',$comparisonLine->id)->update(['item'=>json_encode($historicItem)]);
         $customer=\App\Models\Tenant\Person::findOrFail($input['customer_id']);
         $categories=\Modules\Item\Models\Category::all()->pluck('name')->all();
         $analysis=\Modules\Report\Services\CommercialAnalysisAmounts::row($customer,$categories);
-        self::assertSame('116.00',$analysis['total_ves']); self::assertSame('220.40',$analysis['total_usd']);
+        $analysisVes = $mixedCurrencies ? '116.00' : '336.40';
+        self::assertSame($analysisVes,$analysis['total_ves']); self::assertSame($mixedCurrencies ? '220.40' : '0.00',$analysis['total_usd']);
         self::assertSame(2,$analysis['quantity_visit']); self::assertSame('2 KG; 1 UND',$analysis['REPUESTOS QA']);
         self::assertSame('10-09-2026',$analysis['first_document_date']); self::assertSame('12-09-2026',$analysis['last_document_date']);
         self::assertSame('2.00',$analysis['prom_difference_days']); self::assertSame('14-09-2026',$analysis['contact_date']);
-        self::assertSame(['n'=>'116','d'=>'1'],$analysis['calculation_snapshot']['values']['total_ves']);
+        self::assertSame(\App\Support\Exact\Decimal::fraction($analysisVes),$analysis['calculation_snapshot']['values']['total_ves']);
         $analysisResource=(new \Modules\Report\Http\Resources\CommercialAnalysisCollection(collect([$customer->fresh()])))->toArray(new \Illuminate\Http\Request())->first();
         self::assertSame($analysis['REPUESTOS QA'],$analysisResource['REPUESTOS QA']);
         self::assertSame('V-12345678',$analysisResource['customer_number']);
@@ -1055,7 +1217,7 @@ trait NotePersistenceCases
             'number'=>$customer->number,'person_type_id'=>'all','category_id'=>null]);
         $analysisPage=(new \Modules\Report\Http\Controllers\ReportCommercialAnalysisController())->records($analysisRequest)->getData(true);
         $analysisRow=collect($analysisPage['data'])->first(fn($row)=>$row['id']===$customer->id);
-        self::assertNotNull($analysisRow); self::assertSame('116.00',$analysisRow['total_ves']);
+        self::assertNotNull($analysisRow); self::assertSame($analysisVes,$analysisRow['total_ves']);
         $empty=$customer->replicate(); $empty->number='12345679'; $empty->name='Cliente sin compras'; $empty->save();
         $noPurchases=\Modules\Report\Services\CommercialAnalysisAmounts::row($empty->fresh(),$categories);
         self::assertNull($noPurchases['contact_date']); self::assertNull($noPurchases['last_document_date']);
@@ -1063,35 +1225,35 @@ trait NotePersistenceCases
         $analysisController=new \Modules\Report\Http\Controllers\ReportCommercialAnalysisController();
         $matched=collect($analysisController->records($categoryRequest)->getData(true)['data'])->pluck('id');
         self::assertTrue($matched->contains($customer->id)); self::assertFalse($matched->contains($empty->id));
-        $db->table('documents')->whereIn('id',[$vesInvoice->id,$usdInvoice->id])->update(['state_type_id'=>'11']);
+        $db->table('documents')->whereIn('id',[$vesInvoice->id,$comparisonInvoice->id])->update(['state_type_id'=>'11']);
         $voidMatched=collect($analysisController->records($categoryRequest)->getData(true)['data'])->pluck('id');
         self::assertFalse($voidMatched->contains($customer->id));
-        $db->table('documents')->whereIn('id',[$vesInvoice->id,$usdInvoice->id])->update(['state_type_id'=>'01']);
+        $db->table('documents')->whereIn('id',[$vesInvoice->id,$comparisonInvoice->id])->update(['state_type_id'=>'01']);
         $commercial=(new \Modules\Report\Exports\CommercialAnalysisExport())->records(collect([$customer->fresh()]))->company($company)->categories($categories);
         $commercialFile=(new \Maatwebsite\Excel\Writer($temp))->export($commercial,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('SAB_COMMERCIAL_REPORT_EVIDENCE')) copy($commercialFile->getLocalPath(),$dir.'/analisis-comercial.xlsx');
+            if ($dir=getenv('PRO9_COMMERCIAL_REPORT_EVIDENCE')) copy($commercialFile->getLocalPath(),$dir.'/analisis-comercial.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($commercialFile->getLocalPath());
             $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
-            self::assertContains('116.00',$values); self::assertContains('220.40',$values); self::assertContains('2 KG; 1 UND',$values);
+            self::assertContains($analysisVes,$values); self::assertContains($mixedCurrencies ? '220.40' : '0.00',$values); self::assertContains('2 KG; 1 UND',$values);
             $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
             self::assertContains(['customer:'.$customer->id,'category:REPUESTOS QA:KG','2','2','1'],$fractions);
             $book->disconnectWorksheets();
         } finally { $commercialFile->delete(); }
-        $itemLines=\App\Models\Tenant\DocumentItem::whereIn('document_id',[$vesInvoice->id,$usdInvoice->id])->orderByDesc('id')->get();
+        $itemLines=\App\Models\Tenant\DocumentItem::whereIn('document_id',[$vesInvoice->id,$comparisonInvoice->id])->orderByDesc('id')->get();
         $itemReport=\Modules\Report\Services\ItemReportAmounts::presentation($itemLines);
-        self::assertSame('232',\App\Support\Exact\Decimal::represent($itemReport['amounts']['VES']));
-        self::assertSame('232',\App\Support\Exact\Decimal::represent($itemReport['amounts']['USD']));
+        self::assertSame($mixedCurrencies ? '232' : '464',\App\Support\Exact\Decimal::represent($itemReport['amounts']['VES']));
+        self::assertSame($mixedCurrencies ? '232' : '0',\App\Support\Exact\Decimal::represent($itemReport['amounts']['USD'] ?? 0));
         self::assertSame('2',\App\Support\Exact\Decimal::represent($itemReport['quantities']['UND']));
         self::assertSame('2',\App\Support\Exact\Decimal::represent($itemReport['quantities']['KG']));
         $itemResource=(new \Modules\Report\Http\Resources\ItemCollection($itemLines))->toArray(new \Illuminate\Http\Request());
-        self::assertEqualsCanonicalizing(['VES','USD'],$itemResource->pluck('currency_type_id')->all());
+        self::assertEqualsCanonicalizing(['VES',$mixedCurrencies ? 'USD' : 'VES'],$itemResource->pluck('currency_type_id')->all());
         self::assertEqualsCanonicalizing(['KG','UND'],$itemResource->pluck('unit_type_id')->all());
         \Illuminate\Http\Request::macro('validate',function ($rules) { return validator($this->all(),$rules)->validate(); });
         $itemRequest=\Illuminate\Http\Request::create('/reports/items/records','GET',['period'=>'between_dates',
             'date_start'=>'2026-09-10','date_end'=>'2026-09-12','item_id'=>$itemId,'type'=>'sale']);
         $page=(new \Modules\Report\Http\Controllers\ReportItemController())->records($itemRequest)->getData(true);
-        self::assertCount(2,$page['data']); self::assertEqualsCanonicalizing(['VES','USD'],array_column($page['data'],'currency_type_id'));
+        self::assertCount(2,$page['data']); self::assertEqualsCanonicalizing(['VES',$mixedCurrencies ? 'USD' : 'VES'],array_column($page['data'],'currency_type_id'));
         $extraRequest=\Illuminate\Http\Request::create('/reports/items-extra/records','GET',['period'=>'between_dates',
             'date_start'=>'2026-09-10','date_end'=>'2026-09-12','item_id'=>$itemId,'extra'=>['CatItemStatus'=>999999]]);
         $extraPage=(new \Modules\Report\Http\Controllers\ReportItemExtraController())->records($extraRequest)->getData(true);
@@ -1101,14 +1263,16 @@ trait NotePersistenceCases
             $itemExport=(new \Modules\Report\Exports\ItemExport())->records($itemLines)->company($company)->establishment($establishment)->setWithExtraData($extra);
             $itemFile=(new \Maatwebsite\Excel\Writer($temp))->export($itemExport,\Maatwebsite\Excel\Excel::XLSX);
             try {
-                if ($dir=getenv('SAB_ITEM_REPORT_EVIDENCE')) copy($itemFile->getLocalPath(),$dir.'/producto-'.($extra?'extra':'normal').'.xlsx');
+                if ($dir=getenv('PRO9_ITEM_REPORT_EVIDENCE')) copy($itemFile->getLocalPath(),$dir.'/producto-'.($extra?'extra':'normal').'.xlsx');
                 $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($itemFile->getLocalPath());
                 $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
-                self::assertContains('Total VES',$values); self::assertContains('Total USD',$values);
+                self::assertContains('Total VES',$values);
+                if ($mixedCurrencies) self::assertContains('Total USD',$values);
+                else self::assertNotContains('Total USD',$values);
                 self::assertContains('KG',$values); self::assertContains('UND',$values);
                 $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
                 self::assertContains(['unit:KG','quantity','2','2','1'],$fractions);
-                self::assertContains(['total:USD','total','232','232','1'],$fractions);
+                self::assertContains($mixedCurrencies ? ['total:USD','total','232','232','1'] : ['total:VES','total','464','464','1'],$fractions);
                 $book->disconnectWorksheets();
             } finally { $itemFile->delete(); }
         }
@@ -1181,6 +1345,37 @@ trait NotePersistenceCases
         self::assertSame('03',$last->fiscal_data->transaction_type_id);
     }
 
+    public function test_hka_note_reference_uses_the_original_invoice_fraction_on_postgresql(): void
+    {
+        [$db, $app, $input] = $this->noteFixture();
+        $input['external_id'] = (string) Str::uuid();
+        $input['payment_condition_id'] = '01';
+        $input['payments'][0]['payment'] = '10.00';
+        $source = '10.0049999999996';
+        $decimal = \App\Support\Exact\Decimal::class;
+        $input['items'][0] = array_replace($input['items'][0], [
+            'quantity' => '1', 'unit_price' => '10.005', 'affectation_igv_type_id' => '20',
+            'price_input' => ['amount' => $decimal::fraction($source), 'currency_type_id' => 'VES', 'includes_iva' => true],
+        ]);
+        $invoice = (new Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        self::assertSame('confirmed', $invoice->emission->status);
+        self::assertTrue($invoice->exactValue('total')->isEqualTo($source));
+        self::assertSame('10.005000000000', $decimal::represent($invoice->getRawOriginal('total'), 12, true));
+        $documentedTotal = $invoice->emission->payload['documentoElectronico']['encabezado']['totales']['totalAPagar'];
+        self::assertSame('10.00', $documentedTotal);
+
+        foreach (['07' => '09', '08' => '02'] as $type => $reason) {
+            $data = $this->noteInput($input, $invoice, $type, $reason, [[
+                'affected_document_item_id' => $invoice->items->first()->id, 'adjustment_amount' => '1.00',
+            ]]);
+            $note = (new Facturalo())->forWebDocuments()->save($data)->getDocument()->fresh();
+            self::assertSame('confirmed', $note->emission->status);
+            $reference = $note->emission->payload['documentoElectronico']['encabezado']['identificacionDocumento'];
+            self::assertSame($documentedTotal, $reference['montoFacturaAfectada']);
+            self::assertTrue($decimal::read((array) $note->note->data_affected_document, 'total')->isEqualTo($source));
+        }
+    }
+
     public function test_note_debit_is_a_separate_receivable_without_inventory(): void
     {
         [$db,$app,$input,$invoice]=$this->noteFixture();$line=$invoice->items->first();
@@ -1211,7 +1406,7 @@ trait NotePersistenceCases
     {
         [$db,$app,$input,$first]=$this->noteFixture();
         $party=['person_id'=>$first->customer_id,'rif'=>'J000000004','name'=>'Tercero de prueba','address'=>'Caracas','country_id'=>'VE','activity'=>'Comercio'];
-        foreach (['VES','USD'] as $currency) {
+        foreach ($this->invoiceTestCurrencies() as $currency) {
             foreach ([null,1,2,3,4,5,6,7] as $regime) {
                 $source=$input;$source['currency_type_id']=$currency;$source['exchange_rate_sale']='10.12345678';$source['payments'][0]['payment_method_type_id']=$currency==='USD'?'10':'01';
                 $invoice=(new Facturalo)->forWebDocuments()->save($source)->getDocument()->fresh();
@@ -1356,6 +1551,19 @@ trait NotePersistenceCases
         $db->table('payment_method_types')->where('id','04')->update(['collection_kind'=>'account','cash_currency_type_id'=>null,'is_cash'=>0]);
         self::assertEquals(5,$cash->noteRefundTotal());self::assertSame('egress',$out->getDataCashPaymentReport()['type_transaction']);
         self::assertEquals(-5,$out->getRowIncomeSummaryPayment()['payment_for_calculate']);
+        $refundBeforeRead=$out->fresh()->getAttributes();
+        // Read the real billing-refund adapter with large exact operands. The
+        // model copy is never saved; the registered refund remains five VES.
+        foreach (['VES','USD'] as $currency) {
+            $copy=clone $out;
+            $copy->setRawAttributes(array_replace($copy->getAttributes(),['original_amount'=>'9007199254740993.01',
+                'currency_type_id'=>$currency,'exchange_rate'=>'10.12345678','reversed_at'=>null]));
+            $expected=\App\Support\Exact\Decimal::convert('9007199254740993.01',$currency,'VES','10.12345678')->negated();
+            self::assertSame(\App\Support\Exact\Decimal::represent($expected),$copy->getRowIncomeSummaryPayment()['payment_for_calculate']);
+            $copy->reversed_at=now();
+            self::assertSame('0',$copy->getRowIncomeSummaryPayment()['payment_for_calculate']);
+        }
+        self::assertSame($refundBeforeRead,$out->fresh()->getAttributes());
         self::assertSame(1,\App\Models\Tenant\Cash::filterDataGeneralCashReport()->find($cash->id)->global_destination->where('payment_type',\App\Models\Tenant\DocumentNoteRefund::class)->count());
         (new NoteRefund)->reverse($note,$out,['operation_key'=>(string)Str::uuid(),'reason'=>'Reversión auditada de salida de caja']);
         self::assertEquals(0,$cash->noteRefundTotal());
@@ -1382,14 +1590,36 @@ trait NotePersistenceCases
         (new Facturalo)->forWebDocuments()->save($partial);
         self::assertEquals($stock+3,$db->table('item_warehouse')->where('item_id',$item->id)->value('stock'));
         $lot=\Modules\Item\Models\ItemLotsGroup::create(['item_id'=>$item->id,'code'=>'ORIGINAL','quantity'=>0,'old_quantity'=>2,'date_of_due'=>'2027-01-01']);
-        $serials=[];foreach ([1,2] as $n) $serials[]=\Modules\Item\Models\ItemLot::create(['item_id'=>$item->id,'warehouse_id'=>$warehouse,
-            'series'=>'NOTE-SERIAL-'.$n,'date'=>'2026-09-10','item_loteable_type'=>Document::class,'item_loteable_id'=>$invoice->id,'has_sale'=>true])->toArray();
+        $ids=['9007199254740992','9007199254740993'];
+        $serials=[];
+        foreach ($ids as $index=>$id) {
+            $serial=new \Modules\Item\Models\ItemLot(['item_id'=>$item->id,'warehouse_id'=>$warehouse,
+                'series'=>'NOTE-SERIAL-'.$index,'date'=>'2026-09-10','item_loteable_type'=>Document::class,
+                'item_loteable_id'=>$invoice->id,'has_sale'=>true]);
+            $serial->id=$id;
+            $serial->save();
+            // Legacy snapshots held these identifiers as JSON numbers.
+            $serials[]=['id'=>(int)$id,'series'=>$serial->series,'has_sale'=>true];
+        }
         $snapshot=json_decode(json_encode($original->item),true);$snapshot['presentation']=['quantity_unit'=>2];
         $snapshot['inventory_components']=[['item_id'=>$item->id,'quantity'=>'2']];
         $snapshot['IdLoteSelected']=[['id'=>$lot->id,'compromise_quantity'=>2]];$snapshot['lots']=$serials;
         $original->item=$snapshot;$original->save();
+        self::assertSame('VES',$invoice->currency_type_id);
+        $decode=static fn ($value)=>json_decode(json_encode($value,JSON_THROW_ON_ERROR),true,512,JSON_THROW_ON_ERROR);
+        $noteController=new \App\Http\Controllers\Tenant\NoteController();
+        $noteRecord=$decode($noteController->record($invoice->id));
+        self::assertSame($ids,array_column($noteRecord['note_context']['items'][0]['serials'],'id'));
+        $items=$decode(\App\Http\Resources\Tenant\DocumentResource::mapDocumentItems($invoice->fresh()));
+        self::assertSame($ids,array_column($items[0]['item']['lots'],'id'));
+        $request=\Illuminate\Http\Request::create('/documents/regularize-lots', 'GET', ['document_item_id'=>$original->id]);
+        $documentController=new \Modules\Document\Http\Controllers\DocumentController();
+        self::assertEqualsCanonicalizing($ids,array_column($decode($documentController->regularizeLots($request)),'id'));
+        $collection=new \Modules\Document\Http\Resources\ItemLotCollection(
+            \Modules\Item\Models\ItemLot::query()->whereIn('id',$ids)->orderBy('id')->get());
+        self::assertSame($ids,array_column($decode($collection->resolve($request)),'id'));
         $stock=$db->table('item_warehouse')->where('item_id',$item->id)->value('stock');
-        $returned=$this->noteInput($input,$invoice,'07','07',[['affected_document_item_id'=>$original->id,'quantity'=>1,'serial_ids'=>[$serials[1]['id']]]]);
+        $returned=$this->noteInput($input,$invoice,'07','07',[['affected_document_item_id'=>$original->id,'quantity'=>1,'serial_ids'=>[$noteRecord['note_context']['items'][0]['serials'][1]['id']]]]);
         $returnedDocument=(new Facturalo)->forWebDocuments()->save($returned)->getDocument()->fresh();
         self::assertEquals($stock+2,$db->table('item_warehouse')->where('item_id',$item->id)->value('stock'));
         self::assertEquals(2,$lot->fresh()->quantity);self::assertFalse(\Modules\Item\Models\ItemLot::find($serials[1]['id'])->has_sale);
@@ -1399,7 +1629,8 @@ trait NotePersistenceCases
         catch (\Illuminate\Validation\ValidationException $e) {self::assertArrayHasKey('inventory',$e->errors());}
         self::assertSame($beforeCalls,$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count());
         \Modules\Item\Models\ItemLot::find($serials[1]['id'])->update(['has_sale'=>false]);
-        $context=FiscalNote::context($invoice->fresh());self::assertSame($serials[0]['id'],$context['items'][0]['serials'][0]['id']);
+        $context=FiscalNote::context($invoice->fresh());self::assertSame($ids[0],$context['items'][0]['serials'][0]['id']);
+        self::assertSame([$ids[0]],array_column($decode($documentController->regularizeLots($request)),'id'));
         self::assertEquals(1,$context['items'][0]['lots'][0]['quantity']);
         $bad=$this->noteInput($input,$invoice,'07','07',[['affected_document_item_id'=>$original->id,'quantity'=>1,'serial_ids'=>[$serials[1]['id']]]]);
         $count=$db->table('documents')->count();$httpCalls=$app->make(\Illuminate\Http\Client\Factory::class)->recorded()->count();
@@ -1491,6 +1722,39 @@ trait NotePersistenceCases
         $result=$service->request($debit,['operation_key'=>(string)Str::uuid(),'reason'=>'Cancelación local del cargo no emitido']);
         self::assertSame('completed',$result['annulment']['status']);self::assertSame(1,$calls);self::assertEquals(0,$debit->fresh()->balance);
         $sql=$db->selectOne('SELECT '.\App\Services\Fiscal\FiscalNoteBalance::sql().' AS balance FROM documents WHERE id=?',[$debit->id]);self::assertEquals(0,$sql->balance);
+    }
+
+    public function test_note_annulment_preserves_settled_invoice_cash_link_at_half_a_cent(): void
+    {
+        [$db, $app, $input, $invoice] = $this->noteFixture();
+        $payment = $invoice->payments()->firstOrFail();
+        $amount = $invoice->exactValue('total_payable')->minus('0.005');
+        // Set up the fractional receipt in the temporary fixture without editing a recorded receipt through business APIs.
+        $payment->setExactValues(['payment' => $amount, 'original_amount' => $amount])->saveQuietly();
+        self::assertTrue($invoice->fresh()->exactBalance()->isEqualTo('0.005'));
+
+        $cashId = $db->table('cash')->where('user_id', auth()->id())->where('state', true)->value('id');
+        $creditId = $db->table('cash_document_credits')->insertGetId([
+            'document_id' => $invoice->id,
+            'cash_id' => $cashId,
+            'status' => 'PROCESSED',
+        ]);
+        $note = (new Facturalo)->forWebDocuments()->save($this->noteInput($input, $invoice, '07', '04', [
+            ['affected_document_item_id' => $invoice->items->first()->id, 'adjustment_amount' => '0.01'],
+        ]))->getDocument()->fresh();
+
+        $app->instance(\Illuminate\Http\Client\Factory::class, new \Illuminate\Http\Client\Factory());
+        \Illuminate\Support\Facades\Facade::clearResolvedInstance(\Illuminate\Http\Client\Factory::class);
+        $app->make(\Illuminate\Http\Client\Factory::class)->fake([
+            '*/Anular' => \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'validaciones' => []]),
+        ]);
+        $result = app(\App\Services\Fiscal\NoteAnnulment::class)->request($note, [
+            'operation_key' => (string) Str::uuid(),
+            'reason' => 'Anulación del ajuste aplicado por error',
+        ]);
+        self::assertSame('completed', $result['annulment']['status']);
+        self::assertTrue($invoice->fresh()->exactBalance()->isEqualTo('0.005'));
+        self::assertSame('PROCESSED', $db->table('cash_document_credits')->where('id', $creditId)->value('status'));
     }
 
     public function test_note_annulment_rejection_preserves_effects_and_audits_codes_without_private_text(): void

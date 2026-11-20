@@ -2,6 +2,7 @@
 
 namespace App\Services\Fiscal;
 
+use App\Database\IntegerTransport;
 use App\Http\Controllers\Tenant\DocumentFiscalController;
 use App\Models\Tenant\{Company, Document, DocumentReceivedRetention, Person, ReceivedRetentionUpload, User};
 use App\Services\ExchangeRates\ExchangeRateMath;
@@ -72,7 +73,9 @@ abstract class ReceivedRetentionService
         $data['subtrahend'] = \App\Support\Exact\Decimal::input($data['subtrahend'] ?? 0, 'subtrahend');
         $data['agent_id'] = $document->customer_id;
         $data['tax_kind'] = static::KIND;
-        if (isset($input['agent_id']) && (int)$input['agent_id'] !== (int)$document->customer_id) FiscalAmounts::error('agent_id', 'El agente debe ser el cliente de la factura.');
+        if (isset($input['agent_id']) && IntegerTransport::positiveKey($input['agent_id']) !== (int)$document->customer_id) {
+            FiscalAmounts::error('agent_id', 'El agente debe ser el cliente de la factura.');
+        }
         $hashData = $data; static::sort($hashData);
         $hash = hash('sha256', json_encode($hashData, JSON_THROW_ON_ERROR));
         $result = $document->getConnection()->transaction(function () use ($document, $data, $hash) {

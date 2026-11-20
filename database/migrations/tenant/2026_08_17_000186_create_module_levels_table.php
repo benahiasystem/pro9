@@ -1,48 +1,45 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `module_levels` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `value` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `module_id` int(10) unsigned NOT NULL
- * - `route_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `route_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `label_menu` varchar(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `icon_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - value: varchar(255)
+ * - description: varchar(255)
+ * - module_id: bigint
+ * - route_name: varchar(255)
+ * - route_path: varchar(255)
+ * - label_menu: varchar(3)
+ * - icon_id: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `module_levels` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `value` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `module_id` int(10) unsigned NOT NULL,
-  `route_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `route_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `label_menu` varchar(3) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `icon_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `module_levels_module_id_foreign` (`module_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('module_levels', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('value', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->bigInteger('module_id');
+            $table->string('route_name', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('route_path', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('label_menu', 3)->collation('pro9_ci_ai')->nullable();
+            $table->string('icon_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['module_id'], 'module_levels_module_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `module_levels`');
+        Schema::dropIfExists('module_levels');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

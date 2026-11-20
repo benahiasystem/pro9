@@ -305,7 +305,8 @@
                                     <template v-else>
                                         <el-input
                                             min="0"
-                                            v-model="item.edit_sale_unit_price"
+                                            :value="form.document_type_id === '01' ? (item.invoice_unit_price_draft === null ? item.sale_unit_price : item.invoice_unit_price_draft) : item.edit_sale_unit_price"
+                                            @input="updateUnitPriceDraft(item, $event)"
                                             class="mt-1 mb-2 px-2"
                                             size="mini"
                                             @focus="$event.target.select()"
@@ -1006,10 +1007,11 @@
 </style>
 
 <script>
+import {selectPosCatalogPrice, selectPosOriginalPrice, commitPosManualPrice} from "../../../helpers/pos-invoice-line"
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {documentTotals} from "../../../helpers/exact-document"
 import {isValidPosRate, restorePosDraftRate, refreshPosRate, ensurePosRate} from "../../../helpers/pos-exchange-rate"
-import {exactAmount, exactInput} from "../../../helpers/exchange-rate-math"
+import {exactAmount, exactInput, exactValue} from "../../../helpers/exchange-rate-math"
 
 import Keypress from "vue-keypress";
 import posLocalQuantity from "../../../mixins/pos-local-quantity"
@@ -1129,6 +1131,14 @@ export default {
         this.enabledSearchItemByBarcode();
     },
 
+    watch: {
+        'form.document_type_id'(type, previous) {
+            if (!type || !previous || !this.posCatalogReload) return;
+            this.all_items = [];
+            this.items = [];
+            this.reloadDataItems();
+        },
+    },
     computed: {
         posRateUnavailable() {
             return !isValidPosRate(this.form.exchange_rate_sale);
@@ -1341,12 +1351,16 @@ export default {
             // ######## INICIO CALCULOS EXACTOS SAB ########
             let quantity;
             try {
-                quantity = exactAmount(exactInput(String(item.item.aux_quantity)));
+                quantity = this.form.document_type_id === '01'
+                    ? exactValue(item, 'quantity')
+                    : exactAmount(exactInput(String(item.item.aux_quantity)));
             } catch (_) {
                 return this.$message.error("Indique una cantidad válida.");
             }
             if (quantity.compare(1) <= 0) {
                 this.clickDeleteItem(index);
+            } else if (this.form.document_type_id === '01') {
+                return this.adjustLocalPosInvoiceQuantity(item, index, quantity.minus(1));
             } else {
                 item.item.aux_quantity = quantity.minus(1).decimal();
                 this.clickAddItem(item, index, true);
@@ -1512,59 +1526,48 @@ export default {
             this.setLocalStorageIndex("customer_garage", null);
         },
         clickOpenInputEditUP(index) {
-            this.items[index].edit_unit_price = true;
+            const item = this.items[index];
+            if (this.form.document_type_id === '01') {
+                // A null draft displays the current quote until the operator enters a value.
+                this.$set(item, 'invoice_unit_price_draft', null);
+            }
+            item.edit_unit_price = true;
+        },
+        updateUnitPriceDraft(item, value) {
+            if (this.form.document_type_id === '01') {
+                item.invoice_unit_price_draft = value;
+            } else {
+                item.edit_sale_unit_price = value;
+            }
         },
         clickEditUnitPriceItem(index) {
-            // console.log(index)
-            let item_search = this.items[index];
-            let edit_sale_unit_price = this.items[
-                index
-            ].edit_sale_unit_price;
-            let product = this.items[index];
-
-            if (this.config.condition_sale_purchase_price_to_item) {
-
-                if (edit_sale_unit_price < product.purchase_unit_price) {
-                    return this.$message.error(
-                        "El Precio Unitario debe ser mayor o igual al costo de compra"
-                    );
-                }
-
-
+            const item = this.items[index];
+            const draft = this.form.document_type_id === '01' ? item.invoice_unit_price_draft : item.edit_sale_unit_price;
+            if (draft === null && this.form.document_type_id === '01') {
+                item.edit_unit_price = false;
+                return;
             }
-
-            this.items[index].sale_unit_price = this.items[
-                    index
-            ].edit_sale_unit_price;
-            this.items[index].edit_unit_price = false;
-            // console.log(item_search)
+            let entered;
+            try { entered=exactInput(String(draft)); }
+            catch (_) { return this.$message.error("Indique un precio válido con hasta doce decimales."); }
+            if (this.config.condition_sale_purchase_price_to_item && exactAmount(entered).compare(exactValue(item,'purchase_unit_price')) < 0) {
+                return this.$message.error("El Precio Unitario debe ser mayor o igual al costo de compra");
+            }
+            commitPosManualPrice(item,entered);
         },
         clickCancelUnitPriceItem(index) {
             // console.log(index)
             this.items[index].edit_unit_price = false;
         },
         setPriceItem(price, index) {
-            const item = this.items[index];
-            if (item && item.item_unit_types && Array.isArray(item.item_unit_types)) {
-                item.item_unit_types.forEach(iut => {
-                    if (iut && iut.prices && Array.isArray(iut.prices)) {
-                        iut.prices.forEach(p => {
-                            if (p && p.selected) {
-                                this.$set(p, 'selected', false);
-                            }
-                        });
-                    }
-                });
-            }
-
-            if (price) {
-                this.$set(price, 'selected', true);
-            }
-
-            this.items[index].sale_unit_price = price.price;
-            this.items[index].unit_type_id = price.unit_type_id;
-            this.items[index].presentation = price
-
+            const item=this.items[index];
+            if (!item || !price) return;
+            try { selectPosCatalogPrice(item,price); }
+            catch (error) { return this.$message.error(error.message); }
+            (item.item_unit_types || []).forEach(unit=>(unit.prices || []).forEach(option=>{
+                if (option.selected) this.$set(option,'selected',false);
+            }));
+            this.$set(price,'selected',true);
             this.$message.success("Precio seleccionado");
         },
         clickWarehouseDetail(item) {
@@ -1999,9 +2002,7 @@ export default {
                 item.apply_price_selected_add_product &&
                 this.configuration.price_selected_add_product
             ) {
-                item.sale_unit_price = parseFloat(item.aux_sale_unit_price);
-                item.unit_type_id = item.aux_unit_type_id;
-                item.presentation = null;
+                selectPosOriginalPrice(item);
 
                 item.apply_price_selected_add_product = false;
             }
@@ -2205,7 +2206,10 @@ export default {
                 });
         },
         reloadDataItems(item_id) {
-            this.$http.get(`/${this.resource}/table/items`).then(response => {
+            const type = this.form.document_type_id;
+            const reload = this.posCatalogReload = {};
+            return this.$http.get(`/${this.resource}/table/items`, { params: { document_type_id: type } }).then(response => {
+                if (this.posCatalogReload !== reload || type !== this.form.document_type_id) return;
                 this.all_items = response.data;
                 this.fixItems();
                 this.filterItems();

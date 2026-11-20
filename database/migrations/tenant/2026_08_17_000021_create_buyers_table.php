@@ -1,43 +1,40 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `buyers` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `address` varchar(250) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `location_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - name: varchar(200)
+ * - number: varchar(255)
+ * - address: varchar(250)
+ * - location_id: varchar(255)
+ * - identity_document_type_id: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `buyers` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `address` varchar(250) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `location_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `identity_document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('buyers', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name', 200)->collation('pro9_ci_ai');
+            $table->string('number', 255)->collation('pro9_ci_ai');
+            $table->string('address', 250)->collation('pro9_ci_ai')->nullable();
+            $table->string('location_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('identity_document_type_id', 255)->collation('pro9_ci_ai');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `buyers`');
+        Schema::dropIfExists('buyers');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

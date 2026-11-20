@@ -132,14 +132,14 @@
         <td class="m27-label m27-label-sm">Vendedor:</td>
         <td class="m27-value m27-value-sm">{{ $m27_seller }}</td>
     </tr>
-    @if ($customer->address !== '')
+    @if (($customer->address ?? '') !== '')
         <tr>
             <td class="m27-label m27-label-sm align-top">Dirección:</td>
             <td class="m27-value m27-value-sm">
                 {{ $customer->address }}
-                {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
-                {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
-                {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
+                {{ (!empty($customer->district->description))? ', '.$customer->district->description : '' }}
+                {{ (!empty($customer->province->description))? ', '.$customer->province->description : '' }}
+                {{ (!empty($customer->department->description))? '- '.$customer->department->description : '' }}
             </td>
         </tr>
     @endif

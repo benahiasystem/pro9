@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Database\IntegerTransport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\DocumentPaymentRequest;
 use App\Http\Requests\Tenant\DocumentRequest;
@@ -10,6 +11,7 @@ use App\Models\Tenant\Document;
 use App\Models\Tenant\DocumentPayment;
 use App\Models\Tenant\PaymentMethodType;
 use App\Exports\DocumentPaymentExport;
+use App\Services\Fiscal\FiscalAmounts;
 use Exception, Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Modules\Finance\Traits\FinanceTrait;
@@ -22,10 +24,18 @@ class DocumentPaymentController extends Controller
 {
     use FinanceTrait, FilePaymentTrait;
 
+    private function routeKey($value): int
+    {
+        $key = IntegerTransport::positiveKey($value);
+        abort_if($key === null, 404);
+        return $key;
+    }
+
     public function records($document_id)
     {
-        DocumentFiscalController::authorizeDocument(Document::findOrFail($document_id));
-        $records = DocumentPayment::where('document_id', $document_id)->whereNull('receipt_parent_id')->get();
+        $document = Document::findOrFail($this->routeKey($document_id));
+        DocumentFiscalController::authorizeDocument($document);
+        $records = DocumentPayment::where('document_id', $document->id)->whereNull('receipt_parent_id')->get();
 
         return new DocumentPaymentCollection($records);
     }
@@ -41,7 +51,7 @@ class DocumentPaymentController extends Controller
 
     public function document($document_id)
     {
-        $document = Document::find($document_id);
+        $document = Document::findOrFail($this->routeKey($document_id));
 
         DocumentFiscalController::authorizeDocument($document);
         $paidExact = \App\Support\Exact\Decimal::sum($document->payments()->whereNull('reversed_at')->get()->map(fn($r)=>$r->exactValue('payment')));
@@ -74,10 +84,12 @@ class DocumentPaymentController extends Controller
 
         abort_unless(auth()->user()->type==='admin' || auth()->user()->create_payment,403);
         $id = $request->input('id');
+        $documentId = IntegerTransport::positiveKey($request->input('document_id'));
+        if ($documentId === null) FiscalAmounts::error('document_id', 'Seleccione un comprobante válido.');
 
-        $data = DB::connection('tenant')->transaction(function () use ($id, $request) {
+        $data = DB::connection('tenant')->transaction(function () use ($documentId, $request) {
 
-            $document = Document::findOrFail($request->input('document_id'));
+            $document = Document::findOrFail($documentId);
             DocumentFiscalController::authorizeDocument($document);
             $record = \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $request->all());
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
@@ -96,13 +108,13 @@ class DocumentPaymentController extends Controller
         $adjustment = \App\Models\Tenant\DocumentTax::where('document_payment_id',$data->id)->where('document_id','!=',$data->document_id)->first();
         $adjustmentDocument = $adjustment ? Document::findOrFail($adjustment->document_id) : null;
         if ($adjustmentDocument && !\App\Services\Fiscal\HkaIgtfNote::applies($adjustmentDocument) && !$adjustmentDocument->isVoidedOrRejected()) (new \App\CoreFacturalo\Facturalo())->createPdf($adjustmentDocument,'debit','a4');
-        $document_balance = (object)$this->document($request->document_id);
+        $document_balance = (object)$this->document($documentId);
 
-        if (\App\Models\Tenant\Document::findOrFail($request->document_id)->exactBalance()->isLessThanOrEqualTo(0)) {
+        if (\App\Models\Tenant\Document::findOrFail($documentId)->exactBalance()->isLessThanOrEqualTo(0)) {
 
             $credit = CashDocumentCredit::where([
                 ['status', 'PENDING'],
-                ['document_id', $request->document_id]
+                ['document_id', $documentId]
             ])->first();
 
             if ($credit) {
@@ -139,7 +151,7 @@ class DocumentPaymentController extends Controller
     public function destroy($id, \Illuminate\Http\Request $request)
     {
         abort_unless(auth()->user()->type==='admin' || auth()->user()->delete_payment,403);
-        $item = DocumentPayment::findOrFail($id);
+        $item = DocumentPayment::findOrFail($this->routeKey($id));
         DocumentFiscalController::authorizeDocument($item->document);
         \App\Services\Fiscal\FiscalDocumentPersistence::reverse($item, $request->input('reason', 'Reversión solicitada por el operador'));
 

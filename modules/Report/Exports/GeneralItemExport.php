@@ -10,6 +10,12 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 
 class GeneralItemExport implements FromView, ShouldAutoSize, \Maatwebsite\Excel\Concerns\WithEvents
 {
+    // Explicit properties preserve the public export contract on PHP 8.2.
+    public $document_type_id;
+    public $records;
+    public $request_apply_conversion_to_pen;
+    public $type;
+
     use Exportable;
     private array $costs = [];
     private ?string $frozenHtml = null;

@@ -26,6 +26,9 @@ class DocumentUpdateInput
         $inputs = \App\Support\Venezuela\RetiredDetractionFields::discard($inputs);
         $document_type_id = $inputs['document_type_id'];
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($document_type_id);
+        if ($document_type_id === '01') {
+            EstablishmentInput::validatedId($inputs['establishment_id'] ?? null);
+        }
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         \App\Services\ExportInvoicePolicy::assertInput($inputs, $service === 'web');
         SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null, \App\Services\ExportInvoicePolicy::isExport(\App\Services\ExportInvoicePolicy::operation($inputs)));
@@ -90,7 +93,7 @@ class DocumentUpdateInput
             // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
             'exchange_rate_source' => $inputs['exchange_rate_source'] ?? 'manual',
             'exchange_rate_date' => $inputs['exchange_rate_date'] ?? $inputs['date_of_issue'],
-            'taxes' => $inputs['taxes'] ?? [],
+            'taxes' => $inputs['taxes'] ?? null,
             'fiscal_data' => $inputs['fiscal_data'] ?? [],
             'third_party_id' => $inputs['third_party_id'] ?? null,
             'received_retentions' => $inputs['received_retentions'] ?? [],
@@ -156,7 +159,10 @@ class DocumentUpdateInput
         if (array_key_exists('items', $inputs)) {
             $items = [];
             foreach ($inputs['items'] as $row) {
-                $item = Item::find($row['item_id']);
+                $itemId = \App\Database\IntegerTransport::positiveKey($row['item_id'] ?? null);
+                if ($itemId === null) \App\Services\Fiscal\FiscalAmounts::error('items', 'Las partidas deben identificar un producto válido.');
+                $item = Item::find($itemId);
+                if (!$item) \App\Services\Fiscal\FiscalAmounts::error('items', 'El producto seleccionado no está disponible.');
                 $items[] = [
                     'item_id' => $item->id,
                     'item' => [
@@ -282,6 +288,7 @@ class DocumentUpdateInput
                         'description' => $description,
                         'factor' => $factor,
                         'amount' => $amount,
+                        'amount_exact' => $row['amount_exact'] ?? null,
                         'base' => $base,
                     ];
                 }
@@ -302,7 +309,7 @@ class DocumentUpdateInput
                     $discount_type_id = $row['discount_type_id'];
                     $description = $row['description'];
                     $factor = $row['factor'];
-                    $amount = $row['amount'];
+                    $amount = $row['amount'] ?? null;
                     $base = $row['base'];
                     $is_amount = $row['is_amount'] ?? null; //registra si el descuento fue por monto o porcentaje
 
@@ -311,6 +318,11 @@ class DocumentUpdateInput
                         'description' => $description,
                         'factor' => $factor,
                         'amount' => $amount,
+                        'amount_exact' => $row['amount_exact'] ?? null,
+                        'amount_without_rounded' => $row['amount_without_rounded'] ?? null,
+                        'from_global_distribution' => $row['from_global_distribution'] ?? null,
+                        'use_input_amount' => $row['use_input_amount'] ?? null,
+                        'percentage' => $row['percentage'] ?? null,
                         'base' => $base,
                         'is_amount' => $is_amount,
                     ];
@@ -329,17 +341,7 @@ class DocumentUpdateInput
             if ($inputs['prepayments']) {
                 $prepayments = [];
                 foreach ($inputs['prepayments'] as $row) {
-                    $number = $row['number'];
-                    $document_type_id = $row['document_type_id'];
-                    $amount = $row['amount'];
-                    $total = $row['total'];
-
-                    $prepayments[] = [
-                        'number' => $number,
-                        'document_type_id' => $document_type_id,
-                        'amount' => $amount,
-                        'total' => $total
-                    ];
+                    $prepayments[] = \App\Services\Fiscal\PrepaymentReference::normalize((array)$row);
                 }
 
                 return $prepayments;

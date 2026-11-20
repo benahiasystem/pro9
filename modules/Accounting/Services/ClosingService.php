@@ -136,7 +136,7 @@ final class ClosingService
         $blockers = [];
         $company = app(CompanyContext::class)->company();
         $start = $company->migration_date ? substr((string) $company->migration_date, 0, 7) : '0000-01';
-        $prior = Period::where('status', '!=', 'closed')->whereRaw("CONCAT(year, '-', LPAD(month, 2, '0')) >= ?", [$start])->where(fn($q) => $q->where('year', '<', $period->year)->orWhere(fn($q) => $q->where('year', $period->year)->where('month', '<', $period->month)))->orderBy('year')->orderBy('month')->get(['id', 'year', 'month', 'version'])->toArray();
+        $prior = Period::where('status', '!=', 'closed')->whereRaw("CONCAT(year, '-', LPAD(CAST(month AS text), 2, '0')) >= ?", [$start])->where(fn($q) => $q->where('year', '<', $period->year)->orWhere(fn($q) => $q->where('year', $period->year)->where('month', '<', $period->month)))->orderBy('year')->orderBy('month')->get(['id', 'year', 'month', 'version'])->toArray();
         if ($prior) {
             $blockers[] = ['code' => 'PRIOR_PERIOD_OPEN', 'message' => 'Cierra primero los períodos anteriores desde el inicio del libro.', 'count' => count($prior), 'periods' => $prior];
         }

@@ -31,9 +31,11 @@
 
 <script>
 import Chart from 'chart.js';
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { graphOriginals, chartCoordinate, sumOriginal, formatUnitOriginal, compareOriginal } from '../../../helpers/dashboard-originals';
 
 export default {
-  props: ['type', 'allData'],
+  props: ['type', 'allData', 'exactTotal', 'totalLabel'],
   data() {
     // defaults seguros para evitar undefined en data()
     const defaultColors = {
@@ -66,8 +68,12 @@ export default {
           yPadding: 10,
           displayColors: true,
           callbacks: {
-            label: function (tooltipItem, data) {
+            label: (tooltipItem, data) => {
               const label = (data.labels && data.labels[tooltipItem.index]) || ''
+              const dataset = data.datasets[tooltipItem.datasetIndex]
+              if (this.exactTotal !== undefined || dataset.data_fractions || dataset.calculation_snapshot) {
+                return ` ${label}: ${formatUnitOriginal(graphOriginals(dataset)[tooltipItem.index], 'money', 'en-US')}`
+              }
               const raw = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index]
               const value = Number(raw)
               const amount = isNaN(value) ? raw : value.toFixed(2)
@@ -84,7 +90,7 @@ export default {
                 color: this.getTextColor(),
               },
               {
-                text: 'Total',
+                text: this.totalLabel || 'Total',
                 font: { size: '16', family: "'Arial', sans-serif" },
                 color: '#9B9B9B',
               },
@@ -150,7 +156,7 @@ export default {
             const subFontSize = Math.min(height / 16, 12);
             ctx.font = `${subFontSize}px Arial, sans-serif`;
             ctx.fillStyle = chart.config.options.plugins.doughnutlabel.labels[1].color;
-            ctx.fillText('Total', width / 2, height / 2 + 15);
+            ctx.fillText(chart.config.options.plugins.doughnutlabel.labels[1].text, width / 2, height / 2 + 15);
 
             ctx.restore();
           }
@@ -211,6 +217,9 @@ export default {
       }
     },
     getTotal() {
+      if (this.exactTotal !== undefined) return formatUnitOriginal(this.exactTotal, 'money', 'en-US');
+      const source = this.allData?.datasets?.[0];
+      if (source && (source.data_fractions || source.calculation_snapshot)) return formatUnitOriginal(sumOriginal(graphOriginals(source)), 'money', 'en-US');
       if (!this.allData || !this.allData.datasets || !this.allData.datasets[0]) return 'Bs. 0.00';
       const total = this.allData.datasets[0].data.reduce((a, b) => a + b, 0);
       return (total < 0 ? 'Bs. -' : 'Bs. ') + Math.abs(total).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
@@ -220,7 +229,14 @@ export default {
       if (!this.allData || !this.allData.datasets || !this.allData.datasets[0]) {
         return isDarkMode ? '#ffffff' : '#4A4A4A';
       }
-      const total = this.allData.datasets[0].data.reduce((a, b) => a + b, 0);
+      const source = this.allData.datasets[0];
+      if (this.exactTotal !== undefined || source.data_fractions || source.calculation_snapshot) {
+        if (isDarkMode) return '#ffffff';
+        const amount = this.exactTotal !== undefined ? this.exactTotal : sumOriginal(graphOriginals(source));
+        const colors = this.colors || {primary: '#0d6efd', danger: '#dc3545'};
+        return compareOriginal(amount, '0') < 0 ? colors.danger : colors.primary;
+      }
+      const total = source.data.reduce((a, b) => a + b, 0);
       if (isDarkMode) return '#ffffff';
       const colors = this.colors || { primary: '#0d6efd', danger: '#dc3545' };
       return total < 0 ? colors.danger : colors.primary;
@@ -270,6 +286,8 @@ export default {
 
         return {
           ...dataset,
+          data: this.exactTotal !== undefined || dataset.data_fractions || dataset.calculation_snapshot
+            ? graphOriginals(dataset).map(chartCoordinate) : dataset.data,
           backgroundColor: segmentColors.map(c => c.backgroundColor),
           borderColor: segmentColors.map(c => c.borderColor),
           borderWidth: 2,
@@ -287,5 +305,6 @@ export default {
     }
   }
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 <!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

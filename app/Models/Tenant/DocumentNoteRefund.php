@@ -30,8 +30,9 @@ class DocumentNoteRefund extends ModelTenant
     public function getDataCashPaymentReport(): array { return $this->getRowResourceCashPayment()+['total'=>$this->document->total,'items_description_html'=>'']; }
     public function getRowIncomeSummaryPayment(): array
     {
+        $amount=\App\Support\Exact\Decimal::convert($this->cash_received_amount,$this->currency_type_id,'VES',$this->exchange_rate);
         return $this->getRowResourceCashPayment()+['date_time_of_issue'=>$this->date_of_payment->format('Y-m-d').' 00:00:00',
             'payment_method_type_description'=>$this->payment_method_type->description,'total'=>$this->document->total,'change'=>0,
-            'payment_for_calculate'=>-\App\Services\Fiscal\FiscalAmounts::convert($this->cash_received_amount,$this->currency_type_id,'VES',$this->exchange_rate)];
+            'payment_for_calculate'=>\App\Support\Exact\Decimal::represent($amount->negated())];
     }
 }

@@ -33,14 +33,14 @@
               <div class="db-sub text-muted">
                 <span v-if="row.debts_count > 1" class="db-count text-muted">{{ row.debts_count }} deudas</span>
                 <span v-if="row.debts_count > 1">
-                  <b>Bs. {{ row.urgent_amount | dbMoney }}</b> {{ row.due_text }}
+                  <b>Bs. {{ urgentAmount(row) | dbMoney }}</b> {{ row.due_text }}
                 </span>
                 <span v-else>{{ row.due_text }}</span>
               </div>
             </div>
 
             <div class="db-right">
-              <span class="db-amount">Bs. {{ row.total_to_pay | dbMoney }}</span>
+              <span class="db-amount">Bs. {{ debtTotal(row) | dbMoney }}</span>
               <span class="db-badge" :class="badgeClass(row.status)">{{ badgeText(row) }}</span>
             </div>
 
@@ -54,9 +54,9 @@
             <div class="db-detail-inner">
               <div v-for="debt in row.debts" :key="debt.report_key" class="db-debt" :class="debtClass(debt.status)">
                 <div class="db-debt-main">
-                  <strong>Bs. {{ debt.total_to_pay | dbMoney }}</strong>
+                  <strong>Bs. {{ debtTotal(debt) | dbMoney }}</strong>
                   <small class="text-muted">{{ debt.number }} · {{ debt.due_text }}</small>
-                  <small v-if="debt.currency_type_id === 'USD'" class="text-muted">USD {{ debt.original_balance | dbMoney }}</small>
+                  <small v-if="debt.currency_type_id === 'USD'" class="text-muted">USD {{ originalBalance(debt) | dbMoney }}</small>
                 </div>
                 <span class="db-badge" :class="badgeClass(debt.status)">{{ badgeText(debt) }}</span>
               </div>
@@ -76,20 +76,22 @@
             <div class="db-info">
               <span class="db-name text-truncate">{{ debt.customer }}</span>
               <small class="text-muted">{{ debt.number }} · {{ debt.due_text }}</small>
-              <small v-if="debt.currency_type_id === 'USD'" class="text-muted">USD {{ debt.original_balance | dbMoney }}</small>
+              <small v-if="debt.currency_type_id === 'USD'" class="text-muted">USD {{ originalBalance(debt) | dbMoney }}</small>
             </div>
-            <strong>Bs. {{ debt.total_to_pay | dbMoney }}</strong>
+            <strong>Bs. {{ debtTotal(debt) | dbMoney }}</strong>
           </div>
         </div>
       </div>
 
-      <div v-if="!items.length" class="db-empty text-muted text-center">No hay saldos por cobrar.</div>
+      <div v-if="!items.length" class="db-empty text-muted text-center">{{ loading ? "Cargando saldos…" : fetchFailed ? "No se pudieron cargar los saldos." : "No hay saldos por cobrar." }}</div>
     </div>
   </section>
 </template>
 
 <script>
-import {exactAmount, exactValue} from "../../../../../../../resources/js/helpers/exchange-rate-math";
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { readOriginal, originalToken, sumOriginal, originalText } from "../../../../../../../resources/js/helpers/dashboard-originals";
+
 export default {
   name: "Debtors",
   props: {
@@ -97,9 +99,10 @@ export default {
   },
   data() {
     return {
+      fetchVersion: 0, loading: true, fetchFailed: false,
       items: [],
-      total: 0,
-      count: 0,
+      total: null,
+      count: null,
       viewMode: "client",
     };
   },
@@ -118,7 +121,7 @@ export default {
       return this.visibleDebts.filter((debt) => debt.due_days !== null && debt.due_days !== undefined && Number(debt.due_days) <= 0);
     },
     urgentTotal() {
-      return this.urgentDebts.reduce((sum, debt) => sum.plus(exactValue(debt, "total_to_pay")), exactAmount("0"));
+      return this.loading || this.fetchFailed ? null : sumOriginal(this.urgentDebts.map(debt => readOriginal(debt, 'total_to_pay')));
     },
     dateGroups() {
       const groups = [
@@ -129,7 +132,7 @@ export default {
 
       groups.forEach((group) => {
         group.items = this.visibleDebts.filter((debt) => debt.status === group.status);
-        group.total = group.items.reduce((sum, debt) => sum.plus(exactValue(debt, "total_to_pay")), exactAmount("0"));
+        group.total = sumOriginal(group.items.map(debt => readOriginal(debt, 'total_to_pay')));
       });
 
       return groups.filter((group) => group.items.length);
@@ -147,13 +150,23 @@ export default {
     },
   },
   methods: {
-    fetchData() {
-      this.$http.get("/dashboard/debtors", { params: this.filters || {} }).then((response) => {
+    debtTotal(row) { return readOriginal(row, 'total_to_pay'); },
+    urgentAmount(row) { return originalToken(row.urgent_amount_exact); },
+    originalBalance(row) { return originalToken(row.original_balance_exact); },
+    async fetchData() {
+      const version = ++this.fetchVersion; this.loading = true; this.fetchFailed = false;
+      this.items = []; this.total = null; this.count = null;
+      try {
+        const response = await this.$http.get("/dashboard/debtors", {params: {...(this.filters || {})}});
+        if (version !== this.fetchVersion) return;
         const data = response.data;
-        this.items = (data.items || []).map((row) => ({ ...row, open: false }));
-        this.total = data.total || 0;
-        this.count = data.count || 0;
-      });
+        this.items = (data.items || []).map(row => ({...row, open: false}));
+        this.total = readOriginal(data, 'total'); this.count = Number.isInteger(data.count) && data.count >= 0 ? data.count : null;
+      } catch (_) {
+        if (version === this.fetchVersion) this.fetchFailed = true;
+      } finally {
+        if (version === this.fetchVersion) this.loading = false;
+      }
     },
     toggleOpen(row) {
       if (row.debts_count > 1) {
@@ -184,12 +197,10 @@ export default {
     },
   },
   filters: {
-    dbMoney(value) {
-      const [integer, fraction] = exactAmount(value).decimal().split(".");
-      return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + (fraction ? "," + fraction : "");
-    },
+    dbMoney(value) { return originalText(value, 12, 'es-VE', true); },
   },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

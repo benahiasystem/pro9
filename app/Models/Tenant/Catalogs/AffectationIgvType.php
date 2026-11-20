@@ -15,6 +15,7 @@ class AffectationIgvType extends ModelCatalog
 
     protected $table = "cat_affectation_igv_types";
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 
     // ########## INICIO CAMBIO AFECTACIÓN IVA

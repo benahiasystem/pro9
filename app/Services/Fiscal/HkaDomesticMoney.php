@@ -12,6 +12,72 @@ final class HkaDomesticMoney
     private static function money($cents): string { return D::represent(D::of($cents)->dividedBy(100),2,true); }
     private static function group($code, $rate): string { return $code.':'.D::represent($rate,2,true); }
 
+    public static function reconcileOrdinaryVesInvoice(array $payload, array $snapshot): array
+    {
+        $doc = &$payload['documentoElectronico'];
+        $totals = &$doc['encabezado']['totales'];
+        $groups = [];
+        foreach ($doc['detallesItems'] as $index => $line) {
+            $key = self::group($line['codigoImpuesto'], $line['tasaIVA']);
+            $groups[$key]['prices'][$index] = D::read($snapshot['items'][$index], 'total_value');
+            $groups[$key]['taxes'][$index] = D::read($snapshot['items'][$index], 'total_igv');
+        }
+        $prices = array_map(fn ($group) => D::sum($group['prices']), $groups);
+        $taxes = array_map(fn ($group) => D::sum($group['taxes']), $groups);
+        $subtotal = D::sum($prices);
+        $iva = D::sum($taxes);
+        // Header adjustments can make the fiscal bases differ from the sum of the lines.
+        if (!$subtotal->isEqualTo(D::read($snapshot, 'total_value'))
+            || !$iva->isEqualTo(D::read($snapshot, 'total_igv'))
+            || !$subtotal->plus($iva)->isEqualTo(D::read($snapshot, 'total'))) {
+            return $payload;
+        }
+        $taxRows = [];
+        foreach (array_values($snapshot['taxes']) as $index => $tax) {
+            $key = self::group($tax['code'], $tax['percentage']);
+            if (!isset($prices[$key]) || isset($taxRows[$key])
+                || !$prices[$key]->isEqualTo(D::read($tax, 'base'))
+                || !$taxes[$key]->isEqualTo(D::read($tax, 'amount'))) {
+                return $payload;
+            }
+            $taxRows[$key] = $index;
+        }
+        if (array_diff_key($groups, $taxRows)) return $payload;
+
+        $roundedSubtotal = D::of($totals['totalAPagar'])->minus($totals['totalIVA']);
+        $groupPrices = self::distributedMoney($roundedSubtotal, $prices);
+        $groupTaxes = self::distributedMoney($totals['totalIVA'], $taxes);
+        $exempt = D::of(0);
+        foreach ($groups as $key => $group) {
+            $pricesByLine = self::distributedMoney($groupPrices[$key], $group['prices']);
+            $taxesByLine = self::distributedMoney($groupTaxes[$key], $group['taxes']);
+            foreach ($pricesByLine as $index => $price) {
+                $line = &$doc['detallesItems'][$index];
+                $line['precioItem'] = $price;
+                $line['valorIVA'] = $taxesByLine[$index];
+                $line['valorTotalItem'] = D::represent(D::of($price)->plus($line['valorIVA']), 2, true);
+                unset($line);
+            }
+            $taxRow = &$totals['impuestosSubtotal'][$taxRows[$key]];
+            $taxRow['baseImponibleImp'] = $groupPrices[$key];
+            $taxRow['valorTotalImp'] = $groupTaxes[$key];
+            if ($taxRow['codigoTotalImp'] === 'E') $exempt = $exempt->plus($groupPrices[$key]);
+            unset($taxRow);
+        }
+        $totals['subtotal'] = D::represent($roundedSubtotal, 2, true);
+        $totals['montoExentoTotal'] = D::represent($exempt, 2, true);
+        $totals['montoGravadoTotal'] = D::represent($roundedSubtotal->minus($exempt), 2, true);
+        return $payload;
+    }
+
+    private static function distributedMoney($target, array $weights): array
+    {
+        $rounded = array_map(fn ($value) => D::represent($value, 2, true), $weights);
+        return D::sum($rounded)->isEqualTo($target)
+            ? $rounded
+            : array_combine(array_keys($weights), D::allocate($target, $weights, 2));
+    }
+
     /** Match each HKA item to the final tax base, including global discounts already persisted. */
     public static function adapt(array $payload, array $snapshot): array
     {
@@ -71,12 +137,23 @@ final class HkaDomesticMoney
         // HKA validates totalAPagar against this tax row, in addition to the IGTF totals.
         $igtfGroups = [];
         foreach ($snapshot['taxes'] as $tax) if ($tax['tax_kind'] === 'IGTF') {
-            $key = self::group('IGTF', $tax['percentage']);
-            $igtfGroups[$key] = ['codigoTotalImp'=>'IGTF', 'alicuotaImp'=>D::represent($tax['percentage'],2,true),
-                'baseImponibleImp'=>self::money(self::cents($igtfGroups[$key]['baseImponibleImp'] ?? 0)->plus(self::cents(D::read($tax,'base')))),
-                'valorTotalImp'=>self::money(self::cents($igtfGroups[$key]['valorTotalImp'] ?? 0)->plus(self::cents(D::read($tax,'amount'))))];
+            $rate = D::read($tax, 'percentage');
+            $key = self::group('IGTF', $rate);
+            $group = $igtfGroups[$key] ?? [];
+            $igtfGroups[$key] = [
+                'rate' => $rate,
+                'base' => D::read($tax, 'base')->plus($group['base'] ?? 0),
+                'amount' => D::read($tax, 'amount')->plus($group['amount'] ?? 0),
+            ];
         }
-        foreach ($igtfGroups as $tax) $totals['impuestosSubtotal'][] = $tax;
+        foreach ($igtfGroups as $group) {
+            $totals['impuestosSubtotal'][] = [
+                'codigoTotalImp' => 'IGTF',
+                'alicuotaImp' => D::represent($group['rate'], 2, true),
+                'baseImponibleImp' => D::represent($group['base'], 2, true),
+                'valorTotalImp' => D::represent($group['amount'], 2, true),
+            ];
+        }
         return $payload;
     }
 

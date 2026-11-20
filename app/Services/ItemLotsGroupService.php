@@ -61,6 +61,12 @@
          *
          * @return \Illuminate\Database\Eloquent\HigherOrderBuilderProxy|mixed|string
          */
+        public function getInvoiceLotDateOfDue($id)
+        {
+            $date = $this->getLotDateOfDue($id);
+            return trim((string) $date, "/ \t\r\n") === '' ? '' : $date;
+        }
+
         public function getLotDateOfDue($id){
             $result = '';
             if (is_array($id)) {

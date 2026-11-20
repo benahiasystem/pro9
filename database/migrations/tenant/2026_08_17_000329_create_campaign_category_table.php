@@ -1,32 +1,30 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `campaign_category` para instalaciones nuevas.
- * Inventario de columnas:
- * - `discount_campaign_id` bigint(20) unsigned NOT NULL
- * - `category_id` int(10) unsigned NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - discount_campaign_id: bigint
+ * - category_id: bigint
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `campaign_category` (
-  `discount_campaign_id` bigint(20) unsigned NOT NULL,
-  `category_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`discount_campaign_id`,`category_id`),
-  KEY `campaign_category_category_id_foreign` (`category_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('campaign_category', function (Blueprint $table) {
+            $table->bigInteger('discount_campaign_id');
+            $table->bigInteger('category_id');
+            $table->primary(['discount_campaign_id', 'category_id']);
+            $table->index(['category_id'], 'campaign_category_category_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `campaign_category`');
+        Schema::dropIfExists('campaign_category');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

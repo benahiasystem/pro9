@@ -2,6 +2,7 @@
 namespace App\Services\Fiscal;
 
 use App\Models\Tenant\{Company, Document, DocumentPayment, Establishment, Person, PaymentMethodType};
+use App\Services\Payments\ReceiptChange;
 use App\Services\SalesCustomerIdentityPolicy;
 use Illuminate\Support\Str;
 use App\Support\Exact\Decimal as D;
@@ -55,23 +56,57 @@ final class FiscalDocumentPersistence
         return $customer;
     }
 
-    public static function line(array $line, bool $exportation = false, ?array $frozenComponents=null): array
+    public static function line(array $line, bool $exportation = false, ?array $frozenComponents=null, ?bool $frozenIsSet=null): array
     {
+        unset($line['source_sale_note_items']);
         $affectation = $line['affectation_igv_type_id'] ?? null;
         if (!in_array($affectation, $exportation ? ['EXP'] : ['10','20'], true)) FiscalAmounts::error('items', $exportation ? 'Seleccione Exportación — IVA 0 %.' : 'Seleccione Gravado o Exento.');
         if ($exportation && ($line['item']['unit_type_id'] ?? '') === 'SERV') FiscalAmounts::error('items', 'La exportación de servicios no está habilitada.');
         validator($line, ['quantity'=>'required|numeric|min:0', 'unit_price'=>'required|numeric|min:0'])->validate();
         $percentage = $affectation === '10' ? \App\Support\Venezuela\Localization::exactTaxPercentage() : 0;
         // ######## INICIO CALCULOS EXACTOS SAB ########
-        if (($line['total_other_taxes'] ?? 0) != 0) FiscalAmounts::error('items.total_other_taxes','Los tributos adicionales deben registrarse en el detalle del documento.');
+        $declaredOtherTaxes = $line['total_other_taxes'] ?? '0';
+        // An exponent cannot turn nonzero digits into zero.
+        if (!is_scalar($declaredOtherTaxes)
+            || preg_match('/\A[+-]?(?:0+(?:\.0*)?|\.0+)(?:[eE][+-]?[0-9]+)?\z/', trim((string) $declaredOtherTaxes)) !== 1) {
+            FiscalAmounts::error('items.total_other_taxes', 'Los tributos adicionales deben registrarse en el detalle del documento.');
+        }
+        // Fixed line discounts may carry the previous fraction after their
+        // displayed amount has been edited. Preserve a matching original; a new
+        // valid decimal takes precedence over a stale positive original.
+        foreach ($line['discounts'] ?? [] as $index => $discount) {
+            $discount = (array) $discount;
+            $distributed = !empty($discount['from_global_distribution']);
+            if (empty($discount['is_amount']) && !$distributed) continue;
+            $original = $discount['amount_exact'] ?? $discount['amount_without_rounded'] ?? null;
+            if ($original === null || !isset($discount['amount'])) continue;
+            $field = 'items.discounts.amount';
+            $decimal = D::of(D::input($discount['amount'], $field));
+            $fraction = D::inputRational($original, $field);
+            // The legacy distribution sent a cents amount alongside the unrounded value.
+            $matchesProjection = $decimal->isEqualTo(D::represent($fraction))
+                || ($distributed && !isset($discount['amount_exact']) && $decimal->isEqualTo(D::represent($fraction, 2)));
+            if (!$fraction->isNegative() && !$matchesProjection) {
+                $discount['amount_exact'] = D::fraction($decimal);
+                $line['discounts'][$index] = $discount;
+            }
+        }
         $line = \App\Support\Exact\LineCalculation::fromRecord($line, $percentage);
         // ######## FIN CALCULOS EXACTOS SAB ########
         $rateCode = in_array($affectation, ['20', 'EXP'], true) ? 'E' : (['8'=>'R','16'=>'G','31'=>'A'][(string)$percentage] ?? null);
         $line['iva_rate'] = ['code'=>$rateCode,'percentage'=>$percentage];
+        if (isset($line['item_id'])) $line=FiscalNoteInventory::capture($line,$frozenComponents,$frozenIsSet);
         unset($line['item']['cod_digemid']);
         $line['item']['hka_unit_code'] = DB::connection('tenant')->table('cat_unit_types')->where('id', $line['item']['unit_type_id'])->where('active',1)->value('hka_code');
         if (!$line['item']['hka_unit_code']) FiscalAmounts::error('items.unit_type_id','Seleccione una unidad activa con equivalencia HKA.');
-        return isset($line['item_id']) ? FiscalNoteInventory::capture($line,$frozenComponents) : $line;
+        return $line;
+    }
+
+    public static function affectedInvoiceSnapshot(Document $invoice): array
+    {
+        $snapshot = $invoice->only(['document_type_id', 'series', 'number', 'date_of_issue', 'total', 'control_number', 'currency_type_id', 'exchange_rate_sale']);
+        $snapshot['calculation_snapshot'] = D::snapshot(['total' => D::readRequired($invoice, 'total')]);
+        return $snapshot;
     }
 
     public static function fiscalData(Document $document, array $input = []): void
@@ -85,7 +120,7 @@ final class FiscalDocumentPersistence
             if (!$inherits && \App\Services\SpecialTaxRegimePolicy::applies($affected)) FiscalAmounts::error('note', 'Las notas vinculadas a regímenes especiales todavía no están habilitadas.');
             if (!$inherits && \App\Services\ThirdPartyInvoicePolicy::isThirdParty($affected)) FiscalAmounts::error('note', 'Las notas de facturas por cuenta de terceros todavía no están habilitadas.');
             if ($affected->document_type_id !== '01' || $affected->customer_id !== $document->customer_id || $affected->establishment_id !== $document->establishment_id || $affected->fiscal_environment !== $document->fiscal_environment || $affected->currency_type_id !== $document->currency_type_id) FiscalAmounts::error('note','La factura afectada debe corresponder al cliente, sucursal, ambiente y moneda de la nota.');
-            $document->note->data_affected_document = $affected->only(['document_type_id','series','number','date_of_issue','total','control_number','currency_type_id','exchange_rate_sale']);
+            $document->note->data_affected_document = self::affectedInvoiceSnapshot($affected);
             $document->note->save();
         }
         if ($inherits) {
@@ -200,6 +235,16 @@ final class FiscalDocumentPersistence
                 'amount_ves'=>D::convert($amount,$document->currency_type_id,'VES',$document->exchange_rate_sale)];
             $data = D::values($values) + ['code'=>$data['code'],'tax_kind'=>'OTI','calculation_snapshot'=>D::snapshot($values)];
             $document->taxes()->create($data);
+        }
+    }
+
+    public static function revalueOtherTaxes(Document $document): void
+    {
+        foreach ($document->taxes()->where('tax_kind', 'OTI')->get() as $tax) {
+            $tax->setExactValues([
+                'base_ves' => D::convert($tax->exactValue('base'), $document->currency_type_id, 'VES', $document->exchange_rate_sale),
+                'amount_ves' => D::convert($tax->exactValue('amount'), $document->currency_type_id, 'VES', $document->exchange_rate_sale),
+            ])->save();
         }
     }
 
@@ -331,12 +376,7 @@ final class FiscalDocumentPersistence
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             $balance=$document->exactBalance(true);
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
-            $principal=D::readRequired($values, 'payment');
-            if (!$principal->isEqualTo($balance) && $principal->isEqualTo(D::of(D::represent($balance,2)))) {
-                $values['payment']=D::represent($balance);
-                $values['calculation_snapshot']['values']['payment']=D::fraction($balance);
-                $values['calculation_snapshot']['values']['payment_adjustment']=D::fraction($balance->minus(D::of($values['calculation_snapshot']['values']['converted_principal'])));
-            }
+            $values=ReceiptChange::settleClosingBalance($values,$balance);
             if (!$initial && D::readRequired($values, 'payment')->isGreaterThan($balance)) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');
             if ($initial && $document->emission()->where('status', '!=', 'not_requested')->exists()) FiscalAmounts::error('emission','No se modifican los pagos de una operación preparada.');
             if (!empty($input['id']) && !$receiptOrigin) FiscalAmounts::error('id', 'Revierta el pago y registre uno nuevo; no se editan pagos contabilizados.');
@@ -443,7 +483,7 @@ final class FiscalDocumentPersistence
         $reference=FiscalNote::ordinary($invoice) ? $invoice->note->affected_document : $invoice;
         $note->note()->create(['note_type' => 'debit', 'note_debit_type_id' => 'IGTF', 'note_description' => 'IGTF sobre pago posterior',
             'effect_snapshot'=>FiscalNote::ordinary($invoice) ? ['invoice_fiscal_data'=>$invoice->fiscal_data->only(['provider_type_id','special_tax_regime_id','catalog_snapshot','third_party','third_party_person_id'])] : null,
-            'affected_document_id' => $reference->id, 'data_affected_document' => array_merge($reference->only(['series','number','date_of_issue','total','control_number','currency_type_id','exchange_rate_sale']), ['document_type_id'=>'01'])]);
+            'affected_document_id' => $reference->id, 'data_affected_document' => self::affectedInvoiceSnapshot($reference)]);
         $note->unsetRelation('note');
         self::fiscalData($note, ['transaction_type_id' => '98']);
         return $note;

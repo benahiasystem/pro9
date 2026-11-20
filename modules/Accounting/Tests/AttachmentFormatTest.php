@@ -6,6 +6,7 @@ use Modules\Accounting\Domain\ApiProblem;
 use Modules\Accounting\Support\AttachmentFormat;
 use PHPUnit\Framework\TestCase;
 
+/** @group accounting-attachments */
 final class AttachmentFormatTest extends TestCase
 {
     private string $directory;

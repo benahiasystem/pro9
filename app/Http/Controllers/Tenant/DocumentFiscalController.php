@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\{Company,Document};
 use App\Services\Fiscal\{FiscalDocumentPersistence,HkaEmissionPreparation};
+use App\Support\Exact\Decimal;
 use Illuminate\Http\Request;
 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
 class DocumentFiscalController extends Controller
@@ -98,7 +99,7 @@ class DocumentFiscalController extends Controller
     {
         abort_unless(auth()->user() instanceof \App\Models\Tenant\User && auth()->user()->type==='admin',403);
         $data=$request->validate(['enabled'=>'required|boolean','rate'=>'nullable|numeric|gt:0|max:100']);
-        if(isset($data['rate'])) $data['rate']=round((float)$data['rate'],2);
+        if(isset($data['rate'])) $data['rate']=Decimal::input($data['rate'],'rate',8,3);
         if($data['enabled'] && empty($data['rate'])) \App\Services\Fiscal\FiscalAmounts::error('rate','Indique la tasa operativa.');
         \DB::connection('tenant')->transaction(function () use ($data) {
             $company=Company::query()->lockForUpdate()->firstOrFail();

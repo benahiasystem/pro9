@@ -24,6 +24,7 @@
             :class="{ 'layout-editing-active': editingLayout }"
             @submit.prevent="submit"
             >
+            <div v-if="invoiceCalculationError" class="col-12 alert alert-danger" role="alert">{{ invoiceCalculationError }}</div>
             <div class="col-xl-12 col-md-12 col-12 px-0">
                 <header class="clearfix clearfix-default py-2 px-0 px-md-2 border-0">
                     <div
@@ -399,9 +400,9 @@
                         <div :class="{ 'has-danger': errors.currency_type_id }" class="form-group money-input">
                             <label class="control-label">Moneda</label>
                             <el-select
-                                v-model="form.currency_type_id"
+                                :value="form.currency_type_id"
                                 :disabled="isUpdateDocument"
-                                @change="changeCurrencyType"
+                                @input="changeInvoiceCurrencyType"
                             >
                                 <el-option
                                     v-for="option in currency_types"
@@ -806,7 +807,8 @@
                                                                         "
                                                                         @input="
                                                                             inputAmountPrepayment(
-                                                                                index
+                                                                                index,
+                                                                                $event
                                                                             )
                                                                         "
                                                                     ></el-input>
@@ -858,8 +860,8 @@
 
                                         <div
                                             v-if="
-                                                config.active_allowance_charge &&
-                                                    form.total > 0
+                                                !isExportInvoice && config.active_allowance_charge &&
+                                                    hasPositiveInvoiceTotal
                                             "
                                             class="col-12 py-2 px-0"
                                         >
@@ -871,17 +873,14 @@
                                                     >
                                                 </div>
                                                 <div class="col-4">
-                                                    <el-input-number
-                                                        v-model="
-                                                            config.percentage_allowance_charge
-                                                        "
-                                                        :min="0"
-                                                        controls-position="right"
+                                                    <exact-decimal-input
+                                                        ref="invoiceAllowanceInput"
+                                                        :generation="invoiceDraftGeneration"
+                                                        :value="invoiceAllowancePercent === null ? config.percentage_allowance_charge : invoiceAllowancePercent"
+                                                        :apply="(value, input) => applyInvoiceDecimal('allowance', value, null, input)"
+                                                        @cancelled="$message.warning($event)"
                                                         size="mini"
-                                                        @change="
-                                                            calculateTotal
-                                                        "
-                                                    ></el-input-number>
+                                                    ></exact-decimal-input>
                                                 </div>
                                             </div>
                                         </div>
@@ -1291,7 +1290,7 @@
                                 <!-- ########### INICIO CONTRATO FLUJO DE PRODUCTOS -->
                                 <tr
                                     v-for="(row, index) in form.items"
-                                    :key="index"
+                                    :key="invoiceInputKey(row)"
                                 >
                                     <td></td>
                                     <td>
@@ -1398,52 +1397,50 @@
                                         {{ row.item.unit_type_id }}
                                     </td>
                                     <td class="text-end">
-                                        <el-input-number
+                                        <el-input
                                             v-if="showEditableItems"
                                             v-model="row.quantity"
-                                            :min="0.01"
-                                            :controls="false"
                                             :disabled="hasRowAdvancedOption(row)"
                                             class="input-custom"
                                             style="min-width: 70px !important"
                                             @change="changeRowQuantity(row)"
-                                            @focus="valueInputSelect($event)"
-                                        ></el-input-number>
+                                            @focus="beginEditableInvoiceRow(row, 'quantity', $event)"
+                                         inputmode="decimal"></el-input>
                                         <template v-else>{{ row.quantity }}</template>
                                     </td>
                                     <td class="text-end">
                                         <div v-if="showEditableItems" class="input-with-currency">
                                             <span class="currency-symbol">{{ documentCurrencySymbol }}</span>
-                                            <el-input-number
+                                            <el-input
                                                 v-model="row.unit_price"
-                                                :min="0.01"
-                                                :controls="false"
                                                 :disabled="hasRowAdvancedOption(row) || !hasPermissionEditItemPrices(authUser.permission_edit_item_prices)"
                                                 class="input-custom"
                                                 style="min-width: 98px !important"
                                                 @change="changeRowUnitPrice(row)"
-                                                @focus="valueInputSelect($event)"
-                                            ></el-input-number>
+                                                @focus="beginEditableInvoiceRow(row, 'unit_price', $event)"
+                                             inputmode="decimal"></el-input>
                                         </div>
                                         <template v-else>
                                             {{ documentCurrencySymbol }}
-                                            {{ getFormatUnitPriceRow(row.item.unit_price, row) }}
+                                            {{ documentRowUnitPrice(row) }}
                                         </template>
                                     </td>
                                     <td class="text-end">
                                         <div v-if="showEditableItems" class="input-with-currency">
                                             <span class="currency-symbol">{{ documentCurrencySymbol }}</span>
-                                            <el-input-number
+                                            <exact-decimal-input
+                                                ref="invoiceRowDiscountInputs"
+                                                :generation="invoiceDraftGeneration"
                                                 :value="rowDiscountValue(row)"
-                                                :min="0"
                                                 :precision="2"
-                                                :controls="false"
+                                                :context-key="form.currency_type_id"
                                                 :disabled="isRowDiscountLocked(row) || !hasPermissionEditItemPrices(authUser.permission_edit_item_prices)"
                                                 class="input-custom"
                                                 style="min-width: 98px !important"
-                                                @change="value => applyItemDiscount(index, value)"
+                                                :apply="(value, input) => applyInvoiceDecimal('row', value, index, input)"
+                                                @cancelled="$message.warning($event)"
                                                 @focus="valueInputSelect($event)"
-                                            ></el-input-number>
+                                            ></exact-decimal-input>
                                         </div>
                                         <template v-else>
                                             {{ documentCurrencySymbol }} {{ setTextDiscountItem(row) }}
@@ -1452,16 +1449,14 @@
                                     <td class="text-end">
                                         <div v-if="showEditableItems" class="input-with-currency">
                                             <span class="currency-symbol">{{ documentCurrencySymbol }}</span>
-                                            <el-input-number
+                                            <el-input
                                                 v-model="row.total"
-                                                :min="0"
-                                                :controls="false"
                                                 :disabled="hasRowAdvancedOption(row) || !hasPermissionEditItemPrices(authUser.permission_edit_item_prices)"
                                                 class="input-custom"
                                                 style="min-width: 98px !important"
                                                 @change="changeRowTotal(row)"
-                                                @focus="valueInputSelect($event)"
-                                            ></el-input-number>
+                                                @focus="beginEditableInvoiceRow(row, 'total', $event)"
+                                             inputmode="decimal"></el-input>
                                         </div>
                                         <template v-else>
                                             {{ documentCurrencySymbol }} {{ row.total }}
@@ -1530,8 +1525,8 @@
                                 </tr>
                                 <tr
                                     v-if="
-                                        form.total > 0 &&
-                                            enabled_discount_global
+                                        hasPositiveInvoiceTotal &&
+                                            (enabled_discount_global || recordDiscountsGlobal)
                                     "
                                 >
                                     <td>
@@ -1556,22 +1551,23 @@
                                             %</template
                                         >
                                         <el-checkbox
-                                            v-model="is_amount"
+                                            :value="is_amount"
                                             class="ml-1 mr-1"
-                                            @change="changeTypeDiscount"
+                                            @input="changeInvoiceDiscountMode"
                                         ></el-checkbox>
                                         :
                                     </td>
                                     <td>
-                                        <el-input-number
-                                            v-model="total_global_discount"
-                                            :min="0"
+                                        <exact-decimal-input
+                                            ref="invoiceDiscountInput"
+                                            :generation="invoiceDraftGeneration"
+                                            :value="total_global_discount"
+                                            :exact-source="invoiceGlobalDiscountSource ? invoiceGlobalDiscountSource.amount : null"
+                                            :apply="(value, input) => applyInvoiceDecimal('discount', value, null, input)"
+                                            :context-key="form.currency_type_id + '|' + is_amount"
+                                            @cancelled="$message.warning($event)"
                                             class="input-custom"
-                                            controls-position="right"
-                                            @change="
-                                                changeTotalGlobalDiscount
-                                            "
-                                        ></el-input-number>
+                                        ></exact-decimal-input>
 
                                         <!-- <el-input v-model="total_global_discount"
                                                   class="input-custom"
@@ -1586,7 +1582,7 @@
 
 
 
-                                <tr v-if="form.total_exportation > 0 && !isNrus">
+                                <tr v-if="hasPositiveInvoiceAmount('total_exportation') && !isNrus">
                                     <td>EXPORTACIÓN (IVA 0 %):</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
@@ -1595,28 +1591,28 @@
                                 </tr>
 
 
-                                <tr v-if="form.total_exonerated > 0">
+                                <tr v-if="hasPositiveInvoiceAmount('total_exonerated')">
                                     <td>OP.EXONERADAS:</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
                                         {{ form.total_exonerated }}
                                     </td>
                                 </tr>
-                                <tr v-if="form.total_taxed > 0 && !isNrus">
+                                <tr v-if="hasPositiveInvoiceAmount('total_taxed') && !isNrus">
                                     <td>Op. gravada:</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
                                         {{ form.total_taxed }}
                                     </td>
                                 </tr>
-                                <tr v-if="form.total_prepayment > 0">
+                                <tr v-if="hasPositiveInvoicePrepayment">
                                     <td>ANTICIPOS:</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
-                                        {{ form.total_discount }}
+                                        {{ form.total_prepayment }}
                                     </td>
                                 </tr>
-                                <tr v-if="form.total_igv > 0 && !isNrus">
+                                <tr v-if="hasPositiveInvoiceAmount('total_igv') && !isNrus">
                                     <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
                                     <td>IVA:</td>
                                     <!-- ########### FIN CAMBIO IVA VENEZUELA -->
@@ -1630,9 +1626,8 @@
 
                                 <tr
                                     v-if="
-                                        form.subtotal > 0 &&
-                                            (form.total_discount > 0 ||
-                                                totalDiscount > 0)
+                                        hasPositiveInvoiceAmount('subtotal') &&
+                                            (hasPositiveInvoiceAmount('total_discount') || hasPositiveInvoiceDiscount)
                                     "
                                 >
                                     <td>SUBTOTAL:</td>
@@ -1642,7 +1637,7 @@
                                     </td>
                                 </tr>
 
-                                <tr v-if="totalDiscount > 0">
+                                <tr v-if="hasPositiveInvoiceDiscount">
                                     <td>DESCUENTOS TOTALES:</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
@@ -1650,39 +1645,42 @@
                                     </td>
                                 </tr>
 
-                                <tr v-if="form.total > 0">
+                                <tr v-if="hasPositiveInvoiceTotal">
                                     <td>Otros cargos:</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
-                                        <el-input-number
-                                            v-model="total_global_charge"
+                                        <exact-decimal-input
+                                            ref="invoiceChargeInput"
+                                            :generation="invoiceDraftGeneration"
+                                            :value="total_global_charge"
+                                            :exact-source="invoiceGlobalChargeSource ? invoiceGlobalChargeSource.amount : null"
+                                            :apply="(value, input) => applyInvoiceDecimal('charge', value, null, input)"
+                                            :context-key="form.currency_type_id"
+                                            @cancelled="$message.warning($event)"
                                             :disabled="
                                                 !isExportInvoice && config.active_allowance_charge ==
                                                 true
                                                     ? true
                                                     : false
                                             "
-                                            :min="0"
                                             class="input-custom"
-                                            controls-position="right"
-                                            @change="calculateTotal"
-                                        ></el-input-number>
+                                        ></exact-decimal-input>
                                     </td>
                                 </tr>
 
-                                <tr v-if="form.total > 0" :class="{'invoice-total-due': !fiscalPaymentsApplicable || isUpdateDocument}">
+                                <tr v-if="hasPositiveInvoiceTotal" :class="{'invoice-total-due': !fiscalPaymentsApplicable || isUpdateDocument}">
                                     <td><strong v-if="fiscalPaymentsApplicable && !isUpdateDocument">Total de la venta</strong><template v-else><strong>Total a pagar</strong></template>:</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
                                         {{ form.total }}
                                     </td>
                                 </tr>
-                                <tr v-if="form.settlement_adjustment && form.settlement_adjustment != 0">
+                                <tr v-if="invoiceSettlementAdjustmentLabel">
                                     <td>Ajuste de liquidación:</td>
-                                    <td>{{ documentCurrencySymbol }} {{ form.settlement_adjustment }}</td>
+                                    <td>{{ documentCurrencySymbol }} {{ invoiceSettlementAdjustmentLabel }}</td>
                                 </tr>
                                 <!-- ######## INICIO TOTAL A PAGAR CON IGTF ######## -->
-                                <tr v-if="form.total > 0 && fiscalPaymentsApplicable && !isUpdateDocument" class="invoice-total-due" data-testid="invoice-total-with-igtf">
+                                <tr v-if="hasPositiveInvoiceTotal && fiscalPaymentsApplicable && !isUpdateDocument" class="invoice-total-due" data-testid="invoice-total-with-igtf">
                                     <td><strong>Total a pagar:</strong></td>
                                     <td>
                                         <template v-if="invoiceTotalWithIgtf !== null">{{ documentCurrencySymbol }} {{ invoiceTotalWithIgtf }}</template>
@@ -1691,7 +1689,7 @@
                                     </td>
                                 </tr>
                                 <!-- ######## FIN TOTAL A PAGAR CON IGTF ######## -->
-                                <tr v-if="form.total > 0 && fiscalPaymentsApplicable && !isUpdateDocument" data-testid="invoice-change">
+                                <tr v-if="hasPositiveInvoiceTotal && fiscalPaymentsApplicable && !isUpdateDocument" data-testid="invoice-change">
                                     <td><strong>Vuelto:</strong></td>
                                     <td>
                                         <template v-if="displayFiscalQuote && displayFiscalQuote.payments.length">
@@ -1712,7 +1710,7 @@
                                 </tr>
                             </table>
                             <table class="table table-sm text-end" style="width: 100%;">
-                                <tr v-if="form.total > 0">
+                                <tr v-if="hasPositiveInvoiceTotal">
                                     <!-- Metodos de pago -->
                                     <td class="p-0" colspan="2">
                                       <div class="payment-section">
@@ -2473,6 +2471,7 @@
     <lots-group
         :lots-group="lotModalLotsGroup"
         :quantity="lotModalQuantity"
+        :exact-quantities="true"
         :showDialog.sync="showDialogLotsGroup"
         @addRowLotGroup="addRowLotGroupFromTable"
     >
@@ -2738,12 +2737,17 @@
 </style>
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+import {selectPrepayment, updatePrepaymentInput, applyPrepaymentDiscount} from '../../../helpers/exact-prepayments'
+import invoicePrepayments from '../../../mixins/invoice-prepayments'
+
 import {defaultCashForCurrency, proposeCashDestination, restoreDeferredInvoiceCash, isRecordedReceipt} from '@helpers/payment-classification'
 import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import {validateInvoicePayments} from "@helpers/invoice-payment-validation"
 import {restoreSaleNoteContext, documentRateRequest, mayApplyDocumentRate} from "../../../helpers/sale-note-conversion"
 
 import {withoutDraftRetentions, suggestRemainingPayment, markPaymentEdited, suggestInstallments, paymentConditionPayload, invoicePaymentsForCondition} from "@helpers/document-creation"
+import {recalculateInvoiceRow} from "@helpers/invoice-row-edit"
+import {captureInvoiceEdit} from "@helpers/invoice-edit-state"
 import documentCreationMixin from "@mixins/document-creation"
 // ######## INICIO TASAS OCHO DECIMALES ########
 import { exactAmount, normalizeExchangeRate, exactValue, exactSum } from "../../../helpers/exchange-rate-math"
@@ -2753,6 +2757,7 @@ import { documentTotals } from "../../../helpers/exact-document"
 import IgtfPaymentFields from "./partials/igtf_fields.vue"
 // ######## INICIO RESUMEN REACTIVO IVA E IGTF ########
 import DocumentTaxSummary from "./partials/tax_summary.vue"
+import ExactDecimalInput from "./partials/exact_decimal_input.vue"
 // ######## FIN RESUMEN REACTIVO IVA E IGTF ########
 // ######## INICIO RESUMEN PAGADO Y FALTA ########
 import DocumentPaymentProgress from "./partials/payment_progress.vue"
@@ -2797,7 +2802,8 @@ import {
     validateItemsLots,
     hydrateItemLots,
     resolveIdLoteSelected,
-} from "../../../helpers/lotValidation";
+    normalizeInvoiceLots, lotQuantity, invoiceSeriesValid, sameInvoiceRecordId,
+} from "../../../helpers/invoice-lots";
 import { editableRowItems } from "@mixins/editable-row-items";
 import { buhoprinter } from "@mixins/buhoprinter";
 import ItemSearchQuickSale from "@components/items/ItemSearchQuickSale.vue";
@@ -2842,7 +2848,7 @@ export default {
         "isUpdate",
         "authUser"
     ],
-    components: { IgtfPaymentFields,
+    components: { IgtfPaymentFields, ExactDecimalInput,
         // ######## INICIO RESUMEN REACTIVO IVA E IGTF ########
         DocumentTaxSummary,
         // ######## FIN RESUMEN REACTIVO IVA E IGTF ########
@@ -2874,7 +2880,7 @@ export default {
         RemoteSlot,
         MiniTour,
     },
-    mixins: [fiscalPaymentSettings, documentCreationMixin,
+    mixins: [fiscalPaymentSettings, documentCreationMixin, invoicePrepayments,
         functions,
         exchangeRate,
         pointSystemFunctions,
@@ -2999,7 +3005,13 @@ export default {
             prepayment_deduction: false,
             activePanel: 0,
             total_global_discount: 0,
+            invoiceGlobalDiscountSource: null,
+            invoiceGlobalChargeSource: null,
+            invoiceDiscountRestoreError: null,
             total_global_charge: 0,
+            invoiceAllowancePercent: null,
+            invoiceDraftGeneration: 0,
+            invoiceCalculationError: null,
             // Subtotal UI antes del dto global tipo 02 (form.subtotal sigue = total para XML TaxInclusiveAmount)
             subtotal_before_global_discount: 0,
             loading_search: false,
@@ -3229,6 +3241,20 @@ export default {
             return this.company?.fiscal_emission_mode === 'digital' && this.company?.fiscal_environment === 'demo'
                 && this.form.document_type_id === '01' && this.form.operation_type_id === '0101' && !this.form.is_itinerant;
         },
+        hasPositiveInvoiceTotal() {
+            return exactValue(this.form, 'total').compare(0) > 0;
+        },
+        invoiceSettlementAdjustmentLabel() {
+            const amount = exactValue(this.form, 'settlement_adjustment');
+            if (amount.compare(0) === 0) return null;
+            const decimal = amount.decimal();
+            if (decimal !== '0') return decimal;
+            const {n, d} = amount.fraction();
+            return `${n}/${d}`;
+        },
+        hasPositiveInvoicePrepayment() {
+            return exactValue(this.form, 'total_prepayment').compare(0) > 0;
+        },
         showCurrencyExchangeFields() {
             return this.currency_types.length > 1;
         },
@@ -3406,13 +3432,19 @@ export default {
 
             return customer.address;
         },
-        totalDiscount() {
-            const lineDiscount = exactSum(this.form.items.map(item => this.itemDiscountDisplayAmount(item)));
+        totalDiscountExact() {
+            const lineDiscount = exactSum(this.form.items.map(item => this.itemDiscountExactAmount(item)));
             const global = exactSum((this.form.discounts || []).map(discount => {
                 const amount = exactAmount(discount.amount_exact ?? discount.amount_without_rounded ?? discount.amount ?? '0');
                 return ['02','04'].includes(discount.discount_type_id) ? amount.times(exactAmount(1).plus(this.percentage_igv)) : amount;
             }));
-            return lineDiscount.plus(global).decimal();
+            return lineDiscount.plus(global);
+        },
+        totalDiscount() {
+            return this.totalDiscountExact.decimal();
+        },
+        hasPositiveInvoiceDiscount() {
+            return this.totalDiscountExact.compare(0) > 0;
         },
         displaySubtotalBeforeDiscount() {
             // Tipo 02: mostrar total con IGV ANTES del dto (UI). form.subtotal = total post-dto (XML).
@@ -3423,11 +3455,6 @@ export default {
                 return this.subtotal_before_global_discount;
             }
             return this.form.subtotal;
-        },
-        guarantee_fund: function() {
-
-            let fund_obj = 0
-            return fund_obj.guarantee_fund ? fund_obj.guarantee_fund : 0
         }
     },
     mounted() {
@@ -3491,17 +3518,7 @@ export default {
             await this.$http
                 .get("/documents/search-items", { params })
                 .then(response => {
-                    const itemsResponse = response.data.items.map(i => {
-                        return this.setItemFromResponse(i, itemsParsed, true);
-                    });
-                    this.form.items = itemsResponse.map(i => {
-                        return calculateRowItem(
-                            i,
-                            this.form.currency_type_id,
-                            this.form.exchange_rate_sale,
-                            this.percentage_igv, this.isExportInvoice
-                        );
-                    });
+                    this.form.items = response.data.items.map(item => this.calculateDispatchInvoiceRow(item, itemsParsed));
                 });
         }
 
@@ -3562,7 +3579,7 @@ export default {
             this.preloadedCustomer = client;
             await this.reloadDataCustomers(client.id);
             this.preloadedCustomer =
-                _.find(this.customers, { id: client.id }) || client;
+                this.customers.find(customer => sameInvoiceRecordId(customer.id, client.id)) || client;
             // ######### FIN FACTURA DESDE MÚLTIPLES NOTAS PARA TODO CLIENTE #########
             if (client.dispatch_establishment_id) this.form.establishment_id=client.dispatch_establishment_id;
             this.changeEstablishment();
@@ -3622,6 +3639,45 @@ export default {
         }
     },
     methods: {
+        documentRowUnitPrice(row) { return exactValue(row,'unit_price').decimal(); },
+        beginEditableInvoiceRow(row, field, event) {
+            this._invoiceRowBeforeEdit ||= new WeakMap();
+            const values = this._invoiceRowBeforeEdit.get(row) || {};
+            if (!(field in values)) values[field] = row[field];
+            this._invoiceRowBeforeEdit.set(row,values);
+            this.valueInputSelect(event);
+        },
+        commitEditableInvoiceRow(row, field) {
+            const index = this.form.items.indexOf(row);
+            if (index < 0) return false;
+            const before = _.cloneDeep(this.form);
+            const previous = this._invoiceRowBeforeEdit?.get(row);
+            if (['quantity','unit_price','total'].includes(field)) {
+                try { before.items[index][field] = previous && field in previous ? previous[field] : exactValue(row,field).decimal(); } catch (_) {}
+            }
+            const subtotalBefore = this.subtotal_before_global_discount, discountBefore = this.total_discount_no_base;
+            try {
+                const next = recalculateInvoiceRow(row, field, {
+                    currency_type_id:this.form.currency_type_id, exchange_rate_sale:this.form.exchange_rate_sale,
+                    percentage_igv:this.percentage_igv, exportation:this.isExportInvoice,
+                });
+                this.$set(this.form.items,index,next);
+                this.calculateTotal();
+                this._invoiceRowBeforeEdit?.delete(row);
+                return true;
+            } catch (error) {
+                Object.assign(this.form,before);
+                this.subtotal_before_global_discount = subtotalBefore;
+                this.total_discount_no_base = discountBefore;
+                this._invoiceRowBeforeEdit?.delete(row);
+                this.$message.error(error.message);
+                return false;
+            }
+        },
+        changeRowQuantity(row) { return this.commitEditableInvoiceRow(row,'quantity'); },
+        changeRowUnitPrice(row) { return this.commitEditableInvoiceRow(row,'unit_price'); },
+        changeRowTotal(row) { return this.commitEditableInvoiceRow(row,'total'); },
+        recalculateRowTotals(row) { return this.commitEditableInvoiceRow(row,'recalculate'); },
         // ######## INICIO REPARTO DE VUELTO ########
         fiscalSourceForQuote(index) {
             return this.fiscalQuoteRows.filter(row => {
@@ -4146,6 +4202,9 @@ export default {
             }
         },
         initForm() {
+            this.invoiceDraftGeneration=(this.invoiceDraftGeneration || 0)+1;
+            this.invoiceCalculationError=null;
+            this.invoiceAllowancePercent = null;
             this.specialTaxRegimeMode = false;
             this.thirdPartySearchTerm = '';
             this.thirdPartyCreateInput = '';
@@ -4247,6 +4306,10 @@ export default {
             this.clickAddInitGuides();
             this.is_receivable = false;
             this.total_global_discount = 0;
+            this.invoiceGlobalDiscountSource = null;
+            this.invoiceGlobalChargeSource = null;
+            this.invoiceDiscountRestoreError = null;
+            this.recordDiscountsGlobal = null;
             this.total_global_charge = 0;
             this.is_amount = true;
             this.prepayment_deduction = false;
@@ -4332,7 +4395,7 @@ export default {
                 localStorage.removeItem("itemsNotGroupForNotes");
             }
         },
-        setItemFromResponse(item, itemsParsed, sum_quantity = false) {
+        setItemFromResponse(item, itemsParsed) {
             /* Obtiene el igv del item, si no existe, coloca el gravado*/
             if (item.sale_affectation_igv_type !== undefined) {
                 item.affectation_igv_type = item.sale_affectation_igv_type;
@@ -4391,20 +4454,9 @@ export default {
 
             item.quantity = 1;
 
-            if (sum_quantity) {
-                const quantity_from_item_response = this.getQuantityFromItemResponse(
-                    item,
-                    itemsParsed
-                );
-                if (quantity_from_item_response > 0)
-                    item.quantity = quantity_from_item_response;
-            } else {
-                let tempItem = itemsParsed.find(
-                    ip => ip.item_id == item.id || ip.id == item.id
-                );
-                if (tempItem !== undefined) {
-                    item.quantity = tempItem.quantity;
-                }
+            const sourceItem = itemsParsed.find(ip => ip.item_id == item.id || ip.id == item.id);
+            if (sourceItem !== undefined) {
+                item.quantity = sourceItem.quantity;
             }
 
             // item.quantity = itemsParsed.find(ip => ip.item_id == item.id).quantity;
@@ -4421,12 +4473,19 @@ export default {
 
             return item;
         },
-        getQuantityFromItemResponse(item, itemsParsed) {
-            const group_items = itemsParsed.filter(
-                ip => ip.item_id == item.id || ip.id == item.id
+        calculateDispatchInvoiceRow(item, itemsParsed) {
+            const row = this.setItemFromResponse(item, []);
+            row._from_delivery_order = true;
+            const matchingItems = itemsParsed.filter(source => String(source.item_id) === String(item.id));
+            const quantity = exactSum(matchingItems.map(source => exactValue(source, 'quantity')));
+            return calculateRowItem(
+                row,
+                this.form.currency_type_id,
+                this.form.exchange_rate_sale,
+                this.percentage_igv,
+                this.isExportInvoice,
+                quantity.compare(0) > 0 ? quantity.fraction() : null
             );
-
-            return exactSum(group_items.map(row=>exactValue(row,'quantity'))).decimal();
         },
         disabledSeries() {
             return (
@@ -4464,6 +4523,15 @@ export default {
             }
         },
         async onSetFormData(data) {
+            this.invoiceDraftGeneration=(this.invoiceDraftGeneration || 0)+1;
+            this.invoiceCalculationError=null;
+            this.invoiceGlobalDiscountSource=null;
+            this.invoiceGlobalChargeSource=null;
+            this.total_global_charge='0';
+            this.invoiceDiscountRestoreError=null;
+            this.total_global_discount='0';
+            this.recordDiscountsGlobal=null;
+            this.is_amount=true;
             // carga informacion de un documento previo al formulario
             // console.log('onSetFormData')
             this.currency_type = await _.find(this.currency_types, {
@@ -4478,11 +4546,11 @@ export default {
 
             this.form.document_type_id = data.document_type_id;
 
-            this.customers = this.customers.filter(el => el.id !== data.customer_id)
+            this.customers = this.customers.filter(el => !sameInvoiceRecordId(el.id, data.customer_id))
             this.customers.push(data.customer)
 
             if (this.isGeneratedFromExternal && data.customer) {
-                this.all_customers = this.all_customers.filter(el => el.id !== data.customer_id)
+                this.all_customers = this.all_customers.filter(el => !sameInvoiceRecordId(el.id, data.customer_id))
                 this.all_customers.push(data.customer)
             }
 
@@ -4557,7 +4625,10 @@ export default {
                 ? data.invoice.operation_type_id
                 : data.operation_type_id;
             if (this.isExportInvoice) {
-                this.total_global_charge = exactSum(this.form.charges.map(charge => exactAmount(charge.amount_exact ?? charge.amount ?? '0'))).decimal();
+                this.setInvoiceGlobalCharge(exactSum(this.form.charges.map(charge => exactAmount(charge.amount_exact ?? charge.amount ?? '0'))));
+            } else if (!this.config.active_allowance_charge) {
+                this.setInvoiceGlobalCharge(exactSum(this.form.charges.filter(charge=>charge.charge_type_id==='50')
+                    .map(charge=>exactAmount(charge.amount_exact ?? charge.amount ?? '0'))));
             }
             this.form.terms_condition = data.terms_condition || "";
             this.form.guides = data.guides || [];
@@ -4594,18 +4665,6 @@ export default {
 
 
             this.form.quotation_id = data.quotation_id;
-
-            if (data.discounts && data.discounts[0]) {
-                this.recordDiscountsGlobal = data.discounts[0]
-                let discount_type_id = data.discounts[0].discount_type_id
-                if (this.isExportInvoice) {
-                    this.prepareDataGlobalDiscount(data);
-                } else {
-                    this.total_global_discount = discount_type_id !== "02" ? data.total_discount :
-                        exactAmount(data.total_discount).times(exactAmount(1).plus(this.percentage_igv)).decimal();
-                }
-            }
-
 
             this.form.additional_information = this.onPrepareAdditionalInformation(
                 data.additional_information
@@ -4647,6 +4706,7 @@ export default {
 
             this.prepareDataCustomer();
 
+            if (this.restoreInvoiceGlobalDiscount(data)===false) return false;
             this.regenerateItems();
             this.calculateTotal();
             // this.currency_type = _.find(this.currency_types, {'id': this.form.currency_type_id})
@@ -4708,12 +4768,72 @@ export default {
                     this.is_amount = discounts[0].is_amount;
                 }
 
-                this.total_global_discount = this.is_amount
-                    ? discounts[0].amount
-                    : discounts[0].factor * 100;
+                const discount = discounts[0];
+                if (this.is_amount) {
+                    this.setInvoiceGlobalDiscount(exactAmount(discount.amount_exact ?? discount.amount));
+                } else {
+                    let percentage = discount.percentage != null
+                        ? exactAmount(discount.percentage) : exactAmount(discount.factor).times(100);
+                    if (this.isExportInvoice && discount.percentage == null && discount.amount_exact != null) {
+                        const base = exactSum(this.form.items.filter(item => item.affectation_igv_type_id === 'EXP')
+                            .map(item => exactValue(item, 'total_value')));
+                        if (base.compare(0) > 0) percentage = exactAmount(discount.amount_exact).times(100).dividedBy(base);
+                    }
+                    this.setInvoiceGlobalDiscount(percentage);
+                }
             }
 
             return discounts;
+        },
+        restoreInvoiceGlobalDiscount(data) {
+            const restore=captureInvoiceEdit(this);
+            try {
+                const headers=Object.values(data.discounts || {});
+                if (headers.length>1) throw new Error('La factura tiene varios descuentos globales. Revise sus ajustes antes de editarla.');
+                if (headers.length===1) {
+                    this.recordDiscountsGlobal=headers[0];
+                    this.prepareDataGlobalDiscount(data);
+                    if (!this.isExportInvoice && this.is_amount) {
+                        this.setInvoiceGlobalDiscount(this.invoiceDiscountInputForBase(
+                            exactAmount(headers[0].amount_exact ?? headers[0].amount),headers[0].discount_type_id));
+                    }
+                    return true;
+                }
+                if (this.isExportInvoice) return true;
+                const portions=this.form.items.map(item=>{
+                    const discounts=(item.discounts || []).filter(discount=>discount.from_global_distribution===true);
+                    return {discounts,amount:exactSum(discounts.map(discount=>exactAmount(discount.amount_exact ?? discount.amount_without_rounded ?? discount.amount)))};
+                });
+                const kinds=new Set(portions.flatMap(row=>row.discounts.map(discount=>discount.discount_type_id)));
+                if (!kinds.size) return true;
+                if (kinds.size!==1 || !['00','01'].includes([...kinds][0])) throw new Error('No se puede reconstruir el descuento global guardado sin cambiar sus partidas.');
+                const type=[...kinds][0]==='00' ? '02' : '03';
+                const amount=exactSum(portions.map(row=>row.amount));
+                this.clearGlobalDistributionDiscounts();
+                const selected=this.form.items.filter(item=>this.isDiscountableAffectation(item));
+                const base=exactSum(selected.map(item=>exactValue(item,'total_value')));
+                if (base.compare(0)<=0) throw new Error('El descuento global guardado no tiene una base válida.');
+                this.form.items.forEach((item,index)=>{
+                    const expected=this.isDiscountableAffectation(item) ? exactValue(item,'total_value').times(amount).dividedBy(base) : exactAmount(0);
+                    if (portions[index].amount.compare(expected)!==0) throw new Error('El descuento global guardado no coincide con su reparto original. No se modificaron sus importes.');
+                });
+                // Distributed lines retain the fixed shares, not the original
+                // percentage input. Recover an equivalent fixed amount only.
+                this.is_amount=true;this.recordDiscountsGlobal={discount_type_id:type};
+                this.setInvoiceGlobalDiscount(this.invoiceDiscountInputForBase(amount,type));
+                return true;
+            } catch (error) {
+                restore();this.invoiceDiscountRestoreError=error.message;this.invoiceCalculationError=error.message;
+                this.$message.error(error.message);return false;
+            }
+        },
+        invoiceDiscountInputForBase(amount,type) {
+            if (type!=='02' || !this.configuration.exact_discount) return amount;
+            const rows=this.form.items.filter(item=>this.isDiscountableAffectation(item));
+            const base=exactSum(rows.map(item=>exactValue(item,'total_value')));
+            if (base.compare(0)<=0) throw new Error('El descuento global no tiene una base válida.');
+            const taxed=exactSum(rows.filter(item=>item.affectation_igv_type_id==='10').map(item=>exactValue(item,'total_value')));
+            return amount.times(exactAmount(1).plus(exactAmount(this.percentage_igv).times(taxed).dividedBy(base)));
         },
         async prepareDataCustomer() {
             const customer = _.find(this.customers, {
@@ -4824,23 +4944,14 @@ export default {
                 id: this.form.prepayments[index].document_id
             });
         },
-        inputAmountPrepayment(index) {
-            let prepayment = this.getPrepayment(index);
-
-            if (
-                exactAmount(this.form.prepayments[index].amount).compare(prepayment.amount) > 0
-            ) {
-                this.form.prepayments[index].amount = prepayment.amount;
-                this.$message.error(
-                    "El monto debe ser menor o igual al del anticipo"
-                );
-            }
-
-            this.form.prepayments[index].total = this.form.affectation_type_prepayment == 10
-                ? exactAmount(this.form.prepayments[index].amount).times(exactAmount(1).plus(this.percentage_igv)).decimal()
-                : String(this.form.prepayments[index].amount);
-
-            this.changeTotalPrepayment();
+        inputAmountPrepayment(index, enteredAmount) {
+            try {
+                const result = updatePrepaymentInput(this.form.prepayments[index], this.getPrepayment(index),
+                    this.form.affectation_type_prepayment, this.percentage_igv, enteredAmount);
+                this.$set(this.form.prepayments, index, result.row);
+                if (result.clamped) this.$message.error('El monto debe ser menor o igual al del anticipo');
+                this.changeTotalPrepayment();
+            } catch (error) { this.$message.error(error.message); }
         },
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
         changeDestinationSale() {
@@ -4944,29 +5055,15 @@ export default {
             return (this.form.currency_type_id === 'USD' ? price.dividedBy(this.form.exchange_rate_sale) : price.times(this.form.exchange_rate_sale)).decimal();
         },
         discountGlobalPrepayment() {
-            const amount = exactSum(this.form.prepayments.map(row => row.amount || '0'));
-            this.form.total_prepayment = exactSum(this.form.prepayments.map(row => row.total || '0')).decimal();
-            const taxed = String(this.form.affectation_type_prepayment) === '10';
-            const type = taxed ? '04' : '05';
-            this.form.discounts = this.form.discounts.filter(row => !['04','05'].includes(row.discount_type_id));
-            const base = exactSum(this.form.items.filter(row => row.affectation_igv_type_id === (taxed ? '10' : '20')).map(row => exactValue(row, 'total_base_igv')));
-            if (amount.compare(0) > 0 && base.compare(0) > 0) this.form.discounts.push({discount_type_id: type,
-                description: 'Descuento por anticipos', amount: amount.decimal(), amount_exact: amount.fraction(),
-                base: base.decimal(), factor: amount.dividedBy(base).decimal(), is_amount: true});
+            return applyPrepaymentDiscount(this.form);
         },
         // ######## FIN CALCULOS EXACTOS SAB ########
         async changeDocumentPrepayment(index) {
-            let prepayment = await _.find(this.prepayment_documents, {
-                id: this.form.prepayments[index].document_id
-            });
-
-            this.form.prepayments[index].number = prepayment.description;
-            this.form.prepayments[index].document_type_id =
-                prepayment.document_type_id;
-            this.form.prepayments[index].amount = prepayment.amount;
-            this.form.prepayments[index].total = prepayment.total;
-
-            await this.changeTotalPrepayment();
+            try {
+                const selected = this.getPrepayment(index);
+                this.$set(this.form.prepayments, index, selectPrepayment(this.form.prepayments[index], selected));
+                await this.changeTotalPrepayment();
+            } catch (error) { this.$message.error(error.message); }
         },
         clickAddPrepayment() {
             this.form.prepayments.push({
@@ -4986,6 +5083,7 @@ export default {
                 this.deletePrepaymentDiscount();
         },
         async changePrepaymentDeduction() {
+            this.resetInvoicePrepaymentOptions();
             this.form.prepayments = [];
             this.form.total_prepayment = 0;
             await this.deletePrepaymentDiscount();
@@ -5065,18 +5163,8 @@ export default {
                 this.changeTotalPrepayment();
             }
         },
-        getDocumentsPrepayment() {
-            this.$http
-                .get(
-                    `/${this.resource}/prepayments/${
-                        this.form.affectation_type_prepayment
-                    }`
-                )
-                .then(response => {
-                    this.prepayment_documents = response.data;
-                });
-        },
         changeTotalPrepayment() {
+            this.discountGlobalPrepayment();
             this.calculateTotal();
         },
         isActiveBussinessTurn(value) {
@@ -5253,26 +5341,24 @@ export default {
                     });
                 temp_all_customers = this.all_customers.filter(
                     (item, index, self) =>
-                        index === self.findIndex(t => t.id === item.id)
+                        index === self.findIndex(t => sameInvoiceRecordId(t.id, item.id))
                 );
                 temp_customers = this.customers.filter(
                     (item, index, self) =>
-                        index === self.findIndex(t => t.id === item.id)
+                        index === self.findIndex(t => sameInvoiceRecordId(t.id, item.id))
                 );
                 this.all_customers = temp_all_customers;
                 this.customers = temp_customers;
                 await this.filterCustomers();
                 // this.form.customer_id = (this.customers.length > 0) ? this.establishment.customer_id : null
-                let alt = _.find(this.customers, {
-                    id: this.establishment.customer_id
-                });
+                const alt = this.customers.find(customer => sameInvoiceRecordId(customer.id, this.establishment.customer_id));
                 // console.log(alt)
 
                 if (alt !== undefined) {
-                    this.form.customer_id = this.establishment.customer_id;
+                    this.form.customer_id = alt.id;
 
                     let seller = this.sellers.find(
-                        element => element.id == alt.seller_id
+                        element => sameInvoiceRecordId(element.id, alt.seller_id)
                     );
                     if (seller !== undefined) {
                         this.form.seller_id = seller.id;
@@ -5303,24 +5389,25 @@ export default {
             }
 
             const customerId = this.preloadedCustomerId;
+            const matchesCustomer = customer => sameInvoiceRecordId(customer.id, customerId);
+            const selectedCustomer = this.customers.find(matchesCustomer);
+            const catalogCustomer = this.all_customers.find(matchesCustomer);
             const existingCustomer =
-                this.preloadedCustomer ||
-                _.find(this.customers, { id: customerId }) ||
-                _.find(this.all_customers, { id: customerId });
+                selectedCustomer || catalogCustomer || this.preloadedCustomer;
 
             if (!existingCustomer) {
                 return;
             }
 
-            if (!_.find(this.all_customers, { id: customerId })) {
+            if (!catalogCustomer) {
                 this.all_customers.push(existingCustomer);
             }
 
-            if (!_.find(this.customers, { id: customerId })) {
+            if (!selectedCustomer) {
                 this.customers.push(existingCustomer);
             }
 
-            this.form.customer_id = customerId;
+            this.form.customer_id = existingCustomer.id;
         },
         cleanCustomer() {
             if (this.shouldProtectPreloadedCustomer()) {
@@ -5411,7 +5498,7 @@ export default {
                 this.form.series_id = null;
             }
             let series = this.all_series.filter(s =>
-                Number(s.establishment_id) === Number(this.form.establishment_id) &&
+                String(s.establishment_id) === String(this.form.establishment_id) &&
                 String(s.document_type_id) === String(this.form.document_type_id) &&
                 Boolean(s.contingency) === Boolean(this.is_contingency)
             );
@@ -5420,7 +5507,7 @@ export default {
                 this.typeUser == "seller"
             ) {
                 // Se filtra si el documento es el mismo que el establecido para el usuario.
-                series = series.filter(s => Number(s.id) === Number(this.config.user.serie));
+                series = series.filter(s => String(s.id) === String(this.config.user.serie));
             }
 
             //console.log(series);
@@ -5484,6 +5571,7 @@ export default {
             // console.log('enable_barcode', this.$refs.item_search_quick_sale.search_item_by_barcode);
             if (this.recordItem) {
                 //this.form.items.$set(this.recordItem.indexi, row)
+                if (this.recordItem._from_delivery_order) row._from_delivery_order = true;
                 this.form.items[this.recordItem.indexi] = row;
                 this.recordItem = null;
 
@@ -5545,29 +5633,34 @@ export default {
             );
         },
         getUnifiedItemIndex(row) {
-            const presentationId = _.get(row, "item.presentation.id", null);
+            // Conversion rows already carry the grouping and provenance from the server.
+            if (row.source_sale_note_items?.length) return -1;
+            const presentation = row.item?.presentation;
+            const factor = source => source?.quantity_unit_exact ??
+                source?.calculation_snapshot?.values?.quantity_unit ?? source?.quantity_unit ?? '1';
+            const samePresentation = item => {
+                const current = item.item?.presentation;
+                if (String(current?.id ?? '') !== String(presentation?.id ?? '')) return false;
+                try {
+                    return exactAmount(factor(current)).compare(factor(presentation)) === 0;
+                } catch (_) {
+                    return false;
+                }
+            };
 
-            return this.form.items.findIndex(item => {
-                const itemPresentationId = _.get(
-                    item,
-                    "item.presentation.id",
-                    null
-                );
-
-                return (
-                    canMergeRowQuantity(item) &&
-                    canMergeRowPrice(item, row) &&
-                    String(item.item_id) === String(row.item_id) &&
-                    String(itemPresentationId || "") ===
-                        String(presentationId || "") &&
-                    String(item.affectation_igv_type_id || "") ===
-                        String(row.affectation_igv_type_id || "") &&
-                    String(item.unit_price || "") ===
-                        String(row.unit_price || "") &&
-                    String(item.warehouse_id || "") ===
-                        String(row.warehouse_id || "")
-                );
-            });
+            return this.form.items.findIndex(item =>
+                !item.source_sale_note_items?.length &&
+                canMergeRowQuantity(item) &&
+                canMergeRowPrice(item, row) &&
+                String(item.item_id) === String(row.item_id) &&
+                samePresentation(item) &&
+                String(item.affectation_igv_type_id || "") ===
+                    String(row.affectation_igv_type_id || "") &&
+                String(item.unit_price || "") ===
+                    String(row.unit_price || "") &&
+                String(item.warehouse_id || "") ===
+                    String(row.warehouse_id || "")
+            );
         },
         clickRemoveItem(index) {
             this.form.items.splice(index, 1);
@@ -5580,17 +5673,21 @@ export default {
             let rate;
             try { rate = normalizeExchangeRate(value); } catch (_) { return; }
             if (!this.form.items?.length) return;
-            if (this.enabled_discount_global) this.clearGlobalDistributionDiscounts();
+            if (this.enabled_discount_global || this.recordDiscountsGlobal) this.clearGlobalDistributionDiscounts();
             this.form.items = this.form.items.map(row => calculateRowItem(row, this.form.currency_type_id, rate, this.percentage_igv, this.isExportInvoice));
             this.calculateTotal();
         },
         // ######## FIN RECALCULO REACTIVO DE TASA ########
-        changeCurrencyType() {
+        changeCurrencyType(previousCurrency = this.form.currency_type_id) {
+            const discount = this.invoiceGlobalDiscountExact(previousCurrency);
+            const charge = this.invoiceGlobalChargeExact(previousCurrency);
+            if (this.enabled_discount_global || this.recordDiscountsGlobal) this.clearGlobalDistributionDiscounts();
             this.currency_type = _.find(this.currency_types, {
                 id: this.form.currency_type_id
             });
             let items = [];
             this.form.items.forEach(row => {
+                if (previousCurrency!==this.form.currency_type_id) row=this.convertInvoiceLineDiscounts(row,previousCurrency);
                 items.push(
                     calculateRowItem(
                         row,
@@ -5602,32 +5699,55 @@ export default {
             });
             this.form.items = items;
 
-            if (this.form.currency_type_id === 'VES') {
-                this.total_global_discount = exactAmount(this.total_global_discount).times(exactAmount(this.form.exchange_rate_sale)).final(2)
-            } else {
-                this.total_global_discount = exactAmount(this.total_global_discount).dividedBy(exactAmount(this.form.exchange_rate_sale)).final(2)
+            if (previousCurrency!==this.form.currency_type_id) {
+                const rate=exactAmount(normalizeExchangeRate(this.form.exchange_rate_sale));
+                const convert=amount=>this.form.currency_type_id==='VES' ? amount.times(rate) : amount.dividedBy(rate);
+                this.form.charges=(this.form.charges || []).map(row=>{
+                    const amount=convert(exactAmount(row.amount_exact ?? row.amount ?? 0));
+                    return {...row,amount:amount.decimal(),amount_exact:amount.fraction()};
+                });
+                if (this.isExportInvoice || !this.config.active_allowance_charge) this.setInvoiceGlobalCharge(convert(charge));
             }
-            this.calculateTotal();
+
+            if (this.is_amount) {
+                const currency=this.form.currency_type_id;
+                if (!['VES','USD'].includes(previousCurrency) || !['VES','USD'].includes(currency)) throw new Error('Seleccione una moneda válida.');
+                const rate=previousCurrency===currency ? null : exactAmount(normalizeExchangeRate(this.form.exchange_rate_sale));
+                this.setInvoiceGlobalDiscount(previousCurrency===currency ? discount
+                    : currency==='VES' ? discount.times(rate) : discount.dividedBy(rate));
+            } else {
+                this.setInvoiceGlobalDiscount(discount);
+            }
+            return this.calculateTotal();
         },
         // ######## INICIO CALCULOS EXACTOS SAB ########
+        hasPositiveInvoiceAmount(field) {
+            return exactValue(this.form, field).compare(0) > 0;
+        },
         calculateTotal() {
-            if (this.enabled_discount_global) this.clearGlobalDistributionDiscounts();
-            Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment));
+            if (this.invoiceDiscountRestoreError) { this.invoiceCalculationError=this.invoiceDiscountRestoreError;return false; }
+            this.invoiceCalculationError=null;
+            if (this.enabled_discount_global || this.recordDiscountsGlobal) this.clearGlobalDistributionDiscounts();
+            Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment, this.form.prepayments));
             this.subtotal_before_global_discount = this.form.total;
             this.total_discount_no_base = '0';
-            if (this.enabled_discount_global || (this.isExportInvoice && this.recordDiscountsGlobal)) this.discountGlobalItems(this.form);
+            if ((this.enabled_discount_global || this.recordDiscountsGlobal) && this.discountGlobalItems(this.form)===false) {
+                this.invoiceCalculationError='Revise el descuento global: supera la base actual de la factura.';
+                return false;
+            }
             if (this.prepayment_deduction) this.discountGlobalPrepayment();
             if (this.isExportInvoice) this.applyExportGlobalCharge();
             else this.chargeGlobal();
-            Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment));
+            Object.assign(this.form, documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment, this.form.prepayments));
             this.setTotalDefaultPayment();
             this.setPendingAmount();
             this.calculateFee();
             this.setTotalPointsBySale(this.config);
+            return true;
         },
         // ######## FIN CALCULOS EXACTOS SAB ########
         recalculateDecimalTotalTaxed(total, igv) {
-            return total - igv;
+            return exactAmount(total).minus(igv).decimal();
         },
         verifyRecalculateTotalTaxed() {
             const keysToCheck = [
@@ -5654,7 +5774,7 @@ export default {
         },
         // ######## INICIO CALCULOS EXACTOS SAB ########
         applyExportGlobalCharge() {
-            const amount = exactAmount(this.total_global_charge || '0');
+            const amount = this.invoiceGlobalChargeExact();
             const base = exactValue(documentTotals(this.form.items, this.form.discounts), 'total_value');
             const charges = this.form.charges.length ? this.form.charges : [{charge_type_id: '50', description: 'Cargos globales', amount: '1'}];
             const weights = charges.map(row => exactAmount(row.amount_exact ?? row.amount ?? '0'));
@@ -5666,16 +5786,16 @@ export default {
         },
         chargeGlobal() {
             const others = this.form.charges.filter(row => row.charge_type_id !== '50');
-            const base = exactValue(documentTotals(this.form.items, this.form.discounts, others, this.form.total_prepayment), 'total');
-            const amount = this.config.active_allowance_charge ? base.times(this.config.percentage_allowance_charge || '0').dividedBy(100) : exactAmount(this.total_global_charge || '0');
-            this.total_global_charge = amount.decimal();
+            const base = exactValue(documentTotals(this.form.items, this.form.discounts, others, this.form.total_prepayment, this.form.prepayments), 'total');
+            const amount = this.config.active_allowance_charge ? base.times(this.invoiceAllowancePercent ?? this.config.percentage_allowance_charge ?? '0').dividedBy(100) : this.invoiceGlobalChargeExact();
+            this.setInvoiceGlobalCharge(amount);
             this.form.charges = others;
             if (amount.compare(0) > 0) this.form.charges.push({charge_type_id: '50', description: 'Cargos globales que no afectan la base imponible del IVA',
                 base: base.decimal(), amount: amount.decimal(), amount_exact: amount.fraction(), factor: base.compare(0) > 0 ? amount.dividedBy(base).decimal() : '0'});
         },
         chargeConsumptionSurcharge() {
             this.form.charges = this.form.charges.filter(row => row.charge_type_id !== '46');
-            const base = exactValue(documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment), 'total');
+            const base = exactValue(documentTotals(this.form.items, this.form.discounts, this.form.charges, this.form.total_prepayment, this.form.prepayments), 'total');
             const amount = this.is_consumption_charge ? base.times(this.restaurant_tip_factor || '0').dividedBy(100) : exactAmount(0);
             this.total_consumption_charge = amount.decimal();
             if (amount.compare(0) > 0) this.form.charges.push({charge_type_id: '46', description: 'Recargo al consumo y/o propinas',
@@ -5697,6 +5817,114 @@ export default {
         },
         changeTotalGlobalDiscount() {
             this.calculateTotal();
+        },
+        invoiceInputKey(row) {
+            const key=Symbol.for('pro9.invoice.input.identity');
+            if (!row[key]) row[key]=Symbol('invoice-line');
+            return row[key];
+        },
+        currentInvoiceDecimal(kind,index) {
+            if (kind==='row') return this.rowDiscountValue(this.form.items[index]);
+            return String(kind==='allowance' ? this.invoiceAllowancePercent : kind==='discount' ? this.total_global_discount : this.total_global_charge);
+        },
+        invoiceGlobalDiscountExact(currency = this.form.currency_type_id) {
+            const source=this.invoiceGlobalDiscountSource;
+            return exactAmount(source && source.currency===currency && source.projection===String(this.total_global_discount)
+                ? source.amount : this.total_global_discount || '0');
+        },
+        convertInvoiceLineDiscounts(row,previousCurrency) {
+            if (!['VES','USD'].includes(previousCurrency) || !['VES','USD'].includes(this.form.currency_type_id)) throw new Error('Seleccione una moneda válida.');
+            const rate=exactAmount(normalizeExchangeRate(this.form.exchange_rate_sale));
+            const discounts=(row.discounts || []).map(discount=>{
+                if (!discount.is_amount) return discount;
+                const amount=exactAmount(discount.amount_exact ?? discount.amount_without_rounded
+                    ?? (discount.use_input_amount===false ? discount.percentage : discount.amount ?? discount.percentage) ?? 0);
+                const converted=this.form.currency_type_id==='VES' ? amount.times(rate) : amount.dividedBy(rate);
+                return {...discount,amount:converted.decimal(),amount_exact:converted.fraction(),use_input_amount:true,
+                    ...(discount.amount_without_rounded!=null ? {amount_without_rounded:converted.decimal()} : {})};
+            });
+            return {...row,discounts};
+        },
+        setInvoiceGlobalDiscount(amount) {
+            this.total_global_discount=amount.decimal();
+            this.invoiceGlobalDiscountSource={currency:this.form.currency_type_id,projection:this.total_global_discount,amount:amount.fraction()};
+        },
+        invoiceGlobalChargeExact(currency = this.form.currency_type_id) {
+            const source=this.invoiceGlobalChargeSource;
+            return exactAmount(source && source.currency===currency && source.projection===String(this.total_global_charge)
+                ? source.amount : this.total_global_charge || '0');
+        },
+        setInvoiceGlobalCharge(amount) {
+            this.total_global_charge=amount.decimal();
+            this.invoiceGlobalChargeSource={currency:this.form.currency_type_id,projection:this.total_global_charge,amount:amount.fraction()};
+        },
+        applyInvoiceDecimal(kind, value, index = null, input = null) {
+            if (input && !this._invoiceAdjustmentsCommitting) {
+                return this.commitPendingInvoiceAdjustments() ? this.currentInvoiceDecimal(kind,index) : false;
+            }
+            const restore=captureInvoiceEdit(this);
+            try {
+                if (kind==='row') {
+                    if (this.applyItemDiscount(index,value)===false) { restore();return false; }
+                    return this.currentInvoiceDecimal(kind,index);
+                }
+                if (kind==='allowance') this.invoiceAllowancePercent=value;
+                else if (kind==='discount') { this.total_global_discount=value;this.invoiceGlobalDiscountSource=null;this.invoiceDiscountRestoreError=null; }
+                else if (kind==='charge') { this.total_global_charge=value;this.invoiceGlobalChargeSource=null; }
+                else throw new Error('Ajuste de factura inválido.');
+                if (this.calculateTotal()===false) { restore();return false; }
+                return this.currentInvoiceDecimal(kind,index);
+            } catch (error) {
+                restore();this.$message.error(error.message);return false;
+            }
+        },
+        commitPendingInvoiceAdjustments() {
+            if (this._invoiceAdjustmentsCommitting) return true;
+            const refs=this.$refs || {};
+            const controls=[];
+            for (const name of ['invoiceAllowanceInput','invoiceDiscountInput','invoiceChargeInput','invoiceRowDiscountInputs']) {
+                const inputs=Array.isArray(refs[name]) ? refs[name] : [refs[name]];
+                for (const input of inputs) if (input) controls.push(input);
+            }
+            if (!controls.length) return true;
+            for (const input of controls) if (!input.validatePending().valid) return false;
+            const restore=captureInvoiceEdit(this);
+            const drafts=controls.map(input=>({input,draft:input.draft,dirty:input.dirty,error:input.error}));
+            this._invoiceAdjustmentsCommitting=true;
+            try {
+                for (const input of controls) if (!input.commitPending()) {
+                    const error=input.error;restore();
+                    for (const state of drafts) Object.assign(state.input,{draft:state.draft,dirty:state.dirty,error:state.error});
+                    input.error=error;return false;
+                }
+                return true;
+            } catch (error) {
+                restore();
+                for (const state of drafts) Object.assign(state.input,{draft:state.draft,dirty:state.dirty,error:state.error});
+                this.$message.error(error.message);return false;
+            } finally { this._invoiceAdjustmentsCommitting=false; }
+        },
+        changeInvoiceCurrencyType(currency) {
+            if (!this.commitPendingInvoiceAdjustments()) return false;
+            const restore=captureInvoiceEdit(this);
+            try {
+                const previousCurrency=this.form.currency_type_id;
+                if (this.prepayment_deduction && previousCurrency !== currency) this.clearInvoicePrepaymentRows();
+                if (this.enabled_discount_global || this.recordDiscountsGlobal) this.clearGlobalDistributionDiscounts();
+                this.form.currency_type_id=currency;
+                if (this.changeCurrencyType(previousCurrency)===false) { restore();return false; }
+                return true;
+            } catch (error) { restore();this.$message.error(error.message);return false; }
+        },
+        changeInvoiceDiscountMode(mode) {
+            if (!this.commitPendingInvoiceAdjustments()) return false;
+            const restore=captureInvoiceEdit(this);
+            try {
+                this.is_amount=mode;
+                this.invoiceGlobalDiscountSource=null;
+                if (this.calculateTotal()===false) { restore();return false; }
+                return true;
+            } catch (error) { restore();this.$message.error(error.message);return false; }
         },
         deleteDiscountGlobal() {
             let discount = _.find(this.form.discounts, {
@@ -5720,7 +5948,7 @@ export default {
                 id: this.configuration.global_discount_type_id
             });
         },
-        setGlobalDiscount(factor, amount, base, amount_without_rounded) {
+        setGlobalDiscount(factor, amount, base, amount_without_rounded, percentage = null) {
             this.form.discounts.push({
                 discount_type_id: this.recordDiscountsGlobal ? this.recordDiscountsGlobal.discount_type_id : this.global_discount_type.id,
                 description: this.recordDiscountsGlobal ? this.recordDiscountsGlobal.description : this.global_discount_type.description,
@@ -5728,6 +5956,7 @@ export default {
                 amount: amount,
                 base: base,
                 is_amount: this.is_amount,
+                percentage: percentage,
                 amount_without_rounded: amount_without_rounded,
                 amount_exact: exactAmount(amount_without_rounded ?? amount).fraction()
             });
@@ -5800,13 +6029,14 @@ export default {
          * Valor de la linea sobre el que se calcula un descuento.
          */
         itemValueForDiscount(item) { return exactValue(item, 'total_value').decimal(); },
-        itemDiscountDisplayAmount(item, predicate) {
+        itemDiscountExactAmount(item, predicate) {
             const multiplier = item.affectation_igv_type_id === '10' ? exactAmount(1).plus(this.percentage_igv) : exactAmount(1);
             return exactSum((item.discounts || []).filter(discount => !predicate || predicate(discount)).map(discount => {
                 const amount = exactAmount(discount.amount_exact ?? discount.amount_without_rounded ?? discount.amount ?? '0');
                 return this.isBaseDiscount(discount) ? amount.times(multiplier) : amount;
-            })).decimal();
+            }));
         },
+        itemDiscountDisplayAmount(item, predicate) { return this.itemDiscountExactAmount(item, predicate).decimal(); },
         isBaseDiscount(discount) {
             if (discount.discount_type) return !!discount.discount_type.base;
 
@@ -5823,7 +6053,7 @@ export default {
             item.discounts = item.discounts || [];
             target = exactAmount(target);
             const own = discount => !discount.from_global_distribution;
-            const current = exactAmount(this.itemDiscountDisplayAmount(item, own));
+            const current = this.itemDiscountExactAmount(item, own);
             if (target.compare(0) <= 0) { item.discounts = item.discounts.filter(discount => !own(discount)); return; }
             if (current.compare(0) > 0) {
                 const factor = target.dividedBy(current);
@@ -5877,41 +6107,46 @@ export default {
         applyItemDiscount(index, value) {
             let item = this.form.items[index];
             if (!item) return;
-            const global = exactAmount(this.itemDiscountDisplayAmount(item, discount => discount.from_global_distribution));
+            const global = this.itemDiscountExactAmount(item, discount => discount.from_global_distribution);
             let target = exactAmount(value || '0').minus(global);
             if (target.compare(0) < 0) target = exactAmount(0);
-            const maximum = exactValue(item, 'total').plus(this.itemDiscountDisplayAmount(item, discount => !discount.from_global_distribution));
+            const maximum = exactValue(item, 'total').plus(this.itemDiscountExactAmount(item, discount => !discount.from_global_distribution));
             if (target.compare(maximum) > 0) { target = maximum; this.$message.warning(`El descuento no puede superar ${maximum.decimal()}`); }
             this.clearGlobalDistributionDiscounts();
             item = this.form.items[index];
             this.spreadItemDiscount(item, target);
             this.recalculateDiscountedItems([index]);
-            this.calculateTotal();
+            return this.calculateTotal();
         },
         // ######## INICIO CALCULOS EXACTOS SAB ########
         discountGlobalItems(ctx) {
             if (this.isExportInvoice) {
                 this.deleteDiscountGlobal();
                 const base = this.form.items ? exactSum(this.form.items.filter(item => item.affectation_igv_type_id === 'EXP').map(item => exactValue(item, 'total_value'))) : exactValue(ctx, 'total_exportation');
-                const amount = this.is_amount ? exactAmount(this.total_global_discount || '0') : base.times(this.total_global_discount || '0').dividedBy(100);
-                if (amount.compare(0) < 0 || amount.compare(base) > 0) { this.$message.error('El descuento supera el valor exportado.'); return; }
-                if (amount.compare(0) > 0 && base.compare(0) > 0) this.setGlobalDiscount(amount.dividedBy(base).decimal(), amount.decimal(), base.decimal(), amount.fraction());
+                const discount = this.invoiceGlobalDiscountExact();
+                const amount = this.is_amount ? discount : base.times(discount).dividedBy(100);
+                if (amount.compare(0) < 0 || amount.compare(base) > 0) { this.$message.error('El descuento supera el valor exportado.'); return false; }
+                if (amount.compare(0) > 0 && base.compare(0) > 0) {
+                    const percentage = discount.decimal();
+                    this.setGlobalDiscount(amount.dividedBy(base).decimal(), amount.decimal(), base.decimal(), amount.fraction(),
+                        !this.is_amount && discount.compare(percentage) === 0 ? percentage : null);
+                }
                 const total = base.minus(amount).decimal();
                 Object.assign(this.form, {total_exportation: total, total_value: total, total, subtotal: total,
                     total_discount: exactAmount(this.form.total_discount || '0').plus(amount).decimal()});
                 return;
             }
             this.clearGlobalDistributionDiscounts();
-            if (!this.total_global_discount || exactAmount(this.total_global_discount).compare(0) <= 0) return;
+            if (this.invoiceGlobalDiscountExact().compare(0) <= 0) return;
             const selected = this.form.items.filter(item => this.isDiscountableAffectation(item));
             const base = exactSum(selected.map(item => exactValue(item, 'total_value')));
-            if (base.compare(0) <= 0) return;
+            if (base.compare(0) <= 0) { this.$message.error('No existe una base positiva para el descuento global.');return false; }
             const type = this.recordDiscountsGlobal?.discount_type_id || this.global_discount_type.id;
             const taxed = exactSum(selected.filter(item => item.affectation_igv_type_id === '10').map(item => exactValue(item, 'total_value')));
-            let amount = exactAmount(this.total_global_discount);
+            let amount = this.invoiceGlobalDiscountExact();
             if (!this.is_amount) amount = base.times(amount).dividedBy(100);
             else if (type === '02' && this.configuration.exact_discount) amount = amount.dividedBy(exactAmount(1).plus(exactAmount(this.percentage_igv).times(taxed).dividedBy(base)));
-            if (amount.compare(base) > 0) { this.$message.error('El descuento supera su base.'); return; }
+            if (amount.compare(base) > 0) { this.$message.error('El descuento supera su base.'); return false; }
             this.deleteDiscountGlobal();
             selected.forEach(item => {
                 const share = exactValue(item, 'total_value').times(amount).dividedBy(base);
@@ -6003,6 +6238,8 @@ export default {
             if (this.thirdPartyMode && (!this.form.third_party_id || !this.thirdPartyAvailable || this.form.payment_condition_id !== '01')) {
                 return this.$message.error('Seleccione el tercero y mantenga una Factura de venta interna al contado.');
             }
+            if (!this.commitPendingInvoiceAdjustments()) return;
+            if (this.invoiceCalculationError) return this.$message.error(this.invoiceCalculationError);
             if (!this.thirdPartyMode) this.form.third_party_id = null;
             let customer = _.find(this.customers, {
                 id: this.form.customer_id
@@ -6013,7 +6250,7 @@ export default {
             }
 
             // Normalizar IdLoteSelected en cada ítem antes de validar y enviar
-            this.ensureItemsLotsForSubmit();
+            if (this.ensureItemsLotsForSubmit() === false) return false;
 
             // Validando lotes (origen) — misma regla que DocumentRequest / lots_group.vue
             const lotsValidation = validateItemsLots(this.form.items);
@@ -6023,14 +6260,7 @@ export default {
             }
 
             //Validando las series seleccionadas
-            let errorSeries = false;
-            _.forEach(this.form.items, row => {
-                if (row.item.series_enabled) {
-                    errorSeries =
-                        parseFloat(row.quantity) !== row.item.lots.length;
-                    return false;
-                }
-            });
+            const errorSeries = !invoiceSeriesValid(this.form.items);
 
             // Validar campos personalizados requeridos
             if (this.$refs.customFieldsRenderer) {
@@ -6097,14 +6327,6 @@ export default {
                     );
             }
 
-            if (this.config.enabled_guarantee_fund) {
-                let fund_obj = 0 || {}
-
-                if(parseFloat(fund_obj.guarantee_fund) > this.form.total_pending_payment) {
-                    return this.$message.error('El fondo de garantía no puede ser mayor al monto pendiente')
-                }
-            }
-
             // validacion sistema por puntos
 
             if (this.isGeneratedFromExternal) {
@@ -6120,7 +6342,7 @@ export default {
 
             // Asegurar IdLoteSelected a nivel de fila e ítem antes del POST
             // (la UI puede resolverlo desde item.IdLoteSelected / lots_group, pero el backend lee row.IdLoteSelected)
-            this.ensureItemsLotsForSubmit();
+            if (this.ensureItemsLotsForSubmit() === false) return false;
 
             // Capturar el cliente antes del submit, ya que resetForm() limpia el customer
             this.customerCurrent = this.getCustomer;
@@ -6276,7 +6498,8 @@ export default {
                 return;
             }
 
-            const preloadedCustomer = _.find(this.customers, { id: customer_id });
+            const matchesCustomer = customer => sameInvoiceRecordId(customer.id, customer_id);
+            const preloadedCustomer = this.customers.find(matchesCustomer);
 
             await this.$http
                 .get(`/${this.resource}/search/customer/${customer_id}`, {params: {operation_type_id: this.form.operation_type_id}})
@@ -6287,7 +6510,7 @@ export default {
                         this.customers = [preloadedCustomer];
                     }
 
-                    this.form.customer_id = customer_id;
+                    this.form.customer_id = this.customers.find(matchesCustomer)?.id ?? customer_id;
 
                     this.$nextTick(() => {
                         this.changeCustomer();
@@ -6297,7 +6520,7 @@ export default {
         changeCustomer() {
             if (
                 this.preloadedCustomerId &&
-                this.form.customer_id !== this.preloadedCustomerId
+                !sameInvoiceRecordId(this.form.customer_id, this.preloadedCustomerId)
             ) {
                 this.preloadedCustomerId = null;
                 this.preloadedCustomer = null;
@@ -6307,9 +6530,7 @@ export default {
             this.customer_addresses = [];
             this.form.customer_address_id = null;
 
-            const customer = _.find(this.customers, {
-                id: this.form.customer_id
-            });
+            const customer = this.customers.find(row => sameInvoiceRecordId(row.id, this.form.customer_id));
 
             if (!customer) {
                 return;
@@ -6327,7 +6548,7 @@ export default {
             );
 
             let seller = this.sellers.find(
-                element => element.id == customer.seller_id
+                element => sameInvoiceRecordId(element.id, customer.seller_id)
             );
             if (seller !== undefined) {
                 this.form.seller_id = seller.id;
@@ -6579,7 +6800,7 @@ export default {
                 }
 
                 this.lotModalLotsGroup = lotsGroup;
-                this.lotModalQuantity = parseFloat(row.quantity) || 0;
+                this.lotModalQuantity = lotQuantity(row.quantity);
                 this.lotModalItemIndex = index;
                 this.showDialogLotsGroup = true;
             } catch (e) {
@@ -6622,7 +6843,7 @@ export default {
          */
         ensureItemsLotsForSubmit() {
             if (!Array.isArray(this.form.items)) return;
-
+            try {
             this.form.items.forEach((row, index) => {
                 if (!row) return;
 
@@ -6633,14 +6854,7 @@ export default {
                     return;
                 }
 
-                const normalized = Array.isArray(resolved)
-                    ? resolved.map(lot => ({
-                          id: lot.id,
-                          code: lot.code,
-                          compromise_quantity: Number(lot.compromise_quantity) || 0,
-                          date_of_due: lot.date_of_due || null
-                      }))
-                    : resolved;
+                const normalized = normalizeInvoiceLots(resolved);
 
                 this.$set(row, "IdLoteSelected", normalized);
                 if (row.item) {
@@ -6648,6 +6862,8 @@ export default {
                 }
                 this.$set(this.form.items, index, row);
             });
+            return true;
+            } catch (error) { this.$message.error(error.message); return false; }
         },
         firstValidationError(errors, fieldHint) {
             if (!errors || typeof errors !== "object") return null;
@@ -6671,14 +6887,9 @@ export default {
         },
 
         async validatePreview() {
-            let errorSeries = false;
-            _.forEach(this.form.items, row => {
-                if (row.item.series_enabled) {
-                    errorSeries =
-                        parseFloat(row.quantity) !== row.item.lots.length;
-                    return false;
-                }
-            });
+            if (!this.commitPendingInvoiceAdjustments()) return false;
+            if (this.invoiceCalculationError) { this.$message.error(this.invoiceCalculationError);return false; }
+            const errorSeries = !invoiceSeriesValid(this.form.items);
             if (errorSeries) {
                 this.$message.error("No se han seleccionado todas las series");
                 return false;
@@ -6773,11 +6984,8 @@ export default {
         verifySelectedSeller() {
 
             if (this.form.seller_id) {
-                const sellerExists = this.filteredSellers.some(s => s.id === this.form.seller_id);
-                if (!sellerExists) {
-
-                    this.form.seller_id = this.idUser || null;
-                }
+                const seller = this.filteredSellers.find(row => sameInvoiceRecordId(row.id, this.form.seller_id));
+                this.form.seller_id = seller?.id ?? (this.idUser || null);
             }
         },
 

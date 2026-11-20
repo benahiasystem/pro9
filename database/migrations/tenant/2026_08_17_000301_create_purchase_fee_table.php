@@ -1,44 +1,41 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `purchase_fee` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `purchase_id` int(10) unsigned NOT NULL
- * - `date` date NOT NULL
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `amount` decimal(30,12) NOT NULL
- * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - purchase_id: bigint
+ * - date: date
+ * - currency_type_id: varchar(255)
+ * - amount: numeric(30,12)
+ * - payment_method_type_id: char(2)
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `purchase_fee` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `purchase_id` int(10) unsigned NOT NULL,
-  `date` date NOT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `amount` decimal(30,12) NOT NULL,
-  `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `purchase_fee_purchase_id_foreign` (`purchase_id`),
-  KEY `purchase_fee_currency_type_id_foreign` (`currency_type_id`),
-  KEY `purchase_fee_payment_method_type_id_foreign` (`payment_method_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('purchase_fee', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('purchase_id');
+            $table->date('date');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->decimal('amount', 30, 12);
+            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['purchase_id'], 'purchase_fee_purchase_id_foreign');
+            $table->index(['currency_type_id'], 'purchase_fee_currency_type_id_foreign');
+            $table->index(['payment_method_type_id'], 'purchase_fee_payment_method_type_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `purchase_fee`');
+        Schema::dropIfExists('purchase_fee');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

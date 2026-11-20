@@ -1,56 +1,54 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `item_lots` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `series` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `date` date NOT NULL
- * - `item_id` int(10) unsigned NOT NULL
- * - `warehouse_id` int(10) unsigned DEFAULT NULL
- * - `item_loteable_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `item_loteable_id` int(10) unsigned NOT NULL
- * - `has_sale` tinyint(1) NOT NULL DEFAULT '0'
- * - `state` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - series: varchar(255)
+ * - date: date
+ * - item_id: bigint
+ * - warehouse_id: bigint
+ * - item_loteable_type: varchar(255)
+ * - item_loteable_id: bigint
+ * - has_sale: boolean
+ * - state: varchar(20)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `item_lots` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `series` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date` date NOT NULL,
-  `item_id` int(10) unsigned NOT NULL,
-  `warehouse_id` int(10) unsigned DEFAULT NULL,
-  `item_loteable_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `item_loteable_id` int(10) unsigned NOT NULL,
-  `has_sale` tinyint(1) NOT NULL DEFAULT '0',
-  `state` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `item_lots_item_id_foreign` (`item_id`),
-  KEY `item_lots_warehouse_id_foreign` (`warehouse_id`),
-  KEY `item_lots_series_index` (`series`),
-  KEY `item_lots_date_index` (`date`),
-  KEY `item_lots_has_sale_index` (`has_sale`),
-  KEY `item_lots_item_loteable_type_index` (`item_loteable_type`),
-  KEY `item_lots_item_loteable_id_index` (`item_loteable_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('item_lots', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('series', 255)->collation('pro9_ci_ai');
+            $table->date('date');
+            $table->bigInteger('item_id');
+            $table->bigInteger('warehouse_id')->nullable();
+            $table->string('item_loteable_type', 255)->collation('pro9_ci_ai');
+            $table->bigInteger('item_loteable_id');
+            $table->boolean('has_sale')->default(false);
+            $table->string('state', 20)->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['item_id'], 'item_lots_item_id_foreign');
+            $table->index(['warehouse_id'], 'item_lots_warehouse_id_foreign');
+            $table->index(['series'], 'item_lots_series_index');
+            $table->index(['date'], 'item_lots_date_index');
+            $table->index(['has_sale'], 'item_lots_has_sale_index');
+            $table->index(['item_loteable_type'], 'item_lots_item_loteable_type_index');
+            $table->index(['item_loteable_id'], 'item_lots_item_loteable_id_index');
+        });
+        DB::statement('ALTER TABLE "item_lots" ADD CONSTRAINT "item_lots_item_loteable_id_range" CHECK ("item_loteable_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `item_lots`');
+        Schema::dropIfExists('item_lots');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17
