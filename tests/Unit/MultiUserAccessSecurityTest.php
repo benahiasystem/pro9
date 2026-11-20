@@ -2,18 +2,16 @@
 
 namespace Tests\Unit;
 
+use App\Database\PostgresBootstrap;
 use App\Models\System\Client;
 use App\Models\Tenant\User;
 use App\Tenancy\Contracts\CurrentHostname;
-use App\Tenancy\Database\Connection as TenancyConnection;
 use App\Tenancy\Environment;
 use App\Tenancy\Models\Hostname;
 use App\Tenancy\Models\Website;
-use Illuminate\Config\Repository;
-use Illuminate\Database\Capsule\Manager as Capsule;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Connection;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Redirector;
 use Illuminate\Routing\RouteCollection;
@@ -23,62 +21,57 @@ use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory;
 use Illuminate\Validation\ValidationException;
-use Mockery;
 use Modules\MultiUser\Helpers\Tenant\AutoLoginHelper;
 use Modules\MultiUser\Http\Controllers\Tenant\Api\MultiUserController as ApiController;
 use Modules\MultiUser\Http\Controllers\Tenant\MultiUserController as WebController;
 use Modules\MultiUser\Http\Requests\Tenant\Api\ChangeClientRequest as ApiRequest;
 use Modules\MultiUser\Http\Requests\Tenant\ChangeClientRequest;
-use PHPUnit\Framework\TestCase;
+use Tenancy\Identification\Events\Switched;
+use Tests\Support\PostgresTestEnvironment;
+use Tests\TestCase;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-/**
- * Integración aislada: modelos y consultas reales sobre cuatro SQLite :memory:.
- * No arranca Kernel, .env, proveedores del proyecto ni conexiones/colas reales.
- */
+/** @group postgres-integration */
 class MultiUserAccessSecurityTest extends TestCase
 {
-    private $app;
-    private $db;
+    private ?DatabaseManager $db = null;
+    private ?Connection $control = null;
+    private array $databases = [];
     private $cache;
     private $auth;
-    private int $tenant = 1;
     private array $switches = [];
 
     protected function setUp(): void
     {
-        parent::setUp();
-        $this->app = new Application(dirname(__DIR__, 2));
-        $this->app->instance('config', new Repository([
-            'database' => ['default' => 'system', 'connections' => []],
-            'tenancy' => ['models' => ['website' => Website::class]],
-            'tenant' => ['force_https' => true],
-        ]));
-        Facade::clearResolvedInstances();
-        Facade::setFacadeApplication($this->app);
-        $this->db = new Capsule($this->app);
-        foreach (['system', 'tenant1', 'tenant2', 'tenant3'] as $name) {
-            $this->db->addConnection(['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => ''], $name);
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') {
+            $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
         }
-        $this->db->bootEloquent();
-        $this->db->getDatabaseManager()->setDefaultConnection('system');
-        $this->app->instance('db', $this->db->getDatabaseManager());
+        parent::setUp();
 
-        $connection = Mockery::mock(TenancyConnection::class);
-        $connection->shouldReceive('systemName')->andReturn('system');
-        $connection->shouldReceive('tenantName')->andReturnUsing(fn () => 'tenant'.$this->tenant);
-        $this->app->instance(TenancyConnection::class, $connection);
-        $environment = Mockery::mock(Environment::class);
-        $environment->shouldReceive('tenant')->andReturnUsing(function ($website = null) {
-            if ($website) {
-                $this->tenant = (int) $website->id;
-                $this->switches[] = $this->tenant;
-            }
-            return Website::findOrFail($this->tenant);
+        $this->db = $this->app['db'];
+        $connection = PostgresTestEnvironment::connection();
+        config(['database.connections.multiuser_control' => $connection]);
+        $this->control = $this->db->connection('multiuser_control');
+        PostgresTestEnvironment::assertServer($this->control);
+
+        // Use independent databases and the real Tenancy switch, with credentials from the test runner.
+        $prefix = 'sab_multi_user_'.bin2hex(random_bytes(6));
+        foreach (['system', 'tenant1', 'tenant2', 'tenant3'] as $name) {
+            $database = $prefix.'_'.$name;
+            $this->control->statement('CREATE DATABASE "'.$database.'" TEMPLATE template0');
+            $this->databases[$name] = $database;
+            $this->db->purge($name);
+            config(['database.connections.'.$name => array_replace($connection, ['database' => $database])]);
+            PostgresBootstrap::install($this->db->connection($name));
+        }
+        $this->db->setDefaultConnection('system');
+        config(['tenancy.db.tenant-division-mode' => 'bypass', 'tenant.force_https' => true, 'cache.default' => 'array']);
+        $this->app['events']->listen(Switched::class, function (Switched $event): void {
+            if ($event->tenant) $this->switches[] = (int) $event->tenant->getKey();
         });
-        $this->app->instance(Environment::class, $environment);
 
         $this->cache = new MultiUserMemoryCache();
+        Facade::clearResolvedInstance('cache');
         $this->app->instance('cache', $this->cache);
         $this->auth = new class {
             public $current;
@@ -92,6 +85,7 @@ class MultiUserAccessSecurityTest extends TestCase
             public function user() { return $this->current; }
             public function loginUsingId($id) { $this->logins[] = $id; return true; }
         };
+        Facade::clearResolvedInstance('auth');
         $this->app->instance('auth', $this->auth);
         $validator = new Factory(new Translator(new ArrayLoader(), 'es'), $this->app);
         $this->app->instance('validator', $validator);
@@ -105,7 +99,7 @@ class MultiUserAccessSecurityTest extends TestCase
 
     private function createFixtures(): void
     {
-        $schema = $this->db->getConnection('system')->getSchemaBuilder();
+        $schema = $this->db->connection('system')->getSchemaBuilder();
         $schema->create('multi_users', function (Blueprint $table) {
             $table->integer('id')->primary();
             foreach (['origin_client_id', 'origin_user_id', 'destination_client_id', 'destination_user_id'] as $key) {
@@ -130,14 +124,15 @@ class MultiUserAccessSecurityTest extends TestCase
         $schema->create('websites', function (Blueprint $table) {
             $table->integer('id')->primary();
             $table->string('uuid');
+            $table->string('managed_by_database_connection');
             $table->timestamp('deleted_at')->nullable();
         });
         foreach ([1, 2, 3] as $id) {
-            $central = $this->db->getConnection('system');
+            $central = $this->db->connection('system');
             $central->table('clients')->insert(['id' => $id, 'hostname_id' => $id, 'name' => 'Empresa '.$id, 'number' => 'J'.$id]);
             $central->table('hostnames')->insert(['id' => $id, 'website_id' => $id, 'fqdn' => 'tenant'.$id.'.test']);
-            $central->table('websites')->insert(['id' => $id, 'uuid' => 'tenant'.$id]);
-            $schema = $this->db->getConnection('tenant'.$id)->getSchemaBuilder();
+            $central->table('websites')->insert(['id' => $id, 'uuid' => 'tenant'.$id, 'managed_by_database_connection' => 'tenant'.$id]);
+            $schema = $this->db->connection('tenant'.$id)->getSchemaBuilder();
             $schema->create('users', function (Blueprint $table) {
                 $table->integer('id')->primary();
                 $table->boolean('active')->default(true);
@@ -149,7 +144,7 @@ class MultiUserAccessSecurityTest extends TestCase
                 $table->integer('establishment_id')->default(1);
             });
             // IDs locales coincidentes deliberadamente.
-            $this->db->getConnection('tenant'.$id)->table('users')->insert([
+            $this->db->connection('tenant'.$id)->table('users')->insert([
                 ['id' => 10, 'api_token' => 'SYNTHETIC-'.$id.'-10'],
                 ['id' => 20, 'api_token' => 'SYNTHETIC-'.$id.'-20'],
             ]);
@@ -178,25 +173,27 @@ class MultiUserAccessSecurityTest extends TestCase
                     $table->string('id')->primary();
                     $table->string('description');
                 });
-                $this->db->getConnection('tenant'.$id)->table($catalog)->insert(['id' => '1', 'description' => $catalog.'-'.$id]);
+                $this->db->connection('tenant'.$id)->table($catalog)->insert(['id' => '1', 'description' => $catalog.'-'.$id]);
             }
-            $this->db->getConnection('tenant'.$id)->table('companies')->insert(['id' => 1, 'name' => 'Empresa '.$id, 'number' => 'J'.$id]);
-            $this->db->getConnection('tenant'.$id)->table('establishments')->insert(['id' => 1, 'address' => 'Dirección '.$id]);
+            $this->db->connection('tenant'.$id)->table('companies')->insert(['id' => 1, 'name' => 'Empresa '.$id, 'number' => 'J'.$id]);
+            $this->db->connection('tenant'.$id)->table('establishments')->insert(['id' => 1, 'address' => 'Dirección '.$id]);
         }
-        $this->db->getConnection('system')->table('multi_users')->insert([
+        $this->db->connection('system')->table('multi_users')->insert([
             ['id' => 101, 'origin_client_id' => 1, 'origin_user_id' => 10, 'destination_client_id' => 2, 'destination_user_id' => 10],
             ['id' => 102, 'origin_client_id' => 1, 'origin_user_id' => 10, 'destination_client_id' => 3, 'destination_user_id' => 10],
             ['id' => 201, 'origin_client_id' => 1, 'origin_user_id' => 20, 'destination_client_id' => 2, 'destination_user_id' => 20],
         ]);
         foreach ([2 => 101, 3 => 102] as $tenant => $association) {
-            $this->db->getConnection('tenant'.$tenant)->table('users')->where('id', 10)
+            $this->db->connection('tenant'.$tenant)->table('users')->where('id', 10)
                 ->update(['is_multi_user' => true, 'multi_user_id' => $association]);
         }
     }
 
     private function useActor(int $tenant, int $userId): User
     {
-        $this->tenant = $tenant;
+        $environment = $this->app->make(Environment::class);
+        $environment->switchTenant(Website::findOrFail($tenant));
+        $this->switches = [];
         $this->cache->setPrefix('tenant'.$tenant);
         $this->app->instance(CurrentHostname::class, Hostname::findOrFail($tenant));
         return $this->auth->current = User::whereFilterWithOutRelations()->findOrFail($userId);
@@ -275,7 +272,7 @@ class MultiUserAccessSecurityTest extends TestCase
         $this->auth->current->multi_user_id = 101;
         $this->assertForbidden(fn () => (new WebController())->changeClient($this->request(['multi_user_id' => 102, 'is_destination' => true])));
         $this->useActor(2, 10);
-        $this->db->getConnection('system')->table('multi_users')->where('id', 101)->delete();
+        $this->db->connection('system')->table('multi_users')->where('id', 101)->delete();
         $this->assertForbidden(fn () => (new WebController())->changeClient($this->request(['multi_user_id' => 102, 'is_destination' => true])));
         self::assertSame([], $this->cache->writes);
     }
@@ -309,7 +306,7 @@ class MultiUserAccessSecurityTest extends TestCase
             self::assertSame('Empresa '.$destination, $result['company']['name']);
             self::assertStringEndsWith('Dirección '.$destination, $result['company']['address']);
             self::assertSame(1, $result['establishment_id']);
-            self::assertSame($source, $this->tenant);
+            self::assertSame($source, (int) $this->app->make(Environment::class)->tenant()->getKey());
         }
     }
 
@@ -323,11 +320,11 @@ class MultiUserAccessSecurityTest extends TestCase
 
     public function test_disabled_destination_cannot_receive_login_or_return_token(): void
     {
-        $this->db->getConnection('tenant2')->table('users')->where('id', 10)->update(['active' => false]);
+        $this->db->connection('tenant2')->table('users')->where('id', 10)->update(['active' => false]);
         $this->assertForbidden(fn () => (new ApiController())->changeClient($this->request([
             'multi_user_id' => 101, 'is_destination' => true, 'fqdn' => 'tenant2.test',
         ], true)));
-        self::assertSame(1, $this->tenant);
+        self::assertSame(1, (int) $this->app->make(Environment::class)->tenant()->getKey());
         (new WebController())->changeClient($this->request(['multi_user_id' => 101, 'is_destination' => true]));
         $this->useActor(2, 10);
         $this->assertForbidden(fn () => (new AutoLoginHelper())->startProcess());
@@ -337,7 +334,7 @@ class MultiUserAccessSecurityTest extends TestCase
     public function test_web_handoff_rejects_association_changed_after_authorization(): void
     {
         (new WebController())->changeClient($this->request(['multi_user_id' => 101, 'is_destination' => true]));
-        $this->db->getConnection('system')->table('multi_users')->where('id', 101)->update(['destination_user_id' => 20]);
+        $this->db->connection('system')->table('multi_users')->where('id', 101)->update(['destination_user_id' => 20]);
         $this->useActor(2, 10);
         $this->assertForbidden(fn () => (new AutoLoginHelper())->startProcess());
         self::assertSame([], $this->auth->logins);
@@ -387,26 +384,26 @@ class MultiUserAccessSecurityTest extends TestCase
 
     public function test_api_keeps_no_token_response_and_restores_source(): void
     {
-        $this->db->getConnection('tenant1')->table('users')->where('id', 10)->update(['api_token' => null]);
+        $this->db->connection('tenant1')->table('users')->where('id', 10)->update(['api_token' => null]);
         $this->useActor(2, 10);
         $response = (new ApiController())->changeClient($this->request([
             'multi_user_id' => 101, 'is_destination' => '0', 'fqdn' => 'tenant1.test',
         ], true));
         self::assertFalse($response['success']);
         self::assertArrayNotHasKey('api_token', $response);
-        self::assertSame(2, $this->tenant);
+        self::assertSame(2, (int) $this->app->make(Environment::class)->tenant()->getKey());
     }
 
     public function test_api_missing_destination_user_restores_source_without_login(): void
     {
-        $this->db->getConnection('tenant2')->table('users')->where('id', 10)->delete();
+        $this->db->connection('tenant2')->table('users')->where('id', 10)->delete();
         try {
             (new ApiController())->changeClient($this->request([
                 'multi_user_id' => 101, 'is_destination' => true, 'fqdn' => 'tenant2.test',
             ], true));
             self::fail('No debe emitir credenciales para un usuario inexistente.');
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            self::assertSame(1, $this->tenant);
+            self::assertSame(1, (int) $this->app->make(Environment::class)->tenant()->getKey());
             self::assertSame([], $this->auth->logins);
         }
     }
@@ -414,7 +411,7 @@ class MultiUserAccessSecurityTest extends TestCase
     public function test_revoked_association_cannot_be_redeemed(): void
     {
         (new WebController())->changeClient($this->request(['multi_user_id' => 101, 'is_destination' => true]));
-        $this->db->getConnection('system')->table('multi_users')->where('id', 101)->delete();
+        $this->db->connection('system')->table('multi_users')->where('id', 101)->delete();
         $this->useActor(2, 10);
         try {
             (new AutoLoginHelper())->startProcess();
@@ -427,15 +424,16 @@ class MultiUserAccessSecurityTest extends TestCase
 
     protected function tearDown(): void
     {
-        Mockery::close();
-        foreach (['system', 'tenant1', 'tenant2', 'tenant3'] as $name) $this->db->getDatabaseManager()->purge($name);
-        Model::unsetConnectionResolver();
-        Model::clearBootedModels();
-        Facade::clearResolvedInstances();
-        Facade::setFacadeApplication(null);
-        $this->app->flush();
-        Application::setInstance(null);
-        parent::tearDown();
+        try {
+            if ($this->databases) $this->app->make(Environment::class)->switchTenant(null);
+            foreach ($this->databases as $name => $database) {
+                $this->db->purge($name);
+                $this->control->statement('DROP DATABASE "'.$database.'" WITH (FORCE)');
+            }
+        } finally {
+            $this->db?->purge('multiuser_control');
+            parent::tearDown();
+        }
     }
 }
 
