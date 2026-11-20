@@ -55,6 +55,7 @@ $environment=getenv();$environment['SAB_POSTGRES_RUN_ID']=$runId;$environment['S
 $environment['SAB_POSTGRES_DATA']=$cache.'/data';$environment['SAB_TEST_STORAGE']=$cache.'/storage';$environment['SAB_TEST_BOOTSTRAP_CACHE']=$cache.'/bootstrap-cache';
 $environment['SAB_POSTGRES_AV_DEFINITIONS']=$cache.'/scanner-signatures';
 if ($withoutAccounting) $environment['SAB_FISCAL_EXCLUDE_ACCOUNTING']='1';
+if ($vesDocumentsOnly) $environment['SAB_TEST_DOCUMENTS_VES_ONLY']='1';
 if ($vesInvoicesOnly) {
     $environment['SAB_HTTP_ACCEPTANCE_VES_ONLY']='1';
     $environment['SAB_TEST_INVOICES_VES_ONLY']='1';
