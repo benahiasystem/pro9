@@ -15,7 +15,7 @@ use App\Models\Tenant\DocumentItem;
 use App\Models\Tenant\SaleNoteItem;
 use App\Models\Tenant\Company;
 use App\Traits\JobReportTrait;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Hostname;
 use Illuminate\Support\Facades\Log;
 use Modules\Report\Http\Resources\GeneralItemCollection;
 use Modules\Report\Jobs\ProcessReportGeneralItems;

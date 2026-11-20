@@ -6,7 +6,7 @@ use App\Models\Tenant\Item;
 use App\Models\Tenant\ModelTenant;
 use Modules\Inventory\Models\InventoryKardex;
 use Carbon\Carbon;
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\Item\Models\ItemLot;
 

@@ -10,7 +10,7 @@
     use Illuminate\Database\Eloquent\Relations\HasMany;
     use Illuminate\Database\Eloquent\Relations\HasOne;
     use Modules\Document\Models\SeriesConfiguration;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Collection;
 
 

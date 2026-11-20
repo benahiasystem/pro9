@@ -2,7 +2,7 @@
 
 namespace Modules\Webhook\Http\Controllers;
 
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Webhook\Http\Resources\WebhookDeliveryResource;

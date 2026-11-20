@@ -7,7 +7,7 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\Establishment;
 use App\Traits\JobReportTrait;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

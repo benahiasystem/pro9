@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 abstract class OwnedModel extends Model
 {
     use HasUuids;
-    use \Hyn\Tenancy\Traits\UsesTenantConnection;
+    use \App\Tenancy\Traits\UsesTenantConnection;
     public function __construct(array $attributes = [])
     {
         // Set the physical name once; Eloquent may later set a query alias.

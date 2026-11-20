@@ -4,7 +4,7 @@ namespace Modules\MobileApp\Http\Requests\Api;
 
 use App\Models\System\Configuration;
 use App\Rules\SubdomainNotLatin;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Hostname;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

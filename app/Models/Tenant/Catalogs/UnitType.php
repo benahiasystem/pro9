@@ -3,7 +3,7 @@
 namespace App\Models\Tenant\Catalogs;
 
 use App\Models\Tenant\Item;
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 use InvalidArgumentException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;

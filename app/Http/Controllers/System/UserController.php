@@ -5,7 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\System\UserRequest;
 use App\Http\Resources\System\UserResource;
 use App\Models\System\User;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use App\Models\System\Client;
 use Illuminate\Support\Facades\DB;
 use App\Models\System\Configuration;

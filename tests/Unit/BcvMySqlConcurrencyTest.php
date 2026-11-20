@@ -67,9 +67,9 @@ class BcvMySqlConcurrencyTest extends TestCase
             config()->set('database.connections.bcv_test_b', $secondConnection);
             DB::connection('bcv_test_b')->statement('CREATE TABLE exchange_rates (date DATE PRIMARY KEY, date_original DATE NOT NULL, sale NUMERIC(18,8) NOT NULL, purchase NUMERIC(18,8) NOT NULL, sale_original NUMERIC(18,8) NOT NULL, purchase_original NUMERIC(18,8) NOT NULL, created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL)');
             $active = 'bcv_test';
-            $tenancy = $this->getMockBuilder(\Hyn\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
+            $tenancy = $this->getMockBuilder(\App\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
             $tenancy->method('tenantName')->willReturnCallback(function () use (&$active) { return $active; });
-            app()->instance(\Hyn\Tenancy\Database\Connection::class, $tenancy);
+            app()->instance(\App\Tenancy\Database\Connection::class, $tenancy);
             \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse('2026-10-07 10:00:00', 'America/Caracas'));
             $client = $this->createMock(\App\Services\ExchangeRates\BcvClient::class);
             $client->expects(self::once())->method('dollarRate')->willReturn('333.78912345');

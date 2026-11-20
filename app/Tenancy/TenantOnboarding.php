@@ -29,7 +29,7 @@ final class TenantOnboarding
         $central = DB::connection('system');
         if ($central->getDriverName() !== 'pgsql') return $register();
         if (self::active() || $central->transactionLevel()) throw new \LogicException('El alta requiere su propia transacción central.');
-        $environment = app(\Hyn\Tenancy\Environment::class); $previous = $environment->tenant();
+        $environment = app(\App\Tenancy\Environment::class); $previous = $environment->tenant();
         $default = DB::getDefaultConnection(); $committed = false;
         self::$runs = []; $central->beginTransaction();
         try {

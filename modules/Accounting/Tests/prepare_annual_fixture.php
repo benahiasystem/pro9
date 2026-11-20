@@ -8,8 +8,8 @@ try {
     if (!app()->environment('testing') || !config('accounting.isolated_tests') || getenv('ACCOUNTING_FIXTURE_LOCKED') !== '1' || !in_array($argv[1] ?? '', ['http', 'ui'], true)) {
         throw new RuntimeException('Se requiere el clon aislado y el bloqueo de la suite.');
     }
-    $host = Hyn\Tenancy\Models\Hostname::with('website')->where('fqdn', 'contabilidad.localhost')->firstOrFail();
-    $environment = app(Hyn\Tenancy\Environment::class);
+    $host = App\Tenancy\Models\Hostname::with('website')->where('fqdn', 'contabilidad.localhost')->firstOrFail();
+    $environment = app(App\Tenancy\Environment::class);
     $environment->hostname($host);
     $environment->tenant($host->website);
     $db = Illuminate\Support\Facades\DB::connection('tenant');

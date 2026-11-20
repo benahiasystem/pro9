@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use App\Database\PostgresBootstrap;
-use Hyn\Tenancy\Generators\Database\DefaultPasswordGenerator;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Database\Connection as TenantConnection;
+use App\Tenancy\Models\Website;
 use Illuminate\Container\Container;
 use Illuminate\Database\Capsule\Manager;
 use Illuminate\Database\Connection;
@@ -94,7 +94,7 @@ final class BenchmarkTenantCohort
         ]);
         $model = (new Website())->forceFill(['id' => $website, 'uuid' => $database, 'created_at' => $createdAt]);
         $app['config']->set('tenancy.key', $cohort['key']);
-        $password = (new DefaultPasswordGenerator($app))->generate($model);
+        $password = TenantConnection::legacyPassword($model, $cohort['key'], $app['config']->get('app.key'));
         $quoted = $control->getPdo()->quote($password);
 
         if ($control->getDriverName() === 'pgsql') {

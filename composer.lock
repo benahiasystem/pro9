@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d0f21225824352cfa5cb6dafd5e5700a",
+    "content-hash": "fd80b8df996bf6524c669521888c368c",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -2494,95 +2494,6 @@
                 "source": "https://github.com/mtibben/html2text/tree/4.3.2"
             },
             "time": "2024-08-20T02:43:29+00:00"
-        },
-        {
-            "name": "hyn/multi-tenant",
-            "version": "5.9.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/tenancy/multi-tenant.git",
-                "reference": "2beff8fbe999957050bf9e82904ca637b3256c26"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/tenancy/multi-tenant/zipball/2beff8fbe999957050bf9e82904ca637b3256c26",
-                "reference": "2beff8fbe999957050bf9e82904ca637b3256c26",
-                "shasum": ""
-            },
-            "require": {
-                "doctrine/dbal": "~2.5|~3.0",
-                "laravel/framework": "^9.0|^10.0",
-                "php": "^8.0",
-                "ramsey/uuid": "^4.0"
-            },
-            "require-dev": {
-                "fakerphp/faker": "^1.12",
-                "laravel/laravel": "^9.0|^10.0",
-                "mockery/mockery": "^1.0",
-                "phpunit/phpunit": "^9.0",
-                "symfony/dom-crawler": "~3.1"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "aliases": {
-                        "Tenancy": "Hyn\\Tenancy\\Facades\\TenancyFacade"
-                    },
-                    "providers": [
-                        "Hyn\\Tenancy\\Providers\\TenancyProvider",
-                        "Hyn\\Tenancy\\Providers\\WebserverProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Hyn\\Tenancy\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Daniël Klabbers",
-                    "email": "daniel+hyn@klabbers.email",
-                    "homepage": "https://luceos.com"
-                }
-            ],
-            "description": "Run multiple websites using the same laravel installation while keeping tenant specific data separated for fully independant multi-domain setups.",
-            "keywords": [
-                "hyn",
-                "laravel",
-                "multi-tenancy",
-                "multi-tenant",
-                "saas",
-                "tenancy"
-            ],
-            "support": {
-                "docs": "https://tenancy.dev",
-                "issues": "https://github.com/hyn/multi-tenant/issues",
-                "source": "https://github.com/hyn/multi-tenant"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/[user1",
-                    "type": "github"
-                },
-                {
-                    "url": "https://github.com/tenancy] # Replace with up to 4 GitHub Sponsors-enabled usernames e.g.",
-                    "type": "github"
-                },
-                {
-                    "url": "https://github.com/user2",
-                    "type": "github"
-                },
-                {
-                    "url": "https://opencollective.com/tenancy",
-                    "type": "open_collective"
-                }
-            ],
-            "time": "2023-08-18T18:02:02+00:00"
         },
         {
             "name": "imangazaliev/didom",
@@ -9633,6 +9544,125 @@
                 }
             ],
             "time": "2026-01-01T13:34:06+00:00"
+        },
+        {
+            "name": "tenancy/tenancy",
+            "version": "v2.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/tenancy/tenancy.git",
+                "reference": "b14f84800de107c97bb48021d698108ea631dbef"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/tenancy/tenancy/zipball/b14f84800de107c97bb48021d698108ea631dbef",
+                "reference": "b14f84800de107c97bb48021d698108ea631dbef",
+                "shasum": ""
+            },
+            "require": {
+                "doctrine/dbal": "^3.3 | ^4.0",
+                "laravel/framework": "^10.0 | ^11.0 | ^12.0 | ^13.0"
+            },
+            "replace": {
+                "tenancy/affects-broadcasts": "self.version",
+                "tenancy/affects-cache": "self.version",
+                "tenancy/affects-configs": "self.version",
+                "tenancy/affects-connections": "self.version",
+                "tenancy/affects-filesystems": "self.version",
+                "tenancy/affects-logs": "self.version",
+                "tenancy/affects-mails": "self.version",
+                "tenancy/affects-models": "self.version",
+                "tenancy/affects-routes": "self.version",
+                "tenancy/affects-urls": "self.version",
+                "tenancy/affects-views": "self.version",
+                "tenancy/db-driver-mysql": "self.version",
+                "tenancy/db-driver-sqlite": "self.version",
+                "tenancy/framework": "self.version",
+                "tenancy/hooks-database": "self.version",
+                "tenancy/hooks-migration": "self.version",
+                "tenancy/identification-driver-console": "self.version",
+                "tenancy/identification-driver-environment": "self.version",
+                "tenancy/identification-driver-http": "self.version",
+                "tenancy/identification-driver-queue": "self.version",
+                "tenancy/testing": "self.version"
+            },
+            "require-dev": {
+                "fakerphp/faker": "^1.9",
+                "laravel/laravel": "*",
+                "laravel/pint": "^1.0",
+                "mockery/mockery": "^1.5.0",
+                "phpunit/phpunit": "^10.0 | ^11.0 | ^12.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Tenancy": "Tenancy\\Facades\\Tenancy"
+                    },
+                    "providers": [
+                        "Tenancy\\Providers\\TenancyProvider",
+                        "Tenancy\\Affects\\Broadcasts\\Provider",
+                        "Tenancy\\Affects\\Cache\\Provider",
+                        "Tenancy\\Affects\\Configs\\Provider",
+                        "Tenancy\\Affects\\Connections\\Provider",
+                        "Tenancy\\Affects\\Filesystems\\Provider",
+                        "Tenancy\\Affects\\Logs\\Provider",
+                        "Tenancy\\Affects\\Mails\\Provider",
+                        "Tenancy\\Affects\\Models\\Provider",
+                        "Tenancy\\Affects\\Routes\\Provider",
+                        "Tenancy\\Affects\\URLs\\Provider",
+                        "Tenancy\\Affects\\Views\\Provider",
+                        "Tenancy\\Identification\\Drivers\\Console\\Providers\\IdentificationProvider",
+                        "Tenancy\\Identification\\Drivers\\Environment\\Providers\\IdentificationProvider",
+                        "Tenancy\\Identification\\Drivers\\Http\\Providers\\IdentificationProvider",
+                        "Tenancy\\Identification\\Drivers\\Queue\\Providers\\IdentificationProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Tenancy\\": "src/Tenancy",
+                    "Tenancy\\Hooks\\": "src/Hooks",
+                    "Tenancy\\Affects\\": "src/Affects",
+                    "Tenancy\\Database\\Drivers\\": "src/Database",
+                    "Tenancy\\Identification\\Drivers\\": "src/Identification"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Arlon Antonius",
+                    "email": "opensource@arlon.dev",
+                    "homepage": "https://arlon.dev"
+                }
+            ],
+            "description": "Creating multi tenant saas from your Laravel app with ease",
+            "keywords": [
+                "aws",
+                "gce",
+                "laravel",
+                "multi-tenant",
+                "saas",
+                "tenancy"
+            ],
+            "support": {
+                "issues": "https://github.com/tenancy/tenancy/issues",
+                "source": "https://github.com/tenancy/tenancy/tree/v2.5.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/tenancy",
+                    "type": "github"
+                },
+                {
+                    "url": "https://opencollective.com/tenancy",
+                    "type": "opencollective"
+                }
+            ],
+            "time": "2026-05-09T06:52:59+00:00"
         },
         {
             "name": "thiagoalessio/tesseract_ocr",

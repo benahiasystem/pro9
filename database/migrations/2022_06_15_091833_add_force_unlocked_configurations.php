@@ -6,7 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use App\Models\System\Configuration;
 use App\Models\System\Client;
 use Illuminate\Support\Facades\DB;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 
 
 class AddForceUnlockedConfigurations extends Migration

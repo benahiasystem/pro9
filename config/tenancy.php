@@ -12,7 +12,7 @@
  * @see https://github.com/hyn/multi-tenant
  */
 
-use Hyn\Tenancy\Database\Connection;
+use App\Tenancy\Database\Connection;
 
 return [
     /**
@@ -29,12 +29,12 @@ return [
          * UsesSystemConnection.
          */
 
-        // Must implement \Hyn\Tenancy\Contracts\Hostname
-        'hostname' => \Hyn\Tenancy\Models\Hostname::class,
+        // Must implement \App\Tenancy\Models\Hostname
+        'hostname' => \App\Tenancy\Models\Hostname::class,
 //        'hostname' => \App\Models\System\Hostname::class,
 
-        // Must implement \Hyn\Tenancy\Contracts\Website
-        'website' => \Hyn\Tenancy\Models\Website::class
+        // Must implement \App\Tenancy\Models\Website
+        'website' => \App\Tenancy\Models\Website::class
 //        'website' => \App\Models\System\Website::class
     ],
     /**
@@ -43,10 +43,9 @@ return [
      */
     'middleware' => [
         // The eager identification middleware.
-        \Hyn\Tenancy\Middleware\EagerIdentification::class,
 
         // The hostname actions middleware (redirects, https, maintenance).
-        \Hyn\Tenancy\Middleware\HostnameActions::class,
+        \App\Tenancy\Middleware\HostnameActions::class,
     ],
     'website' => [
         /**
@@ -66,7 +65,6 @@ return [
          *
          * @warn This won't work if disable-random-id is true.
          */
-        'random-id-generator' => Hyn\Tenancy\Generators\Uuid\ShaGenerator::class,
 
         /**
          * Enable this flag in case you're using a driver that does not support
@@ -207,7 +205,6 @@ return [
          * note that this will only work in 'division modes' that set up
          * a connection to a separate database.
          */
-        'password-generator' => Hyn\Tenancy\Generators\Database\DefaultPasswordGenerator::class,
 
         /**
          * The tenant migrations to be run during creation of a tenant. Specify a directory

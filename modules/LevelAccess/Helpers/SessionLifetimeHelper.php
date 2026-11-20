@@ -4,9 +4,9 @@ namespace Modules\LevelAccess\Helpers;
 
 
 use App\Models\Tenant\Configuration;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Support\Facades\Cache;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Hostname;
 
 
 class SessionLifetimeHelper

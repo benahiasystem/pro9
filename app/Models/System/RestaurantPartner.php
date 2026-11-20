@@ -3,7 +3,7 @@
 namespace App\Models\System;
 
 use Illuminate\Database\Eloquent\Model;
-use Hyn\Tenancy\Traits\UsesSystemConnection;
+use App\Tenancy\Traits\UsesSystemConnection;
 
 class RestaurantPartner extends Model
 {

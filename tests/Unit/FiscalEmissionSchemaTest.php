@@ -103,10 +103,10 @@ class FiscalEmissionSchemaTest extends TestCase
         $app->instance('db', $this->capsule->getDatabaseManager());
         $app->instance('cache', new \Illuminate\Cache\Repository(new \Illuminate\Cache\ArrayStore()));
         $app->bind('db.schema', fn () => $this->capsule->getConnection()->getSchemaBuilder());
-        $tenancy = $this->getMockBuilder(\Hyn\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName', 'systemName'])->getMock();
+        $tenancy = $this->getMockBuilder(\App\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName', 'systemName'])->getMock();
         $tenancy->method('tenantName')->willReturn('tenant');
         $tenancy->method('systemName')->willReturn('system');
-        $app->instance(\Hyn\Tenancy\Database\Connection::class, $tenancy);
+        $app->instance(\App\Tenancy\Database\Connection::class, $tenancy);
         $this->capsule->bootEloquent();
         $app->make('validator')->setPresenceVerifier(
             new \Illuminate\Validation\DatabasePresenceVerifier($this->capsule->getDatabaseManager())

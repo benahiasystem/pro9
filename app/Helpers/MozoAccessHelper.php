@@ -3,7 +3,7 @@
 namespace App\Helpers;
 
 use App\Models\Tenant\User;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Support\Str;
 
 class MozoAccessHelper

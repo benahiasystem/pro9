@@ -43,9 +43,9 @@ abstract class SeriesDatabaseTestCase extends TestCase
         $auth = $this->getMockBuilder(\Illuminate\Auth\AuthManager::class)->disableOriginalConstructor()->onlyMethods(['guard'])->getMock();
         $auth->method('guard')->willReturn($guard);
         $app->instance('auth', $auth);
-        $tenancy = $this->getMockBuilder(\Hyn\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
+        $tenancy = $this->getMockBuilder(\App\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
         $tenancy->method('tenantName')->willReturnCallback(fn () => $this->tenantConnection);
-        $app->instance(\Hyn\Tenancy\Database\Connection::class, $tenancy);
+        $app->instance(\App\Tenancy\Database\Connection::class, $tenancy);
         $this->manager = new Manager($app);
         $this->configureConnections($this->manager);
         $this->manager->getDatabaseManager()->setDefaultConnection('tenant');

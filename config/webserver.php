@@ -47,7 +47,7 @@ return [
         /**
          * The generator taking care of hooking into the Apache services and files.
          */
-        'generator' => \Hyn\Tenancy\Generators\Webserver\Vhost\ApacheGenerator::class,
+        'generator' => null,
 
         /**
          * The view that holds the vhost configuration template.
@@ -133,7 +133,7 @@ return [
         /**
          * The generator taking care of hooking into the nginx services and files.
          */
-        'generator' => \Hyn\Tenancy\Generators\Webserver\Vhost\NginxGenerator::class,
+        'generator' => null,
 
         /**
          * The view that holds the vhost configuration template.

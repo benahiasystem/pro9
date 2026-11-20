@@ -6,13 +6,15 @@ $root=dirname(__DIR__);chdir($root);
 require __DIR__.'/postgresql_source_manifest.php';
 require __DIR__.'/postgresql_junit.php';
 $source=postgresqlSourceManifest($root);
-$arguments=array_slice($argv,1);$suite='all';$phpunit=[];$skipBuild=false;$reuseReference=false;$deferPosPerformance=false;$vesInvoicesOnly=false;
+$arguments=array_slice($argv,1);$suite='all';$phpunit=[];$skipBuild=false;$reuseReference=false;$deferPosPerformance=false;$vesInvoicesOnly=false;$vesDocumentsOnly=false;$withoutAccounting=false;
 while ($arguments) {
     $argument=array_shift($arguments);
     if ($argument==='--') {$phpunit=$arguments;break;}
     if ($argument==='--without-pos-performance' || $argument==='--without-performance') {$deferPosPerformance=true;continue;}
     if ($argument==='--reuse-reference') {$reuseReference=true;continue;}
     if ($argument==='--ves-invoices-only') {$vesInvoicesOnly=true;$deferPosPerformance=true;continue;}
+    if ($argument==='--ves-documents-only') {$vesDocumentsOnly=$vesInvoicesOnly=true;continue;}
+    if ($argument==='--without-accounting') {$withoutAccounting=true;continue;}
     if ($argument==='--skip-build') {$skipBuild=true;continue;}
     if (str_starts_with($argument,'--suite=')) {$suite=substr($argument,8);continue;}
     fwrite(STDERR,'Argumento no válido: '.$argument.PHP_EOL);exit(2);
@@ -22,19 +24,37 @@ if ($deferPosPerformance && (!in_array($suite, ['all','performance'], true) || $
     fwrite(STDERR, "El aplazamiento POS se admite en la batería completa o de rendimiento.\n");
     exit(2);
 }
-if ($vesInvoicesOnly && ($suite!=='all' || $phpunit)) {
-    fwrite(STDERR, "El alcance de facturas VES se aplica al inventario de la batería completa.\n");
+if (($vesInvoicesOnly || $withoutAccounting) && ($suite!=='all' || $phpunit)) {
+    fwrite(STDERR, "La selección fiscal se aplica al inventario de la batería completa.\n");
     exit(2);
 }
 $currencyPolicy=$vesInvoicesOnly
     ? json_decode(file_get_contents($root.'/tests/Infrastructure/postgresql_ves_invoice_scope.json'),true,512,JSON_THROW_ON_ERROR)
     : null;
+if ($vesDocumentsOnly) {
+    $additionalPolicy = json_decode(file_get_contents($root.'/tests/Infrastructure/postgresql_ves_document_scope.json'), true, 512, JSON_THROW_ON_ERROR);
+    $currencyPolicy['php_excluded'] = array_unique(array_merge($currencyPolicy['php_excluded'], $additionalPolicy['php_excluded']));
+}
+if ($vesDocumentsOnly || $withoutAccounting) {
+    $evidence = $root.'/informes/evidencias/postgresql_17_implementacion/';
+    $inputs = ['casts_exactos_efectivos.json'];
+    if ($reuseReference) {
+        $inputs[] = 'referencia_rendimiento_multitenant_mysql.json';
+        if (!$deferPosPerformance) $inputs[] = 'referencia_rendimiento_mysql.json';
+    }
+    $missing = array_values(array_filter($inputs, static fn ($name) => !is_file($evidence.$name)));
+    if ($missing) {
+        fwrite(STDERR, 'Insumos obligatorios ausentes: '.implode(', ', $missing).PHP_EOL);
+        exit(2);
+    }
+}
 $runId='sab-pgtest-'.bin2hex(random_bytes(6));
 $cache=(getenv('XDG_CACHE_HOME') ?: (getenv('HOME').'/.cache')).'/sab-postgres-tests/'.$runId;
 foreach (['data','storage/framework/cache/data','storage/framework/views','storage/framework/sessions','storage/logs','storage/app','bootstrap-cache'] as $directory) if (!mkdir($cache.'/'.$directory,0700,true) && !is_dir($cache.'/'.$directory)) throw new RuntimeException('No se pudo preparar la ejecución temporal.');
 $environment=getenv();$environment['SAB_POSTGRES_RUN_ID']=$runId;$environment['SAB_POSTGRES_PASSWORD']=bin2hex(random_bytes(24));
 $environment['SAB_POSTGRES_DATA']=$cache.'/data';$environment['SAB_TEST_STORAGE']=$cache.'/storage';$environment['SAB_TEST_BOOTSTRAP_CACHE']=$cache.'/bootstrap-cache';
 $environment['SAB_POSTGRES_AV_DEFINITIONS']=$cache.'/scanner-signatures';
+if ($withoutAccounting) $environment['SAB_FISCAL_EXCLUDE_ACCOUNTING']='1';
 if ($vesInvoicesOnly) {
     $environment['SAB_HTTP_ACCEPTANCE_VES_ONLY']='1';
     $environment['SAB_TEST_INVOICES_VES_ONLY']='1';
@@ -126,9 +146,17 @@ try {
             $expectedAll=array_diff_key($expectedAll,$currencyExcluded);
             $adapted=array_keys($currencyPolicy['php_adapted']);
             if (array_diff($adapted,array_keys($expectedFunctional))) throw new RuntimeException('Falta una prueba adaptada a facturas en VES.');
-            $phases['invoice_currency_scope']=['currency'=>'VES','php_excluded'=>array_keys($currencyExcluded),
+            $phases[$vesDocumentsOnly ? 'document_currency_scope' : 'invoice_currency_scope']=['currency'=>'VES','php_excluded'=>array_keys($currencyExcluded),
                 'php_adapted'=>$currencyPolicy['php_adapted'],'javascript_excluded'=>$currencyPolicy['javascript_excluded'],
                 'javascript_adapted'=>$currencyPolicy['javascript_adapted']];
+        }
+        $accountingExcluded = [];
+        if ($withoutAccounting) {
+            $accountingExcluded = postgresqlAccountingCases($expectedFunctional + $currencyExcluded);
+            if (!$accountingExcluded) throw new RuntimeException('No se encontraron casos de Contabilidad para excluir.');
+            $expectedFunctional = array_diff_key($expectedFunctional, $accountingExcluded);
+            $expectedAll = array_diff_key($expectedAll, $accountingExcluded);
+            $phases['accounting_scope'] = ['modules_loaded'=>true, 'php_excluded'=>array_keys($accountingExcluded)];
         }
         $expectedPerformance=array_diff_key($expectedAll, $expectedFunctional);
         $performanceFile=$runId.'-performance.xml';
@@ -146,9 +174,10 @@ try {
             $phases['functional']=['exit_code'=>1,'junit'=>$runId.'-functional.xml','state'=>'incomplete',
                 'subphases'=>[],'discovered_tests'=>count($expectedFunctional)];
             foreach (postgresqlFunctionalFilters() as $label=>$filter) {
+                if ($withoutAccounting && $label==='accounting') continue;
                 $filename=$runId.'-functional-'.$label.'.xml';
                 $functional=['vendor/bin/phpunit','--exclude-group',implode(',', $functionalExcludedGroups),'--printer','Tests\Support\FiscalProgressPrinter',
-                    '--filter',postgresqlExcludeCases($filter,$currencyExcluded),'--log-junit',$junitDirectory.$filename];
+                    '--filter',postgresqlExcludeCases($filter,$currencyExcluded + $accountingExcluded),'--log-junit',$junitDirectory.$filename];
                 $phaseCode=command(array_merge($runtime,$functional),$environment);
                 $functionalPhases[$label]=['exit_code'=>$phaseCode,'junit'=>$filename];
                 $phases['functional']['subphases']=$functionalPhases;

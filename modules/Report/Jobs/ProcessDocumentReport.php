@@ -8,11 +8,11 @@
     use Illuminate\Queue\InteractsWithQueue;
     use Illuminate\Contracts\Queue\ShouldQueue;
     use Illuminate\Foundation\Bus\Dispatchable;
-    use Hyn\Tenancy\Models\Website;
+    use App\Tenancy\Models\Website;
     use Illuminate\Support\Facades\Log;
     use Exception;
     use App\Models\Tenant\DownloadTray;
-    use Hyn\Tenancy\Environment;
+    use App\Tenancy\Environment;
     use App\CoreFacturalo\Helpers\Storage\StorageDocument;
     use Modules\Inventory\Exports\InventoryExport;
     use Barryvdh\DomPDF\Facade\Pdf as PDF;

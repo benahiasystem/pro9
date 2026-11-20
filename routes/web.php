@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\System\Configuration;
 use App\Http\Controllers\AdminReseller\UserController as AdminResellerUserController;
 
-$hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
+$hostname = app(App\Tenancy\Contracts\CurrentHostname::class);
 
 if ($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
@@ -1235,7 +1235,7 @@ if ($hostname) {
             /*
             Route::get('ajuste_claves_mysql', function(){
 
-                $sites = \Hyn\Tenancy\Models\Website::all();
+                $sites = \App\Tenancy\Models\Website::all();
                 $passwords = [];
                 foreach($sites as $site){
                     $contra =md5(sprintf(

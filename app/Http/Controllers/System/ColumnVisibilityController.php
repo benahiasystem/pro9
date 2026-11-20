@@ -5,7 +5,7 @@ namespace App\Http\Controllers\System;
 use App\Http\Controllers\Controller;
 use App\Models\System\ColumnVisibilityConfig;
 use App\Models\System\Client;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 

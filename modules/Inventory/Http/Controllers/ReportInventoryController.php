@@ -15,7 +15,7 @@ use Modules\Inventory\Models\ItemWarehouse;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Item\Models\Brand;
 use Modules\Item\Models\Category;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Hostname;
 use App\Models\System\Client;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Jobs\ProcessInventoryReport;

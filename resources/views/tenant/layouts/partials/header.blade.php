@@ -421,7 +421,7 @@
                         $headerMultiUserCount = 0;
                         if (config('configuration.multi_user_enabled')) {
                             try {
-                                $headerWebsite = app(\Hyn\Tenancy\Environment::class)->tenant();
+                                $headerWebsite = app(\App\Tenancy\Environment::class)->tenant();
                                 $headerCurrentClient = \App\Models\System\Client::currentClientByWebsite($headerWebsite)->first();
                                 if ($headerCurrentClient && auth()->check()) {
                                     $headerCurrentUser = auth()->user();

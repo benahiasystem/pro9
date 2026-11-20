@@ -6,7 +6,7 @@ namespace App\Models\Tenant\Catalogs;
 use App\Support\Venezuela\Localization;
 use InvalidArgumentException;
 // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 
 class Province extends ModelCatalog
 {

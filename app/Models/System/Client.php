@@ -4,8 +4,8 @@ namespace App\Models\System;
 
 use App\Mail\PaymentOrderEmail;
 use Carbon\Carbon;
-use Hyn\Tenancy\Models\Hostname;
-use Hyn\Tenancy\Traits\UsesSystemConnection;
+use App\Tenancy\Models\Hostname;
+use App\Tenancy\Traits\UsesSystemConnection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;

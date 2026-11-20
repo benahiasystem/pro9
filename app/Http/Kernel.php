@@ -28,6 +28,7 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\TrustProxies::class,
         \App\Http\Middleware\ForceHttps::class,
         \Illuminate\Http\Middleware\HandleCors::class,
+        \App\Tenancy\Middleware\HostnameActions::class,
     ];
 
     /**

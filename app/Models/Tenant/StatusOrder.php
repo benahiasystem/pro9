@@ -3,7 +3,7 @@
 namespace App\Models\Tenant;
 
 use App\Models\Tenant\Order;
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 
 class StatusOrder extends ModelTenant
 {

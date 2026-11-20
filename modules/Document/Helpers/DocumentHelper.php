@@ -9,7 +9,7 @@ use App\Models\Tenant\{
     Document,
     SaleNote,
 };
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use App\Models\System\Client;
 use App\Traits\LockedEmissionTrait;
 

@@ -2,7 +2,7 @@
 
 namespace App\Models\Tenant;
 
-// use Hyn\Tenancy\Abstracts\TenantModel;
+// use App\Tenancy\Abstracts\TenantModel;
 use Modules\Inventory\Models\ItemWarehouse;
 
 class ItemWarehousePrice extends ModelTenant

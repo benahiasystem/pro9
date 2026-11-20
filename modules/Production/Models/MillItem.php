@@ -7,7 +7,7 @@
     use App\Models\Tenant\Item;
     use App\Models\Tenant\ModelTenant;
     use Carbon\Carbon;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
     /**

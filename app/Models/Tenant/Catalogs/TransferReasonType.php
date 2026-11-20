@@ -2,7 +2,7 @@
 
 namespace App\Models\Tenant\Catalogs;
 
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 use Illuminate\Validation\Rule;
 
 class TransferReasonType extends ModelCatalog

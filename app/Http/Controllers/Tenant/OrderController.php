@@ -14,7 +14,7 @@ use App\Models\Tenant\ItemWarehouse;
 use App\Models\Tenant\StatusOrder;
 use App\Services\Tenant\OrderDocumentFromStatusService;
 use Illuminate\Support\Facades\Cache;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use App\Http\Resources\Tenant\OrderCollection;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\Http\Resources\Tenant\ItemWarehouseCollection;

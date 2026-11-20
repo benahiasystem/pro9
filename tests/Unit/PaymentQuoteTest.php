@@ -438,8 +438,8 @@ class PaymentQuoteTest extends TestCase
 
     public function test_quote_route_is_registered_inside_the_authenticated_tenant_group(): void
     {
-        $this->app->instance(\Hyn\Tenancy\Contracts\CurrentHostname::class,
-            (new \Hyn\Tenancy\Models\Hostname())->forceFill(['fqdn'=>'quote.example.test']));
+        $this->app->instance(\App\Tenancy\Contracts\CurrentHostname::class,
+            (new \App\Tenancy\Models\Hostname())->forceFill(['fqdn'=>'quote.example.test']));
         \Illuminate\Support\Facades\Route::namespace('App\\Http\\Controllers')->group(base_path('routes/web.php'));
         $route=app('router')->getRoutes()->match(\Illuminate\Http\Request::create('http://quote.example.test/documents/payment-quote','POST'));
         self::assertSame('App\\Http\\Controllers\\Tenant\\DocumentPaymentQuoteController@__invoke',$route->getActionName());

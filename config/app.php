@@ -183,6 +183,8 @@ return [
         /*
          * Application Service Providers...
          */
+        Tenancy\Providers\TenancyProvider::class,
+        Tenancy\Affects\Connections\Provider::class,
         App\Providers\PostgresServiceProvider::class,
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,

@@ -17,7 +17,7 @@ $app->instance('files',new Illuminate\Filesystem\Filesystem());
 config(['filesystems.disks.tenant'=>['driver'=>'local','root'=>sys_get_temp_dir().'/'.$input['connection']['database']]]);
 $app->instance('filesystem',new Illuminate\Filesystem\FilesystemManager($app));
 $app->instance('cache',new Illuminate\Cache\Repository(new Illuminate\Cache\ArrayStore()));
-$app->instance(Hyn\Tenancy\Database\Connection::class,new class extends Hyn\Tenancy\Database\Connection {
+$app->instance(App\Tenancy\Database\Connection::class,new class extends App\Tenancy\Database\Connection {
     public function __construct() {}
     public function tenantName(): string {return 'tenant';}
     public function systemName(): string {return 'tenant';}

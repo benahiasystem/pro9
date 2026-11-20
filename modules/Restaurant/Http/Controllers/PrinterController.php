@@ -3,7 +3,7 @@
 namespace Modules\Restaurant\Http\Controllers;
 
 use Exception;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;

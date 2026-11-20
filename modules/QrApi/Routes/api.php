@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 
-$hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
+$hostname = app(App\Tenancy\Contracts\CurrentHostname::class);
 
 if ($hostname)
 {

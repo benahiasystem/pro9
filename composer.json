@@ -21,7 +21,7 @@
         "graham-campbell/markdown": "^15.0",
         "guzzlehttp/guzzle": "^7.2",
         "html2text/html2text": "^4.3",
-        "hyn/multi-tenant": "^5.8",
+        "tenancy/tenancy": "^2.5",
         "imangazaliev/didom": "^1.16",
         "intervention/image": "^2.7",
         "jenssegers/agent": "^2.6",
@@ -74,7 +74,7 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": ["tenancy/tenancy"]
         }
     },
     "scripts": {

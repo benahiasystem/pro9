@@ -14,7 +14,7 @@ if (!flock($fixtureLock,LOCK_EX|LOCK_NB)) exit("Otra preparación de BBC está e
 $root=dirname(__DIR__);$host=$argv[1] ?? ''; $mode=$argv[2] ?? '';
 if ($host!=='bbc.localhost' || !in_array($mode,['prepare','emit','documents','audit'],true)) exit("Usage: php scripts/prepare_delivery_order_demo.php bbc.localhost prepare|emit|documents|audit [case]\n");
 $app=require $root.'/bootstrap/app.php';$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-$hostname=Hyn\Tenancy\Models\Hostname::where('fqdn',$host)->firstOrFail();app(Hyn\Tenancy\Environment::class)->tenant($hostname->website);
+$hostname=App\Tenancy\Models\Hostname::where('fqdn',$host)->firstOrFail();app(App\Tenancy\Environment::class)->tenant($hostname->website);
 $db=Illuminate\Support\Facades\DB::connection('tenant');Illuminate\Support\Facades\DB::setDefaultConnection('tenant');
 $company=Company::firstOrFail();if ($company->fiscal_environment!=='demo' || $company->fiscal_emission_mode!=='digital') exit("BBC must remain digital DEMO.\n");
 auth()->setUser(User::where('type','admin')->firstOrFail());

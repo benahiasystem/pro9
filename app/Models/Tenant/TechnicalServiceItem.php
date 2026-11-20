@@ -8,7 +8,7 @@
     use App\Models\Tenant\Catalogs\PriceType;
     use App\Traits\AttributePerItems;
     use Carbon\Carbon;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Modules\Inventory\Models\Warehouse;
     use Modules\Sale\Models\TechnicalService;

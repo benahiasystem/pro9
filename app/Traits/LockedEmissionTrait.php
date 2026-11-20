@@ -2,8 +2,8 @@
 
 namespace App\Traits;
 
-use Hyn\Tenancy\Contracts\Hostname;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Models\Hostname;
+use App\Tenancy\Environment;
 use App\Models\System\{
     Client,
     Plan

@@ -37,9 +37,9 @@ final class SalesLimitPostgresTest extends \PHPUnit\Framework\TestCase
             });
         }
         $db->table('clients')->insert(['hostname_id'=>1,'start_billing_cycle'=>date('Y-m').'-01']);
-        $hostname=new \Hyn\Tenancy\Models\Hostname(); $hostname->setRawAttributes(['id'=>1]);
-        $environment=$this->getMockBuilder(\Hyn\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['hostname'])->getMock();
-        $environment->method('hostname')->willReturn($hostname); $app->instance(\Hyn\Tenancy\Environment::class,$environment);
+        $hostname=new \App\Tenancy\Models\Hostname(); $hostname->setRawAttributes(['id'=>1]);
+        $environment=$this->getMockBuilder(\App\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['hostname'])->getMock();
+        $environment->method('hostname')->willReturn($hostname); $app->instance(\App\Tenancy\Environment::class,$environment);
         $plan=new \App\Models\System\Plan();
         $plan->setRawAttributes(['id'=>1,'name'=>'Temporal','sales_limit'=>$cap,'sales_unlimited'=>false,
             'include_sale_notes_sales_limit'=>$includeNotes,'calculation_snapshot'=>json_encode(D::snapshot(['sales_limit'=>$cap]),JSON_THROW_ON_ERROR)]);

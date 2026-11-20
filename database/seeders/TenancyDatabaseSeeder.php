@@ -7,8 +7,8 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Database\Seeders\Libs\Migration\PolymorphicRelationSeeder;
-use Hyn\Tenancy\Environment;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Environment;
+use App\Tenancy\Models\Website;
 
 class TenancyDatabaseSeeder extends Seeder
 {

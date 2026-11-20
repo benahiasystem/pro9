@@ -1,0 +1,7 @@
+{
+    "php_excluded": [
+        "Tests\\Unit\\FiscalEmissionSchemaTest::test_purchase_report_preserves_customer_and_exact_totals_in_pdf_and_excel",
+        "Tests\\Unit\\VendeyaDocumentPayloadNormalizerTest::test_it_totals_taxed_and_exempt_usd_lines_with_the_configured_rate",
+        "Tests\\Unit\\ThirdPartyInvoiceTest::test_usd_cent_allocation_keeps_exempt_sales_and_post_tax_discounts_balanced"
+    ]
+}

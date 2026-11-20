@@ -6,7 +6,7 @@ use App\Models\System\Configuration;
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 use App\Support\Venezuela\Localization;
 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

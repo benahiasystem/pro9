@@ -120,7 +120,7 @@ class RestaurantController extends Controller
     private function buildConfigResponse(array $branding)
     {
         try {
-            $currentHostname = app(\Hyn\Tenancy\Contracts\CurrentHostname::class)?->fqdn;
+            $currentHostname = app(\App\Tenancy\Contracts\CurrentHostname::class)?->fqdn;
             $fqdn = $currentHostname ?: request()->getHost();
             $protocol = config('tenant.force_https') ? 'https://' : 'http://';
 

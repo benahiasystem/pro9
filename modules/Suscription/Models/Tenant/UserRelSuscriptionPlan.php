@@ -20,7 +20,7 @@
     use App\Models\Tenant\User;
     use Illuminate\Support\Facades\Auth;
     use Carbon\Carbon;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
 
     /**

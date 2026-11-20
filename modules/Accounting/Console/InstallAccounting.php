@@ -4,8 +4,8 @@ namespace Modules\Accounting\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use Hyn\Tenancy\Models\Hostname;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Models\Hostname;
+use App\Tenancy\Environment;
 use App\Models\Tenant\User;
 use Modules\Accounting\Support\TenantDB as DB;
 use Modules\Accounting\Domain\CompanyContext;

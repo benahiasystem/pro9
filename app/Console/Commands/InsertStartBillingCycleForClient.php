@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\System\Client;
 use App\Models\Tenant\Document;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;

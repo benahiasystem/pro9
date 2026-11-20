@@ -2,7 +2,7 @@
 
 namespace Modules\WhatsAppBot\Models;
 
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Model;
 
 class BotSession extends Model

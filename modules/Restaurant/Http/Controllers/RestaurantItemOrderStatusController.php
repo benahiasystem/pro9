@@ -10,7 +10,7 @@ use App\Models\Tenant\Item;
 use Modules\Restaurant\Models\RestaurantItemOrderStatus;
 use Modules\Restaurant\Services\RestaurantStockService;
 use App\Services\CentrifugoService;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 
 
 class RestaurantItemOrderStatusController extends Controller

@@ -258,8 +258,8 @@ final class PostgresImplementationTest extends \Tests\TestCase
         self::assertTrue($result['success'], $result['message'] ?? 'Alta fallida');
         $run=DB::connection('system')->table('tenant_provisioning_runs')->where('tenant_name',$this->prefix.'_panel')->first();
         self::assertSame('ready',$run->state);
-        $website=\Hyn\Tenancy\Models\Website::where('uuid',$this->prefix.'_panel')->firstOrFail();
-        $cfg=app(\Hyn\Tenancy\Database\Connection::class)->generateConfigurationArray($website);
+        $website=\App\Tenancy\Models\Website::where('uuid',$this->prefix.'_panel')->firstOrFail();
+        $cfg=app(\App\Tenancy\Database\Connection::class)->generateConfigurationArray($website);
         $tenant=$this->connect($cfg);
         self::assertSame('free_form',$tenant->table('companies')->value('fiscal_emission_mode'));
         self::assertSame('J123456789',$tenant->table('companies')->value('number'));
@@ -267,17 +267,17 @@ final class PostgresImplementationTest extends \Tests\TestCase
 
         $apiRequest=\Illuminate\Http\Request::create('/api/tenant','POST',['ruc'=>'12345678901','subdomain'=>'api','email'=>'postgres-api@example.test','plan_id'=>1,'fiscal_environment'=>'demo','fiscal_emission_mode'=>'free_form','fiscal_configuration'=>[]]);
         $api=app(\App\Http\Controllers\System\Api\TenantController::class)->store($apiRequest);self::assertSame(200,$api->getStatusCode());
-        $otherSite=\Hyn\Tenancy\Models\Website::where('uuid',$this->prefix.'_api')->firstOrFail();
-        $otherConfig=app(\Hyn\Tenancy\Database\Connection::class)->generateConfigurationArray($otherSite);
+        $otherSite=\App\Tenancy\Models\Website::where('uuid',$this->prefix.'_api')->firstOrFail();
+        $otherConfig=app(\App\Tenancy\Database\Connection::class)->generateConfigurationArray($otherSite);
         $other=$this->connect($otherConfig,'pg_other_tenant');self::assertSame(1,$other->table('companies')->value('id'));
         self::assertSame(1,$tenant->table('companies')->value('id'));self::assertNotSame($tenant->table('companies')->value('number'),$other->table('companies')->value('number'));
         $this->verifyHostnameIsolation($website,$cfg,$otherSite,$otherConfig);
         $failedName=$this->prefix.'_fault';
         try {
             \App\Tenancy\TenantOnboarding::run(function () use ($failedName) {
-                $site=new \Hyn\Tenancy\Models\Website();$site->uuid=$failedName;
-                app(\Hyn\Tenancy\Contracts\Repositories\WebsiteRepository::class)->create($site);
-                app(\Hyn\Tenancy\Environment::class)->tenant($site);\App\Tenancy\TenantOnboarding::beginTenant();
+                $site=new \App\Tenancy\Models\Website();$site->uuid=$failedName;
+                app(\App\Tenancy\Repositories\WebsiteRepository::class)->create($site);
+                app(\App\Tenancy\Environment::class)->tenant($site);\App\Tenancy\TenantOnboarding::beginTenant();
                 throw new \RuntimeException('Injected business initialization failure');
             });
             self::fail('Debe fallar el alta incompleta.');
@@ -296,7 +296,7 @@ final class PostgresImplementationTest extends \Tests\TestCase
             $user = $db->table('users')->orderBy('id')->first(['id', 'email']);
             $users[] = $user;
             $db->table('users')->where('id', $user->id)->update(['api_token'=>$tokens[$index],'email_verified_at'=>now()]);
-            $companies[]=$db->table('companies')->value('number');$hosts[]=\Hyn\Tenancy\Models\Hostname::where('website_id',$site->id)->value('fqdn');
+            $companies[]=$db->table('companies')->value('number');$hosts[]=\App\Tenancy\Models\Hostname::where('website_id',$site->id)->value('fqdn');
             $clients[] = $central->table('clients')->where('hostname_id', function ($query) use ($site) {
                 $query->select('id')->from('hostnames')->where('website_id', $site->id);
             })->first(['id', 'number', 'name']);
@@ -425,8 +425,8 @@ final class PostgresImplementationTest extends \Tests\TestCase
                 ]);
                 $created=app(\App\Http\Controllers\System\ClientController::class)->store($request);
                 self::assertTrue($created['success'],$created['message'] ?? 'Alta integral fallida');
-                $site=\Hyn\Tenancy\Models\Website::where('uuid',$this->prefix.'_'.$suffix)->firstOrFail();$sites[]=$site;
-                $c=app(\Hyn\Tenancy\Database\Connection::class)->generateConfigurationArray($site);$configs[]=$c;$names[]=$c['database'];
+                $site=\App\Tenancy\Models\Website::where('uuid',$this->prefix.'_'.$suffix)->firstOrFail();$sites[]=$site;
+                $c=app(\App\Tenancy\Database\Connection::class)->generateConfigurationArray($site);$configs[]=$c;$names[]=$c['database'];
                 $db=$this->connect($c);$db->statement('CREATE TABLE amounts(id bigserial PRIMARY KEY,company_id bigint REFERENCES companies(id),amount numeric(30,12),snapshot json)');
                 $db->table('amounts')->insert(['id'=>40,'company_id'=>1,'amount'=>'0.300000000001','snapshot'=>'{"n":"1","d":"3"}']);SequenceSynchronizer::sync($db);
                 $schemas[$c['database']]=SchemaInspector::snapshot($db);$data[$c['database']]=$fingerprint($db);
@@ -609,11 +609,11 @@ final class PostgresImplementationTest extends \Tests\TestCase
     {
         $this->install();$service=app(TenantProvisioning::class);$sites=[];
         foreach (['job_a','job_b'] as $suffix) {
-            $site=\Hyn\Tenancy\Models\Website::withoutEvents(function () use ($suffix) {$site=new \Hyn\Tenancy\Models\Website();$site->uuid=$this->prefix.'_'.$suffix;$site->save();return $site;});
-            $c=app(\Hyn\Tenancy\Database\Connection::class)->generateConfigurationArray($site);
+            $site=\App\Tenancy\Models\Website::withoutEvents(function () use ($suffix) {$site=new \App\Tenancy\Models\Website();$site->uuid=$this->prefix.'_'.$suffix;$site->save();return $site;});
+            $c=app(\App\Tenancy\Database\Connection::class)->generateConfigurationArray($site);
             $service->create($c,null,function () use ($c) {$db=$this->connect($c);$db->statement('CREATE TABLE companies(id integer PRIMARY KEY,name text)');$db->table('companies')->insert(['id'=>1,'name'=>$c['database']]);});$sites[]=$site;
         }
-        $environment=app(\Hyn\Tenancy\Environment::class);$events=app('events');\App\Tenancy\TenantJobContext::clear();
+        $environment=app(\App\Tenancy\Environment::class);$events=app('events');\App\Tenancy\TenantJobContext::clear();
         foreach ($sites as $site) {
             $job=$this->createMock(\Illuminate\Contracts\Queue\Job::class);$job->method('payload')->willReturn(['website_id'=>$site->id]);
             $events->dispatch(new \Illuminate\Queue\Events\JobProcessing('temporary',$job));
@@ -636,7 +636,7 @@ final class PostgresImplementationTest extends \Tests\TestCase
         }
         self::assertSame(0,$queue->size('tenant-isolation'));
         foreach ($sites as $site) {
-            $config=app(\Hyn\Tenancy\Database\Connection::class)->generateConfigurationArray($site);
+            $config=app(\App\Tenancy\Database\Connection::class)->generateConfigurationArray($site);
             self::assertSame('worker:'.$site->uuid,$this->connect($config)->table('companies')->where('id',1)->value('name'));
         }
 

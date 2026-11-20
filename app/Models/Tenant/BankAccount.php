@@ -3,7 +3,7 @@
     namespace App\Models\Tenant;
 
     use App\Models\Tenant\Catalogs\CurrencyType;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;

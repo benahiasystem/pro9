@@ -26,7 +26,7 @@ use App\Mail\Tenant\CulqiEmail;
 use App\Http\Controllers\Tenant\Api\ServiceController;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Modules\Inventory\Models\InventoryConfiguration;
 use App\Http\Resources\Tenant\OrderCollection;
 use App\Models\Tenant\Promotion;

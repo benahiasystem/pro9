@@ -2,8 +2,8 @@
 
 namespace App\Models\System;
 
-use Hyn\Tenancy\Models\Website;
-use Hyn\Tenancy\Traits\UsesSystemConnection;
+use App\Tenancy\Models\Website;
+use App\Tenancy\Traits\UsesSystemConnection;
 use Illuminate\Database\Eloquent\Model;
 
 /**

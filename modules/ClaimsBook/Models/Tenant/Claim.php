@@ -8,7 +8,7 @@ use App\Models\Tenant\ModelTenant;
 use App\Models\Tenant\Catalogs\District;
 use App\Models\Tenant\Catalogs\IdentityDocumentType;
 use App\Models\Tenant\User;
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;

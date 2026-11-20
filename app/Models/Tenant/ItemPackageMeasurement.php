@@ -6,7 +6,7 @@
 
     use App\Models\Tenant\Catalogs\CatItemPackageMeasurement;
     use Carbon\Carbon;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Collection;
 

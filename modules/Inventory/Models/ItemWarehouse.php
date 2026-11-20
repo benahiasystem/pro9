@@ -6,7 +6,7 @@
     use App\Models\Tenant\ModelTenant;
     use Carbon\Carbon;
     use Eloquent;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
 
     /**

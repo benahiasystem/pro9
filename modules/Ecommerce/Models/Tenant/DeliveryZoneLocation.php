@@ -6,7 +6,7 @@ use App\Models\Tenant\ModelTenant;
 use App\Models\Tenant\Catalogs\Department;
 use App\Models\Tenant\Catalogs\Province;
 use App\Models\Tenant\Catalogs\District;
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 
 /**
  * Ubicación asociada a una zona de delivery.

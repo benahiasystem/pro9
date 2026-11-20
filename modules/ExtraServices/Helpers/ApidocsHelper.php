@@ -49,7 +49,7 @@ class ApidocsHelper
                 return null;
             }
 
-            $hostname = \Hyn\Tenancy\Models\Hostname::where('fqdn', $current_url)->first();
+            $hostname = \App\Tenancy\Models\Hostname::where('fqdn', $current_url)->first();
             if (!$hostname) {
                 return null;
             }

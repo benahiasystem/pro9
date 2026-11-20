@@ -2,7 +2,7 @@
 
     namespace App\Models\System;
 
-    use Hyn\Tenancy\Abstracts\SystemModel;
+    use App\Tenancy\Abstracts\SystemModel;
 
     /**
      * Class ModuleLevel

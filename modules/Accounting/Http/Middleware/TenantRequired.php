@@ -3,7 +3,7 @@
 namespace Modules\Accounting\Http\Middleware;
 
 use Closure;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Modules\Accounting\Domain\ApiProblem;
 use Illuminate\Http\Request;
 final class TenantRequired

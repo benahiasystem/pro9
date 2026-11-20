@@ -4,7 +4,7 @@ namespace App\Notifications\Tenant;
 
 use Illuminate\Support\Facades\Log;
 use App\Models\Tenant\Company;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;

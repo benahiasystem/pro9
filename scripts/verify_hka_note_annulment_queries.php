@@ -6,7 +6,7 @@ if (getenv('SAB_POSTGRES_TESTS') !== '1' || !$source || !str_starts_with($source
 $matrix=json_decode(file_get_contents($source),true,512,JSON_THROW_ON_ERROR);
 if (empty($matrix['synthetic_commercial_data'])) exit("Only synthetic acceptance evidence may be used.\n");
 $app=require $root.'/bootstrap/app.php';$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-$hostname=Hyn\Tenancy\Models\Hostname::where('fqdn',$host)->firstOrFail();app(Hyn\Tenancy\Environment::class)->tenant($hostname->website);
+$hostname=App\Tenancy\Models\Hostname::where('fqdn',$host)->firstOrFail();app(App\Tenancy\Environment::class)->tenant($hostname->website);
 $company=App\Models\Tenant\Company::firstOrFail();if($company->fiscal_environment!=='demo'||$company->fiscal_emission_mode!=='digital')exit("DEMO only.\n");
 $transport=app(App\Services\Fiscal\HkaTransport::class);$token=$transport->token($company);
 $report=['date'=>date('c'),'environment'=>'demo','read_only'=>true,'source'=>basename($source),'email_sent'=>false,'cases'=>[]];$path=$root.'/informes/evidencias/notas_hka_anulacion_consultas_'.date('Y_m_d_His').'.json';

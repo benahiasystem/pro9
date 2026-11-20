@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\DocumentItem;
 use App\Models\Tenant\SaleNoteItem;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Models\Website;
 use Illuminate\Console\Command;
 
 class SearchMostUsedAffectationIgvTypes extends Command
@@ -40,7 +40,7 @@ class SearchMostUsedAffectationIgvTypes extends Command
         if (count($tenants) == 1 && $tenants[0] === "") {
             $websites = Website::all();
             foreach ($websites as $website) {
-                $tenancy = app(\Hyn\Tenancy\Environment::class);
+                $tenancy = app(\App\Tenancy\Environment::class);
                 $tenancy->tenant($website);
                 $this->getAffectationIgvTypeMostUsed();
 
@@ -49,7 +49,7 @@ class SearchMostUsedAffectationIgvTypes extends Command
             foreach ($tenants as $tenant_id) {
                 $website = Website::where('id', $tenant_id)->first();
                 if ($website) {
-                    $tenancy = app(\Hyn\Tenancy\Environment::class);
+                    $tenancy = app(\App\Tenancy\Environment::class);
                     $tenancy->tenant($website);
 
                     $this->getAffectationIgvTypeMostUsed();

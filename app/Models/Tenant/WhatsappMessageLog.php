@@ -2,7 +2,7 @@
 
 namespace App\Models\Tenant;
 
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Model;
 
 class WhatsappMessageLog extends Model

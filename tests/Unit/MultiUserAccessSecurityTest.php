@@ -4,11 +4,11 @@ namespace Tests\Unit;
 
 use App\Models\System\Client;
 use App\Models\Tenant\User;
-use Hyn\Tenancy\Contracts\CurrentHostname;
-use Hyn\Tenancy\Database\Connection as TenancyConnection;
-use Hyn\Tenancy\Environment;
-use Hyn\Tenancy\Models\Hostname;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Database\Connection as TenancyConnection;
+use App\Tenancy\Environment;
+use App\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Website;
 use Illuminate\Config\Repository;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use Illuminate\Database\Eloquent\Model;

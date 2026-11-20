@@ -21,7 +21,7 @@ use Modules\Report\Mail\DocumentEmail;
 use Mpdf\Mpdf;
 use Modules\Report\Jobs\ProcessDocumentReport;
 use App\Models\Tenant\DownloadTray;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Hostname;
 use App\Models\System\Client;
 
 use Maatwebsite\Excel\Excel as BaseExcel;

@@ -3,7 +3,7 @@
 namespace App\Models\Tenant\Catalogs;
 
 use Illuminate\Database\Eloquent\Builder;
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 
 class CurrencyType extends ModelCatalog
 {

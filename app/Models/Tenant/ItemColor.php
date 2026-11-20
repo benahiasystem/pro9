@@ -6,7 +6,7 @@
     use App\Models\Tenant\Catalogs\CatColorsItem;
     use Carbon\Carbon;
     use Eloquent;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
 
     /**

@@ -13,7 +13,7 @@ use App\Models\System\PaymentOrderState;
 use App\Models\System\Plan;
 use App\Models\System\PlanPeriod;
 use Carbon\Carbon;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 

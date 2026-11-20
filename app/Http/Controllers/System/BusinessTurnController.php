@@ -9,7 +9,7 @@ use App\Models\System\Client;
 use App\Models\System\Module;
 use App\Models\System\Plan;
 use Exception;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

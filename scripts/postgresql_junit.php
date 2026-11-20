@@ -91,6 +91,21 @@ function postgresqlVesTestSelection(array $inventory, array $selectors): array
     return ['included'=>array_diff_key($inventory,$excluded), 'excluded'=>$excluded];
 }
 
+/** Cases owned by Account/Accounting, including exporters tested from the shared suite. */
+function postgresqlAccountingCases(array $inventory): array
+{
+    $shared = [
+        'Tests\\Unit\\ContasisPostgresTest::test_contasis_formats_persisted_exact_values_and_real_other_taxes',
+        'Tests\\Unit\\RetiredBagTaxExportTest::test_ejb_workbook_keeps_columns_and_identifiers_aligned_without_the_tax',
+        'Tests\\Unit\\RetiredBagTaxExportTest::test_ejb_blade_has_the_same_column_alignment_as_the_workbook',
+    ];
+    return array_filter($inventory, static function (array $case, string $key) use ($shared): bool {
+        return str_starts_with($case['class'], 'Modules\\Account\\Tests\\')
+            || str_starts_with($case['class'], 'Modules\\Accounting\\Tests\\')
+            || in_array($key, $shared, true);
+    }, ARRAY_FILTER_USE_BOTH);
+}
+
 /** Keep the phase prefix and exclude only the exact discovered case identities. */
 function postgresqlExcludeCases(string $phaseFilter, array $excluded): string
 {
