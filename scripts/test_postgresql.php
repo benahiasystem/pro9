@@ -141,7 +141,8 @@ try {
         // PHPUnit's listing ignores group filters; apply exactly the original exclusions here.
         $expectedAll=postgresqlTestInventory($report.'/'.$discovery,$excludedGroups);
         $functionalExcludedGroups = [...$excludedGroups, 'postgres-performance'];
-        $expectedFunctional=postgresqlTestInventory($report.'/'.$discovery,$functionalExcludedGroups);
+        $discoveredFunctional=postgresqlTestInventory($report.'/'.$discovery,$functionalExcludedGroups);
+        $expectedFunctional=$discoveredFunctional;
         // Measure against a fresh PostgreSQL before the functional suite creates tenants.
         $deferred=[];
         if ($deferPosPerformance) {
@@ -171,6 +172,23 @@ try {
             $expectedAll = array_diff_key($expectedAll, $accountingExcluded);
             $phases['accounting_scope'] = ['modules_loaded'=>true, 'php_excluded'=>array_keys($accountingExcluded)];
         }
+        $functionalFilters = [];
+        if ($suite === 'all') {
+            $selected = [];
+            foreach (postgresqlFunctionalFilters() as $label => $filter) {
+                if ($withoutAccounting && $label === 'accounting') continue;
+                $pattern = postgresqlExcludeCases($filter, $currencyExcluded + $accountingExcluded);
+                $matches = array_filter($discoveredFunctional, static fn (string $id): bool => preg_match($pattern, $id) === 1, ARRAY_FILTER_USE_KEY);
+                if (!$matches || array_intersect_key($selected, $matches)) {
+                    throw new RuntimeException('La selección de PHPUnit está vacía o contiene duplicados en la fase '.$label.'.');
+                }
+                $selected += $matches;
+                $functionalFilters[$label] = $pattern;
+            }
+            if (array_diff_key($expectedFunctional, $selected) || array_diff_key($selected, $expectedFunctional)) {
+                throw new RuntimeException('Los filtros de PHPUnit no reproducen el inventario funcional.');
+            }
+        }
         $expectedPerformance=array_diff_key($expectedAll, $expectedFunctional);
         $performanceFile=$runId.'-performance.xml';
         $performanceExcludedGroups = $deferPosPerformance ? [...$excludedGroups, 'postgres-performance-pos'] : $excludedGroups;
@@ -186,11 +204,10 @@ try {
             $functionalReports=[];$functionalPhases=[];
             $phases['functional']=['exit_code'=>1,'junit'=>$runId.'-functional.xml','state'=>'incomplete',
                 'subphases'=>[],'discovered_tests'=>count($expectedFunctional)];
-            foreach (postgresqlFunctionalFilters() as $label=>$filter) {
-                if ($withoutAccounting && $label==='accounting') continue;
+            foreach ($functionalFilters as $label=>$filter) {
                 $filename=$runId.'-functional-'.$label.'.xml';
                 $functional=['vendor/bin/phpunit','--exclude-group',implode(',', $functionalExcludedGroups),'--printer','Tests\Support\FiscalProgressPrinter',
-                    '--filter',postgresqlExcludeCases($filter,$currencyExcluded + $accountingExcluded),'--log-junit',$junitDirectory.$filename];
+                    '--filter',$filter,'--log-junit',$junitDirectory.$filename];
                 $phaseCode=command(array_merge($runtime,$functional),$environment);
                 $functionalPhases[$label]=['exit_code'=>$phaseCode,'junit'=>$filename];
                 $phases['functional']['subphases']=$functionalPhases;

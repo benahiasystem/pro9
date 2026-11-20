@@ -88,6 +88,24 @@ final class PostgresJunitTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    public function test_many_dataset_exclusions_keep_the_phase_filter_within_pcre_limits(): void
+    {
+        $class = 'Tests\Unit\FiscalEmissionSchemaTest';
+        $name = 'test_existing_documents_keep_their_original_taxable_base_and_currency';
+        $excluded = [];
+        for ($index = 0; $index < 400; $index++) {
+            $dataset = $name.' with data set #'.$index;
+            $excluded[$class.'::'.$dataset] = ['class' => $class, 'name' => $dataset];
+        }
+
+        $filter = \postgresqlExcludeCases(\postgresqlFunctionalFilters()['fiscal'], $excluded);
+        foreach ($excluded as $id => $case) {
+            self::assertSame(0, preg_match($filter, $id), $id);
+        }
+        self::assertSame(1, preg_match($filter, $class.'::'.$name.' with data set #400'));
+        self::assertSame(0, preg_match($filter, 'Tests\Unit\OtherTest::'.$name));
+    }
+
     public function test_missing_invoice_currency_selector_invalidates_the_inventory(): void
     {
         $inventory=['Fiscal::old'=>['class'=>'Fiscal','name'=>'old','groups'=>[]]];
