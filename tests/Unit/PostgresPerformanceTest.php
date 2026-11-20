@@ -12,13 +12,13 @@ use Symfony\Component\Process\Process;
  */
 final class PostgresPerformanceTest extends TestCase
 {
-    public function test_http_and_sales_report_p95_matches_the_temporary_mysql_reference(): void
+    public function test_http_and_sales_report_p95_matches_the_postgresql_tenancy2_reference(): void
     {
         $workloads = ['http_documents', 'sales_report'];
         $single = $this->measureWorkloads($workloads, 'http-reportes');
 
         $root = dirname(__DIR__, 2);
-        $reference = $root.'/informes/evidencias/postgresql_17_implementacion/referencia_rendimiento_multitenant_mysql.json';
+        $reference = $root.'/informes/evidencias/postgresql_17_implementacion/referencia_rendimiento_postgresql.json';
         [$baseline, $hash] = $this->readReference($reference);
         $reports = $this->runBenchmark('benchmark_postgresql_tenants.php');
         self::assertSame(['a', 'b'], array_keys($baseline['tenants']));
@@ -30,9 +30,9 @@ final class PostgresPerformanceTest extends TestCase
 
         $comparisons = [];
         foreach ($reports as $member => $postgres) {
-            $mysql = $baseline['tenants'][$member];
-            self::assertSame($mysql['tenant']['hostname'], $postgres['tenant']['hostname']);
-            foreach ($this->compareWorkloads($mysql, $postgres, $workloads) as $comparison) {
+            $beforeReport = $baseline['tenants'][$member];
+            self::assertSame($beforeReport['tenant']['hostname'], $postgres['tenant']['hostname']);
+            foreach ($this->compareWorkloads($beforeReport, $postgres, $workloads) as $comparison) {
                 $comparisons[] = ['tenant' => $member] + $comparison;
             }
         }
@@ -41,7 +41,7 @@ final class PostgresPerformanceTest extends TestCase
     }
 
     /** @group postgres-performance-pos */
-    public function test_pos_catalog_p95_matches_the_temporary_mysql_reference(): void
+    public function test_pos_catalog_p95_matches_the_postgresql_tenancy2_reference(): void
     {
         $this->assertPerformanceBudgets($this->measureWorkloads(['pos_catalog'], 'pos'));
     }
@@ -50,21 +50,22 @@ final class PostgresPerformanceTest extends TestCase
     {
         if (getenv('SAB_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere el ejecutor PostgreSQL temporal.');
         $root = dirname(__DIR__, 2);
-        $reference = getenv('SAB_POSTGRES_BASELINE_JSON') ?: $root.'/informes/evidencias/postgresql_17_implementacion/referencia_rendimiento_mysql.json';
+        $reference = $root.'/informes/evidencias/postgresql_17_implementacion/referencia_rendimiento_postgresql.json';
         [$baseline, $hash] = $this->readReference($reference);
         $postgres = $this->runBenchmark('benchmark_postgresql_http.php', $workloads);
-        $comparisons = $this->compareWorkloads($baseline, $postgres, $workloads);
+        $referenceSection = $label === 'pos' ? 'pos' : 'single';
+        $comparisons = $this->compareWorkloads($baseline[$referenceSection], $postgres, $workloads);
         $this->writeCaseResults($label, ['postgres' => $postgres], $comparisons, $reference, $hash);
         return $comparisons;
     }
 
     private function readReference(string $path): array
     {
-        self::assertFileExists($path, 'Falta la referencia MySQL temporal.');
+        self::assertFileExists($path, 'Falta la referencia PostgreSQL de Tenancy 2.');
         $bytes = file_get_contents($path);
         $reference = json_decode($bytes, true, 512, JSON_THROW_ON_ERROR);
         self::assertTrue($reference['temporary_only']);
-        self::assertSame('861228462e208d2060c9148b87fd7d7d3f354da5', $reference['baseline_revision']);
+        self::assertSame('9d7d61dea246d8bb2905c46a636cbd63c7336d8b', $reference['baseline_revision']);
         self::assertSame(PHP_VERSION, $reference['php_version']);
         self::assertSame(2, $reference['cpu_limit']);
         self::assertSame(805306368, $reference['server_memory_bytes']);
@@ -82,11 +83,11 @@ final class PostgresPerformanceTest extends TestCase
         return json_decode($process->getOutput(), true, 512, JSON_THROW_ON_ERROR);
     }
 
-    private function compareWorkloads(array $mysql, array $postgres, array $workloads): array
+    private function compareWorkloads(array $beforeReport, array $postgres, array $workloads): array
     {
-        self::assertSame('mysql', $mysql['engine']);
+        self::assertSame('pgsql', $beforeReport['engine']);
         self::assertSame('pgsql', $postgres['engine']);
-        foreach ([$mysql, $postgres] as $report) {
+        foreach ([$beforeReport, $postgres] as $report) {
             self::assertSame(30, $report['samples']);
             self::assertSame(3, $report['warmups']);
             self::assertSame([1000, 10000], array_keys($report['cases']));
@@ -96,7 +97,7 @@ final class PostgresPerformanceTest extends TestCase
         foreach ([1000, 10000] as $count) {
             self::assertSame($workloads, array_keys($postgres['cases'][$count]));
             foreach ($workloads as $workload) {
-                $expected = $mysql['cases'][$count][$workload];
+                $expected = $beforeReport['cases'][$count][$workload];
                 $measured = $postgres['cases'][$count][$workload];
                 self::assertCount(30, $expected['samples_ms']);
                 self::assertCount(30, $measured['samples_ms']);

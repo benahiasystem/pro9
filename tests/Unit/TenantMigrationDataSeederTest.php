@@ -39,7 +39,8 @@ class TenantMigrationDataSeederTest extends TestCase
         $foreignKeyMigrations = glob(database_path('migrations/tenant/*_add_tenant_foreign_keys.php')) ?: [];
         self::assertCount(350, $createMigrations);
         self::assertCount(1, $foreignKeyMigrations);
-        self::assertCount(351, glob(database_path('migrations/tenant/*.php')) ?: []);
+        self::assertFileExists(database_path('migrations/tenant/2026_11_19_120000_remove_legacy_nrus.php'));
+        self::assertCount(352, glob(database_path('migrations/tenant/*.php')) ?: []);
         self::assertSame([], glob(database_path('migrations/tenant/*_migrate_*.php')) ?: []);
 
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########

@@ -198,8 +198,8 @@ final class PostgresJunitTest extends \PHPUnit\Framework\TestCase
         $functional=['Unit::one'=>['class'=>'Unit','name'=>'one','groups'=>['unit']],
             'Unit::two with data set "tercio ñ"'=>['class'=>'Unit','name'=>'two with data set "tercio ñ"','groups'=>['exact']]];
         $class='Tests\\Unit\\PostgresPerformanceTest';
-        $regular='test_http_and_sales_report_p95_matches_the_temporary_mysql_reference';
-        $pos='test_pos_catalog_p95_matches_the_temporary_mysql_reference';
+        $regular='test_http_and_sales_report_p95_matches_the_postgresql_tenancy2_reference';
+        $pos='test_pos_catalog_p95_matches_the_postgresql_tenancy2_reference';
         return [$functional+[
             $class.'::'.$regular=>['class'=>$class,'name'=>$regular,'groups'=>['postgres-performance']],
             $class.'::'.$pos=>['class'=>$class,'name'=>$pos,'groups'=>['postgres-performance','postgres-performance-pos']],

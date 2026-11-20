@@ -14,16 +14,16 @@ El proyecto Docker `sab-tenancy2-preprod` quedó ejecutando Tenancy 2.5.0 en su 
 
 ## Batería fiscal
 
-La corrida completa se intentó sobre `9d7d61de`:
+Ejecutar en el worktree de `codex/tenancy-2` con PostgreSQL 17.11 temporal y Tenancy 2.5:
 
 ```bash
-php scripts/test_postgresql.php --skip-build --reuse-reference --without-accounting --ves-documents-only
+php scripts/test_postgresql.php --skip-build --without-accounting --ves-documents-only
 ```
 
-Terminó en la comprobación de insumos con código 2. Faltan `casts_exactos_efectivos.json` y `referencia_rendimiento_multitenant_mysql.json`. Nueve archivos del informe histórico de casts tenían huellas distintas a las de la rama base, por lo que se descartó como evidencia vigente. La opción VES no difiere las pruebas de rendimiento por sí sola.
+El arnés utiliza tres insumos versionados. `casts_exactos_efectivos.json` conserva el inventario de campos y valida los casts efectivos de la rama. `esquema.json` contiene el contrato de tablas y columnas normalizado para PostgreSQL. `referencia_rendimiento_postgresql.json` compara HTTP, reportes y POS contra las mediciones del commit `9d7d61de`, que ya usa Tenancy 2. La opción VES incluye las pruebas de rendimiento.
 
-Los módulos `Account` y `Accounting` siguen activos. El arnés excluye sus pruebas propias y casos compartidos identificados. Conserva cobros USD sobre documentos VES. El descubrimiento preliminar guardó 153 coincidencias de Contabilidad y 157 de moneda en `storage/app/tenancy-build/exclusiones-descubiertas.json`. Algunos casos coinciden en ambas listas. Hubo cuatro entradas de error durante ese descubrimiento, por lo que las cifras son diagnósticas.
+Los módulos `Account` y `Accounting` siguen activos. El arnés excluye sus pruebas propias y casos compartidos identificados. Conserva cobros USD sobre documentos VES, incluido el cobro mixto. El reporte JSON lista las exclusiones por identificador, y el arnés verifica la cobertura comparando el inventario con los JUnit.
 
-La selección dirigida ejecuta la aceptación HTTP, la matriz de notas y la factura VES con cobro mixto a tasa BCV. El perfil omite dos recorridos internos de la aceptación HTTP que creaban un servicio técnico y una nota en USD. Comprueba al final que no haya documentos USD en las siete tablas documentales incluidas en ese recorrido. El comparativo utiliza el mismo ajuste de prueba sobre el runtime Hyn de la rama base.
+La selección dirigida cubrió la aceptación HTTP, la matriz de notas y la factura VES con cobro mixto a tasa BCV. El perfil omite dos recorridos internos de la aceptación HTTP que creaban un servicio técnico y una nota en USD. Comprueba al final que no haya documentos USD en las siete tablas documentales incluidas en ese recorrido.
 
-Ambas ejecuciones dirigidas pasaron los mismos tres casos. Hyn acumuló **1.763 aserciones** y Tenancy 2 **1.757 aserciones**, sin fallos, errores ni omisiones en esa selección. Los JUnit y la comparación están en `storage/app/tenancy-build/junit`.
+Tenancy 2 pasó los tres casos con **1.757 aserciones**. El JUnit de esa selección está en `storage/app/tenancy-build/junit`.

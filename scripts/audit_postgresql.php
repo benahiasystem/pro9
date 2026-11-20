@@ -27,7 +27,10 @@ foreach (['app','modules','config','database/migrations','database/seeders'] as 
 $config=file_get_contents($root.'/config/database.php');
 if (preg_match("/'driver'\\s*=>\\s*'mysql'/",$config)) $errors[]='Existe una conexión MySQL activa.';
 if (str_contains(file_get_contents($root.'/composer.json'),'ifsnop/mysqldump')) $errors[]='Existe una dependencia de dump MySQL.';
-if (count(glob($root.'/database/migrations/tenant/*.php'))!==351) $errors[]='Se esperan 350 migraciones consolidadas y una migración SellNow.';
+if (count(glob($root.'/database/migrations/tenant/*.php'))!==352
+    || !is_file($root.'/database/migrations/tenant/2026_11_19_120000_remove_legacy_nrus.php')) {
+    $errors[]='Se esperan 350 migraciones de creación, la de claves foráneas y la de retirada de NRUS.';
+}
 foreach ($errors as $error) fwrite(STDERR,$error.PHP_EOL);
 fwrite($errors?STDERR:STDOUT,json_encode(['files'=>$files,'errors'=>count($errors)],JSON_THROW_ON_ERROR).PHP_EOL);
 exit($errors?1:0);

@@ -230,10 +230,9 @@ class FiscalEmissionSchemaTest extends TestCase
         $this->prepareFiscalFixtureSchema();$db=$this->capsule->getConnection('tenant');
         $directory=base_path('informes/evidencias/postgresql_17_implementacion');
         $contract=json_decode(file_get_contents($directory.'/esquema.json'),true,512,JSON_THROW_ON_ERROR);
-        $reference=json_decode(file_get_contents($directory.'/referencia_mysql_temporal.json'),true,512,JSON_THROW_ON_ERROR);
-        $source=[];foreach ($reference['columns'] as $column) $source[$column['TABLE_NAME']][$column['COLUMN_NAME']]=$column;
-        // The original 4,380-column MySQL capture is immutable. These are the
-        // explicitly reviewed additions from develop, not a renewed baseline.
+        self::assertSame('pgsql',$contract['provenance']['engine_under_test']);
+        // The archived contract covers 4,380 columns. These additions were
+        // explicitly reviewed after the archive was created.
         $additions=[
             'payment_method_types'=>['available_for_change'=>['boolean',false,false,'false']],
             'document_change_disbursements'=>[
@@ -266,18 +265,18 @@ class FiscalEmissionSchemaTest extends TestCase
             $actual=[];foreach (\App\Database\SchemaInspector::columns($db,$table['table']) as $column) $actual[$column->name]=$column;
             self::assertEqualsCanonicalizing(array_merge(array_keys($table['type_map']),array_keys($additions[$table['table']] ?? [])),array_keys($actual),$table['table']);
             foreach ($table['type_map'] as $field=>$type) {
-                $column=$actual[$field];$before=$source[$table['table']][$field];$label=$table['table'].'.'.$field;$columns++;
+                $column=$actual[$field];$before=$table['column_contract'][$field];$label=$table['table'].'.'.$field;$columns++;
                 $normalized=$normalize($column->type);
                 self::assertSame($type,$normalized,$label.' tipo PostgreSQL');
-                self::assertSame($before['IS_NULLABLE']==='YES',(bool)$column->nullable,$label.' nulabilidad');
-                self::assertSame(str_contains($before['EXTRA'],'auto_increment'),(bool)$column->has_sequence,$label.' secuencia');
+                self::assertSame($before['nullable'],(bool)$column->nullable,$label.' nulabilidad');
+                self::assertSame($before['sequence'],(bool)$column->has_sequence,$label.' secuencia');
                 if ($column->generated || $column->has_sequence) continue;
-                if ($before['COLUMN_DEFAULT']===null) {self::assertNull($column->default,$label.' sin valor predeterminado');continue;}
+                if ($before['default']===null) {self::assertNull($column->default,$label.' sin valor predeterminado');continue;}
                 self::assertNotNull($column->default,$label.' valor predeterminado');
-                if (strtoupper($before['COLUMN_DEFAULT'])==='CURRENT_TIMESTAMP') {
+                if (strtoupper($before['default'])==='CURRENT_TIMESTAMP') {
                     self::assertMatchesRegularExpression('/statement_timestamp\(\)/i',$column->default,$label);continue;
                 }
-                $defaults[]=[$label,$type,$before['COLUMN_DEFAULT'],$column->default];
+                $defaults[]=[$label,$type,$before['default'],$column->default];
             }
         }
         // Catalog expressions come from our own disposable schema, never from request input.

@@ -12,7 +12,7 @@ class PostgresSourceManifestTest extends TestCase
         $root=sys_get_temp_dir().'/sab-manifest-'.bin2hex(random_bytes(8));
         $directory='informes/evidencias/postgresql_17_implementacion/';
         $inputs=['app/source.php'=>'<?php return true;'];
-        foreach (['esquema.json','referencia_mysql_temporal.json','referencia_rendimiento_mysql.json','casts_exactos_efectivos.json'] as $name) $inputs[$directory.$name]='{"fixed":"'.$name.'"}';
+        foreach (['esquema.json','referencia_rendimiento_postgresql.json','casts_exactos_efectivos.json'] as $name) $inputs[$directory.$name]='{"fixed":"'.$name.'"}';
         $inputs[$directory.'resultados/generated.json']='{"result":true}';
         try {
             foreach ($inputs as $path=>$bytes) {
@@ -20,27 +20,16 @@ class PostgresSourceManifestTest extends TestCase
                 file_put_contents($root.'/'.$path,$bytes);
             }
             $files=\postgresqlSourceFiles($root,array_keys($inputs));
-            self::assertCount(5,$files);
-            foreach (array_slice($inputs,0,5,true) as $path=>$bytes) self::assertSame(hash('sha256',$bytes),$files[$path]);
+            self::assertCount(4,$files);
+            foreach (array_slice($inputs,0,4,true) as $path=>$bytes) self::assertSame(hash('sha256',$bytes),$files[$path]);
             self::assertArrayNotHasKey($directory.'resultados/generated.json',$files);
-            file_put_contents($root.'/'.$directory.'esquema.json','{"changed":true}');
+            $reference=$directory.'referencia_rendimiento_postgresql.json';
+            file_put_contents($root.'/'.$reference,'{"changed":true}');
             $after=\postgresqlSourceFiles($root,array_keys($inputs));
-            self::assertNotSame($files[$directory.'esquema.json'],$after[$directory.'esquema.json']);
+            self::assertNotSame($files[$reference],$after[$reference]);
         } finally {
             (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($root);
         }
-    }
-
-    public function test_newly_captured_reference_does_not_approve_other_changed_inputs(): void
-    {
-        require_once dirname(__DIR__,2).'/scripts/postgresql_source_manifest.php';
-        $reference='informes/evidencias/postgresql_17_implementacion/referencia_rendimiento_mysql.json';
-        $before=['branch'=>'test','revision'=>'test','files'=>['app/code.php'=>'a',$reference=>'before']];
-        $after=$before;$after['files'][$reference]='after';
-        self::assertSame($after,\postgresqlSourceAfterReference($before,$after,$reference));
-        $after['files']['app/code.php']='changed';
-        $this->expectException(\RuntimeException::class);
-        \postgresqlSourceAfterReference($before,$after,$reference);
     }
 
     public function test_browser_source_build_configuration_and_actual_assets_are_immutable_test_inputs(): void

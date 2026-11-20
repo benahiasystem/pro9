@@ -1,0 +1,2286 @@
+{
+  "scope": "Declared model casts only; no approval of accessors, producers, arithmetic or consumers.",
+  "database_access": "none; reflection without model construction, no Eloquent resolver",
+  "fields": [
+    {
+      "file": "app/Models/Tenant/BankAccount.php",
+      "class": "App\\Models\\Tenant\\BankAccount",
+      "table": "bank_accounts",
+      "column": "initial_balance",
+      "declared": "float",
+      "effective": "string",
+      "line": 46,
+      "source_sha256": "43f4c85b82ad8c76606d7682c89a8793b88103b445f4ff559f08edd8577c15bc"
+    },
+    {
+      "file": "app/Models/Tenant/Configuration.php",
+      "class": "App\\Models\\Tenant\\Configuration",
+      "table": "configurations",
+      "column": "percentage_allowance_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 410,
+      "source_sha256": "e8700f087d8bd69f15aef9fb1e319f641bccdcf5d2c455547de771a35871bec1"
+    },
+    {
+      "file": "app/Models/Tenant/Configuration.php",
+      "class": "App\\Models\\Tenant\\Configuration",
+      "table": "configurations",
+      "column": "igv_retention_percentage",
+      "declared": "float",
+      "effective": "string",
+      "line": 411,
+      "source_sha256": "e8700f087d8bd69f15aef9fb1e319f641bccdcf5d2c455547de771a35871bec1"
+    },
+    {
+      "file": "app/Models/Tenant/Configuration.php",
+      "class": "App\\Models\\Tenant\\Configuration",
+      "table": "configurations",
+      "column": "point_system_sale_amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 463,
+      "source_sha256": "e8700f087d8bd69f15aef9fb1e319f641bccdcf5d2c455547de771a35871bec1"
+    },
+    {
+      "file": "app/Models/Tenant/Configuration.php",
+      "class": "App\\Models\\Tenant\\Configuration",
+      "table": "configurations",
+      "column": "quantity_of_points",
+      "declared": "float",
+      "effective": "string",
+      "line": 464,
+      "source_sha256": "e8700f087d8bd69f15aef9fb1e319f641bccdcf5d2c455547de771a35871bec1"
+    },
+    {
+      "file": "app/Models/Tenant/Configuration.php",
+      "class": "App\\Models\\Tenant\\Configuration",
+      "table": "configurations",
+      "column": "sellers_discount_limit",
+      "declared": "float",
+      "effective": "string",
+      "line": 468,
+      "source_sha256": "e8700f087d8bd69f15aef9fb1e319f641bccdcf5d2c455547de771a35871bec1"
+    },
+    {
+      "file": "app/Models/Tenant/Configuration.php",
+      "class": "App\\Models\\Tenant\\Configuration",
+      "table": "configurations",
+      "column": "session_lifetime",
+      "declared": "float",
+      "effective": "string",
+      "line": 488,
+      "source_sha256": "e8700f087d8bd69f15aef9fb1e319f641bccdcf5d2c455547de771a35871bec1"
+    },
+    {
+      "file": "app/Models/Tenant/DispatchItem.php",
+      "class": "App\\Models\\Tenant\\DispatchItem",
+      "table": "dispatch_items",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 39,
+      "source_sha256": "7bc0240a399f816b52c65ed4236226da06e56cd345977ad9345299154be8063b"
+    },
+    {
+      "file": "app/Models/Tenant/Document.php",
+      "class": "App\\Models\\Tenant\\Document",
+      "table": "documents",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 330,
+      "source_sha256": "06b84c3bdec271c15ab4303c3c379f83e49b7d3d6c4479d4e39a2f78c59d08db"
+    },
+    {
+      "file": "app/Models/Tenant/DocumentFee.php",
+      "class": "App\\Models\\Tenant\\DocumentFee",
+      "table": "document_fee",
+      "column": "amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 27,
+      "source_sha256": "d694e22b4e5ac10346f24ccc05d6cac5baf3ae34f04e915e14a0bbfb3a1a1645"
+    },
+    {
+      "file": "app/Models/Tenant/EcommerceCampaign.php",
+      "class": "App\\Models\\Tenant\\EcommerceCampaign",
+      "table": "ecommerce_campaigns",
+      "column": "discount_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 41,
+      "source_sha256": "3060d9fe3d817ae36abdc38cd35e4c077d1a23475df42244a59aea54ea629af5"
+    },
+    {
+      "file": "app/Models/Tenant/Item.php",
+      "class": "App\\Models\\Tenant\\Item",
+      "table": "items",
+      "column": "sale_unit_price",
+      "declared": "float",
+      "effective": "string",
+      "line": 200,
+      "source_sha256": "9e085d4f0030121ab075bdd93e1b4c3ca7d54273f4623893dcc57ca1531b4d6c"
+    },
+    {
+      "file": "app/Models/Tenant/Item.php",
+      "class": "App\\Models\\Tenant\\Item",
+      "table": "items",
+      "column": "purchase_unit_price",
+      "declared": "float",
+      "effective": "string",
+      "line": 201,
+      "source_sha256": "9e085d4f0030121ab075bdd93e1b4c3ca7d54273f4623893dcc57ca1531b4d6c"
+    },
+    {
+      "file": "app/Models/Tenant/Item.php",
+      "class": "App\\Models\\Tenant\\Item",
+      "table": "items",
+      "column": "quantity_of_points",
+      "declared": "float",
+      "effective": "string",
+      "line": 204,
+      "source_sha256": "9e085d4f0030121ab075bdd93e1b4c3ca7d54273f4623893dcc57ca1531b4d6c"
+    },
+    {
+      "file": "app/Models/Tenant/ItemMovement.php",
+      "class": "App\\Models\\Tenant\\ItemMovement",
+      "table": "item_movement",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 97,
+      "source_sha256": "e3ad662c4dc0d7f7222eafbf7e7b9bc35ca7524ff116e413a96480bda19b0994"
+    },
+    {
+      "file": "app/Models/Tenant/ItemSupply.php",
+      "class": "App\\Models\\Tenant\\ItemSupply",
+      "table": "item_supplies",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 36,
+      "source_sha256": "08187a571c605b5b9030ab2a519873645c8dc05550c5f652a1db5d672f9f97a3"
+    },
+    {
+      "file": "app/Models/Tenant/ItemUnitTypePrice.php",
+      "class": "App\\Models\\Tenant\\ItemUnitTypePrice",
+      "table": "item_unit_type_prices",
+      "column": "price",
+      "declared": "float",
+      "effective": "string",
+      "line": 32,
+      "source_sha256": "3149434b052a5c96283b3c57df066c78d4af9397edcf73139786070112b6d7a1"
+    },
+    {
+      "file": "app/Models/Tenant/ItemWarehousePrice.php",
+      "class": "App\\Models\\Tenant\\ItemWarehousePrice",
+      "table": "item_warehouse_prices",
+      "column": "price",
+      "declared": "float",
+      "effective": "string",
+      "line": 19,
+      "source_sha256": "b557d5fe63cec17bf5d4c566ae91cec77c1bff5d9c0e9769dfdb24146aaaa2c2"
+    },
+    {
+      "file": "app/Models/Tenant/Person.php",
+      "class": "App\\Models\\Tenant\\Person",
+      "table": "persons",
+      "column": "percentage_perception",
+      "declared": "float",
+      "effective": "string",
+      "line": 189,
+      "source_sha256": "f370519d29f752b5c59cfb18ce46c6b3b0797a69326bdb5667194fa5a7e1808a"
+    },
+    {
+      "file": "app/Models/Tenant/Person.php",
+      "class": "App\\Models\\Tenant\\Person",
+      "table": "persons",
+      "column": "discount_amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 198,
+      "source_sha256": "f370519d29f752b5c59cfb18ce46c6b3b0797a69326bdb5667194fa5a7e1808a"
+    },
+    {
+      "file": "app/Models/Tenant/PurchaseFee.php",
+      "class": "App\\Models\\Tenant\\PurchaseFee",
+      "table": "purchase_fee",
+      "column": "amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 27,
+      "source_sha256": "23074218f1c724e125de8fa83c6bb6450be92298217115c98ca48260304e09b3"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_prepayment",
+      "declared": "float",
+      "effective": "string",
+      "line": 249,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 250,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 251,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_exportation",
+      "declared": "float",
+      "effective": "string",
+      "line": 252,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_free",
+      "declared": "float",
+      "effective": "string",
+      "line": 253,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_taxed",
+      "declared": "float",
+      "effective": "string",
+      "line": 254,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_unaffected",
+      "declared": "float",
+      "effective": "string",
+      "line": 255,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_exonerated",
+      "declared": "float",
+      "effective": "string",
+      "line": 256,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 257,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_igv_free",
+      "declared": "float",
+      "effective": "string",
+      "line": 258,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 259,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 260,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 261,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 262,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNote.php",
+      "class": "App\\Models\\Tenant\\SaleNote",
+      "table": "sale_notes",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 263,
+      "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198"
+    },
+    {
+      "file": "app/Models/Tenant/SaleNoteFee.php",
+      "class": "App\\Models\\Tenant\\SaleNoteFee",
+      "table": "sale_note_fees",
+      "column": "amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 21,
+      "source_sha256": "a630a5ff40b7caba9bc907291473ffa69b096b7a4aa7b81faec983acf27be911"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 59,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "unit_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 60,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "total_base_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 61,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "percentage_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 62,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 63,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 64,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "percentage_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 65,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 66,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 67,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "unit_price",
+      "declared": "float",
+      "effective": "string",
+      "line": 68,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 69,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 70,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 71,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TechnicalServiceItem.php",
+      "class": "App\\Models\\Tenant\\TechnicalServiceItem",
+      "table": "technical_service_items",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 72,
+      "source_sha256": "5ed8ef77c175f2600ce4f0d038ab8501b0f10b6a18f8eccad3143f67c9568acd"
+    },
+    {
+      "file": "app/Models/Tenant/TransferAccountPayment.php",
+      "class": "App\\Models\\Tenant\\TransferAccountPayment",
+      "table": "transfer_account_payments",
+      "column": "amount",
+      "declared": "string",
+      "effective": "string",
+      "line": 38,
+      "source_sha256": "40652a73071d75f9c27c13609cf6fa9bdbaa6c88a07a72cc91e5e6ea54b7e212"
+    },
+    {
+      "file": "modules/Account/Models/AccountingLedger.php",
+      "class": "Modules\\Account\\Models\\AccountingLedger",
+      "table": "accounting_ledger",
+      "column": "last_month_total",
+      "declared": "float",
+      "effective": "string",
+      "line": 43,
+      "source_sha256": "917cbf7664c3d14e7390e3e8aba63313d0d7301f7b1058be9c2bd03ef303078e"
+    },
+    {
+      "file": "modules/Account/Models/AccountingLedger.php",
+      "class": "Modules\\Account\\Models\\AccountingLedger",
+      "table": "accounting_ledger",
+      "column": "credits",
+      "declared": "float",
+      "effective": "string",
+      "line": 44,
+      "source_sha256": "917cbf7664c3d14e7390e3e8aba63313d0d7301f7b1058be9c2bd03ef303078e"
+    },
+    {
+      "file": "modules/Account/Models/AccountingLedger.php",
+      "class": "Modules\\Account\\Models\\AccountingLedger",
+      "table": "accounting_ledger",
+      "column": "debs",
+      "declared": "float",
+      "effective": "string",
+      "line": 45,
+      "source_sha256": "917cbf7664c3d14e7390e3e8aba63313d0d7301f7b1058be9c2bd03ef303078e"
+    },
+    {
+      "file": "modules/Account/Models/AccountingLedger.php",
+      "class": "Modules\\Account\\Models\\AccountingLedger",
+      "table": "accounting_ledger",
+      "column": "final_total",
+      "declared": "float",
+      "effective": "string",
+      "line": 46,
+      "source_sha256": "917cbf7664c3d14e7390e3e8aba63313d0d7301f7b1058be9c2bd03ef303078e"
+    },
+    {
+      "file": "modules/ClaimsBook/Models/Tenant/Claim.php",
+      "class": "Modules\\ClaimsBook\\Models\\Tenant\\Claim",
+      "table": "claims",
+      "column": "receipt_amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 75,
+      "source_sha256": "5f690df2f88057faeedaf62bc6241a37d7c450894eb48134ea6cb506c9c5f07e"
+    },
+    {
+      "file": "modules/DocumentaryProcedure/Models/DocumentaryProcess.php",
+      "class": "Modules\\DocumentaryProcedure\\Models\\DocumentaryProcess",
+      "table": "documentary_processes",
+      "column": "price",
+      "declared": "float",
+      "effective": "string",
+      "line": 33,
+      "source_sha256": "42720290c8b8118053414466f5d73a71e322111a229d619966a8d3c291ccc8ec"
+    },
+    {
+      "file": "modules/Ecommerce/Models/Tenant/DeliveryZone.php",
+      "class": "Modules\\Ecommerce\\Models\\Tenant\\DeliveryZone",
+      "table": "delivery_zones",
+      "column": "price",
+      "declared": "float",
+      "effective": "string",
+      "line": 34,
+      "source_sha256": "acda46af8d574fdf696fc7e23dbfcbfdb05091bf79e107b1b0a01e49e8f87846"
+    },
+    {
+      "file": "modules/Ecommerce/Models/Tenant/DiscountCampaign.php",
+      "class": "Modules\\Ecommerce\\Models\\Tenant\\DiscountCampaign",
+      "table": "discount_campaigns",
+      "column": "value",
+      "declared": "float",
+      "effective": "string",
+      "line": 25,
+      "source_sha256": "d6e18040b5200a5e30b786606d7ef82c17702e04932ac1b24d1f1368d5139f10"
+    },
+    {
+      "file": "modules/Ecommerce/Models/Tenant/DiscountCoupon.php",
+      "class": "Modules\\Ecommerce\\Models\\Tenant\\DiscountCoupon",
+      "table": "discount_coupons",
+      "column": "amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 40,
+      "source_sha256": "89329f9643c868d775ae1a1dfa11c8d454c78c43c6baf78431a949be84a02015"
+    },
+    {
+      "file": "modules/Ecommerce/Models/Tenant/DiscountCoupon.php",
+      "class": "Modules\\Ecommerce\\Models\\Tenant\\DiscountCoupon",
+      "table": "discount_coupons",
+      "column": "min_amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 41,
+      "source_sha256": "89329f9643c868d775ae1a1dfa11c8d454c78c43c6baf78431a949be84a02015"
+    },
+    {
+      "file": "modules/Ecommerce/Models/Tenant/DiscountCoupon.php",
+      "class": "Modules\\Ecommerce\\Models\\Tenant\\DiscountCoupon",
+      "table": "discount_coupons",
+      "column": "max_amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 42,
+      "source_sha256": "89329f9643c868d775ae1a1dfa11c8d454c78c43c6baf78431a949be84a02015"
+    },
+    {
+      "file": "modules/Expense/Models/BankLoan.php",
+      "class": "Modules\\Expense\\Models\\BankLoan",
+      "table": "bank_loans",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 76,
+      "source_sha256": "1a4318ed7e8dcd35c9ab932155b4226f75742f515a02955109d9b0ce613e4126"
+    },
+    {
+      "file": "modules/Expense/Models/BankLoan.php",
+      "class": "Modules\\Expense\\Models\\BankLoan",
+      "table": "bank_loans",
+      "column": "total_interest",
+      "declared": "float",
+      "effective": "string",
+      "line": 77,
+      "source_sha256": "1a4318ed7e8dcd35c9ab932155b4226f75742f515a02955109d9b0ce613e4126"
+    },
+    {
+      "file": "modules/Expense/Models/BankLoan.php",
+      "class": "Modules\\Expense\\Models\\BankLoan",
+      "table": "bank_loans",
+      "column": "total_ingress",
+      "declared": "float",
+      "effective": "string",
+      "line": 78,
+      "source_sha256": "1a4318ed7e8dcd35c9ab932155b4226f75742f515a02955109d9b0ce613e4126"
+    },
+    {
+      "file": "modules/Expense/Models/BankLoanFee.php",
+      "class": "Modules\\Expense\\Models\\BankLoanFee",
+      "table": "bank_loan_fee",
+      "column": "amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 39,
+      "source_sha256": "e7fd4c1348aedc83c4f8ea2e8d80e835a147954c93114ed67d126a3582a16eaf"
+    },
+    {
+      "file": "modules/Expense/Models/BankLoanItem.php",
+      "class": "Modules\\Expense\\Models\\BankLoanItem",
+      "table": "bank_loan_items",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 37,
+      "source_sha256": "f5aa495575c90feefd2d4232dd4bc431b507639140af1d9657d79b7666eccd0c"
+    },
+    {
+      "file": "modules/Expense/Models/BankLoanItem.php",
+      "class": "Modules\\Expense\\Models\\BankLoanItem",
+      "table": "bank_loan_items",
+      "column": "total_interest",
+      "declared": "float",
+      "effective": "string",
+      "line": 38,
+      "source_sha256": "f5aa495575c90feefd2d4232dd4bc431b507639140af1d9657d79b7666eccd0c"
+    },
+    {
+      "file": "modules/Expense/Models/BankLoanItem.php",
+      "class": "Modules\\Expense\\Models\\BankLoanItem",
+      "table": "bank_loan_items",
+      "column": "total_ingress",
+      "declared": "float",
+      "effective": "string",
+      "line": 39,
+      "source_sha256": "f5aa495575c90feefd2d4232dd4bc431b507639140af1d9657d79b7666eccd0c"
+    },
+    {
+      "file": "modules/Expense/Models/BankLoanPayment.php",
+      "class": "Modules\\Expense\\Models\\BankLoanPayment",
+      "table": "bank_loan_payments",
+      "column": "payment",
+      "declared": "float",
+      "effective": "string",
+      "line": 45,
+      "source_sha256": "051a5e42eb569b742051103772c63399d6831a23ec6d69b20f58c06636400c08"
+    },
+    {
+      "file": "modules/Expense/Models/Expense.php",
+      "class": "Modules\\Expense\\Models\\Expense",
+      "table": "expenses",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 99,
+      "source_sha256": "0fb92142ce64fe3ac5806d6d7efea07dfed3e59f589994a7acc1ee4222561316"
+    },
+    {
+      "file": "modules/Expense/Models/ExpenseItem.php",
+      "class": "Modules\\Expense\\Models\\ExpenseItem",
+      "table": "expense_items",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 36,
+      "source_sha256": "4d0aaac5eeca5e32081920f942e0886d1725f71145ae5da18bdafe272c7a7750"
+    },
+    {
+      "file": "modules/Expense/Models/ExpensePayment.php",
+      "class": "Modules\\Expense\\Models\\ExpensePayment",
+      "table": "expense_payments",
+      "column": "payment",
+      "declared": "float",
+      "effective": "string",
+      "line": 51,
+      "source_sha256": "777c9963e17819e579831a03ac22a4d515d696d6411405e1ca3079b3ad8507b0"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 67,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "unit_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 68,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_base_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 69,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "percentage_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 70,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 71,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 72,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "percentage_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 73,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 74,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 75,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "unit_price",
+      "declared": "float",
+      "effective": "string",
+      "line": 76,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 77,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 78,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 79,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 80,
+      "source_sha256": "87c30866a6e4a23a5d7e87e2113d93bf1c68bd8a55232a3b2f263986676f1d4f"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_prepayment",
+      "declared": "float",
+      "effective": "string",
+      "line": 80,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 81,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 82,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_exportation",
+      "declared": "float",
+      "effective": "string",
+      "line": 83,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_free",
+      "declared": "float",
+      "effective": "string",
+      "line": 84,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_taxed",
+      "declared": "float",
+      "effective": "string",
+      "line": 85,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_unaffected",
+      "declared": "float",
+      "effective": "string",
+      "line": 86,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_exonerated",
+      "declared": "float",
+      "effective": "string",
+      "line": 87,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 88,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_igv_free",
+      "declared": "float",
+      "effective": "string",
+      "line": 89,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 90,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 91,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 92,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 93,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 94,
+      "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 112,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_prepayment",
+      "declared": "float",
+      "effective": "string",
+      "line": 123,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 124,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 125,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_exportation",
+      "declared": "float",
+      "effective": "string",
+      "line": 126,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_taxed",
+      "declared": "float",
+      "effective": "string",
+      "line": 127,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_exonerated",
+      "declared": "float",
+      "effective": "string",
+      "line": 128,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 129,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 130,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 131,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 132,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 133,
+      "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944"
+    },
+    {
+      "file": "modules/Inventory/Models/Inventory.php",
+      "class": "Modules\\Inventory\\Models\\Inventory",
+      "table": "inventories",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 62,
+      "source_sha256": "7035fe0df2ea2de8a6eb4c7ba125aa3e78e3dfb7d2d0758c8b441c39a704b94e"
+    },
+    {
+      "file": "modules/Inventory/Models/Inventory.php",
+      "class": "Modules\\Inventory\\Models\\Inventory",
+      "table": "inventories",
+      "column": "real_stock",
+      "declared": "float",
+      "effective": "string",
+      "line": 65,
+      "source_sha256": "7035fe0df2ea2de8a6eb4c7ba125aa3e78e3dfb7d2d0758c8b441c39a704b94e"
+    },
+    {
+      "file": "modules/Inventory/Models/Inventory.php",
+      "class": "Modules\\Inventory\\Models\\Inventory",
+      "table": "inventories",
+      "column": "system_stock",
+      "declared": "float",
+      "effective": "string",
+      "line": 66,
+      "source_sha256": "7035fe0df2ea2de8a6eb4c7ba125aa3e78e3dfb7d2d0758c8b441c39a704b94e"
+    },
+    {
+      "file": "modules/Inventory/Models/InventoryTransfer.php",
+      "class": "Modules\\Inventory\\Models\\InventoryTransfer",
+      "table": "inventories_transfer",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 74,
+      "source_sha256": "e7742f3c755f3fc249b7bed4d61152c7d13dd41ef12fe3599a86e583adec0331"
+    },
+    {
+      "file": "modules/Inventory/Models/ItemWarehouse.php",
+      "class": "Modules\\Inventory\\Models\\ItemWarehouse",
+      "table": "item_warehouse",
+      "column": "stock",
+      "declared": "float",
+      "effective": "string",
+      "line": 43,
+      "source_sha256": "dbbb7a9756aa70eab0fc56f5372cafab2bb506f65f6aec86c083690fc2e1d7e8"
+    },
+    {
+      "file": "modules/MobileApp/Models/ReceivedPayment.php",
+      "class": "Modules\\MobileApp\\Models\\ReceivedPayment",
+      "table": "received_payments",
+      "column": "amount",
+      "declared": "float",
+      "effective": "string",
+      "line": 60,
+      "source_sha256": "c414b48719446d9055fec81b94470843e5bdafb16d7577393a47f2cff69e52e3"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_prepayment",
+      "declared": "float",
+      "effective": "string",
+      "line": 182,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 183,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 184,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_exportation",
+      "declared": "float",
+      "effective": "string",
+      "line": 185,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_free",
+      "declared": "float",
+      "effective": "string",
+      "line": 186,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_taxed",
+      "declared": "float",
+      "effective": "string",
+      "line": 187,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_unaffected",
+      "declared": "float",
+      "effective": "string",
+      "line": 188,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_exonerated",
+      "declared": "float",
+      "effective": "string",
+      "line": 189,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 190,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_igv_free",
+      "declared": "float",
+      "effective": "string",
+      "line": 191,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 192,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 193,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 194,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 195,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNote.php",
+      "class": "Modules\\Order\\Models\\OrderNote",
+      "table": "order_notes",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 196,
+      "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 107,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "unit_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 108,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "total_base_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 109,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "percentage_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 110,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 111,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 112,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "percentage_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 113,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 114,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 115,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "unit_price",
+      "declared": "float",
+      "effective": "string",
+      "line": 116,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 117,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 118,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 119,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Order/Models/OrderNoteItem.php",
+      "class": "Modules\\Order\\Models\\OrderNoteItem",
+      "table": "order_note_items",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 120,
+      "source_sha256": "e9d84e79dd74cafab292f22959089d8dbd2348107b5c93e157bb94ee2839c06b"
+    },
+    {
+      "file": "modules/Production/Models/MillItem.php",
+      "class": "Modules\\Production\\Models\\MillItem",
+      "table": "mill_items",
+      "column": "height_to_mill",
+      "declared": "float",
+      "effective": "string",
+      "line": 39,
+      "source_sha256": "414b8b8d4af65d46a26169c53e8ed40feb839def0e22ecfebf013613d7b38605"
+    },
+    {
+      "file": "modules/Production/Models/MillItem.php",
+      "class": "Modules\\Production\\Models\\MillItem",
+      "table": "mill_items",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 40,
+      "source_sha256": "414b8b8d4af65d46a26169c53e8ed40feb839def0e22ecfebf013613d7b38605"
+    },
+    {
+      "file": "modules/Production/Models/MillItem.php",
+      "class": "Modules\\Production\\Models\\MillItem",
+      "table": "mill_items",
+      "column": "total_height",
+      "declared": "float",
+      "effective": "string",
+      "line": 41,
+      "source_sha256": "414b8b8d4af65d46a26169c53e8ed40feb839def0e22ecfebf013613d7b38605"
+    },
+    {
+      "file": "modules/Production/Models/Packaging.php",
+      "class": "Modules\\Production\\Models\\Packaging",
+      "table": "packaging",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 54,
+      "source_sha256": "335e485da33e8f631772424135c21e5777bb120ce05e86c778e466d51723fa83"
+    },
+    {
+      "file": "modules/Production/Models/Packaging.php",
+      "class": "Modules\\Production\\Models\\Packaging",
+      "table": "packaging",
+      "column": "number_packages",
+      "declared": "float",
+      "effective": "string",
+      "line": 55,
+      "source_sha256": "335e485da33e8f631772424135c21e5777bb120ce05e86c778e466d51723fa83"
+    },
+    {
+      "file": "modules/Production/Models/Production.php",
+      "class": "Modules\\Production\\Models\\Production",
+      "table": "production",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 70,
+      "source_sha256": "39cf735814860d6de314827999262d3c173e0230e46ad5ff65ab2bedc254392c"
+    },
+    {
+      "file": "modules/Production/Models/Production.php",
+      "class": "Modules\\Production\\Models\\Production",
+      "table": "production",
+      "column": "agreed",
+      "declared": "float",
+      "effective": "string",
+      "line": 74,
+      "source_sha256": "39cf735814860d6de314827999262d3c173e0230e46ad5ff65ab2bedc254392c"
+    },
+    {
+      "file": "modules/Production/Models/Production.php",
+      "class": "Modules\\Production\\Models\\Production",
+      "table": "production",
+      "column": "imperfect",
+      "declared": "float",
+      "effective": "string",
+      "line": 75,
+      "source_sha256": "39cf735814860d6de314827999262d3c173e0230e46ad5ff65ab2bedc254392c"
+    },
+    {
+      "file": "modules/Purchase/Models/WeightedAverageCost.php",
+      "class": "Modules\\Purchase\\Models\\WeightedAverageCost",
+      "table": "weighted_average_costs",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 29,
+      "source_sha256": "fbb0121b31142216614b45e220182a5d6b38a65083f38f1c2838ded4e671e2b9"
+    },
+    {
+      "file": "modules/Purchase/Models/WeightedAverageCost.php",
+      "class": "Modules\\Purchase\\Models\\WeightedAverageCost",
+      "table": "weighted_average_costs",
+      "column": "cost",
+      "declared": "float",
+      "effective": "string",
+      "line": 30,
+      "source_sha256": "fbb0121b31142216614b45e220182a5d6b38a65083f38f1c2838ded4e671e2b9"
+    },
+    {
+      "file": "modules/Purchase/Models/WeightedAverageCost.php",
+      "class": "Modules\\Purchase\\Models\\WeightedAverageCost",
+      "table": "weighted_average_costs",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 31,
+      "source_sha256": "fbb0121b31142216614b45e220182a5d6b38a65083f38f1c2838ded4e671e2b9"
+    },
+    {
+      "file": "modules/Purchase/Models/WeightedAverageCost.php",
+      "class": "Modules\\Purchase\\Models\\WeightedAverageCost",
+      "table": "weighted_average_costs",
+      "column": "weighted_cost",
+      "declared": "float",
+      "effective": "string",
+      "line": 32,
+      "source_sha256": "fbb0121b31142216614b45e220182a5d6b38a65083f38f1c2838ded4e671e2b9"
+    },
+    {
+      "file": "modules/Purchase/Models/WeightedAverageCost.php",
+      "class": "Modules\\Purchase\\Models\\WeightedAverageCost",
+      "table": "weighted_average_costs",
+      "column": "stock",
+      "declared": "float",
+      "effective": "string",
+      "line": 33,
+      "source_sha256": "fbb0121b31142216614b45e220182a5d6b38a65083f38f1c2838ded4e671e2b9"
+    },
+    {
+      "file": "modules/Restaurant/Models/RestaurantTable.php",
+      "class": "Modules\\Restaurant\\Models\\RestaurantTable",
+      "table": "restaurant_tables",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 50,
+      "source_sha256": "72d03d8155e96a7c4111d85a2b42ae03751f8459622092b5ab2aed330de64ce9"
+    },
+    {
+      "file": "modules/Restaurant/Models/RestaurantTableGroup.php",
+      "class": "Modules\\Restaurant\\Models\\RestaurantTableGroup",
+      "table": "restaurant_table_groups",
+      "column": "total",
+      "declared": "decimal:2",
+      "effective": "string",
+      "line": 20,
+      "source_sha256": "6fe59939794e90dbac1d17e0bf0c1e6e65cf083657dae8407a17961252c429ed"
+    },
+    {
+      "file": "modules/Restaurant/Models/Supply.php",
+      "class": "Modules\\Restaurant\\Models\\Supply",
+      "table": "supplies",
+      "column": "cost",
+      "declared": "decimal:2",
+      "effective": "string",
+      "line": 37,
+      "source_sha256": "e70cc3435ce619a700ee514669dd1eb2da7f148d7ad1cc238bcf160c2f01ea90"
+    },
+    {
+      "file": "modules/Restaurant/Models/Supply.php",
+      "class": "Modules\\Restaurant\\Models\\Supply",
+      "table": "supplies",
+      "column": "waste_percentage",
+      "declared": "decimal:2",
+      "effective": "string",
+      "line": 38,
+      "source_sha256": "e70cc3435ce619a700ee514669dd1eb2da7f148d7ad1cc238bcf160c2f01ea90"
+    },
+    {
+      "file": "modules/Restaurant/Models/Supply.php",
+      "class": "Modules\\Restaurant\\Models\\Supply",
+      "table": "supplies",
+      "column": "stock",
+      "declared": "decimal:4",
+      "effective": "string",
+      "line": 39,
+      "source_sha256": "e70cc3435ce619a700ee514669dd1eb2da7f148d7ad1cc238bcf160c2f01ea90"
+    },
+    {
+      "file": "modules/Restaurant/Models/Supply.php",
+      "class": "Modules\\Restaurant\\Models\\Supply",
+      "table": "supplies",
+      "column": "minimum_stock",
+      "declared": "decimal:4",
+      "effective": "string",
+      "line": 40,
+      "source_sha256": "e70cc3435ce619a700ee514669dd1eb2da7f148d7ad1cc238bcf160c2f01ea90"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_prepayment",
+      "declared": "float",
+      "effective": "string",
+      "line": 150,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 151,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 152,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_exportation",
+      "declared": "float",
+      "effective": "string",
+      "line": 153,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_free",
+      "declared": "float",
+      "effective": "string",
+      "line": 154,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_taxed",
+      "declared": "float",
+      "effective": "string",
+      "line": 155,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_unaffected",
+      "declared": "float",
+      "effective": "string",
+      "line": 156,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_exonerated",
+      "declared": "float",
+      "effective": "string",
+      "line": 157,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 158,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_igv_free",
+      "declared": "float",
+      "effective": "string",
+      "line": 159,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 160,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 161,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 162,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 163,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "subtotal",
+      "declared": "float",
+      "effective": "string",
+      "line": 164,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 165,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "cost",
+      "declared": "float",
+      "effective": "string",
+      "line": 167,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Sale/Models/TechnicalService.php",
+      "class": "Modules\\Sale\\Models\\TechnicalService",
+      "table": "technical_services",
+      "column": "prepayment",
+      "declared": "float",
+      "effective": "string",
+      "line": 168,
+      "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "quantity",
+      "declared": "float",
+      "effective": "string",
+      "line": 65,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "unit_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 66,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_base_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 67,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "percentage_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 68,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 69,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 70,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "percentage_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 71,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 72,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 73,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "unit_price",
+      "declared": "float",
+      "effective": "string",
+      "line": 74,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 75,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 76,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 77,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\ItemRelSuscriptionPlan",
+      "table": "item_rel_suscription_plans",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 78,
+      "source_sha256": "4f2d725241c78dae2fcd69f5dc68b30bf7f1d3595ab94b4832fb834102139b69"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_prepayment",
+      "declared": "float",
+      "effective": "string",
+      "line": 78,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 79,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 80,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_exportation",
+      "declared": "float",
+      "effective": "string",
+      "line": 81,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_free",
+      "declared": "float",
+      "effective": "string",
+      "line": 82,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_taxed",
+      "declared": "float",
+      "effective": "string",
+      "line": 83,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_unaffected",
+      "declared": "float",
+      "effective": "string",
+      "line": 84,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_exonerated",
+      "declared": "float",
+      "effective": "string",
+      "line": 85,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 86,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_igv_free",
+      "declared": "float",
+      "effective": "string",
+      "line": 87,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 88,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 89,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 90,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 91,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+      "table": "suscription_plans",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 92,
+      "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total",
+      "declared": "float",
+      "effective": "string",
+      "line": 105,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_prepayment",
+      "declared": "float",
+      "effective": "string",
+      "line": 115,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_charge",
+      "declared": "float",
+      "effective": "string",
+      "line": 116,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_discount",
+      "declared": "float",
+      "effective": "string",
+      "line": 117,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_exportation",
+      "declared": "float",
+      "effective": "string",
+      "line": 118,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_taxed",
+      "declared": "float",
+      "effective": "string",
+      "line": 119,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_exonerated",
+      "declared": "float",
+      "effective": "string",
+      "line": 120,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_igv",
+      "declared": "float",
+      "effective": "string",
+      "line": 121,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_base_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 122,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_other_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 123,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_taxes",
+      "declared": "float",
+      "effective": "string",
+      "line": 124,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    },
+    {
+      "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+      "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+      "table": "user_rel_suscription_plans",
+      "column": "total_value",
+      "declared": "float",
+      "effective": "string",
+      "line": 125,
+      "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0"
+    }
+  ]
+}

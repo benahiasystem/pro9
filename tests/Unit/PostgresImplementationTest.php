@@ -143,7 +143,7 @@ final class PostgresImplementationTest extends \Tests\TestCase
         $this->install();
         $this->artisan('db:seed',['--database'=>'central_migrator','--force'=>true])->assertExitCode(0);
         $db=DB::connection('central_migrator');SequenceSynchronizer::sync($db);
-        self::assertSame(2,$db->table('plans')->count());
+        self::assertSame(['Ilimitado'],$db->table('plans')->pluck('name')->all());
         $previous=$db->table('modules')->max('id');
         $row=$db->table('modules')->first();$data=(array)$row;unset($data['id']);
         if (isset($data['value'])) $data['value']='pg-sequence-test';
@@ -248,9 +248,11 @@ final class PostgresImplementationTest extends \Tests\TestCase
         $this->artisan('db:seed',['--database'=>'central_migrator','--force'=>true])->assertExitCode(0);
         config(['tenant.prefix_database'=>$this->prefix,'tenant.app_url_base'=>'example.test','tenancy.website.cache'=>0]);
         $this->actingAs(\App\Models\System\User::first(),'admin');
+        $planId=DB::connection('system')->table('plans')->where('name','Ilimitado')->value('id');
+        self::assertNotNull($planId);
         $request=\App\Http\Requests\System\ClientRequest::create('/clients','POST',[
             'name'=>'Empresa PostgreSQL temporal','email'=>'postgres-test@example.test','number'=>'J123456789',
-            'password'=>'Fictional-test-password-17','subdomain'=>'panel','plan_id'=>1,'plan_period_id'=>1,'price'=>'99',
+            'password'=>'Fictional-test-password-17','subdomain'=>'panel','plan_id'=>$planId,'plan_period_id'=>1,'price'=>'99',
             'locked_emission'=>false,'enable_list_product'=>true,'type'=>'admin','fiscal_environment'=>'demo','fiscal_emission_mode'=>'free_form',
             'fiscal_configuration'=>[],'fiscal_credentials'=>null,'modules'=>[],'levels'=>[],
         ]);
@@ -265,7 +267,7 @@ final class PostgresImplementationTest extends \Tests\TestCase
         self::assertSame('J123456789',$tenant->table('companies')->value('number'));
         self::assertGreaterThan(0,$tenant->table('users')->count());
 
-        $apiRequest=\Illuminate\Http\Request::create('/api/tenant','POST',['ruc'=>'12345678901','subdomain'=>'api','email'=>'postgres-api@example.test','plan_id'=>1,'fiscal_environment'=>'demo','fiscal_emission_mode'=>'free_form','fiscal_configuration'=>[]]);
+        $apiRequest=\Illuminate\Http\Request::create('/api/tenant','POST',['ruc'=>'12345678901','subdomain'=>'api','email'=>'postgres-api@example.test','plan_id'=>$planId,'fiscal_environment'=>'demo','fiscal_emission_mode'=>'free_form','fiscal_configuration'=>[]]);
         $api=app(\App\Http\Controllers\System\Api\TenantController::class)->store($apiRequest);self::assertSame(200,$api->getStatusCode());
         $otherSite=\App\Tenancy\Models\Website::where('uuid',$this->prefix.'_api')->firstOrFail();
         $otherConfig=app(\App\Tenancy\Database\Connection::class)->generateConfigurationArray($otherSite);
@@ -405,6 +407,8 @@ final class PostgresImplementationTest extends \Tests\TestCase
         $this->install();$service=app(TenantProvisioning::class);$configs=[];$names=[];$sites=[];$schemas=[];$data=[];
         config(['tenant.prefix_database'=>$this->prefix,'tenant.app_url_base'=>'example.test','tenancy.website.cache'=>0]);
         $this->actingAs(\App\Models\System\User::first(),'admin');
+        $planId=DB::connection('system')->table('plans')->where('name','Ilimitado')->value('id');
+        self::assertNotNull($planId);
         $fingerprint=static function ($db): array {
             $result=[];
             foreach (SchemaInspector::tables($db) as $table) {
@@ -419,7 +423,7 @@ final class PostgresImplementationTest extends \Tests\TestCase
             foreach (['one','two'] as $suffix) {
                 $request=\App\Http\Requests\System\ClientRequest::create('/clients','POST',[
                     'name'=>'Empresa integral '.$suffix,'email'=>$suffix.'@backup.example.test','number'=>$suffix==='one' ? 'J123456789' : 'J987654321',
-                    'password'=>'Fictional-test-password-17','subdomain'=>$suffix,'plan_id'=>1,'plan_period_id'=>1,'price'=>'99',
+                    'password'=>'Fictional-test-password-17','subdomain'=>$suffix,'plan_id'=>$planId,'plan_period_id'=>1,'price'=>'99',
                     'locked_emission'=>false,'enable_list_product'=>true,'type'=>'admin','fiscal_environment'=>'demo','fiscal_emission_mode'=>'free_form',
                     'fiscal_configuration'=>[],'fiscal_credentials'=>null,'modules'=>[],'levels'=>[],
                 ]);
@@ -510,7 +514,7 @@ final class PostgresImplementationTest extends \Tests\TestCase
                 try {$this->artisan('sab:restore-central',['package'=>$package,'--source'=>$this->owner['database']])->assertExitCode(0);}
                 finally {config(['database.connections.central_migrator'=>$before]);DB::purge('central_migrator');}
             },false);
-            $copy=$this->connect($centralCopy,'pg_central_copy');self::assertSame(2,$copy->table('websites')->count());self::assertSame(2,$copy->table('plans')->count());
+            $copy=$this->connect($centralCopy,'pg_central_copy');self::assertSame(2,$copy->table('websites')->count());self::assertSame(['Ilimitado'],$copy->table('plans')->pluck('name')->all());
             self::assertSame($centralSchema,SchemaInspector::snapshot($copy));
             self::assertSame($centralData,$fingerprint($copy),'Datos de todas las tablas centrales en el corte restaurado');
             $sequenceColumns=$copy->select("SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='public' AND (column_default LIKE 'nextval(%' OR is_identity='YES') ORDER BY table_name,column_name");

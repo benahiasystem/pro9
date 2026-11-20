@@ -57,8 +57,8 @@ function postgresqlDeferPosPerformance(array $all, array $functional): array
         }
     }
     $class='Tests\\Unit\\PostgresPerformanceTest';
-    $pos='test_pos_catalog_p95_matches_the_temporary_mysql_reference';
-    $remaining='test_http_and_sales_report_p95_matches_the_temporary_mysql_reference';
+    $pos='test_pos_catalog_p95_matches_the_postgresql_tenancy2_reference';
+    $remaining='test_http_and_sales_report_p95_matches_the_postgresql_tenancy2_reference';
     $performance=array_diff_key($all,$functional);
     $deferredKey=$class.'::'.$pos;
     $mandatoryKey=$class.'::'.$remaining;
