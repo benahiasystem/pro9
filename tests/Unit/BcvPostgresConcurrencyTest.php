@@ -2,12 +2,14 @@
 // ######## INICIO API BCV ########
 namespace Tests\Unit;
 
+use App\Tenancy\Environment;
+use App\Tenancy\Models\Website;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 /** @group postgres-integration */
-class BcvMySqlConcurrencyTest extends TestCase
+class BcvPostgresConcurrencyTest extends TestCase
 {
     public function test_parallel_queries_keep_the_first_daily_rate(): void
     {
@@ -66,17 +68,23 @@ class BcvMySqlConcurrencyTest extends TestCase
             $secondConnection['database'] = $secondDatabase;
             config()->set('database.connections.bcv_test_b', $secondConnection);
             DB::connection('bcv_test_b')->statement('CREATE TABLE exchange_rates (date DATE PRIMARY KEY, date_original DATE NOT NULL, sale NUMERIC(18,8) NOT NULL, purchase NUMERIC(18,8) NOT NULL, sale_original NUMERIC(18,8) NOT NULL, purchase_original NUMERIC(18,8) NOT NULL, created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL)');
-            $active = 'bcv_test';
-            $tenancy = $this->getMockBuilder(\App\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
-            $tenancy->method('tenantName')->willReturnCallback(function () use (&$active) { return $active; });
-            app()->instance(\App\Tenancy\Database\Connection::class, $tenancy);
+            // These disposable databases already exist and share the test provisioner's credentials.
+            config(['tenancy.db.tenant-division-mode' => 'bypass']);
+            $tenancy = app(Environment::class);
+            $first = (new Website())->forceFill([
+                'id' => 1, 'uuid' => $database, 'managed_by_database_connection' => 'bcv_test',
+            ]);
+            $second = (new Website())->forceFill([
+                'id' => 2, 'uuid' => $secondDatabase, 'managed_by_database_connection' => 'bcv_test_b',
+            ]);
             \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse('2026-10-07 10:00:00', 'America/Caracas'));
             $client = $this->createMock(\App\Services\ExchangeRates\BcvClient::class);
             $client->expects(self::once())->method('dollarRate')->willReturn('333.78912345');
             $service = new \App\Services\ExchangeRates\TenantExchangeRateService($client);
-            self::assertEquals($results[0]['sale'], $service->exchange('2026-10-07')['sale']);
-            $active = 'bcv_test_b';
-            self::assertSame('333.78912345', $service->exchange('2026-10-07')['sale']);
+            $exchange = fn () => $service->exchange('2026-10-07')['sale'];
+            self::assertEquals($results[0]['sale'], $tenancy->run($first, $exchange));
+            self::assertSame('333.78912345', $tenancy->run($second, $exchange));
+            self::assertNull($tenancy->tenant());
             self::assertEquals($results[0]['sale'], $db->table('exchange_rates')->value('sale'));
             self::assertSame(1, DB::connection('bcv_test_b')->table('exchange_rates')->count());
         } finally {

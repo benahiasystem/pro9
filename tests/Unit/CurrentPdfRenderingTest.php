@@ -696,7 +696,7 @@ class CurrentPdfRenderingTest extends TestCase
             'quantity'=>\App\Support\Exact\Decimal::of(1)->dividedBy('3000000000000')]);
         $company=new Fluent(['name'=>'Empresa de prueba','number'=>'J-12345678-9','trade_name'=>'Prueba','logo'=>null]);
         $manifest=[];$run=getenv('SAB_POSTGRES_RUN_ID');
-        $directory=preg_match('/\Apro9-pgtest-[a-f0-9]{12}\z/',(string)$run)
+        $directory=preg_match(\Tests\Support\PostgresTestEnvironment::RUN_ID_PATTERN,(string)$run)
             ? base_path('informes/evidencias/postgresql_17_implementacion/resultados/invoice-subprecision-pdf-'.$run) : null;
         if ($directory && !is_dir($directory)) mkdir($directory,0755,true);
         foreach (['default'=>['a4','a5','ticket','ticket_58'], 'modern-2027'=>['a4','a5','ticket','ticket_58'],

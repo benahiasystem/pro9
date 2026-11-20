@@ -5,11 +5,13 @@ namespace Tests\Support;
 // ########## INICIO CAMBIO POSTGRESQL 17
 final class PostgresTestEnvironment
 {
+    public const RUN_ID_PATTERN = '/\Asab-pgtest-[a-f0-9]{12}\z/';
+
     /** Host-captured source provenance, independent of a host-only worktree .git pointer. */
     public static function source(?string $root=null): array
     {
         $runId=getenv('SAB_POSTGRES_RUN_ID');
-        if (getenv('SAB_POSTGRES_TESTS')!=='1' || !is_string($runId) || !preg_match('/^sab-pgtest-[a-f0-9]{12}$/D',$runId)) {
+        if (getenv('SAB_POSTGRES_TESTS')!=='1' || !is_string($runId) || !preg_match(self::RUN_ID_PATTERN,$runId)) {
             throw new \LogicException('Utilice el ejecutor PostgreSQL temporal para identificar las fuentes.');
         }
         $path=($root ?? dirname(__DIR__,2)).'/informes/evidencias/postgresql_17_implementacion/resultados/'.$runId.'-fuentes.json';

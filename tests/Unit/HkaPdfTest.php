@@ -24,9 +24,6 @@ class HkaPdfTest extends TestCase
         parent::setUp();
         Storage::fake('tenant');
         config(['database.connections.tenant' => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
-        $tenancy = $this->getMockBuilder(\App\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
-        $tenancy->method('tenantName')->willReturn('tenant');
-        $this->app->instance(\App\Tenancy\Database\Connection::class, $tenancy);
         DB::purge('tenant');
         Schema::connection('tenant')->create('companies', function ($table) {
             $table->increments('id');
@@ -248,9 +245,7 @@ class HkaPdfTest extends TestCase
         $attributes = (array) DB::connection('tenant')->table('documents')->first();
         $attributes['external_id'] = 'other-invoice';
         DB::connection('other_pdf_tenant')->table('documents')->insert($attributes);
-        $tenancy = $this->getMockBuilder(\App\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
-        $tenancy->method('tenantName')->willReturn('other_pdf_tenant');
-        $this->app->instance(\App\Tenancy\Database\Connection::class, $tenancy);
+        config(['tenancy.db.tenant-connection-name' => 'other_pdf_tenant']);
         foreach (['a4', 'ticket'] as $format) {
             try { (new DocumentPdfController())->download('invoice-pdf', $format); self::fail('Must not read first tenant'); }
             catch (\Illuminate\Database\Eloquent\ModelNotFoundException $exception) { self::assertTrue(true); }

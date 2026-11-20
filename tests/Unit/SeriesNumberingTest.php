@@ -349,7 +349,7 @@ class SeriesNumberingTest extends SeriesDatabaseTestCase
         $other = $this->manager->getConnection('other_tenant');
         $other->statement('CREATE TABLE series (id INTEGER PRIMARY KEY, document_type_id TEXT, number TEXT, establishment_id INTEGER)');
         $other->table('series')->insert(['id' => $id, 'document_type_id' => '01', 'number' => 'FF02', 'establishment_id' => 1]);
-        $this->tenantConnection = 'other_tenant';
+        config(['tenancy.db.tenant-connection-name' => 'other_tenant']);
         $this->expectException(ValidationException::class);
         SeriesNumbering::resolve('01', 'FF01', 1);
     }
