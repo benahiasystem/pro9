@@ -74,7 +74,7 @@
                     <span>Subtotal</span>
                     <span>{{ currencyTypeActive.symbol }} {{ money(checkoutValue(form, 'total_taxed')) }}</span>
                 </div>
-                <div class="pos-checkout__total-row" v-if="!isNrus">
+                <div class="pos-checkout__total-row">
                     <!-- ########## INICIO CAMBIO IGV A IVA -->
                     <span>IVA</span>
                     <!-- ######### FIN CAMBIO IGV A IVA -->
@@ -133,7 +133,7 @@
                                         class="pos-doctype"
                                         size="small"
                                         @input="selectDocumentType">
-                            <el-radio-button v-if="!isNrus" label="01">FACTURA</el-radio-button>
+                            <el-radio-button label="01">FACTURA</el-radio-button>
                             <!-- ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
                             <el-radio-button label="80">N. VENTA</el-radio-button>
                             <!-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
@@ -515,9 +515,6 @@ export default {
         hasNamedSeries() {
             return this.series.some(option => (option.number || '').trim() !== '')
         },
-        isNrus: function () {
-            return !!(this.config && this.config.is_nrus)
-        },
         isGlobalDiscountBase: function () {
             return (this.globalDiscountTypeId === '02')
         },
@@ -588,7 +585,7 @@ export default {
             // if (this.default_series_type === undefined) this.default_series_type = null;
 
             if (this.default_document_type !== null) {
-                const documentType = this.isNrus && this.default_document_type === '01' ? '80' : this.default_document_type
+                const documentType = this.default_document_type
                 if (!this.selectDocumentType(documentType, false)) return
                 const defaultSeries = _.find(this.series, { id: this.default_series_type });
 
@@ -648,7 +645,7 @@ export default {
         },
         handleFn113() {
             const code = this.form.document_type_id
-            this.selectDocumentType(this.isNrus || code === '01' ? '80' : '01')
+            this.selectDocumentType(code === '01' ? '80' : '01')
         },
         keyupEnterAmount() {
 

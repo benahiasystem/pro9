@@ -37,6 +37,22 @@ class Establishment extends ModelTenant
         'has_igv_31556' => 'boolean'
     ];
 
+    public static function availablePdfTemplate($value): bool
+    {
+        return is_string($value) && preg_match('/^[A-Za-z0-9_-]+$/', $value)
+            && is_file(app_path('CoreFacturalo/Templates/pdf/'.$value.'/style.css'));
+    }
+
+    public function getTemplatePdfAttribute($value)
+    {
+        return self::availablePdfTemplate($value) ? $value : 'default';
+    }
+
+    public function getTemplateTicketPdfAttribute($value)
+    {
+        return self::availablePdfTemplate($value) ? $value : 'default';
+    }
+
     public function country()
     {
         return $this->belongsTo(Country::class, 'country_id');

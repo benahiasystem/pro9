@@ -906,7 +906,7 @@ class SaleNoteController extends Controller
                 'mode' => 'utf-8',
                 'format' => [
                     $width,
-                    $base_height + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + ((in_array($format_pdf, ['ticket','ticket_58'], true) && in_array($base_template, ['default','nrus','modern-2027'], true)) ? 6 : 0) +
+                    $base_height + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + ((in_array($format_pdf, ['ticket','ticket_58'], true) && in_array($base_template, ['default','modern-2027'], true)) ? 6 : 0) +
                     ($quantity_rows * 8)+
                     (($format_pdf === 'ticket_58' && in_array($base_template, ['Plantilla_personalizable','default','marca_de_agua'], true)) ? $quantity_rows * 20 : 0) +
                     (($format_pdf === 'ticket_58' && $base_template === 'modern-2027')

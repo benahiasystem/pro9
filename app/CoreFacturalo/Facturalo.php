@@ -581,7 +581,7 @@ class Facturalo
                 'format' => [
                     $width,
                     80 +
-                    $height_terms + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + (($format_pdf === 'ticket_58' && in_array($base_pdf_template, ['default','nrus'], true)) ? 6 : 0) + (($format_pdf === 'ticket' && in_array($base_pdf_template, ['default','nrus','modern-2027'], true) && $this->type === 'invoice') ? 5 : 0) +
+                    $height_terms + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + (($format_pdf === 'ticket_58' && in_array($base_pdf_template, ['default'], true)) ? 6 : 0) + (($format_pdf === 'ticket' && in_array($base_pdf_template, ['default','modern-2027'], true) && $this->type === 'invoice') ? 5 : 0) +
                      $heightQr +
                      $height_logo +
                     (($quantity_rows * 8) + $extra_by_item_description) +
@@ -1451,7 +1451,7 @@ class Facturalo
                 'format' => [
                     $width,
                     80 +
-                    $height_terms + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + (($format_pdf === 'ticket_58' && in_array($base_pdf_template, ['default','nrus'], true)) ? 6 : 0) + (($format_pdf === 'ticket' && in_array($base_pdf_template, ['default','nrus','modern-2027'], true) && $this->type === 'invoice') ? 5 : 0) +
+                    $height_terms + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + (($format_pdf === 'ticket_58' && in_array($base_pdf_template, ['default'], true)) ? 6 : 0) + (($format_pdf === 'ticket' && in_array($base_pdf_template, ['default','modern-2027'], true) && $this->type === 'invoice') ? 5 : 0) +
                     (($quantity_rows * 8) + $extra_by_item_description) +
                     // ######## INICIO ESPACIO PARA LOTES EN VISTA PREVIA ########
                     (($this->document instanceof Document && in_array($this->document->document_type_id, ['07','08'], true))

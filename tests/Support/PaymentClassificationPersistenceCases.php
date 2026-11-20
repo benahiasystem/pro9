@@ -6555,7 +6555,7 @@ trait PaymentClassificationPersistenceCases
         $columnConfig=\App\Models\Tenant\TemplateColumnsConfig::getOrCreateConfig($input['establishment_id']);
         $columns=$columnConfig->columns_config; $columns['lote']=true; $columns['fecha_vencimiento']=true; $columns['serie']=true;
         $columnConfig->update(['columns_config'=>$columns]);
-        foreach (['marca_de_agua','default','modern-2027','Plantilla_personalizable','nrus'] as $design) {
+        foreach (['marca_de_agua','default','modern-2027','Plantilla_personalizable'] as $design) {
             $db->table('establishments')->where('id',$input['establishment_id'])->update(['template_ticket_pdf'=>$design]);
             $printer=new \App\Http\Controllers\Tenant\SaleNoteController();
             $printer->createPdf($note->fresh(),'ticket_58',$note->filename);
@@ -9052,7 +9052,7 @@ trait PaymentClassificationPersistenceCases
                 self::assertStringNotContainsString('precio unitario mostrado está redondeado',$html);
             }
             $columns['precio_unitario']=true; $columnConfig->update(['columns_config'=>$columns]);
-            foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable','nrus'] as $design) {
+            foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable'] as $design) {
                 $db->table('establishments')->where('id',$input['establishment_id'])->update(['template_ticket_pdf'=>$design]);
                 foreach (['ticket','ticket_58'] as $format) {
                     $printDocument=$document->fresh();
@@ -9105,7 +9105,7 @@ trait PaymentClassificationPersistenceCases
                     (object)['codigo_interno'=>$firstCode,'esFusionado'=>true,'total_item'=>'999'],
                     (object)['codigo_interno'=>'LINEA-INDIVIDUAL','esFusionado'=>false,'total_item'=>'0.01'],
                 ]];
-                foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable','nrus'] as $design) {
+                foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable'] as $design) {
                     $html=(new \App\CoreFacturalo\Template())->pdf($design,$type==='80' ? 'sale_note' : 'invoice',\App\Models\Tenant\Company::active(),$printDocument,'ticket',['is_preview'=>false]);
                     self::assertStringContainsString('LINEA INDIVIDUAL QA',$html,$design);
                     $renderer=new \Mpdf\Mpdf(['tempDir'=>sys_get_temp_dir(),'format'=>[80,300],'default_font'=>'arial']);
@@ -9124,7 +9124,6 @@ trait PaymentClassificationPersistenceCases
                         self::assertStringContainsString($expected,$text,$design);
                     }
                     if ($type==='01' && in_array($design,['default','modern-2027'],true)) self::assertStringContainsString('AJUSTE DE TEXTO EN EL TICKET',$text);
-                    if ($type==='01' && $design==='nrus') self::assertStringContainsString('Productos: 4 UND',$text);
                     self::assertStringNotContainsString('999.00',$text,$design);
                     $info=new \Symfony\Component\Process\Process(['pdfinfo',$path]); $info->mustRun();
                     self::assertMatchesRegularExpression('/Pages:\s+1\b/',$info->getOutput(),$design);
@@ -9147,7 +9146,7 @@ trait PaymentClassificationPersistenceCases
                         if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-note-'.$design.'.pdf',$quantityPdf);
                         $extractQuantity=new \Symfony\Component\Process\Process(['pdftotext','-layout',$quantityPath,'-']); $extractQuantity->mustRun();
                         self::assertStringContainsString('9007199254740993',$extractQuantity->getOutput(),$design);
-                        if (in_array($design,['default','modern-2027','nrus'],true)) self::assertStringContainsString('9007199254740996',$extractQuantity->getOutput(),$design);
+                        if (in_array($design,['default','modern-2027'],true)) self::assertStringContainsString('9007199254740996',$extractQuantity->getOutput(),$design);
                         $second->setExactValues(['quantity'=>1]);
                         $first->setExactValues(['quantity'=>'9007199254740993']);
                         $groupQuantity=(new \App\CoreFacturalo\Template())->pdf($design,'sale_note',\App\Models\Tenant\Company::active(),$printDocument,'ticket',['is_preview'=>false]);
@@ -9232,7 +9231,7 @@ trait PaymentClassificationPersistenceCases
                         self::assertStringContainsString('AJUSTE DE TEXTO EN EL TICKET',$narrowText);
                         self::assertStringContainsString('TOTAL: Bs. 38.00',$narrowText);
                     }
-                    if (in_array($design,['default','nrus'],true)) self::assertStringContainsString('9007199254740996',$narrowExtract->getOutput(),$design.' '.$type);
+                    if (in_array($design,['default'],true)) self::assertStringContainsString('9007199254740996',$narrowExtract->getOutput(),$design.' '.$type);
                     $narrowInfo=new \Symfony\Component\Process\Process(['pdfinfo',$narrowPath]); $narrowInfo->mustRun();
                     self::assertMatchesRegularExpression('/Pages:\s+1\b/',$narrowInfo->getOutput(),$design.' '.$type);
                     $second->setExactValues(['quantity'=>1]);
@@ -12056,7 +12055,7 @@ trait PaymentClassificationPersistenceCases
         config(['view.compiled'=>sys_get_temp_dir().'/'.$this->database.'/credit-ticket-views', 'view.paths'=>[base_path('resources/views')]]);
         mkdir(config('view.compiled'),0777,true);
         $app->register(\Illuminate\View\ViewServiceProvider::class);
-        foreach ([['default','ticket_58'],['nrus','ticket_58'],['marca_de_agua','ticket_50'],
+        foreach ([['default','ticket_58'],['marca_de_agua','ticket_50'],
             ['marca_de_agua','ticket_58'],['Plantilla_personalizable','ticket_58']] as [$template,$format]) {
             $printDocument=$document->fresh();
             $customer=(array)$printDocument->customer;
@@ -12095,7 +12094,7 @@ trait PaymentClassificationPersistenceCases
             $itemData['is_set']=$itemData['is_set'] ?? 0;
             $item->item=$itemData;
         }
-        foreach ([['default','a4'],['default','a5'],['default','ticket'],['nrus','ticket'],
+        foreach ([['default','a4'],['default','a5'],['default','ticket'],
             ['marca_de_agua','a4'],['marca_de_agua','a5'],['marca_de_agua','ticket'],
             ['Plantilla_personalizable','a4'],['Plantilla_personalizable','a5'],['Plantilla_personalizable','ticket'],
             ['modern-2027','a4'],['modern-2027','a5'],['modern-2027','ticket'],['modern-2027','ticket_58']] as [$template,$format]) {
@@ -12125,7 +12124,7 @@ trait PaymentClassificationPersistenceCases
             self::assertStringStartsWith('%PDF-',$bytes,$view);
             if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$template.'-'.$format.'.pdf',$bytes);
         }
-        foreach (['default','nrus','marca_de_agua','Plantilla_personalizable','modern-2027'] as $productionTemplate) {
+        foreach (['default','marca_de_agua','Plantilla_personalizable','modern-2027'] as $productionTemplate) {
             $db->table('establishments')->where('id',$document->establishment_id)->update(['template_ticket_pdf'=>$productionTemplate]);
             $productionPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,'invoice','ticket_58','string');
             self::assertStringStartsWith('%PDF-',$productionPdf,$productionTemplate);
@@ -12301,6 +12300,8 @@ trait PaymentClassificationPersistenceCases
         } finally {
             $itemFile->delete();
         }
+        if (getenv('SAB_FISCAL_EXCLUDE_ACCOUNTING') === '1') return;
+
         $db->table('company_accounts')->insert([
             'subtotal_pen'=>'701','total_pen'=>'121','igv_pen'=>'401',
             'subtotal_usd'=>'702','total_usd'=>'122','igv_usd'=>'402',
@@ -12559,7 +12560,7 @@ trait PaymentClassificationPersistenceCases
                   'modern-2027'=>['a4','a5','ticket','ticket_58','ticket_80'],
                   'Plantilla_personalizable'=>['a4','a5','ticket','ticket_58','ticket_80'],
                   'marca_de_agua'=>['a4','a5','ticket','ticket_50','ticket_58','ticket_80'],
-                  'nrus'=>['ticket','ticket_58','ticket_80']] as $template=>$formats) {
+                  ] as $template=>$formats) {
             foreach ($formats as $format) {
                 $html=(new \App\CoreFacturalo\Template())->pdf($template,'sale_note',\App\Models\Tenant\Company::active(),$note->fresh(),$format,['is_preview'=>false]);
                 self::assertStringContainsString('Vuelto USD 6.80',$html,"$template $format");

@@ -241,6 +241,10 @@ class ConfigurationController extends Controller
 
     public function changeFormat(Request $request)
     {
+        if (!Establishment::availablePdfTemplate($request->formats)) {
+            return ['success' => false, 'message' => 'La plantilla seleccionada no está disponible.'];
+        }
+
         $establishment = Establishment::find($request->establishment);
         $establishment->template_pdf = $request->formats;
         $establishment->save();
@@ -257,6 +261,10 @@ class ConfigurationController extends Controller
 
     public function changeTicketFormat(Request $request)
     {
+        if (!Establishment::availablePdfTemplate($request->formats)) {
+            return ['success' => false, 'message' => 'La plantilla seleccionada no está disponible.'];
+        }
+
         $establishment = Establishment::find($request->establishment);
         $establishment->template_ticket_pdf = $request->formats;
         $establishment->save();

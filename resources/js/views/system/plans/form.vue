@@ -61,10 +61,10 @@
                                 <el-input value="∞" disabled></el-input>
                             </template>
                             <template v-else>
-                                <el-input v-model="form.establishments_limit" :disabled="form.nrus"></el-input>
+                                <el-input v-model="form.establishments_limit"></el-input>
                             </template>
 
-                            <el-checkbox v-model="form.establishments_unlimited" :disabled="form.nrus">Ilimitado</el-checkbox><br>
+                            <el-checkbox v-model="form.establishments_unlimited">Ilimitado</el-checkbox><br>
 
                             <small class="form-control-feedback d-block" v-if="errors.establishments_limit" v-text="errors.establishments_limit[0]"></small>
                         </div>
@@ -87,10 +87,10 @@
                                 <el-input value="∞" disabled></el-input>
                             </template>
                             <template v-else>
-                                <el-input v-model="form.sales_limit" @input="normalizeNrusSalesLimit"></el-input>
+                                <el-input v-model="form.sales_limit"></el-input>
                             </template>
 
-                            <el-checkbox v-model="form.sales_unlimited" :disabled="form.nrus">Ilimitado</el-checkbox><br>
+                            <el-checkbox v-model="form.sales_unlimited">Ilimitado</el-checkbox><br>
                             <el-checkbox v-model="form.include_sale_notes_sales_limit">Incluir notas de venta</el-checkbox><br>
 
 
@@ -112,25 +112,6 @@
                             <el-checkbox v-model="form.whatsapp_messages_unlimited">Ilimitado</el-checkbox><br>
 
                             <small class="form-control-feedback d-block" v-if="errors.whatsapp_messages_limit" v-text="errors.whatsapp_messages_limit[0]"></small>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 d-flex align-items-center">
-                        <div class="form-group">
-                            <el-switch
-                                v-model="form.nrus"
-                                @change="changeNrus">
-                            </el-switch>
-                            <span class="ms-2">
-                                Régimen NRUS
-                                <el-tooltip
-                                    class="item"
-                                    content="Fija el plan en 1 sucursal y hasta Bs. 8000 de ventas al mes. No limita los módulos."
-                                    effect="dark"
-                                    placement="top">
-                                    <i class="fa fa-info-circle"></i>
-                                </el-tooltip>
-                            </span>
                         </div>
                     </div>
 
@@ -174,21 +155,6 @@
                                         node-key="id"
                                         show-checkbox
                                         @check="FixChildren">
-                                        <span class="nrus-tree-node" slot-scope="{ node, data }">
-                                            <span>{{ node.label }}</span>
-                                            <el-tooltip
-                                                v-if="nrusTag(data)"
-                                                :content="nrusTag(data).tooltip"
-                                                effect="dark"
-                                                placement="right">
-                                                <el-tag
-                                                    :type="nrusTag(data).type"
-                                                    size="mini"
-                                                    class="ms-2">
-                                                    {{ nrusTag(data).text }}
-                                                </el-tag>
-                                            </el-tooltip>
-                                        </span>
                                     </el-tree>
                                 </div>
                             </div>
@@ -207,32 +173,8 @@
                                         node-key="id"
                                         show-checkbox
                                         @check="FixAppChildren">
-                                        <span class="nrus-tree-node" slot-scope="{ node, data }">
-                                            <span>{{ node.label }}</span>
-                                            <el-tooltip
-                                                v-if="nrusTag(data)"
-                                                :content="nrusTag(data).tooltip"
-                                                effect="dark"
-                                                placement="right">
-                                                <el-tag
-                                                    :type="nrusTag(data).type"
-                                                    size="mini"
-                                                    class="ms-2">
-                                                    {{ nrusTag(data).text }}
-                                                </el-tag>
-                                            </el-tooltip>
-                                        </span>
                                     </el-tree>
                                 </div>
-                            </div>
-                            <div v-if="form.nrus && nrusBlockedSelected" class="col-12 mt-2">
-                                <el-alert
-                                    type="warning"
-                                    :closable="false"
-                                    show-icon
-                                    title="Los módulos «No Recomendado» no están probados con NRUS"
-                                    description="Puedes activarlos, pero bajo tu responsabilidad: pueden no funcionar con el régimen.">
-                                </el-alert>
                             </div>
                         </div>
                     </el-collapse-item>
@@ -262,19 +204,13 @@
 
 <style>
 .plan_documents{ display:block ; margin: 15px 0 ;}
-.nrus-tree-node {
-    display: inline-flex;
-    align-items: center;
-}
 </style>
 
 <script>
     import {exactAmount} from '../../../helpers/exchange-rate-math'
 
-    import {nrusModules} from '../../../mixins/nrus-modules'
 
     export default {
-        mixins: [nrusModules],
         props: ['showDialog', 'recordId','plan_documents'],
         data() {
             return {
@@ -292,7 +228,6 @@
                 collapse: 1,
                 business: null,
                 applyingBusinessModules: false,
-                nrus_sales_warned: false,
                 modules: [],
                 apps: [],
                 business_turns: [],
@@ -337,8 +272,6 @@
                 this.errors = {}
                 this.errorLDocument = {}
                 this.errorLUser = {}
-                this.nrusBlockedSelected = false
-                this.nrus_sales_warned = false
 
                 this.form = {
                     id: null,
@@ -362,7 +295,6 @@
                     whatsapp_messages_limit : 0,
                     whatsapp_messages_unlimited : true,
 
-                    nrus: false,
 
                     module_permissions: null
                 }
@@ -381,58 +313,6 @@
                         })
                 }
             },
-            permissionsAreNrus(permissions) {
-                if (!permissions) return false;
-                if (permissions.nrus !== undefined && permissions.nrus !== null) return !!permissions.nrus;
-
-                return Number(permissions.business) === 6;
-            },
-            changeNrus() {
-                if (this.form.nrus) this.applyNrusLimits(true);
-                this.refreshNrusBlocked();
-            },
-            normalizeNrusSalesLimit() {
-                if (!this.form.nrus || this.form.sales_unlimited) return;
-
-                const salesLimit = this.exactSalesLimit();
-
-                if (!salesLimit || salesLimit.compare('8000') <= 0) {
-                    this.nrus_sales_warned = false;
-                    return;
-                }
-
-                this.form.sales_limit = '8000';
-
-                if (this.nrus_sales_warned) return;
-
-                this.nrus_sales_warned = true;
-                this.$message.warning('El límite de ventas mensual para NRUS es Bs. 8000.');
-            },
-            applyNrusLimits(showMessages = false) {
-                const messages = [];
-                const salesLimit = this.exactSalesLimit();
-                const establishmentsLimit = Number(this.form.establishments_limit);
-                const wasEstablishmentsUnlimited = this.form.establishments_unlimited;
-
-                if (salesLimit && salesLimit.compare('8000') > 0) {
-                    this.form.sales_limit = '8000';
-                    messages.push('las ventas mensuales se ajustaron a Bs. 8000');
-                }
-
-                if (wasEstablishmentsUnlimited || isNaN(establishmentsLimit) || establishmentsLimit !== 1) {
-                    this.form.establishments_unlimited = false;
-                    this.form.establishments_limit = 1;
-                    if (wasEstablishmentsUnlimited || isNaN(establishmentsLimit) || establishmentsLimit > 1) {
-                        messages.push('las sucursales se ajustaron a 1');
-                    }
-                }
-
-                this.form.sales_unlimited = false;
-
-                if (showMessages && messages.length) {
-                    this.$message.warning(`Para NRUS, ${messages.join(' y ')}.`);
-                }
-            },
             validateInputs()
             {
                 if(!this.form.establishments_unlimited)
@@ -443,8 +323,6 @@
                 if(!this.form.sales_unlimited)
                 {
                     if(!this.exactSalesLimit()) return this.getResponseValidations(false, 'Límite de ventas no es un número válido.')
-                    if(this.form.nrus) this.applyNrusLimits()
-                    if(this.form.nrus && this.exactSalesLimit().compare('8000') > 0) return this.getResponseValidations(false, 'El límite de ventas mensual para NRUS no puede ser mayor a 8000.')
                 }
 
                 if(!this.form.whatsapp_messages_unlimited)
@@ -492,7 +370,6 @@
 
                 this.form.module_permissions = {
                     business: this.business,
-                    nrus: !!this.form.nrus,
                     modules: selModules,
                     apps: selApps,
                     levels: selLevels
@@ -537,13 +414,9 @@
                 const preSelecteds = [];
                 const preAppSelecteds = [];
 
-                // `nrus` no es columna del plan: vive dentro de module_permissions,
-                // por eso se agrega al form de forma reactiva.
-                this.$set(this.form, 'nrus', this.permissionsAreNrus(this.form.module_permissions))
-
                 if (this.form.module_permissions) {
                     const permissions = this.form.module_permissions;
-                    this.business = Number(permissions.business) === 6 ? null : permissions.business;
+                    this.business = permissions.business;
                     const preSelectedsModules = this.form.module_permissions.modules || [];
                     const preSelectedsApps = this.form.module_permissions.apps || [];
                     const preSelectedsLevels = this.form.module_permissions.levels || [];
@@ -578,7 +451,6 @@
                     if(this.$refs.tree) this.$refs.tree.setCheckedKeys(preSelecteds);
                     if(this.$refs.Apptree) this.$refs.Apptree.setCheckedKeys(preAppSelecteds);
                     this.applyingBusinessModules = false;
-                    this.refreshNrusBlocked();
                 }, 500);
             },
             transform(){
@@ -655,7 +527,6 @@
                         }
                     }
                 }
-                this.refreshNrusBlocked()
             },
             FixAppChildren(currentObj, treeStatus) {
                 this.markCustomBusiness()
@@ -671,7 +542,6 @@
                         }
                     }
                 }
-                this.refreshNrusBlocked()
             },
             markCustomBusiness() {
                 if (this.applyingBusinessModules || this.business === 0) return;
@@ -729,7 +599,6 @@
                     }
 
                     this.applyingBusinessModules = false;
-                    this.refreshNrusBlocked();
                 });
             },
             getIds(modules) {

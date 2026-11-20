@@ -68,7 +68,7 @@
                             width="100%"
                         />
                     </el-tab-pane>
-                    <el-tab-pane label="A4" name="quarter" v-if="!isNrus">
+                    <el-tab-pane label="A4" name="quarter">
                         <embed
                             class="pos-ticket-embed"
                             :src="form.print_a4"
@@ -76,7 +76,7 @@
                             width="100%"
                         />
                     </el-tab-pane>
-                    <el-tab-pane label="A5" name="fifth" v-if="!isNrus">
+                    <el-tab-pane label="A5" name="fifth">
                         <embed
                             class="pos-ticket-embed"
                             :src="form.print_a5"
@@ -175,7 +175,7 @@
                             <i class="fa fa-receipt"></i> Ticket 58
                         </button>
                         <button
-                            v-if="!isNrus"
+
                             type="button"
                             class="pos-success__format"
                             :disabled="pdfDownloadDisabled('a4')"
@@ -184,7 +184,7 @@
                             <i class="fa fa-file-alt"></i> A4
                         </button>
                         <button
-                            v-if="!isNrus"
+
                             type="button"
                             class="pos-success__format"
                             :disabled="pdfDownloadDisabled('a5')"
@@ -566,9 +566,6 @@ export default {
         ...documentPdf.computed,
         ...documentEmail.computed,
         ...mapState(["config"]),
-        isNrus() {
-            return !!(this.config && this.config.is_nrus);
-        },
         applyConvertCpePos() {
             if (this.configuration && this.configuration.show_convert_cpe_pos)
                 return this.configuration.show_convert_cpe_pos;

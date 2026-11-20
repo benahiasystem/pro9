@@ -89,13 +89,13 @@
                 <template #sale_unit_price>
                     <div :class="{'has-danger': errors.sale_unit_price}" class="form-group">
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
-                        <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template><span class="text-danger">*</span></label>
+                        <label class="control-label">Precio Unitario <template><small v-if="form.has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template><span class="text-danger">*</span></label>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
                         <el-input v-model="form.sale_unit_price"
                                   class="input-select-all"
                                   dusk="sale_unit_price"
                                   @input="calculatePercentageOfProfitBySale"></el-input>
-                        <small v-if="!isNrus" :style="saleUnitPriceBreakdown ? 'opacity: 1' : 'opacity: 0'" class="text-muted">
+                        <small :style="saleUnitPriceBreakdown ? 'opacity: 1' : 'opacity: 0'" class="text-muted">
                             <template v-if="saleUnitPriceBreakdown">
                                 {{ saleUnitPriceBreakdown }}
                             </template>
@@ -317,7 +317,7 @@
                 <template #purchase_unit_price>
                     <div :class="{'has-danger': errors.purchase_unit_price}" class="form-group">
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
-                        <label class="control-label">Precio Unitario (Compra) <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template></label>
+                        <label class="control-label">Precio Unitario (Compra) <template><small v-if="form.purchase_has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template></label>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
                         <el-input v-model="form.purchase_unit_price"
                                   class="input-select-all"
@@ -622,7 +622,6 @@
                             </div>
                         </div>
 
-                        <template v-if="!isNrus">
                         <div class="col-md-3" v-if="showRestrictSaleItemsCpe">
                             <div :class="{'has-danger': errors.restrict_sale_cpe}"
                                  class="form-group">
@@ -662,7 +661,6 @@
                                     <small v-if="errors.quantity_of_points" class="form-control-feedback" v-text="errors.quantity_of_points[0]"></small>
                                 </div>
                             </div>
-                        </template>
                         </template>
                         <div class="col-12 mt-3">
                             <div class="row">
@@ -869,7 +867,7 @@
                 </el-tab-pane>
 
                 <el-tab-pane class
-                             v-if="!isService && showTab('warehouses') && !isNrus"
+                             v-if="!isService && showTab('warehouses')"
                              name="second">
                     <span slot="label">Almacenes</span>
                     <div class="row">
@@ -1283,13 +1281,13 @@
                             <div :class="{'has-danger': errors.purchase_unit_price}"
                                  class="form-group">
                                 <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template></label>
+                                <label class="control-label">Precio Unitario <template><small v-if="form.purchase_has_igv">(con IVA)</small> <small v-else>(SIN IVA)</small></template></label>
                                 <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <el-input v-model="form.purchase_unit_price"
                                           class="input-select-all"
                                           dusk="purchase_unit_price"
                                           @input="calculatePercentageOfProfitByPurchase"></el-input>
-                                <small v-if="!isNrus" :style="purchaseUnitPriceBreakdown ? 'opacity: 1' : 'opacity: 0'" class="text-muted">
+                                <small :style="purchaseUnitPriceBreakdown ? 'opacity: 1' : 'opacity: 0'" class="text-muted">
                                     <template v-if="purchaseUnitPriceBreakdown">
                                         {{ purchaseUnitPriceBreakdown }}
                                     </template>
@@ -1606,7 +1604,7 @@
                         </div>
                     </div>
 
-                    <div v-if="!isNrus" class="advanced-section">
+                    <div class="advanced-section">
                         <h6 class="advanced-section__title">Tributos y retenciones</h6>
 
                         <div class="advanced-toggle">
@@ -1822,10 +1820,6 @@ export default {
                 return !!this.config.global_igv_handling
             }
             return true
-        },
-        isNrus()
-        {
-            return !!(this.config && this.config.is_nrus)
         },
         saleUnitPriceBreakdown()
         {

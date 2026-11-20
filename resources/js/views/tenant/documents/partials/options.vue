@@ -86,7 +86,7 @@
             <p v-if="pdfDownloadMessage" class="text-warning mt-2">{{ pdfDownloadMessage }}</p>
             <div class="row print-buttons-container">
 
-                <div class="col text-center font-weight-bold mt-3" v-if="!isNrus">
+                <div class="col text-center font-weight-bold mt-3">
                     <button class="btn btn-lg btn-info waves-effect waves-light w-100"
                             type="button"
                             :disabled="pdfDownloadDisabled('a4')"
@@ -116,7 +116,7 @@
                     </button>
                 </div>
 
-                <div class="col text-center font-weight-bold mt-3" v-if="!isNrus">
+                <div class="col text-center font-weight-bold mt-3">
 
                     <button class="btn btn-lg btn-info waves-effect waves-light w-100"
                             type="button"
@@ -322,9 +322,6 @@ export default {
                 : `${caption} ${number}: pendiente de confirmación HKA.`;
             return {type: 'warning', title,
                 description: emission.diagnostic || 'La venta está guardada; todavía no hay una confirmación fiscal.'};
-        },
-        isNrus: function () {
-            return !!(this.config && this.config.is_nrus);
         },
         ShowTicket58: function () {
             if (this.config === undefined) return false;

@@ -1,6 +1,6 @@
 # Plan de implementación de PostgreSQL 17 en Pro9
 
-Fecha: 9 de noviembre de 2026. Estado: planificación técnica para instalaciones nuevas. La aplicación continúa usando su configuración actual; los cambios de código descritos aquí se realizarán al implementar.
+Fecha original: 9 de noviembre de 2026. Actualización: 11 de noviembre de 2026. Este documento conserva el alcance aprobado. Su implementación está en la rama `codex/postgresql-supabase-17-11`; el código y la validación se describen en [el informe de implementación](postgresql_17/implementacion.md) y en [el manual operativo](postgresql_17/operacion.md). El estado de cierre depende de los resultados registrados, incluidos los pendientes, y no de la existencia de código o pruebas.
 
 ## Objetivo y decisiones
 
@@ -8,7 +8,9 @@ Sustituir MySQL por PostgreSQL 17 en la administración central, empresas, módu
 
 Se conservarán Laravel 9, Hyn Tenancy 5.9.1 y PHP 8.2. Se prepararán instalaciones nuevas; no se convertirán bases existentes ni se recalcularán documentos. Los cambios actuales del usuario se preservarán como parte de la referencia funcional.
 
-La versión comprobada en una instancia nueva fue PostgreSQL 17.11, con la imagen `postgres:17.11-bookworm@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994`. Antes de implementar se comprobará el parche vigente de la rama 17 y se fijará el digest correspondiente. No se cambiará automáticamente de versión mayor. Véanse la [política oficial de versiones](https://www.postgresql.org/support/versioning/) y el [soporte documentado de PostgreSQL 17 en Supabase](https://supabase.com/docs/guides/platform/upgrading).
+La versión objetivo queda fijada en **PostgreSQL 17.11**, sin actualizar automáticamente a otro parche. La referencia facilitada por el usuario es `PostgreSQL 17.11 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit`, correspondiente a su servidor Supabase. El equipo local Intel i7 utiliza **linux/amd64**; arquitectura y compilador no tienen que coincidir con ARM64. Se utilizará `supabase/postgres:17.11.0.019`, fijada por digest, y se verificará `server_version_num = 170011`. Los sondeos previos con `postgres:17.11-bookworm` conservan su carácter histórico y no acreditan la nueva imagen.
+
+La implementación se realizará exclusivamente en la rama **`codex/postgresql-supabase-17-11`**, usando su worktree existente y preservando sus cambios previos. Todas las pruebas y verificaciones con datos utilizarán bases temporales y recursos aislados creados por el ejecutor; no se accederá a bases reales. Actualización de requisitos: 11 de noviembre de 2026.
 
 ## Inventario que utilizará la implementación
 
@@ -36,7 +38,7 @@ Se revisará la implementación actual de `/home/benahia/benahia/pro/pro6`, su [
 
 | Referencia | Solución que se aprovechará | Adaptación necesaria |
 |---|---|---|
-| Docker PostgreSQL 17.5 | Servicio PostgreSQL y volumen persistente | Parche 17 vigente, digest fijo, healthcheck TCP y aislamiento por proyecto Compose. |
+| Docker PostgreSQL 17.5 | Servicio PostgreSQL y volumen persistente | PostgreSQL 17.11 fijo, digest fijo, healthcheck TCP y aislamiento por proyecto Compose. |
 | Conexiones `system` y `tenant` | Separación lógica de conexiones | Mantener la resolución dinámica de Hyn; no crear un tenant estático con credenciales centrales. |
 | Controlador PostgreSQL personalizado | Creación de empresas y permisos de `public` | Adaptador fuera de `vendor`, propietarios correctos y credenciales separadas. |
 | Hooks de Composer | Necesidad de conservar la adaptación al reinstalar dependencias | Registro mediante proveedor y extensiones de Hyn; no sobrescribir dependencias. |
@@ -127,7 +129,7 @@ Aceptación: panel y API crean empresas, fallos en cualquier etapa son recuperab
 
 ### 4 Esquema central y secuencias
 
-Mantener las 159 migraciones centrales existentes. Añadir una migración inicial de soporte PostgreSQL anterior a las tablas que usan sus collations y otra para `tenant_provisioning_runs`, después de las tablas de tenancy. La secuencia central objetivo tendrá 161 migraciones, si no hay cambios de alcance posteriores.
+Mantener las 159 migraciones centrales existentes. Añadir una migración inicial de soporte PostgreSQL anterior a las tablas que usan sus collations y otra para `tenant_provisioning_runs`, después de las tablas de tenancy. La secuencia central objetivo tiene 161 migraciones propias más 18 migraciones centrales de Marketplace registradas por su proveedor: 179 en la instalación completa. Estas últimas también usan la conexión del migrador durante la instalación y el rollback.
 
 Crear `SequenceSynchronizer`. Se invocará después de cargas con IDs explícitos, antes de que una migración posterior inserte IDs automáticos, y al terminar semillas/restauraciones. No bastará con ejecutarlo únicamente al final de toda la instalación: el ensayo detectó colisiones intermedias en `modules`.
 
@@ -232,7 +234,7 @@ Usar `PRO9_POSTGRES_TESTS=1`, eliminar lecturas de `.env` real de los fixtures y
 
 Crear `SchemaInspector` para columnas, tipos canónicos, índices, FKs, secuencias y snapshots PostgreSQL. Sustituir `SHOW TABLES/COLUMNS/INDEX/CREATE` en las pruebas por sus APIs; no emular respuestas MySQL dentro del driver. Los snapshots compararán estructura canónica PostgreSQL y excluirán sólo diferencias variables justificadas.
 
-Reemplazar `FiscalFixtureSnapshot` por `pg_dump`/`pg_restore` privado de proceso, preservando secuencias, extensiones, restricciones y columnas generadas. La restauración partirá de una base vacía: usará los objetos de soporte del dump, sin ejecutar primero el bootstrap que los duplicaría. La ruta sin snapshot sí ejecutará bootstrap, migraciones y semillas. La clave del fixture incluirá versión de motor y hashes de migraciones/semillas; una copia modificada no afectará la fuente ni otra prueba.
+Reemplazar `FiscalFixtureSnapshot` por `pg_dump`/`pg_restore` privado de proceso, preservando secuencias, extensiones, restricciones y columnas generadas. La restauración partirá de una base vacía: usará los objetos de soporte del dump, sin ejecutar primero el bootstrap que los duplicaría. La ruta sin snapshot sí ejecutará bootstrap, migraciones y semillas. El dump y la restauración nativa serán obligatorios en la prueba de copia del fixture y en respaldos. Para repetir las pruebas funcionales, `PRO9_POSTGRES_FAST_FIXTURES=1` permitirá clonar una plantilla privada del proceso, creada desde ese mismo esquema y semillas, sin compartir escrituras entre bases. La clave del fixture incluirá versión de motor y hashes de migraciones, semillas y soporte PostgreSQL; una copia modificada no afectará la fuente ni otra prueba.
 
 Añadir auditoría de SQL PostgreSQL y un job GitHub Actions sobre la imagen fijada. El job comprobará versión 17, instalación completa, casos obligatorios ejecutados y limpieza. Fallará si faltan pruebas, reaparece sintaxis incompatible en rutas activas o un candidato queda sin clasificar. Registrar exclusiones individualmente y no confundir código PHP con SQL.
 
@@ -246,7 +248,7 @@ Revisar los cambios de expresiones que afecten `exact_rounding_registry` y sus h
 |---|---|---|
 | PG-INFRA | Construcción limpia; salud TCP; proyecto paralelo; recreación de contenedor | Motor/clientes 17, sin colisiones ni pérdida de datos. |
 | PG-CONNECTION | Central/tenant/CLI/cursores; decimales, booleanos y JSON | Tipos de API compatibles y ausencia de pérdida de precisión. |
-| PG-CENTRAL-INSTALL | Las 161 migraciones previstas, semillas, siguientes IDs y rollback | Dos ciclos completos equivalentes mediante el flujo real de instalación. |
+| PG-CENTRAL-INSTALL | Las 179 migraciones previstas (161 centrales y 18 de Marketplace), semillas, siguientes IDs y rollback | Dos ciclos completos equivalentes mediante el flujo real de instalación. |
 | PG-INSTALL | Las 348 tablas tenant, semillas, 554 FKs e instalación repetida | 349 archivos consolidados; integridad al commit y ninguna tabla residual después de rollback. |
 | PG-SCHEMA | Límites unsigned/decimal, defaults, `CHECK`, nulos, índices y generadas | Valores válidos aceptados e inválidos rechazados sin redondeo silencioso desde la aplicación. |
 | PG-TENANCY | Panel, API, primer acceso, subdominio reutilizado, renombrado, credenciales y eliminación | Recursos y contexto correctos, incluidos dos tenants con los mismos IDs internos. |
@@ -288,4 +290,4 @@ Entregables de implementación: código, imágenes/configuración reproducibles,
 
 ## Límites de esta planificación
 
-La planificación y el inventario son los entregables actuales. Los sondeos descritos ya se realizaron; los cambios de aplicación y las pruebas de aceptación anteriores corresponden a la implementación futura. Se mantienen fuera de alcance la conversión de bases existentes, el alojamiento en Supabase, la modernización general de Laravel y la alta disponibilidad.
+La planificación y el inventario son la referencia aprobada para la implementación. Los sondeos del 9 de noviembre se conservan como evidencia histórica; los ensayos de la imagen Supabase y los resultados actuales están en `informes/evidencias/postgresql_17_implementacion/`. Se mantienen fuera de alcance la conversión de bases existentes, el alojamiento en Supabase, la modernización general de Laravel y la alta disponibilidad.

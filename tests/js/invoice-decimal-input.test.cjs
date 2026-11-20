@@ -120,7 +120,7 @@ test('the invoice summary keeps rows for positive tax bases and discounts projec
             itemDiscountExactAmount: invoice.methods.itemDiscountExactAmount,
             hasPositiveInvoiceAmount: invoice.methods.hasPositiveInvoiceAmount,
         },
-        data: () => ({form: {items: [], discounts: []}, isNrus: false, documentCurrencySymbol: 'Bs.',
+        data: () => ({form: {items: [], discounts: []}, documentCurrencySymbol: 'Bs.',
             isGlobalDiscountBase: false, percentage_igv: '0.16'}),
     })
     const text = node => [node.text, ...(node.children || []).map(text)].filter(Boolean).join(' ')
@@ -137,9 +137,6 @@ test('the invoice summary keeps rows for positive tax bases and discounts projec
             for (const field of ['total_taxed', 'total_exonerated', 'total_exportation', 'total_igv']) assert.equal(header[field], '0')
             view.form = {...header, items: [line], discounts: []}
             for (const label of labels) assert.equal(text(view._render()).includes(label), expected.includes(label), label)
-            view.isNrus = true
-            for (const label of labels) assert.equal(text(view._render()).includes(label), expected.includes(label) && label === 'OP.EXONERADAS:', label)
-            view.isNrus = false
         }
 
         const line = {affectation_igv_type_id: 'EXP', total_value: '1'}

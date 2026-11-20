@@ -59,7 +59,7 @@ abstract class SeriesDatabaseTestCase extends TestCase
             'companies' => 'id INTEGER PRIMARY KEY, fiscal_environment TEXT, fiscal_emission_mode TEXT, fiscal_environment_locked INTEGER DEFAULT 0, number TEXT, created_at TEXT, updated_at TEXT',
             'establishments' => 'id INTEGER PRIMARY KEY',
             'user_default_document_types' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, document_type_id TEXT, series_id INTEGER',
-            'configurations' => 'id INTEGER PRIMARY KEY, enable_dedicated_series INTEGER DEFAULT 1, is_nrus INTEGER DEFAULT 0',
+            'configurations' => 'id INTEGER PRIMARY KEY, enable_dedicated_series INTEGER DEFAULT 1',
             'series' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, establishment_id INTEGER, document_type_id TEXT, number TEXT, dedicated INTEGER DEFAULT 0, contingency INTEGER DEFAULT 0, in_use INTEGER DEFAULT 0, series_device_group_id INTEGER, created_at TEXT, updated_at TEXT, UNIQUE(establishment_id, document_type_id, number)',
             'series_configurations' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, series_id INTEGER UNIQUE, document_type_id TEXT, series TEXT, number INTEGER, created_at TEXT, updated_at TEXT',
             'series_device_groups' => 'id INTEGER PRIMARY KEY AUTOINCREMENT, establishment_id INTEGER, name TEXT, module_value TEXT, bound_device_name TEXT, bound_user_id INTEGER, bound_at TEXT, created_at TEXT, updated_at TEXT',

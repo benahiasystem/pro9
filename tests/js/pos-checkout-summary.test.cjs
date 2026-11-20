@@ -33,7 +33,7 @@ function checkout(name) {
             money(value) { return money.call(this, value?.fraction ? value.fraction() : value) },
         },
         data: {
-            currencyTypeActive: {symbol: 'Bs.'}, isNrus: false, ivaPercentageLabel: '16',
+            currencyTypeActive: {symbol: 'Bs.'}, ivaPercentageLabel: '16',
             item: {total: '0.005', calculation_snapshot: {version: 1, values: {total: belowHalfCent}}},
             form: {document_type_id: '01', total_taxed: '0.005', total_igv: '0.005', total_discount: '0',
                 calculation_snapshot: {version: 1, values: {

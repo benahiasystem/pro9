@@ -1003,11 +1003,11 @@
                     </div>
 
 
-                    <div v-if="cartSummaryValue('total_taxed').compare(0) > 0 && !isNrus" class="pos-cart__total-row">
+                    <div v-if="cartSummaryValue('total_taxed').compare(0) > 0" class="pos-cart__total-row">
                         <span>Op. gravada</span>
                         <span>{{ currency_type.symbol }} {{ cartSummaryMoney('total_taxed') }}</span>
                     </div>
-                    <div v-if="cartSummaryValue('total_igv').compare(0) > 0 && !isNrus" class="pos-cart__total-row">
+                    <div v-if="cartSummaryValue('total_igv').compare(0) > 0" class="pos-cart__total-row">
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
                         <span>IVA</span>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
@@ -1657,9 +1657,6 @@ export default {
                 : this.form.total > 0;
         },
         ...mapState(["config"]),
-        isNrus: function() {
-            return !!(this.config && this.config.is_nrus);
-        },
         canSeeHistoryPurchase: function() {
             if (this.typeUser !== "admin") {
                 return this.configuration.pos_history;

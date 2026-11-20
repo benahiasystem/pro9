@@ -97,7 +97,7 @@
                     <span class="fp-total-label">Subtotal</span>
                     <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ money(checkoutValue(form, 'total_taxed')) }}</span>
                 </div>
-                <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
+                <div class="fp-total-row d-flex justify-content-between py-1">
                     <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
                     <span class="fp-total-label">IVA ({{ ivaPercentageLabel }}%)</span>
                     <!-- ######### FIN CAMBIO AFECTACIÓN IVA -->
@@ -407,10 +407,6 @@ export default {
             return Number((Number(this.percentageIgv) || 0.16) * 100).toFixed(0);
         },
         // ######### FIN CAMBIO AFECTACIÓN IVA
-        isNrus()
-        {
-            return !!((this.configuration && this.configuration.is_nrus) || (this.config && this.config.is_nrus));
-        },
         disabledDiscountForSeller()
         {
             return this.configuration.restrict_seller_discount && this.typeUser === 'seller';
@@ -486,7 +482,7 @@ export default {
             // Solo cambia el tipo de documento si el usuario no ha seleccionado manualmente
             if (!this.userSelectedDocType) {
                 // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-                if (this.configuration.default_document_type_80 || this.isNrus) {
+                if (this.configuration.default_document_type_80) {
                     this.form.document_type_id = "80";
                 } else {
                     this.form.document_type_id = "01";
@@ -558,11 +554,6 @@ export default {
         handleFn113() {
             const code = this.form.document_type_id
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            if (this.isNrus) {
-                this.form.document_type_id = '80'
-                this.filterSeries()
-                return
-            }
             this.form.document_type_id = code == '01' ? '80' : '01'
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 

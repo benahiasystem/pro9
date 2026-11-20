@@ -32,7 +32,7 @@ class SeriesRequest extends FormRequest
             'correlative' => 'sometimes|integer|min:1|max:2147483647',
             'dedicated' => 'sometimes|boolean',
             'contingency' => 'sometimes|boolean',
-            'document_type_id' => ['required', \Illuminate\Validation\Rule::in(array_unique(array_column(\App\Services\SeriesCodeGenerator::availableTypes(false), 'document_type_id')))],
+            'document_type_id' => ['required', \Illuminate\Validation\Rule::in(array_unique(array_column(\App\Services\SeriesCodeGenerator::availableTypes(), 'document_type_id')))],
             'number' => $validate_number,
         ];
     }

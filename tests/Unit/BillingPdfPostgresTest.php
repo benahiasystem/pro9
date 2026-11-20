@@ -85,8 +85,8 @@ final class BillingPdfPostgresTest extends \PHPUnit\Framework\TestCase
             self::assertSame([0, 1], array_keys($document->fee->all()));
             self::assertSame(array_column($input['fee'], 'amount'), $document->fee->pluck('amount')->all());
             self::assertInstanceOf(\Carbon\CarbonInterface::class, $document->items->first()->relation_item->date_of_due);
-            foreach (['default', 'modern-2027', 'marca_de_agua', 'Plantilla_personalizable', 'nrus'] as $design) {
-                $formats = $design === 'nrus' ? ['ticket', 'ticket_58'] : ['a4', 'a5', 'ticket', 'ticket_58'];
+            foreach (['default', 'modern-2027', 'marca_de_agua', 'Plantilla_personalizable'] as $design) {
+                $formats = ['a4', 'a5', 'ticket', 'ticket_58'];
                 foreach ($formats as $format) {
                     $label = "$context $design $format";
                     $options = $context === 'preview' ? ['is_preview' => true] : [];
@@ -118,7 +118,7 @@ final class BillingPdfPostgresTest extends \PHPUnit\Framework\TestCase
         self::assertFileExists(asset('logo/logo.jpg'));
         \Tests\Support\PostgresTestEnvironment::assertServer($db);
         $run = getenv('SAB_POSTGRES_RUN_ID');
-        self::assertMatchesRegularExpression('/^sab-pgtest-[a-f0-9]{12}$/D',$run);
+        self::assertMatchesRegularExpression('/^pro9-pgtest-[a-f0-9]{12}$/D',$run);
         $directory = base_path('informes/evidencias/postgresql_17_implementacion/resultados/billing-pdf-'.$run.'/'.$currency);
         self::assertDirectoryDoesNotExist($directory);
         self::assertTrue(mkdir($directory,0755,true));

@@ -1280,7 +1280,7 @@
 
                                 <p
                                     class="text-end"
-                                    v-if="form.total_exportation > 0 && !isNrus"
+                                    v-if="form.total_exportation > 0"
                                 >
                                     OP.EXPORTACIÓN: {{ currency_type.symbol }}
                                     {{ form.total_exportation }}
@@ -1308,12 +1308,12 @@
                                 </p>
                                 <p
                                     class="text-end"
-                                    v-if="form.total_taxed > 0 && !isNrus"
+                                    v-if="form.total_taxed > 0"
                                 >
                                     OP.GRAVADA: {{ currency_type.symbol }}
                                     {{ form.total_taxed }}
                                 </p>
-                                <p class="text-end" v-if="form.total_igv > 0 && !isNrus">
+                                <p class="text-end" v-if="form.total_igv > 0">
                                     <!-- ########## INICIO CAMBIO IGV A IVA -->
                                     IVA: {{ currency_type.symbol }}
                                     <!-- ######### FIN CAMBIO IGV A IVA -->
@@ -2234,9 +2234,6 @@ export default {
             return this.payment_method_types.filter(method => ['cash', 'account'].includes(method.collection_kind) && [true, 1, '1'].includes(method.is_active));
         },
         ...mapState(["config"]),
-        isNrus: function() {
-            return !!(this.config && this.config.is_nrus);
-        },
         sms_periodo: function() {
             let text = "";
             let type = this.form.type_period;

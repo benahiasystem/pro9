@@ -25,7 +25,7 @@ test('reopening an export percentage discount keeps its decimal factor exactly',
 test('the operation selector receives the catalog loaded by the form in create and edit contexts',async()=>{
     for(const operations of [[{id:'0101',description:'Venta interna'}],
         [{id:'0101',description:'Venta interna'},{id:'0201',description:'Exportación FOB'},{id:'0202',description:'Exportación CIF'},{id:'0203',description:'Exportación EXW'}]]) {
-        const ctx={resource:'documents',configuration:{},form:{},isNrus:false,idUser:1,operation_types:[],
+        const ctx={resource:'documents',configuration:{},form:{},idUser:1,operation_types:[],
             $store:{commit(){}},$http:{get:async url=>{
                 assert.equal(url,'/documents/tables');
                 return {data:{document_types_invoice:[{id:'01'}],operation_types:operations,establishments:[{id:1}],

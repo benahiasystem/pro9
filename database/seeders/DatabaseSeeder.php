@@ -55,27 +55,6 @@ class DatabaseSeeder extends Seeder
             'locked' => true
         ]);
 
-        Plan::firstOrCreate(['name'=>'NRUS','locked'=>true], [
-            'name' => 'NRUS',
-            'pricing' => 49,
-            'limit_users' => 0,
-            'limit_documents' => 0,
-            'plan_documents' => [1],
-            'is_popular' => false,
-            'locked' => true,
-            'establishments_limit' => 1,
-            'establishments_unlimited' => false,
-            'sales_limit' => 8000,
-            'sales_unlimited' => false,
-            'module_permissions' => [
-                'business' => null,
-                'nrus' => true,
-                'modules' => [7, 2, 1, 17, 18, 8, 12, 52, 4],
-                'apps' => [11, 14, 5, 53],
-                'levels' => [1, 2, 5, 8, 15, 84, 16],
-            ],
-        ]);
-
         \App\Database\SequenceSynchronizer::sync(DB::connection());
     }
     // ######### FIN CAMBIO POSTGRESQL 17

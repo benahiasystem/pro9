@@ -205,15 +205,7 @@ class ConfigurationController extends Controller
 
     public function getTicketFormats()
     {
-        $is_nrus = optional(Configuration::first())->isNrus();
-
-        $query = FormatTemplate::query();
-
-        if ($is_nrus) {
-            $query->where('formats', 'nrus');
-        } else {
-            $query->where('is_custom_ticket', true)->where('formats', '!=', 'nrus');
-        }
+        $query = FormatTemplate::where('is_custom_ticket', true);
 
         $formats = $query->get()->transform(function($row) {
                 return $row->getCollectionData();
@@ -259,6 +251,10 @@ class ConfigurationController extends Controller
 
     public function changeFormat(Request $request)
     {
+        if (!Establishment::availablePdfTemplate($request->formats)) {
+            return ['success' => false, 'message' => 'La plantilla seleccionada no está disponible.'];
+        }
+
         if (in_array($request->formats, $this->getTicketOnlyPdfTemplates(), true)) {
             return [
                 'success' => false,
@@ -282,6 +278,10 @@ class ConfigurationController extends Controller
 
     public function changeTicketFormat(Request $request)
     {
+        if (!Establishment::availablePdfTemplate($request->formats)) {
+            return ['success' => false, 'message' => 'La plantilla seleccionada no está disponible.'];
+        }
+
         $establishment = Establishment::find($request->establishment);
         $establishment->template_ticket_pdf = $request->formats;
         $establishment->save();

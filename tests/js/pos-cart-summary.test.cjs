@@ -18,7 +18,7 @@ const text = node => node.text ?? (node.children || []).map(text).join('')
 function cart(row, documentType = '01') {
     return new Vue({
         ...render,
-        data: {form: {document_type_id: documentType, ...documentTotals([row])}, currency_type: {symbol: 'Bs.'}, isNrus: false},
+        data: {form: {document_type_id: documentType, ...documentTotals([row])}, currency_type: {symbol: 'Bs.'}},
         methods: methods('index', ['money', 'cartSummaryValue', 'cartSummaryMoney']),
     })
 }
@@ -38,8 +38,6 @@ test('POS invoice cart shows exact positive bases and IVA projected to zero', ()
     assert.equal(view.form.total_igv, '0')
     assert.ok(math.exactValue(view.form, 'total_taxed').compare(0) > 0)
     assert.deepEqual(amounts(view).rows, ['Op. gravada Bs. 0.00', 'IVA Bs. 0.00', 'TOTAL Bs. 0.00'])
-    view.isNrus = true
-    assert.deepEqual(amounts(view).rows, ['TOTAL Bs. 0.00'])
     view.$destroy()
 })
 

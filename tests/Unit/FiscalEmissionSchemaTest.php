@@ -2755,6 +2755,60 @@ PHP;
         self::assertFalse($db->table('items')->whereIn('internal_id', ['TEST-PARENT', 'TEST-VARIATION', 'TEST-SERVICE'])->exists());
     }
 
+    public function test_retired_regime_tenant_migration_preserves_history_and_custom_operations(): void
+    {
+        $db = $this->capsule->getConnection('tenant');
+        $db->statement('CREATE TABLE establishments (id integer PRIMARY KEY, template_pdf text, template_ticket_pdf text)');
+        $db->statement('CREATE TABLE configurations (id integer PRIMARY KEY, plan json, formats text)');
+        $db->statement('CREATE TABLE format_templates (id serial PRIMARY KEY, formats text, urls json, is_custom_ticket boolean DEFAULT false)');
+        $db->statement('CREATE TABLE cat_operation_types (id text PRIMARY KEY, active boolean)');
+        $db->statement('CREATE TABLE historical_invoices (id integer PRIMARY KEY, operation_type_id text REFERENCES cat_operation_types(id))');
+        $db->table('establishments')->insert(['id'=>1, 'template_pdf'=>'default', 'template_ticket_pdf'=>'nrus']);
+        $db->table('configurations')->insert(['id'=>1, 'plan'=>json_encode(['module_permissions'=>['nrus'=>true, 'modules'=>[1]]]), 'formats'=>'nrus']);
+        $db->table('cat_operation_types')->insert([
+            ['id'=>'0101','active'=>false], ['id'=>'0201','active'=>false],
+            ['id'=>'0202','active'=>false], ['id'=>'0203','active'=>false], ['id'=>'0113','active'=>true],
+        ]);
+        $db->table('historical_invoices')->insert(['id'=>1, 'operation_type_id'=>'0113']);
+        $migration = require database_path('migrations/tenant/2026_11_19_120000_remove_legacy_nrus.php');
+        $migration->up();
+        $migration->up();
+        self::assertSame('default', $db->table('establishments')->value('template_ticket_pdf'));
+        self::assertSame('default', $db->table('configurations')->value('formats'));
+        self::assertArrayNotHasKey('nrus', json_decode($db->table('configurations')->value('plan'), true)['module_permissions']);
+        self::assertSame(['0101','0201','0202','0203'], $db->table('cat_operation_types')->where('active', true)->orderBy('id')->pluck('id')->all());
+        self::assertSame('0113', $db->table('historical_invoices')->value('operation_type_id'));
+        self::assertSame(1, $db->table('format_templates')->where('formats', 'default')->count());
+    }
+
+    public function test_retired_regime_central_migration_stops_for_assigned_clients(): void
+    {
+        $db = $this->capsule->getConnection('tenant');
+        $db->statement('CREATE TABLE plans (id integer PRIMARY KEY, name text, locked boolean, module_permissions json)');
+        $db->statement('CREATE TABLE clients (id integer PRIMARY KEY, plan_id integer REFERENCES plans(id))');
+        $db->statement('CREATE TABLE payment_orders (id integer PRIMARY KEY, plan_id integer REFERENCES plans(id) ON DELETE SET NULL, order_state_id integer)');
+        $db->statement('CREATE TABLE configurations (id integer PRIMARY KEY, guest_register_plan_id integer)');
+        $db->statement('CREATE TABLE business_turns (id integer PRIMARY KEY, value text)');
+        $db->table('plans')->insert(['id'=>1, 'name'=>'NRUS', 'locked'=>true, 'module_permissions'=>'{}']);
+        $db->table('clients')->insert(['id'=>1, 'plan_id'=>1]);
+        $migration = require database_path('migrations/2026_11_19_120000_remove_legacy_nrus.php');
+        try {
+            $migration->up();
+            self::fail('La migración debía detenerse ante un cliente asignado.');
+        } catch (\RuntimeException $error) {
+            self::assertStringContainsString('clientes', $error->getMessage());
+        }
+        self::assertSame(1, $db->table('plans')->count());
+        $db->table('clients')->delete();
+        $db->table('configurations')->insert(['id'=>1, 'guest_register_plan_id'=>1]);
+        $db->table('payment_orders')->insert(['id'=>1, 'plan_id'=>1, 'order_state_id'=>2]);
+        $migration->up();
+        $migration->up();
+        self::assertSame(0, $db->table('plans')->count());
+        self::assertNull($db->table('configurations')->value('guest_register_plan_id'));
+        self::assertNull($db->table('payment_orders')->value('plan_id'));
+    }
+
     public function test_fresh_system_migrations_do_not_create_fiscal_transport_configuration(): void
     {
         $this->capsule->getDatabaseManager()->setDefaultConnection('system');

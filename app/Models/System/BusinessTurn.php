@@ -22,10 +22,6 @@ class BusinessTurn extends Model
 
     public const FULL_ID = 5;
 
-    public const NRUS_ID = 6;
-
-    public const NRUS_VALUE = 'nrus';
-
     public const RESERVED_IDS = [self::CUSTOM_ID, self::FULL_ID];
 
     protected $table = 'business_turns';
@@ -63,18 +59,6 @@ class BusinessTurn extends Model
     }
 
     /**
-     * Excluye el giro NRUS heredado: NRUS ya no se elige como giro de negocio.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder $query
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function scopeSelectable($query)
-    {
-        return $query->where('value', '!=', self::NRUS_VALUE);
-    }
-
-    /**
      * Payload que consumen los formularios de cliente y de plan para armar los
      * radios de "Giro de negocio" y precargar los árboles de módulos/apps.
      *
@@ -82,7 +66,7 @@ class BusinessTurn extends Model
      */
     public static function formOptions()
     {
-        return self::selectable()
+        return self::query()
             ->sorted()
             ->get()
             ->map(function (self $row) {

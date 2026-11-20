@@ -315,7 +315,7 @@ class InvoicePaymentPreviewCurrencyTest extends TestCase
         self::assertStringContainsString('Banco histórico', $html);
         self::assertStringContainsString('Recibido USD 5.00', $html);
         self::assertStringContainsString('Aplicado VES 50.00', $html);
-        foreach (['default/invoice_ticket_58','nrus/invoice_ticket_58','marca_de_agua/invoice_ticket_50',
+        foreach (['default/invoice_ticket_58','marca_de_agua/invoice_ticket_50',
             'marca_de_agua/invoice_ticket_58','Plantilla_personalizable/invoice_ticket_58'] as $template) {
             $source=file_get_contents(base_path('app/CoreFacturalo/Templates/pdf/'.$template.'.blade.php'));
             self::assertStringContainsString("pdf.partials.invoice_ticket_payments",$source);

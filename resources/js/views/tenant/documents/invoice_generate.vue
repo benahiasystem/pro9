@@ -1582,7 +1582,7 @@
 
 
 
-                                <tr v-if="hasPositiveInvoiceAmount('total_exportation') && !isNrus">
+                                <tr v-if="hasPositiveInvoiceAmount('total_exportation')">
                                     <td>EXPORTACIÓN (IVA 0 %):</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
@@ -1598,7 +1598,7 @@
                                         {{ form.total_exonerated }}
                                     </td>
                                 </tr>
-                                <tr v-if="hasPositiveInvoiceAmount('total_taxed') && !isNrus">
+                                <tr v-if="hasPositiveInvoiceAmount('total_taxed')">
                                     <td>Op. gravada:</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
@@ -1612,7 +1612,7 @@
                                         {{ form.total_prepayment }}
                                     </td>
                                 </tr>
-                                <tr v-if="hasPositiveInvoiceAmount('total_igv') && !isNrus">
+                                <tr v-if="hasPositiveInvoiceAmount('total_igv')">
                                     <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
                                     <td>IVA:</td>
                                     <!-- ########### FIN CAMBIO IVA VENEZUELA -->
@@ -3334,14 +3334,8 @@ export default {
             return this.configuration.global_discount_type_id === "02" ;
         },
         ...mapState(["config", "series", "all_series"]),
-        isNrus() {
-            return !!(this.config && this.config.is_nrus);
-        },
         documentTypesAvailable() {
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            if (this.isNrus) {
-                return [];
-            }
             return this.document_types.filter(dt => dt.id === "01");
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         },
@@ -3572,7 +3566,7 @@ export default {
         if (clientfromDispatchesOrNotes) {
             const client = JSON.parse(clientfromDispatchesOrNotes);
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            this.form.document_type_id = this.isNrus ? null : "01";
+            this.form.document_type_id = "01";
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             // ########## INICIO FACTURA DESDE MÚLTIPLES NOTAS PARA TODO CLIENTE ##########
             this.preloadedCustomerId = client.id;
@@ -4014,9 +4008,7 @@ export default {
                     this.establishments.length > 0
                         ? this.establishments[0].id
                         : null;
-                this.form.document_type_id = this.isNrus
-                    ? "03"
-                    : this.document_types.length > 0
+                this.form.document_type_id = this.document_types.length > 0
                         ? this.document_types[0].id
                         : null;
                 this.form.operation_type_id =
@@ -5016,10 +5008,6 @@ export default {
         },
         selectDocumentType() {
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            if (this.isNrus) {
-                this.form.document_type_id = null;
-                return;
-            }
             this.form.document_type_id = "01";
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         },

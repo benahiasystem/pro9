@@ -1165,14 +1165,7 @@ export default {
             });
         },
         ...mapState(["config"]),
-        isNrus() {
-            return !!((this.configuration && this.configuration.is_nrus) || (this.config && this.config.is_nrus));
-        },
         docTypeTabsAvailable() {
-            // NRUS no emite Factura (01)
-            if (this.isNrus) {
-                return this.doc_type_tabs.filter(tab => tab.id !== '01');
-            }
             return this.doc_type_tabs;
         },
         validteCreateProduct() {
@@ -1762,7 +1755,7 @@ export default {
             this.customer = customer;
 
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            if (this.configuration.default_document_type_80 || this.isNrus) {
+            if (this.configuration.default_document_type_80) {
                 this.form.document_type_id = "80";
             } else {
                 this.form.document_type_id = "01";

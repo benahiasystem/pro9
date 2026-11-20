@@ -60,9 +60,6 @@ class SeriesConfigurationController extends Controller
         $establishmentId = auth()->user()->establishment_id;
         $document_type_ids = ['01', '07', '08', '09', '80'];
 
-        if ((bool) optional(Configuration::first())->isNrus()) {
-            $document_type_ids = array_values(array_intersect($document_type_ids, SeriesCodeGenerator::nrusDocumentTypeIds()));
-        }
 
         $document_types = DocumentType::whereIn('id', $document_type_ids)->get();
 
