@@ -1,45 +1,42 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `item_supplies` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `item_id` int(10) unsigned NOT NULL
- * - `individual_item_id` int(10) unsigned NOT NULL
- * - `quantity` decimal(30,12) DEFAULT '0.000'
- * - `unit_price` decimal(30,12) DEFAULT '0.00'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - item_id: bigint
+ * - individual_item_id: bigint
+ * - quantity: numeric(30,12)
+ * - unit_price: numeric(30,12)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `item_supplies` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `item_id` int(10) unsigned NOT NULL,
-  `individual_item_id` int(10) unsigned NOT NULL,
-  `quantity` decimal(30,12) DEFAULT '0.000',
-  `unit_price` decimal(30,12) DEFAULT '0.00',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `item_supplies_item_id_foreign` (`item_id`),
-  KEY `item_supplies_individual_item_id_foreign` (`individual_item_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('item_supplies', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('item_id');
+            $table->bigInteger('individual_item_id');
+            $table->decimal('quantity', 30, 12)->nullable()->default('0.000');
+            $table->decimal('unit_price', 30, 12)->nullable()->default('0.00');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['item_id'], 'item_supplies_item_id_foreign');
+            $table->index(['individual_item_id'], 'item_supplies_individual_item_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `item_supplies`');
+        Schema::dropIfExists('item_supplies');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

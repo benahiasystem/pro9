@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::connection('system')->create('marketplace_stores', function (Blueprint $table) {
+        Schema::create('marketplace_stores', function (Blueprint $table) {
             $table->id();
 
             // Identidad enviada por la app. Recomendado: el uuid del tenant.
@@ -61,6 +61,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::connection('system')->dropIfExists('marketplace_stores');
+        Schema::dropIfExists('marketplace_stores');
     }
 };

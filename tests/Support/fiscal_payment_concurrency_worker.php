@@ -2,8 +2,9 @@
 // Keep PHP diagnostics separate from the READY/JSON protocol consumed by the parent.
 ini_set('display_errors', 'stderr');
 require dirname(__DIR__,2).'/vendor/autoload.php';
+\Illuminate\Database\Connection::resolverFor('pgsql', static fn ($pdo,$database,$prefix,$config) => new \App\Database\PostgresConnection($pdo,$database,$prefix,$config));
 $input=json_decode(stream_get_contents(STDIN),true,512,JSON_THROW_ON_ERROR);
-if (!preg_match('/\Asab_fiscal_test_[a-f0-9]{12}\z/',$input['connection']['database'] ?? '')) exit(2);
+if (!preg_match('/\Apro9_fiscal_test_[a-f0-9]{12}\z/',$input['connection']['database'] ?? '')) exit(2);
 if (!class_exists('DB')) class_alias(Illuminate\Support\Facades\DB::class,'DB');
 $app=new Illuminate\Foundation\Application(dirname(__DIR__,2));
 Illuminate\Container\Container::setInstance($app);
@@ -24,6 +25,7 @@ $app->instance(Hyn\Tenancy\Database\Connection::class,new class extends Hyn\Tena
 $manager=new Illuminate\Database\Capsule\Manager($app);
 $manager->addConnection($input['connection'],'tenant');
 $manager->getDatabaseManager()->setDefaultConnection('tenant');
+\Tests\Support\PostgresTestEnvironment::assertServer($manager->getConnection('tenant'));
 $manager->getConnection('tenant')->setTransactionManager(new Illuminate\Database\DatabaseTransactionsManager());
 $manager->setEventDispatcher(new Illuminate\Events\Dispatcher($app));$manager->bootEloquent();
 $app->instance('db',$manager->getDatabaseManager());
@@ -37,12 +39,13 @@ $app->instance('auth',new class($user) {
     public function check() {return true;}
 });
 App\Models\Tenant\Document::observe(App\Observers\DocumentObserver::class);
+(new App\Providers\KardexServiceProvider($app))->boot();
 (new Modules\Inventory\Providers\InventoryKardexServiceProvider($app))->boot();
 (new Modules\Inventory\Providers\InventoryVoidedServiceProvider($app))->boot();
 $manager->getConnection('tenant')->getPdo();
 // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
 if (in_array($input['operation'] ?? '', ['store-order-receipt','store-coupon-order','subscription-edit','cash-document-link','cash-opening','bank-currency-edit','currency-deactivate','method-reclassify','method-activate','method-deactivate','quotation-receipt','quotation-apply-note','quotation-conversion-preflight','technical-apply-note','technical-receipt','sale-note-receipt','sale-note-batch','sale-note-delete','sale-note-reuse-invoice','document-receipt','receipt-attach'], true)) {
-    $connectionId=$manager->getConnection('tenant')->selectOne('SELECT CONNECTION_ID() AS id')->id;
+    $connectionId=$manager->getConnection('tenant')->selectOne('SELECT pg_backend_pid() AS id')->id;
     fwrite(STDERR,"LOCK_TEST_CONNECTION={$connectionId}\n");
 }
 // ######## FIN MONEDA DEL MEDIO DE COBRO ########

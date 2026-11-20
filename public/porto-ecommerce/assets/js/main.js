@@ -512,7 +512,7 @@ function(e) {
 				const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
 					? `/storage/uploads/items/${element.image_small}`
 					: `/logo/imagen-no-disponible.jpg`;
-				const qty = parseInt(element.quantity, 10) || 1;
+				const qty = window.Pro9StorefrontAmounts.quantity(element.quantity ?? '1');
 				jQuery(".dropdown-cart-products").append( `
 						<div class="product">
 							<div class="product-details">
@@ -571,9 +571,9 @@ function(e) {
 			const symbol = (item.currency_type && item.currency_type.symbol)
 				? item.currency_type.symbol
 				: (item.currency_type_symbol || 'S/');
-			const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
-			const price = Number(item.sale_unit_price) || 0;
-			const compareAt = Number(item.compare_at_price) || 0;
+			const qty = window.Pro9StorefrontAmounts.quantity(item.quantity ?? '1');
+			const price = item.sale_unit_price == null ? null : window.Pro9StorefrontAmounts.line({...item,cantidad:'1'}, {convert:false}).sourceUnitPrice;
+			const compareAt = item.compare_at_price == null ? null : window.Pro9StorefrontAmounts.amount(item.compare_at_price);
 			const showPrices = !(window.__storefront_show_prices === false || window.__storefront_show_prices === 0);
 			const thumb = (item.image_medium && item.image_medium !== 'imagen-no-disponible.jpg')
 				? `/storage/uploads/items/${item.image_medium}`
@@ -593,9 +593,9 @@ function(e) {
 			jQuery('#cart_added_meta').text(metaParts.filter(Boolean).join(' · '));
 
 			if (showPrices) {
-				let priceHtml = '<span class="cart-added-modal__price-current">' + this.escapeHtml(symbol) + ' ' + price.toFixed(2) + '</span>';
-				if (compareAt > price) {
-					priceHtml = '<span class="cart-added-modal__price-old">' + this.escapeHtml(symbol) + ' ' + compareAt.toFixed(2) + '</span>' + priceHtml;
+				let priceHtml = '<span class="cart-added-modal__price-current">' + this.escapeHtml(symbol) + ' ' + price.final(2) + '</span>';
+				if (compareAt && compareAt.compare(price.fraction()) > 0) {
+					priceHtml = '<span class="cart-added-modal__price-old">' + this.escapeHtml(symbol) + ' ' + compareAt.final(2) + '</span>' + priceHtml;
 				}
 				jQuery('#cart_added_price').html(priceHtml).show();
 			} else {
@@ -603,14 +603,13 @@ function(e) {
 			}
 
 			jQuery('#cart_added_qty_input').val(qty);
-			jQuery('#cart_added_qty_minus').prop('disabled', qty <= 1);
+			jQuery('#cart_added_qty_minus').prop('disabled', window.Pro9StorefrontAmounts.amount(qty).compare('1') <= 0);
 		},
 		syncCartQuantity: function(productId, quantity)
 		{
 			const contex = this;
 			return Promise.resolve().then(function () {
-				let qty = parseInt(quantity, 10);
-				if (!qty || qty < 1) qty = 1;
+				const qty = window.Pro9StorefrontAmounts.quantity(quantity);
 				const array = contex.getCartArray();
 				const found = array.find(x => String(x.id) === String(productId));
 				if (!found) {
@@ -622,7 +621,7 @@ function(e) {
 				contex.productsCartDropDown();
 				contex.calculateTotalCart();
 				jQuery('#cart_added_qty_input').val(qty);
-				jQuery('#cart_added_qty_minus').prop('disabled', qty <= 1);
+				jQuery('#cart_added_qty_minus').prop('disabled', window.Pro9StorefrontAmounts.amount(qty).compare('1') <= 0);
 				return qty;
 			});
 		},
@@ -635,22 +634,21 @@ function(e) {
 			e(document).on('click', '#cart_added_qty_minus', function (ev) {
 				ev.preventDefault();
 				const id = jQuery('#cart_added_product_row').attr('data-product-id');
-				const current = parseInt(jQuery('#cart_added_qty_input').val(), 10) || 1;
-				if (current <= 1) return;
-				contex.syncCartQuantity(id, current - 1);
+				const current = window.Pro9StorefrontAmounts.amount(window.Pro9StorefrontAmounts.quantity(jQuery('#cart_added_qty_input').val()));
+				if (current.compare('1') <= 0) return;
+				contex.syncCartQuantity(id, current.minus('1').decimal());
 			});
 
 			e(document).on('click', '#cart_added_qty_plus', function (ev) {
 				ev.preventDefault();
 				const id = jQuery('#cart_added_product_row').attr('data-product-id');
-				const current = parseInt(jQuery('#cart_added_qty_input').val(), 10) || 1;
-				contex.syncCartQuantity(id, current + 1);
+				const current = window.Pro9StorefrontAmounts.amount(window.Pro9StorefrontAmounts.quantity(jQuery('#cart_added_qty_input').val()));
+				contex.syncCartQuantity(id, current.plus('1').decimal());
 			});
 
 			e(document).on('change', '#cart_added_qty_input', function () {
 				const id = jQuery('#cart_added_product_row').attr('data-product-id');
-				let current = parseInt(jQuery(this).val(), 10);
-				if (!current || current < 1) current = 1;
+				const current = window.Pro9StorefrontAmounts.quantity(jQuery(this).val());
 				contex.syncCartQuantity(id, current);
 			});
 
@@ -679,9 +677,7 @@ function(e) {
 				// Clone so we don't mutate jQuery cache oddly across clicks
 				item = Object.assign({}, item);
 				const compareRaw = jQuery(this).attr('data-compare-at');
-				if (compareRaw && !isNaN(parseFloat(compareRaw))) {
-					item.compare_at_price = parseFloat(compareRaw);
-				}
+				if (compareRaw) item.compare_at_price = window.Pro9StorefrontAmounts.input(compareRaw);
 
 				let array = contex.getCartArray();
 				let found = array.find(x => String(x.id) === String(item.id));
@@ -699,7 +695,7 @@ function(e) {
 						array.push(item);
 						found = item;
 					} else {
-						found.quantity = (parseInt(found.quantity, 10) || 1) + 1;
+						found.quantity = window.Pro9StorefrontAmounts.quantity(window.Pro9StorefrontAmounts.amount(found.quantity ?? '1').plus('1').decimal());
 						found.cantidad = found.quantity;
 						if (item.compare_at_price && !found.compare_at_price) {
 							found.compare_at_price = item.compare_at_price;
@@ -767,14 +763,8 @@ function(e) {
 		{
 
 			let array = this.getCartArray();
-			let total = 0;
-			array.forEach(element => {
-				const qty = parseInt(element.quantity, 10) || 1;
-				total += (parseFloat(element.sale_unit_price) || 0) * qty;
-			});
-	
-			$(".cart-total-price").empty();
-			$(".cart-total-price").append(total.toFixed(2));
+            try {$(".cart-total-price").text(window.Pro9StorefrontAmounts.total(array));}
+            catch (error) {$(".cart-total-price").text('Importe pendiente');}
 		}
 	};
 	

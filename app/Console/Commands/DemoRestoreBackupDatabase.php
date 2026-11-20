@@ -1,191 +1,22 @@
 <?php
-
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
-use Exception;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
-
-class DemoRestoreBackupDatabase extends Command
+// ########## INICIO CAMBIO POSTGRESQL 17
+class DemoRestoreBackupDatabase extends \Illuminate\Console\Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'demobk:dbrestore --database={database} --restore_dbname={restore_dbname} --restore_type={restore_type}';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Restaurar base de datos demo de un archivo sql';
-
-    private $host;
-    private $username;
-    private $password;
-
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    protected $signature = 'demobk:dbrestore {database} {restore_dbname} {restore_type} {--activate}';
+    protected $description = 'Valida y restaura un paquete PostgreSQL en una base independiente';
+    public function handle(): int
     {
-        parent::__construct();
+        $name=$this->argument('restore_dbname');
+        \App\Database\PostgresBootstrap::identifier($name);
+        $kind=$this->argument('restore_type');
+        if (!in_array($kind,['demo','system'],true)) throw new \InvalidArgumentException('Tipo inválido.');
+        $path=storage_path('app/demo_backups/'.$kind.'/'.$name.'.zip');
+        $manifest=app(\App\Database\PostgresBackup::class)->verify($path);
+        if (count($manifest['databases'])!==1) throw new \InvalidArgumentException('Seleccione un respaldo de una empresa.');
+        $result=app(\App\Tenancy\TenantRestore::class)->restore($this->argument('database'),$path,$manifest['databases'][0],(bool)$this->option('activate'));
+        $this->line(json_encode($result,JSON_THROW_ON_ERROR));return 0;
     }
-
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function handle()
-    {
-        try {
-            $database = $this->argument('database');
-            $restore_dbname = $this->argument('restore_dbname');
-            $restore_type = $this->argument('restore_type');
-
-            $this->initDbConfig();
-
-            $mysqlBin = 'mysql';
-            $bin = (strpbrk($mysqlBin, '\\/') !== false) ? escapeshellarg($mysqlBin) : $mysqlBin;
-
-            $backupPath = ($restore_type=='demo')?storage_path("app/demo_backups/demo/{$restore_dbname}.sql"):storage_path("app/demo_backups/system/{$restore_dbname}.sql");
-
-            if (!file_exists($backupPath)) {
-                Log::error("El archivo de backup no existe: {$backupPath}");
-                $this->error("El archivo de backup no existe: {$backupPath}");
-                return;
-            }
-
-            $check = []; $checkVar = 0;
-            exec($bin . ' --version 2>&1', $check, $checkVar);
-            if ($checkVar !== 0) {
-                Log::error("No se encuentra mysql en el PATH. Salida: " . implode("\n", $check));
-                $this->error("No se encuentra mysql en el PATH.");
-                return;   // aborta SIN borrar => no hay pérdida de datos
-            }
-
-            $this->dropAllTables($database);
-
-            $passwordParam = $this->password ? '-p' . escapeshellarg($this->password) : '';
-            // Construir el comando para restaurar
-            $command = sprintf(
-                '%s -h %s -u %s %s %s < %s 2>&1',
-                $bin,
-                escapeshellarg($this->host),
-                escapeshellarg($this->username),
-                $passwordParam,
-                escapeshellarg($database),
-                escapeshellarg($backupPath)
-            );
-
-            exec($command, $output, $returnVar);
-
-            if ($returnVar !== 0) {
-                Log::error("Error al restaurar la base de datos {$database}.");
-                $this->error("Error al restaurar la base de datos {$database}.");
-                return;
-            }
-
-            $this->restoreImagesZip($restore_type , $restore_dbname);
-
-            Log::info("Base de datos {$database} restaurada correctamente.");
-            $this->info("Base de datos {$database} restaurada correctamente.");
-        } catch (Exception $e) {
-            Log::error("Error restaurando la base de datos: " . $e->getMessage());
-            $this->error("Error: " . $e->getMessage());
-        }
-    }
-
-    private function initDbConfig()
-    {
-        $dbConfig = config('database.connections.mysql');
-
-        $this->host = $dbConfig['host'];
-        $this->username = $dbConfig['username'];
-        $this->password = $dbConfig['password'];
-    }
-
-    private function dropAllTables($database) {
-        $pdo = new \PDO("mysql:host={$this->host};dbname={$database}", $this->username, $this->password);
-        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-    
-        $pdo->exec("SET foreign_key_checks = 0");
-        $tables = $pdo->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
-    
-        foreach ($tables as $table) {
-            $pdo->exec("DROP TABLE IF EXISTS `$table`");
-        }
-    
-        $pdo->exec("SET foreign_key_checks = 1");
-    }
-
-    private function restoreImagesZip($restore_type , $restore_dbname) {
-
-        $backupPath = ($restore_type=='demo')?storage_path("app/demo_backups/demo/{$restore_dbname}.zip"):storage_path("app/demo_backups/system/{$restore_dbname}.zip");
-
-        if (!file_exists($backupPath)) {
-            Log::error("El archivo de backup no existe: {$backupPath}");
-            return;
-        }
-        
-        $foldersMap = [
-            'items' => storage_path('app/public/uploads/items'),
-            'categories' => storage_path('app/public/uploads/categories'),
-            'promotions' => storage_path('app/public/uploads/promotions'),
-            'logos' => storage_path('app/public/uploads/logos'),
-        ];
-
-        foreach ($foldersMap as $folder) {
-            if (!File::exists($folder)) {
-                File::makeDirectory($folder, 0755, true);
-            }
-        }
-    
-        $zip = new \ZipArchive();
-        if ($zip->open($backupPath) === true) {
-            for ($i = 0; $i < $zip->numFiles; $i++) {
-                $filename = $zip->getNameIndex($i);
-                $stream = $zip->getStream($filename);
-
-                if (!$stream) {
-                    Log::warning("No se pudo leer el archivo dentro del ZIP: {$filename}");
-                    continue;
-                }
-    
-                $normalizedFilename = str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $filename);
-                $parts = explode(DIRECTORY_SEPARATOR, $normalizedFilename);
-                $baseFolder = $parts[0];
-                
-    
-                if (isset($foldersMap[$baseFolder])) {
-                    $destinationFolder = $foldersMap[$baseFolder];
-                    $destinationPath = $destinationFolder . '/' . implode('/', array_slice($parts, 1));
-                    
-                    $subfolder = dirname($destinationPath);
-                    if (!File::exists($subfolder)) {
-                        File::makeDirectory($subfolder, 0755, true);
-                    }
-
-                    file_put_contents($destinationPath, stream_get_contents($stream));
-                    fclose($stream);
-                }
-            }
-            $zip->close();
-
-            Log::info('Restore Backup ' . $restore_dbname . ' with images successfully.');
-
-        } else {
-            Log::error("No se pudo abrir el archivo ZIP: {$backupPath}");
-        }
-
-    }
-
-
 }
+// ######### FIN CAMBIO POSTGRESQL 17

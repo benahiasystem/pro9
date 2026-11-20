@@ -14,14 +14,21 @@ const component = exportsObject.default;
 test('editing submits commercial changes without resubmitting collections', () => {
     const form = {id: 17, series: '', number: 5, currency_type_id: 'VES', customer_id: 4,
         items: [{unit_price: 110}], payments: [{id: 10, payment: 100}], received_retentions: [{amount: 5}], guarantee_fund: {amount: 5}};
-    const payload = component.methods.documentSubmission.call({isUpdateDocument: true, form});
+    const state={isUpdateDocument:true,form}
+    Object.defineProperty(state,'activeInvoicePayments',{get:()=>component.computed.activeInvoicePayments.call(state)})
+    const payload = component.methods.documentSubmission.call(state);
     assert.equal(payload.id, 17); assert.equal(payload.series, ''); assert.equal(payload.number, 5);
     assert.equal(payload.items[0].unit_price, 110); assert.equal(payload.currency_type_id, 'VES');
     assert.equal(payload.payments.length, 0); assert.equal(payload.received_retentions.length, 0); assert.equal(payload.guarantee_fund, null);
     assert.equal(form.payments[0].payment, 100);
-    const creation = component.methods.documentSubmission.call({isUpdateDocument: false, form});
+    state.isUpdateDocument=false
+    const creation = component.methods.documentSubmission.call(state);
     assert.equal(Object.hasOwn(creation, 'received_retentions'), false);
     assert.equal(creation.payments, form.payments);
+    form.payment_condition_id='02';form.payments.push({payment:'20'})
+    const credit=component.methods.documentSubmission.call(state)
+    assert.deepEqual(Array.from(credit.payments),[form.payments[0]])
+    assert.equal(form.payments.length,2)
 });
 test('blocked edits stop before validation, HTTP or cash writes', async () => {
     const messages = [];

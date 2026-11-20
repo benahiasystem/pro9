@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Tenant;
 
+use App\Rules\PositiveBigint;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +17,7 @@ class DocumentPaymentRequest extends FormRequest
     {
         $id = $this->input('id');
         return [
-            'document_id' => ['required', 'integer', Rule::exists('tenant.documents', 'id')],
+            'document_id' => ['bail', 'required', new PositiveBigint(), Rule::exists('tenant.documents', 'id')],
             'currency_type_id' => ['sometimes', Rule::in(['VES','USD'])],
             'original_amount' => ['sometimes','numeric','gt:0'],
             'exchange_rate' => ['sometimes','numeric','gt:0'],

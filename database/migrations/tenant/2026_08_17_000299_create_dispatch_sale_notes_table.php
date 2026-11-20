@@ -1,44 +1,41 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `dispatch_sale_notes` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `sale_note_id` int(10) unsigned NOT NULL
- * - `date_dispatch` date DEFAULT NULL
- * - `time_dispatch` time DEFAULT NULL
- * - `person_pick` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `person_dispatch` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `status` tinyint(1) DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - sale_note_id: bigint
+ * - date_dispatch: date
+ * - time_dispatch: time
+ * - person_pick: varchar(255)
+ * - reference: varchar(255)
+ * - person_dispatch: varchar(255)
+ * - status: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `dispatch_sale_notes` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `sale_note_id` int(10) unsigned NOT NULL,
-  `date_dispatch` date DEFAULT NULL,
-  `time_dispatch` time DEFAULT NULL,
-  `person_pick` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `person_dispatch` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` tinyint(1) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `dispatch_sale_notes_sale_note_id_foreign` (`sale_note_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('dispatch_sale_notes', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('sale_note_id');
+            $table->date('date_dispatch')->nullable();
+            $table->time('time_dispatch')->nullable();
+            $table->string('person_pick', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('person_dispatch', 255)->collation('pro9_ci_ai')->nullable();
+            $table->boolean('status')->nullable();
+            $table->index(['sale_note_id'], 'dispatch_sale_notes_sale_note_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `dispatch_sale_notes`');
+        Schema::dropIfExists('dispatch_sale_notes');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

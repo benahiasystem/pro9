@@ -5,6 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Modules\Accounting\Support\TenantSchema as Schema;
 use Modules\Accounting\Support\TenantDB as DB;
 
+use Modules\Accounting\Support\PostgresIntegrity as Integrity;
+
 return new class extends Migration
 {
     protected $connection = 'tenant';
@@ -17,10 +19,8 @@ return new class extends Migration
             $table->string('cancellation_reason', 2000)->nullable();
         });
         DB::table('accounting_operation_results')->whereNotNull('result')->update(['state' => 'confirmed']);
-        if (DB::getDriverName() === 'mysql') {
-            DB::unprepared("CREATE TRIGGER accounting_operation_result_upd BEFORE UPDATE ON accounting_operation_results FOR EACH ROW BEGIN IF OLD.state IN ('confirmed', 'cancelled') THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Confirmacion o cancelacion inmutable'; END IF; END");
-            DB::unprepared("CREATE TRIGGER accounting_operation_result_del BEFORE DELETE ON accounting_operation_results FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Identidad de operacion conservada'");
-        }
+        Integrity::reject('accounting_operation_results', 'accounting_operation_result_upd', 'UPDATE', 'Confirmacion o cancelacion inmutable', "OLD.state IN ('confirmed', 'cancelled')");
+        Integrity::reject('accounting_operation_results', 'accounting_operation_result_del', 'DELETE', 'Identidad de operacion conservada');
     }
 
     public function down(): void

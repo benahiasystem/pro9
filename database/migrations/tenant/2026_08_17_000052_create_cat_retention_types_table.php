@@ -1,33 +1,31 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Tipos de operación ISLR del manual SENIAT 3.1 (2014), para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL, tipo de operación
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `abbreviation` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: char(2)
+ * - description: varchar(255)
+ * - abbreviation: char(2)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_retention_types` (
-  `id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `abbreviation` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_retention_types', function (Blueprint $table) {
+            $table->char('id', 2)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->char('abbreviation', 2)->collation('pro9_ci_ai');
+            $table->primary(['id']);
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_retention_types`');
+        Schema::dropIfExists('cat_retention_types');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

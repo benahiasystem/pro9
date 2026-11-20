@@ -4,7 +4,10 @@ namespace Modules\Inventory\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\Item;
+use App\Support\Exact\Decimal as D;
+use App\Support\Exact\LineCalculation;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Modules\Inventory\Models\{
     Warehouse,
     ItemWarehouse,
@@ -66,7 +69,17 @@ class ItemController extends Controller
     public function validateCurrentItemStock(Request $request)
     {
         $item_id = $request->item_id;
-        $quantity = $request->quantity;
+        $quantity = D::of(D::input($request->input('quantity'), 'quantity'));
+        if ($request->has('quantity_exact')) {
+            $exact = LineCalculation::priceInput($request->input('quantity_exact'), 'quantity');
+            if (!$quantity->isEqualTo(D::represent($exact))) {
+                throw ValidationException::withMessages(['quantity' => 'La cantidad no coincide con su fracción exacta.']);
+            }
+            $quantity = $exact;
+        }
+        if ($quantity->isNegative()) {
+            throw ValidationException::withMessages(['quantity' => 'Indique una cantidad válida.']);
+        }
         $warehouse_id = $request->warehouse_id;
         $presentation_quantity = !empty($request->presentation) ? ($request->presentation['quantity_unit'] ?? 1) : 1;
 
@@ -85,7 +98,7 @@ class ItemController extends Controller
 
                     if($individual_item->checkIsNotService())
                     {
-                        $calculate_quantity = $quantity * $set->quantity;
+                        $calculate_quantity = $quantity->multipliedBy($set->exactValue('quantity'));
     
                         $error_message =  "El producto {$individual_item->description} registrado en el conjunto {$item->description} no tiene suficiente stock.";
 
@@ -97,7 +110,7 @@ class ItemController extends Controller
             }
             else
             {
-                $calculate_quantity = $quantity * $presentation_quantity;
+                $calculate_quantity = $quantity->multipliedBy(D::of($presentation_quantity));
 
                 $check_individual_item_stock = $this->checkIndividualItemStock($item, $warehouse_id, $calculate_quantity);
 
@@ -115,13 +128,12 @@ class ItemController extends Controller
      *
      * @param  Item $item
      * @param  int $warehouse_id
-     * @param  float $quantity
-     * @param  float $presentation_quantity
+     * @param  \Brick\Math\BigRational $calculate_quantity
      * @param  string $message_not_stock
      * @return array
      * 
      */
-    public function checkIndividualItemStock($item, $warehouse_id, $calculate_quantity, $message_not_stock = null)
+    public function checkIndividualItemStock($item, $warehouse_id, \Brick\Math\BigRational $calculate_quantity, $message_not_stock = null)
     {
         $item_warehouse = $this->getDataItemWarehouse($item->id, $warehouse_id);
                 
@@ -129,7 +141,7 @@ class ItemController extends Controller
 
         $error_message = $message_not_stock ?? "El producto {$item->description} no tiene suficiente stock.";
 
-        if (($item_warehouse->stock - $calculate_quantity) < 0) return $this->generalResponse(false, $error_message);
+        if ($item_warehouse->exactValue('stock')->isLessThan($calculate_quantity)) return $this->generalResponse(false, $error_message);
 
         return $this->generalResponse(true, '');
     }

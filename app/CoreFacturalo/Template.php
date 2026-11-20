@@ -7,6 +7,7 @@ class Template
 {
     public function pdf($base_template, $template, $company, $document, $format_pdf, $configuration = null )
     {
+        $base_template = \App\Models\Tenant\Establishment::availablePdfTemplate($base_template) ? $base_template : 'default';
         if($template === 'credit' || $template === 'debit') {
             $template = 'note';
         }
@@ -40,7 +41,7 @@ class Template
         // El marcador sólo aparece si la plantilla realmente muestra el precio unitario.
         // Los PDF originales del proveedor se gestionan fuera de esta plantilla.
         $visiblePriceItems=null;
-        if (in_array($template, ['invoice','sale_note'], true) && $format_pdf === 'ticket' && in_array($base_template, ['default','modern-2027','marca_de_agua','Plantilla_personalizable','nrus'], true)) {
+        if (in_array($template, ['invoice','sale_note'], true) && $format_pdf === 'ticket' && in_array($base_template, ['default','modern-2027','marca_de_agua','Plantilla_personalizable'], true)) {
             if ($template === 'invoice') {
                 $visiblePriceItems=\App\Support\Exact\PdfInvoiceGroups::split($document)['individual'];
             } elseif ($template === 'sale_note') {
@@ -196,6 +197,7 @@ class Template
 
     public function pdfFooter($base_template, $document = null)
     {
+        $base_template = \App\Models\Tenant\Establishment::availablePdfTemplate($base_template) ? $base_template : 'default';
         view()->addLocation(__DIR__.'/Templates');
 
         return view('pdf.'.$base_template.'.partials.footer', compact('document'))->render();
@@ -203,6 +205,7 @@ class Template
 
     public function pdfStylesheet($base_template, $template, $document, $format_pdf): string
     {
+        $base_template = \App\Models\Tenant\Establishment::availablePdfTemplate($base_template) ? $base_template : 'default';
         $directory=__DIR__.'/Templates/pdf/';
         $stylesheet=file_get_contents($directory.$base_template.'/style.css');
         if ($template === 'invoice' && $format_pdf === 'a5' && ($document->document_type_id ?? null) === '01'
@@ -214,6 +217,7 @@ class Template
 
     public function pdfHeader($base_template, $company, $document = null)
     {
+        $base_template = \App\Models\Tenant\Establishment::availablePdfTemplate($base_template) ? $base_template : 'default';
         view()->addLocation(__DIR__.'/Templates');
 
         if ($document instanceof \App\Models\Tenant\Document && $document->issuer) {
@@ -256,6 +260,7 @@ class Template
 
     public function pdfFooterTermCondition($base_template, $document)
     {
+        $base_template = \App\Models\Tenant\Establishment::availablePdfTemplate($base_template) ? $base_template : 'default';
         view()->addLocation(__DIR__.'/Templates');
 
         return view('pdf.'.$base_template.'.partials.footer_term_condition', compact('document'))->render();
@@ -264,6 +269,7 @@ class Template
 
     public function pdfFooterBlank($base_template, $document)
     {
+        $base_template = \App\Models\Tenant\Establishment::availablePdfTemplate($base_template) ? $base_template : 'default';
         view()->addLocation(__DIR__.'/Templates');
 
         return view('pdf.'.$base_template.'.partials.footer_blank', compact('document'))->render();
@@ -271,6 +277,7 @@ class Template
 
     public function pdfFooterDispatch($base_template, $document)
     {
+        $base_template = \App\Models\Tenant\Establishment::availablePdfTemplate($base_template) ? $base_template : 'default';
         view()->addLocation(__DIR__.'/Templates');
 
         return view('pdf.'.$base_template.'.partials.footer_dispatch', compact('document'))->render();
@@ -289,6 +296,7 @@ class Template
      */
     public function pdfWithoutFormat($base_template, $template, $company, $document)
     {
+        $base_template = \App\Models\Tenant\Establishment::availablePdfTemplate($base_template) ? $base_template : 'default';
         $path_template =  $this->validateTemplateWithoutFormat($base_template, $template);
         return self::render($path_template, $company, $document);
     }
@@ -324,6 +332,7 @@ class Template
      */
     public function pdfFooterImages($base_template, $images)
     {
+        $base_template = \App\Models\Tenant\Establishment::availablePdfTemplate($base_template) ? $base_template : 'default';
         view()->addLocation(__DIR__.'/Templates');
 
         return view('pdf.'.$base_template.'.partials.footer_images', compact('images'))->render();

@@ -27,6 +27,12 @@ class StoreSyncService
 
     public function sync(array $payload, ?string $ip = null): Store
     {
+        // Validate the whole price batch before creating stores or memoized categories.
+        foreach ($payload['items'] ?? [] as $index => $item) {
+            $payload['items'][$index]['price'] = \Modules\Marketplace\Support\CatalogPrice::input(
+                $item['price'] ?? null, 'items.'.$index.'.price'
+            );
+        }
         $store = DB::connection('system')->transaction(function () use ($payload, $ip) {
             $store = $this->upsertStore($payload['store'], $payload['app_version'] ?? null, $ip, count($payload['items'] ?? []));
 

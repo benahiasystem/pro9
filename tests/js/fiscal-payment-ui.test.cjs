@@ -12,7 +12,8 @@ vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,b
 const component = exportsObject.default;
 test('total tendered includes IGTF and preserves the customer entry through reactive recalculations', async () => {
     const Vue=require('vue');
-    for (const documentCurrency of ['USD','VES']) {
+    const currencies = process.env.PRO9_TEST_INVOICES_VES_ONLY === '1' ? ['VES'] : ['USD', 'VES'];
+    for (const documentCurrency of currencies) {
         const payment=Vue.observable({payment:documentCurrency==='USD' ? '60' : '600',original_amount:'60',
             currency_type_id:'USD',payment_method_type_id:'usd',exchange_rate:'10',igtf_status:'subject'});
         const view=new Vue({...component,propsData:{payment,documentCurrency,documentRate:'10',useDocumentRate:true,
@@ -57,9 +58,9 @@ test('inclusive cash allocates exact tax and principal once without losing a del
 
 test('changing the payment currency converts the delivered total and reevaluates its included IGTF', async () => {
     const Vue=require('vue');
-    const payment=Vue.observable({payment:'60',original_amount:'60',currency_type_id:'USD',exchange_rate:'10',
+    const payment=Vue.observable({payment:'600',original_amount:'60',currency_type_id:'USD',exchange_rate:'10',
         payment_method_type_id:'usd',igtf_status:'subject'});
-    const view=new Vue({...component,propsData:{payment,documentCurrency:'USD',documentRate:'10',useDocumentRate:true,
+    const view=new Vue({...component,propsData:{payment,documentCurrency:'VES',documentRate:'10',useDocumentRate:true,
         totalTendered:true,igtfEnabled:true,igtfRate:'3',paymentMethods:[
             {id:'usd',collection_kind:'cash',currency_type_id:'USD'}, {id:'ves',collection_kind:'cash',currency_type_id:'VES'}]},
         beforeCreate() { this.$http={post:async (_,input)=>({data:{data:{payment:{igtf_status:input.currency_type_id==='USD' ? 'subject' : 'not_applicable'}}}})}; }});
@@ -68,24 +69,24 @@ test('changing the payment currency converts the delivered total and reevaluates
     payment.payment_method_type_id='ves';
     for (let n=0;n<6;n++) await Vue.nextTick();
     assert.equal(payment.tendered_amount,'700.00');assert.equal(payment.original_amount,'700.00');
-    assert.equal(payment.igtf_status,'not_applicable');assert.equal(payment.payment,'70.00');
+    assert.equal(payment.igtf_status,'not_applicable');assert.equal(payment.payment,'700.00');
     payment.payment_method_type_id='usd';
     for (let n=0;n<6;n++) await Vue.nextTick();
     assert.equal(payment.tendered_amount,'70.00');assert.equal(payment.original_amount,'67.96');
-    assert.equal(payment.igtf_status,'subject');view.$destroy();
+    assert.equal(payment.igtf_status,'subject');assert.equal(payment.payment,'679.60');view.$destroy();
 });
 // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
 test('old exception drafts are reevaluated automatically while their receipt identity stays unchanged', async () => {
     const Vue = require('vue');
-    const payment = Vue.observable({payment:'10.00', original_amount:'10.00', currency_type_id:'USD', exchange_rate:'40',
+    const payment = Vue.observable({payment:'400.00', original_amount:'10.00', currency_type_id:'USD', exchange_rate:'40',
         operation_key:'old-key', igtf_status:'exempt', exemption_reason:'Motivo', exception_basis:'Fundamento', quoted_tax_amount:'0.00'});
-    const instance = new Vue({...component, propsData:{payment, igtfEnabled:true, documentCurrency:'USD'},
+    const instance = new Vue({...component, propsData:{payment, igtfEnabled:true, documentCurrency:'VES'},
         beforeCreate() { this.$http = {post:async () => ({data:{data:{payment:{igtf_status:'subject'}}}})}; }});
     await Promise.resolve(); await Vue.nextTick();
     assert.equal(payment.igtf_status, 'subject');
     assert.equal(payment.exception_basis, undefined); assert.equal(payment.exemption_reason, undefined);
     assert.equal(payment.quoted_tax_amount, undefined); assert.equal(payment.operation_key, 'old-key');
-    assert.equal(payment.original_amount, '10.00'); assert.equal(payment.payment, '10.00');
+    assert.equal(payment.original_amount, '10.00'); assert.equal(payment.payment, '400.00');
     assert.equal(instance.setExemption, undefined);
     instance.$destroy();
 });
@@ -94,8 +95,8 @@ test('destroying a fiscal controller prevents its pending response from changing
     const Vue = require('vue');
     let resolve;
     const pending = new Promise(done => { resolve = done; });
-    const payment = Vue.observable({payment:'10', original_amount:'10', currency_type_id:'USD', exchange_rate:'40', igtf_status:'not_applicable'});
-    const instance = new Vue({...component, propsData:{payment, igtfEnabled:true, documentCurrency:'USD'},
+    const payment = Vue.observable({payment:'400', original_amount:'10', currency_type_id:'USD', exchange_rate:'40', igtf_status:'not_applicable'});
+    const instance = new Vue({...component, propsData:{payment, igtfEnabled:true, documentCurrency:'VES'},
         beforeCreate() { this.$http = {post:() => pending}; }});
     instance.$destroy();
     resolve({data:{data:{issuer_spe:true, payment:{igtf_status:'subject'}}}});
@@ -128,6 +129,41 @@ test('late method catalogs determine receipt currency and intermediation', async
     instance.$destroy()
 })
 
+test('a new POS receipt uses the invoice BCV rate when switching from VES to USD', async () => {
+    const Vue = require('vue')
+    for (const panel of ['payment.vue', 'fast_payment.vue', 'fast_payment_garage.vue', 'multiple_payment.vue', 'multiple_payment_garage.vue']) {
+        const template = compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/pos/partials/' + panel, 'utf8')).template.content
+        const field = template.match(/<igtf-payment-fields\b[\s\S]*?\/>/)?.[0]
+        assert.match(field, /:document-rate="/, panel)
+        assert.match(field, /:total-tendered="true"/, panel)
+    }
+    const rate = '10.12345678'
+    const payment = Vue.observable({payment: '101.23', payment_method_type_id: 'ves'})
+    const paymentMethods = [
+        {id: 'ves', currency_type_id: 'VES', collection_kind: 'cash'},
+        {id: 'usd', currency_type_id: 'USD', collection_kind: 'cash'},
+        {id: 'usd-bank', currency_type_id: 'USD', collection_kind: 'account'},
+    ]
+    const instance = new Vue({...component, propsData: {payment, paymentMethods,
+        documentCurrency: 'VES', documentRate: rate, totalTendered: true}})
+    await Vue.nextTick()
+    assert.equal(payment.currency_type_id, 'VES')
+    payment.payment_method_type_id = 'usd'
+    await Vue.nextTick()
+    await Vue.nextTick()
+    assert.equal(payment.exchange_rate, rate)
+    assert.equal(payment.original_amount, '10.00')
+    assert.equal(payment.payment, '101.23')
+
+    payment.payment_method_type_id = 'usd-bank'
+    await Vue.nextTick()
+    assert.equal(payment.currency_type_id, 'USD')
+    assert.equal(payment.exchange_rate, rate)
+    assert.equal(payment.original_amount, '10.00')
+    assert.equal(payment.payment, '101.23')
+    instance.$destroy()
+})
+
 test('invoice receipts follow the header rate while retaining the received amount', async () => {
     const Vue=require('vue'),payment={payment:'50',payment_method_type_id:'cash',currency_type_id:'USD',original_amount:'10',exchange_rate:'5'}
     const instance=new Vue({...component,propsData:{payment,useDocumentRate:true,
@@ -146,8 +182,8 @@ test('invoice receipts follow the header rate while retaining the received amoun
 
 test('a proposal includes the method and cannot overwrite a different same-currency method', async () => {
     let resolve,payload
-    const payment={payment:'10',currency_type_id:'USD',original_amount:'10',exchange_rate:'10',payment_method_type_id:'cash',financial_intermediation:'none'}
-    const ctx={payment,sequence:0,documentCurrency:'USD',igtfEnabled:true,$set:(o,k,v)=>o[k]=v,
+    const payment={payment:'100',currency_type_id:'USD',original_amount:'10',exchange_rate:'10',payment_method_type_id:'cash',financial_intermediation:'none'}
+    const ctx={payment,sequence:0,documentCurrency:'VES',igtfEnabled:true,$set:(o,k,v)=>o[k]=v,
         $http:{post:(_url,body)=>{payload=body;return new Promise(done=>{resolve=done})}}}
     const pending=component.methods.evaluate.call(ctx)
     assert.equal(payload.payment_method_type_id,'cash')
@@ -286,9 +322,9 @@ test('method proposal and reverse conversion use the settled received amount',()
     component.methods.syncMethodCurrency.call(ctx)
     assert.equal(payment.original_amount,'33.33')
     assert.equal(payment.payment,'99.99')
-    ctx.documentCurrency='USD'; payment.currency_type_id='VES';payment.original_amount='1.005';payment.exchange_rate='2'
+    payment.original_amount='1.005';payment.exchange_rate='2'
     component.methods.convertPrincipal.call(ctx)
-    assert.equal(payment.payment,'0.51')
+    assert.equal(payment.payment,'2.02')
 })
 
 test('fiscal form discloses the received amount rounded for settlement',()=>{

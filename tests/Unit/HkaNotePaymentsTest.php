@@ -1,7 +1,9 @@
 <?php
 namespace Tests\Unit;
 use App\Services\Fiscal\HkaNotePayments;
-use PHPUnit\Framework\TestCase;
+use App\Support\Exact\Decimal as D;
+use Illuminate\Validation\ValidationException;
+use Tests\TestCase;
 
 class HkaNotePaymentsTest extends TestCase
 {
@@ -34,6 +36,34 @@ class HkaNotePaymentsTest extends TestCase
     {
         $d=$this->snapshot('08');$d['payment_condition_id']='01';self::assertSame([],HkaNotePayments::append($d,[]));
         unset($d['note']);self::assertSame([],HkaNotePayments::append($d,[]));
+    }
+
+    public static function debitOverpayments(): array
+    {
+        return [
+            'within tolerance'=>['100','100.0049',false],
+            'inclusive half cent'=>['100','100.005',false],
+            'outside tolerance'=>['100','100.0051',true],
+            'next decimal position'=>['100','100.005000000001',true],
+            'large inclusive half cent'=>['9007199254740993.01','9007199254740993.015',false],
+            'large outside tolerance'=>['9007199254740993.01','9007199254740993.015000000001',true],
+        ];
+    }
+
+    /** @dataProvider debitOverpayments */
+    public function test_debit_checks_exact_overpayment_before_rounding_its_credit_declaration(string $total,string $paid,bool $reject): void
+    {
+        $d=$this->snapshot('08');$d['total']=D::represent($total);
+        $d['calculation_snapshot']=D::snapshot(['total'=>D::of($total)]);
+        $d['payments']=[['payment'=>D::represent($paid),'calculation_snapshot'=>D::snapshot(['payment'=>D::of($paid)])]];
+        $original=$d;$real=[['forma'=>'09','monto'=>D::represent($paid)]];
+        try {
+            self::assertSame($real,HkaNotePayments::append($d,$real));
+            self::assertFalse($reject,'Se aceptó un exceso superior a medio centavo.');
+        } catch (ValidationException $error) {
+            self::assertTrue($reject);self::assertArrayHasKey('payments',$error->errors());
+        }
+        self::assertSame($original,$d);
     }
 
     public function test_split_currency_rounding_changes_only_the_fiscal_credit_declaration(): void

@@ -3,10 +3,11 @@
 // Test worker accepts only the disposable DB naming convention, never a tenant DB.
 ini_set('display_errors','stderr');
 require dirname(__DIR__,2).'/vendor/autoload.php';
+\Illuminate\Database\Connection::resolverFor('pgsql', static fn ($pdo,$database,$prefix,$config) => new \App\Database\PostgresConnection($pdo,$database,$prefix,$config));
 $input=json_decode(stream_get_contents(STDIN),true,512,JSON_THROW_ON_ERROR);
 if (!class_exists('DB')) class_alias(Illuminate\Support\Facades\DB::class,'DB');
 if (!class_exists('Log')) class_alias(Illuminate\Support\Facades\Log::class,'Log');
-if (!preg_match('/\Asab_fiscal_test_[a-f0-9]{12}\z/', $input['connection']['database'] ?? '')) exit(2);
+if (!preg_match('/\Apro9_fiscal_test_[a-f0-9]{12}\z/', $input['connection']['database'] ?? '')) exit(2);
 $app=new Illuminate\Foundation\Application(dirname(__DIR__,2));
 Illuminate\Container\Container::setInstance($app);
 Illuminate\Support\Facades\Facade::setFacadeApplication($app);
@@ -25,6 +26,7 @@ $app->instance(Hyn\Tenancy\Database\Connection::class,new class extends Hyn\Tena
 $manager=new Illuminate\Database\Capsule\Manager($app);
 $manager->addConnection($input['connection'],'tenant');
 $manager->getDatabaseManager()->setDefaultConnection('tenant');
+\Tests\Support\PostgresTestEnvironment::assertServer($manager->getConnection('tenant'));
 $manager->getConnection('tenant')->setTransactionManager(new Illuminate\Database\DatabaseTransactionsManager());
 $manager->setEventDispatcher(new Illuminate\Events\Dispatcher($app));
 $manager->bootEloquent();

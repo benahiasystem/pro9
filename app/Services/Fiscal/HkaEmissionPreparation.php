@@ -28,7 +28,7 @@ final class HkaEmissionPreparation
             if($document->note) {
                 $snapshot['note']=array_replace($snapshot['note'] ?? [],$document->note->only(['creation_key','effect_snapshot','note_credit_type_id','note_debit_type_id','note_description','affected_document_id']));
                 $affected=Document::find($document->note->affected_document_id);
-                $snapshot['reference']=$document->note->data_affected_document ? (array)$document->note->data_affected_document : ($affected ? $affected->only(['series','number','date_of_issue','total','control_number']) : []);
+                $snapshot['reference']=$document->note->data_affected_document ? (array)$document->note->data_affected_document : ($affected ? FiscalDocumentPersistence::affectedInvoiceSnapshot($affected) : []);
             }
             if (isset($snapshot['reference']) && empty($snapshot['reference']['control_number']) && $affected) {
                 $snapshot['reference']['control_number'] = $affected->control_number;

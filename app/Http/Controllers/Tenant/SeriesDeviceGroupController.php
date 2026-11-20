@@ -102,9 +102,6 @@ class SeriesDeviceGroupController extends Controller
         \App\Services\SeriesAdministration::authorize((int) $establishmentId);
         $available_series = Series::where('establishment_id', $establishmentId)
             ->dedicated()
-            ->when($this->resolver->isNrus(), function ($query) {
-                $query->whereIn('document_type_id', SeriesCodeGenerator::nrusDocumentTypeIds());
-            })
             ->whereNull('series_device_group_id')
             ->get()
             ->map(fn (Series $serie) => [
@@ -168,9 +165,6 @@ class SeriesDeviceGroupController extends Controller
                 Series::whereIn('id', $series_ids)
                     ->where('dedicated', true)
                     ->where('establishment_id', $group->establishment_id)
-                    ->when($this->resolver->isNrus(), function ($query) {
-                        $query->whereIn('document_type_id', SeriesCodeGenerator::nrusDocumentTypeIds());
-                    })
                     ->where(function ($query) use ($group) {
                         $query->whereNull('series_device_group_id')->orWhere('series_device_group_id', $group->id);
                     })
@@ -378,9 +372,6 @@ class SeriesDeviceGroupController extends Controller
             'module_label'      => $group->module_label,
             'bound_device_name' => $group->bound_device_name,
             'series'            => $group->series
-                ->when($this->resolver->isNrus(), function ($series) {
-                    return $series->whereIn('document_type_id', SeriesCodeGenerator::nrusDocumentTypeIds());
-                })
                 ->map(function ($serie) {
                     return [
                         'id'               => $serie->id,

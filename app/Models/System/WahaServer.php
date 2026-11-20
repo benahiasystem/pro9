@@ -8,6 +8,10 @@ use Illuminate\Support\Str;
 
 class WahaServer extends Model
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     use UsesSystemConnection;
 
     protected $fillable = [

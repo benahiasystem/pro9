@@ -125,6 +125,7 @@
 
     <!-- Main JS File -->
     <script src="{{ asset('porto-ecommerce/assets/js/cart.js') }}"></script>
+    @vite('resources/js/storefront-amounts.js')
     <script src="{{ asset('porto-ecommerce/assets/js/main.js') }}"></script>
     <script src="{{ asset('porto-ecommerce/assets/js/vue.min.js') }}"></script>
 

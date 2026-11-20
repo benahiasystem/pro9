@@ -1,37 +1,37 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `payment_conditions` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `days` int(11) NOT NULL DEFAULT '0'
- * - `is_locked` tinyint(1) NOT NULL DEFAULT '0'
- * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: varchar(255)
+ * - name: varchar(255)
+ * - days: integer
+ * - is_locked: boolean
+ * - is_active: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `payment_conditions` (
-  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `days` int(11) NOT NULL DEFAULT '0',
-  `is_locked` tinyint(1) NOT NULL DEFAULT '0',
-  `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  KEY `payment_conditions_id_index` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('payment_conditions', function (Blueprint $table) {
+            $table->string('id', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->integer('days')->default('0');
+            $table->boolean('is_locked')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->index(['id'], 'payment_conditions_id_index');
+            $table->unique(['id'], 'payment_conditions_id_pg_unique');
+        });
+        DB::statement('ALTER TABLE "payment_conditions" ADD CONSTRAINT "payment_conditions_days_range" CHECK ("days" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `payment_conditions`');
+        Schema::dropIfExists('payment_conditions');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

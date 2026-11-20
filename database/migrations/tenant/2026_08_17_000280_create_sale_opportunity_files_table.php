@@ -1,34 +1,31 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `sale_opportunity_files` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `sale_opportunity_id` int(10) unsigned NOT NULL
- * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - sale_opportunity_id: bigint
+ * - filename: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `sale_opportunity_files` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `sale_opportunity_id` int(10) unsigned NOT NULL,
-  `filename` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `sale_opportunity_files_sale_opportunity_id_foreign` (`sale_opportunity_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('sale_opportunity_files', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('sale_opportunity_id');
+            $table->string('filename', 255)->collation('pro9_ci_ai');
+            $table->index(['sale_opportunity_id'], 'sale_opportunity_files_sale_opportunity_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `sale_opportunity_files`');
+        Schema::dropIfExists('sale_opportunity_files');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

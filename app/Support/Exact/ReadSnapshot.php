@@ -2,8 +2,8 @@
 
 namespace App\Support\Exact;
 
-// ######## INICIO CALCULOS EXACTOS SAB ########
-/** A report owns its consistent MySQL read; it never changes session isolation. */
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+/** A report owns its consistent database read; it never changes session isolation. */
 final class ReadSnapshot
 {
     private static ?\WeakMap $active = null;
@@ -13,13 +13,13 @@ final class ReadSnapshot
         $pdo = $connection->getPdo();
         self::$active ??= new \WeakMap();
         if ($connection->transactionLevel() > 0) {
-            if ($connection->getDriverName() === 'mysql' && !isset(self::$active[$pdo])) {
-                throw new \LogicException('El reporte debe iniciar su lectura consistente antes de otra transacción MySQL.');
+            if ($connection->getDriverName() === 'pgsql' && !isset(self::$active[$pdo])) {
+                throw new \LogicException('El reporte debe iniciar su lectura consistente antes de otra transacción.');
             }
             return $read();
         }
-        if ($connection->getDriverName() === 'mysql') $connection->statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
-        return $connection->transaction(function () use ($pdo, $read) {
+        return $connection->transaction(function () use ($connection, $pdo, $read) {
+            if ($connection->getDriverName() === 'pgsql') $connection->statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
             self::$active[$pdo] = true;
             try { return $read(); }
             finally { unset(self::$active[$pdo]); }

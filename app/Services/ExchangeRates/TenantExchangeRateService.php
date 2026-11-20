@@ -36,20 +36,11 @@ class TenantExchangeRateService
         $values = ['date' => $date, 'date_original' => $today,
             'sale' => $rate, 'sale_original' => $rate, 'purchase' => $rate, 'purchase_original' => $rate,
             'created_at' => now(), 'updated_at' => now()];
-        for ($attempt = 0; $attempt < 3; $attempt++) {
-            try {
-                ExchangeRate::query()->insert($values);
-                break;
-            } catch (QueryException $exception) {
-                $code = $exception->errorInfo[1] ?? null;
-                // Una colisión conserva la primera fila; un deadlock permite repetir sólo la inserción.
-                if (in_array($code, [1062, 19], true)) break;
-                if (in_array($code, [1213, 1205], true) && $attempt < 2) {
-                    usleep(20000);
-                    continue;
-                }
-                throw new HttpException(503, 'No se pudo guardar la tasa de cambio en el tenant.');
-            }
+        try {
+            // ON CONFLICT preserves the first concurrent rate without aborting a surrounding transaction.
+            ExchangeRate::query()->insertOrIgnore($values);
+        } catch (QueryException $exception) {
+            throw new HttpException(503, 'No se pudo guardar la tasa de cambio en el tenant.');
         }
         $record = ExchangeRate::query()->where('date', $date)->first();
         if (!$record) throw new HttpException(503, 'No se pudo guardar la tasa de cambio en el tenant.');

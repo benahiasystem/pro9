@@ -13,8 +13,8 @@ use Modules\Marketplace\Services\WhatsAppLink;
 /**
  * Forma de los objetos que consume el front público.
  *
- * Centralizado para que sea evidente qué se expone: aquí no hay precio, stock
- * ni datos internos de la tienda. Lo que no está en estos arrays, no llega al
+ * Centralizado para que sea evidente qué se expone: el precio exige opt-in;
+ * no se publican stock ni datos internos. Lo que no está en estos arrays, no llega al
  * navegador.
  */
 class PublicPresenter
@@ -32,7 +32,7 @@ class PublicPresenter
             // llega al navegador. La descripción se omite cuando coincide con el
             // nombre (productos donde la app aún fusiona ambos): repetir el
             // título en el modal no aporta nada.
-            'price' => $store->show_prices && $item->price !== null ? (float) $item->price : null,
+            'price' => $store->show_prices ? CatalogPrice::publicValue($item->price) : null,
             'description' => $item->description && $item->description !== $item->name ? $item->description : null,
             'image_url' => self::url($item->image_path),
             'initial' => mb_strtoupper(mb_substr($item->name, 0, 1)),

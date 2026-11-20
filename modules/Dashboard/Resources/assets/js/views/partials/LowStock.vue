@@ -19,7 +19,9 @@
 </template>
 
 <script>
-import {exactValue} from "../../../../../../../resources/js/helpers/exchange-rate-math";
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { readOriginal, originalDecimal } from "../../../../../../../resources/js/helpers/dashboard-originals";
+
 export default {
   name: "LowStock",
   props: {
@@ -27,8 +29,9 @@ export default {
   },
   data() {
     return {
+      fetchVersion: 0, loading: true, fetchFailed: false,
       items: [],
-      total: 0,
+      total: null,
     };
   },
   mounted() {
@@ -43,16 +46,28 @@ export default {
     },
   },
   methods: {
-    stockText(row) { return exactValue(row, "stock").decimal(); },
-    fetchData() {
-      this.$http.get("/dashboard/low-stock", { params: this.filters || {} }).then((response) => {
+    stockText(row) {
+      const amount = readOriginal(row, 'stock');
+      // The legacy stock contract also permits an unrounded stored decimal string.
+      return originalDecimal(amount ?? (typeof row.stock === 'string' ? row.stock : null));
+    },
+    async fetchData() {
+      const version = ++this.fetchVersion; this.loading = true; this.fetchFailed = false;
+      this.items = []; this.total = null;
+      try {
+        const response = await this.$http.get("/dashboard/low-stock", {params: {...(this.filters || {})}});
+        if (version !== this.fetchVersion) return;
         const data = response.data;
-        this.items = data.items || [];
-        this.total = data.total || 0;
-      });
+        this.items = data.items || []; this.total = Number.isInteger(data.total) && data.total >= 0 ? data.total : null;
+      } catch (_) {
+        if (version === this.fetchVersion) this.fetchFailed = true;
+      } finally {
+        if (version === this.fetchVersion) this.loading = false;
+      }
     },
   },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

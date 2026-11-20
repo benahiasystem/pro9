@@ -9,7 +9,7 @@ class AddVendeyaConfigurationToSystemConfigurations extends Migration
 {
     public function up()
     {
-        Schema::connection('system')->table('configurations', function (Blueprint $table) {
+        Schema::table('configurations', function (Blueprint $table) {
             $table->json('vendeya_configuration')->nullable();
         });
 
@@ -31,14 +31,14 @@ class AddVendeyaConfigurationToSystemConfigurations extends Migration
             'logoVersion' => null,
         ];
 
-        DB::connection('system')->table('configurations')->update([
+        DB::connection()->table('configurations')->update([
             'vendeya_configuration' => json_encode($defaults, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ]);
     }
 
     public function down()
     {
-        Schema::connection('system')->table('configurations', function (Blueprint $table) {
+        Schema::table('configurations', function (Blueprint $table) {
             $table->dropColumn('vendeya_configuration');
         });
     }

@@ -1,31 +1,28 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `preprinted_format_templates` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `formats` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - formats: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `preprinted_format_templates` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `formats` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('preprinted_format_templates', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('formats', 255)->collation('pro9_ci_ai');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `preprinted_format_templates`');
+        Schema::dropIfExists('preprinted_format_templates');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

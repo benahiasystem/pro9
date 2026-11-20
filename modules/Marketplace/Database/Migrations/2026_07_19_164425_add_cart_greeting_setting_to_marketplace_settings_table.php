@@ -15,7 +15,7 @@ return new class extends Migration
      */
     public function up()
     {
-        DB::connection('system')->table('marketplace_settings')->updateOrInsert(
+        DB::connection()->table('marketplace_settings')->updateOrInsert(
             ['key' => 'whatsapp_cart_greeting'],
             ['value' => 'Hola, quiero hacer este pedido que armé en el marketplace:', 'type' => 'string']
         );
@@ -23,7 +23,7 @@ return new class extends Migration
 
     public function down()
     {
-        DB::connection('system')->table('marketplace_settings')
+        DB::connection()->table('marketplace_settings')
             ->where('key', 'whatsapp_cart_greeting')
             ->delete();
     }

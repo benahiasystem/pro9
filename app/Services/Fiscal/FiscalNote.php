@@ -1,9 +1,11 @@
 <?php
 namespace App\Services\Fiscal;
 
+use App\Database\IntegerTransport;
 use App\Models\Tenant\{Company, Document, DocumentItem, DocumentNoteRefund, Note};
 use App\Services\ExchangeRates\ExchangeRateMath as Math;
 use App\Support\Exact\Decimal as D;
+use App\Support\Exact\LineCalculation;
 use App\Http\Controllers\Tenant\DocumentFiscalController;
 use Illuminate\Support\Facades\DB;
 
@@ -127,11 +129,11 @@ final class FiscalNote
                 // ######## INICIO CONTEXTO EXACTO DE LOTES ########
                 $allocations=FiscalNoteInventory::snapshot($r['line'],D::read($r,'remaining_quantity'),[]);
                 // ######## FIN CONTEXTO EXACTO DE LOTES ########
-                return ['id'=>$r['line']->id, 'description'=>$r['line']->item->description,
+                return ['id'=>IntegerTransport::value($r['line']->id), 'description'=>$r['line']->item->description,
                     'quantity'=>$r['line']->quantity,'remaining_quantity'=>$r['remaining_quantity'], 'remaining_total'=>$r['remaining_total'], 'calculation_snapshot'=>$r['calculation_snapshot'],
                     'iva_rate'=>$r['line']->iva_rate, 'unit_type_id'=>$r['line']->item->unit_type_id,
-                    'serials'=>array_map(fn ($s)=>['id'=>$s['id'],'series'=>$s['series']],$allocations['lots'] ?? []),
-                    'lots'=>array_map(fn ($l)=>['id'=>$l['id'],'quantity'=>$l['compromise_quantity'],
+                    'serials'=>array_map(fn ($s)=>['id'=>IntegerTransport::value($s['id']),'series'=>$s['series']],$allocations['lots'] ?? []),
+                    'lots'=>array_map(fn ($l)=>['id'=>IntegerTransport::value($l['id']),'quantity'=>$l['compromise_quantity'],
                         'calculation_snapshot'=>D::snapshot(['quantity'=>$l['compromise_quantity_exact'] ?? $l['compromise_quantity']])],$allocations['IdLoteSelected'] ?? [])];
             }, self::entitlements($invoice))),
             'notes'=>Note::where('affected_document_id',$invoice->id)->get()->map(fn ($n)=>[
@@ -268,11 +270,21 @@ final class FiscalNote
                 if ($credit || $reasonId === '02') FiscalAmounts::error("items.$index",'Seleccione una partida de la factura original.');
                 $item=\App\Models\Tenant\Item::findOrFail($row['item_id'] ?? 0);
                 if ($item->unit_type_id !== 'SERV') FiscalAmounts::error("items.$index",'Los cargos de intereses o despacho requieren un servicio.');
-                // The service charge is one server-defined unit at the requested adjustment amount.
-                // Historical fractions and alternate price/quantity inputs are not authoritative here.
+                // A service charge is one fiscal unit. Only the explicit adjustment is a price input.
                 unset($row['calculation_snapshot'], $row['quantity_input'], $row['price_input']);
                 $row['item']=$item->toArray(); $row['quantity']=1;
                 $row['unit_price']=$row['adjustment_amount'] ?? $row['unit_price'] ?? 0;
+                if (isset($row['adjustment_amount_exact'])) {
+                    $field = "items.$index.adjustment_amount";
+                    $amount = D::of(D::input($row['adjustment_amount'] ?? null, $field));
+                    $original = LineCalculation::priceInput($row['adjustment_amount_exact'], $field);
+                    if ($original->isNegative()) FiscalAmounts::error($field, 'El ajuste debe ser mayor o igual a cero.');
+                    if ($amount->isEqualTo(D::represent($original))) {
+                        $row['currency_type_id'] = $input['currency_type_id'];
+                        $row['price_input'] = ['amount' => D::fraction($original), 'currency_type_id' => $input['currency_type_id'], 'includes_iva' => true];
+                    }
+                }
+                unset($row['adjustment_amount_exact']);
                 $row['discounts']=[]; $row['charges']=[]; $row['inventory_quantity']=0;
                 $rows[]=FiscalDocumentPersistence::line($row);
             }

@@ -9,7 +9,7 @@ use PHPUnit\TextUI\DefaultResultPrinter;
 use PHPUnit\Util\Test as TestName;
 use Throwable;
 
-/** Informa fallos y duración sin esperar a que termine toda la batería. */
+/** Informa fallos, duración y memoria sin esperar al final de la batería. */
 final class FiscalProgressPrinter extends DefaultResultPrinter
 {
     private ?int $fiscalTotal = null;
@@ -44,6 +44,7 @@ final class FiscalProgressPrinter extends DefaultResultPrinter
         parent::endTest($test, $time);
         $this->fiscalCompleted++;
         $percent = $this->fiscalTotal ? 100 * $this->fiscalCompleted / $this->fiscalTotal : 0;
-        fwrite(STDERR, sprintf("\n%d/%d (%.1f%%) %.3f s %s\n", $this->fiscalCompleted, $this->fiscalTotal ?? 0, $percent, $time, TestName::describeAsString($test)));
+        fwrite(STDERR, sprintf("\n%d/%d (%.1f%%) %.3f s memory=%d peak=%d bytes %s\n", $this->fiscalCompleted, $this->fiscalTotal ?? 0, $percent, $time,
+            memory_get_usage(true), memory_get_peak_usage(true), TestName::describeAsString($test)));
     }
 }

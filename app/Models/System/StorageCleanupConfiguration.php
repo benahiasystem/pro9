@@ -22,6 +22,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class StorageCleanupConfiguration extends Model
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     use UsesSystemConnection;
 
     const FREQUENCY_DAILY = 'daily';

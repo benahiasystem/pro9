@@ -29,7 +29,7 @@
           <div class="sp-fbt__body">
             <div class="sp-fbt__name" :title="item.description">{{ item.description }}</div>
             <div class="sp-fbt__price">
-              {{ item.currency_symbol }} {{ formatPrice(item.sale_unit_price) }}
+              {{ item.currency_symbol }} {{ formatPrice(item.sale_unit_price, item.calculation_snapshot) }}
             </div>
             <div v-if="showCount && item.times_bought_together" class="sp-fbt__meta">
               Juntos {{ item.times_bought_together }} veces
@@ -50,6 +50,9 @@
 </template>
 
 <script>
+import {cartRequestIdentifier} from '../../../../../../../resources/js/helpers/storefront-cart-amounts'
+import {exactAmount} from '../../../../../../../resources/js/helpers/exchange-rate-math'
+
 export default {
   name: 'FrequentlyBoughtTogether',
   props: {
@@ -95,10 +98,10 @@ export default {
     },
     resolvedIds() {
       if (Array.isArray(this.itemIds) && this.itemIds.length) {
-        return this.itemIds.map((id) => parseInt(id, 10)).filter((id) => id > 0);
+        return this.itemIds.map(cartRequestIdentifier).filter((id) => id !== null);
       }
-      const single = parseInt(this.itemId, 10);
-      return single > 0 ? [single] : [];
+      const single = cartRequestIdentifier(this.itemId);
+      return single === null ? [] : [single];
     },
   },
   watch: {
@@ -117,9 +120,8 @@ export default {
     }
   },
   methods: {
-    formatPrice(value) {
-      const n = Number(value || 0);
-      return n.toFixed(2);
+    formatPrice(value, snapshot) {
+      return value == null ? '—' : exactAmount(snapshot?.values?.sale_unit_price ?? value).final(2);
     },
     scrollBy(direction) {
       const el = this.$refs.track;

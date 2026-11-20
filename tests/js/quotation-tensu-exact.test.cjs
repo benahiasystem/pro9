@@ -134,4 +134,51 @@ test('Tensu totals real taxed and exempt lines and keeps legacy export rows inta
     assert.equal(legacyExport.affectation_igv_type_id,'40')
     assert.equal(view.form.calculation_snapshot.values.total.n,'625')
 })
+
+test('Tensu renders positive exact totals when the decimal projections are zero', () => {
+    const file = 'resources/js/views/tenant/documents/invoicetensu.vue'
+    const c = component(file)
+    const Vue = require('vue')
+    const {calculateRowItem} = loadModule(path.resolve('resources/js/helpers/functions.js'))
+    const {exactValue} = loadModule(path.resolve('resources/js/helpers/exchange-rate-math.js'))
+    const template = compiler.parseComponent(fs.readFileSync(file, 'utf8')).template.content
+    const rows = template.match(/<(?:p|h3) class="text-right" v-if="[^"]+">.*?<\/(?:p|h3)>/g)
+    assert.equal(rows.length, 5)
+    const view = new Vue({
+        ...compiler.compileToFunctions(`<div>${rows.join('')}</div>`),
+        data: {form: {items: [], discounts: [], charges: [], total_prepayment: '0'}, form_payment: {}, currency_type: {symbol: 'Bs.'}},
+        methods: c.methods,
+    })
+    const fields = {
+        total_exportation: 'OP.EXPORTACIÓN',
+        total_exonerated: 'OP.EXONERADAS',
+        total_taxed: 'OP.GRAVADA',
+        total_igv: 'IVA',
+        total: 'TOTAL A PAGAR',
+    }
+    const rendered = () => view._render().children.filter(node => node.tag)
+        .map(node => node.children[0].text || node.children[0].children[0].text).join(' ')
+    for (const [type, positiveFields] of [
+        ['10', ['total_taxed', 'total_igv', 'total']],
+        ['20', ['total_exonerated', 'total']],
+        ['40', ['total_exportation', 'total']],
+    ]) {
+        const item = calculateRowItem({
+            item: {unit_price: '0.000000000001', currency_type_id: 'VES'},
+            quantity: '0.333333333333',
+            quantity_input: {amount: '1', unit_price: '3'},
+            affectation_igv_type_id: type === '40' ? '20' : type,
+        }, 'VES', '1')
+        view.form.items = [{...item, affectation_igv_type_id: type}]
+        view.calculateTotal()
+        for (const [field, label] of Object.entries(fields)) {
+            assert.equal(view.form[field], '0', field)
+            assert.equal(exactValue(view.form, field).compare(0), positiveFields.includes(field) ? 1 : 0, field)
+            assert.equal(rendered().includes(label), positiveFields.includes(field), field)
+        }
+    }
+    view.form = {total_taxed: '0', total_exonerated: '-1', total: '2', total_payable: '2'}
+    assert.equal(rendered(), 'TOTAL A PAGAR: ')
+    view.$destroy()
+})
 // ######## FIN PRUEBAS CALCULOS EXACTOS COTIZACIONES ########

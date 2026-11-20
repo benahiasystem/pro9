@@ -10,6 +10,7 @@ class SystemActivityLogType extends ModelTenant
 {
 
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 
     protected $fillable = [

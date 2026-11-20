@@ -1,61 +1,58 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `hotel_rent_item_payments` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `hotel_rent_item_id` int(10) unsigned NOT NULL
- * - `date_of_payment` date NOT NULL
- * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `change` decimal(30,12) DEFAULT NULL
- * - `payment` decimal(30,12) NOT NULL
- * - `currency_type_id` varchar(255) DEFAULT NULL
- * - `original_amount` decimal(30,12) DEFAULT NULL
- * - `exchange_rate` decimal(18,8) DEFAULT NULL
- * - `exchange_rate_source` varchar(255) DEFAULT NULL
- * - `exchange_rate_date` date DEFAULT NULL
- * - `payment_method_snapshot` json DEFAULT NULL
- * - `source_sale_note_payment_id` int(10) unsigned DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - hotel_rent_item_id: bigint
+ * - date_of_payment: date
+ * - payment_method_type_id: char(2)
+ * - reference: varchar(255)
+ * - change: numeric(30,12)
+ * - payment: numeric(30,12)
+ * - currency_type_id: varchar(255)
+ * - original_amount: numeric(30,12)
+ * - exchange_rate: numeric(18,8)
+ * - exchange_rate_source: varchar(255)
+ * - exchange_rate_date: date
+ * - payment_method_snapshot: json
+ * - source_sale_note_payment_id: bigint
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `hotel_rent_item_payments` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `hotel_rent_item_id` int(10) unsigned NOT NULL,
-  `date_of_payment` date NOT NULL,
-  `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `change` decimal(30,12) DEFAULT NULL,
-  `payment` decimal(30,12) NOT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `original_amount` decimal(30,12) DEFAULT NULL,
-  `exchange_rate` decimal(18,8) DEFAULT NULL,
-  `exchange_rate_source` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `exchange_rate_date` date DEFAULT NULL,
-  `payment_method_snapshot` json DEFAULT NULL,
-  `source_sale_note_payment_id` int(10) unsigned DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `hotel_receipt_source_unique` (`source_sale_note_payment_id`),
-  KEY `hotel_rent_item_payments_hotel_rent_item_id_foreign` (`hotel_rent_item_id`),
-  KEY `hotel_rent_item_payments_payment_method_type_id_foreign` (`payment_method_type_id`),
-  KEY `hotel_rent_item_payments_date_of_payment_index` (`date_of_payment`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('hotel_rent_item_payments', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('hotel_rent_item_id');
+            $table->date('date_of_payment');
+            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai');
+            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('change', 30, 12)->nullable();
+            $table->decimal('payment', 30, 12);
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('original_amount', 30, 12)->nullable();
+            $table->decimal('exchange_rate', 18, 8)->nullable();
+            $table->string('exchange_rate_source', 255)->collation('pro9_ci_ai')->nullable();
+            $table->date('exchange_rate_date')->nullable();
+            $table->json('payment_method_snapshot')->nullable();
+            $table->bigInteger('source_sale_note_payment_id')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->unique(['source_sale_note_payment_id'], 'hotel_receipt_source_unique');
+            $table->index(['hotel_rent_item_id'], 'hotel_rent_item_payments_hotel_rent_item_id_foreign');
+            $table->index(['payment_method_type_id'], 'hotel_rent_item_payments_payment_method_type_id_foreign');
+            $table->index(['date_of_payment'], 'hotel_rent_item_payments_date_of_payment_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `hotel_rent_item_payments`');
+        Schema::dropIfExists('hotel_rent_item_payments');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

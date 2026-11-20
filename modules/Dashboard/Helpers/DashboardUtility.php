@@ -3,253 +3,120 @@
 // ######## FIN TASAS OCHO DECIMALES: CONVERSIONES EXACTAS ########
 namespace Modules\Dashboard\Helpers;
 
-use App\Models\Tenant\DocumentItem;
-use App\Models\Tenant\PurchaseItem;
-use App\Models\Tenant\SaleNoteItem;
+use App\Models\Tenant\{DocumentItem, SaleNoteItem};
+use App\Support\Exact\{ConsolidatedLines, DashboardSales, Decimal as D, JsonDecimals, ReadSnapshot};
+use Illuminate\Database\Eloquent\Collection;
 use Modules\Expense\Models\Expense;
+use Modules\Report\Services\EstimatedPurchaseCost;
 
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+/** Estimated utility: current positive catalogue cost, then eligible purchase history. */
 class DashboardUtility
 {
     public function data($request)
     {
-        $filters = DashboardFilterHelper::resolve($request);
-
-        return [
-            'utilities' => $this->calculateUtilityTotals(
-                $filters['establishment_id'],
-                $filters['date_start'],
-                $filters['date_end'],
-                filter_var($request['enabled_expense'] ?? true, FILTER_VALIDATE_BOOLEAN),
-                $request['item_id'] ?? null
-            ),
-        ];
+        $filters=DashboardFilterHelper::resolve($request);
+        return ['utilities'=>$this->calculateUtilityTotals($filters['establishment_id'],$filters['date_start'],
+            $filters['date_end'],filter_var($request['enabled_expense'] ?? true,FILTER_VALIDATE_BOOLEAN),$request['item_id'] ?? null)];
     }
 
-    public function calculateUtilityTotals($establishment_id, $d_start, $d_end, $enabled_expense = true, $item_id = null)
+    public function calculateUtilityTotals($establishment_id, $d_start, $d_end, $enabled_expense=true, $item_id=null)
     {
-        $document_items = $this->getDocumentItems($establishment_id, $d_start, $d_end, $item_id);
-        $sale_note_items = $this->getSaleNoteItems($establishment_id, $d_start, $d_end, $item_id);
-
-        $document_totals = $this->getTotalDocumentItems($document_items);
-        $sale_note_totals = $this->getTotalSaleNoteItems($sale_note_items);
-        $expenses_total = $this->getTotalExpenses(
-            $this->getExpenses($establishment_id, $d_start, $d_end, $enabled_expense)
-        );
-
-        $total_income = $document_totals['document_sale_total'] + $sale_note_totals['sale_note_sale_total'];
-        $total_egress = $document_totals['document_purchase_total']
-            + $sale_note_totals['sale_note_purchase_total']
-            + $expenses_total;
-        $utility = $total_income - $total_egress;
-
-        return [
-            'totals' => [
-                'total_income' => number_format($total_income, 2, '.', ''),
-                'total_egress' => number_format($total_egress, 2, '.', ''),
-                'utility' => number_format($utility, 2, '.', ''),
-            ],
-            'graph' => [
-                'labels' => ['Ingreso', 'Egreso'],
-                'datasets' => [
-                    [
-                        'label' => 'Utilidades',
-                        'data' => [round($total_income, 2), round($total_egress, 2)],
-                        'backgroundColor' => [
-                            'rgb(36, 71, 232, .1)',
-                            'rgb(254, 0, 108, .1)',
-                        ],
-                        'borderColor' => [
-                            'rgb(36, 71, 232)',
-                            'rgb(254, 0, 108)',
-                        ],
-                    ],
-                ],
-            ],
-        ];
+        return ReadSnapshot::run((new DocumentItem)->getConnection(),function () use ($establishment_id,$d_start,$d_end,$enabled_expense,$item_id) {
+            $income=$cost=$expenses=D::of(0);
+            foreach (['document','sale_note'] as $source) {
+                $records=$this->lines($source,$establishment_id,$d_start,$d_end,$item_id);
+                [$sale,$purchase]=$this->lineTotals($records,$source);
+                $income=$income->plus($sale)->simplified(); $cost=$cost->plus($purchase)->simplified();
+            }
+            if ($enabled_expense) {
+                $query=Expense::withoutEagerLoads()->where('state_type_id','!=','11');
+                $this->filter($query,$establishment_id,$d_start,$d_end);
+                foreach ($query->lazyById(500) as $expense) $expenses=$expenses->plus(DashboardSales::inVes($expense))->simplified();
+            }
+            $egress=$cost->plus($expenses)->simplified();
+            $values=['total_income'=>$income,'total_egress'=>$egress,'utility'=>$income->minus($egress)->simplified()];
+            $projection=DashboardSales::numericProjection($values);
+            return ['totals'=>array_map(static fn($value)=>D::format($value,2,'.',''),$values)+['calculation_snapshot'=>D::snapshot($values)],
+                'cost_is_estimated'=>true,'cost_policy'=>'current_positive_catalog_then_eligible_purchase',
+                'graph'=>['labels'=>['Ingreso','Egreso'],'datasets'=>[[
+                    'label'=>'Utilidades','data'=>[$projection['total_income'],$projection['total_egress']],
+                    'data_exact'=>[$projection['total_income_exact'],$projection['total_egress_exact']],
+                    'calculation_snapshot'=>D::snapshot(['income'=>$income,'egress'=>$egress]),
+                    'backgroundColor'=>['rgb(36, 71, 232, .1)','rgb(254, 0, 108, .1)'],
+                    'borderColor'=>['rgb(36, 71, 232)','rgb(254, 0, 108)']]]]];
+        });
     }
 
-    private function getDocumentItems($establishment_id, $d_start, $d_end, $item_id)
+    private function lines(string $source, $establishment, $start, $end, $item)
     {
-        $query = DocumentItem::without(['affectation_igv_type', 'price_type'])
-            ->with([
-                'document:id,currency_type_id,exchange_rate_sale,document_type_id',
-                'relation_item:id,purchase_unit_price,unit_type_id',
-            ])
-            ->whereHas('document', function ($query) use ($establishment_id, $d_start, $d_end) {
-                $query->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
-                    ->whereIn('document_type_id', ['01', '07', '08']);
+        $query=$source === 'document' ? DocumentItem::withoutEagerLoads() : SaleNoteItem::withoutEagerLoads();
+        $query->with([$source=>function ($parent) use ($source) {
+            $parent->withoutEagerLoads();
+            if ($source === 'document') $parent->with('note');
+        },'relation_item'=>fn($catalog)=>$catalog->withoutEagerLoads()]);
+        $query->whereHas($source,function ($parent) use ($source,$establishment,$start,$end) {
+            $parent->whereIn('state_type_id',DashboardSales::ACCEPTED_STATES);
+            if ($source === 'document') $parent->whereIn('document_type_id',['01','07','08']);
+            else $parent->where('changed',false);
+            $this->filter($parent,$establishment,$start,$end);
+        });
+        if ($item) $query->where('item_id',$item);
+        return $query->lazyById(500);
+    }
 
-                if ($establishment_id) {
-                    $query->where('establishment_id', $establishment_id);
+    private function filter($query, $establishment, $start, $end): void
+    {
+        if ($establishment) $query->where('establishment_id',$establishment);
+        if ($start && $end) $query->whereBetween('date_of_issue',[$start,$end]);
+    }
+
+    private function lineTotals($records, string $source): array
+    {
+        $income=$cost=D::of(0);
+        $reader=new ConsolidatedLines((new DocumentItem)->getConnection());
+        foreach ($records->chunk(500) as $chunk) {
+            $chunk=new Collection($chunk->values()->all());
+            $fallback=new Collection(); $costs=[];
+            foreach ($chunk as $line) {
+                $parent=$line->$source; $catalog=$line->relation_item;
+                if (!$catalog) throw new \UnexpectedValueException('No se encontró el producto para estimar su costo.');
+                $line->source_type=$source; $line->source_id=$parent->id; $line->currency_type_id=$parent->currency_type_id;
+                $line->exchange_rate_sale=DashboardSales::historicalRate($parent);
+                $line->document_type_id=$source === 'document' ? $parent->document_type_id : '80';
+                $monetaryAdjustment=$line->document_type_id === '08' || ($line->document_type_id === '07'
+                    && !in_array($parent->note->note_credit_type_id ?? null,['01','07'],true));
+                if ($monetaryAdjustment || $catalog->unit_type_id === 'SERV') {
+                    $costs[spl_object_id($line)]=D::of(0); continue;
                 }
-
-                if ($d_start && $d_end) {
-                    $query->whereBetween('date_of_issue', [$d_start, $d_end]);
-                }
-            });
-
-        if ($item_id) {
-            $query->where('item_id', $item_id);
-        }
-
-        return $query->get();
-    }
-
-    private function getSaleNoteItems($establishment_id, $d_start, $d_end, $item_id)
-    {
-        $query = SaleNoteItem::without(['affectation_igv_type', 'price_type'])
-            ->with([
-                'sale_note:id,currency_type_id,exchange_rate_sale',
-                'relation_item:id,purchase_unit_price,unit_type_id',
-            ])
-            ->whereHas('sale_note', function ($query) use ($establishment_id, $d_start, $d_end) {
-                $query->where('changed', false)
-                    ->whereIn('state_type_id', ['01', '03', '05', '07', '13']);
-
-                if ($establishment_id) {
-                    $query->where('establishment_id', $establishment_id);
-                }
-
-                if ($d_start && $d_end) {
-                    $query->whereBetween('date_of_issue', [$d_start, $d_end]);
-                }
-            });
-
-        if ($item_id) {
-            $query->where('item_id', $item_id);
-        }
-
-        return $query->get();
-    }
-
-    private function getExpenses($establishment_id, $d_start, $d_end, $enabled_expense)
-    {
-        if (!$enabled_expense) {
-            return null;
-        }
-
-        $query = Expense::query()
-            ->where('state_type_id', '!=', '11');
-
-        if ($establishment_id) {
-            $query->where('establishment_id', $establishment_id);
-        }
-
-        if ($d_start && $d_end) {
-            $query->whereBetween('date_of_issue', [$d_start, $d_end]);
-        }
-
-        return $query->get();
-    }
-
-    private function getTotalExpenses($expenses)
-    {
-        if (!$expenses) {
-            return 0.0;
-        }
-
-        $total = 0.0;
-
-        foreach ($expenses as $expense) {
-            $total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational(($expense->currency_type_id == 'USD')
-                ? (\App\Services\ExchangeRates\ExchangeRateMath::rational($expense->total)->multipliedBy(\App\Services\ExchangeRates\ExchangeRateMath::rational($expense->exchange_rate_sale)))->toBigDecimal()
-                : $expense->total))->toBigDecimal();
-        }
-
-        return round((float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($total, 2), 2);
-    }
-
-    private function getPurchaseUnitPrice($record)
-    {
-        $unit_type_id = optional($record->relation_item)->unit_type_id
-            ?? ($record->item->unit_type_id ?? null);
-
-        if ($unit_type_id === 'SERV') {
-            return 0.0;
-        }
-
-        $relation_item = $record->relation_item;
-
-        if ($relation_item && (float) $relation_item->purchase_unit_price > 0) {
-            return (float) $relation_item->purchase_unit_price;
-        }
-
-        $purchase_item = PurchaseItem::select('unit_price')
-            ->where('item_id', $record->item_id)
-            ->latest('id')
-            ->first();
-
-        if ($purchase_item && (float) $purchase_item->unit_price > 0) {
-            return (float) $purchase_item->unit_price;
-        }
-
-        return 0.0;
-    }
-
-    private function getTotalSaleNoteItems($sale_note_items)
-    {
-        $sale_note_sale_total = 0.0;
-        $sale_note_purchase_total = 0.0;
-
-        foreach ($sale_note_items as $sale_note_item) {
-            $factor = ($sale_note_item->sale_note->currency_type_id === 'USD')
-                ? $sale_note_item->sale_note->exchange_rate_sale
-                : 1.0;
-
-            $sale_note_sale_total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_sale_total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($sale_note_item->total)->multipliedBy($factor))->toBigDecimal();
-
-            $purchase_unit_price = $this->getPurchaseUnitPrice($sale_note_item);
-            $presentation_quantity = $this->getQuantityUnitPresentation($sale_note_item);
-            $sale_note_purchase_total += $purchase_unit_price * ((float) $sale_note_item->quantity * $presentation_quantity);
-        }
-
-        return [
-            'sale_note_sale_total' => (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($sale_note_sale_total, 2),
-            'sale_note_purchase_total' => round($sale_note_purchase_total, 2),
-        ];
-    }
-
-    private function getTotalDocumentItems($document_items)
-    {
-        $document_sale_total = 0.0;
-        $document_purchase_total = 0.0;
-
-        foreach ($document_items as $document_item) {
-            $factor = ($document_item->document->currency_type_id === 'USD')
-                ? $document_item->document->exchange_rate_sale
-                : 1.0;
-
-            $is_sale = in_array($document_item->document->document_type_id, ['01', '08'], true);
-            $sign = $is_sale ? 1 : -1;
-
-            $document_sale_total = (string) \App\Services\ExchangeRates\ExchangeRateMath::rational($document_sale_total)->plus(\App\Services\ExchangeRates\ExchangeRateMath::rational($document_item->total)->multipliedBy($factor)->multipliedBy($sign))->toBigDecimal();
-
-            $purchase_unit_price = $this->getPurchaseUnitPrice($document_item);
-            $presentation_quantity = $this->getQuantityUnitPresentation($document_item);
-            $document_purchase_total += $purchase_unit_price * ((float) $document_item->quantity * $presentation_quantity) * $sign;
-        }
-
-        return [
-            'document_sale_total' => (float) \App\Services\ExchangeRates\ExchangeRateMath::finalAmount($document_sale_total, 2),
-            'document_purchase_total' => round($document_purchase_total, 2),
-        ];
-    }
-
-    public function getQuantityUnitPresentation($model_item)
-    {
-        $item = $model_item->item;
-
-        if ($item && !empty($item->presentation)) {
-            $presentation = $item->presentation;
-            $quantity_unit = is_object($presentation)
-                ? ($presentation->quantity_unit ?? null)
-                : ($presentation['quantity_unit'] ?? null);
-
-            if ($quantity_unit) {
-                return (float) $quantity_unit;
+                $unit=D::readRequired($catalog,'purchase_unit_price');
+                if ($unit->isPositive()) {
+                    $unit=D::convert($unit,$catalog->currency_type_id,'VES',$line->exchange_rate_sale);
+                    $costs[spl_object_id($line)]=$unit->multipliedBy(D::readRequired($line,'quantity'))
+                        ->multipliedBy($this->getQuantityUnitPresentation($line))->simplified();
+                } else $fallback->push($line);
+            }
+            if ($fallback->isNotEmpty()) {
+                foreach (EstimatedPurchaseCost::forLines($fallback,$source,true) as $key=>$estimate) $costs[$key]=D::max(0,$estimate['amount']);
+            }
+            foreach ($reader->rows($chunk) as $position=>$row) {
+                $line=$chunk[$position]; $amount=$costs[spl_object_id($line)];
+                if ($line->document_type_id === '07') $amount=$amount->negated();
+                $income=$income->plus(D::readRequired($row,'total_sale'))->simplified();
+                $cost=$cost->plus($amount)->simplified();
             }
         }
+        return [$income,$cost];
+    }
 
-        return 1.0;
+    public function getQuantityUnitPresentation($model_item): \Brick\Math\BigRational
+    {
+        $item=$model_item->getRawOriginal('item');
+        if (is_string($item)) $item=JsonDecimals::decode($item);
+        $presentation=(array)(((array)$item)['presentation'] ?? []);
+        $quantity=D::inputRational($presentation['quantity_unit'] ?? '1','presentation.quantity_unit');
+        if (!$quantity->isPositive()) throw new \UnexpectedValueException('La presentación requiere una cantidad positiva.');
+        return $quantity;
     }
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########

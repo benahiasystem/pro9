@@ -118,7 +118,7 @@
                         </div>
                         <div class="col-sm-6 py-1 text-right">
                             <p class="font-weight-semibold mb-0">
-                                {{ currencyTypeActive.symbol }} {{ money(form.total_taxed) }}
+                                {{ currencyTypeActive.symbol }} {{ money(checkoutValue(form, 'total_taxed')) }}
                             </p>
                         </div>
                     </div>
@@ -129,7 +129,7 @@
                         </div>
                         <div class="col-sm-6 py-1 text-right">
                             <p class="font-weight-semibold mb-0">
-                                {{ currencyTypeActive.symbol }} {{ money(form.total_igv) }}
+                                {{ currencyTypeActive.symbol }} {{ money(checkoutValue(form, 'total_igv')) }}
                             </p>
                         </div>
                     </div>
@@ -144,7 +144,7 @@
                 </div>
                 <div class="row m-0 p-0 h-25 d-flex align-items-center bg-white">
                     <div class="col-lg-6">
-                        <button :disabled="stockBlocked || singleAmountInvalid || (button_payment && form.payment_condition_id !== '02')"
+                        <button :disabled="stockBlocked || singleAmountInvalid || (settlementPaymentBlocked && form.payment_condition_id !== '02')"
                                 class="btn btn-block btn-primary"
                                 @click="clickPayment">PAGAR
                         </button>
@@ -228,8 +228,10 @@ import paymentSettlementSummary from "@mixins/payment-settlement-summary"
 // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {exactAmount,exactSum} from '../../../../helpers/exchange-rate-math'
+import {sameInvoiceRecordId} from '../../../../helpers/invoice-lots'
+import {posInvoiceQuantityError} from '../../../../helpers/pos-invoice-line'
 
-import {checkoutTotals} from '../../../../helpers/exact-commercial'
+import {applyInvoiceCheckoutDiscount, checkoutTotals} from '../../../../helpers/exact-commercial'
 
 import documentCreationMixin from "@mixins/document-creation"
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
@@ -350,7 +352,7 @@ export default {
         },
         keyupEnterAmount() {
 
-            if (this.button_payment) {
+            if (this.settlementPaymentBlocked) {
                 return this.$message.warning("El monto a pagar es menor al total")
             }
 
@@ -374,13 +376,14 @@ export default {
             if (!this.enabled_discount) {
 
                 this.discount_amount = 0
-                this.deleteDiscountGlobal()
+                if (this.form.document_type_id !== '01') this.deleteDiscountGlobal()
                 this.reCalculateTotal()
 
             }
 
         },
         inputDiscountAmount() {
+            if (this.form.document_type_id === '01') return applyInvoiceCheckoutDiscount(this)
 
             if (this.enabled_discount) {
 
@@ -451,7 +454,9 @@ export default {
                     this.$set(this.form, 'payment_condition_id', '02')
                 }
                 if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
-                    this.amount = exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
+                    this.amount = this.localInvoiceSettlement
+                        ? this.appliedReceiptTotal(this.form.payments || [])
+                        : exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
                     this.enter_amount = this.useLocalCalculations ? this.enteredReceiptAmount(this.form.payments || []) : this.amount
                     this.inputAmount()
                 }
@@ -488,7 +493,7 @@ export default {
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         async enterAmount() {
             const rows = this.form.payments || []
-            if (rows.length > 1 || this.singleAmountLocked) return
+            if (rows.length > 1 || this.singleAmountLocked || this.singleAmountInvalid) return
             const text = String(this.enter_amount ?? '').trim()
             if (text && !/^\d+(?:\.\d*)?$/.test(text)) return
             const entered = exactAmount(!text ? '0' : (text.endsWith('.') ? text.slice(0, -1) : text)).decimal()
@@ -584,7 +589,7 @@ export default {
 
         filterSeries(warn = true) {
             this.series = _.filter(this.all_series, {'document_type_id': this.form.document_type_id});
-            const selected = this.series.find(series => series.id === this.form.series_id)
+            const selected = this.series.find(series => sameInvoiceRecordId(series.id, this.form.series_id))
             this.form.series_id = selected ? selected.id : (this.series.length > 0 ? this.series[0].id : null)
 
             if (!this.form.series_id && warn !== false) {
@@ -650,6 +655,7 @@ export default {
         },
         async clickPayment() {
             if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
+            if (this.form.document_type_id === '01' && this.enabled_discount && !applyInvoiceCheckoutDiscount(this)) return
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             if (this.singleAmountInvalid) return this.$message.warning('Indique un monto válido.')
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
@@ -662,6 +668,13 @@ export default {
 
             if(this.rowsItems < 1) {
                 return this.$message.warning('Debe agregar productos');
+            }
+
+            if (this.form.document_type_id === '01') {
+                for (const item of this.form.items) {
+                    const error = posInvoiceQuantityError(item);
+                    if (error) return this.$message.error(error);
+                }
             }
 
             if (!moment(moment().format("YYYY-MM-DD")).isSame(this.form.date_of_issue)) {

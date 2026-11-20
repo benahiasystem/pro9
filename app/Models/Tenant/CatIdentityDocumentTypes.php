@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CatIdentityDocumentTypes extends ModelTenant
 {
+    protected $keyType = 'string';
+    public $incrementing = false;
     protected $table = 'cat_identity_document_types';
     public $timestamps = false;
 }

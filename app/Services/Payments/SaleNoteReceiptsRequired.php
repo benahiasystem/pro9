@@ -2,6 +2,7 @@
 
 namespace App\Services\Payments;
 
+use App\Database\IntegerTransport;
 use App\Models\Tenant\{SaleNote, SaleNotePayment};
 
 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
@@ -14,18 +15,25 @@ final class SaleNoteReceiptsRequired
             throw new \LogicException('La conversión de notas requiere una transacción.');
         }
         $ids = [];
-        if (!empty($input['sale_note_id'])) $ids[] = $input['sale_note_id'];
+        if (!empty($input['sale_note_id'])) {
+            $id = IntegerTransport::positiveKey($input['sale_note_id']);
+            if ($id === null) Classification::error('sale_note_id', 'Identifique la nota de venta de origen.');
+            $ids[] = $id;
+        }
         $related = $input['sale_notes_relateds'] ?? [];
         if (!is_array($related) || !array_is_list($related)) Classification::error('sale_notes_relateds', 'La relación de notas de venta no es válida.');
         foreach ($related as $row) {
-            $id = is_array($row) ? ($row['id'] ?? null) : $row;
-            if (!$id || !ctype_digit((string)$id)) Classification::error('sale_notes_relateds', 'Identifique las notas de venta de origen.');
+            $id = IntegerTransport::positiveKey(is_array($row) ? ($row['id'] ?? null) : $row);
+            if ($id === null) Classification::error('sale_notes_relateds', 'Identifique las notas de venta de origen.');
             $ids[] = $id;
         }
         $paymentIds = [];
         foreach ($input['payments'] ?? [] as $row) {
             $id = $row['source_sale_note_payment_id'] ?? (!empty($row['sale_note_id']) ? ($row['id'] ?? null) : null);
-            if ($id !== null) $paymentIds[] = $id;
+            if ($id === null) continue;
+            $paymentId = IntegerTransport::positiveKey($id);
+            if ($paymentId === null) Classification::error('source_sale_note_payment_id', 'Identifique el cobro de la nota de venta de origen.');
+            $paymentIds[] = $paymentId;
         }
         // Lock every owner mentioned by a receipt first, including invalid inputs,
         // so QuotationReceiptsRequired and ConvertedReceipt use the same order.

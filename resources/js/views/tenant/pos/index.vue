@@ -280,10 +280,10 @@
                     <div :key="index">
                         <section
                             class="card product-item"
-                            :class="{ 'pos-m-in-cart': cartQty(item) > 0 }"
+                            :class="{ 'pos-m-in-cart': cartHasQuantity(item) }"
                         >
                             <div
-                                v-if="cartQty(item) > 0"
+                                v-if="cartHasQuantity(item)"
                                 class="pos-m-card-qty"
                                 :class="{
                                     'is-busy': card_busy_id === item.item_id,
@@ -410,7 +410,8 @@
                                         <el-input
                                             min="0"
                                             inputmode="decimal"
-                                            v-model="item.edit_sale_unit_price"
+                                            :value="form.document_type_id === '01' ? (item.invoice_unit_price_draft === null ? item.sale_unit_price : item.invoice_unit_price_draft) : item.edit_sale_unit_price"
+                                            @input="updateUnitPriceDraft(item, $event)"
                                             class="pos-price-edit__input"
                                             size="mini"
                                             @focus="valueInputSelect"
@@ -996,21 +997,21 @@
                 </div>
 
                 <div class="pos-cart__totals">
-                    <div v-if="form.total_exonerated > 0" class="pos-cart__total-row">
+                    <div v-if="cartSummaryValue('total_exonerated').compare(0) > 0" class="pos-cart__total-row">
                         <span>Op. exoneradas</span>
-                        <span>{{ currency_type.symbol }} {{ money(form.total_exonerated) }}</span>
+                        <span>{{ currency_type.symbol }} {{ cartSummaryMoney('total_exonerated') }}</span>
                     </div>
 
 
-                    <div v-if="form.total_taxed > 0 && !isNrus" class="pos-cart__total-row">
+                    <div v-if="cartSummaryValue('total_taxed').compare(0) > 0" class="pos-cart__total-row">
                         <span>Op. gravada</span>
-                        <span>{{ currency_type.symbol }} {{ money(form.total_taxed) }}</span>
+                        <span>{{ currency_type.symbol }} {{ cartSummaryMoney('total_taxed') }}</span>
                     </div>
-                    <div v-if="form.total_igv > 0 && !isNrus" class="pos-cart__total-row">
+                    <div v-if="cartSummaryValue('total_igv').compare(0) > 0" class="pos-cart__total-row">
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
                         <span>IVA</span>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
-                        <span>{{ currency_type.symbol }} {{ money(form.total_igv) }}</span>
+                        <span>{{ currency_type.symbol }} {{ cartSummaryMoney('total_igv') }}</span>
                     </div>
 
                     <!-- ########## INICIO SIN DETRACCIONES E ISC -->
@@ -1018,7 +1019,7 @@
 
                     <div class="pos-cart__total-row pos-cart__total-row--grand">
                         <span>TOTAL</span>
-                        <span>{{ currency_type.symbol }} {{ money(form.total) }}</span>
+                        <span>{{ currency_type.symbol }} {{ cartSummaryMoney('total') }}</span>
                     </div>
 
                 </div>
@@ -1033,7 +1034,7 @@
                 >
                     <span class="pos-cart__pay-label">PAGAR</span>
                     <span class="pos-cart__pay-amount">
-                        {{ currency_type.symbol }} {{ money(form.total) }}
+                        {{ currency_type.symbol }} {{ cartSummaryMoney('total') }}
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
                 </button>
@@ -1452,15 +1453,17 @@
 }
 </style>
 <script>
+import {selectPosCatalogPrice, selectPosOriginalPrice, commitPosManualPrice, posInvoiceQuantityError, samePosId} from "../../../helpers/pos-invoice-line"
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {documentTotals} from "../../../helpers/exact-document"
 import {isValidPosRate, restorePosDraftRate, refreshPosRate, ensurePosRate} from "../../../helpers/pos-exchange-rate"
-import {exactAmount, exactInput} from "../../../helpers/exchange-rate-math"
+import {exactAmount, exactInput, exactValue, exactSum} from "../../../helpers/exchange-rate-math"
 
 import Keypress from "vue-keypress";
 import posLocalQuantity from "../../../mixins/pos-local-quantity"
 import posCartAdditions from "../../../mixins/pos-cart-additions"
 import { calculateRowItem } from "../../../helpers/functions";
+import { applyPosScalePrices } from "../../../helpers/pos-scale-prices";
 import PaymentForm from "./partials/payment.vue";
 import ItemForm from "./partials/form.vue";
 import { functions, exchangeRate } from "../../../mixins/functions";
@@ -1617,6 +1620,14 @@ export default {
         await this.enabledSearchItemByBarcode();
         await this.restoreViewPreference();
     },
+    watch: {
+        'form.document_type_id'(type, previous) {
+            if (!type || !previous || !this.posCatalogReload) return;
+            this.all_items = [];
+            this.items = [];
+            this.reloadDataItems();
+        },
+    },
     computed: {
         posRateUnavailable() {
             return !isValidPosRate(this.form.exchange_rate_sale);
@@ -1640,12 +1651,12 @@ export default {
         // No se puede cobrar sin cliente: el botón queda inhabilitado hasta
         // que se seleccione uno
         canPay() {
-            return !this.posBarcodePending && this.form.total > 0 && !!this.form.customer_id;
+            if (this.posBarcodePending || !this.form.customer_id) return false;
+            return this.form.document_type_id === '01'
+                ? exactValue(this.form, 'total').compare(0) > 0
+                : this.form.total > 0;
         },
         ...mapState(["config"]),
-        isNrus: function() {
-            return !!(this.config && this.config.is_nrus);
-        },
         canSeeHistoryPurchase: function() {
             if (this.typeUser !== "admin") {
                 return this.configuration.pos_history;
@@ -1982,6 +1993,7 @@ export default {
                 this.initDateTimeIssue();
                 if (isValidPosRate(this.form.exchange_rate_sale)) {
                     this.exchangeRateError = "";
+                    if (applyPosScalePrices(this.form, this.percentage_igv)) this.calculateTotal();
                 } else {
                     this.changeExchangeRate();
                 }
@@ -2022,62 +2034,48 @@ export default {
             this.setLocalStorageIndex("customer", null);
         },
         clickOpenInputEditUP(index) {
-            this.items[index].edit_unit_price = true;
+            const item = this.items[index];
+            if (this.form.document_type_id === '01') {
+                // A null draft displays the current quote until the operator enters a value.
+                this.$set(item, 'invoice_unit_price_draft', null);
+            }
+            item.edit_unit_price = true;
+        },
+        updateUnitPriceDraft(item, value) {
+            if (this.form.document_type_id === '01') {
+                item.invoice_unit_price_draft = value;
+            } else {
+                item.edit_sale_unit_price = value;
+            }
         },
         clickEditUnitPriceItem(index) {
-            // console.log(index)
-            let item_search = this.items[index];
-            let edit_sale_unit_price = this.items[
-                index
-            ].edit_sale_unit_price;
-            let product = this.items[index];
-
-            if (this.config.condition_sale_purchase_price_to_item) {
-
-                if (edit_sale_unit_price < product.purchase_unit_price) {
-                    return this.$message.error(
-                        "El Precio Unitario debe ser mayor o igual al costo de compra"
-                    );
-                }
-
-
+            const item = this.items[index];
+            const draft = this.form.document_type_id === '01' ? item.invoice_unit_price_draft : item.edit_sale_unit_price;
+            if (draft === null && this.form.document_type_id === '01') {
+                item.edit_unit_price = false;
+                return;
             }
-
-            this.items[index].sale_unit_price = this.items[
-                    index
-                ].edit_sale_unit_price;
-            this.items[index].edit_unit_price = false;
-            // console.log(item_search)
+            let entered;
+            try { entered=exactInput(String(draft)); }
+            catch (_) { return this.$message.error("Indique un precio válido con hasta doce decimales."); }
+            if (this.config.condition_sale_purchase_price_to_item && exactAmount(entered).compare(exactValue(item,'purchase_unit_price')) < 0) {
+                return this.$message.error("El Precio Unitario debe ser mayor o igual al costo de compra");
+            }
+            commitPosManualPrice(item,entered);
         },
         clickCancelUnitPriceItem(index) {
             // console.log(index)
             this.items[index].edit_unit_price = false;
         },
         setPriceItem(price, index) {
-
-            const item = this.items[index];
-            if (item && item.item_unit_types && Array.isArray(item.item_unit_types)) {
-                item.item_unit_types.forEach(iut => {
-                    if (iut && iut.prices && Array.isArray(iut.prices)) {
-                        iut.prices.forEach(p => {
-                            if (p && p.selected) {
-                                this.$set(p, 'selected', false);
-                            }
-                        });
-                    }
-                });
-            }
-
-            if (price) {
-                this.$set(price, 'selected', true);
-            }
-
-            this.items[index].sale_unit_price = price.price;
-            this.items[index].unit_type_id = price.unit_type_id;
-            this.items[index].presentation = price
-            // se marca la fila para que ChangeSelectedPrice no pise el precio elegido a mano
-            this.$set(this.items[index], 'manual_price_selected', true);
-            this.ChangeSelectedPrice()
+            const item=this.items[index];
+            if (!item || !price) return;
+            try { selectPosCatalogPrice(item,price); }
+            catch (error) { return this.$message.error(error.message); }
+            (item.item_unit_types || []).forEach(unit=>(unit.prices || []).forEach(option=>{
+                if (option.selected) this.$set(option,'selected',false);
+            }));
+            this.$set(price,'selected',true);
             this.$message.success("Precio seleccionado");
         },
         clickWarehouseDetail(item) {
@@ -2404,6 +2402,7 @@ export default {
 
             ;
 
+            if (applyPosScalePrices(this.form, this.percentage_igv)) this.calculateTotal();
             this.setLocalStorageIndex("customer", this.customer);
             this.setFormPosLocalStorage();
         },
@@ -2614,9 +2613,15 @@ export default {
             });
 
             let unit_type_notAllowed = ['SERV', 'UND'];
+            const isInvoice = this.form.document_type_id === '01'
+            let invoiceQuantityError
             let errorZeroQuantity = false
             let errorFloatQuantity = false
             let existError = this.form.items.some(item => {
+                if (isInvoice) {
+                    invoiceQuantityError = posInvoiceQuantityError(item)
+                    return Boolean(invoiceQuantityError)
+                }
                 if (Number(item.quantity) == 0) {
                     errorZeroQuantity = true
                     return true;
@@ -2629,6 +2634,7 @@ export default {
             });
 
             if(existError) {
+                if (isInvoice) return this.$message.error(invoiceQuantityError)
                 if (errorZeroQuantity) {
                     this.$message.error('Los productos deben tener cantidades mayor a 0');
                 }
@@ -2663,10 +2669,14 @@ export default {
             this.setFormPosLocalStorage();
         },
         getQuantityFromElectronicScale(reading) {
-            return _.round(reading.weight, 4);
+            return exactAmount(`${reading.integer_weight}.${reading.decimal_weight}`);
         },
-        getUnitPriceFromElectronicScale(reading) {
-            return _.round(reading.total / reading.weight, 6);
+        getUnitPriceFromElectronicScale(reading, quantity) {
+            const total = exactAmount(`${reading.integer_total}.${reading.decimal_total}`);
+            return {
+                invoice: total.dividedBy(quantity).fraction(),
+                saleNote: exactAmount(_.round(reading.total / reading.weight, 6)).fraction(),
+            };
         },
         clickAddItem(item, index, input = false, scaleReading) {
             if (!ensurePosRate(this)) return;
@@ -2682,9 +2692,9 @@ export default {
             const reading = scaleReading === undefined && this.changeValuesElectronicScale
                 ? this.electronic_scale_data : scaleReading;
             if (reading) {
-                const quantity = String(this.getQuantityFromElectronicScale(reading));
-                const scalePrice = this.getUnitPriceFromElectronicScale(reading);
-                return this.addPosItem(item, { quantity, scalePrice, onAdded: () => {
+                const weight = this.getQuantityFromElectronicScale(reading);
+                const scalePrices = this.getUnitPriceFromElectronicScale(reading, weight);
+                return this.addPosItem(item, { quantity: weight.decimal(), scalePrices, onAdded: () => {
                     if (this.electronic_scale_data === reading) this.initElectronicScaleData();
                 } });
             }
@@ -2692,27 +2702,31 @@ export default {
         },
         // Cantidad total del producto en el carrito (suma todas sus filas)
         cartQty(item) {
-            let total = 0;
-            for (const row of this.form.items) {
-                if (row.item_id === item.item_id) {
-                    total += parseFloat(row.quantity) || 0;
-                }
-            }
-            return total;
+            return exactSum(this.form.items.filter(row => samePosId(row.item_id, item.item_id))
+                .map(row => exactValue(row, 'quantity')));
+        },
+        cartHasQuantity(item) {
+            const quantity = this.cartQty(item);
+            return this.form.document_type_id === '01' ? quantity.compare(0) > 0 : quantity.decimal() > 0;
         },
         cartQtyLabel(item) {
-            return _.round(this.cartQty(item), 2);
+            const quantity = this.cartQty(item);
+            const displayed = quantity.decimal();
+            if (this.form.document_type_id === '01' && displayed === '0' && quantity.compare(0) > 0) {
+                return '<0.000000000001';
+            }
+            return displayed;
         },
         // Quita una unidad desde la tarjeta del producto; al llegar a 1
         // elimina la fila del carrito
         async decrementCardItem(item) {
             const index = this.form.items.findIndex(
-                r => r.item_id === item.item_id
+                r => samePosId(r.item_id,item.item_id)
             );
             if (index < 0) return;
 
             const row = this.form.items[index];
-            if (parseFloat(row.item.aux_quantity) <= 1) {
+            if (exactValue(row,'quantity').compare(1) <= 0) {
                 return await this.clickDeleteItem(row, index);
             }
             await this.changeCartQuantity(row, index, -1);
@@ -2751,7 +2765,7 @@ export default {
 
             if (index < 0) {
                 index = this.form.items.findIndex(
-                    row => row.item_id === item.item_id
+                    row => samePosId(row.item_id,item.item_id)
                 );
             }
 
@@ -2765,32 +2779,35 @@ export default {
          * Formatea un importe para mostrarlo siempre con 2 decimales.
          */
         money(value) {
-            let amount = parseFloat(value);
-            if (isNaN(amount)) amount = 0;
-            return amount.toFixed(2);
+            try { return exactAmount(value).final(2); } catch (_) { return '0.00'; }
+        },
+        cartSummaryValue(field) {
+            try {
+                return this.form.document_type_id === '01' ? exactValue(this.form, field) : exactAmount(this.form[field] ?? 0);
+            } catch (_) {
+                return exactAmount(0);
+            }
+        },
+        cartSummaryMoney(field) {
+            if (this.form.document_type_id === '01') return this.money(this.cartSummaryValue(field));
+            const amount = parseFloat(this.form[field]);
+            return (isNaN(amount) ? 0 : amount).toFixed(2);
         },
         /**
          * Precio unitario (con IGV) de una fila del carrito.
          */
         rowUnitPrice(row) {
-            let unit_price = parseFloat(row.unit_price);
-
-            if (isNaN(unit_price)) {
-                const total = parseFloat(row.total);
-                const quantity = parseFloat(row.quantity);
-                unit_price =
-                    !isNaN(total) && !isNaN(quantity) && quantity > 0
-                        ? total / quantity
-                        : 0;
-            }
-
-            return _.round(unit_price, 2).toFixed(2);
+            try {
+                if (row.calculation_snapshot?.values?.unit_price != null || row.unit_price != null) return exactValue(row,'unit_price').final(2);
+                const quantity=exactValue(row,'quantity');
+                return quantity.compare(0)>0 ? exactValue(row,'total').dividedBy(quantity).final(2) : '0.00';
+            } catch (_) { return '0.00'; }
         },
         /**
          * Importe de una fila del carrito (modo solo lectura).
          */
         rowTotal(row) {
-            return this.money(row.total);
+            try { return exactValue(row,'total').final(2); } catch (_) { return '0.00'; }
         },
         /**
          * Aumenta/disminuye en una unidad la cantidad de una fila del carrito.
@@ -2802,13 +2819,19 @@ export default {
             // ######## INICIO CALCULOS EXACTOS SAB ########
             let quantity;
             try {
-                quantity = exactAmount(exactInput(String(item.item.aux_quantity))).plus(delta);
+                const current = this.form.document_type_id === '01'
+                    ? exactValue(item, 'quantity')
+                    : exactAmount(exactInput(String(item.item.aux_quantity)));
+                quantity = current.plus(delta);
             } catch (_) {
                 return this.$message.error("Indique una cantidad válida.");
             }
             if (quantity.compare(1) < 0) {
                 if (delta < 0) return;
                 quantity = exactAmount(1);
+            }
+            if (this.form.document_type_id === '01') {
+                return this.adjustLocalPosInvoiceQuantity(item, index, quantity);
             }
             try {
                 item.item.aux_quantity = exactInput(quantity.decimal());
@@ -3010,7 +3033,7 @@ export default {
                 }`
             );
 
-            if (isNaN(this.electronic_scale_data.weight))
+            if (!/^\d{5}$/.test(this.electronic_scale_data.parse_weight) || this.electronic_scale_data.weight <= 0)
                 return this.getResponseValidate(
                     false,
                     "El peso no cumple con el formato establecido, no se pudo obtener un valor numérico correcto."
@@ -3031,7 +3054,7 @@ export default {
                 }`
             );
 
-            if (isNaN(this.electronic_scale_data.total))
+            if (!/^\d{6}$/.test(this.electronic_scale_data.parse_total))
                 return this.getResponseValidate(
                     false,
                     "El total no cumple con el formato establecido, no se pudo obtener un valor numérico correcto."
@@ -3232,7 +3255,10 @@ export default {
                 });
         },
         reloadDataItems(item_id) {
-            this.$http.get(`/${this.resource}/table/items`).then(response => {
+            const type = this.form.document_type_id;
+            const reload = this.posCatalogReload = {};
+            return this.$http.get(`/${this.resource}/table/items`, { params: { document_type_id: type } }).then(response => {
+                if (this.posCatalogReload !== reload || type !== this.form.document_type_id) return;
                 this.all_items = response.data;
                 this.fixItems();
                 this.filterItems();
@@ -3350,83 +3376,20 @@ export default {
             });
         },
         async ChangeSelectedPrice() {
-            // recorrer items
-
-            this.items.forEach(row => {
-                    // precio elegido manualmente en la fila: la lista de precios no lo sobrescribe
-                    if (row.manual_price_selected) return;
-
-                    if(row.item_unit_types && row.item_unit_types.length > 0) {
-                        let first_list = row.item_unit_types[0];
-                        let original_price = parseFloat(row.sale_unit_price);
-
-                        // Extraer price_label_id del selectedOptionPrice
-                        let priceLabelId = null;
-                        if(typeof this.selected_option_price === 'string' && this.selected_option_price.startsWith('price_label_')) {
-                            priceLabelId = parseInt(this.selected_option_price.replace('price_label_', ''));
-                        }
-
-                        if (!row.affected_list_price) { // funcion candado, para colocar el valor original ya que sale_unit_price se ve modificado al cambiar la lista de precios
-                            row.original_sale_unit_price = original_price;
-                        }
-
-                        // Buscar y asignar el precio correspondiente usando 'id'
-                        if(priceLabelId && first_list.prices && first_list.prices.length > 0) {
-
-                            const priceObj = first_list.prices.find(p => p.price_label_id == priceLabelId);
-
-                            if(priceObj && Number(priceObj.price) > 0) {
-                                row.sale_unit_price = parseFloat(priceObj.price);
-                                row.affected_list_price = true;
-                            } else {
-                                row.sale_unit_price = row.original_sale_unit_price
-                            }
-
-                            // Si no se encuentra o es 0, mantener el sale_unit_price original
-                        } else {
-                            row.sale_unit_price = row.original_sale_unit_price
-                        }
-                    }
-
+            this.items.forEach(row=>{
+                if (row.manual_price_selected || !row.item_unit_types?.length) return;
+                const presentation=row.item_unit_types[0];
+                const id=typeof this.selected_option_price==='string' && this.selected_option_price.startsWith('price_label_')
+                    ? this.selected_option_price.slice('price_label_'.length) : null;
+                const quote=id ? presentation.prices?.find(price=>String(price.price_label_id)===id) : null;
+                if (quote && exactAmount(quote.price).compare(0)>0) selectPosCatalogPrice(row,quote,presentation,false);
+                else selectPosOriginalPrice(row);
             });
         },
-            itemSetSaleUnitPrice(row)
-            {
-                // precio elegido manualmente en la fila: se muestra y se usa tal cual
-                if (row && row.manual_price_selected) {
-                    return row.unit_price_value = parseFloat(row.sale_unit_price).toFixed(2);
-                }
-
-                if(!this.configuration.enable_list_product && this.selected_option_price !== 1) {
-                    if(Array.isArray( row.item_unit_types) &&  row.item_unit_types.length) {
-                        let first_list = row.item_unit_types[0];
-
-                        // Extraer price_label_id del selectedOptionPrice (formato: "price_label_2")
-                        let priceLabelId = null;
-                        if(typeof this.selected_option_price === 'string' && this.selected_option_price.startsWith('price_label_')) {
-                            priceLabelId = parseInt(this.selected_option_price.replace('price_label_', ''));
-                        }
-
-                        // Buscar el precio correspondiente en el array prices usando 'id'
-                        if(priceLabelId && first_list.prices && first_list.prices.length > 0) {
-                            const priceObj = first_list.prices.find(p => p.price_label_id === priceLabelId);
-
-                            if(priceObj) {
-                                return row.unit_price_value = parseFloat(priceObj.price).toFixed(2);
-                            } else {
-                                return row.unit_price_value = parseFloat(row.sale_unit_price).toFixed(2);
-                            }
-                        }
-
-                        // Fallback: usar unit_price_value por defecto
-                        return row.unit_price_value = parseFloat(row.sale_unit_price).toFixed(2);
-                    } else {
-                        return row.unit_price_value = parseFloat(row.sale_unit_price).toFixed(2);
-                    }
-                }
-
-                return row.original_sale_unit_price ? row.original_sale_unit_price.toFixed(2) : parseFloat(row.sale_unit_price).toFixed(2);
-            },
+        selectedItemPrice(row) { return String(row.sale_unit_price); },
+        itemSetSaleUnitPrice(row) {
+            return exactAmount(this.selectedItemPrice(row)).final(2);
+        },
         }
 };
 </script>

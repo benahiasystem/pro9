@@ -132,6 +132,8 @@ import Debtors from '../views/partials/Debtors.vue'
 import MonthGoal from '../views/partials/MonthGoal.vue'
 import LowStock from '../views/partials/LowStock.vue'
 import { GRID_GAP, GRID_ROW_HEIGHT, formatValue, recFor, salesTitleForPeriod, themeColors, themePalette, typeById, typesForSource } from './registry'
+import { readOriginal, readVector, compareOriginal, originalDatasetAvailable } from '../../../../../../resources/js/helpers/dashboard-originals'
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
 
 // Componentes custom aportados por fuentes del propio módulo Dashboard.
 // Fuentes de otros módulos registran los suyos vía registerCustomComponent.
@@ -182,13 +184,14 @@ export default {
       return this.widget.type === 'kpi' || this.widget.type === 'kpi_spark'
     },
     hasError() {
-      return !!(this.dataset && this.dataset.error)
+      return !!(this.dataset && (this.dataset.error || !originalDatasetAvailable(this.dataset)))
     },
     hasData() {
       const d = this.dataset
-      if (!d || d.error) return false
-      const serieHas = (d.series || []).some(s => (s.data || []).some(v => Number(v) !== 0))
-      const breakdownHas = (d.breakdown && d.breakdown.values || []).some(v => Number(v) !== 0)
+      if (!d || this.hasError) return false
+      const nonzero = value => value !== null && compareOriginal(value, '0') !== 0
+      const serieHas = (d.series || []).some(s => readVector(s, 'data_fractions').some(nonzero))
+      const breakdownHas = readVector(d.breakdown, 'values_fractions').some(nonzero)
       return serieHas || breakdownHas
     },
     isCircular() {
@@ -216,7 +219,7 @@ export default {
       if (!d || d.error) return []
       const palette = themePalette()
       const labels = d.breakdown.labels || []
-      const values = d.breakdown.values || []
+      const values = readVector(d.breakdown, 'values_fractions')
 
       const items = labels.slice(0, 6).map((label, i) => ({
         label,
@@ -224,10 +227,11 @@ export default {
         color: palette[i % palette.length],
       }))
 
-      if (d.totals.current !== null && d.totals.current !== undefined && d.unit !== 'percent') {
+      const total = readOriginal(d.totals, 'current')
+      if (total !== null && d.unit !== 'percent') {
         items.push({
           label: 'Total',
-          valueStr: formatValue(d.totals.current, d.unit),
+          valueStr: formatValue(total, d.unit),
           color: themeColors().success,
         })
       }
@@ -272,6 +276,7 @@ export default {
     },
   },
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 <style scoped>
 .wg-cell {

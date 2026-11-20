@@ -4,6 +4,7 @@ namespace App\Services\Fiscal;
 
 use App\Models\Tenant\{Document, DocumentReceivedRetention};
 use App\Services\ExchangeRates\ExchangeRateMath;
+use App\Support\Exact\Decimal;
 
 /** Applies a received voucher to an existing invoice; this never emits document type 05. */
 final class HkaIvaRetentionPayload
@@ -17,17 +18,18 @@ final class HkaIvaRetentionPayload
         }
         $currency = $id['moneda'] ?? null;
         if (!in_array($currency, ['VES', 'USD'], true)) FiscalAmounts::error('currency_type_id', 'Falta la moneda fiscal conservada en HKA.');
-        $money = static function ($amount) use ($retention, $document, $currency): string {
+        $money = static function (string $field) use ($retention, $currency): string {
             // Voucher money and settlement money are independent. VES -> VES stays exact,
             // even when the invoice is USD and the collection rate differs from its issue rate.
-            return ExchangeRateMath::finalAmount(FiscalAmounts::convert($amount, $retention->currency_type_id, $currency, $retention->exchange_rate));
+            $amount = Decimal::convert($retention->exactValue($field), $retention->currency_type_id, $currency, $retention->exchange_rate);
+            return ExchangeRateMath::finalAmount($amount);
         };
         return ['serie' => $id['serie'] ?? '', 'tipoDocumento' => '01',
             'numeroDocumento' => (string) $id['numeroDocumento'], 'numeroControl' => $document->control_number,
             'totalRetencion' => ['numeroCompRetencion' => $retention->voucher_number,
                 'fechaEmisionCR' => $retention->voucher_date->format('d/m/Y'),
-                'totalBaseImponible' => $money($retention->taxable_base),
-                'totalIVA' => $money($retention->base), 'totalRetenido' => $money($retention->amount)]];
+                'totalBaseImponible' => $money('taxable_base'),
+                'totalIVA' => $money('base'), 'totalRetenido' => $money('amount')]];
     }
 
     public static function identity(array $payload): array

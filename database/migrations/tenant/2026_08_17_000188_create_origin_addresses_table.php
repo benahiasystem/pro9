@@ -1,48 +1,44 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `origin_addresses` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `address` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `location_id` json NOT NULL
- * - `is_default` tinyint(1) NOT NULL DEFAULT '0'
- * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
- * - `country_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'VE'
- * - `establishment_id` int(11) DEFAULT NULL
- * - `establishment_code` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '0000'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - address: varchar(255)
+ * - location_id: json
+ * - is_default: boolean
+ * - is_active: boolean
+ * - country_id: char(2)
+ * - establishment_id: bigint
+ * - establishment_code: varchar(4)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `origin_addresses` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `address` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `location_id` json NOT NULL,
-  `is_default` tinyint(1) NOT NULL DEFAULT '0',
-  `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `country_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'VE',
-  `establishment_id` int(11) DEFAULT NULL,
-  `establishment_code` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '0000',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `origin_addresses_country_id_foreign` (`country_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('origin_addresses', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('address', 255)->collation('pro9_ci_ai');
+            $table->json('location_id');
+            $table->boolean('is_default')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->char('country_id', 2)->collation('pro9_ci_ai')->default('VE');
+            $table->bigInteger('establishment_id')->nullable();
+            $table->string('establishment_code', 4)->collation('pro9_ci_ai')->default('0000');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['country_id'], 'origin_addresses_country_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `origin_addresses`');
+        Schema::dropIfExists('origin_addresses');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

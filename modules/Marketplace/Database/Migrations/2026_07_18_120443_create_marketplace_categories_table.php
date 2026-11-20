@@ -10,7 +10,7 @@ return new class extends Migration
     {
         // Taxonomía plana, un solo nivel. Se construye sola con lo que envían
         // las apps: el slug es la llave natural y el admin no crea nada.
-        Schema::connection('system')->create('marketplace_categories', function (Blueprint $table) {
+        Schema::create('marketplace_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name', 120);
             $table->string('slug', 140)->unique();
@@ -23,6 +23,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::connection('system')->dropIfExists('marketplace_categories');
+        Schema::dropIfExists('marketplace_categories');
     }
 };

@@ -1,35 +1,33 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `cat_transfer_reason_types` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL, código funcional y clave primaria
- * - `active` tinyint(1) NOT NULL
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `discount_stock` tinyint(1) DEFAULT '0'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: varchar(2)
+ * - active: boolean
+ * - description: varchar(255)
+ * - discount_stock: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_transfer_reason_types` (
-  `id` varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `active` tinyint(1) NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `discount_stock` tinyint(1) DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_transfer_reason_types', function (Blueprint $table) {
+            $table->string('id', 2)->collation('pro9_ci_ai');
+            $table->boolean('active');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->boolean('discount_stock')->nullable()->default(false);
+            $table->primary(['id']);
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_transfer_reason_types`');
+        Schema::dropIfExists('cat_transfer_reason_types');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -199,8 +199,8 @@ trait ReportIntegrationAssertions
             $this->fail('No se puede generar otro formato con datos sustituidos.');
         } catch (ApiProblem $error) { $this->assertSame('REPORT_SNAPSHOT_CHANGED', $error->errorCode); }
         try {
-            DB::table('accounting_report_jobs')->where('id', $job->id)->update(['row_count' => 0]);
-            $this->fail('La evidencia lista es inmutable en MySQL.');
+            DB::transaction(fn() => DB::table('accounting_report_jobs')->where('id', $job->id)->update(['row_count' => 0]));
+            $this->fail('La evidencia lista es inmutable en PostgreSQL.');
         } catch (\Illuminate\Database\QueryException $error) { $this->assertStringContainsString('Informe congelado inmutable', $error->getMessage()); }
         app(CompanyContext::class)->set($this->b);
         $this->assertNull(ReportJob::find($job->id));

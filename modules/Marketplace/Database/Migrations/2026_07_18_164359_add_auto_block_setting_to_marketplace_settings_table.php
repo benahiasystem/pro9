@@ -14,7 +14,7 @@ return new class extends Migration
      */
     public function up()
     {
-        DB::connection('system')->table('marketplace_settings')->updateOrInsert(
+        DB::connection()->table('marketplace_settings')->updateOrInsert(
             ['key' => 'auto_block_reports'],
             ['value' => '100', 'type' => 'int']
         );
@@ -22,7 +22,7 @@ return new class extends Migration
 
     public function down()
     {
-        DB::connection('system')->table('marketplace_settings')
+        DB::connection()->table('marketplace_settings')
             ->where('key', 'auto_block_reports')
             ->delete();
     }

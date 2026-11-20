@@ -1,0 +1,100 @@
+[
+  {
+    "file": "app/Models/Tenant/DocumentNoteRefund.php",
+    "class": "App\\Models\\Tenant\\DocumentNoteRefund",
+    "column": "exchange_rate",
+    "source_sha256": "d4cb3ca6aab3a2ea52a92b2fd6ae860503bd8b079806e19f0563f9e1771db920",
+    "table": "document_note_refunds"
+  },
+  {
+    "file": "app/Models/Tenant/ExchangeRate.php",
+    "class": "App\\Models\\Tenant\\ExchangeRate",
+    "column": "purchase",
+    "source_sha256": "5d23393db3b248b7de8dea0b8f7223a6ecfd249af5f318a1038d49a92987930b",
+    "table": "exchange_rates"
+  },
+  {
+    "file": "app/Models/Tenant/ExchangeRate.php",
+    "class": "App\\Models\\Tenant\\ExchangeRate",
+    "column": "purchase_original",
+    "source_sha256": "5d23393db3b248b7de8dea0b8f7223a6ecfd249af5f318a1038d49a92987930b",
+    "table": "exchange_rates"
+  },
+  {
+    "file": "app/Models/Tenant/ExchangeRate.php",
+    "class": "App\\Models\\Tenant\\ExchangeRate",
+    "column": "sale",
+    "source_sha256": "5d23393db3b248b7de8dea0b8f7223a6ecfd249af5f318a1038d49a92987930b",
+    "table": "exchange_rates"
+  },
+  {
+    "file": "app/Models/Tenant/ExchangeRate.php",
+    "class": "App\\Models\\Tenant\\ExchangeRate",
+    "column": "sale_original",
+    "source_sha256": "5d23393db3b248b7de8dea0b8f7223a6ecfd249af5f318a1038d49a92987930b",
+    "table": "exchange_rates"
+  },
+  {
+    "file": "app/Models/Tenant/SaleNote.php",
+    "class": "App\\Models\\Tenant\\SaleNote",
+    "column": "exchange_rate_sale",
+    "source_sha256": "978639315062dbf5ce38e362f2d3d46aede1405e9908fc8a518438899c97f0b6",
+    "table": "sale_notes"
+  },
+  {
+    "file": "modules/Expense/Models/BankLoan.php",
+    "class": "Modules\\Expense\\Models\\BankLoan",
+    "column": "exchange_rate_sale",
+    "source_sha256": "cd7a0af06eb3543287bb9526d9ae360c2f69bd7be6da0f62787d6ed6a1707a9b",
+    "table": "bank_loans"
+  },
+  {
+    "file": "modules/Expense/Models/Expense.php",
+    "class": "Modules\\Expense\\Models\\Expense",
+    "column": "exchange_rate_sale",
+    "source_sha256": "072b2d08384deac7fc21b5d6069403f0c98e3d19917a0187da4cc4f19fc5e581",
+    "table": "expenses"
+  },
+  {
+    "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
+    "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
+    "column": "exchange_rate_sale",
+    "source_sha256": "16ef97ee5f364dc2fd35359d1eab1a027ec909a99a96eda4d253e091c12c6029",
+    "table": "suscription_plans"
+  },
+  {
+    "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
+    "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+    "column": "exchange_rate_sale",
+    "source_sha256": "a21af44cef08da401f0a70bcfb82bf7b71f11e3c34e5bc0080193ce2233f7dac",
+    "table": "user_rel_suscription_plans"
+  },
+  {
+    "file": "modules/Order/Models/OrderNote.php",
+    "class": "Modules\\Order\\Models\\OrderNote",
+    "column": "exchange_rate_sale",
+    "source_sha256": "16812812668acc699c5d2e673847a16ae6e03c606df81ef6fec89f53ba6aa56e",
+    "table": "order_notes"
+  },
+  {
+    "file": "modules/Sale/Models/TechnicalService.php",
+    "class": "Modules\\Sale\\Models\\TechnicalService",
+    "column": "exchange_rate_sale",
+    "source_sha256": "464b5e0ab5b6161af4d91359cb2a0910828edabe57a438d320477d23950be8ba",
+    "table": "technical_services"
+  },
+  {
+    "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
+    "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
+    "column": "exchange_rate_sale",
+    "source_sha256": "c593e6005ebaf3a6f35b5f01ba89e73cd828d6e8c28c29f1537be3a950738e02",
+    "table": "suscription_plans"
+  },
+  {
+    "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
+    "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
+    "column": "exchange_rate_sale",
+    "source_sha256": "ada308962537ff57b6feaa7db42d98d858f0619106608434856bbe2ce7b6d0f7",
+    "table": "user_rel_suscription_plans"
+  }
+]

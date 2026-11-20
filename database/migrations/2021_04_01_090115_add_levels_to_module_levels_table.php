@@ -87,7 +87,8 @@ class AddLevelsToModuleLevelsTable extends Migration
 		];
 
 		ModuleLevel::query()->insert($data);
-	}
+	    \App\Database\SequenceSynchronizer::sync(\Illuminate\Support\Facades\DB::connection());
+    }
 
 	/**
 	 * Reverse the migrations.

@@ -1,50 +1,47 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `authorized_discount_users` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `user_id` int(10) unsigned NOT NULL
- * - `seller_id` int(10) unsigned DEFAULT NULL
- * - `date` date NOT NULL
- * - `time` time NOT NULL
- * - `token` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `active` tinyint(1) NOT NULL DEFAULT '1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - user_id: bigint
+ * - seller_id: bigint
+ * - date: date
+ * - time: time
+ * - token: varchar(255)
+ * - active: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `authorized_discount_users` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `seller_id` int(10) unsigned DEFAULT NULL,
-  `date` date NOT NULL,
-  `time` time NOT NULL,
-  `token` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT '1',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `authorized_discount_users_token_unique` (`token`),
-  KEY `authorized_discount_users_user_id_foreign` (`user_id`),
-  KEY `authorized_discount_users_seller_id_foreign` (`seller_id`),
-  KEY `authorized_discount_users_date_index` (`date`),
-  KEY `authorized_discount_users_active_index` (`active`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('authorized_discount_users', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id');
+            $table->bigInteger('seller_id')->nullable();
+            $table->date('date');
+            $table->time('time');
+            $table->string('token', 255)->collation('C');
+            $table->boolean('active')->default(true);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['token'], 'authorized_discount_users_token_unique');
+            $table->index(['user_id'], 'authorized_discount_users_user_id_foreign');
+            $table->index(['seller_id'], 'authorized_discount_users_seller_id_foreign');
+            $table->index(['date'], 'authorized_discount_users_date_index');
+            $table->index(['active'], 'authorized_discount_users_active_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `authorized_discount_users`');
+        Schema::dropIfExists('authorized_discount_users');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

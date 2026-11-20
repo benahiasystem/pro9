@@ -25,10 +25,19 @@ for(const file of files) test(`${file} requires a destination by classification,
  const rows=[{payment_method_type_id:'09',payment_destination_id:null}, {payment_method_type_id:'05',payment_destination_id:null}]
  const methodsList=[{id:'09',collection_kind:'account',is_credit:false},{id:'05',collection_kind:'credit',is_credit:true}]
  const ctx={form:{payments:rows},document:{payments:rows},payment_method_types:methodsList,payment_condition:'02',isCreditPaymentCondition:true}
+ if(file.endsWith('invoice_generate.vue')) {
+  const {invoicePaymentsForCondition}=require('./support/exact-runtime.cjs')('document-creation')
+  Object.defineProperty(ctx,'activeInvoicePayments',{get:()=>invoicePaymentsForCondition(ctx.form)})
+ }
  assert.equal(validate.call(ctx).error_by_item,1)
  rows[0].payment_destination_id=2
  assert.equal(validate.call(ctx).error_by_item,0)
  rows[0].payment_destination_id=null; rows[0].id=7
  assert.equal(validate.call(ctx).error_by_item,0)
+ if(file.endsWith('invoice_generate.vue')) {
+  ctx.form.payment_condition_id='02'
+  assert.equal(ctx.activeInvoicePayments[0],rows[0])
+  assert.equal(validate.call(ctx).error_by_item,0)
+ }
  assert.deepEqual(compiler.compile(source.template.content).errors,[])
 })

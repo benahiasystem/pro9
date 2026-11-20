@@ -2,19 +2,19 @@
 
 namespace Modules\Marketplace\Models;
 
-use Hyn\Tenancy\Traits\UsesSystemConnection;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\System\ModelSystem;
 use Modules\Marketplace\Scopes\PublishedScope;
 
-class Item extends Model
+class Item extends ModelSystem
 {
-    use UsesSystemConnection;
 
     public const STATUS_ACTIVE = 'active';
     public const STATUS_INACTIVE = 'inactive';
     public const STATUS_BLOCKED = 'blocked';
 
     protected $table = 'marketplace_items';
+
+    protected $hidden = ['calculation_snapshot'];
 
     protected $fillable = [
         'store_id',
@@ -40,7 +40,7 @@ class Item extends Model
     protected $casts = [
         'store_id' => 'integer',
         'category_id' => 'integer',
-        'price' => 'decimal:2',
+        'price' => 'string',
         'reports_count' => 'integer',
         'recommendations_count' => 'integer',
         'blocked_at' => 'datetime',

@@ -1,39 +1,38 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `accounting_ledger_task` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `month` smallint(5) unsigned DEFAULT '0' COMMENT 'Numero de mes'
- * - `year` mediumint(8) unsigned DEFAULT '0' COMMENT 'Numero de mes'
- * - `last_rum` datetime DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - month: integer
+ * - year: bigint
+ * - last_rum: timestamp
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `accounting_ledger_task` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `month` smallint(5) unsigned DEFAULT '0' COMMENT 'Numero de mes',
-  `year` mediumint(8) unsigned DEFAULT '0' COMMENT 'Numero de mes',
-  `last_rum` datetime DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('accounting_ledger_task', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->integer('month')->nullable()->default('0')->comment('Numero de mes');
+            $table->bigInteger('year')->nullable()->default('0')->comment('Numero de mes');
+            $table->timestamp('last_rum')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "accounting_ledger_task" ADD CONSTRAINT "accounting_ledger_task_month_range" CHECK ("month" BETWEEN 0 AND 65535)');
+        DB::statement('ALTER TABLE "accounting_ledger_task" ADD CONSTRAINT "accounting_ledger_task_year_range" CHECK ("year" BETWEEN 0 AND 16777215)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `accounting_ledger_task`');
+        Schema::dropIfExists('accounting_ledger_task');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -15,14 +15,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::connection('system')->table('marketplace_stores', function (Blueprint $table) {
+        Schema::table('marketplace_stores', function (Blueprint $table) {
             $table->boolean('show_prices')->default(false)->after('address');
         });
     }
 
     public function down()
     {
-        Schema::connection('system')->table('marketplace_stores', function (Blueprint $table) {
+        Schema::table('marketplace_stores', function (Blueprint $table) {
             $table->dropColumn('show_prices');
         });
     }

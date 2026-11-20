@@ -1,154 +1,153 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `purchases` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `user_id` int(10) unsigned NOT NULL
- * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `establishment_id` int(10) unsigned NOT NULL
- * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `group_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `series` char(4) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `number` int(11) NOT NULL
- * - `date_of_issue` date NOT NULL
- * - `date_of_due` date DEFAULT NULL
- * - `time_of_issue` time NOT NULL
- * - `supplier_id` int(10) unsigned NOT NULL
- * - `supplier` json NOT NULL
- * - `purchase_order_id` int(10) unsigned DEFAULT NULL
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `payment_condition_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `observation` text COLLATE utf8mb4_unicode_ci
- * - `exchange_rate_sale` decimal(18,8) NOT NULL
- * - `total_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_free` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_unaffected` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_value` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_payable` decimal(30,12) DEFAULT NULL
- * - `settlement_adjustment` decimal(30,12) NOT NULL DEFAULT 0
- * - `total` decimal(30,12) NOT NULL
- * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `total_canceled` tinyint(1) NOT NULL DEFAULT '0'
- * - `customer_id` int(10) unsigned DEFAULT NULL
- * - `perception_date` date DEFAULT NULL
- * - `perception_number` int(11) DEFAULT NULL
- * - `total_perception` decimal(30,12) DEFAULT NULL
- * - `charges` json DEFAULT NULL
- * - `discounts` json DEFAULT NULL
- * - `prepayments` json DEFAULT NULL
- * - `guides` json DEFAULT NULL
- * - `related` json DEFAULT NULL
- * - `perception` json DEFAULT NULL
- * - `legends` json DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `deleted_at` timestamp NULL DEFAULT NULL
- * - `period` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `date_registration` datetime DEFAULT NULL
- * - `related_invoice_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `related_invoice_serie` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `affectation` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - user_id: bigint
+ * - external_id: char(36)
+ * - establishment_id: bigint
+ * - fiscal_environment: varchar(16)
+ * - state_type_id: char(2)
+ * - group_id: char(2)
+ * - document_type_id: varchar(255)
+ * - series: char(4)
+ * - number: integer
+ * - date_of_issue: date
+ * - date_of_due: date
+ * - time_of_issue: time
+ * - supplier_id: bigint
+ * - supplier: json
+ * - purchase_order_id: bigint
+ * - currency_type_id: varchar(255)
+ * - payment_condition_id: varchar(255)
+ * - observation: text
+ * - exchange_rate_sale: numeric(18,8)
+ * - total_prepayment: numeric(30,12)
+ * - total_charge: numeric(30,12)
+ * - total_discount: numeric(30,12)
+ * - total_exportation: numeric(30,12)
+ * - total_free: numeric(30,12)
+ * - total_taxed: numeric(30,12)
+ * - total_unaffected: numeric(30,12)
+ * - total_exonerated: numeric(30,12)
+ * - total_igv: numeric(30,12)
+ * - total_base_other_taxes: numeric(30,12)
+ * - total_other_taxes: numeric(30,12)
+ * - total_taxes: numeric(30,12)
+ * - total_value: numeric(30,12)
+ * - total: numeric(30,12)
+ * - filename: varchar(255)
+ * - total_canceled: boolean
+ * - customer_id: bigint
+ * - perception_date: date
+ * - perception_number: integer
+ * - total_perception: numeric(30,12)
+ * - charges: json
+ * - discounts: json
+ * - prepayments: json
+ * - guides: json
+ * - related: json
+ * - perception: json
+ * - legends: json
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - deleted_at: timestamp
+ * - period: varchar(255)
+ * - date_registration: timestamp
+ * - related_invoice_number: varchar(255)
+ * - related_invoice_serie: varchar(255)
+ * - affectation: varchar(255)
+ * - calculation_snapshot: json
+ * - total_payable: numeric(30,12)
+ * - settlement_adjustment: numeric(30,12)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `purchases` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `establishment_id` int(10) unsigned NOT NULL,
-  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `group_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `series` char(4) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `number` int(11) NOT NULL,
-  `date_of_issue` date NOT NULL,
-  `date_of_due` date DEFAULT NULL,
-  `time_of_issue` time NOT NULL,
-  `supplier_id` int(10) unsigned NOT NULL,
-  `supplier` json NOT NULL,
-  `purchase_order_id` int(10) unsigned DEFAULT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `payment_condition_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `observation` text COLLATE utf8mb4_unicode_ci,
-  `exchange_rate_sale` decimal(18,8) NOT NULL,
-  `total_prepayment` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_charge` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_discount` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_free` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_unaffected` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_base_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_other_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_value` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total` decimal(30,12) NOT NULL,
-  `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `total_canceled` tinyint(1) NOT NULL DEFAULT '0',
-  `customer_id` int(10) unsigned DEFAULT NULL,
-  `perception_date` date DEFAULT NULL,
-  `perception_number` int(11) DEFAULT NULL,
-  `total_perception` decimal(30,12) DEFAULT NULL,
-  `charges` json DEFAULT NULL,
-  `discounts` json DEFAULT NULL,
-  `prepayments` json DEFAULT NULL,
-  `guides` json DEFAULT NULL,
-  `related` json DEFAULT NULL,
-  `perception` json DEFAULT NULL,
-  `legends` json DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `deleted_at` timestamp NULL DEFAULT NULL,
-  `period` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `date_registration` datetime DEFAULT NULL,
-  `related_invoice_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `related_invoice_serie` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `affectation` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  `total_payable` decimal(30,12) DEFAULT NULL,
-  `settlement_adjustment` decimal(30,12) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `purchases_user_id_foreign` (`user_id`),
-  KEY `purchases_establishment_id_foreign` (`establishment_id`),
-  KEY `purchases_supplier_id_foreign` (`supplier_id`),
-  KEY `purchases_fiscal_environment_foreign` (`fiscal_environment`),
-  KEY `purchases_state_type_id_foreign` (`state_type_id`),
-  KEY `purchases_group_id_foreign` (`group_id`),
-  KEY `purchases_document_type_id_foreign` (`document_type_id`),
-  KEY `purchases_currency_type_id_foreign` (`currency_type_id`),
-  KEY `purchases_purchase_order_id_foreign` (`purchase_order_id`),
-  KEY `purchases_customer_id_foreign` (`customer_id`),
-  KEY `purchases_payment_condition_id_foreign` (`payment_condition_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('purchases', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id');
+            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->bigInteger('establishment_id');
+            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
+            $table->char('state_type_id', 2)->collation('pro9_ci_ai');
+            $table->char('group_id', 2)->collation('pro9_ci_ai');
+            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
+            $table->char('series', 4)->collation('pro9_ci_ai');
+            $table->integer('number');
+            $table->date('date_of_issue');
+            $table->date('date_of_due')->nullable();
+            $table->time('time_of_issue');
+            $table->bigInteger('supplier_id');
+            $table->json('supplier');
+            $table->bigInteger('purchase_order_id')->nullable();
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('payment_condition_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->text('observation')->collation('pro9_ci_ai')->nullable();
+            $table->decimal('exchange_rate_sale', 18, 8);
+            $table->decimal('total_prepayment', 30, 12)->default('0.00');
+            $table->decimal('total_charge', 30, 12)->default('0.00');
+            $table->decimal('total_discount', 30, 12)->default('0.00');
+            $table->decimal('total_exportation', 30, 12)->default('0.00');
+            $table->decimal('total_free', 30, 12)->default('0.00');
+            $table->decimal('total_taxed', 30, 12)->default('0.00');
+            $table->decimal('total_unaffected', 30, 12)->default('0.00');
+            $table->decimal('total_exonerated', 30, 12)->default('0.00');
+            $table->decimal('total_igv', 30, 12)->default('0.00');
+            $table->decimal('total_base_other_taxes', 30, 12)->default('0.00');
+            $table->decimal('total_other_taxes', 30, 12)->default('0.00');
+            $table->decimal('total_taxes', 30, 12)->default('0.00');
+            $table->decimal('total_value', 30, 12)->default('0.00');
+            $table->decimal('total', 30, 12);
+            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->boolean('total_canceled')->default(false);
+            $table->bigInteger('customer_id')->nullable();
+            $table->date('perception_date')->nullable();
+            $table->integer('perception_number')->nullable();
+            $table->decimal('total_perception', 30, 12)->nullable();
+            $table->json('charges')->nullable();
+            $table->json('discounts')->nullable();
+            $table->json('prepayments')->nullable();
+            $table->json('guides')->nullable();
+            $table->json('related')->nullable();
+            $table->json('perception')->nullable();
+            $table->json('legends')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->string('period', 255)->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('date_registration')->nullable();
+            $table->string('related_invoice_number', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('related_invoice_serie', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('affectation', 255)->collation('pro9_ci_ai')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->decimal('total_payable', 30, 12)->nullable();
+            $table->decimal('settlement_adjustment', 30, 12)->default('0');
+            $table->index(['user_id'], 'purchases_user_id_foreign');
+            $table->index(['establishment_id'], 'purchases_establishment_id_foreign');
+            $table->index(['supplier_id'], 'purchases_supplier_id_foreign');
+            $table->index(['fiscal_environment'], 'purchases_fiscal_environment_foreign');
+            $table->index(['state_type_id'], 'purchases_state_type_id_foreign');
+            $table->index(['group_id'], 'purchases_group_id_foreign');
+            $table->index(['document_type_id'], 'purchases_document_type_id_foreign');
+            $table->index(['currency_type_id'], 'purchases_currency_type_id_foreign');
+            $table->index(['purchase_order_id'], 'purchases_purchase_order_id_foreign');
+            $table->index(['customer_id'], 'purchases_customer_id_foreign');
+            $table->index(['payment_condition_id'], 'purchases_payment_condition_id_foreign');
+        });
+        DB::statement('ALTER TABLE "purchases" ADD CONSTRAINT "purchases_number_range" CHECK ("number" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "purchases" ADD CONSTRAINT "purchases_perception_number_range" CHECK ("perception_number" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `purchases`');
+        Schema::dropIfExists('purchases');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

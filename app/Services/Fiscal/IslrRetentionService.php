@@ -70,7 +70,7 @@ final class IslrRetentionService extends ReceivedRetentionService
         $issuer = FiscalProfileService::at(Company::firstOrFail(),$date);
         $buyer = FiscalProfileService::at(Person::whereType('customers')->findOrFail($customerId),$date);
         $decision = SpecialTaxpayerPolicy::retention($issuer,$buyer,$date,[]);
-        $eligible = $decision['islr_eligible'] && D::of($amount)->isGreaterThan(0) && D::of($base)->isGreaterThan(0);
+        $eligible = $decision['islr_eligible'] && $retained->isPositive() && $baseExact->isPositive();
         return ['eligible'=>$eligible,'concept_id'=>$concept['id'],'concept'=>$concept,'base'=>$base,'base_mode'=>$mode,
             'percentage'=>$percentage,'subtrahend'=>$subtrahend,'voucher_amount'=>$amount,
             'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['base'=>$baseExact,'voucher_amount'=>$retained,'amount'=>\App\Support\Exact\Decimal::convert($retained,$data['currency_type_id'],$documentCurrency,$rate)]),

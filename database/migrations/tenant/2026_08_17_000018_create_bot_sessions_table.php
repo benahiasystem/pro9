@@ -1,44 +1,42 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `bot_sessions` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `customer_phone` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `state` enum('idle','active','awaiting_confirm','paused','closed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'idle'
- * - `context_json` json DEFAULT NULL
- * - `pending_document_json` json DEFAULT NULL
- * - `last_activity_at` timestamp NULL DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - customer_phone: varchar(30)
+ * - state: varchar(255)
+ * - context_json: json
+ * - pending_document_json: json
+ * - last_activity_at: timestamp
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `bot_sessions` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `customer_phone` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `state` enum('idle','active','awaiting_confirm','paused','closed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'idle',
-  `context_json` json DEFAULT NULL,
-  `pending_document_json` json DEFAULT NULL,
-  `last_activity_at` timestamp NULL DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `bot_sessions_customer_phone_index` (`customer_phone`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('bot_sessions', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('customer_phone', 30)->collation('pro9_ci_ai');
+            $table->string('state', 255)->collation('pro9_ci_ai')->default('idle');
+            $table->json('context_json')->nullable();
+            $table->json('pending_document_json')->nullable();
+            $table->timestamp('last_activity_at')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['customer_phone'], 'bot_sessions_customer_phone_index');
+        });
+        DB::statement('ALTER TABLE "bot_sessions" ADD CONSTRAINT "bot_sessions_state_check" CHECK ("state" IN (\'idle\',\'active\',\'awaiting_confirm\',\'paused\',\'closed\'))');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `bot_sessions`');
+        Schema::dropIfExists('bot_sessions');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

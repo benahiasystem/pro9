@@ -153,6 +153,10 @@ use Modules\LevelAccess\Models\AuthorizedDiscountUser;
  */
 class User extends Authenticatable
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     use Notifiable;
     use UsesTenantConnection;
 

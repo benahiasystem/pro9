@@ -1,40 +1,37 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `dispatch_addresses` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `person_id` int(10) unsigned NOT NULL
- * - `address` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `location_id` json NOT NULL
- * - `establishment_code` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '0000'
- * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - person_id: bigint
+ * - address: varchar(255)
+ * - location_id: json
+ * - establishment_code: varchar(4)
+ * - is_active: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `dispatch_addresses` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `person_id` int(10) unsigned NOT NULL,
-  `address` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `location_id` json NOT NULL,
-  `establishment_code` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '0000',
-  `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `dispatch_address_unique` (`person_id`,`address`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('dispatch_addresses', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('person_id');
+            $table->string('address', 255)->collation('pro9_ci_ai');
+            $table->json('location_id');
+            $table->string('establishment_code', 4)->collation('pro9_ci_ai')->default('0000');
+            $table->boolean('is_active')->default(true);
+            $table->unique(['person_id', 'address'], 'dispatch_address_unique');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `dispatch_addresses`');
+        Schema::dropIfExists('dispatch_addresses');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

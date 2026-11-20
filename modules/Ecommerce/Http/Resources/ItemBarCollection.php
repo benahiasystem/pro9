@@ -3,7 +3,9 @@
 namespace Modules\Ecommerce\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
-use App\Http\Controllers\Tenant\Api\ServiceController;
+use App\Models\Tenant\ConfigurationEcommerce;
+use App\Support\Exact\Decimal as D;
+use Modules\Ecommerce\Services\CampaignPriceService;
 use Illuminate\Support\Str;
 
 class ItemBarCollection extends ResourceCollection
@@ -17,26 +19,16 @@ class ItemBarCollection extends ResourceCollection
     public function toArray($request)
     {
 
-        $exchange_rate_sale = $this->getExchangeRateSale();
-
-        return $this->collection->transform(function($row, $key) use($exchange_rate_sale){
-
-            $has_igv_description = null;
-            $affectation_igv_types_exonerated_unaffected = ['20','21','30','31','32','33','34','35','36','37'];
-
-            if(in_array($row->sale_affectation_igv_type_id, $affectation_igv_types_exonerated_unaffected)) {
-
-                $has_igv_description = 'No';
-
-            }else{
-
-                $has_igv_description = ((bool) $row->has_igv) ? 'Si':'No';
-
-            }
-
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $showPrices = ConfigurationEcommerce::storefrontShowsPrices();
+        $pricingService = app(CampaignPriceService::class);
+        return $this->collection->transform(function($row, $key) use($showPrices, $pricingService){
             // ########## INICIO CAMBIO AFECTACIÓN IVA
-            $sale_unit_price = ($row->has_igv) ? $row->sale_unit_price : $row->sale_unit_price * \App\Support\Venezuela\Localization::taxMultiplier();
+            $has_igv_description = $row->sale_affectation_igv_type_id === '20' ? 'No'
+                : ($row->sale_affectation_igv_type_id === '10' ? ((bool)$row->has_igv ? 'Si' : 'No') : null);
             // ######### FIN CAMBIO AFECTACIÓN IVA
+            $pricing = $showPrices ? $pricingService->forItem($row) : null;
+            $sale_unit_price = $pricing['final_price'] ?? null;
 
             return [
                 'id' => $row->id,
@@ -54,24 +46,30 @@ class ItemBarCollection extends ResourceCollection
                 'internal_id' => $row->internal_id,
                 'item_code' => $row->item_code,
                 'item_code_gs1' => $row->item_code_gs1,
-                'stock' => $row->getStockByWarehouse(),
+                'stock' => D::represent($row->getStockByWarehouseMain()),
                 'stock_min' => $row->stock_min,
                 'currency_type_id' => $row->currency_type_id,
                 'currency_type_symbol' => $row->currency_type->symbol,
                 'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
                 'amount_sale_unit_price' => $sale_unit_price,
+                'original_price' => $pricing['base_price'] ?? null,
+                'compare_at_price' => $pricing['compare_at_price'] ?? null,
+                'discount_campaign_id' => $pricing['discount_campaign_id'] ?? null,
+                'discount_campaign_name' => $pricing['discount_campaign_name'] ?? null,
+                'campaign_discount_percent' => $pricing['real_discount_percentage'] ?? null,
+                'campaign_discount_embedded' => $pricing['has_real_discount'] ?? false,
+                'campaign_pricing_snapshot' => $pricing['calculation_snapshot'] ?? null,
                 'calculate_quantity' => (bool) $row->calculate_quantity,
                 'has_igv' => (bool) $row->has_igv,
                 'has_igv_description' => $has_igv_description,
                 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
-                'sale_unit_price' => sprintf(
+                'sale_unit_price' => $showPrices ? sprintf(
                     '%s %s',
                     $row->currency_type->symbol ?? \App\Support\Venezuela\Localization::currencySymbol($row->currency_type_id),
-                    round($sale_unit_price, 2)
-                ),
+                    D::format(D::readRequired($pricing,'final_price'))
+                ) : null,
                 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
                 // 'sale_unit_price' => "{$row->currency_type->symbol} {$row->sale_unit_price}",
-                'purchase_unit_price' => "{$row->currency_type->symbol} {$row->purchase_unit_price}",
                 'created_at' => ($row->created_at) ? $row->created_at->format('Y-m-d H:i:s') : '',
                 'updated_at' => ($row->created_at) ? $row->updated_at->format('Y-m-d H:i:s') : '',
                 'warehouses' => collect($row->warehouses)->transform(function($row) {
@@ -91,19 +89,8 @@ class ItemBarCollection extends ResourceCollection
 
             ];
         });
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
 
-    private function getExchangeRateSale()
-    {
-        try {
-            $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
-
-            return (is_array($exchange_rate) && array_key_exists('sale', $exchange_rate) && $exchange_rate['sale'])
-                ? $exchange_rate['sale']
-                : 1;
-        } catch (\Throwable $e) {
-            return 1;
-        }
-    }
 }

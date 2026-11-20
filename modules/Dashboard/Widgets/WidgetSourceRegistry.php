@@ -9,6 +9,7 @@ namespace Modules\Dashboard\Widgets;
  *
  *     app(WidgetSourceRegistry::class)->register($miFuente);
  */
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
 class WidgetSourceRegistry
 {
     /** @var WidgetSource[] indexadas por key */
@@ -85,30 +86,26 @@ class WidgetSourceRegistry
      */
     public function resolveBatch(array $requests, array $filters)
     {
-        $context = new WidgetContext($filters);
-        $results = [];
-
-        foreach ($requests as $request) {
-            $sourceKey = $request['source'] ?? null;
-            $resultKey = (string) ($request['key'] ?? $sourceKey ?? '');
-            $options = (array) ($request['options'] ?? []);
-            $source = $sourceKey ? $this->get($sourceKey) : null;
-
-            if (!$source || !$source->visible()) {
-                $results[$resultKey] = ['error' => 'source_not_found'];
-                continue;
+        $connection=(new \App\Models\Tenant\Document)->getConnection();
+        return \App\Support\Exact\ReadSnapshot::run($connection,function () use ($requests,$filters,$connection) {
+            $context=new WidgetContext($filters);$results=[];
+            foreach ($requests as $request) {
+                $sourceKey=$request['source'] ?? null;$resultKey=(string)($request['key'] ?? $sourceKey ?? '');
+                $options=(array)($request['options'] ?? []);
+                try {
+                    // A failed SQL statement must roll back its savepoint before the next source reads.
+                    $results[$resultKey]=$connection->transaction(function () use ($sourceKey,$context,$options) {
+                        $source=$sourceKey ? $this->get($sourceKey) : null;
+                        if (!$source || !$source->visible()) return ['error'=>'source_not_found'];
+                        $dataset=$source->resolve($context,$options);
+                        return $dataset instanceof WidgetDataset ? $dataset->toArray() : $dataset;
+                    });
+                } catch (\Throwable $error) {
+                    report($error);$results[$resultKey]=['error'=>'resolve_failed'];
+                }
             }
-
-            try {
-                $dataset = $source->resolve($context, $options);
-                $results[$resultKey] = $dataset instanceof WidgetDataset ? $dataset->toArray() : $dataset;
-            } catch (\Throwable $e) {
-                report($e);
-                $results[$resultKey] = ['error' => 'resolve_failed'];
-            }
-        }
-
-        return $results;
+            return $results;
+        });
     }
 
     private function loadDefaults()
@@ -128,3 +125,4 @@ class WidgetSourceRegistry
         }
     }
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########

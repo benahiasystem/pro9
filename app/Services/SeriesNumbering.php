@@ -61,9 +61,6 @@ final class SeriesNumbering
         if (($series->dedicated && (!$group || (int) $series->series_device_group_id !== $group)) || (!$series->dedicated && $group)) {
             throw ValidationException::withMessages(['series' => 'La serie no está autorizada para el grupo de este equipo.']);
         }
-        if ($resolver->isNrus() && !in_array($type, SeriesCodeGenerator::nrusDocumentTypeIds(), true)) {
-            throw ValidationException::withMessages(['series' => 'La serie no está disponible para esta empresa.']);
-        }
         return $series;
     }
 

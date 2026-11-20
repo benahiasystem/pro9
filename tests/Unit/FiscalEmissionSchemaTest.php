@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Facade;
 use PHPUnit\Framework\TestCase;
 
 // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+/** @group postgres-integration */
 class FiscalEmissionSchemaTest extends TestCase
 {
     use \Tests\Support\DispatchPersistenceCases;
@@ -25,29 +26,49 @@ class FiscalEmissionSchemaTest extends TestCase
     use \Tests\Support\IslrRetentionPersistenceCases;
     use \Tests\Support\HkaAutoSendPersistenceCases;
     use \Tests\Support\PaymentClassificationPersistenceCases;
+    private function invoiceTestCurrencies(): array
+    {
+        return getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1' ? ['VES'] : ['VES', 'USD'];
+    }
+
+    private static ?\WeakMap $globalInventoryDispatchers=null;
     private $previousContainer;
     private $previousFacade;
     private $capsule;
     private $database;
     private $previousResolver;
     private $previousDispatcher;
+    private array $previousFrameworkState=[];
 
     protected function setUp(): void
     {
-        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') {
-            $this->markTestSkipped('Active SAB_FISCAL_MYSQL_TESTS=1 para usar una base MySQL temporal aislada.');
+        if (getenv('PRO9_POSTGRES_TESTS') !== '1') {
+            $this->markTestSkipped('Active PRO9_POSTGRES_TESTS=1 para usar una base PostgreSQL temporal aislada.');
         }
         $this->previousContainer = Container::getInstance();
         $this->previousFacade = Facade::getFacadeApplication();
         $this->previousResolver = \Illuminate\Database\Eloquent\Model::getConnectionResolver();
         $this->previousDispatcher = \Illuminate\Database\Eloquent\Model::getEventDispatcher();
         \Illuminate\Database\Eloquent\Model::clearBootedModels();
+        // Rendering tests may have cached a reduced table definition for the same model.
+        $guardableColumns = new \ReflectionProperty(\Illuminate\Database\Eloquent\Model::class, 'guardableColumns');
+        $guardableColumns->setAccessible(true);
+        $this->previousFrameworkState[] = [$guardableColumns, $guardableColumns->getValue()];
+        $guardableColumns->setValue(null, []);
         $root = dirname(__DIR__, 2);
         $app = new Application($root);
         Container::setInstance($app);
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication($app);
         $app->instance('request', \Illuminate\Http\Request::create('http://fiscal-schema.example.test'));
+        foreach ([\Illuminate\Pagination\Paginator::class=>['viewFactoryResolver','currentPathResolver','currentPageResolver','queryStringResolver'],
+            \Illuminate\Pagination\CursorPaginator::class=>['currentCursorResolver']] as $class=>$properties) {
+            foreach ($properties as $property) {
+                $reflection=new \ReflectionProperty($class,$property);$reflection->setAccessible(true);
+                $this->previousFrameworkState[]=[$reflection,$reflection->getValue()];
+            }
+        }
+        \Illuminate\Pagination\PaginationState::resolveUsing($app);
         $guard = $this->createMock(\Illuminate\Contracts\Auth\Guard::class);
         $guard->method('check')->willReturn(false);
         $auth = $this->createMock(\Illuminate\Contracts\Auth\Factory::class);
@@ -57,6 +78,7 @@ class FiscalEmissionSchemaTest extends TestCase
             class_alias(\Illuminate\Support\Facades\DB::class, 'DB');
         }
         $app->instance('config', new Repository([
+            'app' => ['locale' => 'es', 'fallback_locale' => 'es', 'timezone' => 'America/Caracas'],
             'fiscal_emission' => require $root . '/config/fiscal_emission.php',
             'venezuela' => require $root . '/config/venezuela.php',
         ]));
@@ -64,20 +86,12 @@ class FiscalEmissionSchemaTest extends TestCase
             new \Illuminate\Translation\Translator(new \Illuminate\Translation\ArrayLoader(), 'es'),
             $app
         ));
-        $environment = is_file($root . '/.env') ? \Dotenv\Dotenv::parse(file_get_contents($root . '/.env')) : [];
-        $connection = [
-            'driver' => 'mysql',
-            'host' => getenv('DB_HOST') ?: ($environment['DB_HOST'] ?? '127.0.0.1'),
-            'port' => getenv('DB_PORT') ?: ($environment['DB_PORT'] ?? 3306),
-            'username' => $environment['DB_USERNAME'] ?? 'root',
-            'password' => $environment['DB_PASSWORD'] ?? '',
-            'database' => 'information_schema',
-            'charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'prefix' => '',
-        ];
+        $connection = \Tests\Support\PostgresTestEnvironment::connection();
         $this->capsule = new Manager($app);
         $this->capsule->addConnection($connection, 'control');
-        $this->database = 'sab_fiscal_test_' . bin2hex(random_bytes(6));
-        $this->capsule->getConnection('control')->statement('CREATE DATABASE `' . $this->database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        \Tests\Support\PostgresTestEnvironment::assertServer($this->capsule->getConnection('control'));
+        $this->database = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
+        $this->capsule->getConnection('control')->statement('CREATE DATABASE "' . $this->database . '" TEMPLATE template0');
         \Tests\Support\FiscalTemporaryDatabases::register($this->database, $this->capsule->getConnection('control')->getPdo());
         $connection['database'] = $this->database;
         config(['filesystems.disks.tenant' => ['driver' => 'local', 'root' => sys_get_temp_dir().'/'.$this->database]]);
@@ -102,38 +116,54 @@ class FiscalEmissionSchemaTest extends TestCase
     protected function tearDown(): void
     {
         try {
-            if ($this->database && preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/', $this->database)) {
+            if ($this->database && preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/', $this->database)) {
                 $tenant = $this->capsule->getConnection('tenant');
                 while ($tenant->transactionLevel() > 0) $tenant->rollBack();
-                $this->capsule->getConnection('control')->statement('DROP DATABASE `' . $this->database . '`');
+                $this->capsule->getConnection('control')->statement('DROP DATABASE "' . $this->database . '" WITH (FORCE)');
                 \Tests\Support\FiscalTemporaryDatabases::forget($this->database);
                 (new \Illuminate\Filesystem\Filesystem())->deleteDirectory(sys_get_temp_dir().'/'.$this->database);
             }
         } finally {
-            if ($this->capsule) {
-                foreach ($this->capsule->getDatabaseManager()->getConnections() as $connection) $connection->disconnect();
+            try {
+                foreach ($this->previousFrameworkState as [$property,$value]) $property->setValue(null,$value);
+                if ($this->capsule) {
+                    foreach ($this->capsule->getDatabaseManager()->getConnections() as $connection) $connection->disconnect();
+                }
+                if ($this->previousContainer) {
+                \Illuminate\Database\Eloquent\Model::clearBootedModels();
+                if ($this->previousDispatcher) \Illuminate\Database\Eloquent\Model::setEventDispatcher($this->previousDispatcher);
+                else \Illuminate\Database\Eloquent\Model::unsetEventDispatcher();
+                if ($this->previousResolver) {
+                    \Illuminate\Database\Eloquent\Model::setConnectionResolver($this->previousResolver);
+                } else {
+                    \Illuminate\Database\Eloquent\Model::unsetConnectionResolver();
+                }
+                Facade::clearResolvedInstances();
+                Facade::setFacadeApplication($this->previousFacade);
+                Container::setInstance($this->previousContainer);
+                }
+                parent::tearDown();
+            } finally {
+                // PHPUnit retains completed test objects; release their owned application graph.
+                $this->capsule=null;
+                $this->previousContainer=null;
+                $this->previousFacade=null;
+                $this->previousResolver=null;
+                $this->previousDispatcher=null;
+                $this->previousFrameworkState=[];
+                unset($tenant,$connection);
+                gc_collect_cycles();
             }
-            if ($this->previousContainer) {
-            \Illuminate\Database\Eloquent\Model::clearBootedModels();
-            if ($this->previousDispatcher) \Illuminate\Database\Eloquent\Model::setEventDispatcher($this->previousDispatcher);
-            else \Illuminate\Database\Eloquent\Model::unsetEventDispatcher();
-            if ($this->previousResolver) {
-                \Illuminate\Database\Eloquent\Model::setConnectionResolver($this->previousResolver);
-            } else {
-                \Illuminate\Database\Eloquent\Model::unsetConnectionResolver();
-            }
-            Facade::clearResolvedInstances();
-            Facade::setFacadeApplication($this->previousFacade);
-            Container::setInstance($this->previousContainer);
-            }
-            parent::tearDown();
         }
     }
 
-    private function migrations(string $pattern): array
+    private function migrations(string ...$patterns): array
     {
-        $paths = glob(database_path($pattern));
-        sort($paths, SORT_STRING);
+        \App\Database\PostgresBootstrap::install($this->capsule->getConnection());
+        $paths = [];
+        foreach ($patterns as $pattern) $paths = array_merge($paths, glob(database_path($pattern)));
+        $paths = array_values(array_unique($paths));
+        usort($paths, static fn ($left,$right) => strcmp(basename($left),basename($right)));
         return array_map(function ($path) {
             if (preg_match('/class\s+(\w+)\s+extends\s+\w+/',file_get_contents($path),$class)) {
                 if (!class_exists($class[1],false)) require $path;
@@ -147,60 +177,170 @@ class FiscalEmissionSchemaTest extends TestCase
     {
         $start = microtime(true);
         $db = $this->capsule->getConnection('tenant');
-        if (getenv('SAB_FISCAL_SNAPSHOT') !== '0' && \Tests\Support\FiscalFixtureSnapshot::restore($db)) {
-            if (getenv('SAB_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture restaurado: %.3f s\n", microtime(true) - $start));
+        if (getenv('PRO9_FISCAL_SNAPSHOT') !== '0' && \Tests\Support\FiscalFixtureSnapshot::restore($db)) {
+            if (getenv('PRO9_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture restaurado: %.3f s\n", microtime(true) - $start));
             return;
         }
         foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
         $migrated = microtime(true);
         (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
         $seeded = microtime(true);
-        if (getenv('SAB_FISCAL_SNAPSHOT') !== '0') \Tests\Support\FiscalFixtureSnapshot::capture($db);
-        if (getenv('SAB_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture migraciones %.3f s; semillas %.3f s; captura %.3f s\n", $migrated - $start, $seeded - $migrated, microtime(true) - $seeded));
+        if (getenv('PRO9_FISCAL_SNAPSHOT') !== '0') \Tests\Support\FiscalFixtureSnapshot::capture($db);
+        if (getenv('PRO9_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture migraciones %.3f s; semillas %.3f s; captura %.3f s\n", $migrated - $start, $seeded - $migrated, microtime(true) - $seeded));
     }
 
     public function test_fiscal_fixture_snapshot_preserves_schema_seed_data_and_database_isolation(): void
     {
-        if (getenv('SAB_FISCAL_SNAPSHOT') === '0') $this->markTestSkipped('La restauración del fixture está deshabilitada.');
+        if (getenv('PRO9_FISCAL_SNAPSHOT') === '0') $this->markTestSkipped('La restauración del fixture está deshabilitada.');
         $this->prepareFiscalFixtureSchema();
         $source = $this->capsule->getConnection('tenant');
-        $other = 'sab_fiscal_test_' . bin2hex(random_bytes(6));
+        $other = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
         $control = $this->capsule->getConnection('control');
-        $control->statement('CREATE DATABASE `' . $other . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        $control->statement('CREATE DATABASE "' . $other . '" TEMPLATE template0');
         \Tests\Support\FiscalTemporaryDatabases::register($other, $control->getPdo());
         try {
             $config = $source->getConfig();
             $config['database'] = $other;
             $this->capsule->addConnection($config, 'fiscal_snapshot_check');
             $target = $this->capsule->getConnection('fiscal_snapshot_check');
-            self::assertTrue(\Tests\Support\FiscalFixtureSnapshot::restore($target));
-            self::assertSame($this->schemaSnapshot($source), $this->schemaSnapshot($target));
-            self::assertSame($this->seedSnapshot($source, false), $this->seedSnapshot($target, false));
+            self::assertTrue(\Tests\Support\FiscalFixtureSnapshot::restore($target, true));
+            $targetSchema=$this->schemaSnapshot($target);
+            foreach ($this->schemaSnapshot($source) as $table => $definition) {
+                self::assertSame(hash('sha256',json_encode($definition)), hash('sha256',json_encode($targetSchema[$table])), 'Esquema restaurado: '.$table);
+            }
+            $sourceRows=$this->seedSnapshot($source,false);$targetRows=$this->seedSnapshot($target,false);
+            foreach ($sourceRows as $table=>$rows) self::assertSame(hash('sha256',json_encode($rows)),hash('sha256',json_encode($targetRows[$table])), 'Datos restaurados: '.$table);
             $target->table('payment_method_types')->where('id', '01')->update(['description' => 'Sólo en la copia']);
             self::assertNotSame('Sólo en la copia', $source->table('payment_method_types')->where('id', '01')->value('description'));
             try {
                 $target->table('payment_method_types')->where('id', '01')->update(['currency_type_id' => 'invalid']);
                 self::fail('La copia debe conservar sus claves foráneas.');
             } catch (\Illuminate\Database\QueryException $error) {
-                self::assertSame('23000', $error->getCode());
+                self::assertSame('23503', $error->getCode());
             }
         } finally {
             $this->capsule->getDatabaseManager()->purge('fiscal_snapshot_check');
-            $control->statement('DROP DATABASE `' . $other . '`');
+            $control->statement('DROP DATABASE "' . $other . '" WITH (FORCE)');
             \Tests\Support\FiscalTemporaryDatabases::forget($other);
         }
     }
 
+    public function test_postgresql_schema_preserves_all_columns_nullability_defaults_and_identity_contracts(): void
+    {
+        $this->prepareFiscalFixtureSchema();$db=$this->capsule->getConnection('tenant');
+        $directory=base_path('informes/evidencias/postgresql_17_implementacion');
+        $contract=json_decode(file_get_contents($directory.'/esquema.json'),true,512,JSON_THROW_ON_ERROR);
+        $reference=json_decode(file_get_contents($directory.'/referencia_mysql_temporal.json'),true,512,JSON_THROW_ON_ERROR);
+        $source=[];foreach ($reference['columns'] as $column) $source[$column['TABLE_NAME']][$column['COLUMN_NAME']]=$column;
+        // The original 4,380-column MySQL capture is immutable. These are the
+        // explicitly reviewed additions from develop, not a renewed baseline.
+        $additions=[
+            'payment_method_types'=>['available_for_change'=>['boolean',false,false,'false']],
+            'document_change_disbursements'=>[
+                'id'=>['bigint',false,true], 'document_id'=>['bigint',false,false],
+                'document_payment_id'=>['bigint',false,false], 'position'=>['integer',false,false],
+                'payment_method_type_id'=>['char(2)',false,false], 'currency_type_id'=>['varchar(255)',false,false],
+                'original_amount'=>['numeric(30,12)',false,false], 'exchange_rate'=>['numeric(18,8)',false,false],
+                'date_of_payment'=>['date',false,false], 'reference'=>['varchar(255)',true,false],
+                'calculation_snapshot'=>['json',false,false], 'context'=>['json',false,false],
+                'reversed_at'=>['timestamp',true,false], 'created_at'=>['timestamp',true,false], 'updated_at'=>['timestamp',true,false],
+            ],
+            'sellnow_sales'=>[
+                'id'=>['bigint',false,true], 'client_sale_id'=>['uuid',false,false], 'device_id'=>['uuid',false,false],
+                'user_id'=>['bigint',false,false], 'establishment_id'=>['bigint',false,false],
+                'kind'=>['varchar(20)',false,false], 'payload_hash'=>['char(64)',false,false],
+                'original_cash_id'=>['bigint',false,false], 'cash_id'=>['bigint',false,false],
+                'recorded_at'=>['timestamp',false,false], 'status'=>['varchar(24)',false,false,'pending'],
+                'document_id'=>['bigint',true,false], 'sale_note_id'=>['bigint',true,false],
+                'envelope'=>['text',false,false], 'result'=>['text',true,false], 'error'=>['text',true,false],
+                'effects'=>['text',true,false], 'cash_history'=>['text',true,false],
+                'created_at'=>['timestamp',true,false], 'updated_at'=>['timestamp',true,false],
+            ],
+        ];
+        $normalize=static fn(string $type): string=>str_replace(
+            ['timestamp(0) without time zone','timestamp without time zone','time(0) without time zone','time without time zone'],
+            ['timestamp','timestamp','time','time'],$type);
+        $expectedTables=array_merge(array_column($contract['tables'],'table'),['document_change_disbursements','sellnow_sales']);sort($expectedTables);
+        self::assertSame($expectedTables,\App\Database\SchemaInspector::tables($db));$columns=0;$defaults=[];
+        foreach ($contract['tables'] as $table) {
+            $actual=[];foreach (\App\Database\SchemaInspector::columns($db,$table['table']) as $column) $actual[$column->name]=$column;
+            self::assertEqualsCanonicalizing(array_merge(array_keys($table['type_map']),array_keys($additions[$table['table']] ?? [])),array_keys($actual),$table['table']);
+            foreach ($table['type_map'] as $field=>$type) {
+                $column=$actual[$field];$before=$source[$table['table']][$field];$label=$table['table'].'.'.$field;$columns++;
+                $normalized=$normalize($column->type);
+                self::assertSame($type,$normalized,$label.' tipo PostgreSQL');
+                self::assertSame($before['IS_NULLABLE']==='YES',(bool)$column->nullable,$label.' nulabilidad');
+                self::assertSame(str_contains($before['EXTRA'],'auto_increment'),(bool)$column->has_sequence,$label.' secuencia');
+                if ($column->generated || $column->has_sequence) continue;
+                if ($before['COLUMN_DEFAULT']===null) {self::assertNull($column->default,$label.' sin valor predeterminado');continue;}
+                self::assertNotNull($column->default,$label.' valor predeterminado');
+                if (strtoupper($before['COLUMN_DEFAULT'])==='CURRENT_TIMESTAMP') {
+                    self::assertMatchesRegularExpression('/statement_timestamp\(\)/i',$column->default,$label);continue;
+                }
+                $defaults[]=[$label,$type,$before['COLUMN_DEFAULT'],$column->default];
+            }
+        }
+        // Catalog expressions come from our own disposable schema, never from request input.
+        foreach (array_chunk($defaults,100) as $chunk) {
+            $select=[];foreach ($chunk as $index=>$entry) $select[]='('.$entry[3].')::text AS d'.$index;
+            $values=(array)$db->selectOne('SELECT '.implode(',',$select));
+            foreach ($chunk as $index=>[$label,$type,$before]) {
+                $after=$values['d'.$index];
+                if ($type==='boolean') {
+                    self::assertContains((string)$before,['0','1','false','true'],$label.' debe ser un indicador booleano en la referencia');
+                    self::assertSame(in_array((string)$before,['1','true'],true),$after==='true',$label.' default');
+                }
+                elseif (preg_match('/^(?:numeric|smallint|integer|bigint)/',$type)) self::assertTrue(\Brick\Math\BigRational::of($before)->isEqualTo(\Brick\Math\BigRational::of($after)),$label.' default exacto');
+                else self::assertSame((string)$before,(string)$after,$label.' default');
+            }
+        }
+        self::assertSame(4380,$columns);self::assertSame($contract['column_count'],$columns);
+        $extraColumns=0;
+        foreach ($additions as $table=>$fields) {
+            $actual=array_column(\App\Database\SchemaInspector::columns($db,$table),null,'name');
+            if ($table!=='payment_method_types') self::assertEqualsCanonicalizing(array_keys($fields),array_keys($actual),$table);
+            foreach ($fields as $field=>$definition) {
+                [$type,$nullable,$sequence]=$definition;$column=$actual[$field];$label=$table.'.'.$field;$extraColumns++;
+                self::assertSame($type,$normalize($column->type),$label);
+                self::assertSame($nullable,(bool)$column->nullable,$label.' nulabilidad');
+                self::assertSame($sequence,(bool)$column->has_sequence,$label.' secuencia');
+                if ($sequence) continue;
+                if (!array_key_exists(3,$definition)) self::assertNull($column->default,$label.' sin default');
+                else {
+                    self::assertNotNull($column->default,$label.' default');
+                    self::assertSame($definition[3],$db->selectOne('SELECT ('.$column->default.')::text AS value')->value,$label.' default');
+                }
+            }
+        }
+        self::assertSame(36,$extraColumns);self::assertSame(4416,$columns+$extraColumns);
+        $keys=\App\Database\SchemaInspector::foreignKeys($db);self::assertCount(558,$keys);
+        $extraKeys=[
+            'document_change_document_fk'=>['document_id','documents'],
+            'document_change_payment_fk'=>['document_payment_id','document_payments'],
+            'document_change_method_fk'=>['payment_method_type_id','payment_method_types'],
+            'document_change_currency_fk'=>['currency_type_id','cat_currency_types'],
+        ];
+        self::assertCount(554,array_filter($keys,static fn($key)=>!isset($extraKeys[$key->name])));
+        foreach ($extraKeys as $name=>[$column,$target]) {
+            $extra=array_values(array_filter($keys,static fn($key)=>$key->name===$name));self::assertCount(1,$extra,$name);
+            $key=$extra[0];self::assertSame('document_change_disbursements',$key->table);
+            self::assertSame($column,$key->column);self::assertSame($target,$key->reference_table);
+            self::assertSame('id',$key->reference_column);self::assertSame('r',$key->delete_action);self::assertSame('a',$key->update_action);
+        }
+        foreach ($keys as $key) {self::assertSame(1,(int)$key->deferrable,$key->name);self::assertSame(0,(int)$key->initially_deferred,$key->name);}
+        self::assertSame(0,(int)\App\Database\SchemaInspector::indexes($db,'sellnow_sales','sellnow_sales_client_sale_id_unique')[0]->non_unique);
+    }
+
     public function test_fiscal_temporary_database_is_removed_after_process_error(): void
     {
-        $name = 'sab_fiscal_test_' . bin2hex(random_bytes(6));
+        $name = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
         $connection = $this->capsule->getConnection('control')->getConfig();
         $code = <<<'PHP'
 require 'vendor/autoload.php';
 $input = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
 $c = $input['connection'];
-$pdo = new PDO('mysql:host='.$c['host'].';port='.$c['port'].';dbname=information_schema', $c['username'], $c['password']);
-$pdo->exec('CREATE DATABASE `'.$input['name'].'`');
+$pdo = new PDO('pgsql:host='.$c['host'].';port='.$c['port'].';dbname=postgres', $c['username'], $c['password']);
+$pdo->exec('CREATE DATABASE "'.$input['name'].'"');
 \Tests\Support\FiscalTemporaryDatabases::register($input['name'], $pdo);
 exit(9);
 PHP;
@@ -212,15 +352,15 @@ PHP;
             $stdout = stream_get_contents($pipes[1]); fclose($pipes[1]);
             $stderr = stream_get_contents($pipes[2]); fclose($pipes[2]);
             self::assertSame(9, proc_close($process), $stdout . $stderr);
-            $exists = $this->capsule->getConnection('control')->selectOne('SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?', [$name]);
+            $exists = $this->capsule->getConnection('control')->selectOne('SELECT datname FROM pg_database WHERE datname = ?', [$name]);
             self::assertNull($exists, 'La base del proceso fallido debe limpiarse al terminar.');
         } finally {
-            $this->capsule->getConnection('control')->statement('DROP DATABASE IF EXISTS `' . $name . '`');
+            $this->capsule->getConnection('control')->statement('DROP DATABASE IF EXISTS "' . $name . '"');
         }
     }
 
-    // ######## INICIO CALCULOS EXACTOS SAB ########
-    public function test_central_exact_schema_range_snapshot_rollback_and_repeat_in_mysql(): void
+    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    public function test_central_exact_schema_range_snapshot_rollback_and_repeat_in_postgresql(): void
     {
         $migrations=[];
         foreach (['2019_01_28_092812_create_plans_table.php','2022_12_23_164914_add_sales_limit_to_plans.php',
@@ -228,7 +368,7 @@ PHP;
         $db=$this->capsule->getConnection('system');
         for ($cycle=0;$cycle<2;$cycle++) {
             foreach ($migrations as $migration) $migration->up();
-            self::assertSame('decimal(32,12)',$db->select("SHOW COLUMNS FROM plans LIKE 'sales_limit'")[0]->Type);
+            self::assertSame('numeric(32,12)',\App\Database\SchemaInspector::columns($db, "plans", 'sales_limit')[0]->type);
             $plan=\App\Models\System\Plan::create(['name'=>'Exacto','pricing'=>\App\Support\Exact\Decimal::of(1)->dividedBy(3),
                 'sales_limit'=>'99999999999999999999.999999999999','limit_users'=>1,'limit_documents'=>1,'plan_documents'=>[]]);
             $plan=$plan->fresh();
@@ -240,7 +380,7 @@ PHP;
             self::assertSame(['n'=>'1','d'=>'3'],\App\Support\Exact\Decimal::fraction($plan->fresh()->exactValue('pricing')));
             try {
                 $plan->pricing=\App\Support\Exact\Decimal::of('1000000000000000000');$plan->save();
-                self::fail('El valor fuera de rango no puede llegar a MySQL.');
+                self::fail('El valor fuera de rango no puede llegar a PostgreSQL.');
             } catch (\Illuminate\Validation\ValidationException $error) {self::assertArrayHasKey('pricing',$error->errors());}
             self::assertSame(['n'=>'1','d'=>'3'],\App\Support\Exact\Decimal::fraction($plan->fresh()->exactValue('pricing')));
             foreach (array_reverse($migrations) as $migration) $migration->down();
@@ -259,10 +399,9 @@ PHP;
             self::assertTrue($db->getSchemaBuilder()->hasColumn('payment_method_types', 'available_for_change'));
             self::assertTrue($db->getSchemaBuilder()->hasTable('document_change_disbursements'));
             foreach (['document_change_document_fk', 'document_change_payment_fk', 'document_change_method_fk', 'document_change_currency_fk'] as $constraint) {
-                self::assertCount(1, $db->select('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?',
-                    [$this->database, 'document_change_disbursements', $constraint]));
+                self::assertCount(1, array_filter(\App\Database\SchemaInspector::foreignKeys($db, 'document_change_disbursements'), static fn($key) => $key->name === $constraint));
             }
-            self::assertSame(0, (int) $db->select("SHOW INDEX FROM document_change_disbursements WHERE Key_name = 'document_change_payment_position_unique'")[0]->Non_unique);
+            self::assertSame(0, (int) \App\Database\SchemaInspector::indexes($db, 'document_change_disbursements', 'document_change_payment_position_unique')[0]->non_unique);
             foreach (array_reverse($migrations) as $migration) $migration->down();
             self::assertFalse($db->getSchemaBuilder()->hasTable('document_change_disbursements'));
         }
@@ -281,7 +420,7 @@ PHP;
             (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
             $this->assertFiscalSchema($db);
             self::assertTrue($db->getSchemaBuilder()->hasColumn('hotel_rents', 'calculation_snapshot'));
-            self::assertSame('decimal(30,12)', $db->selectOne('SHOW COLUMNS FROM hotel_rents WHERE Field = ?', ['arrears'])->Type);
+            self::assertSame('numeric(30,12)', \App\Database\SchemaInspector::column($db, "hotel_rents", 'arrears')->type);
             foreach (['fiscal_sequences', 'fiscal_profiles', 'fiscal_control_lots', 'fiscal_number_reservations', 'fiscal_emission_attempts', 'fiscal_numbering_audits', 'fiscal_demo_receipts', 'fiscal_hka_assignments'] as $retired) {
                 self::assertFalse($db->getSchemaBuilder()->hasTable($retired), $retired);
             }
@@ -302,16 +441,16 @@ PHP;
                 foreach (['currency_type_id', 'original_amount', 'exchange_rate', 'exchange_rate_source', 'exchange_rate_date', 'payment_method_snapshot'] as $column) {
                     self::assertTrue($db->getSchemaBuilder()->hasColumn($table, $column), $table.'.'.$column);
                 }
-                self::assertCount(1, $db->select('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?', [$this->database, $table, $table.'_currency_fk']));
+                self::assertCount(1, $db->select('SELECT con.conname FROM pg_constraint con JOIN pg_class tbl ON tbl.oid=con.conrelid JOIN pg_namespace ns ON ns.oid=tbl.relnamespace JOIN pg_class rt ON rt.oid=con.confrelid CROSS JOIN LATERAL generate_subscripts(con.conkey,1) k(i) JOIN pg_attribute a ON a.attrelid=tbl.oid AND a.attnum=con.conkey[k.i] JOIN pg_attribute ra ON ra.attrelid=rt.oid AND ra.attnum=con.confkey[k.i] WHERE ns.nspname=current_schema() AND current_database() = ? AND tbl.relname = ? AND con.conname = ?', [$this->database, $table, $table.'_currency_fk']));
             }
             self::assertTrue($db->getSchemaBuilder()->hasColumn('hotel_rent_item_payments', 'source_sale_note_payment_id'));
             self::assertTrue($db->getSchemaBuilder()->hasColumn('transfer_account_payments', 'currency_type_id'));
-            self::assertCount(1, $db->select("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'transfer_account_payments' AND CONSTRAINT_NAME = 'transfer_account_currency_fk'", [$this->database]));
-            self::assertCount(1, $db->select("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'hotel_rent_item_payments' AND CONSTRAINT_NAME = 'hotel_receipt_source_fk'", [$this->database]));
-            self::assertSame(0, (int) $db->select("SHOW INDEX FROM hotel_rent_item_payments WHERE Key_name = 'hotel_receipt_source_unique'")[0]->Non_unique);
+            self::assertCount(1, $db->select("SELECT con.conname FROM pg_constraint con JOIN pg_class tbl ON tbl.oid=con.conrelid JOIN pg_namespace ns ON ns.oid=tbl.relnamespace JOIN pg_class rt ON rt.oid=con.confrelid CROSS JOIN LATERAL generate_subscripts(con.conkey,1) k(i) JOIN pg_attribute a ON a.attrelid=tbl.oid AND a.attnum=con.conkey[k.i] JOIN pg_attribute ra ON ra.attrelid=rt.oid AND ra.attnum=con.confkey[k.i] WHERE ns.nspname=current_schema() AND current_database() = ? AND tbl.relname = 'transfer_account_payments' AND con.conname = 'transfer_account_currency_fk'", [$this->database]));
+            self::assertCount(1, $db->select("SELECT con.conname FROM pg_constraint con JOIN pg_class tbl ON tbl.oid=con.conrelid JOIN pg_namespace ns ON ns.oid=tbl.relnamespace JOIN pg_class rt ON rt.oid=con.confrelid CROSS JOIN LATERAL generate_subscripts(con.conkey,1) k(i) JOIN pg_attribute a ON a.attrelid=tbl.oid AND a.attnum=con.conkey[k.i] JOIN pg_attribute ra ON ra.attrelid=rt.oid AND ra.attnum=con.confkey[k.i] WHERE ns.nspname=current_schema() AND current_database() = ? AND tbl.relname = 'hotel_rent_item_payments' AND con.conname = 'hotel_receipt_source_fk'", [$this->database]));
+            self::assertSame(0, (int) \App\Database\SchemaInspector::indexes($db, "hotel_rent_item_payments", 'hotel_receipt_source_unique')[0]->non_unique);
             self::assertTrue($db->getSchemaBuilder()->hasColumn('received_payments', 'currency_type_id'));
-            self::assertSame('NO', $db->select("SHOW COLUMNS FROM received_payments LIKE 'currency_type_id'")[0]->Null);
-            self::assertCount(1, $db->select("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'received_payments' AND CONSTRAINT_NAME = 'received_payments_currency_fk'", [$this->database]));
+            self::assertFalse((bool) \App\Database\SchemaInspector::columns($db, "received_payments", 'currency_type_id')[0]->nullable);
+            self::assertCount(1, $db->select("SELECT con.conname FROM pg_constraint con JOIN pg_class tbl ON tbl.oid=con.conrelid JOIN pg_namespace ns ON ns.oid=tbl.relnamespace JOIN pg_class rt ON rt.oid=con.confrelid CROSS JOIN LATERAL generate_subscripts(con.conkey,1) k(i) JOIN pg_attribute a ON a.attrelid=tbl.oid AND a.attnum=con.conkey[k.i] JOIN pg_attribute ra ON ra.attrelid=rt.oid AND ra.attnum=con.confkey[k.i] WHERE ns.nspname=current_schema() AND current_database() = ? AND tbl.relname = 'received_payments' AND con.conname = 'received_payments_currency_fk'", [$this->database]));
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             foreach (['payment_method_types', 'expense_method_types', 'document_payments', 'sale_note_payments', 'purchase_payments', 'quotation_payments', 'contract_payments', 'income_payments', 'expense_payments', 'bank_loan_payments'] as $table) {
                 self::assertFalse($db->getSchemaBuilder()->hasColumn($table, 'has_card'), $table);
@@ -321,7 +460,7 @@ PHP;
             self::assertSame(2, $db->table('payment_method_types')->where('currency_type_id', 'USD')->count());
             self::assertSame(['10', '13'], $db->table('payment_method_types')->where('currency_type_id', 'USD')->orderBy('id')->pluck('id')->all());
             self::assertSame(0, $db->table('payment_method_types')->whereNotNull('iva_rate_type_id')->count());
-            self::assertCount(2, $db->select("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'payment_method_types' AND CONSTRAINT_NAME IN ('payment_method_currency_fk', 'payment_method_tax_fk')", [$this->database]));
+            self::assertCount(2, $db->select("SELECT con.conname FROM pg_constraint con JOIN pg_class tbl ON tbl.oid=con.conrelid JOIN pg_namespace ns ON ns.oid=tbl.relnamespace JOIN pg_class rt ON rt.oid=con.confrelid CROSS JOIN LATERAL generate_subscripts(con.conkey,1) k(i) JOIN pg_attribute a ON a.attrelid=tbl.oid AND a.attnum=con.conkey[k.i] JOIN pg_attribute ra ON ra.attrelid=rt.oid AND ra.attnum=con.confkey[k.i] WHERE ns.nspname=current_schema() AND current_database() = ? AND tbl.relname = 'payment_method_types' AND con.conname IN ('payment_method_currency_fk', 'payment_method_tax_fk')", [$this->database]));
             self::assertSame(0, $db->table('payment_method_types')->where('collection_kind', 'unclassified')->count());
             self::assertSame(4, \App\Models\Tenant\PaymentMethodType::getPaymentMethodTypes()->count());
             $paymentRules = (new \App\Http\Requests\Tenant\DocumentPaymentRequest())->rules();
@@ -340,12 +479,12 @@ PHP;
             } catch (\Illuminate\Validation\ValidationException $exception) {
                 self::assertArrayHasKey('payment_method_type_id', $exception->errors());
             }
-            $column = $db->select("SHOW COLUMNS FROM `payment_method_types` LIKE 'hka_code'");
-            self::assertSame('char(2)', $column[0]->Type);
-            self::assertSame('YES', $column[0]->Null);
-            $hkaIndex = $db->select("SHOW INDEX FROM `payment_method_types` WHERE Key_name = 'payment_method_types_hka_code_index'");
+            $column = \App\Database\SchemaInspector::columns($db, "payment_method_types", 'hka_code');
+            self::assertSame('char(2)', $column[0]->type);
+            self::assertTrue((bool) $column[0]->nullable);
+            $hkaIndex = \App\Database\SchemaInspector::indexes($db, "payment_method_types", 'payment_method_types_hka_code_index');
             self::assertCount(1, $hkaIndex);
-            self::assertSame(1, (int) $hkaIndex[0]->Non_unique);
+            self::assertSame(1, (int) $hkaIndex[0]->non_unique);
             $db->table('companies')->insert(['id'=>999, 'identity_document_type_id'=>'6', 'number'=>'J123456789', 'name'=>'Temporal', 'fiscal_environment'=>'demo', 'fiscal_emission_mode'=>'free_form']);
             $customMethod = \Modules\Sale\Http\Requests\PaymentMethodTypeRequest::create('/', 'POST', [
                 'id' => '27', 'description' => 'Método local de prueba', 'is_active' => 1, 'collection_kind'=>'cash', 'currency_type_id'=>'VES',
@@ -363,7 +502,7 @@ PHP;
                 ['MUNICIPAL', 'Impuesto Municipal o Estadal'],
                 ['IGTF', 'Impuesto a las grandes transacciones'],
                 ['LISAEA', 'Impuesto sobre Alcohol y Especies Alcohólicas - LISAEA'],
-            ], $db->table('cat_taxes_types')->orderByRaw("FIELD(id, 'IVA', 'ISLR', 'MUNICIPAL', 'IGTF', 'LISAEA')")
+            ], $db->table('cat_taxes_types')->orderByRaw("CASE id WHEN 'IVA' THEN 1 WHEN 'ISLR' THEN 2 WHEN 'MUNICIPAL' THEN 3 WHEN 'IGTF' THEN 4 WHEN 'LISAEA' THEN 5 ELSE 0 END")
                 ->get(['id', 'description'])->map(static fn ($row): array => [$row->id, $row->description])->all());
             self::assertSame([
                 ['A', 'Alícuota Adicional (suntuario)', '31.00', 'IVA'],
@@ -374,8 +513,8 @@ PHP;
                 ['R', 'Alícuota Reducida', '8.00', 'IVA'],
             ], $db->table('cat_iva_rate_types')->orderBy('id')->get(['id', 'description', 'percentage', 'tax_kind'])
                 ->map(static fn ($row): array => [$row->id, $row->description, number_format((float) $row->percentage, 2, '.', ''), $row->tax_kind])->all());
-            self::assertCount(1, $db->select("SHOW INDEX FROM `cat_iva_rate_types` WHERE Key_name = 'PRIMARY'"));
-            $taxKey = $db->selectOne('SELECT REFERENCED_TABLE_NAME AS ref_table, REFERENCED_COLUMN_NAME AS ref_column FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND CONSTRAINT_NAME = ?', [$this->database, 'cat_iva_rate_types', 'cat_iva_rate_types_tax_kind_foreign']);
+            self::assertCount(1, \App\Database\SchemaInspector::indexes($db, "cat_iva_rate_types", 'PRIMARY'));
+            $taxKey = $db->selectOne('SELECT rt.relname AS ref_table, ra.attname AS ref_column FROM pg_constraint con JOIN pg_class tbl ON tbl.oid=con.conrelid JOIN pg_namespace ns ON ns.oid=tbl.relnamespace JOIN pg_class rt ON rt.oid=con.confrelid JOIN pg_attribute ra ON ra.attrelid=rt.oid AND ra.attnum=con.confkey[1] WHERE ns.nspname=current_schema() AND current_database() = ? AND tbl.relname = ? AND con.conname = ?', [$this->database, 'cat_iva_rate_types', 'cat_iva_rate_types_tax_kind_foreign']);
             self::assertSame('cat_taxes_types', $taxKey->ref_table);
             self::assertSame('id', $taxKey->ref_column);
             foreach ([
@@ -387,7 +526,7 @@ PHP;
                     $operation();
                     self::fail('La clave foránea debe rechazar la operación.');
                 } catch (\Illuminate\Database\QueryException $error) {
-                    self::assertSame('23000', $error->getCode());
+                    self::assertSame('23503', $error->getCode());
                 }
             }
             self::assertSame('IVA', $db->table('cat_iva_rate_types')->where('id', 'G')->value('tax_kind'));
@@ -423,8 +562,8 @@ PHP;
             ], $db->table('cat_retention_types')->orderBy('id')->get(['id', 'description', 'abbreviation'])
                 ->map(static fn ($row): array => [$row->id, $row->description, $row->abbreviation])->all());
             self::assertFalse($db->getSchemaBuilder()->hasColumn('cat_retention_types', 'percentage'));
-            self::assertCount(1, $db->select("SHOW INDEX FROM `cat_retention_concept` WHERE Key_name = 'PRIMARY'"));
-            self::assertCount(1, $db->select("SHOW INDEX FROM `cat_retention_types` WHERE Key_name = 'PRIMARY'"));
+            self::assertCount(1, \App\Database\SchemaInspector::indexes($db, "cat_retention_concept", 'PRIMARY'));
+            self::assertCount(1, \App\Database\SchemaInspector::indexes($db, "cat_retention_types", 'PRIMARY'));
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             $referenceCatalogs = [
@@ -447,22 +586,22 @@ PHP;
                     ->map(static fn ($row): array => [(int) $row->id, $row->description, (int) $row->active])
                     ->all();
                 self::assertSame($expectedRows, $rows, $table);
-                $columns = collect($db->select("SHOW COLUMNS FROM `{$table}`"))
+                $columns = collect(\App\Database\SchemaInspector::columns($db, "$table"))
                     ->map(static fn ($column): array => [
-                        $column->Field,
-                        preg_replace('/^tinyint\(3\) unsigned$/', 'tinyint unsigned', $column->Type),
-                        $column->Null,
-                        $column->Key,
+                        $column->name,
+                        preg_replace('/^tinyint\(3\) unsigned$/', 'smallint', $column->type),
+                        $column->nullable ? 'YES' : 'NO',
+                        $column->primary ? 'PRI' : '',
                     ])
                     ->all();
                 self::assertSame([
-                    ['id', 'tinyint unsigned', 'NO', 'PRI'],
+                    ['id', 'smallint', 'NO', 'PRI'],
                     ['description', 'varchar(255)', 'NO', ''],
-                    ['active', 'tinyint(1)', 'NO', ''],
+                    ['active', 'boolean', 'NO', ''],
                 ], $columns, $table);
-                $primaryKey = $db->select("SHOW INDEX FROM `{$table}` WHERE Key_name = 'PRIMARY'");
+                $primaryKey = \App\Database\SchemaInspector::indexes($db, "$table", 'PRIMARY');
                 self::assertCount(1, $primaryKey, $table);
-                self::assertSame('id', $primaryKey[0]->Column_name, $table);
+                self::assertSame('id', $primaryKey[0]->column, $table);
             }
 
             $providerRows = $db->table('cat_providers_types')->orderBy('id')->get(['id', 'code', 'description', 'active'])
@@ -474,13 +613,13 @@ PHP;
                 [3, 'NR', 'No Residenciado', 1],
                 [4, 'ND', 'No Domiciliado', 1],
             ], $providerRows);
-            $providerPrimaryKey = $db->select("SHOW INDEX FROM `cat_providers_types` WHERE Key_name = 'PRIMARY'");
+            $providerPrimaryKey = \App\Database\SchemaInspector::indexes($db, "cat_providers_types", 'PRIMARY');
             self::assertCount(1, $providerPrimaryKey);
-            self::assertSame('id', $providerPrimaryKey[0]->Column_name);
-            $providerCodeIndex = $db->select("SHOW INDEX FROM `cat_providers_types` WHERE Key_name = 'cat_providers_types_code_unique'");
+            self::assertSame('id', $providerPrimaryKey[0]->column);
+            $providerCodeIndex = \App\Database\SchemaInspector::indexes($db, "cat_providers_types", 'cat_providers_types_code_unique');
             self::assertCount(1, $providerCodeIndex);
-            self::assertSame('code', $providerCodeIndex[0]->Column_name);
-            self::assertSame(0, (int) $providerCodeIndex[0]->Non_unique);
+            self::assertSame('code', $providerCodeIndex[0]->column);
+            self::assertSame(0, (int) $providerCodeIndex[0]->non_unique);
 
             $regimeRows = $db->table('cat_special_tax_regime')->orderBy('id')->get(['id', 'description', 'active'])
                 ->map(static fn ($row): array => [(int) $row->id, $row->description, (int) $row->active])
@@ -494,9 +633,9 @@ PHP;
                 [6, 'Puerto libre Estado Nueva Esparta', 1],
                 [7, 'Dutty Free', 1],
             ], $regimeRows);
-            $regimePrimaryKey = $db->select("SHOW INDEX FROM `cat_special_tax_regime` WHERE Key_name = 'PRIMARY'");
+            $regimePrimaryKey = \App\Database\SchemaInspector::indexes($db, "cat_special_tax_regime", 'PRIMARY');
             self::assertCount(1, $regimePrimaryKey);
-            self::assertSame('id', $regimePrimaryKey[0]->Column_name);
+            self::assertSame('id', $regimePrimaryKey[0]->column);
 
             $transactionRows = $db->table('cat_transactions_types')->orderBy('id')->get(['id', 'description', 'active'])
                 ->map(static fn ($row): array => [(string) $row->id, $row->description, (int) $row->active])
@@ -509,9 +648,9 @@ PHP;
                 ['98', 'ND por IGTF', 1],
                 ['99', 'Solo cuando la factura es a Terceros', 1],
             ], $transactionRows);
-            $primaryKey = $db->select("SHOW INDEX FROM `cat_transactions_types` WHERE Key_name = 'PRIMARY'");
+            $primaryKey = \App\Database\SchemaInspector::indexes($db, "cat_transactions_types", 'PRIMARY');
             self::assertCount(1, $primaryKey);
-            self::assertSame('id', $primaryKey[0]->Column_name);
+            self::assertSame('id', $primaryKey[0]->column);
 
             // ########## INICIO CAMBIO CATÁLOGO MOTIVOS DE TRASLADO VENEZUELA
             self::assertSame([
@@ -522,29 +661,29 @@ PHP;
                 ['24', 'Otras causas (especifique)', 1, 0],
             ], $db->table('cat_transfer_reason_types')->orderBy('id')->get(['id', 'description', 'active', 'discount_stock'])
                 ->map(static fn ($row): array => [$row->id, $row->description, (int) $row->active, (int) $row->discount_stock])->all());
-            $transferReasonColumn = $db->select("SHOW COLUMNS FROM `cat_transfer_reason_types` LIKE 'id'");
-            self::assertSame('varchar(2)', $transferReasonColumn[0]->Type);
-            self::assertSame('PRI', $transferReasonColumn[0]->Key);
-            self::assertSame('NO', $transferReasonColumn[0]->Null);
-            self::assertSame('varchar(2)', $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'transfer_reason_type_id'")[0]->Type);
-            $discountStockColumn = $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'discount_stock'")[0];
-            self::assertSame('tinyint(1)', $discountStockColumn->Type);
-            self::assertSame('0', $discountStockColumn->Default);
+            $transferReasonColumn = \App\Database\SchemaInspector::columns($db, "cat_transfer_reason_types", 'id');
+            self::assertSame('varchar(2)', $transferReasonColumn[0]->type);
+            self::assertTrue((bool)$transferReasonColumn[0]->primary);
+            self::assertFalse((bool)$transferReasonColumn[0]->nullable);
+            self::assertSame('varchar(2)', \App\Database\SchemaInspector::columns($db, "dispatches", 'transfer_reason_type_id')[0]->type);
+            $discountStockColumn = \App\Database\SchemaInspector::columns($db, "dispatches", 'discount_stock')[0];
+            self::assertSame('boolean', $discountStockColumn->type);
+            self::assertSame('false', $discountStockColumn->default);
             // ########## INICIO RETIRO TRASLADO M1/L1 ##########
-            self::assertSame([], $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'is_transport_m1l'"));
-            self::assertSame([], $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'license_plate_m1l'"));
+            self::assertSame([], \App\Database\SchemaInspector::columns($db, "dispatches", 'is_transport_m1l'));
+            self::assertSame([], \App\Database\SchemaInspector::columns($db, "dispatches", 'license_plate_m1l'));
             // ######### FIN RETIRO TRASLADO M1/L1 #########
             // ########## INICIO RETIRO SEMIRREMOLQUE ##########
-            self::assertSame([], $db->select("SHOW COLUMNS FROM `dispatches` LIKE 'secondary_license_plates'"));
+            self::assertSame([], \App\Database\SchemaInspector::columns($db, "dispatches", 'secondary_license_plates'));
             // ######### FIN RETIRO SEMIRREMOLQUE #########
-            self::assertSame('varchar(2)', $db->select("SHOW COLUMNS FROM `order_forms` LIKE 'transfer_reason_type_id'")[0]->Type);
+            self::assertSame('varchar(2)', \App\Database\SchemaInspector::columns($db, "order_forms", 'transfer_reason_type_id')[0]->type);
             // ######### FIN CAMBIO CATÁLOGO MOTIVOS DE TRASLADO VENEZUELA
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             $current = $this->schemaSnapshot($db);
             foreach (['retentions', 'perceptions', 'purchase_settlements'] as $table) {
-                self::assertSame('varchar(20)', $db->select("SHOW COLUMNS FROM `$table` LIKE 'series'")[0]->Type);
+                self::assertSame('varchar(20)', \App\Database\SchemaInspector::columns($db, "$table", 'series')[0]->type);
             }
-            if (getenv('SAB_EXPORT_CONTRACT') === '1') {
+            if (getenv('PRO9_EXPORT_CONTRACT') === '1') {
                 file_put_contents('/tmp/sab-fresh-final-schema.json', json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
             $this->assertForeignKeyIntegrity($db);
@@ -573,7 +712,7 @@ PHP;
             foreach (array_reverse($migrations) as $migration) {
                 $migration->down();
             }
-            self::assertSame([], $db->select('SHOW TABLES'), 'Rollback completo sin tablas residuales.');
+            self::assertSame([], \App\Database\SchemaInspector::tables($db), 'Rollback completo sin tablas residuales.');
         }
     }
 
@@ -625,9 +764,9 @@ PHP;
             ];
             \Illuminate\Database\Eloquent\Model::setEventDispatcher(new \Illuminate\Events\Dispatcher($app));
             \App\Models\Tenant\Document::observe(\App\Observers\DocumentObserver::class);
+            $this->bootGlobalInventory($app);
             (new \Modules\Inventory\Providers\InventoryKardexServiceProvider($app))->boot();
             (new \Modules\Inventory\Providers\InventoryVoidedServiceProvider($app))->boot();
-            (new \App\Providers\KardexServiceProvider($app))->boot();
             $cash=\App\Models\Tenant\Cash::create(['user_id'=>$userId,'state'=>true,'date_opening'=>'2026-09-10','time_opening'=>'12:00:00','beginning_balance'=>'0']);
             $db->transaction(fn()=>\App\Services\Payments\CashLedger::open($cash,[]));
             $first = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument();
@@ -829,17 +968,20 @@ PHP;
         self::assertEquals(194,$document->fresh()->balance);
         self::assertNotNull($payment->fresh()->reversed_at);
         self::assertSame('11',$note->fresh()->state_type_id);
-        $fx=array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),'currency_type_id'=>'USD',
-            'exchange_rate_sale'=>10.123,'payments'=>[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','payment'=>232,'igtf_status'=>'subject','financial_intermediation'=>'none']]]);
+        $vesOnly = count($this->invoiceTestCurrencies()) === 1;
+        $fx=array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),'currency_type_id'=>$vesOnly ? 'VES' : 'USD',
+            'exchange_rate_sale'=>$vesOnly ? '1' : '10.123','payments'=>[['date_of_payment'=>'2026-09-10',
+                'payment_method_type_id'=>'10','payment'=>232,'igtf_status'=>'subject','financial_intermediation'=>'none']]]);
+        if ($vesOnly) $fx['payments'][0] += ['currency_type_id'=>'USD','original_amount'=>'232','exchange_rate'=>'1'];
         $paid=(new \App\CoreFacturalo\Facturalo())->save($fx)->getDocument();
         self::assertEquals(238.96,$paid->total);self::assertTrue((bool)$paid->total_canceled);self::assertEquals(238.96,$paid->payments->sum('payment'));self::assertEquals(0,$paid->balance);
         self::assertEquals(6.96,$paid->taxes()->where('tax_kind','IGTF')->sum('amount'));
-        self::assertSame('2418.99208', \App\Support\Exact\Decimal::represent($paid->currency_totals->exactValue('total')));
+        self::assertSame($vesOnly ? '238.96' : '2418.99208', \App\Support\Exact\Decimal::represent($paid->currency_totals->exactValue('total')));
         self::assertEquals(232,$paid->payments->whereNull('receipt_parent_id')->first()->payment);
         $company->forceFill(['igtf_enabled'=>false])->save();
-        self::assertSame($paid->payments->whereNull('receipt_parent_id')->first()->id,$service::payment($paid,[
-            'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','payment'=>232,'igtf_status'=>'subject','financial_intermediation'=>'none',
-            'operation_key'=>$paid->payments->whereNull('receipt_parent_id')->first()->operation_key],true)->id);
+        $principal = $paid->payments->whereNull('receipt_parent_id')->first();
+        self::assertSame($principal->id,$service::payment($paid,$fx['payments'][0]+[
+            'operation_key'=>$principal->operation_key],true)->id);
         $company->forceFill(['igtf_enabled'=>true])->save();
         $discounted=(new \App\CoreFacturalo\Facturalo())->save(array_replace($input,[
             'external_id'=>(string)\Illuminate\Support\Str::uuid(),
@@ -894,9 +1036,9 @@ PHP;
             'received_retentions'=>[array_replace($retention,['amount'=>999])]]));self::fail('Invalid retention persisted');}
         catch (\Illuminate\Validation\ValidationException $e) { self::assertSame($count,$db->table('documents')->count()); }
         foreach (['total','total_igv','total_discount'] as $column) {
-            self::assertSame('decimal(30,12)',$db->selectOne('SHOW COLUMNS FROM documents WHERE Field = ?',[$column])->Type);
+            self::assertSame('numeric(30,12)',\App\Database\SchemaInspector::column($db, "documents", $column)->type);
         }
-        self::assertSame('decimal(18,8)',$db->selectOne("SHOW COLUMNS FROM documents WHERE Field = 'exchange_rate_sale'")->Type);
+        self::assertSame('numeric(18,8)',\App\Database\SchemaInspector::column($db, "documents", 'exchange_rate_sale')->type);
         foreach (['ubl_version','perception','total_unaffected','total_free','total_igv_free','retention','user_rel_subscription_plan_id'] as $column) {
             self::assertFalse($db->getSchemaBuilder()->hasColumn('documents',$column));
         }
@@ -928,7 +1070,7 @@ PHP;
         $key=(string)\Illuminate\Support\Str::uuid();
         $payment=['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10','currency_type_id'=>'USD','exchange_rate'=>10,
             'original_amount'=>8,'igtf_status'=>'subject','financial_intermediation'=>'none','operation_key'=>$key];
-        $result=$this->runFiscalWorkers($id,'payment',[$payment,$payment]);
+        $result=$this->runFiscalWorkers($id,'payment',array_fill(0,20,$payment));
         self::assertArrayHasKey('id',$result[0],json_encode($result));
         self::assertArrayHasKey('id',$result[1],json_encode($result));
         self::assertSame($result[0]['id'],$result[1]['id']);
@@ -950,18 +1092,18 @@ PHP;
         self::assertSame(1,$db->table('documents')->where('document_type_id','08')->count());
         $p1=array_replace($payment,['operation_key'=>(string)\Illuminate\Support\Str::uuid(),'original_amount'=>1.5]);
         $p2=array_replace($p1,['operation_key'=>(string)\Illuminate\Support\Str::uuid()]);
-        $result=$this->runFiscalWorkers($id,'payment',[$p1,$p2]);
+        $result=$this->runFiscalWorkers($id,'payment',array_map(static fn ($i)=>array_replace($p1,['operation_key'=>(string)\Illuminate\Support\Str::uuid()]),range(1,20)));
         self::assertCount(1,array_filter($result,fn ($r)=>isset($r['id'])));
         self::assertEquals(95,$db->table('document_payments')->where('document_id',$id)->sum('payment'));
         self::assertSame(2,$db->table('documents')->where('document_type_id','08')->count());
         $retention=['tax_kind'=>'ISLR','voucher_number'=>'CONCURRENT-1','voucher_date'=>'2026-09-10','agent_id'=>$customer->id,
             'concept_id'=>'063','base'=>80,'percentage'=>5,'amount'=>4,'currency_type_id'=>'VES','exchange_rate'=>1];
         $retention += \Tests\Support\SpeProfiles::voucher(\App\Models\Tenant\Document::findOrFail($id));
-        $result=$this->runFiscalWorkers($id,'retention',[$retention,array_replace($retention,['voucher_number'=>'CONCURRENT-2'])]);
+        $result=$this->runFiscalWorkers($id,'retention',array_map(static fn ($i)=>array_replace($retention,['voucher_number'=>'CONCURRENT-'.$i]),range(1,20)));
         self::assertCount(1,array_filter($result,fn ($r)=>isset($r['id'])));
         self::assertEquals(4,$db->table('document_received_retentions')->where('document_id',$id)->sum('applied_amount'));
         $retention=array_replace($retention,['voucher_number'=>'CONCURRENT-DUPLICATE','concept_id'=>'055','base'=>50,'percentage'=>2,'amount'=>1]);
-        $result=$this->runFiscalWorkers($id,'retention',[$retention,$retention]);
+        $result=$this->runFiscalWorkers($id,'retention',array_fill(0,20,$retention));
         self::assertCount(0,array_filter($result,fn ($r)=>isset($r['id'])));
         self::assertSame(1,$db->table('document_received_retentions')->where('document_id',$id)->count());
     }
@@ -975,9 +1117,9 @@ PHP;
             foreach ($data as $input) {
                 $p=new \Symfony\Component\Process\Process([PHP_BINARY,dirname(__DIR__).'/Support/fiscal_payment_concurrency_worker.php']);
                 $p->setInput(json_encode(['connection'=>$db->getConfig(),'document_id'=>$documentId,'operation'=>$operation,'data'=>$input],JSON_THROW_ON_ERROR));
-                $p->setTimeout(30);$p->start();$processes[]=$p;
+                $p->setTimeout(90);$p->start();$processes[]=$p;
             }
-            $deadline=microtime(true)+10;
+            $deadline=microtime(true)+60;
             foreach ($processes as $p) {
                 while (!str_contains($p->getOutput(),"READY\n")) {
                     if (!$p->isRunning() || microtime(true)>$deadline) self::fail('Fiscal worker did not reach the lock barrier: '.$p->getErrorOutput());
@@ -1028,7 +1170,7 @@ PHP;
             self::assertEquals($stock,$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock'));
         }
         $db->beginTransaction();(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case);$db->rollBack();self::assertSame(0,$count);
-        foreach(\App\Services\SpecialTaxRegimePolicy::NAMES as $id=>$name)foreach(['VES','USD'] as $currency)foreach([false,true] as $third){
+        foreach(\App\Services\SpecialTaxRegimePolicy::NAMES as $id=>$name)foreach($this->invoiceTestCurrencies() as $currency)foreach([false,true] as $third){
             $case=array_replace($input,['fiscal_data'=>['special_tax_regime_id'=>$id],'currency_type_id'=>$currency,'third_party_id'=>$third?$party->id:null,
                 'external_id'=>(string)\Illuminate\Support\Str::uuid()]);
             $case['payments'][0]['payment_method_type_id']=$currency === 'USD' ? '10' : '01';
@@ -1044,7 +1186,7 @@ PHP;
             self::assertSame($frozen,$doc->fresh()->emission->payload);self::assertSame($name,\App\Services\SpecialTaxRegimePolicy::view($doc->fresh())['special_tax_regime_description']);
             $db->table('cat_special_tax_regime')->where('id',$id)->update(['description'=>$name,'active'=>1]);
         }
-        self::assertSame(28,$count);
+        self::assertSame(count(\App\Services\SpecialTaxRegimePolicy::NAMES) * count($this->invoiceTestCurrencies()) * 2, $count);
         foreach(['rejected','timeout'] as $failure){
             $mode=$failure;$failed=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh();
             self::assertSame($failure==='timeout'?'uncertain':'rejected',$failed->emission->status);self::assertEquals(0,$failed->balance);self::assertEquals(232,$failed->total);
@@ -1117,7 +1259,7 @@ PHP;
         $db->beginTransaction();(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($third);self::assertSame(0,$transmissions);$db->rollBack();
         self::assertSame(0,$db->table('documents')->count());
         self::assertEquals($beforeStock,$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock'));
-        foreach($parties as $party)foreach(['VES','USD'] as $currency){
+        foreach($parties as $party)foreach($this->invoiceTestCurrencies() as $currency){
             $case=array_replace($third,['third_party_id'=>$party->id,'currency_type_id'=>$currency,'external_id'=>(string)\Illuminate\Support\Str::uuid()]);
             $case['payments'][0]['payment_method_type_id']=$currency === 'USD' ? '10' : '01';
             $db->beginTransaction();$doc=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($case)->getDocument()->fresh();
@@ -1130,7 +1272,7 @@ PHP;
             $party->update(['address'=>'DIRECCION NUEVA EN FICHA']);
             self::assertEquals($saved,$doc->fresh()->fiscal_data->third_party);self::assertEquals($payload,$doc->fresh()->emission->payload);
             try{$db->table('persons')->where('id',$party->id)->delete();self::fail('A used titular cannot be physically deleted');}
-            catch(\Illuminate\Database\QueryException $e){self::assertSame('23000',$e->getCode());}
+            catch(\Illuminate\Database\QueryException $e){self::assertSame('23503',$e->getCode());}
         }
         $frozenParty=$doc->fiscal_data->third_party;$frozenPayload=$doc->emission->payload;
         foreach([['is_third_party'=>false],['is_third_party'=>true,'enabled'=>false]] as $change){
@@ -1163,7 +1305,15 @@ PHP;
         self::assertSame($count,$db->table('documents')->count());self::assertEquals($stock,$db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->value('stock'));
         $company->igtf_enabled=true;$company->igtf_rate=3;$company->save();
         \Tests\Support\SpeProfiles::versions($db, $company->id, $input['customer_id']);
-        $igtfInput=array_replace($third,['currency_type_id'=>'USD']);$igtfInput['payments'][0]['payment_method_type_id']='10';$igtfInput['payments'][0]['igtf_status']='subject';$igtfInput['payments'][0]['financial_intermediation']='none';
+        $vesOnly = count($this->invoiceTestCurrencies()) === 1;
+        $igtfInput=array_replace($third,['currency_type_id'=>$vesOnly ? 'VES' : 'USD']);
+        $igtfInput['payments'][0]['payment_method_type_id']='10';
+        $igtfInput['payments'][0]['igtf_status']='subject';
+        $igtfInput['payments'][0]['financial_intermediation']='none';
+        if ($vesOnly) {
+            $igtfInput['exchange_rate_sale']='1';
+            $igtfInput['payments'][0] += ['currency_type_id'=>'USD','original_amount'=>'232','exchange_rate'=>'1'];
+        }
         $igtfDoc=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($igtfInput)->getDocument()->fresh();
         self::assertEquals(238.96,$igtfDoc->total);self::assertEquals(0,$igtfDoc->balance);
         $prepared=(new \App\Services\Fiscal\HkaEmissionPreparation)->prepare($igtfDoc);
@@ -1211,8 +1361,8 @@ PHP;
         }
         try {
             $db->table('persons')->insert($foreign->only(['type','identity_document_type_id','external_identity_type','number','name','country_id','address']));
-            self::fail('Duplicate foreign identity must be rejected by MySQL');
-        } catch (\Illuminate\Database\QueryException $expected) { self::assertSame('23000',$expected->getCode()); }
+            self::fail('Duplicate foreign identity must be rejected by PostgreSQL');
+        } catch (\Illuminate\Database\QueryException $expected) { self::assertSame('23505',$expected->getCode()); }
         $transmissions = 0;
         $http = $app->make(\Illuminate\Http\Client\Factory::class);
         $http->fake(function ($request) use ($db, &$transmissions) {
@@ -1233,7 +1383,7 @@ PHP;
         self::assertSame(0, $transmissions);
         $db->rollBack();
         self::assertSame(0, $db->table('documents')->count());
-        foreach (\App\Services\ExportInvoicePolicy::INCOTERMS as $operation=>$term) foreach (['USD','VES'] as $currency) {
+        foreach (\App\Services\ExportInvoicePolicy::INCOTERMS as $operation=>$term) foreach (array_reverse($this->invoiceTestCurrencies()) as $currency) {
             $case = array_replace_recursive($input, ['invoice'=>['operation_type_id'=>$operation], 'currency_type_id'=>$currency,
                 'external_id'=>(string) \Illuminate\Support\Str::uuid()]);
             $db->beginTransaction();
@@ -1395,6 +1545,321 @@ PHP;
         }
     }
 
+    public function test_postgresql_list_balance_scope_keeps_fractions_and_releases_its_values(): void
+    {
+        [$db,$app,$input]=$this->bootHkaFixture();$input['payment_condition_id']='02';$input['payments']=[];
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $document=(new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
+        $db->table('document_payments')->insert(['document_id'=>$document->id,'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'VES','exchange_rate'=>'1','operation_key'=>(string)\Illuminate\Support\Str::uuid(),'payment_method_snapshot'=>'{"collection_kind":"cash","currency_type_id":"VES"}','payment'=>'0.333333333333','original_amount'=>'0.333333333333','calculation_snapshot'=>json_encode(\App\Support\Exact\Decimal::snapshot(['payment'=>'1/3']))]);
+        \App\Support\Exact\ReadBalanceScope::run(new \Illuminate\Database\Eloquent\Collection([$document]),function () use ($db,$document) {
+            self::assertTrue($document->exactBalance()->isEqualTo('695/3'));
+            $db->table('document_payments')->insert(['document_id'=>$document->id,'date_of_payment'=>'2026-09-10','payment_method_type_id'=>'01','currency_type_id'=>'VES','exchange_rate'=>'1','operation_key'=>(string)\Illuminate\Support\Str::uuid(),'payment_method_snapshot'=>'{"collection_kind":"cash","currency_type_id":"VES"}','payment'=>'0.1','original_amount'=>'0.1','calculation_snapshot'=>json_encode(\App\Support\Exact\Decimal::snapshot(['payment'=>'1/10']))]);
+            self::assertTrue($document->exactBalance()->isEqualTo('695/3'));
+            self::assertTrue($document->exactBalance(true)->isEqualTo('6947/30'));
+        });
+        self::assertTrue($document->exactBalance()->isEqualTo('6947/30'));
+        try {\App\Support\Exact\ReadBalanceScope::run(new \Illuminate\Database\Eloquent\Collection([$document]),fn()=>throw new \RuntimeException('Injected render failure'));}
+        catch (\RuntimeException $error) {self::assertSame('Injected render failure',$error->getMessage());}
+        self::assertNull(\App\Support\Exact\ReadBalanceScope::value($document));
+    }
+
+    private function bootGlobalInventory($app): void
+    {
+        self::$globalInventoryDispatchers ??= new \WeakMap();
+        $dispatcher=\Illuminate\Database\Eloquent\Model::getEventDispatcher();
+        if (!isset(self::$globalInventoryDispatchers[$dispatcher])) {
+            (new \App\Providers\KardexServiceProvider($app))->boot();self::$globalInventoryDispatchers[$dispatcher]=true;
+        }
+    }
+
+    public function test_hka_prepares_unit_price_from_frozen_fraction_on_postgresql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $input['payment_condition_id'] = '01';
+        $input['payments'][0]['payment'] = '1.43';
+        $input['items'][0]['quantity'] = '1';
+        $input['items'][0]['unit_price'] = '1.431962';
+        $decimal = \App\Support\Exact\Decimal::class;
+        $preparer = new \App\Services\Fiscal\HkaEmissionPreparation();
+        foreach (['1.2344499999996' => '1.2344', '1.23445' => '1.2345'] as $source => $expected) {
+            $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+            $input['items'][0]['price_input'] = [
+                'amount' => $decimal::fraction($source), 'currency_type_id' => 'VES', 'includes_iva' => false,
+            ];
+            $document = $db->transaction(static fn () => (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument());
+            $line = $document->items()->firstOrFail();
+            self::assertSame('1.234450000000', $decimal::represent($line->getRawOriginal('unit_value'), 12, true));
+            self::assertTrue($decimal::readRequired($line, 'unit_value')->isEqualTo($source));
+            $prepared = $preparer->prepare($document);
+            self::assertSame('prepared', $prepared->status);
+            self::assertSame($expected, $prepared->payload['documentoElectronico']['detallesItems'][0]['precioUnitario']);
+            self::assertSame($prepared->payload, $preparer->prepare($document->fresh())->payload);
+        }
+    }
+
+    public function test_hka_prepares_line_adjustments_from_frozen_fractions_on_postgresql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $input['payment_condition_id'] = '01';
+        $input['payments'][0]['payment'] = '10';
+        $input['items'][0] = array_replace($input['items'][0], [
+            'quantity' => '1', 'unit_price' => '10', 'affectation_igv_type_id' => '20',
+        ]);
+        $decimal = \App\Support\Exact\Decimal::class;
+        $preparer = new \App\Services\Fiscal\HkaEmissionPreparation();
+        foreach (['0.0049999999996' => '0.00', '0.005' => '0.01'] as $source => $expected) {
+            $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+            $input['items'][0]['discounts'] = [[
+                'discount_type_id' => '00', 'is_amount' => true, 'amount' => '0.005', 'amount_exact' => $decimal::fraction($source),
+            ]];
+            $input['items'][0]['charges'] = [[
+                'charge_type_id' => '50', 'factor' => $decimal::fraction($decimal::of($source)->dividedBy(10)),
+            ]];
+            $document = $db->transaction(static fn () => (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument());
+            $line = $document->items()->firstOrFail();
+            foreach (['total_discount', 'total_charge'] as $field) {
+                self::assertSame('0.005000000000', $decimal::represent($line->getRawOriginal($field), 12, true));
+                self::assertTrue($decimal::readRequired($line, $field)->isEqualTo($source));
+                self::assertTrue($decimal::readRequired($document, $field)->isEqualTo($source));
+            }
+            $prepared = $preparer->prepare($document);
+            $payload = $prepared->payload['documentoElectronico'];
+            self::assertSame($expected, $payload['detallesItems'][0]['descuentoMonto']);
+            self::assertSame($expected, $payload['detallesItems'][0]['recargoMonto']);
+            self::assertSame($expected, $payload['encabezado']['totales']['totalDescuento']);
+            self::assertSame($expected, $payload['encabezado']['totales']['totalRecargos']);
+            self::assertSame('10.00', $payload['encabezado']['totales']['totalAPagar']);
+            self::assertSame($prepared->payload, $preparer->prepare($document->fresh())->payload);
+        }
+    }
+
+    public function test_hka_reconciles_cents_across_ordinary_ves_invoice_lines_on_postgresql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $input['payment_condition_id'] = '01';
+        $input['payments'][0]['payment'] = '0.01';
+        $line = array_replace($input['items'][0], [
+            'quantity' => '1', 'unit_price' => '0.005', 'affectation_igv_type_id' => '20',
+        ]);
+        $input['items'] = [$line, $line];
+        $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        self::assertSame('1/100', (string) $document->exactValue('total'));
+        $lines = $document->items()->orderBy('id')->get();
+        self::assertSame(['1/200', '1/200'], $lines->map(fn ($line) => (string) $line->exactValue('total'))->all());
+
+        $preparer = new \App\Services\Fiscal\HkaEmissionPreparation();
+        $prepared = $preparer->prepare($document);
+        $payload = $prepared->payload['documentoElectronico'];
+        self::assertSame(['0.01', '0.00'], array_column($payload['detallesItems'], 'valorTotalItem'));
+        self::assertSame(['0.00', '0.00'], array_column($payload['detallesItems'], 'descuentoMonto'));
+        self::assertSame('0.01', $payload['encabezado']['totales']['totalAPagar']);
+        self::assertSame('0.01', $payload['encabezado']['totales']['formasPago'][0]['monto']);
+        self::assertSame($prepared->payload, $preparer->prepare($document->fresh())->payload);
+        self::assertSame(['1/200', '1/200'], $document->items()->orderBy('id')->get()->map(fn ($line) => (string) $line->exactValue('total'))->all());
+    }
+
+    public function test_hka_prepares_exempt_base_from_frozen_fraction_on_postgresql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $input['payment_condition_id'] = '01';
+        $input['items'][0] = array_replace($input['items'][0], [
+            'quantity' => '1', 'unit_price' => '10.005', 'affectation_igv_type_id' => '20',
+        ]);
+        $decimal = \App\Support\Exact\Decimal::class;
+        $preparer = new \App\Services\Fiscal\HkaEmissionPreparation();
+        foreach (['10.0049999999996' => '10.00', '10.005' => '10.01'] as $source => $expected) {
+            $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+            $input['payments'][0]['payment'] = $expected;
+            $input['items'][0]['price_input'] = [
+                'amount' => $decimal::fraction($source), 'currency_type_id' => 'VES', 'includes_iva' => true,
+            ];
+            $document = $db->transaction(static fn () => (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument())->fresh();
+            self::assertSame('10.005000000000', $decimal::represent($document->getRawOriginal('total_exonerated'), 12, true));
+            self::assertTrue($decimal::readRequired($document, 'total_exonerated')->isEqualTo($source));
+            $totals = $preparer->prepare($document)->payload['documentoElectronico']['encabezado']['totales'];
+            self::assertSame($expected, $totals['montoExentoTotal']);
+            self::assertSame($expected, $totals['subtotal']);
+            self::assertSame($expected, $totals['totalAPagar']);
+        }
+    }
+
+    /** @dataProvider retentionForecastCapabilities */
+    public function test_hka_blocks_a_retention_forecast_using_the_exact_postgresql_shortfall(string $tax, string $affectation, string $capability): void
+    {
+        [$db, , $input, $state] = $this->bootIslrFixture();
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        config(['iva_retention.demo_net_collection_verified' => false, 'islr_retention.demo_net_collection_verified' => false]);
+        $field = strtolower($tax).'_retention';
+        unset($input[($tax === 'IVA' ? 'islr' : 'iva').'_retention_prevision']);
+        if ($tax === 'ISLR') $input['islr_retention_prevision']['subtrahend'] = '0';
+        $input['items'][0] = array_replace($input['items'][0], [
+            'quantity' => '0.1', 'unit_price' => '10.050000000001', 'affectation_igv_type_id' => $affectation,
+        ]);
+        $input['payments'][0]['payment'] = '1';
+
+        $document = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
+        self::assertTrue($document->fiscal_data->{$field.'_prevision'}['eligible']);
+        self::assertSame('1.005000000000', $document->getRawOriginal('total'));
+        self::assertTrue($document->exactValue('total')->isEqualTo('1.0050000000001'));
+        self::assertTrue($document->payments->first()->exactValue('payment')->isEqualTo('1'));
+        self::assertSame($capability::BLOCK_REASON, $capability::reason($document));
+
+        try {
+            (new \App\Services\Fiscal\HkaEmissionPreparation())->prepare($document);
+            self::fail('La previsión con saldo exacto fuera de tolerancia debe bloquear la preparación.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertSame([$capability::BLOCK_REASON], $error->errors()[$field] ?? []);
+        }
+        $result = (new \App\Services\Fiscal\HkaEmission())->send($document);
+        self::assertSame('not_requested', $result['status']);
+        self::assertSame($capability::BLOCK_REASON, $result['diagnostic']);
+        self::assertNull($document->fresh()->emission->payload);
+        self::assertSame([], $state->calls);
+    }
+
+    public static function retentionForecastCapabilities(): array
+    {
+        return [
+            'IVA' => ['IVA', '10', \App\Services\Fiscal\HkaIvaRetentionCapability::class],
+            'ISLR' => ['ISLR', '20', \App\Services\Fiscal\HkaIslrRetentionCapability::class],
+        ];
+    }
+
+    public function test_invoice_accepts_a_positive_iva_forecast_below_column_precision(): void
+    {
+        [$db, , $input, $state] = $this->bootIvaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode' => 'free_form']);
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $input['payment_condition_id'] = '02';
+        $input['payments'] = [];
+        $input['items'][1] = array_replace($input['items'][0], ['affectation_igv_type_id' => '20', 'quantity' => '1', 'unit_price' => '10']);
+        $input['items'][0] = array_replace($input['items'][0], ['quantity' => '0.000000000002', 'unit_price' => '1.16']);
+
+        $document = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
+        self::assertSame('0.000000000000', $document->getRawOriginal('total_igv'));
+        self::assertTrue($document->exactValue('total_igv')->isEqualTo('0.00000000000032'));
+        $forecast = $document->fiscal_data->iva_retention_prevision;
+        self::assertTrue($forecast['eligible']);
+        self::assertTrue(\App\Support\Exact\Decimal::readRequired($forecast, 'amount')->isEqualTo('0.00000000000024'));
+        self::assertCount(0, $document->received_retentions);
+        self::assertSame([], $state->calls);
+
+        $voucher = $this->ivaVoucher($document, ['base' => '0.01', 'amount' => '0.01']);
+        try {
+            (new \ReflectionMethod(\App\Services\Fiscal\IvaRetentionService::class, 'validatePending'))->invoke(null, $document, $voucher);
+            self::fail('El IVA sin importe liquidable no admite aplicar un centavo como comprobante.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('document', $error->errors());
+        }
+        self::assertSame(0, $document->received_retentions()->count());
+
+        $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+        $input['items'][0]['affectation_igv_type_id'] = '20';
+        try {
+            (new \App\CoreFacturalo\Facturalo())->save($input);
+            self::fail('Una factura con IVA exactamente cero no admite una previsión.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('document', $error->errors());
+        }
+        self::assertSame(1, $db->table('documents')->count());
+    }
+
+    public function test_invoice_edit_keeps_positive_iva_forecast_until_the_exact_tax_is_zero(): void
+    {
+        [$db, , $input, $state] = $this->bootIvaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode' => 'free_form']);
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $input['payment_condition_id'] = '02';
+        $input['payments'] = [];
+        $input['items'][1] = array_replace($input['items'][0], ['affectation_igv_type_id' => '20', 'quantity' => '1', 'unit_price' => '10']);
+        $document = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
+        $original = $document->fiscal_data->iva_retention_prevision;
+
+        unset($input['iva_retention_prevision']);
+        $edit = array_replace($input, ['id' => $document->id, 'series' => $document->series, 'number' => $document->number,
+            'received_retentions' => [], 'guarantee_fund' => null]);
+        foreach ($document->items()->orderBy('id')->pluck('id') as $index => $lineId) $edit['items'][$index]['record_id'] = $lineId;
+        $edit['items'][0]['quantity'] = '0.000000000002';
+        $edit['items'][0]['unit_price'] = '1.16';
+        (new \App\CoreFacturalo\Facturalo())->update($edit, $document->id);
+
+        $current = $document->fresh();
+        self::assertSame('0.000000000000', $current->getRawOriginal('total_igv'));
+        self::assertTrue($current->exactValue('total_igv')->isEqualTo('0.00000000000032'));
+        $forecast = $current->fiscal_data->iva_retention_prevision;
+        self::assertNotNull($forecast);
+        self::assertSame($original['saved_at'], $forecast['saved_at']);
+        self::assertTrue(\App\Support\Exact\Decimal::readRequired($forecast, 'amount')->isEqualTo('0.00000000000024'));
+
+        foreach ($current->items()->orderBy('id')->pluck('id') as $index => $lineId) $edit['items'][$index]['record_id'] = $lineId;
+        $edit['items'][0]['affectation_igv_type_id'] = '20';
+        (new \App\CoreFacturalo\Facturalo())->update($edit, $document->id);
+        self::assertTrue($document->fresh()->exactValue('total_igv')->isZero());
+        self::assertNull($document->fresh()->fiscal_data->iva_retention_prevision);
+        self::assertSame([], $state->calls);
+    }
+
+    public function test_hka_rejects_export_fraction_in_an_internal_invoice_snapshot_on_postgresql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $document = $db->transaction(static fn () => (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument());
+        $decimal = \App\Support\Exact\Decimal::class;
+        $source = '0.0000000000004';
+        $snapshot = $document->calculation_snapshot;
+        $snapshot['values']['total_exportation'] = $decimal::fraction($source);
+        $db->table('documents')->where('id', $document->id)->update([
+            'total_exportation' => $decimal::represent($source), 'calculation_snapshot' => json_encode($snapshot, JSON_THROW_ON_ERROR),
+        ]);
+        $document->refresh();
+        self::assertTrue($decimal::of($document->getRawOriginal('total_exportation'))->isZero());
+        self::assertTrue($decimal::readRequired($document, 'total_exportation')->isPositive());
+        try {
+            (new \App\Services\Fiscal\HkaEmissionPreparation())->prepare($document);
+            self::fail('Una operación interna no puede declarar un valor de exportación.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            self::assertArrayHasKey('fiscal_data', $e->errors());
+        }
+        self::assertSame('not_requested', $document->emission()->firstOrFail()->status);
+    }
+
+    public function test_hka_groups_igtf_from_two_converted_receipts_before_rounding_on_postgresql(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $db->table('companies')->update(['igtf_enabled' => true, 'igtf_rate' => '3']);
+        \Tests\Support\SpeProfiles::versions($db, 1, $input['customer_id']);
+        $input['payment_condition_id'] = '01';
+        $input['items'][0] = array_replace($input['items'][0], [
+            'quantity' => '1', 'unit_price' => '7.08', 'affectation_igv_type_id' => '20',
+        ]);
+        $receipt = array_replace($input['payments'][0], [
+            'currency_type_id' => 'USD', 'payment_method_type_id' => '10', 'original_amount' => '0.34',
+            'financial_intermediation' => 'none', 'exchange_rate' => '10.4',
+        ]);
+        $input['payments'] = array_map(static fn () => array_replace($receipt, [
+            'operation_key' => (string) \Illuminate\Support\Str::uuid(),
+        ]), [1, 2]);
+        $document = $db->transaction(static fn () => (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument())->fresh();
+        $taxes = $document->taxes()->where('tax_kind', 'IGTF')->get();
+        self::assertCount(2, $taxes);
+        foreach ($taxes as $tax) {
+            self::assertTrue($tax->exactValue('base')->isEqualTo('3.536'));
+            self::assertTrue($tax->exactValue('amount')->isEqualTo('0.104'));
+        }
+        $prepared = (new \App\Services\Fiscal\HkaEmissionPreparation())->prepare($document);
+        $totals = $prepared->payload['documentoElectronico']['encabezado']['totales'];
+        $tax = collect($totals['impuestosSubtotal'])->firstWhere('codigoTotalImp', 'IGTF');
+        self::assertSame('0.21', $totals['totalIGTF']);
+        self::assertSame($totals['totalIGTF'], $tax['valorTotalImp']);
+        self::assertSame('7.07', $tax['baseImponibleImp']);
+        self::assertSame($prepared->payload, (new \App\Services\Fiscal\HkaEmissionPreparation())->prepare($document->fresh())->payload);
+    }
+
     private function bootHkaFixture(bool $openCash = true): array
     {
         $db = $this->capsule->getConnection('tenant');
@@ -1442,6 +1907,7 @@ PHP;
         \Illuminate\Database\Eloquent\Model::clearBootedModels();
         \Illuminate\Database\Eloquent\Model::setEventDispatcher(new \Illuminate\Events\Dispatcher($app));
         \App\Models\Tenant\Document::observe(\App\Observers\DocumentObserver::class);
+        $this->bootGlobalInventory($app);
         (new \Modules\Inventory\Providers\InventoryKardexServiceProvider($app))->boot();
         (new \Modules\Inventory\Providers\InventoryVoidedServiceProvider($app))->boot();
         $app->instance('encrypter', new \Illuminate\Encryption\Encrypter(str_repeat('k', 32), 'AES-256-CBC'));
@@ -1462,7 +1928,7 @@ PHP;
     }
 
     /** @dataProvider fiscalChannelModes */
-    public function test_exact_calculations_survive_mysql_reads_grouping_discounts_and_rollback(string $fiscalMode): void
+    public function test_exact_calculations_survive_postgresql_reads_grouping_discounts_and_rollback(string $fiscalMode): void
     {
         [$db, $app, $input] = $this->bootHkaFixture();
         $db->table('companies')->update(['fiscal_emission_mode'=>$fiscalMode]);
@@ -1538,31 +2004,32 @@ PHP;
         $exemptLine = $mixedDocument->items()->where('affectation_igv_type_id','20')->firstOrFail();
         self::assertTrue($D::readRequired($exemptLine,'header_discount')->isZero());
         self::assertSame('100',$D::represent($exemptLine->exactValue('total_base_igv')));
-        $usd = array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),
-            'date_of_issue'=>'2026-10-19','currency_type_id'=>'USD','exchange_rate_sale'=>'3.00000000']);
-        $usd['items'][0]['price_input'] = ['amount'=>'1','currency_type_id'=>'VES','includes_iva'=>true];
-        $usdDocument = (new \App\CoreFacturalo\Facturalo())->save($usd)->getDocument()->fresh();
-        self::assertSame('1/3',(string)$usdDocument->exactValue('total'));
+        $vesOnly = count($this->invoiceTestCurrencies()) === 1;
+        $fractional = array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),
+            'date_of_issue'=>'2026-10-19','currency_type_id'=>$vesOnly ? 'VES' : 'USD','exchange_rate_sale'=>'3.00000000']);
+        $fractional['items'][0]['price_input'] = ['amount'=>$vesOnly ? ['n'=>'1','d'=>'3'] : '1','currency_type_id'=>'VES','includes_iva'=>true];
+        $fractionalDocument = (new \App\CoreFacturalo\Facturalo())->save($fractional)->getDocument()->fresh();
+        self::assertSame('1/3',(string)$fractionalDocument->exactValue('total'));
         $report = (new \Modules\Report\Http\Controllers\ReportSaleConsolidatedController())->detailRecords([
             'document_type_id'=>'[]','date_range_type_id'=>'date_of_issue','date_start'=>'2026-10-19','date_end'=>'2026-10-19','person_id'=>null]);
         $summary = \App\Support\Exact\SalesConsolidated::summary($report);
-        self::assertSame('201.4',$summary['total_sale']);
+        self::assertSame($vesOnly ? '200.733333333333' : '201.4',$summary['total_sale']);
         self::assertSame('10',$summary['header_discount']);
         self::assertSame('10',$summary['header_prepayment']);
         self::assertSame('-1.6',$summary['header_iva_adjustment']);
         $receivables = collect(iterator_to_array(\App\Support\Exact\Receivables::dataset(['stablishmentUnpaidAll'=>1,
             'period'=>'date','date_start'=>'2026-10-19'])))->keyBy('report_key');
         self::assertTrue($D::readRequired($receivables['document:'.$mixedDocument->id],'total_to_pay')->isEqualTo($mixedDocument->exactBalance()));
-        self::assertSame('-1/300',(string)$D::readRequired($receivables['document:'.$usdDocument->id],'settlement_adjustment'));
+        self::assertSame('-1/300',(string)$D::readRequired($receivables['document:'.$fractionalDocument->id],'settlement_adjustment'));
         $balanceSummary = \App\Support\Exact\OutstandingSummary::summarize($receivables);
-        self::assertSame('201.39',$balanceSummary['consolidated_balance_ves']);
-        self::assertSame('201.4',$balanceSummary['consolidated_total_ves']);
+        self::assertSame($vesOnly ? '200.73' : '201.39',$balanceSummary['consolidated_balance_ves']);
+        self::assertSame($vesOnly ? '200.733333333333' : '201.4',$balanceSummary['consolidated_total_ves']);
         // A payment committed between the source and payment queries must not split a report's cut.
         $this->capsule->addConnection($db->getConfig(),'exact_report_writer');
         $writer = $this->capsule->getConnection('exact_report_writer');
         $interleaved = false;
         $db->listen(function ($query) use (&$interleaved,$writer,$mixedDocument) {
-            if ($interleaved || $query->connectionName !== 'tenant' || !str_contains($query->sql,'from `documents`') || !str_contains($query->sql,'limit 500')) return;
+            if ($interleaved || $query->connectionName !== 'tenant' || !str_contains($query->sql,'from "documents"') || !str_contains($query->sql,'limit 500')) return;
             $interleaved = true;
             $writer->table('document_payments')->insert(['document_id'=>$mixedDocument->id,'date_of_payment'=>'2026-10-19',
                 'payment_method_type_id'=>'01','payment'=>'33.4','currency_type_id'=>'VES','exchange_rate'=>'1.00000000',
@@ -1576,7 +2043,7 @@ PHP;
         self::assertSame('200.4',$stable['document:'.$mixedDocument->id]['total_to_pay']);
         self::assertSame('167',$mixedDocument->fresh()->balance);
         $widget = (new \Modules\Dashboard\Helpers\DashboardData())->debtors(['period'=>'date','date_start'=>'2026-10-19']);
-        self::assertSame('167.99',$widget['total']);
+        self::assertSame($vesOnly ? '167.33' : '167.99',$widget['total']);
         self::assertSame($widget['total'],$widget['summary']['consolidated_balance_ves']);
         $db->table('item_warehouse')->where('item_id',$input['items'][0]['item_id'])->update([
             'stock'=>'0.333333333333','calculation_snapshot'=>json_encode($D::snapshot(['stock'=>'1/3']))]);
@@ -1712,7 +2179,7 @@ PHP;
             $active = $request['documentoElectronico']['encabezado']['identificacionDocumento'];
             if ($mode === 'timeout') throw new \Illuminate\Http\Client\ConnectionException('fake-jwt-private test-secret');
             if ($mode === 'resend') {
-                $inFlight = \App\Models\Tenant\Document::whereHas('emission', fn ($q) => $q->whereRaw("REPLACE(operation_key, '-', '') = ?", [$active['transaccionId']]))->firstOrFail();
+                $inFlight = \App\Models\Tenant\Document::whereHas('emission', fn ($q) => $q->whereRaw("REPLACE(operation_key COLLATE \"C\", '-', '') = ?", [$active['transaccionId']]))->firstOrFail();
                 self::assertSame('pending', app(\App\Services\Fiscal\HkaEmission::class)->send($inFlight)['status']);
             }
             return \Illuminate\Support\Facades\Http::response(['codigo' => '200', 'resultado' => $active + [
@@ -1974,6 +2441,36 @@ PHP;
         }
     }
 
+    public function test_invoice_edit_validates_the_establishment_key_before_persisting(): void
+    {
+        [$db, , $input] = $this->bootHkaFixture();
+        $db->table('companies')->where('id', 1)->update(['fiscal_credentials' => null]);
+        $invoice = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument();
+        $establishment = (string) $invoice->establishment_id;
+        $edit = array_replace($input, [
+            'series' => $invoice->series,
+            'number' => $invoice->number,
+            'establishment_id' => $establishment,
+            'payments' => [],
+        ]);
+        (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->update($edit, $invoice->id);
+
+        $stored = $invoice->fresh()->getRawOriginal();
+        $emission = $invoice->fresh()->emission->getRawOriginal();
+        foreach ([$establishment.'x', $establishment.'.0', '0'.$establishment, '9223372036854775808', null] as $invalid) {
+            try {
+                (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->update(
+                    array_replace($edit, ['establishment_id' => $invalid]), $invoice->id
+                );
+                self::fail('La edición debe rechazar la clave de sucursal no canónica.');
+            } catch (\Illuminate\Validation\ValidationException $error) {
+                self::assertArrayHasKey('establishment_id', $error->errors());
+            }
+        }
+        self::assertSame($stored, $invoice->fresh()->getRawOriginal());
+        self::assertSame($emission, $invoice->fresh()->emission->getRawOriginal());
+    }
+
     private function assertPaidInvoiceEditing($document, array $input, $db, $app): void
     {
         $edit = array_replace($input, ['id' => $document->id, 'series' => $document->series, 'number' => $document->number,
@@ -2138,7 +2635,7 @@ PHP;
             try { $mail->send($after, $recipients, (string) \Illuminate\Support\Str::uuid()); self::fail('Unconfirmed invoice must be blocked'); }
             catch (\Illuminate\Validation\ValidationException $expected) { self::assertArrayHasKey('customer_email', $expected->errors()); }
             $after->emission->update(['status' => $fiscalStatus]);
-            // Two independent MySQL connections must still produce only one email mutation.
+            // Two independent PostgreSQL connections must still produce only one email mutation.
             $mailResponse = $after->fresh()->emission->response;
             unset($mailResponse['mail']); $after->fresh()->emission->update(['response' => $mailResponse]);
             $log = tempnam(sys_get_temp_dir(), 'sab_hka_mail_');
@@ -2258,10 +2755,65 @@ PHP;
         self::assertFalse($db->table('items')->whereIn('internal_id', ['TEST-PARENT', 'TEST-VARIATION', 'TEST-SERVICE'])->exists());
     }
 
+    public function test_retired_regime_tenant_migration_preserves_history_and_custom_operations(): void
+    {
+        $db = $this->capsule->getConnection('tenant');
+        $db->statement('CREATE TABLE establishments (id integer PRIMARY KEY, template_pdf text, template_ticket_pdf text)');
+        $db->statement('CREATE TABLE configurations (id integer PRIMARY KEY, plan json, formats text)');
+        $db->statement('CREATE TABLE format_templates (id serial PRIMARY KEY, formats text, urls json, is_custom_ticket boolean DEFAULT false)');
+        $db->statement('CREATE TABLE cat_operation_types (id text PRIMARY KEY, active boolean)');
+        $db->statement('CREATE TABLE historical_invoices (id integer PRIMARY KEY, operation_type_id text REFERENCES cat_operation_types(id))');
+        $db->table('establishments')->insert(['id'=>1, 'template_pdf'=>'default', 'template_ticket_pdf'=>'nrus']);
+        $db->table('configurations')->insert(['id'=>1, 'plan'=>json_encode(['module_permissions'=>['nrus'=>true, 'modules'=>[1]]]), 'formats'=>'nrus']);
+        $db->table('cat_operation_types')->insert([
+            ['id'=>'0101','active'=>false], ['id'=>'0201','active'=>false],
+            ['id'=>'0202','active'=>false], ['id'=>'0203','active'=>false], ['id'=>'0113','active'=>true],
+        ]);
+        $db->table('historical_invoices')->insert(['id'=>1, 'operation_type_id'=>'0113']);
+        $migration = require database_path('migrations/tenant/2026_11_19_120000_remove_legacy_nrus.php');
+        $migration->up();
+        $migration->up();
+        self::assertSame('default', $db->table('establishments')->value('template_ticket_pdf'));
+        self::assertSame('default', $db->table('configurations')->value('formats'));
+        self::assertArrayNotHasKey('nrus', json_decode($db->table('configurations')->value('plan'), true)['module_permissions']);
+        self::assertSame(['0101','0201','0202','0203'], $db->table('cat_operation_types')->where('active', true)->orderBy('id')->pluck('id')->all());
+        self::assertSame('0113', $db->table('historical_invoices')->value('operation_type_id'));
+        self::assertSame(1, $db->table('format_templates')->where('formats', 'default')->count());
+    }
+
+    public function test_retired_regime_central_migration_stops_for_assigned_clients(): void
+    {
+        $db = $this->capsule->getConnection('tenant');
+        $db->statement('CREATE TABLE plans (id integer PRIMARY KEY, name text, locked boolean, module_permissions json)');
+        $db->statement('CREATE TABLE clients (id integer PRIMARY KEY, plan_id integer REFERENCES plans(id))');
+        $db->statement('CREATE TABLE payment_orders (id integer PRIMARY KEY, plan_id integer REFERENCES plans(id) ON DELETE SET NULL, order_state_id integer)');
+        $db->statement('CREATE TABLE configurations (id integer PRIMARY KEY, guest_register_plan_id integer)');
+        $db->statement('CREATE TABLE business_turns (id integer PRIMARY KEY, value text)');
+        $db->table('plans')->insert(['id'=>1, 'name'=>'NRUS', 'locked'=>true, 'module_permissions'=>'{}']);
+        $db->table('clients')->insert(['id'=>1, 'plan_id'=>1]);
+        $migration = require database_path('migrations/2026_11_19_120000_remove_legacy_nrus.php');
+        try {
+            $migration->up();
+            self::fail('La migración debía detenerse ante un cliente asignado.');
+        } catch (\RuntimeException $error) {
+            self::assertStringContainsString('clientes', $error->getMessage());
+        }
+        self::assertSame(1, $db->table('plans')->count());
+        $db->table('clients')->delete();
+        $db->table('configurations')->insert(['id'=>1, 'guest_register_plan_id'=>1]);
+        $db->table('payment_orders')->insert(['id'=>1, 'plan_id'=>1, 'order_state_id'=>2]);
+        $migration->up();
+        $migration->up();
+        self::assertSame(0, $db->table('plans')->count());
+        self::assertNull($db->table('configurations')->value('guest_register_plan_id'));
+        self::assertNull($db->table('payment_orders')->value('plan_id'));
+    }
+
     public function test_fresh_system_migrations_do_not_create_fiscal_transport_configuration(): void
     {
         $this->capsule->getDatabaseManager()->setDefaultConnection('system');
-        $migrations=$this->migrations('migrations/*.php');
+        // Include the module migrations registered by the real central installer.
+        $migrations=$this->migrations('migrations/*.php','../modules/Marketplace/Database/Migrations/*.php');
         foreach ($migrations as $migration) {
             $migration->up();
         }
@@ -2278,13 +2830,13 @@ PHP;
         self::assertSame(0, $db->table('module_levels')->whereIn('value', ['dispatch_carrier', 'carrier_dispatches'])->count());
         self::assertSame(1, $db->table('module_levels')->where('value', 'dispatches')->count());
         foreach (array_reverse($migrations) as $migration) $migration->down();
-        self::assertSame([],array_map(fn($row)=>(array)$row,$db->select('SHOW TABLES')));
+        self::assertSame([],array_map(fn($row)=>(array)$row,\App\Database\SchemaInspector::tables($db)));
         foreach ($migrations as $migration) $migration->up();
         foreach (require base_path('config/exact_calculations_system.php') as $table=>$fields) {
             self::assertTrue($db->getSchemaBuilder()->hasColumn($table,'calculation_snapshot'),$table);
             foreach ($fields as $field) {
-                $expected=$table==='plans' && $field==='sales_limit' ? 'decimal(32,12)' : 'decimal(30,12)';
-                $column=$db->selectOne('SELECT COLUMN_TYPE AS definition FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',[$table,$field]);
+                $expected=$table==='plans' && $field==='sales_limit' ? 'numeric(32,12)' : 'numeric(30,12)';
+                $column=$db->selectOne('SELECT format_type(a.atttypid,a.atttypmod) AS definition FROM pg_attribute a JOIN pg_class tbl ON tbl.oid=a.attrelid JOIN pg_namespace ns ON ns.oid=tbl.relnamespace WHERE ns.nspname=current_schema() AND tbl.relname = ? AND a.attname = ?',[$table,$field]);
                 self::assertSame($expected,$column->definition,$table.'.'.$field);
             }
         }
@@ -2306,9 +2858,9 @@ PHP;
         self::assertSame('XBG', $db->table('cat_unit_types')->where('id', 'BOL')->value('hka_code'));
         self::assertSame('XBE', $db->table('cat_unit_types')->where('id', 'BTO')->value('hka_code'));
         self::assertSame('PR', $db->table('cat_unit_types')->where('id', 'PAR')->value('hka_code'));
-        $hkaColumn = $db->selectOne('SELECT IS_NULLABLE AS nullable, DATA_TYPE AS type, CHARACTER_MAXIMUM_LENGTH AS length, COLUMN_DEFAULT AS default_value FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, 'cat_unit_types', 'hka_code']);
+        $hkaColumn = $db->selectOne('SELECT IS_NULLABLE AS nullable, DATA_TYPE AS type, CHARACTER_MAXIMUM_LENGTH AS length, COLUMN_DEFAULT AS default_value FROM information_schema.COLUMNS WHERE table_catalog = ? AND table_schema=current_schema() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, 'cat_unit_types', 'hka_code']);
         self::assertSame('NO', $hkaColumn->nullable);
-        self::assertSame('varchar', $hkaColumn->type);
+        self::assertSame('character varying', $hkaColumn->type);
         self::assertSame(3, (int) $hkaColumn->length);
         self::assertNull($hkaColumn->default_value);
         self::assertSame(0, $db->table('cat_unit_types')->whereIn('id', ['NIU', 'ZZ'])->count());
@@ -2325,19 +2877,19 @@ PHP;
         // ######## FIN CONTRATO UNIDADES DE MEDIDA VENEZUELA ########
         $this->assertNoTransportColumns($db);
         foreach (['companies', 'documents', 'fiscal_configuration_audits'] as $table) {
-            $column = $db->selectOne('SELECT IS_NULLABLE AS nullable, CHARACTER_MAXIMUM_LENGTH AS length FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, $table, 'fiscal_emission_mode']);
+            $column = $db->selectOne('SELECT IS_NULLABLE AS nullable, CHARACTER_MAXIMUM_LENGTH AS length FROM information_schema.COLUMNS WHERE table_catalog = ? AND table_schema=current_schema() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, $table, 'fiscal_emission_mode']);
             self::assertSame('NO', $column->nullable, $table);
             self::assertSame(32, (int) $column->length, $table);
         }
         foreach (['fiscal_configuration', 'fiscal_credentials'] as $name) {
-            $column = $db->selectOne('SELECT IS_NULLABLE AS nullable, DATA_TYPE AS type FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, 'companies', $name]);
+            $column = $db->selectOne('SELECT IS_NULLABLE AS nullable, DATA_TYPE AS type FROM information_schema.COLUMNS WHERE table_catalog = ? AND table_schema=current_schema() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, 'companies', $name]);
             self::assertSame('YES', $column->nullable);
             self::assertSame('text', $column->type);
         }
-        $hkaAuthenticated = $db->selectOne('SELECT IS_NULLABLE AS nullable, DATA_TYPE AS type FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, 'companies', 'hka_authenticated_at']);
+        $hkaAuthenticated = $db->selectOne('SELECT IS_NULLABLE AS nullable, DATA_TYPE AS type FROM information_schema.COLUMNS WHERE table_catalog = ? AND table_schema=current_schema() AND TABLE_NAME = ? AND COLUMN_NAME = ?', [$this->database, 'companies', 'hka_authenticated_at']);
         self::assertSame('YES', $hkaAuthenticated->nullable);
-        self::assertSame('timestamp', $hkaAuthenticated->type);
-        self::assertNotNull($db->selectOne('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME = ?', [$this->database, 'fiscal_configuration_audits', 'company_id', 'companies']));
+        self::assertSame('timestamp without time zone', $hkaAuthenticated->type);
+        self::assertNotNull($db->selectOne('SELECT con.conname FROM pg_constraint con JOIN pg_class tbl ON tbl.oid=con.conrelid JOIN pg_namespace ns ON ns.oid=tbl.relnamespace JOIN pg_class rt ON rt.oid=con.confrelid CROSS JOIN LATERAL generate_subscripts(con.conkey,1) k(i) JOIN pg_attribute a ON a.attrelid=tbl.oid AND a.attnum=con.conkey[k.i] JOIN pg_attribute ra ON ra.attrelid=rt.oid AND ra.attnum=con.confkey[k.i] WHERE ns.nspname=current_schema() AND current_database() = ? AND tbl.relname = ? AND a.attname = ? AND rt.relname = ?', [$this->database, 'fiscal_configuration_audits', 'company_id', 'companies']));
         foreach (['digital_certificate_qztray', 'private_certificate_qztray'] as $column) {
             self::assertTrue($db->getSchemaBuilder()->hasColumn('companies', $column));
         }
@@ -2372,44 +2924,38 @@ PHP;
         if ($db->getSchemaBuilder()->hasTable('module_levels')) {
             self::assertSame(0, $db->table('module_levels')->whereIn('value', ['document_not_sent', 'regularize_shipping'])->count());
         }
-        self::assertSame([], $db->select("SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND (COLUMN_NAME LIKE 'soap_%' OR COLUMN_NAME IN ('certificate', 'certificate_due', 'send_to_pse', 'response_signature_pse', 'response_send_cdr_pse', 'config_system_env'))", [$this->database]));
+        self::assertSame([], $db->select("SELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE table_catalog = ? AND table_schema=current_schema() AND (COLUMN_NAME LIKE 'soap_%' OR COLUMN_NAME IN ('certificate', 'certificate_due', 'send_to_pse', 'response_signature_pse', 'response_send_cdr_pse', 'config_system_env'))", [$this->database]));
     }
 
     // ######## INICIO INTEGRIDAD DE INSTALACIÓN NUEVA ########
     private function assertForeignKeyIntegrity(Connection $db): void
     {
-        $keys = $db->select('SELECT TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION', [$this->database]);
-        foreach (collect($keys)->groupBy(fn ($key) => $key->TABLE_NAME . '.' . $key->CONSTRAINT_NAME) as $name => $columns) {
+        $keys = \App\Database\SchemaInspector::foreignKeys($db);
+        foreach (collect($keys)->groupBy(fn ($key) => $key->table . '.' . $key->name) as $name => $columns) {
             $first = $columns->first();
-            $query = $db->table($first->TABLE_NAME . ' as child')->leftJoin($first->REFERENCED_TABLE_NAME . ' as parent', function ($join) use ($columns) {
+            $query = $db->table($first->table . ' as child')->leftJoin($first->reference_table . ' as parent', function ($join) use ($columns) {
                 foreach ($columns as $column) {
-                    $join->on('child.' . $column->COLUMN_NAME, '=', 'parent.' . $column->REFERENCED_COLUMN_NAME);
+                    $join->on('child.' . $column->column, '=', 'parent.' . $column->reference_column);
                 }
             });
             foreach ($columns as $column) {
-                $query->whereNotNull('child.' . $column->COLUMN_NAME);
+                $query->whereNotNull('child.' . $column->column);
             }
-            self::assertSame(0, $query->whereNull('parent.' . $first->REFERENCED_COLUMN_NAME)->count(), $name);
+            self::assertSame(0, $query->whereNull('parent.' . $first->reference_column)->count(), $name);
         }
     }
     // ######## FIN INTEGRIDAD DE INSTALACIÓN NUEVA ########
 
     private function schemaSnapshot(Connection $db): array
     {
-        $snapshot = [];
-        foreach ($db->select('SHOW TABLES') as $row) {
-            $table = array_values((array) $row)[0];
-            $snapshot[$table] = array_values((array) $db->selectOne('SHOW CREATE TABLE `' . $table . '`'))[1];
-        }
-        ksort($snapshot);
-        return $snapshot;
+        return \App\Database\SchemaInspector::snapshot($db);
     }
 
     private function seedSnapshot(Connection $db, bool $normalizeTimestamps = true): array
     {
         $snapshot = [];
-        foreach ($db->select('SHOW TABLES') as $tableRow) {
-            $table = array_values((array) $tableRow)[0];
+        foreach (\App\Database\SchemaInspector::tables($db) as $tableRow) {
+            $table = $tableRow;
             $rows = [];
             foreach ($db->table($table)->get() as $row) {
                 $values = (array) $row;

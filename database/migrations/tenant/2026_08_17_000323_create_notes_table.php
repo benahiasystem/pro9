@@ -1,55 +1,53 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Additional note fields: creation_key UUID unique nullable, request_hash SHA-256 nullable, effect_snapshot JSON nullable; document_id unique.
- * Estructura inicial de `notes` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `document_id` int(10) unsigned NOT NULL
- * - `note_type` enum('credit','debit') COLLATE utf8mb4_unicode_ci NOT NULL
- * - `note_credit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `note_debit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `note_description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `affected_document_id` int(10) unsigned DEFAULT NULL
- * - `data_affected_document` json DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - document_id: bigint
+ * - note_type: varchar(255)
+ * - note_credit_type_id: varchar(255)
+ * - note_debit_type_id: varchar(255)
+ * - note_description: varchar(255)
+ * - affected_document_id: bigint
+ * - data_affected_document: json
+ * - creation_key: char(36)
+ * - request_hash: char(64)
+ * - effect_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `notes` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `document_id` int(10) unsigned NOT NULL,
-  `note_type` enum('credit','debit') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `note_credit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `note_debit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `note_description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `affected_document_id` int(10) unsigned DEFAULT NULL,
-  `data_affected_document` json DEFAULT NULL,
-  /* ######## INICIO NOTAS HKA ######## */
-  `creation_key` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `request_hash` char(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `effect_snapshot` json DEFAULT NULL,
-  UNIQUE KEY `notes_creation_key_unique` (`creation_key`),
-  UNIQUE KEY `notes_document_unique` (`document_id`),
-  /* ######## FIN NOTAS HKA ######## */
-  PRIMARY KEY (`id`),
-  KEY `notes_document_id_foreign` (`document_id`),
-  KEY `notes_note_credit_type_id_foreign` (`note_credit_type_id`),
-  KEY `notes_note_debit_type_id_foreign` (`note_debit_type_id`),
-  KEY `notes_affected_document_id_foreign` (`affected_document_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('notes', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('document_id');
+            $table->string('note_type', 255)->collation('pro9_ci_ai');
+            $table->string('note_credit_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('note_debit_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('note_description', 255)->collation('pro9_ci_ai');
+            $table->bigInteger('affected_document_id')->nullable();
+            $table->json('data_affected_document')->nullable();
+            $table->char('creation_key', 36)->collation('pro9_ci_ai')->nullable();
+            $table->char('request_hash', 64)->collation('C')->nullable();
+            $table->json('effect_snapshot')->nullable();
+            $table->unique(['creation_key'], 'notes_creation_key_unique');
+            $table->unique(['document_id'], 'notes_document_unique');
+            $table->index(['document_id'], 'notes_document_id_foreign');
+            $table->index(['note_credit_type_id'], 'notes_note_credit_type_id_foreign');
+            $table->index(['note_debit_type_id'], 'notes_note_debit_type_id_foreign');
+            $table->index(['affected_document_id'], 'notes_affected_document_id_foreign');
+        });
+        DB::statement('ALTER TABLE "notes" ADD CONSTRAINT "notes_note_type_check" CHECK ("note_type" IN (\'credit\',\'debit\'))');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `notes`');
+        Schema::dropIfExists('notes');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

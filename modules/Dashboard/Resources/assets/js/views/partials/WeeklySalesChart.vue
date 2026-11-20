@@ -7,8 +7,8 @@
           <h5 class="ws-title m-0">{{ chartTitle }}</h5>
           <small class="text-muted">{{ subtitle }}</small>
         </div>
-        <span v-if="variation !== null" class="ws-badge" :class="variation >= 0 ? 'is-up' : 'is-down'">
-          {{ variation >= 0 ? "+" : "" }}{{ variation.toFixed(0) }}% vs periodo ant.
+        <span v-if="variation !== null" class="ws-badge" :class="variation.up ? 'is-up' : 'is-down'">
+          {{ variation.up ? "+" : "-" }}{{ percentText(variation.pct) }}% vs periodo ant.
         </span>
       </div>
       <apexchart type="bar" height="300" :options="chartOptions" :series="series"></apexchart>
@@ -17,6 +17,8 @@
 </template>
 
 <script>
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { readOriginal, readVector, rawChange, chartCoordinate, formatUnitOriginal, formatAxisTick, originalText } from "../../../../../../../resources/js/helpers/dashboard-originals";
 export default {
   name: "WeeklySalesChart",
   props: {
@@ -24,10 +26,12 @@ export default {
   },
   data() {
     return {
+      fetchVersion: 0, loading: true, fetchFailed: false,
       labels: [],
       previousLabels: [],
       current: [],
       previous: [],
+      currentTotal: null, previousTotal: null,
       subtitle: "Barras solidas = esta semana - gris = semana anterior",
       barColor: "#0f766e",
     };
@@ -60,16 +64,11 @@ export default {
     },
     series() {
       return [
-        { name: "Actual", data: this.current },
-        { name: "Periodo anterior", data: this.previous },
+        { name: "Actual", data: this.current.map(chartCoordinate) },
+        { name: "Periodo anterior", data: this.previous.map(chartCoordinate) },
       ];
     },
-    variation() {
-      const sumCurrent = this.current.reduce((a, b) => a + Number(b), 0);
-      const sumPrevious = this.previous.reduce((a, b) => a + Number(b), 0);
-      if (!sumPrevious) return null;
-      return ((sumCurrent - sumPrevious) / sumPrevious) * 100;
-    },
+    variation() { return rawChange(this.currentTotal, this.previousTotal, false); },
     chartOptions() {
       return {
         chart: { toolbar: { show: false }, fontFamily: "inherit" },
@@ -104,12 +103,8 @@ export default {
             },
           },
           y: {
-            formatter: (val) =>
-              "Bs. " +
-              Number(val).toLocaleString("es-PE", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              }),
+            formatter: (_coordinate, options) => formatUnitOriginal(
+              (options && options.seriesIndex === 1 ? this.previous : this.current)[options && options.dataPointIndex], 'money'),
           },
         },
       };
@@ -120,23 +115,28 @@ export default {
       const success = getComputedStyle(document.documentElement).getPropertyValue("--success").trim();
       if (success) this.barColor = success;
     },
-    fetchData() {
-      this.$http.get("/dashboard/sales-week", { params: this.filters || {} }).then((response) => {
+    async fetchData() {
+      const version = ++this.fetchVersion; this.loading = true; this.fetchFailed = false;
+      this.labels = []; this.previousLabels = []; this.current = []; this.previous = []; this.currentTotal = null; this.previousTotal = null;
+      try {
+        const response = await this.$http.get("/dashboard/sales-week", {params: {...(this.filters || {})}});
+        if (version !== this.fetchVersion) return;
         const data = response.data;
-        this.labels = data.labels || [];
-        this.previousLabels = data.previous_labels || [];
-        this.current = data.current || [];
-        this.previous = data.previous || [];
+        this.labels = data.labels || []; this.previousLabels = data.previous_labels || [];
+        this.current = readVector(data, 'current_fractions'); this.previous = readVector(data, 'previous_fractions');
+        this.currentTotal = readOriginal(data, 'current_total'); this.previousTotal = readOriginal(data, 'previous_total');
         this.subtitle = data.subtitle || this.subtitle;
-      });
+      } catch (_) {
+        if (version === this.fetchVersion) this.fetchFailed = true;
+      } finally {
+        if (version === this.fetchVersion) this.loading = false;
+      }
     },
-    formatK(val) {
-      const num = Number(val) || 0;
-      if (Math.abs(num) >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-      return num.toFixed(0);
-    },
+    formatK(val) { return formatAxisTick(val, 'count'); },
+    percentText(value) { return originalText(value, 0); },
   },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

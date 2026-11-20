@@ -23,7 +23,7 @@ class BusinessTurnController extends Controller
 
     public function records()
     {
-        return BusinessTurn::selectable()->sorted()->get();
+        return BusinessTurn::query()->sorted()->get();
     }
 
     public function record($id)

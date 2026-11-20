@@ -251,6 +251,7 @@
                         :form="document"
                         :configuration="configuration"
                         :globalDiscountTypes="global_discount_types"
+                        @items-changed="document.payment_condition_id === '02' && calculateFee()"
                         class="mt-3"
                         >
                     </list-restrict-items>
@@ -288,15 +289,13 @@ import { hasNamedSeries } from '@helpers/document-series';
     import {fnRestrictSaleItemsCpe} from '@mixins/functions'
     import fiscalPaymentSettings from '@mixins/fiscal-payment-settings'
     import {suggestInstallments} from '../../../../helpers/document-creation'
+    import {exactAmount} from '../../../../helpers/exchange-rate-math'
     import IgtfPaymentFields from '../../documents/partials/igtf_fields.vue'
     import {defaultCashForCurrency, paymentValidationMessage, isRecordedReceipt} from '../../../../helpers/payment-classification'
     // ######## INICIO MONEDA VENEZUELA HOTEL ########
     import {ensureExchangeRateSale} from '../../../../helpers/ensure-exchange-rate-sale'
     // ######## FIN MONEDA VENEZUELA HOTEL ########
-    import {
-        hydrateItemLots,
-        validateItemsLots,
-    } from '../../../../helpers/lotValidation'
+    import {normalizeInvoiceLots, resolveIdLoteSelected, validateItemsLots} from '../../../../helpers/invoice-lots'
 
     export default {
         components: {DocumentOptions, ListRestrictItems, IgtfPaymentFields},
@@ -374,33 +373,21 @@ import { hasNamedSeries } from '@helpers/document-series';
              * igual que invoice_generate.ensureItemsLotsForSubmit().
              */
             ensureItemsLotsForSubmit() {
-                if (!Array.isArray(this.document.items)) return;
+                if (!Array.isArray(this.document.items)) return true;
+                try {
+                    this.document.items.forEach(row => {
+                        const resolved = resolveIdLoteSelected(row);
+                        if (resolved == null) return;
 
-                this.document.items.forEach((row, index) => {
-                    if (!row) return;
-
-                    hydrateItemLots(row);
-
-                    const resolved = row.IdLoteSelected;
-                    if (resolved === null || resolved === undefined || resolved === '') {
-                        return;
-                    }
-
-                    const normalized = Array.isArray(resolved)
-                        ? resolved.map(lot => ({
-                            id: lot.id,
-                            code: lot.code,
-                            compromise_quantity: Number(lot.compromise_quantity) || 0,
-                            date_of_due: lot.date_of_due || null,
-                        }))
-                        : resolved;
-
-                    this.$set(row, 'IdLoteSelected', normalized);
-                    if (row.item) {
-                        this.$set(row.item, 'IdLoteSelected', normalized);
-                    }
-                    this.$set(this.document.items, index, row);
-                });
+                        const normalized = normalizeInvoiceLots(resolved);
+                        this.$set(row, 'IdLoteSelected', normalized);
+                        if (row.item) this.$set(row.item, 'IdLoteSelected', normalized);
+                    });
+                    return true;
+                } catch (error) {
+                    this.$message.error(error.message);
+                    return false;
+                }
             },
             firstLotValidationError(errors) {
                 if (!errors || typeof errors !== 'object') return null;
@@ -586,6 +573,7 @@ import { hasNamedSeries } from '@helpers/document-series';
 
             },
             validatePaymentDate() {
+                if (this.document.payment_condition_id !== '02') return {error_by_item: 0, message: ''}
 
                 let error_by_item = 0
                 let message = ""
@@ -613,7 +601,7 @@ import { hasNamedSeries } from '@helpers/document-series';
                 if(this.document.items.length === 0) return this.$message.error('No tiene productos agregados.')
 
                 // Regenerar IdLoteSelected antes de validar/enviar (mismo flujo que invoice_generate)
-                this.ensureItemsLotsForSubmit();
+                if (!this.ensureItemsLotsForSubmit()) return;
 
                 const lotsValidation = validateItemsLots(this.document.items);
                 if (!lotsValidation.valid) {
@@ -648,10 +636,9 @@ import { hasNamedSeries } from '@helpers/document-series';
                 }
                 // ######## FIN MONEDA VENEZUELA HOTEL ########
                 if (!await this.ensureFiscalPaymentsReady(this.document.payments)) return;
-                this.loading_submit = true;
-
                 // Reasegurar lotes justo antes del POST (por si mutaron en validaciones previas)
-                this.ensureItemsLotsForSubmit();
+                if (!this.ensureItemsLotsForSubmit()) return;
+                this.loading_submit = true;
 
                 await this.$http.post(`/${this.resource_documents}`, {
                     ...this.document, fee: this.document.payment_condition_id === '02' ? this.document.fee : [],
@@ -752,7 +739,7 @@ import { hasNamedSeries } from '@helpers/document-series';
                         payment_method_type_id: row.payment_method_type_id || null,
                         date: date,
                         currency_type_id: row.currency_type_id || this.document.currency_type_id,
-                        amount: _.round(parseFloat(row.amount) || 0, 2),
+                        amount: exactAmount(row.amount ?? 0).final(2),
                     }
                 })
             },
@@ -810,9 +797,7 @@ import { hasNamedSeries } from '@helpers/document-series';
                 }
 
                 // Precargar/regenerar lotes desde la NV (item.IdLoteSelected o lots_group)
-                if (Array.isArray(this.document.items)) {
-                    this.document.items.forEach(row => hydrateItemLots(row));
-                }
+                this.ensureItemsLotsForSubmit();
 
                 this.assignPlateNumberToItems(q)
                 //console.log(this.document);

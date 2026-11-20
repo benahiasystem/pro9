@@ -14,6 +14,8 @@
 
 <script>
 import Chart from 'chart.js';
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { graphOriginals, chartCoordinate, formatUnitOriginal } from '../../../helpers/dashboard-originals';
 
 export default {
     props: ['allData'],
@@ -65,7 +67,11 @@ export default {
     },
     methods: {
         getCSSVariable(name) {
-            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            const styles = getComputedStyle(document.documentElement);
+            const value = styles.getPropertyValue(name).trim();
+            if (value) return value;
+            const defaults = {'--info': '#00cfe8', '--danger': '#fe006c', '--primary-color': '#2447e8'};
+            return (name === '--primary-color' && styles.getPropertyValue('--primary').trim()) || defaults[name] || '';
         },
         setupThemeObserver() {
             this.teardownThemeObserver();
@@ -146,6 +152,7 @@ export default {
 
                 return {
                     ...dataset,
+                    data: dataset.data_fractions || dataset.calculation_snapshot ? graphOriginals(dataset).map(chartCoordinate) : dataset.data,
                     borderColor: gradientColors[colorIndex].base,
                     backgroundColor: gradient,
                     borderWidth: 3,
@@ -190,6 +197,9 @@ export default {
                             label: function (tooltipItem, data) {
                                 const ds = data.datasets[tooltipItem.datasetIndex]
                                 const label = (ds && ds.label) || ''
+                                if (ds && (ds.data_fractions || ds.calculation_snapshot)) {
+                                    return ` ${label}: ${formatUnitOriginal(graphOriginals(ds)[tooltipItem.index], 'money', 'en-US')}`
+                                }
                                 const value = Number(tooltipItem.yLabel)
                                 const amount = isNaN(value) ? tooltipItem.yLabel : value.toFixed(2)
                                 return ` ${label}: Bs. ${amount}`
@@ -216,4 +226,5 @@ export default {
         }
     }
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>

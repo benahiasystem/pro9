@@ -50,7 +50,7 @@ class KardexServiceProvider extends ServiceProvider
                 $quantity=isset($document_item->item->dispatch_global_inventory_quantity)
                     ? \App\Support\Exact\Decimal::of($document_item->item->dispatch_global_inventory_quantity)
                     : $document_item->exactValue('quantity')->multipliedBy(
-                        !empty($document_item->item->is_set) ? 1 : \App\Support\Exact\Decimal::of($document_item->item->presentation->quantity_unit ?? 1));
+                        !empty($document_item->item->is_set) ? 1 : \App\Services\Fiscal\FiscalNoteInventory::presentationQuantity($document_item->item));
                 if ($quantity->isZero()) return;
                 $kardex = $this->saveKardex('sale', $document_item->item_id, $document_item->document_id, $quantity, 'document');
 

@@ -22,6 +22,10 @@ use RuntimeException;
 
 class User extends Model implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     // CanResetPassword: Activa las funciones internas de resetear clave.
     // Notifiable: Permite que este modelo pueda enviar emails.
     use Authenticatable, Authorizable, UsesSystemConnection, CanResetPassword, Notifiable;

@@ -3,6 +3,7 @@
 namespace Modules\Ecommerce\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Database\IntegerTransport;
 use App\Models\Tenant\ConfigurationEcommerce;
 use App\Services\Tenant\FrequentlyBoughtTogetherService;
 use Illuminate\Http\Request;
@@ -11,12 +12,14 @@ class SocialProofController extends Controller
 {
     public function frequentlyBoughtTogether(Request $request, FrequentlyBoughtTogetherService $service, $itemId = null)
     {
+        if (!ConfigurationEcommerce::storefrontShowsPrices()) return ['success'=>true,'data'=>[]];
         $limit = (int) $request->query('limit', FrequentlyBoughtTogetherService::DEFAULT_LIMIT);
 
         if ($request->filled('item_ids')) {
-            $ids = collect(explode(',', (string) $request->query('item_ids')))
-                ->map(fn ($id) => (int) trim($id))
-                ->filter()
+            $rawIds=$request->query('item_ids');
+            $ids = collect(is_string($rawIds) || is_int($rawIds) ? explode(',',(string)$rawIds) : [])
+                ->map(fn ($id) => IntegerTransport::positiveKey(trim($id)))
+                ->filter(fn ($id) => $id !== null)
                 ->values()
                 ->all();
 
@@ -26,11 +29,11 @@ class SocialProofController extends Controller
             ];
         }
 
-        $itemId = (int) ($itemId ?: $request->query('item_id', 0));
+        $itemId = IntegerTransport::positiveKey($itemId ?: $request->query('item_id', 0));
 
         return [
             'success' => true,
-            'data' => $service->forItem($itemId, $limit),
+            'data' => $itemId === null ? [] : $service->forItem($itemId, $limit),
         ];
     }
 

@@ -13,6 +13,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 class ReportTipExport implements  FromView, ShouldAutoSize, WithEvents
 {
     use Exportable;
+    public $data;
 
     public function data($data)
     {

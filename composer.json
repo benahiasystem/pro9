@@ -5,6 +5,7 @@
     "license": "MIT",
     "type": "project",
     "require": {
+        "ext-pdo_pgsql": "*",
         "barryvdh/laravel-dompdf": "^2.0",
         "binarytorch/larecipe": "^2.6",
         "culqi/culqi-php": "2.0.4",
@@ -16,7 +17,6 @@
         "guzzlehttp/guzzle": "^7.2",
         "html2text/html2text": "^4.3",
         "hyn/multi-tenant": "^5.8",
-        "ifsnop/mysqldump-php": "^2.11",
         "imangazaliev/didom": "^1.16",
         "intervention/image": "^2.7",
         "jenssegers/agent": "^2.6",

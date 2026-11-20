@@ -1,49 +1,55 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
-// ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
-/**
- * document_currency_totals: esquema inicial para instalaciones nuevas.
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `document_id` int(10) unsigned NOT NULL
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `taxed` decimal(30,12) NOT NULL DEFAULT 0
- * - `exportation` decimal(30,12) NOT NULL DEFAULT 0
- * - `exempt` decimal(30,12) NOT NULL DEFAULT 0
- * - `discount` decimal(30,12) NOT NULL DEFAULT 0
- * - `charge` decimal(30,12) NOT NULL DEFAULT 0
- * - `iva` decimal(30,12) NOT NULL DEFAULT 0
- * - `other_taxes` decimal(30,12) NOT NULL DEFAULT 0
- * - `total` decimal(30,12) NOT NULL DEFAULT 0
- * - `tax_breakdown` json NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - document_id: bigint
+ * - currency_type_id: varchar(255)
+ * - taxed: numeric(30,12)
+ * - exportation: numeric(30,12)
+ * - exempt: numeric(30,12)
+ * - discount: numeric(30,12)
+ * - charge: numeric(30,12)
+ * - iva: numeric(30,12)
+ * - other_taxes: numeric(30,12)
+ * - total: numeric(30,12)
+ * - tax_breakdown: json
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
-return new class extends Migration {
-    public function up(): void {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `document_currency_totals` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `document_id` int(10) unsigned NOT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `taxed` decimal(30,12) NOT NULL DEFAULT 0,
-  `exportation` decimal(30,12) NOT NULL DEFAULT 0,
-  `exempt` decimal(30,12) NOT NULL DEFAULT 0,
-  `discount` decimal(30,12) NOT NULL DEFAULT 0,
-  `charge` decimal(30,12) NOT NULL DEFAULT 0,
-  `iva` decimal(30,12) NOT NULL DEFAULT 0,
-  `other_taxes` decimal(30,12) NOT NULL DEFAULT 0,
-  `total` decimal(30,12) NOT NULL DEFAULT 0,
-  `tax_breakdown` json NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `document_currency_totals_document_unique` (`document_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('document_currency_totals', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('document_id');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->decimal('taxed', 30, 12)->default('0');
+            $table->decimal('exportation', 30, 12)->default('0');
+            $table->decimal('exempt', 30, 12)->default('0');
+            $table->decimal('discount', 30, 12)->default('0');
+            $table->decimal('charge', 30, 12)->default('0');
+            $table->decimal('iva', 30, 12)->default('0');
+            $table->decimal('other_taxes', 30, 12)->default('0');
+            $table->decimal('total', 30, 12)->default('0');
+            $table->json('tax_breakdown');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->unique(['document_id'], 'document_currency_totals_document_unique');
+        });
     }
-    public function down(): void { DB::unprepared('DROP TABLE IF EXISTS `document_currency_totals`'); }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('document_currency_totals');
+    }
 };
-// ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

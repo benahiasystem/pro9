@@ -1,7 +1,8 @@
 
 // ######## INICIO TASAS OCHO DECIMALES ########
-import { exactAmount, normalizeExchangeRate } from "../../../../../../resources/js/helpers/exchange-rate-math"
+import { exactAmount, normalizeExchangeRate, exactInput, exactSnapshot } from "../../../../../../resources/js/helpers/exchange-rate-math"
 // ######## FIN TASAS OCHO DECIMALES ########
+import {cartIdentifier, cartRequestIdentifier, cartLineAmount, cartQuantity, cartRestoreRecords, cartSummaryAmounts, DEFAULT_CART_TAX_PERCENTAGE} from '../../../../../../resources/js/helpers/storefront-cart-amounts'
 // Cart Application - Ecommerce Module
 // Main Vue instance for shopping cart detail page
 
@@ -146,6 +147,9 @@ var app_cart = new Vue({
             identity_document_type_id: ''
         },
         records: [],
+        cartCalculationError: '',
+        lastCartStorage: null,
+        cartStorageHandler: null,
         records_old: [],
         couponField: '',
         couponMessage: null,
@@ -155,8 +159,10 @@ var app_cart = new Vue({
         appliedCoupon: null,
         appliedCampaignDiscount: 0,
         campaignSavings: 0,
+        campaignSavingsFraction: null,
         appliedCampaigns: [],
         campaignValidationTimer: null,
+        campaignValidationSequence: 0,
         campaignExpirationInterval: null,
         checkoutPreview: null,
         checkoutPreviewState: 'idle',
@@ -176,6 +182,9 @@ var app_cart = new Vue({
         response_order_total:0,
         errors: {},
         exchange_rate_sale: '',
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        cartTaxPercentage: window.__ecommerce_config?.tax_percentage ?? DEFAULT_CART_TAX_PERCENTAGE,
+        // ######### FIN CAMBIO AFECTACIÓN IVA
         typeDocuments: '',
         typeDocumentList: [],
         numberDocument: '',
@@ -402,8 +411,8 @@ var app_cart = new Vue({
         },
         cartFbtItemIds() {
             return (this.records || [])
-                .map((row) => parseInt(row.id, 10))
-                .filter((id) => id > 0)
+                .map((row) => cartRequestIdentifier(row.id))
+                .filter((id) => id !== null)
                 .slice(0, 8);
         },
         isGuestCheckoutActive() {
@@ -595,7 +604,7 @@ var app_cart = new Vue({
             return 'Confirmar pedido';
         },
         guestCheckoutTotal() {
-            return parseFloat(this.summary.total || 0);
+            return exactAmount(this.summary.total || '0').final(2);
         },
         guestRequiresIdentityDocument() {
             return false;
@@ -645,20 +654,14 @@ var app_cart = new Vue({
         },
         quotationLines() {
             return (this.records || []).map(row => {
-                const qty = Number(row.cantidad) || 1;
-                const unit = Number(row.sale_unit_price) || 0;
-                const lineTotal = Number(row.sub_total);
-                return {
-                    id: row.id,
-                    description: row.description || row.name || 'Producto',
-                    quantity: qty,
-                    unit_price: unit,
-                    total: !isNaN(lineTotal) ? lineTotal : (unit * qty),
-                };
+                const line = cartLineAmount(row, {exchangeRate: this.exchange_rate_sale});
+                return {id: row.id, description: row.description || row.name || 'Producto',
+                    quantity: line.quantityText, unit_price: line.unitPrice.final(2), total: line.total.final(2),
+                    calculation_snapshot: exactSnapshot({quantity: line.quantity.fraction(), unit_price: line.unitPrice.fraction(), total: line.total.fraction()})};
             });
         },
         quotationModalTotal() {
-            return this.quotationLines.reduce((sum, line) => sum + (Number(line.total) || 0), 0);
+            return this.quotationLines.reduce((sum, line) => sum.plus(line.calculation_snapshot?.values?.total ?? line.total), exactAmount('0')).final(2);
         },
         // Compras bloqueadas solo si cotizaciones están ON y el modo es solo cotizar
         quoteOnlyMode() {
@@ -841,33 +844,18 @@ var app_cart = new Vue({
     async mounted() {
         await this.changeExchangeRate(moment().format("YYYY-MM-DD"))
 
-        let exchange_rate_sale = this.exchange_rate_sale
-        let contex = this
-
-        $(".input_quantity").change(function (e) {
-            let value = parseFloat($(this).val())
-            let id = $(this).data('product')
-            let row = contex.records.find(x => x.id == id)
-
-            if(row.currency_type_id === 'USD') {
-                row.sub_total = exactAmount(parseFloat(row.sale_unit_price)).times(exactAmount(value)).times(exactAmount(exchange_rate_sale)).final(2)
-            } else {
-                row.sub_total = (parseFloat(row.sale_unit_price) * value).toFixed(2)
-            }
-
-            row.cantidad = value
-            contex.calculateSummary()
-        })
-
-        this.records.forEach(function (item) {
-            if(item.currency_type_id === 'USD') {
-                item.sub_total = exactAmount(parseFloat(item.sub_total)).times(exactAmount(exchange_rate_sale)).final(2)
-                item.exchange_rate_sale = exchange_rate_sale
-            }
-            item.sale_unit_price = parseFloat(item.sale_unit_price).toFixed(2)
-        })
-
-        this.calculateSummary()
+        const context = this;
+        $('.input_quantity').change(function () {
+            const id = $(this).data('product');
+            const row = context.records.find(item => String(item.id) === String(id));
+            if (!row) return;
+            row.cantidad = String($(this).val());
+            context.onQuantityChange(row);
+        });
+        try {
+            if (this.showCartPrices) this.records.forEach(item => this.updateRowSubtotal(item));
+            if (!this.cartCalculationError) this.calculateSummary();
+        } catch (error) {this.cartCalculationError = error.message;}
         await this.validateDiscountCampaigns()
         this.campaignExpirationInterval = setInterval(() => this.validateDiscountCampaigns(), 30000)
 
@@ -890,22 +878,12 @@ var app_cart = new Vue({
         this.flushPendingCheckoutIntentChoice();
     },
     created() {
-        let array = localStorage.getItem('products_cart');
-        array = JSON.parse(array)
-        if (array) {
-            this.records = array.map(function (item) {
-                let obj = item
-                obj.cantidad = item.quantity ? parseInt(item.quantity) : 1
-                obj.sub_total = (parseFloat(item.sale_unit_price) * obj.cantidad).toFixed(2)
-                obj.exchange_rate_sale = ''
-                // Compatibilidad: items agregados desde el catálogo guardan el símbolo
-                // en currency_type.symbol; otros no lo traen. Normalizamos a un campo plano.
-                obj.currency_type_symbol = item.currency_type_symbol
-                    || (item.currency_type && item.currency_type.symbol)
-                    || 'Bs.'
-                return obj
-            })
-        }
+        this.lastCartStorage = localStorage.getItem('products_cart');
+        try {this.records = cartRestoreRecords(this.lastCartStorage,
+            {allowUnavailablePrices:this.isQuotationCheckout && this.showCartPrices === false});}
+        catch (error) {this.records = [];this.cartCalculationError = error.message;}
+        this.cartStorageHandler = () => this.syncCartFromStorage();
+        window.addEventListener('productAddedToCart', this.cartStorageHandler);
         this.initForm();
         this.restoreGuestCheckoutState();
         // Si el boot pidió modal, mantener overflow bloqueado desde el primer tick de Vue
@@ -920,6 +898,9 @@ var app_cart = new Vue({
     beforeDestroy() {
         clearInterval(this.campaignExpirationInterval)
         clearTimeout(this.campaignValidationTimer)
+        clearTimeout(this.checkoutPreviewTimer);
+        ++this.checkoutPreviewSequence;
+        window.removeEventListener('productAddedToCart', this.cartStorageHandler);
     },
     methods: {
         restoreGuestCheckoutState() {
@@ -2347,36 +2328,69 @@ var app_cart = new Vue({
             this.addressSuggestions = [];
             this.highlightedIndex = -1;
         },
-        incrementQuantity(row) {
-            if (typeof row.cantidad !== 'number' || isNaN(row.cantidad)) {
-                row.cantidad = 1;
-            } else {
-                row.cantidad++;
+        quoteRowTotal(row) { return cartLineAmount(row, {convert: false}).total.final(2); },
+        quoteOriginalPrice(row) {return exactAmount(row.campaign_pricing_snapshot?.values?.compare_at_price ?? row.compare_at_price).final(2);},
+        formatAmount(value) {return exactAmount(value).final(2);},
+        formatCampaignSavings() {return exactAmount(this.campaignSavingsFraction ?? this.campaignSavings).final(2);},
+        isPositiveAmount(value) {return value != null && value !== '' && exactAmount(value).compare('0') > 0;},
+        syncCartFromStorage() {
+            const encoded = localStorage.getItem('products_cart');
+            if (encoded === this.lastCartStorage) return;
+            try {
+                const records = cartRestoreRecords(encoded, {allowUnavailablePrices:this.isQuotationCheckout && this.showCartPrices === false});
+                if (this.showCartPrices) records.forEach(row => this.updateRowSubtotal(row));
+                this.records = records;
+                this.lastCartStorage = encoded;
+                this.cartCalculationError = '';
+                this.calculateSummary();
+            } catch (error) {
+                this.cartCalculationError = error.message;
+                ++this.checkoutPreviewSequence;
+                this.checkoutPreview = null;
+                this.checkoutPreviewState = 'error';
             }
-            this.updateRowSubtotal(row);
-            this.calculateSummary();
+        },
+        resetInvalidCart() {
+            this.records = [];
+            this.cartCalculationError = '';
             this.saveCartToLocalStorage();
+            this.calculateSummary();
+        },
+        onQuantityChange(row) {
+            try {
+                row.cantidad = cartQuantity(row.cantidad);
+                this.updateRowSubtotal(row);
+                this.cartCalculationError = '';
+                this.calculateSummary();
+                this.saveCartToLocalStorage();
+            } catch (error) {this.cartCalculationError = error.message;this.showSwalMessage('Cantidad inválida', error.message, 'warning');}
+        },
+        incrementQuantity(row) {
+            try {
+                row.cantidad = cartQuantity(exactAmount(cartQuantity(row.cantidad)).plus('1').decimal());
+                this.onQuantityChange(row);
+            } catch (error) { this.showSwalMessage('Cantidad inválida', error.message, 'warning'); }
         },
         decrementQuantity(row) {
-            if (typeof row.cantidad !== 'number' || isNaN(row.cantidad) || row.cantidad <= 1) {
-                row.cantidad = 1;
-            } else {
-                row.cantidad--;
-            }
-            this.updateRowSubtotal(row);
-            this.calculateSummary();
-            this.saveCartToLocalStorage();
+            try {
+                const current = exactAmount(cartQuantity(row.cantidad));
+                const next = current.minus('1');
+                if (next.compare('0') > 0) row.cantidad = cartQuantity(next.decimal());
+                this.onQuantityChange(row);
+            } catch (error) { this.showSwalMessage('Cantidad inválida', error.message, 'warning'); }
         },
         updateRowSubtotal(row) {
-            let exchange_rate_sale = this.exchange_rate_sale;
-            if(row.currency_type_id === 'USD') {
-                row.sub_total = exactAmount(parseFloat(row.sale_unit_price)).times(exactAmount(row.cantidad)).times(exactAmount(exchange_rate_sale)).final(2);
-            } else {
-                row.sub_total = (parseFloat(row.sale_unit_price) * row.cantidad).toFixed(2);
-            }
+            const line = cartLineAmount(row, {exchangeRate: this.exchange_rate_sale});
+            row.cantidad = line.quantityText;
+            row.sub_total = line.total.final(2);
+            const snapshot = exactSnapshot({quantity: line.quantity.fraction(), unit_price: line.unitPrice.fraction(), total: line.total.fraction()});
+            if (JSON.stringify(row.cart_calculation_snapshot) !== JSON.stringify(snapshot)) row.cart_calculation_snapshot = snapshot;
         },
         saveCartToLocalStorage() {
-            localStorage.setItem('products_cart', JSON.stringify(this.records));
+            const records = this.records.map(row => ({...row, quantity: cartQuantity(row.cantidad)}));
+            this.lastCartStorage = JSON.stringify(records);
+            localStorage.setItem('products_cart', this.lastCartStorage);
+            window.dispatchEvent(new Event('productAddedToCart'));
         },
         copyToClipboard(textToCopy) {
             if (window.isSecureContext && navigator.clipboard) {
@@ -2673,8 +2687,8 @@ var app_cart = new Vue({
             let purchase = await this.getDocument();
             purchase = this.syncPurchaseCustomerData(purchase, customer);
 
-            let precio = Math.round(Number(this.summary.total) * 100).toFixed(2);
-            let precio_culqi = Number(Number(this.summary.total).toFixed(2));
+            const precio_culqi = exactAmount(this.checkoutPreview.total).final(2);
+            const precio = exactAmount(precio_culqi).times('100').final(2);
             const isGuest = !this.isLoggedIn;
             purchase.checkout = Object.assign({}, purchase.checkout || {}, {
                 channel: 'ecommerce',
@@ -2691,7 +2705,7 @@ var app_cart = new Vue({
                 is_guest: isGuest,
                 discount_coupon_code: this.appliedCoupon ? this.appliedCoupon.code : null,
                 discount_coupon_id: this.appliedCoupon ? this.appliedCoupon.id : null,
-                total_discount: exactAmount(this.appliedCoupon ? this.appliedCoupon.discount : '0').plus(this.appliedCampaignDiscount || '0').decimal(),
+                total_discount: exactAmount(this.appliedCoupon ? (this.appliedCoupon.discount_fraction ?? this.appliedCoupon.discount) : '0').plus(this.appliedCampaignDiscount || '0').decimal(),
                 discount_campaigns: this.appliedCampaigns,
                 delivery: {
                     mode: this.isPickupMode ? 'pickup' : 'delivery',
@@ -2749,7 +2763,11 @@ var app_cart = new Vue({
                 return false;
             }
             try {
-                if (exactAmount(this.checkoutPreview.total).compare('90071992547409.91') <= 0
+                const transmitted = Number(this.checkoutPreview.total);
+                if (Number.isFinite(transmitted)
+                    && exactAmount(this.checkoutPreview.total).compare('0') > 0
+                    && exactAmount(this.checkoutPreview.total).compare('90071992547409.91') <= 0
+                    && exactAmount(String(transmitted)).compare(this.checkoutPreview.total) === 0
                     && exactAmount(this.summary.total).final(2) === this.checkoutPreview.total) return true;
             } catch (error) { /* Se informa la diferencia a continuación. */ }
             this.showSwalMessage('Importe actualizado', 'El importe de la pasarela no coincide con el carrito. Actualiza el carrito o utiliza un método manual.', 'warning');
@@ -2933,7 +2951,7 @@ var app_cart = new Vue({
             this.refreshSetDataCustomer();
             const customer = this.form_document.datos_del_cliente_o_receptor || {};
             return {
-                amount: Number(this.summary.total || 0).toFixed(2),
+                amount: exactAmount(this.summary.total || '0').final(2),
                 email: customer.correo_electronico || (this.user && this.user.email) || '',
             };
         },
@@ -2951,7 +2969,7 @@ var app_cart = new Vue({
 
             return {
                 initialization: {
-                    amount: Number(initData.amount).toFixed(2),
+                    amount: exactAmount(initData.amount).final(2),
                     payer: {
                         email: initData.email || '',
                         entityType: 'individual',
@@ -3098,7 +3116,7 @@ var app_cart = new Vue({
             if (!this.enableMp) return;
 
             const initData = this.getMpBrickInitData();
-            if (!initData.amount || Number(initData.amount) <= 0) return;
+            if (!initData.amount || exactAmount(initData.amount).compare('0') <= 0) return;
 
             if (!force
                 && this.mpBrickReady
@@ -3531,6 +3549,20 @@ var app_cart = new Vue({
         },
         // Arma el detalle de la compra que se mostrará en el modal de confirmación
         buildSuccessOrder(order) {
+            const calculation = order?.purchase?.checkout?.calculation;
+            const documentTotals = calculation?.document?.totals;
+            const storedTotals = order?.purchase?.totales;
+            const money = value => value == null ? null : exactAmount(value).final(2);
+            const fiscal = (field, legacy) => money(documentTotals?.[field] ?? storedTotals?.[legacy]);
+            const items = Array.isArray(calculation?.items) ? calculation.items.map(row => ({
+                description: row.description, cantidad: exactAmount(row.quantity).decimal(), symbol: 'Bs.',
+                total: money(row.subtotal_ves),
+            })) : (Array.isArray(order?.items) ? order.items : []).map(row => ({
+                description: row.description, cantidad: row.cantidad ?? row.quantity ?? null,
+                symbol: row.currency_type_symbol || (row.currency_type_id === 'USD' ? 'USD' : 'Bs.'),
+                // A historical order displays its stored subtotal, never a current catalog price.
+                total: money(row.sub_total),
+            }));
             const paymentLabels = {
                 cash: 'Efectivo', yape: 'Yape', transfer: 'Transferencia',
                 culqi: this.titleCulqi || 'Tarjeta (VISA)', paypal: 'PayPal',
@@ -3544,19 +3576,15 @@ var app_cart = new Vue({
                 : '#—';
             return {
                 number: number,
-                items: this.records.map(r => ({
-                    description: r.description,
-                    cantidad: r.cantidad,
-                    symbol: r.currency_type_symbol || 'Bs.',
-                    total: (parseFloat(r.sale_unit_price) * r.cantidad).toFixed(2)
-                })),
-                total_taxed: this.summary.total_taxed || '0.00',
-                total_igv: this.summary.total_igv || '0.00',
-                total_exonerated: this.summary.total_exonerated || '0.00',
-                delivery: this.summary.delivery || '0.00',
-                total: this.summary.total || '0.00',
-                paymentLabel: paymentLabels[this.selectedPaymentMethod] || 'Efectivo',
-                deliveryLabel: deliveryLabel,
+                items,
+                total_taxed: fiscal('total_taxed', 'total_operaciones_gravadas'),
+                total_igv: fiscal('total_igv', 'total_igv'),
+                total_exonerated: fiscal('total_exonerated', 'total_operaciones_exoneradas'),
+                delivery: money(calculation?.shipping_amount),
+                total: money(calculation?.total_payable ?? order?.total),
+                paymentLabel: order?.reference_payment ? this.getPaymentMethodLabel(order.reference_payment)
+                    : (paymentLabels[this.selectedPaymentMethod] || 'Efectivo'),
+                deliveryLabel: order?.shipping_address || (order ? deliveryLabel : null),
             };
         },
         isYapeOrderPayload(order, formatted = null) {
@@ -3635,20 +3663,14 @@ var app_cart = new Vue({
                     const clean = String(code).replace(/^#/, '');
                     return `#${clean}`;
                 }
-                if (orderOrId.id) {
-                    return `#${String(orderOrId.id).padStart(6, '0')}`;
-                }
-                return '#—';
+                orderOrId = orderOrId.id;
             }
-            const id = Number(orderOrId) || 0;
-            return `#${String(id).padStart(6, '0')}`;
+            const id = cartIdentifier(orderOrId);
+            return id === null ? '#—' : `#${id.padStart(6, '0')}`;
         },
         formatMoney(amount) {
-            const value = Number(amount) || 0;
-            return `Bs. ${value.toLocaleString('es-VE', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })}`;
+            const [whole, fraction] = exactAmount(amount ?? '0').final(2).split('.');
+            return `Bs. ${whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${fraction}`;
         },
         getSuccessOrderItemsCount(order) {
             if (!order) return 0;
@@ -3694,8 +3716,8 @@ var app_cart = new Vue({
             const itemsFromSummary = Array.isArray(summary.items) ? summary.items.length : 0;
             this.successItemsCount = itemsFromBackend || itemsFromSummary;
 
-            const total = summary.total ?? backendOrder.total ?? this.response_order_total ?? 0;
-            this.successOrderTotal = this.formatMoney(total);
+            const total = backendOrder.purchase?.checkout?.calculation?.total_payable ?? backendOrder.total;
+            this.successOrderTotal = total == null ? '—' : this.formatMoney(total);
         },
         /**
          * Modal de éxito unificado para todos los métodos de pago.
@@ -3704,7 +3726,7 @@ var app_cart = new Vue({
          */
         showPurchaseSuccess(order, thankYouUrl = null) {
             this.hidePaymentLoading();
-            this.response_order_total = order ? order.total : 0;
+            this.response_order_total = order?.total ?? null;
             this.thankYouUrl = this.buildThankYouUrl(order, thankYouUrl);
             const formatted = this.buildSuccessOrder(order);
             if (order && order.external_id) {
@@ -3923,7 +3945,7 @@ var app_cart = new Vue({
                 notes: String(this.quotationForm.notes || '').trim(),
                 items: this.records.map(row => ({
                     item_id: row.id,
-                    quantity: Number(row.cantidad) || 1,
+                    quantity: cartQuantity(row.cantidad),
                 })),
             };
 
@@ -4012,95 +4034,21 @@ var app_cart = new Vue({
             return { headers };
         },
         async getDocument() {
-            this.form_document.items = await this.getItemsDocument();
-            const descuentos = await this.getDescuentos();
-            const totales = await this.getTotales(descuentos);
-            let doc = Object.assign({}, this.form_document);
-            doc.totales = totales;
-            if (descuentos.length > 0) {
-                doc.descuentos = descuentos;
+            if (this.cartCalculationError) throw new Error(this.cartCalculationError);
+            // Reuse server-owned fiscal lines: catalog, campaigns, coupons, IVA and shipping.
+            clearTimeout(this.checkoutPreviewTimer);
+            const sequence = ++this.checkoutPreviewSequence;
+            await this.refreshCheckoutPreview(sequence);
+            if (sequence !== this.checkoutPreviewSequence || this.checkoutPreviewState !== 'ready'
+                || !this.checkoutPreview?.document) {
+                throw new Error(this.checkoutPreviewError || 'El carrito cambió. Revisa el importe antes de continuar.');
             }
+            const prepared = JSON.parse(JSON.stringify(this.checkoutPreview.document));
+            const doc = Object.assign({}, this.form_document, prepared);
             // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
-            if (doc.codigo_tipo_documento == '01') {
-                doc.serie_documento = 'F001';
-            } else {
-                doc.serie_documento = null;
-            }
+            doc.serie_documento = doc.codigo_tipo_documento === '01' ? 'F001' : null;
             // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
             return doc;
-        },
-        async getDescuentos() {
-            if(!this.appliedCoupon || !this.global_discount_type) return [];
-
-            let montoEntrada = parseFloat(this.appliedCoupon.discount || 0);
-            let codigo = this.global_discount_type.id;
-            let descripcion = this.global_discount_type.description;
-            let base = 0;
-            let montoCalculado = 0;
-
-            if(this.global_discount_type.base == 1) {
-                // ########## INICIO CAMBIO AFECTACIÓN IVA
-                montoCalculado = montoEntrada / 1.16;
-                // ######### FIN CAMBIO AFECTACIÓN IVA
-                base = parseFloat(this.summary.total_taxed);
-            } else {
-                montoCalculado = montoEntrada;
-                base = parseFloat(this.summary.total_value) + parseFloat(this.summary.total_igv);
-            }
-
-            let factor = base > 0 ? (montoCalculado / base) : 0;
-
-            return [{
-                codigo: codigo,
-                descripcion: descripcion,
-                factor: parseFloat(factor.toFixed(5)),
-                monto: parseFloat(montoCalculado.toFixed(2)),
-                base: parseFloat(base.toFixed(2))
-            }];
-        },
-        async getTotales(descuentos = []) {
-            let total_descuentos_monto = 0.00;
-            if (descuentos.length > 0) {
-                total_descuentos_monto = descuentos.reduce((sum, d) => sum + (parseFloat(d.monto) || 0), 0);
-            }
-
-            let base_antes = parseFloat(this.aux_totals.total_taxed);
-            let igv_antes  = parseFloat(this.aux_totals.total_igv);
-
-            let delivery_price = (this.deliveryZone && this.deliveryZone.price) ? parseFloat(this.deliveryZone.price) : 0;
-            // ########## INICIO CAMBIO AFECTACIÓN IVA
-            let delivery_base  = parseFloat((delivery_price / 1.16).toFixed(2));
-            // ######### FIN CAMBIO AFECTACIÓN IVA
-            let delivery_igv   = parseFloat((delivery_price - delivery_base).toFixed(2));
-
-            let total_operaciones_gravadas = base_antes + delivery_base;
-            let total_igv                  = igv_antes  + delivery_igv;
-            let total_venta                = total_operaciones_gravadas + total_igv;
-
-            if (descuentos.length > 0 && this.global_discount_type) {
-                if (this.global_discount_type.base == 1) {
-                    total_operaciones_gravadas = parseFloat((total_operaciones_gravadas - total_descuentos_monto).toFixed(2));
-                    // ########## INICIO CAMBIO AFECTACIÓN IVA
-                    total_igv   = parseFloat((total_operaciones_gravadas * 0.16).toFixed(2));
-                    // ######### FIN CAMBIO AFECTACIÓN IVA
-                    total_venta = parseFloat((total_operaciones_gravadas + total_igv).toFixed(2));
-                } else {
-                    total_venta = parseFloat((total_venta - total_descuentos_monto).toFixed(2));
-                }
-            }
-
-            return {
-                total_descuentos:               total_descuentos_monto,
-                total_exportacion:              0.00,
-                total_operaciones_gravadas:     total_operaciones_gravadas,
-                total_operaciones_inafectas:    parseFloat(this.aux_totals.total_exonerated || 0),
-                total_operaciones_exoneradas:   0.00,
-                total_operaciones_gratuitas:    0.00,
-                total_igv:                      total_igv,
-                total_impuestos:                total_igv,
-                total_valor:                    total_operaciones_gravadas,
-                total_venta:                    total_venta
-            };
         },
         openAddAddressFlow() {
             this.openAddressMapModal('add', null, false);
@@ -4941,115 +4889,6 @@ var app_cart = new Vue({
                 }
             })
         },
-        async getItemsDocument() {
-            let rec = await this.records.map((item) => {
-                let sale_unit_price = 0
-                let total_exonerated = 0
-                let total_igv = 0
-                let total_val = 0
-                let total = 0
-                // ########## INICIO CAMBIO AFECTACIÓN IVA
-                let percentage_igv = 16
-                // ######### FIN CAMBIO AFECTACIÓN IVA
-                let nombre_producto_pdf = item.promotion_id ? item.description : null
-
-                if (item.sale_affectation_igv_type_id === '10') {
-                    if(item.currency_type_id === 'USD') {
-                        sale_unit_price = exactAmount(parseFloat(item.sale_unit_price)).times(exactAmount(this.exchange_rate_sale)).final(2)
-                    } else {
-                        sale_unit_price = item.sale_unit_price
-                    }
-
-                    let unit_value = sale_unit_price / (1 + percentage_igv / 100)
-                    total_igv = item.cantidad * parseFloat(sale_unit_price - unit_value)
-                    total = (item.cantidad * sale_unit_price)
-                    total_val = (unit_value * item.cantidad)
-
-                    return {
-                        "codigo_interno": (item.internal_id) ? item.internal_id:"",
-                        "descripcion": item.description,
-                        "codigo_producto_sunat": "",
-                        "unidad_de_medida": item.unit_type_id,
-                        "cantidad": item.cantidad,
-                        "valor_unitario": unit_value,
-                        "codigo_tipo_precio": "01",
-                        "precio_unitario": sale_unit_price,
-                        "codigo_tipo_afectacion_igv": "10",
-                        "total_base_igv": total_val,
-                        "porcentaje_igv": percentage_igv,
-                        "total_igv": total_igv,
-                        "total_impuestos": total_igv,
-                        "total_valor_item": total_val,
-                        "total_item": total,
-                        "actualizar_descripcion": false,
-                        "nombre_producto_pdf": nombre_producto_pdf
-                    }
-                }
-
-                if (item.sale_affectation_igv_type_id === '20') {
-                    if(item.currency_type_id === 'USD') {
-                        sale_unit_price = exactAmount(parseFloat(item.sale_unit_price)).times(exactAmount(this.exchange_rate_sale)).final(2)
-                    } else {
-                        sale_unit_price = item.sale_unit_price
-                    }
-
-                    let unit_value = parseFloat(sale_unit_price)
-                    total_igv = 0
-                    total = (parseFloat(item.cantidad) * parseFloat(sale_unit_price))
-                    total_val = (parseFloat(unit_value) * parseFloat(item.cantidad))
-
-                    return {
-                        "codigo_interno": (item.internal_id) ? item.internal_id:"",
-                        "descripcion": item.description,
-                        "codigo_producto_sunat": "",
-                        "unidad_de_medida": item.unit_type_id,
-                        "cantidad": item.cantidad,
-                        "valor_unitario": unit_value,
-                        "codigo_tipo_precio": "01",
-                        "precio_unitario": sale_unit_price,
-                        "codigo_tipo_afectacion_igv": "20",
-                        "total_base_igv": total_val,
-                        "porcentaje_igv": percentage_igv,
-                        "total_igv": 0,
-                        "total_impuestos": 0,
-                        "total_valor_item": total_val,
-                        "total_item": total,
-                        "actualizar_descripcion": false,
-                        "nombre_producto_pdf": nombre_producto_pdf
-                    }
-                }
-            })
-
-            if (this.deliveryZone && parseFloat(this.deliveryZone.price) > 0) {
-                const delivery_price  = parseFloat(this.deliveryZone.price);
-                // ########## INICIO CAMBIO AFECTACIÓN IVA
-                const percentage_igv = 16;
-                // ######### FIN CAMBIO AFECTACIÓN IVA
-                const unit_value   = delivery_price / (1 + percentage_igv / 100);
-                const igv_val      = delivery_price - unit_value;
-                rec.push({
-                    "codigo_interno":              "DELIVERY-ECOM",
-                    "descripcion":                 "Costo de Envío - " + this.deliveryZone.name,
-                    "codigo_producto_sunat":       "",
-                    "unidad_de_medida":            "SERV",
-                    "cantidad":                    1,
-                    "valor_unitario":              parseFloat(unit_value.toFixed(6)),
-                    "codigo_tipo_precio":          "01",
-                    "precio_unitario":             delivery_price,
-                    "codigo_tipo_afectacion_igv":  "10",
-                    "total_base_igv":              parseFloat(unit_value.toFixed(2)),
-                    "porcentaje_igv":              percentage_igv,
-                    "total_igv":                   parseFloat(igv_val.toFixed(2)),
-                    "total_impuestos":             parseFloat(igv_val.toFixed(2)),
-                    "total_valor_item":            parseFloat(unit_value.toFixed(2)),
-                    "total_item":                  delivery_price,
-                    "actualizar_descripcion":      false,
-                    "nombre_producto_pdf":         this.deliveryZone.name
-                });
-            }
-
-            return rec
-        },
         initForm() {
             this.errors = {}
             this.user = window.__ecommerce_config?.user || this.user || {};
@@ -5192,68 +5031,22 @@ var app_cart = new Vue({
         },
         calculateSummary() {
             this.scheduleCheckoutPreview();
-            let total_taxed = 0
-            let total_value = 0
-            let total_exonerated = 0
-            let total_igv = 0
-            let total = 0
-
-            this.records.forEach(function (item) {
-                let unit_price = item.sub_total
-                let unit_value = unit_price
-                // ########## INICIO CAMBIO AFECTACIÓN IVA
-                let percentage_igv = 16
-                // ######### FIN CAMBIO AFECTACIÓN IVA
-
-                if (item.sale_affectation_igv_type_id === '10') {
-                    unit_value = item.sub_total / (1 + percentage_igv / 100)
-                    total_taxed += parseFloat(unit_value)
-                    total_igv += parseFloat(unit_price - unit_value)
-                }
-                if (item.sale_affectation_igv_type_id === '20') {
-                    total_exonerated += parseFloat(unit_value)
-                }
-
-                total_value = total_taxed + total_exonerated
-                total += parseFloat(unit_price)
-            })
-
-            this.summary.total_taxed = total_taxed.toFixed(2)
-            this.summary.total_exonerated = total_exonerated.toFixed(2)
-            this.summary.total_igv = total_igv.toFixed(2)
-            this.summary.total_value = total_value.toFixed(2)
-
-            let computedTotal = total;
-            if (this.appliedCoupon && this.appliedCoupon.discount) {
-                computedTotal = Math.max(0, computedTotal - parseFloat(this.appliedCoupon.discount));
-            }
-            computedTotal = Math.max(0, computedTotal - parseFloat(this.appliedCampaignDiscount || 0));
-
-            let deliveryPrice = (this.deliveryZone && this.deliveryZone.price) ? parseFloat(this.deliveryZone.price) : 0;
-            // Si el modo es recojo en tienda, no se cobra delivery
-            if (this.isPickupMode || (this.appliedCoupon && this.appliedCoupon.free_shipping)) {
-                deliveryPrice = 0;
-            }
-            computedTotal += deliveryPrice;
+            if (this.isQuotationCheckout && this.showCartPrices === false) return;
             // ########## INICIO CAMBIO AFECTACIÓN IVA
-            let deliveryIgv = parseFloat((deliveryPrice / 1.16 * 0.16).toFixed(2));
+            const amounts = cartSummaryAmounts(this.records, {exchangeRate: this.exchange_rate_sale,
+                percentage: this.cartTaxPercentage, coupon: this.appliedCoupon?.discount_fraction ?? this.appliedCoupon?.discount ?? '0',
+                campaign: this.appliedCampaignDiscount ?? '0', delivery: this.deliveryZone?.price ?? '0',
+                freeShipping: this.isPickupMode || !!this.appliedCoupon?.free_shipping});
             // ######### FIN CAMBIO AFECTACIÓN IVA
-            this.summary.delivery         = deliveryPrice.toFixed(2);
-            this.summary.delivery_igv     = deliveryIgv.toFixed(2);
-            this.summary.total            = computedTotal.toFixed(2)
-            this.aux_totals               = Object.assign({}, this.summary)
-
-            $("#total_amount").data('total', this.summary.total);
-
-            this.form_document.codigo_tipo_documento = null
-            this.optionDocument()
+            this.summary = {...this.summary, ...amounts};
+            this.aux_totals = {...this.summary};
+            $('#total_amount').data('total', this.summary.total);
+            this.form_document.codigo_tipo_documento = null;
+            this.optionDocument();
             if (this.isGuestCheckoutActive) {
                 this.enforceGuestHighAmountIdentityRule();
                 this.applyGuestDocumentDefaults();
-            } else {
-                this.applyDocumentDefaults();
-            }
-
+            } else this.applyDocumentDefaults();
             this.payment_cash.amount = this.summary.total;
         },
         saveContactDataUser() {
@@ -5338,7 +5131,7 @@ var app_cart = new Vue({
         },
         clickConsultWhatsappCart() {
             const lines = this.records.map((row) => {
-                const lineTotal = (parseFloat(row.sale_unit_price) * parseFloat(row.cantidad)).toFixed(2);
+                const lineTotal = cartLineAmount(row, {convert: false}).total.final(2);
                 return `• ${row.description} x${row.cantidad} - ${row.currency_type_symbol}${lineTotal}`;
             });
             const text = `Buenas, deseo consultar/finalizar mi pedido:\n\n${lines.join('\n')}\n\n*Total: Bs. ${this.summary.total}*\n\n¿Podrían ayudarme a completar la compra?`;
@@ -5560,6 +5353,7 @@ var app_cart = new Vue({
                         id: d.id,
                         code: d.code,
                         discount: res.data.discount,
+                        discount_fraction: res.data.calculation_snapshot?.values?.discount ?? null,
                         free_shipping: d.free_shipping
                     };
                     this.calculateSummary();
@@ -5580,43 +5374,53 @@ var app_cart = new Vue({
         },
 
         async validateDiscountCampaigns() {
+            const sequence = ++this.campaignValidationSequence;
             if (!this.records.length || this.isQuotationCheckout) {
-                this.appliedCampaignDiscount = 0;
-                this.campaignSavings = 0;
+                this.appliedCampaignDiscount = '0';
+                this.campaignSavings = '0';
+                this.campaignSavingsFraction = null;
                 this.appliedCampaigns = [];
                 return;
             }
-
+            const fingerprint = () => JSON.stringify(this.records.map(item => [String(item.id), String(item.cantidad)]));
+            const requested = fingerprint();
             try {
-                const items = this.records.map(item => ({
-                    item_id: item.id,
-                    subtotal: parseFloat(item.sub_total || 0),
-                    quantity: parseFloat(item.cantidad || 1),
-                }));
-                const response = await axios.post('/ecommerce/discount-campaigns/validate', { items }, this.getHeaderConfig());
+                const items = this.records.map(item => ({item_id: item.id,
+                    subtotal: cartLineAmount(item, {convert: false}).total.decimal(), quantity: cartQuantity(item.cantidad)}));
+                const response = await axios.post('/ecommerce/discount-campaigns/validate', {items}, this.getHeaderConfig());
+                if (sequence !== this.campaignValidationSequence || requested !== fingerprint()) return;
+                if (!response.data?.success) throw new Error('No se pudieron comprobar las promociones.');
                 (response.data.items || []).forEach(detail => {
-                    const item = this.records.find(row => Number(row.id) === Number(detail.item_id));
+                    const item = this.records.find(row => String(row.id) === String(detail.item_id));
                     if (!item) return;
-                    item.original_price = parseFloat(detail.base_unit_price || 0);
-                    item.compare_at_price = detail.compare_at_price ? parseFloat(detail.compare_at_price) : null;
-                    item.sale_unit_price = parseFloat(detail.final_unit_price || detail.base_unit_price || 0).toFixed(2);
-                    item.sub_total = (parseFloat(item.sale_unit_price) * parseFloat(item.cantidad || 1)).toFixed(2);
+                    item.original_price = exactAmount(detail.base_unit_price).decimal();
+                    item.compare_at_price = detail.compare_at_price == null ? null : exactAmount(detail.compare_at_price).decimal();
+                    item.sale_unit_price = exactAmount(detail.final_unit_price).decimal();
+                    if (JSON.stringify(item.campaign_pricing_snapshot) !== JSON.stringify(detail.calculation_snapshot)) {
+                        item.campaign_pricing_snapshot = detail.calculation_snapshot;
+                    }
                     item.discount_campaign_id = detail.campaign_id;
                     item.discount_campaign_name = detail.campaign;
-                    item.campaign_discount_percent = parseFloat(detail.percentage || 0);
+                    item.campaign_discount_percent = exactAmount(detail.percentage ?? '0').decimal();
                     item.campaign_discount_embedded = !!detail.campaign_id;
+                    this.updateRowSubtotal(item);
                 });
-                this.campaignSavings = parseFloat(response.data.discount || 0);
+                this.campaignSavingsFraction = response.data.calculation_snapshot?.values?.discount ?? null;
+                this.campaignSavings = exactAmount(this.campaignSavingsFraction ?? response.data.discount).decimal();
                 const allCampaignPricesEmbedded = this.records.every(item => {
-                    const detail = (response.data.items || []).find(row => Number(row.item_id) === Number(item.id));
-                    return !detail || (item.campaign_discount_embedded && Number(item.discount_campaign_id) === Number(detail.campaign_id));
+                    const detail = (response.data.items || []).find(row => String(row.item_id) === String(item.id));
+                    return !detail?.campaign_id || (item.campaign_discount_embedded
+                        && String(item.discount_campaign_id) === String(detail.campaign_id));
                 });
-                this.appliedCampaignDiscount = allCampaignPricesEmbedded ? 0 : this.campaignSavings;
+                this.appliedCampaignDiscount = allCampaignPricesEmbedded ? '0' : this.campaignSavings;
                 this.appliedCampaigns = response.data.items || [];
                 this.calculateSummary();
+                this.saveCartToLocalStorage();
             } catch (error) {
-                this.appliedCampaignDiscount = 0;
-                this.campaignSavings = 0;
+                if (sequence !== this.campaignValidationSequence || requested !== fingerprint()) return;
+                this.appliedCampaignDiscount = '0';
+                this.campaignSavings = '0';
+                this.campaignSavingsFraction = null;
                 this.appliedCampaigns = [];
             }
         },

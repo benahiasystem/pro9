@@ -34,7 +34,7 @@ return new class extends Migration
 
     public static function getSystemModuleConnection(): Builder
     {
-        return DB::connection('system')->table('modules');
+        return DB::connection()->table('modules');
     }
 
     /**
@@ -48,7 +48,7 @@ return new class extends Migration
 
         $suscriptionRow = self::getSystemModuleConnection()->where($suscriptionData)->first();
         if ($suscriptionRow != null) {
-            DB::connection('system')->table('modules')->delete($suscriptionRow->id);
+            DB::connection()->table('modules')->delete($suscriptionRow->id);
         }
     }
 };

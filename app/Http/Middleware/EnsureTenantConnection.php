@@ -34,6 +34,10 @@ class EnsureTenantConnection
             }
         }
 
+        // ########## INICIO CAMBIO POSTGRESQL 17
+        $website = app(Environment::class)->tenant();
+        if ($website) \App\Tenancy\TenantReadiness::ensure($website->uuid);
+        // ######### FIN CAMBIO POSTGRESQL 17
         return $next($request);
     }
 }

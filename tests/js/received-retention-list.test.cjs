@@ -39,6 +39,31 @@ function manager(documentId = 4) {
     return instance;
 }
 
+test('the regular retention dialog uses the remaining VES amounts after a credit note', async () => {
+    const instance = manager(), payload = documentData();
+    Object.assign(payload.document, {
+        effective_total_value: '80', effective_total_taxed: '80', effective_total_igv: '12.8',
+    });
+    instance.$http.get = async () => ({data: payload});
+    instance.$http.post = async (url, data) => {
+        assert.equal(url, '/documents/retention/proposal');
+        assert.equal(data.total_igv, '12.8');
+        assert.equal(data.total_taxed, '80');
+        assert.equal(data.total_value, '80');
+        return {data: {data: {eligible: true, percentage: 75}}};
+    };
+    try {
+        await instance.load();
+        assert.equal(instance.form.base, '12.8');
+        await instance.evaluate();
+        assert.equal(instance.form.amount, '9.60');
+        instance.changeKind('ISLR');
+        assert.equal(instance.form.base, '80');
+    } finally {
+        instance.$destroy();
+    }
+});
+
 test('creation and confirmation screens expose no retention editor, catalogue or proposal requests', () => {
     for (const path of entrypoints) {
         const source = fs.readFileSync(path, 'utf8'), file = compiler.parseComponent(source), template = file.template.content;
@@ -158,6 +183,31 @@ test('both tax types register against an existing invoice and upload only linked
         instance.$destroy();
     }
 });
+
+test('IVA and ISLR proposals use the same cent rounding as registration', async () => {
+    const instance = manager(); await instance.load()
+    try {
+        instance.form.base = '0.01'
+        instance.$http.post = async () => ({data: {data: {eligible: true, percentage: 75, agent_rif: 'V123456789'}}})
+        await instance.evaluate()
+        assert.equal(instance.form.amount, '0.01')
+        instance.form.base = '0.006666666666'
+        await instance.evaluate()
+        assert.equal(instance.form.amount, '0.00')
+        instance.changeKind('ISLR')
+        instance.$http.post = async () => ({data: {data: {eligible: true, percentage: 2, voucher_amount: '1.27'}}})
+        await instance.evaluate()
+        assert.equal(instance.form.amount, '1.27')
+        instance.$http.post = async () => ({data: {data: {
+            eligible: true, percentage: '1.5', voucher_amount: '0.015',
+            calculation_snapshot: {values: {voucher_amount: {n: '3', d: '200'}}},
+        }}})
+        await instance.evaluate()
+        assert.equal(instance.form.amount, '0.02')
+    } finally {
+        instance.$destroy()
+    }
+})
 
 test('closing the manager prevents late proposals and uploads from changing its state', async () => {
     for (const action of ['evaluate', 'upload']) {

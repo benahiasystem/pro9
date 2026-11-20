@@ -1,37 +1,34 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `invoices` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `document_id` int(10) unsigned NOT NULL
- * - `operation_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `date_of_due` date NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - document_id: bigint
+ * - operation_type_id: varchar(255)
+ * - date_of_due: date
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `invoices` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `document_id` int(10) unsigned NOT NULL,
-  `operation_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date_of_due` date NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `invoices_document_id_foreign` (`document_id`),
-  KEY `invoices_operation_type_id_foreign` (`operation_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('invoices', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('document_id');
+            $table->string('operation_type_id', 255)->collation('pro9_ci_ai');
+            $table->date('date_of_due');
+            $table->index(['document_id'], 'invoices_document_id_foreign');
+            $table->index(['operation_type_id'], 'invoices_operation_type_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `invoices`');
+        Schema::dropIfExists('invoices');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

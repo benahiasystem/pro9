@@ -30,6 +30,7 @@ trait AttachmentIntegrationAssertions
         return app(AttachmentService::class)->upload('journal_entry', $entry->id, $file, ['title' => 'Soporte ficticio conservado', 'reason' => 'Documento ficticio que respalda la operación de pruebas.', 'supersedes_id' => $previous], $entry->version, $this->admin->id, $key ?? 'support:' . Str::uuid());
     }
 
+    /** @group accounting-attachments */
     public function test_support_upload_replays_its_receipt_without_duplicating_bytes_or_invalidating_again(): void
     {
         $this->supportConfiguration(); $entry = $this->draft();
@@ -50,6 +51,7 @@ trait AttachmentIntegrationAssertions
         $this->assertSame($first['resource']['version'], $entry->fresh()->version);
     }
 
+    /** @group accounting-attachments */
     public function test_changed_supports_require_new_approval_and_replaced_bytes_block_posting(): void
     {
         $this->supportConfiguration(); $entry = $this->approved(); $before = $entry->version;
@@ -74,6 +76,7 @@ trait AttachmentIntegrationAssertions
         $this->assertSame('100.00000000', $entry->fresh()->total_debit);
     }
 
+    /** @group accounting-attachments */
     public function test_support_successors_do_not_duplicate_active_bytes_and_can_restore_historical_content_explicitly(): void
     {
         $this->supportConfiguration(); $entry = $this->draft();
@@ -96,6 +99,7 @@ trait AttachmentIntegrationAssertions
         $this->assertSame($version + 1, $entry->fresh()->version);
     }
 
+    /** @group accounting-attachments */
     public function test_posted_entry_keeps_its_original_state_while_later_support_versions_and_loss_are_detected(): void
     {
         $this->supportConfiguration(); $entry = $this->postPrepared($this->draft(), 'support-posted-before-append');
@@ -116,6 +120,7 @@ trait AttachmentIntegrationAssertions
         catch (\Illuminate\Database\QueryException $error) { $this->assertStringContainsString('Soporte conservado inmutable', $error->getMessage()); }
     }
 
+    /** @group accounting-attachments */
     public function test_scanner_rejection_and_unavailability_leave_no_attachment_or_parent_change(): void
     {
         $this->supportConfiguration(); $entry = $this->draft();
@@ -132,6 +137,7 @@ trait AttachmentIntegrationAssertions
         $this->assertSame([], glob(app(PrivateStorage::class)->root() . '/staging/*/*/original.bin'));
     }
 
+    /** @group accounting-attachments */
     public function test_support_download_resolves_the_company_before_opening_any_file(): void
     {
         $this->supportConfiguration(); $entry = $this->draft(); $saved = $this->attachSupport($entry, $this->supportUpload('Evidencia privada ficticia de empresa A.'));
@@ -140,6 +146,7 @@ trait AttachmentIntegrationAssertions
         app(CompanyContext::class)->run($this->b, fn() => app(AttachmentService::class)->download($id, $this->admin->id));
     }
 
+    /** @group accounting-attachments */
     public function test_support_permissions_are_checked_before_staging_or_scanning(): void
     {
         $this->supportConfiguration(); $entry = $this->draft();
@@ -150,6 +157,7 @@ trait AttachmentIntegrationAssertions
         $this->assertFalse(is_dir(app(PrivateStorage::class)->root() . '/staging'));
     }
 
+    /** @group accounting-attachments */
     public function test_raster_preview_is_recoded_without_altering_the_original_evidence(): void
     {
         $this->supportConfiguration(); $entry = $this->draft();
@@ -169,6 +177,7 @@ trait AttachmentIntegrationAssertions
         $this->assertNotSame($record->sha256, $record->preview_sha256);
     }
 
+    /** @group accounting-attachments */
     public function test_document_support_changes_invalidate_pending_review_without_fabricating_a_new_source_revision(): void
     {
         $this->supportConfiguration(); $configuration = $this->invoiceConfiguration();
@@ -197,6 +206,7 @@ trait AttachmentIntegrationAssertions
         $this->assertNotNull($entry->fresh()->posted_at);
     }
 
+    /** @group accounting-attachments */
     public function test_later_document_support_does_not_rewrite_its_posted_fiscal_or_source_fields(): void
     {
         $this->supportConfiguration(); $configuration = $this->invoiceConfiguration();

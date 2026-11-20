@@ -1,43 +1,40 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `hotel_room_rates` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `hotel_room_id` int(10) unsigned NOT NULL
- * - `hotel_rate_id` int(10) unsigned NOT NULL
- * - `price` decimal(30,12) NOT NULL DEFAULT '0'
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - hotel_room_id: bigint
+ * - hotel_rate_id: bigint
+ * - price: numeric(30,12)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `hotel_room_rates` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `hotel_room_id` int(10) unsigned NOT NULL,
-  `hotel_rate_id` int(10) unsigned NOT NULL,
-  `price` decimal(30,12) NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `hotel_room_rates_hotel_room_id_foreign` (`hotel_room_id`),
-  KEY `hotel_room_rates_hotel_rate_id_foreign` (`hotel_rate_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('hotel_room_rates', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('hotel_room_id');
+            $table->bigInteger('hotel_rate_id');
+            $table->decimal('price', 30, 12)->default('0');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['hotel_room_id'], 'hotel_room_rates_hotel_room_id_foreign');
+            $table->index(['hotel_rate_id'], 'hotel_room_rates_hotel_rate_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `hotel_room_rates`');
+        Schema::dropIfExists('hotel_room_rates');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

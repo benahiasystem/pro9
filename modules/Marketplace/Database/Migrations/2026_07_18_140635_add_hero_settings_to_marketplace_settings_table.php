@@ -19,7 +19,7 @@ return new class extends Migration
     public function up()
     {
         foreach (self::KEYS as $key => $value) {
-            DB::connection('system')->table('marketplace_settings')->updateOrInsert(
+            DB::connection()->table('marketplace_settings')->updateOrInsert(
                 ['key' => $key],
                 ['value' => $value, 'type' => 'string']
             );
@@ -28,7 +28,7 @@ return new class extends Migration
 
     public function down()
     {
-        DB::connection('system')->table('marketplace_settings')
+        DB::connection()->table('marketplace_settings')
             ->whereIn('key', array_keys(self::KEYS))
             ->delete();
     }

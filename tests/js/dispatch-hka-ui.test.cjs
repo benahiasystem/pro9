@@ -51,6 +51,44 @@ test('multiple-order conversion carries the authorized branch and correctly form
     assert.equal(JSON.parse(stored.items)[0].quantity,5);assert.equal(box.window.location.href,'/documents/create');assert.equal(ctx.loading,false);
 });
 
+test('the grouped delivery-order invoice keeps the original fraction and bigint identity', () => {
+    const compiler = require('vue-template-compiler');
+    const parser = require('@babel/parser');
+    const generate = require('@babel/generator').default;
+    const path = require('node:path');
+    const load = require('./helpers/load-module.cjs');
+    const math = load(path.resolve('resources/js/helpers/exchange-rate-math.js'));
+    const functions = load(path.resolve('resources/js/helpers/functions.js'));
+    const {recalculateInvoiceRow} = load(path.resolve('resources/js/helpers/invoice-row-edit.js'));
+    const vue = fs.readFileSync('resources/js/views/tenant/documents/invoice_generate.vue', 'utf8');
+    const script = compiler.parseComponent(vue).script.content;
+    const component = parser.parse(script, {sourceType: 'module'}).program.body
+        .find(node => node.type === 'ExportDefaultDeclaration').declaration;
+    const methods = component.properties.find(node => node.key?.name === 'methods').value.properties;
+    const relevant = methods.filter(node => ['calculateDispatchInvoiceRow', 'setItemFromResponse'].includes(node.key?.name));
+    const invoice = vm.runInNewContext('({' + relevant.map(node => generate(node).code).join(',') + '})', {...math, ...functions});
+    const id = '9007199254740993';
+    const qty = {n: '2', d: '3'};
+    const draft = invoice.calculateDispatchInvoiceRow.call({
+        ...invoice, form: {currency_type_id: 'VES', exchange_rate_sale: '1'}, percentage_igv: '0.16',
+    }, {id, sale_unit_price: '116', currency_type_id: 'VES', sale_affectation_igv_type_id: '10'}, [
+        {item_id: '9007199254740992', quantity: '9'},
+        {item_id: id, quantity: '0.666666666667', calculation_snapshot: math.exactSnapshot({quantity: qty})},
+    ]);
+    assert.equal(draft.item_id, id);
+    assert.equal(draft.quantity, '0.666666666667');
+    assert.equal(draft.quantity_input, null);
+    assert.equal(math.exactValue(draft, 'quantity').compare(qty), 0);
+    assert.equal(math.exactValue(draft, 'total').compare({n: '232', d: '3'}), 0);
+    const currency = {currency_type_id: 'VES', exchange_rate_sale: '1', percentage_igv: '0.16'};
+    const edited = recalculateInvoiceRow({...draft, quantity: '0.75'}, 'quantity', currency);
+    assert.equal(math.exactValue(edited, 'quantity').compare({n: '3', d: '4'}), 0);
+    const decimal = recalculateInvoiceRow({...edited, quantity: draft.quantity}, 'quantity', currency);
+    assert.equal(decimal.quantity_input?.amount, '0.666666666667');
+    assert.equal(decimal.quantity_input?.unit_price, '1');
+    assert.equal(math.exactValue(decimal, 'quantity').compare('0.666666666667'), 0);
+});
+
 test('the actions menu keeps unavailable HKA options visible and prevents their requests',()=>{
     const Vue=require('vue');
     const compiler=require('vue-template-compiler');

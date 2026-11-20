@@ -1,39 +1,36 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `whatsapp_message_logs` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `phone` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'sent'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - phone: varchar(30)
+ * - filename: varchar(255)
+ * - status: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `whatsapp_message_logs` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `phone` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'sent',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('whatsapp_message_logs', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('phone', 30)->collation('pro9_ci_ai');
+            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('status', 255)->collation('pro9_ci_ai')->default('sent');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `whatsapp_message_logs`');
+        Schema::dropIfExists('whatsapp_message_logs');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

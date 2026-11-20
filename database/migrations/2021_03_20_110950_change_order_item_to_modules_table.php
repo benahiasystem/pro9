@@ -14,10 +14,10 @@ class ChangeOrderItemToModulesTable extends Migration
      */
     public function up()
     {
-        DB::connection('system')->table('modules')->where('id', 17)->update(['sort' => 5]);
-        DB::connection('system')->table('modules')->where('id', 2)->update(['sort' => 7]);
-        DB::connection('system')->table('modules')->where('id', 18)->update(['sort' => 6]);
-        DB::connection('system')->table('modules')->where('id', 8)->update(['sort' => 7]);
+        DB::connection()->table('modules')->where('id', 17)->update(['sort' => 5]);
+        DB::connection()->table('modules')->where('id', 2)->update(['sort' => 7]);
+        DB::connection()->table('modules')->where('id', 18)->update(['sort' => 6]);
+        DB::connection()->table('modules')->where('id', 8)->update(['sort' => 7]);
     }
 
     /**

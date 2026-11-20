@@ -1,51 +1,48 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `series` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `establishment_id` int(10) unsigned NOT NULL
- * - `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT ''
- * - `contingency` tinyint(1) NOT NULL DEFAULT '0'
- * - `dedicated` tinyint(1) NOT NULL DEFAULT '0'
- * - `series_device_group_id` int(10) unsigned DEFAULT NULL
- * - `in_use` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True al emitir el primer comprobante en la serie'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - establishment_id: bigint
+ * - document_type_id: varchar(255)
+ * - number: varchar(255)
+ * - contingency: boolean
+ * - dedicated: boolean
+ * - series_device_group_id: bigint
+ * - in_use: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `series` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `establishment_id` int(10) unsigned NOT NULL,
-  `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-  `contingency` tinyint(1) NOT NULL DEFAULT '0',
-  `dedicated` tinyint(1) NOT NULL DEFAULT '0',
-  `series_device_group_id` int(10) unsigned DEFAULT NULL,
-  `in_use` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True al emitir el primer comprobante en la serie',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `series_document_type_number_unique` (`establishment_id`,`document_type_id`,`number`),
-  KEY `series_establishment_id_foreign` (`establishment_id`),
-  KEY `series_document_type_id_foreign` (`document_type_id`),
-  KEY `series_series_device_group_id_foreign` (`series_device_group_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('series', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('establishment_id');
+            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('number', 255)->collation('pro9_ci_ai')->default('');
+            $table->boolean('contingency')->default(false);
+            $table->boolean('dedicated')->default(false);
+            $table->bigInteger('series_device_group_id')->nullable();
+            $table->boolean('in_use')->default(false)->comment('True al emitir el primer comprobante en la serie');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['establishment_id', 'document_type_id', 'number'], 'series_document_type_number_unique');
+            $table->index(['establishment_id'], 'series_establishment_id_foreign');
+            $table->index(['document_type_id'], 'series_document_type_id_foreign');
+            $table->index(['series_device_group_id'], 'series_series_device_group_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `series`');
+        Schema::dropIfExists('series');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

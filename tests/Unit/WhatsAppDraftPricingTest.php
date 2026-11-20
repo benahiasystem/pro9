@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use Illuminate\Validation\ValidationException;
 use Modules\WhatsAppBot\Services\Facturalo\DraftPricing;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class WhatsAppDraftPricingTest extends TestCase
 {
@@ -39,6 +39,36 @@ class WhatsAppDraftPricingTest extends TestCase
             \Illuminate\Support\Facades\Facade::clearResolvedInstances();
             \Illuminate\Support\Facades\Facade::setFacadeApplication($previous);
         }
+    }
+
+    public function test_mixed_invoice_keeps_exempt_amounts_out_of_the_taxable_discount_base(): void
+    {
+        $result = DraftPricing::calculate([
+            ['quantity'=>'1', 'price'=>'116', 'price_currency'=>'VES', 'includes_iva'=>true, 'affectation_igv_type_id'=>'10'],
+            ['quantity'=>'0.5', 'price'=>'14.50', 'price_currency'=>'VES', 'includes_iva'=>false, 'affectation_igv_type_id'=>'20'],
+        ], '10', '1');
+
+        self::assertSame('7.25', $result['items'][1]['total']);
+        self::assertSame('0', $result['items'][1]['total_igv']);
+        self::assertSame('100', $result['discount_base']);
+        self::assertSame('99', $result['total_taxed']);
+        self::assertSame('7.25', $result['total_exonerated']);
+        self::assertSame('106.25', $result['total_value']);
+        self::assertSame('15.84', $result['total_igv']);
+        self::assertSame('122.09', $result['total']);
+        self::assertSame('122.09', $result['total_payable']);
+    }
+
+    public function test_invoice_uses_the_configured_tax_rate_and_rejects_export_affectation(): void
+    {
+        config(['venezuela.tax.rate' => '0.08']);
+        $item = ['quantity'=>'1', 'price'=>'100', 'price_currency'=>'VES', 'includes_iva'=>false, 'affectation_igv_type_id'=>'10'];
+        $result = DraftPricing::calculate([$item], '10', '5');
+        self::assertSame('7.6', $result['total_igv']);
+        self::assertSame('102.60', $result['total_payable']);
+
+        $this->expectException(ValidationException::class);
+        DraftPricing::calculate([array_replace($item, ['affectation_igv_type_id'=>'EXP'])], '10');
     }
 
     public function test_orchestrator_explains_that_an_old_draft_must_be_confirmed_again(): void

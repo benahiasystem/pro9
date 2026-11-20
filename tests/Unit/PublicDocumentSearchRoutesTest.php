@@ -32,7 +32,9 @@ class PublicDocumentSearchRoutesTest extends TestCase
             self::assertSame('tenant.download.external_id', $download->getName());
         }
 
-        $central = env('PREFIX_URL') ? env('PREFIX_URL').'.'.env('APP_URL_BASE') : env('APP_URL_BASE');
+        $base = env('APP_URL_BASE') ?: 'central.example.test';
+        $prefix = env('PREFIX_URL');
+        $central = $prefix ? $prefix.'.'.$base : $base;
         $this->assertSearchRoutes($this->loadRoutes(null), $central, $enabled, [
             ['GET', '/consultas'], ['POST', '/consultas'], ['GET', '/consultas/widget'],
             ['GET', '/consultas/widget/bbc.localhost'], ['POST', '/consultas/widget/bbc.localhost'],

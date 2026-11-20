@@ -1,40 +1,37 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `tag_templates` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `width` double(8,2) NOT NULL
- * - `height` double(8,2) NOT NULL
- * - `establishment_id` int(10) unsigned NOT NULL
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `is_default` tinyint(1) NOT NULL DEFAULT '0'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - width: numeric(8,2)
+ * - height: numeric(8,2)
+ * - establishment_id: bigint
+ * - name: varchar(255)
+ * - is_default: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `tag_templates` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `width` double(8,2) NOT NULL,
-  `height` double(8,2) NOT NULL,
-  `establishment_id` int(10) unsigned NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `is_default` tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `tag_templates_establishment_id_foreign` (`establishment_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('tag_templates', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->decimal('width', 8, 2);
+            $table->decimal('height', 8, 2);
+            $table->bigInteger('establishment_id');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->boolean('is_default')->default(false);
+            $table->index(['establishment_id'], 'tag_templates_establishment_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `tag_templates`');
+        Schema::dropIfExists('tag_templates');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

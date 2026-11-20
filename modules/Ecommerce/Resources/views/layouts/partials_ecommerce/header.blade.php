@@ -235,7 +235,7 @@ div.cart-dropdown {
                                     <button v-if="cartQuantities[result.id] > 1" @click.stop.prevent="decrementQuantity(result)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-minus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
                                     </button>
-                                    <input type="number" class="input-quantity mx-2" v-model.number="cartQuantities[result.id]" min="1" style="width: 50px; text-align: center;" @change="updateQuantity(result)">
+                                    <input type="text" inputmode="decimal" class="input-quantity mx-2" v-model="cartQuantities[result.id]" style="width: 50px; text-align: center;" @change="updateQuantity(result)">
                                     <button @click.stop.prevent="incrementQuantity(result)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                                     </button>
@@ -405,7 +405,7 @@ div.cart-dropdown {
     });
 
     function waitForVue(cb) {
-        if (typeof Vue !== 'undefined') return cb();
+        if (typeof Vue !== 'undefined' && window.Pro9StorefrontAmounts) return cb();
         setTimeout(function(){ waitForVue(cb); }, 100);
     }
 
@@ -493,17 +493,20 @@ div.cart-dropdown {
                             imageSmall = item.image_url_small.split(/[\\/]/).pop();
                         }
 
-                        let priceClean = item.sale_unit_price;
-                        if (typeof priceClean === 'string') {
-                            priceClean = priceClean.replace(/[^\d.,-]/g, '').replace(',', '.');
-                        }
-                        priceClean = parseFloat(priceClean) || 0;
+                        const priceClean = item.amount_sale_unit_price == null ? null
+                            : window.Pro9StorefrontAmounts.input(String(item.amount_sale_unit_price));
 
                         const cartItem = {
                             id: item.id,
                             description: item.description,
                             sale_unit_price: priceClean,
-                            original_price: priceClean,
+                            original_price: item.original_price,
+                            compare_at_price: item.compare_at_price,
+                            campaign_pricing_snapshot: item.campaign_pricing_snapshot,
+                            discount_campaign_id: item.discount_campaign_id,
+                            discount_campaign_name: item.discount_campaign_name,
+                            campaign_discount_percent: item.campaign_discount_percent,
+                            campaign_discount_embedded: item.campaign_discount_embedded,
                             sale_unit_price_display: item.sale_unit_price,
                             image_small: imageSmall,
                             image: imageSmall,
@@ -512,8 +515,8 @@ div.cart-dropdown {
                             currency_type_symbol: item.currency_type_symbol || 'Bs.',
                             unit_type_id: item.unit_type_id || 'UND',
                             internal_id: item.internal_id || '',
-                            quantity: 1,
-                            stock: item.stock != null ? parseInt(item.stock, 10) : undefined,
+                            quantity: '1',
+                            stock: item.stock == null ? undefined : window.Pro9StorefrontAmounts.input(String(item.stock)),
                         };
 
                         let array = localStorage.getItem('products_cart');
@@ -522,7 +525,7 @@ div.cart-dropdown {
 
                         if (typeof cartAddOrUpdateItem === 'function') {
                             cartAddOrUpdateItem(cartItem, {
-                                quantity: 1,
+                                quantity: '1',
                                 mode: found ? 'exists' : 'added',
                             });
                             return;
@@ -543,7 +546,7 @@ div.cart-dropdown {
                         array = array ? JSON.parse(array) : [];
                         let obj = {};
                         array.forEach(function(item) {
-                            obj[item.id] = item.quantity || 1;
+                            obj[item.id] = window.Pro9StorefrontAmounts.quantity(item.quantity ?? '1');
                         });
                         this.cartQuantities = obj;
                     },
@@ -552,7 +555,8 @@ div.cart-dropdown {
                         array = array ? JSON.parse(array) : [];
                         let found = array.find(x => x.id == item.id);
                         if (found) {
-                            found.quantity = (found.quantity || 1) + 1;
+                            found.quantity = cartClampQuantity(window.Pro9StorefrontAmounts.amount(window.Pro9StorefrontAmounts.quantity(found.quantity)).plus('1').decimal(), window.Pro9StorefrontAmounts.stock(found), false);
+                            found.cantidad = found.quantity;
                             localStorage.setItem('products_cart', JSON.stringify(array));
                             this.cartQuantities[item.id] = found.quantity;
                             window.dispatchEvent(new Event('productAddedToCart'));
@@ -562,25 +566,26 @@ div.cart-dropdown {
                         let array = localStorage.getItem('products_cart');
                         array = array ? JSON.parse(array) : [];
                         let found = array.find(x => x.id == item.id);
-                        if (found && found.quantity > 1) {
-                            found.quantity--;
+                        if (found && window.Pro9StorefrontAmounts.amount(found.quantity).compare('1') > 0) {
+                            found.quantity = window.Pro9StorefrontAmounts.amount(found.quantity).minus('1').decimal();
+                            found.cantidad = found.quantity;
                             localStorage.setItem('products_cart', JSON.stringify(array));
                             this.cartQuantities[item.id] = found.quantity;
                             window.dispatchEvent(new Event('productAddedToCart'));
-                        } else if (found && found.quantity <= 1) {
+                        } else if (found && window.Pro9StorefrontAmounts.amount(found.quantity).compare('1') <= 0) {
                             this.removeFromCart(item);
                         }
                     },
                     updateQuantity(item) {
-                        let qty = parseInt(this.cartQuantities[item.id]) || 1;
-                        if (qty < 1) qty = 1;
+                        const qty = window.Pro9StorefrontAmounts.quantity(this.cartQuantities[item.id]);
                         let array = localStorage.getItem('products_cart');
                         array = array ? JSON.parse(array) : [];
                         let found = array.find(x => x.id == item.id);
                         if (found) {
-                            found.quantity = qty;
+                            found.quantity = cartClampQuantity(qty, window.Pro9StorefrontAmounts.stock(found), false);
+                            found.cantidad = found.quantity;
                             localStorage.setItem('products_cart', JSON.stringify(array));
-                            this.cartQuantities[item.id] = qty;
+                            this.cartQuantities[item.id] = found.quantity;
                             window.dispatchEvent(new Event('productAddedToCart'));
                         }
                     },

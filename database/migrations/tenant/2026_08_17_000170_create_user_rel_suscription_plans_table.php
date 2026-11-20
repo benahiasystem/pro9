@@ -1,143 +1,155 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `user_rel_suscription_plans` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `user_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con usuario'
- * - `suscription_plan_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con planes de suscripcion'
- * - `cat_period_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con el periodo de tiempo'
- * - `items` json NOT NULL COMMENT 'Pega los items relacionados a modo de standar'
- * - `editable` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Si ya ha sido adquirido, no puede ser modificado'
- * - `deletable` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Si ya ha sido adquirido, no puede ser borrado'
- * - `start_date` date DEFAULT NULL COMMENT 'Fecha de inicio'
- * - `subscription_status` enum('authorized','paused','cancelled','finished') COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `no_send_link` tinyint(1) NOT NULL DEFAULT '0'
- * - `total_send_link` int(11) NOT NULL DEFAULT '0'
- * - `trial_start_date` date DEFAULT NULL
- * - `trial_days` int(11) DEFAULT NULL
- * - `sale_notes` text COLLATE utf8mb4_unicode_ci
- * - `documents` text COLLATE utf8mb4_unicode_ci
- * - `dates_of_documents` text COLLATE utf8mb4_unicode_ci
- * - `automatic_date_of_issue` date DEFAULT NULL
- * - `customer_id` int(10) unsigned DEFAULT '0'
- * - `customer` json NOT NULL
- * - `parent_customer_id` int(10) unsigned DEFAULT '0'
- * - `parent_customer` json NOT NULL
- * - `children_customer_id` int(10) unsigned DEFAULT '0'
- * - `children_customer` longtext COLLATE utf8mb4_unicode_ci
- * - `quantity_period` int(10) unsigned DEFAULT '0'
- * - `apply_concurrency` int(10) unsigned NOT NULL DEFAULT '0'
- * - `enabled_concurrency` int(10) unsigned NOT NULL DEFAULT '1' COMMENT 'Se pasará a nota de ventas como activo'
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `exchange_rate_sale` decimal(18,8) DEFAULT '0.000'
- * - `total_prepayment` decimal(30,12) DEFAULT '0.00'
- * - `total_charge` decimal(30,12) DEFAULT '0.00'
- * - `total_discount` decimal(30,12) DEFAULT '0.00'
- * - `total_exportation` decimal(30,12) DEFAULT '0.00'
- * - `total_free` decimal(30,12) DEFAULT '0.00'
- * - `total_taxed` decimal(30,12) DEFAULT '0.00'
- * - `total_unaffected` decimal(30,12) DEFAULT '0.00'
- * - `total_exonerated` decimal(30,12) DEFAULT '0.00'
- * - `total_igv` decimal(30,12) DEFAULT '0.00'
- * - `total_igv_free` decimal(30,12) DEFAULT '0.00'
- * - `total_base_other_taxes` decimal(30,12) DEFAULT '0.00'
- * - `total_other_taxes` decimal(30,12) DEFAULT '0.00'
- * - `total_taxes` decimal(30,12) DEFAULT '0.00'
- * - `total_value` decimal(30,12) DEFAULT '0.00'
- * - `total` decimal(30,12) DEFAULT '0.00'
- * - `charges` json DEFAULT NULL
- * - `attributes` json DEFAULT NULL
- * - `discounts` json DEFAULT NULL
- * - `prepayments` json DEFAULT NULL
- * - `related` json DEFAULT NULL
- * - `perception` json DEFAULT NULL
- * - `legends` json DEFAULT NULL
- * - `terms_condition` longtext COLLATE utf8mb4_unicode_ci
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `grade` text COLLATE utf8mb4_unicode_ci COMMENT 'Grado designado - utilizado en matricula'
- * - `section` text COLLATE utf8mb4_unicode_ci COMMENT 'Seccion designado - utilizado en matricula'
- * - `orders_created` int(11) NOT NULL DEFAULT '0' COMMENT 'Cantidad de órdenes de cobro creadas para esta suscripción'
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - user_id: bigint
+ * - suscription_plan_id: bigint
+ * - cat_period_id: bigint
+ * - items: json
+ * - editable: smallint
+ * - deletable: smallint
+ * - start_date: date
+ * - subscription_status: varchar(255)
+ * - no_send_link: boolean
+ * - total_send_link: integer
+ * - trial_start_date: date
+ * - trial_days: integer
+ * - sale_notes: text
+ * - documents: text
+ * - dates_of_documents: text
+ * - automatic_date_of_issue: date
+ * - customer_id: bigint
+ * - customer: json
+ * - parent_customer_id: bigint
+ * - parent_customer: json
+ * - children_customer_id: bigint
+ * - children_customer: text
+ * - quantity_period: bigint
+ * - apply_concurrency: bigint
+ * - enabled_concurrency: bigint
+ * - currency_type_id: varchar(255)
+ * - payment_method_type_id: varchar(255)
+ * - exchange_rate_sale: numeric(18,8)
+ * - total_prepayment: numeric(30,12)
+ * - total_charge: numeric(30,12)
+ * - total_discount: numeric(30,12)
+ * - total_exportation: numeric(30,12)
+ * - total_free: numeric(30,12)
+ * - total_taxed: numeric(30,12)
+ * - total_unaffected: numeric(30,12)
+ * - total_exonerated: numeric(30,12)
+ * - total_igv: numeric(30,12)
+ * - total_igv_free: numeric(30,12)
+ * - total_base_other_taxes: numeric(30,12)
+ * - total_other_taxes: numeric(30,12)
+ * - total_taxes: numeric(30,12)
+ * - total_value: numeric(30,12)
+ * - total: numeric(30,12)
+ * - charges: json
+ * - attributes: json
+ * - discounts: json
+ * - prepayments: json
+ * - related: json
+ * - perception: json
+ * - legends: json
+ * - terms_condition: text
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - grade: text
+ * - section: text
+ * - orders_created: integer
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `user_rel_suscription_plans` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con usuario',
-  `suscription_plan_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con planes de suscripcion',
-  `cat_period_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con el periodo de tiempo',
-  `items` json NOT NULL COMMENT 'Pega los items relacionados a modo de standar',
-  `editable` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Si ya ha sido adquirido, no puede ser modificado',
-  `deletable` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'Si ya ha sido adquirido, no puede ser borrado',
-  `start_date` date DEFAULT NULL COMMENT 'Fecha de inicio',
-  `subscription_status` enum('authorized','paused','cancelled','finished') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `no_send_link` tinyint(1) NOT NULL DEFAULT '0',
-  `total_send_link` int(11) NOT NULL DEFAULT '0',
-  `trial_start_date` date DEFAULT NULL,
-  `trial_days` int(11) DEFAULT NULL,
-  `sale_notes` text COLLATE utf8mb4_unicode_ci,
-  `documents` text COLLATE utf8mb4_unicode_ci,
-  `dates_of_documents` text COLLATE utf8mb4_unicode_ci,
-  `automatic_date_of_issue` date DEFAULT NULL,
-  `customer_id` int(10) unsigned DEFAULT '0',
-  `customer` json NOT NULL,
-  `parent_customer_id` int(10) unsigned DEFAULT '0',
-  `parent_customer` json NOT NULL,
-  `children_customer_id` int(10) unsigned DEFAULT '0',
-  `children_customer` longtext COLLATE utf8mb4_unicode_ci,
-  `quantity_period` int(10) unsigned DEFAULT '0',
-  `apply_concurrency` int(10) unsigned NOT NULL DEFAULT '0',
-  `enabled_concurrency` int(10) unsigned NOT NULL DEFAULT '1' COMMENT 'Se pasará a nota de ventas como activo',
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `exchange_rate_sale` decimal(18,8) DEFAULT '0.000',
-  `total_prepayment` decimal(30,12) DEFAULT '0.00',
-  `total_charge` decimal(30,12) DEFAULT '0.00',
-  `total_discount` decimal(30,12) DEFAULT '0.00',
-  `total_exportation` decimal(30,12) DEFAULT '0.00',
-  `total_free` decimal(30,12) DEFAULT '0.00',
-  `total_taxed` decimal(30,12) DEFAULT '0.00',
-  `total_unaffected` decimal(30,12) DEFAULT '0.00',
-  `total_exonerated` decimal(30,12) DEFAULT '0.00',
-  `total_igv` decimal(30,12) DEFAULT '0.00',
-  `total_igv_free` decimal(30,12) DEFAULT '0.00',
-  `total_base_other_taxes` decimal(30,12) DEFAULT '0.00',
-  `total_other_taxes` decimal(30,12) DEFAULT '0.00',
-  `total_taxes` decimal(30,12) DEFAULT '0.00',
-  `total_value` decimal(30,12) DEFAULT '0.00',
-  `total` decimal(30,12) DEFAULT '0.00',
-  `charges` json DEFAULT NULL,
-  `attributes` json DEFAULT NULL,
-  `discounts` json DEFAULT NULL,
-  `prepayments` json DEFAULT NULL,
-  `related` json DEFAULT NULL,
-  `perception` json DEFAULT NULL,
-  `legends` json DEFAULT NULL,
-  `terms_condition` longtext COLLATE utf8mb4_unicode_ci,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `grade` text COLLATE utf8mb4_unicode_ci COMMENT 'Grado designado - utilizado en matricula',
-  `section` text COLLATE utf8mb4_unicode_ci COMMENT 'Seccion designado - utilizado en matricula',
-  `orders_created` int(11) NOT NULL DEFAULT '0' COMMENT 'Cantidad de órdenes de cobro creadas para esta suscripción',
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('user_rel_suscription_plans', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id')->nullable()->default('0')->comment('Relacion con usuario');
+            $table->bigInteger('suscription_plan_id')->nullable()->default('0')->comment('Relacion con planes de suscripcion');
+            $table->bigInteger('cat_period_id')->nullable()->default('0')->comment('Relacion con el periodo de tiempo');
+            $table->json('items')->comment('Pega los items relacionados a modo de standar');
+            $table->smallInteger('editable')->default('0')->comment('Si ya ha sido adquirido, no puede ser modificado');
+            $table->smallInteger('deletable')->default('0')->comment('Si ya ha sido adquirido, no puede ser borrado');
+            $table->date('start_date')->nullable()->comment('Fecha de inicio');
+            $table->string('subscription_status', 255)->collation('pro9_ci_ai')->nullable();
+            $table->boolean('no_send_link')->default(false);
+            $table->integer('total_send_link')->default('0');
+            $table->date('trial_start_date')->nullable();
+            $table->integer('trial_days')->nullable();
+            $table->text('sale_notes')->collation('pro9_ci_ai')->nullable();
+            $table->text('documents')->collation('pro9_ci_ai')->nullable();
+            $table->text('dates_of_documents')->collation('pro9_ci_ai')->nullable();
+            $table->date('automatic_date_of_issue')->nullable();
+            $table->bigInteger('customer_id')->nullable()->default('0');
+            $table->json('customer');
+            $table->bigInteger('parent_customer_id')->nullable()->default('0');
+            $table->json('parent_customer');
+            $table->bigInteger('children_customer_id')->nullable()->default('0');
+            $table->text('children_customer')->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('quantity_period')->nullable()->default('0');
+            $table->bigInteger('apply_concurrency')->default('0');
+            $table->bigInteger('enabled_concurrency')->default('1')->comment('Se pasará a nota de ventas como activo');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('payment_method_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('exchange_rate_sale', 18, 8)->nullable()->default('0.000');
+            $table->decimal('total_prepayment', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_charge', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_discount', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_exportation', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_free', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_taxed', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_unaffected', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_exonerated', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_igv', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_igv_free', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_base_other_taxes', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_other_taxes', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_taxes', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_value', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total', 30, 12)->nullable()->default('0.00');
+            $table->json('charges')->nullable();
+            $table->json('attributes')->nullable();
+            $table->json('discounts')->nullable();
+            $table->json('prepayments')->nullable();
+            $table->json('related')->nullable();
+            $table->json('perception')->nullable();
+            $table->json('legends')->nullable();
+            $table->text('terms_condition')->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->text('grade')->collation('pro9_ci_ai')->nullable()->comment('Grado designado - utilizado en matricula');
+            $table->text('section')->collation('pro9_ci_ai')->nullable()->comment('Seccion designado - utilizado en matricula');
+            $table->integer('orders_created')->default('0')->comment('Cantidad de órdenes de cobro creadas para esta suscripción');
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+        });
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_user_id_range" CHECK ("user_id" >= 0)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_suscription_plan_id_range" CHECK ("suscription_plan_id" >= 0)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_cat_period_id_range" CHECK ("cat_period_id" >= 0)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_editable_range" CHECK ("editable" BETWEEN -128 AND 127)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_deletable_range" CHECK ("deletable" BETWEEN -128 AND 127)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_subscription_status_check" CHECK ("subscription_status" IN (\'authorized\',\'paused\',\'cancelled\',\'finished\'))');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_total_send_link_range" CHECK ("total_send_link" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_trial_days_range" CHECK ("trial_days" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_customer_id_range" CHECK ("customer_id" >= 0)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_parent_customer_id_range" CHECK ("parent_customer_id" >= 0)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_children_customer_id_range" CHECK ("children_customer_id" >= 0)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_quantity_period_range" CHECK ("quantity_period" BETWEEN 0 AND 4294967295)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_apply_concurrency_range" CHECK ("apply_concurrency" BETWEEN 0 AND 4294967295)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_enabled_concurrency_range" CHECK ("enabled_concurrency" BETWEEN 0 AND 4294967295)');
+        DB::statement('ALTER TABLE "user_rel_suscription_plans" ADD CONSTRAINT "user_rel_suscription_plans_orders_created_range" CHECK ("orders_created" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `user_rel_suscription_plans`');
+        Schema::dropIfExists('user_rel_suscription_plans');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

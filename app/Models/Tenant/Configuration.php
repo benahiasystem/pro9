@@ -519,24 +519,6 @@ use Illuminate\Support\Facades\Log;
         ];
 
         /**
-         * Atributos derivados agregados a la serialización del modelo,
-         * para que `is_nrus` esté disponible en cualquier vista/JSON que reciba la configuración.
-         */
-        protected $appends = [
-            'is_nrus',
-        ];
-
-        /**
-         * Accessor para exponer si la empresa es del giro NRUS.
-         *
-         * @return bool
-         */
-        public function getIsNrusAttribute(): bool
-        {
-            return $this->isNrus();
-        }
-
-        /**
          * Relation to the catalog of charge/discount types for the global discount.
          */
         public function globalDiscountType()
@@ -698,7 +680,6 @@ use Illuminate\Support\Facades\Log;
             } catch (\Throwable $e) {}
             $skins = Skin::all()->filter(fn($s) => !$hiddenFilenames->contains($s->filename))->values();
             return [
-                'is_nrus' => $this->isNrus(),
                 'id' => $this->id,
                 'company' => $company,
                 'establishment' => $establishment,
@@ -1017,36 +998,6 @@ use Illuminate\Support\Facades\Log;
         {
             if (empty($this->is_pharmacy)) $this->is_pharmacy = false;
             return (bool)$this->is_pharmacy;
-        }
-
-        /**
-         * Indica si la empresa opera bajo el régimen NRUS, en base al plan
-         * almacenado en la configuración (module_permissions.nrus).
-         *
-         * @return bool
-         */
-        public function isNrus(): bool
-        {
-            $plan = $this->plan;
-            if (is_null($plan) || !isset($plan->module_permissions)) {
-                return false;
-            }
-
-            $module_permissions = $plan->module_permissions;
-
-            if (is_array($module_permissions)) {
-                $nrus = $module_permissions['nrus'] ?? null;
-                $business = $module_permissions['business'] ?? null;
-            } else {
-                $nrus = $module_permissions->nrus ?? null;
-                $business = $module_permissions->business ?? null;
-            }
-
-            if (!is_null($nrus)) {
-                return filter_var($nrus, FILTER_VALIDATE_BOOLEAN);
-            }
-
-            return (int)$business === 6;
         }
 
         /**

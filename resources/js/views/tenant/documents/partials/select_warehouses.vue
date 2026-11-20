@@ -47,7 +47,7 @@
 </template>
 
 <script>
- 
+    import {sameInvoiceRecordId} from '../../../../helpers/invoice-lots'
 
     export default { 
         props:['showDialog', 'warehouses', 'isUpdateWarehouseId'],
@@ -79,7 +79,7 @@
                 
                 if(this.isUpdateWarehouseId){
                     await this.warehouses.forEach((it) => {
-                        if(it.warehouse_id == this.isUpdateWarehouseId){
+                        if(sameInvoiceRecordId(it.warehouse_id, this.isUpdateWarehouseId)){
                             it.checked = true
                         }else{
                             it.checked = false

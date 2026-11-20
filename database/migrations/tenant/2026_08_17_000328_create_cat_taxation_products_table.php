@@ -1,36 +1,32 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial del catálogo HKA `cat_taxation_products` para instalaciones nuevas.
- * Los identificadores son locales porque HKA no publica códigos para estos valores.
- * Inventario de columnas:
- * - `id` tinyint unsigned NOT NULL, clave primaria local
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `active` tinyint(1) NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: smallint
+ * - description: varchar(255)
+ * - active: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_taxation_products` (
-  `id` tinyint unsigned NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `active` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_taxation_products', function (Blueprint $table) {
+            $table->smallInteger('id');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->boolean('active');
+            $table->primary(['id']);
+        });
+        DB::statement('ALTER TABLE "cat_taxation_products" ADD CONSTRAINT "cat_taxation_products_id_range" CHECK ("id" BETWEEN 0 AND 255)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_taxation_products`');
+        Schema::dropIfExists('cat_taxation_products');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
-// ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+// ######### FIN CAMBIO POSTGRESQL 17

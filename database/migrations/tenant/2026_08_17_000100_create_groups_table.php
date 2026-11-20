@@ -1,31 +1,30 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `groups` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: char(2)
+ * - description: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `groups` (
-  `id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  KEY `groups_id_index` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('groups', function (Blueprint $table) {
+            $table->char('id', 2)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->index(['id'], 'groups_id_index');
+            $table->unique(['id'], 'groups_id_pg_unique');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `groups`');
+        Schema::dropIfExists('groups');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

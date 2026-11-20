@@ -1,45 +1,43 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `restaurant_table_envs` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `active` tinyint(1) NOT NULL
- * - `tables_quantity` int(11) NOT NULL
- * - `is_delivery` tinyint(1) NOT NULL DEFAULT '0'
- * - `is_takeaway` tinyint(1) NOT NULL DEFAULT '0'
- * - `can_edit` tinyint(1) NOT NULL DEFAULT '1'
- * - `can_deactivate` tinyint(1) NOT NULL DEFAULT '1'
- * - `can_delete` tinyint(1) NOT NULL DEFAULT '1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - name: varchar(255)
+ * - active: boolean
+ * - tables_quantity: integer
+ * - is_delivery: boolean
+ * - is_takeaway: boolean
+ * - can_edit: boolean
+ * - can_deactivate: boolean
+ * - can_delete: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `restaurant_table_envs` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `active` tinyint(1) NOT NULL,
-  `tables_quantity` int(11) NOT NULL,
-  `is_delivery` tinyint(1) NOT NULL DEFAULT '0',
-  `is_takeaway` tinyint(1) NOT NULL DEFAULT '0',
-  `can_edit` tinyint(1) NOT NULL DEFAULT '1',
-  `can_deactivate` tinyint(1) NOT NULL DEFAULT '1',
-  `can_delete` tinyint(1) NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('restaurant_table_envs', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->boolean('active');
+            $table->integer('tables_quantity');
+            $table->boolean('is_delivery')->default(false);
+            $table->boolean('is_takeaway')->default(false);
+            $table->boolean('can_edit')->default(true);
+            $table->boolean('can_deactivate')->default(true);
+            $table->boolean('can_delete')->default(true);
+        });
+        DB::statement('ALTER TABLE "restaurant_table_envs" ADD CONSTRAINT "restaurant_table_envs_tables_quantity_range" CHECK ("tables_quantity" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `restaurant_table_envs`');
+        Schema::dropIfExists('restaurant_table_envs');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

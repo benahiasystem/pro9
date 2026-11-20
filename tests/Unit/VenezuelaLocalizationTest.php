@@ -68,9 +68,9 @@ class VenezuelaLocalizationTest extends TestCase
     public function consolidated_migrations_preserve_the_venezuelan_location_structure(): void
     {
         foreach ([
-            'departments' => ['CREATE TABLE `departments`', '`id` char(2)'],
-            'provinces' => ['CREATE TABLE `provinces`', '`id` char(4)', '`department_id` char(2)'],
-            'districts' => ['CREATE TABLE `districts`', '`id` char(6)', '`province_id` char(4)'],
+            'departments' => ['Schema::create(\'departments\'', '$table->char(\'id\', 2)'],
+            'provinces' => ['Schema::create(\'provinces\'', '$table->char(\'id\', 4)', '$table->char(\'department_id\', 2)'],
+            'districts' => ['Schema::create(\'districts\'', '$table->char(\'id\', 6)', '$table->char(\'province_id\', 4)'],
         ] as $table => $fragments) {
             $source = $this->migrationSource($table);
             foreach ($fragments as $fragment) {

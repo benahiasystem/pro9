@@ -1,45 +1,42 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `guide_items` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `guide_id` int(10) unsigned NOT NULL
- * - `item_id` int(10) unsigned NOT NULL
- * - `item_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `quantity` decimal(30,12) NOT NULL
- * - `unit_cost` decimal(30,12) NOT NULL
- * - `total` decimal(30,12) NOT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - guide_id: bigint
+ * - item_id: bigint
+ * - item_name: varchar(255)
+ * - quantity: numeric(30,12)
+ * - unit_cost: numeric(30,12)
+ * - total: numeric(30,12)
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `guide_items` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `guide_id` int(10) unsigned NOT NULL,
-  `item_id` int(10) unsigned NOT NULL,
-  `item_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `quantity` decimal(30,12) NOT NULL,
-  `unit_cost` decimal(30,12) NOT NULL,
-  `total` decimal(30,12) NOT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `guide_items_guide_id_foreign` (`guide_id`),
-  KEY `guide_items_item_id_foreign` (`item_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('guide_items', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('guide_id');
+            $table->bigInteger('item_id');
+            $table->string('item_name', 255)->collation('pro9_ci_ai');
+            $table->decimal('quantity', 30, 12);
+            $table->decimal('unit_cost', 30, 12);
+            $table->decimal('total', 30, 12);
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['guide_id'], 'guide_items_guide_id_foreign');
+            $table->index(['item_id'], 'guide_items_item_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `guide_items`');
+        Schema::dropIfExists('guide_items');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

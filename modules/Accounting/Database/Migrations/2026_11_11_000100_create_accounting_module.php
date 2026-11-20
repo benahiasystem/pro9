@@ -4,6 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Modules\Accounting\Support\TenantSchema as Schema;
 use Modules\Accounting\Support\TenantDB as DB;
+use Modules\Accounting\Support\PostgresIntegrity as Integrity;
+
 return new class extends Migration
 {
     private function owned(string $name, Closure $fields): void
@@ -482,26 +484,27 @@ return new class extends Migration
             $t->json('snapshot');
         });
         $this->link('accounting_period_reviews', 'period_id', 'accounting_periods');
-        if (DB::getDriverName() === 'mysql') {
-            foreach (['accounting_audit_events', 'accounting_source_versions'] as $table) {
-                DB::unprepared("CREATE TRIGGER imm_" . $table . "_upd BEFORE UPDATE ON " . $table . " FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Registro de evidencia inmutable'");
-                DB::unprepared("CREATE TRIGGER imm_" . $table . "_del BEFORE DELETE ON " . $table . " FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Registro de evidencia inmutable'");
-            }
-            DB::unprepared("CREATE TRIGGER accounting_posted_entry_upd BEFORE UPDATE ON accounting_journal_entries FOR EACH ROW BEGIN IF OLD.posted_at IS NOT NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Comprobante contabilizado inmutable'; END IF; END");
-            DB::unprepared("CREATE TRIGGER accounting_posted_entry_del BEFORE DELETE ON accounting_journal_entries FOR EACH ROW BEGIN IF OLD.posted_at IS NOT NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Comprobante contabilizado inmutable'; END IF; END");
+        foreach (['accounting_audit_events', 'accounting_source_versions'] as $table) {
             foreach (['UPDATE' => 'upd', 'DELETE' => 'del'] as $event => $suffix) {
-                $targetCheck = $event === 'UPDATE' ? " OR (SELECT posted_at FROM accounting_journal_entries WHERE id=NEW.journal_entry_id) IS NOT NULL" : '';
-                DB::unprepared("CREATE TRIGGER accounting_posted_lines_" . $suffix . " BEFORE " . $event . " ON accounting_journal_lines FOR EACH ROW BEGIN IF (SELECT posted_at FROM accounting_journal_entries WHERE id=OLD.journal_entry_id) IS NOT NULL" . $targetCheck . " THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Líneas contabilizadas inmutables'; END IF; END");
+                Integrity::reject($table, 'imm_'.$table.'_'.$suffix, $event, 'Registro de evidencia inmutable');
             }
-            DB::unprepared("CREATE TRIGGER accounting_posted_lines_ins BEFORE INSERT ON accounting_journal_lines FOR EACH ROW BEGIN IF (SELECT posted_at FROM accounting_journal_entries WHERE id=NEW.journal_entry_id) IS NOT NULL THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Líneas contabilizadas inmutables'; END IF; END");
+        }
+        foreach (['UPDATE' => 'upd', 'DELETE' => 'del'] as $event => $suffix) {
+            Integrity::reject('accounting_journal_entries', 'accounting_posted_entry_'.$suffix, $event, 'Comprobante contabilizado inmutable', 'OLD.posted_at IS NOT NULL');
+        }
+        foreach (['INSERT' => 'ins', 'UPDATE' => 'upd', 'DELETE' => 'del'] as $event => $suffix) {
+            Integrity::postedLines('accounting_posted_lines_'.$suffix, $event);
         }
     }
     public function down(): void
     {
-        Schema::disableForeignKeyConstraints();
+        foreach (['accounting_audit_events', 'accounting_source_versions'] as $table) {
+            foreach (['upd', 'del'] as $suffix) Integrity::drop($table, 'imm_'.$table.'_'.$suffix);
+        }
+        foreach (['upd', 'del'] as $suffix) Integrity::drop('accounting_journal_entries', 'accounting_posted_entry_'.$suffix);
+        foreach (['ins', 'upd', 'del'] as $suffix) Integrity::drop('accounting_journal_lines', 'accounting_posted_lines_'.$suffix);
         foreach (['accounting_period_reviews', 'accounting_obligations', 'accounting_report_jobs', 'accounting_import_jobs', 'accounting_devices', 'accounting_audit_events', 'accounting_audit_heads', 'accounting_operation_results', 'accounting_attachments', 'accounting_incidents', 'accounting_account_mappings', 'accounting_integration_nonces', 'accounting_inbox_events', 'accounting_integration_batches', 'accounting_integration_connections', 'accounting_retentions', 'accounting_fiscal_records', 'accounting_settlement_allocations', 'accounting_open_items', 'accounting_entry_reviews', 'accounting_journal_lines', 'accounting_journal_entries', 'accounting_journal_sequences', 'accounting_source_versions', 'accounting_source_documents', 'accounting_tax_profiles', 'accounting_rule_sets', 'accounting_exchange_rates', 'accounting_cost_centers', 'accounting_third_parties', 'accounting_accounts', 'accounting_periods', 'accounting_fiscal_years', 'accounting_establishments', 'accounting_memberships', 'accounting_companies', 'accounting_organizations'] as $table) {
             Schema::dropIfExists($table);
         }
-        Schema::enableForeignKeyConstraints();
     }
 };

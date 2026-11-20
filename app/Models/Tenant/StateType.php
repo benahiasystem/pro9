@@ -5,6 +5,7 @@ namespace App\Models\Tenant;
 class StateType extends ModelTenant
 {
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 
     

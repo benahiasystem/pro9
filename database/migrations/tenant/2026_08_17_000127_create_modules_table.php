@@ -1,39 +1,37 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `modules` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `value` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `order_menu` int(11) NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - value: varchar(255)
+ * - description: varchar(255)
+ * - order_menu: integer
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `modules` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `value` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `order_menu` int(11) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('modules', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('value', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->integer('order_menu');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "modules" ADD CONSTRAINT "modules_order_menu_range" CHECK ("order_menu" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `modules`');
+        Schema::dropIfExists('modules');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

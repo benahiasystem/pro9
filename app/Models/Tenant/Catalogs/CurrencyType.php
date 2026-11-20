@@ -21,6 +21,7 @@ class CurrencyType extends ModelCatalog
 
     protected $table = "cat_currency_types";
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 
     protected $fillable = [

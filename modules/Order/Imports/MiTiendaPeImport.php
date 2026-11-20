@@ -80,7 +80,6 @@
 
         private function importRows(Collection $rows)
         {
-            libxml_disable_entity_loader(false);
             $this->process = [];
             $configurationMiTienda = ConfigurationMiTiendaPe::first();
             if (empty($configurationMiTienda)) {

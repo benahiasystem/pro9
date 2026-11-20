@@ -3,6 +3,7 @@
 
 namespace App\Http\Resources\Tenant;
 
+use App\Database\IntegerTransport;
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Document;
@@ -39,8 +40,11 @@ class DocumentResource extends JsonResource
         $customer_email=  $mails['optional_email_send'];
 
 
-        $total_payment = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::sum($document->payments->map(fn ($payment) => $payment->exactValue('payment'))));
-            $balance = \App\Support\Exact\Decimal::represent($document->balance);
+        $payments = $document->payments->whereNull('reversed_at');
+        $total_payment = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::sum(
+            $payments->map(fn ($payment) => $payment->exactValue('payment'))
+        ));
+        $balance = $document->exactBalance();
 
         $identityDocumentType = optional($person)->identity_document_type;
 
@@ -108,7 +112,8 @@ class DocumentResource extends JsonResource
                 'settlement_adjustment' => $document->settlement_adjustment,
                 'calculation_snapshot' => $document->calculation_snapshot,
             'total_paid' => $total_payment,
-            'balance' => $balance,
+            'balance' => \App\Support\Exact\Decimal::represent($balance),
+            'has_open_balance' => $balance->isPositive(),
             'has_pdf' => true,
             'btn_voided' => false,
             'items' => self::mapDocumentItems($document),
@@ -169,7 +174,15 @@ class DocumentResource extends JsonResource
                     $description = implode(' | ', array_filter($description));
                 }
 
+                if (isset($item['lots']) && is_array($item['lots'])) {
+                    foreach ($item['lots'] as &$serial) {
+                        if (isset($serial['id'])) $serial['id'] = IntegerTransport::value($serial['id']);
+                    }
+                    unset($serial);
+                }
+
                 $row['item'] = $item;
+                $row['id'] = IntegerTransport::value($row['id']);
                 $row['description'] = $description;
                 $row['quantity'] = (string) ($row['quantity'] ?? '0');
                 $row['unit_price'] = (string) ($row['unit_price'] ?? '0');

@@ -50,7 +50,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
                             $warehouse = ($detail->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($detail->warehouse_id)->establishment_id) : $this->findWarehouse($document['establishment_id']);
 
-                            $presentationQuantity = (!empty($detail['item']->presentation)) ? $detail['item']->presentation->quantity_unit : 1;
+                            $presentationQuantity = \App\Services\Fiscal\FiscalNoteInventory::presentationQuantity($detail->item);
                             $quantity=$detail->exactValue('quantity')->multipliedBy(\App\Support\Exact\Decimal::of($presentationQuantity));
 
                             $this->createInventoryKardex($document, $detail['item_id'], $quantity, $warehouse->id);
@@ -71,6 +71,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                             }
 
                             if (!$detail->document->order_note_id) $this->updateDataLots($detail);
+                            $this->moveInvoiceModifiers($detail, 1);
 
                         }
                         else{
@@ -81,7 +82,9 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
                     }
 
-                    $this->voidedWasDeductedPrepayment($document);
+                    if (!in_array($document->getOriginal('state_type_id'), ['09', '11'], true)) {
+                        $this->voidedWasDeductedPrepayment($document);
+                    }
 
                 }
             }
@@ -101,6 +104,8 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
             if($document->isCreditNote() && $document->isVoidedOrRejected())
             {
+                if (!$document->wasChanged('state_type_id')
+                    || in_array($document->getOriginal('state_type_id'), Document::VOIDED_REJECTED_IDS, true)) return;
                 // si es nota credito tipo 13, no se asocia a inventario
                 if($document->isCreditNoteAndType13()) return;
                 if (\App\Services\Fiscal\FiscalNote::ordinary($document)) return;
@@ -111,10 +116,10 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                     if(!$document_item->item->is_set)
                     {
                         $warehouse = ($document_item->warehouse_id) ? $this->findWarehouse($this->findWarehouseById($document_item->warehouse_id)->establishment_id) : $this->findWarehouse($document->establishment_id);
-                        $presentation_quantity = (!empty($document_item->item->presentation)) ? $document_item->item->presentation->quantity_unit : 1;
+                        $presentation_quantity = \App\Services\Fiscal\FiscalNoteInventory::presentationQuantity($document_item->item);
 
-                        $factor = -1;
-                        $calculate_quantity = $factor * $document_item->exactValue('quantity')->multipliedBy(ExactDecimal::of($presentation_quantity));
+                        $calculate_quantity = $document_item->exactValue('quantity')
+                            ->multipliedBy($presentation_quantity)->negated();
 
                         $this->createInventoryKardex($document, $document_item->item_id, $calculate_quantity, $warehouse->id);
 
@@ -132,27 +137,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
     private function voidedWasDeductedPrepayment($document)
     {
-
-        if($document->prepayments){
-
-            foreach ($document->prepayments as $row) {
-                $fullnumber = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $row->number);
-                if ($fullnumber === null) continue;
-                $series = $fullnumber[0];
-                $number = $fullnumber[1];
-
-                $doc = Document::where([['series',$series],['number',$number]])
-                    ->where('establishment_id', $document->establishment_id)
-                    ->where('fiscal_environment', $document->fiscal_environment)
-                    ->where('document_type_id', ($row->document_type_id ?? '02') === '03' ? '03' : '01')->first();
-                if($doc){
-                    $doc->was_deducted_prepayment = false;
-                    $doc->pending_amount_prepayment += $row->total;
-                    $doc->save();
-                }
-            }
-        }
-
+        \App\Services\Fiscal\PrepaymentBalance::restore($document);
     }
 
     /**
@@ -174,28 +159,9 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                 if($affected_document)
                 {
                     //si el cpe relacionado tiene anticipos y el total de la nota es igual al del cpe afectado
-                    if($affected_document->prepayments && $note->document->total == $affected_document->total)
+                    if($affected_document->prepayments && $note->document->exactValue('total')->isEqualTo($affected_document->exactValue('total')))
                     {
-                        foreach($affected_document->prepayments as $row)
-                        {
-                            $number_full = \App\Services\Fiscal\FiscalIdentity::parseNumberFull((string) $row->number);
-                            if ($number_full === null) continue;
-                            $find_document = Document::whereFilterWithOutRelations()->where([['series', $number_full[0]],['number', $number_full[1]]])
-                                ->where('establishment_id', $affected_document->establishment_id)
-                                ->where('fiscal_environment', $affected_document->fiscal_environment)
-                                ->where('document_type_id', ($row->document_type_id ?? '02') === '03' ? '03' : '01')->first();
-
-                            if($find_document)
-                            {
-                                $find_document->pending_amount_prepayment += $row->total;
-
-                                if($find_document->pending_amount_prepayment <= $find_document->total)
-                                {
-                                    $find_document->was_deducted_prepayment = false;
-                                    $find_document->save();
-                                }
-                            }
-                        }
+                        \App\Services\Fiscal\PrepaymentBalance::restore($affected_document, true);
                     }
 
                 }

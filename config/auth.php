@@ -81,7 +81,7 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
+            'driver' => 'pro9_tenant',
             'model' => App\Models\Tenant\User::class,
         ],
 

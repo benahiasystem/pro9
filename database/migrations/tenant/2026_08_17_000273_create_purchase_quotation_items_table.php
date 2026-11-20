@@ -1,41 +1,38 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `purchase_quotation_items` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `purchase_quotation_id` int(10) unsigned NOT NULL
- * - `item_id` int(10) unsigned NOT NULL
- * - `item` json NOT NULL
- * - `quantity` decimal(30,12) NOT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - purchase_quotation_id: bigint
+ * - item_id: bigint
+ * - item: json
+ * - quantity: numeric(30,12)
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `purchase_quotation_items` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `purchase_quotation_id` int(10) unsigned NOT NULL,
-  `item_id` int(10) unsigned NOT NULL,
-  `item` json NOT NULL,
-  `quantity` decimal(30,12) NOT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `purchase_quotation_items_purchase_quotation_id_foreign` (`purchase_quotation_id`),
-  KEY `purchase_quotation_items_item_id_foreign` (`item_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('purchase_quotation_items', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('purchase_quotation_id');
+            $table->bigInteger('item_id');
+            $table->json('item');
+            $table->decimal('quantity', 30, 12);
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['purchase_quotation_id'], 'purchase_quotation_items_purchase_quotation_id_foreign');
+            $table->index(['item_id'], 'purchase_quotation_items_item_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `purchase_quotation_items`');
+        Schema::dropIfExists('purchase_quotation_items');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

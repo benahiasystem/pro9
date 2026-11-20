@@ -50,6 +50,8 @@ class SaleNoteController extends Controller
 
     protected $sale_note;
 
+    protected $document;
+
     protected $company;
 
     public function lists(Request $request)
@@ -243,6 +245,7 @@ class SaleNoteController extends Controller
             }
             if ($person === null && !empty($client_number)) {
                 $data_person = [
+                    'type' => 'customers',
                     'number' => $client_number,
                     'identity_document_type_id' => $client_data['codigo_tipo_documento_identidad'] ?? '6',
                     'name' => $client_data['apellidos_y_nombres_o_razon_social'] ?? '',
@@ -252,6 +255,10 @@ class SaleNoteController extends Controller
                     'email' => $client_data['correo_electronico'] ?? '',
                     'telephone' => $client_data['telefono'] ?? '',
                 ];
+                $data_person=array_replace($data_person,\App\Support\Venezuela\PersonLocation::resolve(
+                    DB::connection('tenant'),$data_person['country_id'],
+                    in_array($data_person['identity_document_type_id'],['E','7','ND'],true) ? null : $data_person['district_id']
+                ));
                 $person = new PersonModel($data_person);
                 $person->push();
             }
@@ -507,7 +514,7 @@ class SaleNoteController extends Controller
             $company_address = (strlen($this->document->establishment->address) / 30) * 10;
             $company_number = $this->document->establishment->telephone != '' ? '10' : '0';
             $customer_name = strlen($this->document->customer->name) > '25' ? '10' : '0';
-            $customer_address = (strlen($this->document->customer->address) / 200) * 10;
+            $customer_address = (strlen((string) ($this->document->customer->address ?? '')) / 200) * 10;
             $p_order = $this->document->purchase_order != '' ? '10' : '0';
 
             $total_exportation = $this->document->total_exportation != '' ? '10' : '0';
@@ -561,7 +568,7 @@ class SaleNoteController extends Controller
             $company_address = (strlen($this->document->establishment->address) / 30) * 10;
             $company_number = $this->document->establishment->telephone != '' ? '10' : '0';
             $customer_name = strlen($this->document->customer->name) > '25' ? '10' : '0';
-            $customer_address = (strlen($this->document->customer->address) / 200) * 10;
+            $customer_address = (strlen((string) ($this->document->customer->address ?? '')) / 200) * 10;
             $p_order = $this->document->purchase_order != '' ? '10' : '0';
 
             $total_exportation = $this->document->total_exportation != '' ? '10' : '0';

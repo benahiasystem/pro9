@@ -1,110 +1,32 @@
 <?php
-
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
+use App\Database\PostgresBackupManager;
+use Hyn\Tenancy\Models\Website;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Arr;
-use Ifsnop\Mysqldump as IMysqldump;
-use Exception;
 
-class BackupDatabase extends Command
+// ########## INICIO CAMBIO POSTGRESQL 17
+class BackupDatabase extends \Illuminate\Console\Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'bk:bd --type={type?} --database={database?}';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Backup database';
-
-    protected $process;
-
-    protected $host;
-    protected $username;
-    protected $password;
-
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    protected $signature = 'bk:bd {type?} {database?} {--quiesced : Corte integral con mantenimiento y trabajos detenidos}';
+    protected $description = 'Respaldo PostgreSQL 17.11 con manifiesto, hashes y archivos';
+    public function handle(): int
     {
-        parent::__construct();
-    }
-
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function handle()
-    {
-        try {
-            $type = ($this->argument('type')) ? $this->argument('type') : 'todos';
-            $database = $this->argument('database');
-            $this->initDbConfig();
-
-			if ($type === 'individual') {
-                if (!is_dir(storage_path('app/backups/' . $database))) mkdir(storage_path('app/backups/' . $database));
-
-				$tenant_dump = new IMysqldump\Mysqldump(
-                    'mysql:host=' . $this->host . ';dbname=' . $database, $this->username, $this->password
-                );
-				$tenant_dump->start(storage_path("app/backups/{$database}/{$database}.sql"));
-                Log::info('Backup ' . $database . ' database success');
-			} else {
-                $today = now()->format('dmY');
-                if (!is_dir(storage_path('app/backups'))) mkdir(storage_path('app/backups'));
-                if (!is_dir(storage_path('app/backups/'.$today))) mkdir(storage_path('app/backups/'.$today));
-
-				$dbs = DB::table('websites')->get()->toArray();
-				$db_admin = config('database.connections.mysql.database');
-
-				foreach ($dbs as $db) {
-					$tenant_dump = new IMysqldump\Mysqldump('mysql:host=' . $this->host . ';dbname=' . $db->uuid, $this->username, $this->password);
-					$tenant_dump->start(storage_path("app/backups/{$today}/{$db->uuid}.sql"));
-				}
-
-				$system_dump = new IMysqldump\Mysqldump('mysql:host=' . $this->host . ';dbname=' . $db_admin, $this->username, $this->password);
-				$system_dump->start(storage_path("app/backups/{$today}/{$db_admin}.sql"));
-
-				Log::info('Backup database success');
-			}
-
-
-        }catch (Exception $e) {
-
-            Log::error("Backup failed -- Line: {$e->getLine()} - Message: {$e->getMessage()} - File: {$e->getFile()}");
-
-            return [
-                'success' => false,
-                'message' => 'Error inesperado: ' . $e->getMessage()
-            ];
-
+        $type=$this->argument('type') ?: 'todos';
+        if (!in_array($type,['individual','todos'],true)) throw new \InvalidArgumentException('Tipo de respaldo inválido.');
+        $quiesced = (bool) $this->option('quiesced');
+        $databases = $type === 'individual'
+            ? [$this->argument('database')]
+            : array_merge([config('database.connections.system.database')], Website::pluck('uuid')->all());
+        if ($quiesced && $type === 'todos') {
+            // The central owner cannot see the state of the runtime connection used to list tenants.
+            $system = DB::connection('system');
+            if ($system->getPdo()->inTransaction()) throw new \LogicException('Cierre la transacción central antes del corte integral.');
+            $system->disconnect();
         }
-
+        $path=storage_path('app/backups/zip/postgresql-'.now()->format('Ymd-His').'-'.bin2hex(random_bytes(4)).'.zip');
+        app(PostgresBackupManager::class)->backup($databases, $path, $quiesced);
+        $this->info($path);return 0;
     }
-
-
-    private function initDbConfig(){
-
-        $dbConfig = config('database.connections.' . config('tenancy.db.system-connection-name', 'system'));
-
-        $this->host = Arr::first(Arr::wrap($dbConfig['host'] ?? ''));
-        $this->username = $dbConfig['username'];
-        $this->password = $dbConfig['password'];
-
-    }
-
 }
+// ######### FIN CAMBIO POSTGRESQL 17

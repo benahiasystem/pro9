@@ -1,52 +1,50 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `bank_accounts` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `bank_id` int(10) unsigned NOT NULL
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `status` tinyint(4) NOT NULL DEFAULT '1'
- * - `initial_balance` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `show_in_documents` tinyint(1) NOT NULL DEFAULT '1'
- * - `establishment_id` int(10) unsigned DEFAULT NULL
- * - `accounting_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - bank_id: bigint
+ * - description: varchar(255)
+ * - number: varchar(255)
+ * - currency_type_id: varchar(255)
+ * - status: smallint
+ * - initial_balance: numeric(30,12)
+ * - show_in_documents: boolean
+ * - establishment_id: bigint
+ * - accounting_number: varchar(255)
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `bank_accounts` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `bank_id` int(10) unsigned NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `number` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `status` tinyint(4) NOT NULL DEFAULT '1',
-  `initial_balance` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `show_in_documents` tinyint(1) NOT NULL DEFAULT '1',
-  `establishment_id` int(10) unsigned DEFAULT NULL,
-  `accounting_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `bank_accounts_bank_id_foreign` (`bank_id`),
-  KEY `bank_accounts_currency_type_id_foreign` (`currency_type_id`),
-  KEY `bank_accounts_establishment_id_foreign` (`establishment_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('bank_accounts', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('bank_id');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('number', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->smallInteger('status')->default('1');
+            $table->decimal('initial_balance', 30, 12)->default('0.00');
+            $table->boolean('show_in_documents')->default(true);
+            $table->bigInteger('establishment_id')->nullable();
+            $table->string('accounting_number', 255)->collation('pro9_ci_ai')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['bank_id'], 'bank_accounts_bank_id_foreign');
+            $table->index(['currency_type_id'], 'bank_accounts_currency_type_id_foreign');
+            $table->index(['establishment_id'], 'bank_accounts_establishment_id_foreign');
+        });
+        DB::statement('ALTER TABLE "bank_accounts" ADD CONSTRAINT "bank_accounts_status_range" CHECK ("status" BETWEEN -128 AND 127)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `bank_accounts`');
+        Schema::dropIfExists('bank_accounts');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

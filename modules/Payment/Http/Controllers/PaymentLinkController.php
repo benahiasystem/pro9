@@ -3,6 +3,11 @@
 namespace Modules\Payment\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Rules\PositiveBigint;
+use App\Services\Payments\PaymentLinkAmounts;
+use App\Support\Exact\Decimal as D;
+use App\Support\Exact\ReadBalanceScope;
+use App\Support\Exact\ReadSnapshot;
 use App\Models\Tenant\{
     Document,
     Company,
@@ -17,6 +22,7 @@ use Modules\Payment\Models\{
     PaymentConfiguration,
 };
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Modules\Payment\Mail\PaymentLinkEmail;
@@ -93,12 +99,10 @@ class PaymentLinkController extends Controller
     {
         $input = $request->input('input');
 
-        $documents = Document::query()
+        $query = Document::query()
                         ->where('document_type_id', '01')
                         ->where('payment_condition_id', self::CREDIT_PAYMENT_CONDITION_ID)
                         ->whereNotIn('state_type_id', Document::VOIDED_REJECTED_IDS)
-                        // saldo pendiente > 0
-                        ->whereRaw('documents.total > (select coalesce(sum(document_payments.payment), 0) from document_payments where document_payments.document_id = documents.id)')
                         ->when($request->filled('customer_id'), function ($query) use ($request) {
                             $query->where('customer_id', $request->input('customer_id'));
                         })
@@ -108,24 +112,34 @@ class PaymentLinkController extends Controller
                                         ->orWhere('number', 'like', "%{$input}%");
                             });
                         })
-                        ->withSum('payments as total_payments', 'payment')
                         ->latest()
-                        ->take(20)
-                        ->get()
-                        ->transform(function ($row) {
+                        ->orderByDesc('id');
 
-                            $pending = round((float) $row->total - (float) $row->total_payments, 2);
-
-                            return [
-                                'id' => $row->id,
-                                'instance_type' => 'document',
-                                'description' => "{$row->number_full} - {$row->currency_type_id} {$row->total} (Pendiente: {$pending})",
-                                'number_full' => $row->number_full,
-                                'currency_type_id' => $row->currency_type_id,
-                                'total' => (float) $row->total,
-                                'pending' => $pending,
-                            ];
-                        });
+        $documents = ReadSnapshot::run(DB::connection('tenant'), function () use ($query) {
+            $results = collect();
+            // Filter original balances before limiting; projected totals and reversed
+            // receipts cannot decide whether a documentary settlement is still due.
+            $query->chunk(100, function ($batch) use ($results) {
+                return ReadBalanceScope::run($batch, function () use ($batch, $results) {
+                    foreach ($batch as $row) {
+                        $pending = $this->getPendingPayment($row);
+                        if (D::of($pending)->isLessThanOrEqualTo(0)) continue;
+                        $results->push([
+                            'id' => $row->id,
+                            'instance_type' => 'document',
+                            'description' => "{$row->number_full} - {$row->currency_type_id} {$row->total} (Pendiente: {$pending})",
+                            'number_full' => $row->number_full,
+                            'currency_type_id' => $row->currency_type_id,
+                            'total' => $row->total,
+                            'pending' => $pending,
+                        ]);
+                        if ($results->count() === 20) return false;
+                    }
+                    return true;
+                });
+            });
+            return $results;
+        });
 
         return compact('documents');
     }
@@ -195,7 +209,7 @@ class PaymentLinkController extends Controller
             // comprobantes a cobrar con el link (solo aplica cuando se asocia un cliente)
             $documents = $with_customer ? $this->getInputDocuments($request, $person) : [];
 
-            $total = count($documents) > 0 ? $this->getTotalDocuments($documents) : round((float) $request->input('total'), 2);
+            $total = count($documents) > 0 ? $this->getTotalDocuments($documents) : PaymentLinkAmounts::input($request->input('total'));
 
             $payment_link->fill([
                 'user_id' => $payment_link->user_id ?? auth()->id(),
@@ -242,7 +256,7 @@ class PaymentLinkController extends Controller
      *
      * @param  PaymentLink $payment_link
      * @param  array $documents
-     * @param  float $total
+     * @param  string $total
      * @return void
      */
     private function storePendingPayments($payment_link, $documents, $total)
@@ -284,7 +298,10 @@ class PaymentLinkController extends Controller
     public function storeFromDocument(Request $request)
     {
 
-        $document = Document::findOrFail($request->input('document_id'));
+        $data = validator($request->only('document_id'), [
+            'document_id' => ['required', new PositiveBigint()],
+        ])->validate();
+        $document = Document::findOrFail((int) $data['document_id']);
 
         if($document->isVoidedOrRejected())
         {
@@ -296,7 +313,7 @@ class PaymentLinkController extends Controller
 
         $pending = $this->getPendingPayment($document);
 
-        if($pending <= 0)
+        if(D::of($pending)->isLessThanOrEqualTo(0))
         {
             return [
                 'success' => false,
@@ -382,7 +399,7 @@ class PaymentLinkController extends Controller
         return [
             'id' => $payment_link->id,
             'number_full' => $payment_link->number_full,
-            'total' => (float) $payment_link->total,
+            'total' => $payment_link->total,
             'user_payment_link' => $payment_link->user_payment_link,
         ];
     }
@@ -554,15 +571,21 @@ class PaymentLinkController extends Controller
     private function getInputDocuments($request, $person)
     {
 
+        $data = validator($request->only('documents'), [
+            'documents' => 'sometimes|array',
+            'documents.*' => 'array',
+            'documents.*.document_id' => ['required', new PositiveBigint()],
+            'documents.*.payment' => 'required',
+            'documents.*.instance_type' => ['sometimes', 'string', Rule::in(array_keys($this->getPaymentInstances()))],
+        ])->validate();
         $documents = [];
 
-        foreach ($request->input('documents', []) as $row) {
+        foreach ($data['documents'] ?? [] as $row) {
 
             $instance_type = $row['instance_type'] ?? 'document';
-            $record_id = (int) ($row['document_id'] ?? 0);
-            $payment = round((float) ($row['payment'] ?? 0), 2);
+            $record_id = (int) $row['document_id'];
 
-            if($record_id === 0) continue;
+            $payment = PaymentLinkAmounts::input($row['payment'] ?? 0, 'documents.payment');
 
             $key = "{$instance_type}-{$record_id}";
 
@@ -570,7 +593,7 @@ class PaymentLinkController extends Controller
 
             $record = $this->getPaymentInstanceRecord($instance_type, $record_id);
 
-            if($payment <= 0) throw new Exception("El monto a pagar de {$record->number_full} debe ser mayor a 0");
+            if(D::of($payment)->isLessThanOrEqualTo(0)) throw new Exception("El monto a pagar de {$record->number_full} debe ser mayor a 0");
 
             if((int) $record->customer_id !== (int) $person->id) throw new Exception("El comprobante {$record->number_full} no pertenece al cliente seleccionado");
 
@@ -578,7 +601,7 @@ class PaymentLinkController extends Controller
 
             $pending = $this->getPendingPayment($record);
 
-            if($payment > $pending) throw new Exception("El monto a pagar de {$record->number_full} supera el saldo pendiente ({$pending})");
+            if(D::of($payment)->isGreaterThan($pending)) throw new Exception("El monto a pagar de {$record->number_full} supera el saldo pendiente ({$pending})");
 
             $documents[$key] = [
                 'instance_type' => $instance_type,
@@ -598,11 +621,11 @@ class PaymentLinkController extends Controller
      * Obtener el total del link en base a los montos aplicados a los comprobantes
      *
      * @param  array $documents
-     * @return float
+     * @return string
      */
     private function getTotalDocuments($documents)
     {
-        return round(array_sum(array_column($documents, 'payment')), 2);
+        return D::represent(D::sum(array_column($documents, 'payment')), 2, true);
     }
 
 
@@ -624,7 +647,7 @@ class PaymentLinkController extends Controller
             'uuid' => Str::uuid()->toString(),
             'fiscal_environment' => $record->fiscal_environment ?? Company::select('fiscal_environment')->firstOrFail()->fiscal_environment,
             'payment_link_type_id' => $request->payment_link_type_id,
-            'total' => $request->total,
+            'total' => PaymentLinkAmounts::input($request->total),
         ]);
 
         $record->save();
@@ -749,7 +772,7 @@ class PaymentLinkController extends Controller
      *
      * @param  string $uuid
      * @param  string $payment_link_type_id
-     * @param  float $total
+     * @param  string $total
      */
     public function publicPaymentLink($uuid, $payment_link_type_id, $input_total)
     {

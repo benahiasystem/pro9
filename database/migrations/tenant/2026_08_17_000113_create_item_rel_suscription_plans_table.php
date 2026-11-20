@@ -1,87 +1,87 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `item_rel_suscription_plans` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `item_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con items'
- * - `item` json DEFAULT NULL
- * - `suscription_plan_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con planes de suscripcion'
- * - `quantity` decimal(30,12) DEFAULT '0.00'
- * - `unit_value` decimal(30,12) DEFAULT '0.00'
- * - `affectation_igv_type_id` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `total_base_igv` decimal(30,12) DEFAULT '0.00'
- * - `percentage_igv` decimal(30,12) DEFAULT '0.00'
- * - `total_igv` decimal(30,12) DEFAULT '0.00'
- * - `total_base_other_taxes` decimal(30,12) DEFAULT '0.00'
- * - `percentage_other_taxes` decimal(30,12) DEFAULT '0.00'
- * - `total_other_taxes` decimal(30,12) DEFAULT '0.00'
- * - `total_taxes` decimal(30,12) DEFAULT '0.00'
- * - `price_type_id` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `unit_price` decimal(30,12) DEFAULT '0.000000'
- * - `total_value` decimal(30,12) DEFAULT '0.00'
- * - `total_charge` decimal(30,12) DEFAULT '0.00'
- * - `total_discount` decimal(30,12) DEFAULT '0.00'
- * - `total` decimal(30,12) DEFAULT '0.00'
- * - `attributes` json DEFAULT NULL
- * - `discounts` json DEFAULT NULL
- * - `charges` json DEFAULT NULL
- * - `additional_information` text COLLATE utf8mb4_unicode_ci
- * - `warehouse_id` int(10) unsigned DEFAULT '0'
- * - `apply_in_period` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all'
- * - `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - item_id: bigint
+ * - item: json
+ * - suscription_plan_id: bigint
+ * - quantity: numeric(30,12)
+ * - unit_value: numeric(30,12)
+ * - affectation_igv_type_id: char(255)
+ * - total_base_igv: numeric(30,12)
+ * - percentage_igv: numeric(30,12)
+ * - total_igv: numeric(30,12)
+ * - total_base_other_taxes: numeric(30,12)
+ * - percentage_other_taxes: numeric(30,12)
+ * - total_other_taxes: numeric(30,12)
+ * - total_taxes: numeric(30,12)
+ * - price_type_id: char(255)
+ * - unit_price: numeric(30,12)
+ * - total_value: numeric(30,12)
+ * - total_charge: numeric(30,12)
+ * - total_discount: numeric(30,12)
+ * - total: numeric(30,12)
+ * - attributes: json
+ * - discounts: json
+ * - charges: json
+ * - additional_information: text
+ * - warehouse_id: bigint
+ * - apply_in_period: varchar(255)
+ * - name_product_pdf: text
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `item_rel_suscription_plans` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `item_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con items',
-  `item` json DEFAULT NULL,
-  `suscription_plan_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con planes de suscripcion',
-  `quantity` decimal(30,12) DEFAULT '0.00',
-  `unit_value` decimal(30,12) DEFAULT '0.00',
-  `affectation_igv_type_id` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `total_base_igv` decimal(30,12) DEFAULT '0.00',
-  `percentage_igv` decimal(30,12) DEFAULT '0.00',
-  `total_igv` decimal(30,12) DEFAULT '0.00',
-  `total_base_other_taxes` decimal(30,12) DEFAULT '0.00',
-  `percentage_other_taxes` decimal(30,12) DEFAULT '0.00',
-  `total_other_taxes` decimal(30,12) DEFAULT '0.00',
-  `total_taxes` decimal(30,12) DEFAULT '0.00',
-  `price_type_id` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `unit_price` decimal(30,12) DEFAULT '0.000000',
-  `total_value` decimal(30,12) DEFAULT '0.00',
-  `total_charge` decimal(30,12) DEFAULT '0.00',
-  `total_discount` decimal(30,12) DEFAULT '0.00',
-  `total` decimal(30,12) DEFAULT '0.00',
-  `attributes` json DEFAULT NULL,
-  `discounts` json DEFAULT NULL,
-  `charges` json DEFAULT NULL,
-  `additional_information` text COLLATE utf8mb4_unicode_ci,
-  `warehouse_id` int(10) unsigned DEFAULT '0',
-  `apply_in_period` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all',
-  `name_product_pdf` longtext COLLATE utf8mb4_unicode_ci,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('item_rel_suscription_plans', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('item_id')->nullable()->default('0')->comment('Relacion con items');
+            $table->json('item')->nullable();
+            $table->bigInteger('suscription_plan_id')->nullable()->default('0')->comment('Relacion con planes de suscripcion');
+            $table->decimal('quantity', 30, 12)->nullable()->default('0.00');
+            $table->decimal('unit_value', 30, 12)->nullable()->default('0.00');
+            $table->char('affectation_igv_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('total_base_igv', 30, 12)->nullable()->default('0.00');
+            $table->decimal('percentage_igv', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_igv', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_base_other_taxes', 30, 12)->nullable()->default('0.00');
+            $table->decimal('percentage_other_taxes', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_other_taxes', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_taxes', 30, 12)->nullable()->default('0.00');
+            $table->char('price_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('unit_price', 30, 12)->nullable()->default('0.000000');
+            $table->decimal('total_value', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_charge', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_discount', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total', 30, 12)->nullable()->default('0.00');
+            $table->json('attributes')->nullable();
+            $table->json('discounts')->nullable();
+            $table->json('charges')->nullable();
+            $table->text('additional_information')->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('warehouse_id')->nullable()->default('0');
+            $table->string('apply_in_period', 255)->collation('pro9_ci_ai')->default('all');
+            $table->text('name_product_pdf')->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+        });
+        DB::statement('ALTER TABLE "item_rel_suscription_plans" ADD CONSTRAINT "item_rel_suscription_plans_item_id_range" CHECK ("item_id" >= 0)');
+        DB::statement('ALTER TABLE "item_rel_suscription_plans" ADD CONSTRAINT "item_rel_suscription_plans_suscription_plan_id_range" CHECK ("suscription_plan_id" >= 0)');
+        DB::statement('ALTER TABLE "item_rel_suscription_plans" ADD CONSTRAINT "item_rel_suscription_plans_warehouse_id_range" CHECK ("warehouse_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `item_rel_suscription_plans`');
+        Schema::dropIfExists('item_rel_suscription_plans');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

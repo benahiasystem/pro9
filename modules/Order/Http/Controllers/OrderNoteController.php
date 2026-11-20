@@ -128,7 +128,7 @@
 
             } elseif ($request->column == 'customer') {
 
-                $records = OrderNote::whereRaw("LOWER(JSON_UNQUOTE(JSON_EXTRACT(customer, '$.name'))) LIKE ?", ['%' . strtolower($request->value) . '%'])
+                $records = OrderNote::where('customer->name', 'like', '%' . $request->value . '%')
                     ->whereTypeUser()
                     ->latest();
 
@@ -577,7 +577,7 @@
                 $company_address = (strlen($document->establishment->address) / 30) * 10;
                 $company_number = $document->establishment->telephone != '' ? '10' : '0';
                 $customer_name = strlen($document->customer->name) > '25' ? '10' : '0';
-                $customer_address = (strlen($document->customer->address) / 200) * 10;
+                $customer_address = (strlen((string) ($document->customer->address ?? '')) / 200) * 10;
                 $p_order = $document->purchase_order != '' ? '10' : '0';
 
                 $total_exportation = $document->total_exportation != '' ? '10' : '0';
@@ -629,7 +629,7 @@
                     $company_address = (strlen($document->establishment->address) / 30) * 10;
                     $company_number = $document->establishment->telephone != '' ? '10' : '0';
                     $customer_name = strlen($document->customer->name) > '25' ? '10' : '0';
-                    $customer_address = (strlen($document->customer->address) / 200) * 10;
+                    $customer_address = (strlen((string) ($document->customer->address ?? '')) / 200) * 10;
                     $p_order = $document->purchase_order != '' ? '10' : '0';
 
                     $total_exportation = $document->total_exportation != '' ? '10' : '0';

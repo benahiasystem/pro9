@@ -14,6 +14,12 @@ use Modules\Report\Services\DocumentReportLines;
 class DocumentExportStandard implements FromView, ShouldAutoSize, WithEvents
 {
     use Exportable;
+    public $records;
+    public $company;
+    public $establishment;
+    public $filters;
+    public $categories;
+    public $categories_services;
 
     public function records($records) {
         \App\Services\Fiscal\FiscalIdentity::preload($records);

@@ -257,7 +257,8 @@
                                     <template v-else>
                                         <el-input
                                             min="0"
-                                            v-model="item.edit_sale_unit_price"
+                                            :value="form.document_type_id === '01' ? (item.invoice_unit_price_draft === null ? item.sale_unit_price : item.invoice_unit_price_draft) : item.edit_sale_unit_price"
+                                            @input="updateUnitPriceDraft(item, $event)"
                                             class="mt-3 mb-3"
                                             size="mini"
                                             @focus="$event.target.select()"
@@ -691,6 +692,7 @@
                             :companyEnvironment="companyEnvironment"
                             :businessTurns="businessTurns"
                             :is-print="isPrint"
+                            :rows-items="form.items.length"
                         ></fast-payment>
                     </div>
                 </div>
@@ -817,6 +819,8 @@
 </style>
 
 <script>
+import {posLinePrice, incrementPosLine, isPosPriceAllowed, selectPosCatalogPrice, selectPosOriginalPrice, commitPosManualPrice, samePosSelection, posPresentationQuantity, posRequiredStock} from "../../../helpers/pos-invoice-line"
+import {exactAmount, exactInput, exactValue} from "../../../helpers/exchange-rate-math"
 import posLocalQuantity from "../../../mixins/pos-local-quantity"
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {documentTotals} from "../../../helpers/exact-document"
@@ -916,6 +920,14 @@ export default {
         this.form.establishment_id = this.establishment.id;
     },
 
+    watch: {
+        'form.document_type_id'(type, previous) {
+            if (!type || !previous || !this.posCatalogReload) return;
+            this.all_items = [];
+            this.items = [];
+            this.reloadDataItems();
+        },
+    },
     computed: {
         posRateUnavailable() {
             return !isValidPosRate(this.form.exchange_rate_sale);
@@ -1124,39 +1136,48 @@ export default {
             this.setLocalStorageIndex("customer", null);
         },
         clickOpenInputEditUP(index) {
-            this.items[index].edit_unit_price = true;
+            const item = this.items[index];
+            if (this.form.document_type_id === '01') {
+                // A null draft displays the current quote until the operator enters a value.
+                this.$set(item, 'invoice_unit_price_draft', null);
+            }
+            item.edit_unit_price = true;
+        },
+        updateUnitPriceDraft(item, value) {
+            if (this.form.document_type_id === '01') {
+                item.invoice_unit_price_draft = value;
+            } else {
+                item.edit_sale_unit_price = value;
+            }
         },
         clickEditUnitPriceItem(index) {
-            // console.log(index)
-            let item_search = this.items[index];
-            this.items[index].sale_unit_price = this.items[
-                index
-                ].edit_sale_unit_price;
-            this.items[index].edit_unit_price = false;
-
-            // console.log(item_search)
+            const item = this.items[index];
+            const draft = this.form.document_type_id === '01' ? item.invoice_unit_price_draft : item.edit_sale_unit_price;
+            if (draft === null && this.form.document_type_id === '01') {
+                item.edit_unit_price = false;
+                return;
+            }
+            let entered;
+            try { entered=exactInput(String(draft)); }
+            catch (_) { return this.$message.error("Indique un precio válido con hasta doce decimales."); }
+            if (this.config.condition_sale_purchase_price_to_item && exactAmount(entered).compare(exactValue(item,'purchase_unit_price')) < 0) {
+                return this.$message.error("El Precio Unitario debe ser mayor o igual al costo de compra");
+            }
+            commitPosManualPrice(item,entered);
         },
         clickCancelUnitPriceItem(index) {
             // console.log(index)
             this.items[index].edit_unit_price = false;
         },
         setPriceItem(price, index) {
-            let value = 0;
-            switch (price.price_default) {
-                case 1:
-                    value = price.price1;
-                    break;
-                case 2:
-                    value = price.price2;
-                    break;
-                case 3:
-                    value = price.price3;
-                    break;
-            }
-
-            this.items[index].sale_unit_price = value;
-            this.items[index].unit_type_id = price.unit_type_id;
-            this.items[index].presentation = price;
+            const item=this.items[index];
+            if (!item || !price) return;
+            try { selectPosCatalogPrice(item,price); }
+            catch (error) { return this.$message.error(error.message); }
+            (item.item_unit_types || []).forEach(unit=>(unit.prices || []).forEach(option=>{
+                if (option.selected) this.$set(option,'selected',false);
+            }));
+            this.$set(price,'selected',true);
             this.$message.success("Precio seleccionado");
         },
         clickWarehouseDetail(item) {
@@ -1508,10 +1529,8 @@ export default {
             // console.log(exist_item)
             // console.log(item)
 
-            let exist_item = _.find(this.form.items, {
-                item_id: item.item_id,
-                unit_type_id: item.unit_type_id
-            });
+            let exist_item = input && this.form.items[index] === item
+                ? item : this.form.items.find(row=>samePosSelection(row,item));
 
             // console.log(exist_item)
 
@@ -1524,7 +1543,7 @@ export default {
 
                     response = await this.getStatusStock(
                         item.item_id,
-                        exist_item.item.aux_quantity
+                        posRequiredStock(this.form.items,item,exactInput(String(exist_item.item.aux_quantity)),exist_item)
                     );
                     if (!response.success) {
                         item.item.aux_quantity = item.quantity;
@@ -1535,33 +1554,18 @@ export default {
                     exist_item.quantity = exist_item.item.aux_quantity;
                 } else {
 
-                    response = await this.getStatusStock(
-                        item.item_id,
-                        parseFloat(exist_item.item.aux_quantity) + 1
-                    );
+                    const incremented = incrementPosLine(exist_item, '1');
+                    const quantity = exactValue(incremented, 'quantity').fraction();
+                    response = await this.getStatusStock(item.item_id, posRequiredStock(this.form.items, item, quantity, exist_item));
                     if (!response.success) {
                         this.loading = false;
                         return this.$message.error(response.message);
                     }
 
-                    exist_item.quantity++;
-                    exist_item.item.aux_quantity++;
+                    Object.assign(exist_item, incremented);
                 }
 
-                // console.log(exist_item)
-                let search_item_bd = await _.find(this.items, {
-                    item_id: item.item_id
-                });
-
-                if (search_item_bd) {
-                    exist_item.item.unit_price = parseFloat(
-                        search_item_bd.sale_unit_price
-                    );
-                }
-
-                let unit_price = exist_item.item.has_igv
-                    ? exist_item.item.sale_unit_price
-                    : exist_item.item.sale_unit_price * (1 + this.percentage_igv);
+                let unit_price = exist_item.item.unit_price;
                 // exist_item.unit_price = unit_price
                 exist_item.item.unit_price = unit_price;
 
@@ -1582,16 +1586,14 @@ export default {
 
                 response = await this.getStatusStock(
                     item.item_id,
-                    item.presentation
-                        ? parseInt(item.presentation.quantity_unit)
-                        : 1
+                    posRequiredStock(this.form.items,item,'1')
                 );
                 if (!response.success) {
                     this.loading = false;
                     return this.$message.error(response.message);
                 }
 
-                this.form_item.item = item;
+                this.form_item.item = { ...item };
                 this.form_item.unit_price_value = this.form_item.item.sale_unit_price;
                 this.form_item.has_igv = this.form_item.item.has_igv;
 
@@ -1599,9 +1601,11 @@ export default {
                 this.form_item.quantity = 1;
                 this.form_item.aux_quantity = 1;
 
-                let unit_price = this.form_item.has_igv
-                    ? this.form_item.unit_price_value
-                    : this.form_item.unit_price_value * (1 + this.percentage_igv);
+                const enteredPrice = posLinePrice(this.form_item.item, this.form.currency_type_id, this.percentage_igv);
+                let unit_price = enteredPrice.unit_price;
+                this.form_item.price_input = enteredPrice.price_input;
+                this.form_item.quantity_input = null;
+                delete this.form_item.calculation_snapshot;
 
                 this.form_item.unit_price = unit_price;
                 this.form_item.item.unit_price = unit_price;
@@ -1660,9 +1664,9 @@ export default {
         },
         async getStatusStock(item_id, quantity) {
             let data = {};
-            if (!quantity) quantity = 0;
+            const exact=exactAmount(quantity || '0');
             await this.$http
-                .get(`/${this.resource}/validate_stock/${item_id}/${quantity}`)
+                .get(`/${this.resource}/validate_stock/${item_id}/${exact.decimal()}`, {params:{quantity_exact:JSON.stringify(exact.fraction())}})
                 .then(response => {
                     data = response.data;
                 });
@@ -1854,7 +1858,10 @@ export default {
                 });
         },
         reloadDataItems(item_id) {
-            this.$http.get(`/${this.resource}/table/items`).then(response => {
+            const type = this.form.document_type_id;
+            const reload = this.posCatalogReload = {};
+            return this.$http.get(`/${this.resource}/table/items`, { params: { document_type_id: type } }).then(response => {
+                if (this.posCatalogReload !== reload || type !== this.form.document_type_id) return;
                 this.all_items = response.data;
                 this.fixItems();
                 this.filterItems();

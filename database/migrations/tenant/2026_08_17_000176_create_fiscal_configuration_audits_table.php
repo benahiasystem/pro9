@@ -1,46 +1,45 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `fiscal_configuration_audits` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `company_id` int(10) unsigned NOT NULL
- * - `actor_type` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `actor_id` int(10) unsigned NOT NULL
- * - `changed_values` json DEFAULT NULL
- * - `changed_fields` text COLLATE utf8mb4_unicode_ci NOT NULL
- * - `fiscal_emission_mode` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - company_id: bigint
+ * - actor_type: varchar(16)
+ * - actor_id: bigint
+ * - changed_values: json
+ * - changed_fields: text
+ * - fiscal_emission_mode: varchar(32)
+ * - fiscal_environment: varchar(16)
+ * - created_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `fiscal_configuration_audits` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `company_id` int(10) unsigned NOT NULL,
-  `actor_type` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `actor_id` int(10) unsigned NOT NULL,
-  `changed_values` json DEFAULT NULL,
-  `changed_fields` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `fiscal_emission_mode` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `fiscal_configuration_audits_company_id_foreign` (`company_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('fiscal_configuration_audits', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('company_id');
+            $table->string('actor_type', 16)->collation('pro9_ci_ai');
+            $table->bigInteger('actor_id');
+            $table->json('changed_values')->nullable();
+            $table->text('changed_fields')->collation('pro9_ci_ai');
+            $table->string('fiscal_emission_mode', 32)->collation('pro9_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
+            $table->timestamp('created_at')->useCurrent();
+            $table->index(['company_id'], 'fiscal_configuration_audits_company_id_foreign');
+        });
+        DB::statement('ALTER TABLE "fiscal_configuration_audits" ADD CONSTRAINT "fiscal_configuration_audits_actor_id_range" CHECK ("actor_id" >= 0)');
+        \App\Database\PostgresBootstrap::installTouchTrigger(DB::connection(), 'fiscal_configuration_audits', 'created_at');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `fiscal_configuration_audits`');
+        Schema::dropIfExists('fiscal_configuration_audits');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

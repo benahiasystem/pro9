@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Tenant;
 
+use App\Database\IntegerTransport;
 use App\Models\Tenant\Item;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -113,7 +114,14 @@ class DocumentRequest extends FormRequest
                     continue;
                 }
 
-                if (!$this->itemRequiresLotSelection($row)) {
+                $itemId = $row['item_id'] ?? data_get($row, 'item.id');
+                $itemKey = IntegerTransport::positiveKey($itemId);
+                if ($itemId !== null && $itemKey === null) {
+                    $validator->errors()->add("items.{$index}.item_id", 'Seleccione un producto válido.');
+                    continue;
+                }
+
+                if (!$this->itemRequiresLotSelection($row, $itemKey)) {
                     continue;
                 }
 
@@ -215,7 +223,7 @@ class DocumentRequest extends FormRequest
     /**
      * Determina si el ítem exige selección de lote (payload o modelo Item).
      */
-    private function itemRequiresLotSelection(array $row): bool
+    private function itemRequiresLotSelection(array $row, ?int $itemId): bool
     {
         $fromPayload = filter_var(
             data_get($row, 'item.lots_enabled', data_get($row, 'lots_enabled', false)),
@@ -226,8 +234,7 @@ class DocumentRequest extends FormRequest
             return true;
         }
 
-        $itemId = $row['item_id'] ?? data_get($row, 'item.id');
-        if (!$itemId) {
+        if ($itemId === null) {
             return false;
         }
 

@@ -61,6 +61,17 @@ test('classification proof never exempts arithmetic, numeric comparisons or coer
     }
 })
 
+test('strict empty string guards preserve zero and never approve loose coercion', () => {
+    for (const source of ['amount === ""','"" !== amount']) assert.equal(proof(parser.parseExpression(source)),'strict_empty_string_guard')
+    for (const source of ['amount == ""','amount != ""','amount === "0"','amount === "1e-12"','amount < ""']) assert.equal(proof(parser.parseExpression(source)),null,source)
+    for (const value of [null,undefined,false,0,0n,NaN,'0','0.000000000001',{},[]]) assert.equal(value === '',false)
+    assert.equal('' === '',true)
+    const source=parser.parseExpression('round(amount / 3, 2) === ""')
+    assert.equal(proof(source),'strict_empty_string_guard')
+    assert.equal(proof(source.left),null)
+    assert.equal(proof(source.left.arguments[0]),null)
+})
+
 test('nullish guards prove presence only and retain nested monetary candidates', () => {
     for (const expression of ['price == null', 'null != price', 'price != null', 'null == price']) {
         assert.equal(proof(parser.parseExpression(expression)), 'nullish_presence_guard', expression)
@@ -77,6 +88,41 @@ test('nullish guards prove presence only and retain nested monetary candidates',
     }
     assert.equal(undefined == null, true)
     assert.equal(null == null, true)
+})
+
+test('Vue text concatenation proves rendered joins without approving amounts inside interpolations', () => {
+    const expressions=[]
+    audit('<section><p>Total: {{ round(amount / 3, 2) }} {{ amount + "1" }}</p>'+
+        '<p :title="amount + \'1\'" @click="amount += 1">{{ price + quantity }}</p></section>', 'text.vue', 0, {
+        analyze(source,file,offset,context,expression,origin) { expressions.push({source,origin}) },
+        finding() {}
+    })
+    let joins=0, pendingArithmetic=0
+    for (const {source,origin} of expressions) {
+        const tree=parser.parseExpression(source)
+        const nodes=origin === 'vue_text_interpolation' ? proof.vueTextConcatenations(tree) : new Set()
+        function walk(node) {
+            if (!node || typeof node !== 'object') return
+            if (node.type === 'BinaryExpression' && ['+','/'].includes(node.operator)) {
+                if (nodes.has(node)) { assert.equal(proof(node,nodes),'vue_text_concatenation'); joins++ }
+                else { assert.equal(proof(node,nodes),null); pendingArithmetic++ }
+            }
+            for (const [key,value] of Object.entries(node)) {
+                if (['loc','extra'].includes(key)) continue
+                if (Array.isArray(value)) value.forEach(walk)
+                else if (value && typeof value === 'object') walk(value)
+            }
+        }
+        walk(tree)
+    }
+    assert.equal(joins,3)
+    assert.equal(pendingArithmetic,4)
+    for (const source of ['amount + "1"','unknown(amount) + " USD"','_s(amount) * 2','_s(...amount) + " USD"']) {
+        assert.equal(proof.vueTextConcatenations(parser.parseExpression(source)).size,0,source)
+    }
+    const generated=parser.parseExpression('"Total: " + _s(amount)')
+    assert.equal(proof(generated),null,'a script or binding cannot opt into the compiler proof')
+    assert.equal(registry.matchesProof({proof:'vue_text_concatenation'},null),false)
 })
 
 test('loose nonnumeric guards exclude numeric coercions and nested money', () => {

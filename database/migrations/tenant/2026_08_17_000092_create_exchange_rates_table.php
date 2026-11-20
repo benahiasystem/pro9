@@ -1,43 +1,41 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `exchange_rates` para instalaciones nuevas.
- * Inventario de columnas:
- * - `date` date NOT NULL
- * - `sale_original` decimal(18,8) NOT NULL
- * - `purchase_original` decimal(18,8) NOT NULL
- * - `purchase` decimal(18,8) NOT NULL
- * - `sale` decimal(18,8) NOT NULL
- * - `date_original` date NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - date: date
+ * - sale_original: numeric(18,8)
+ * - purchase_original: numeric(18,8)
+ * - purchase: numeric(18,8)
+ * - sale: numeric(18,8)
+ * - date_original: date
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `exchange_rates` (
-  `date` date NOT NULL,
-  `sale_original` decimal(18,8) NOT NULL,
-  `purchase_original` decimal(18,8) NOT NULL,
-  `purchase` decimal(18,8) NOT NULL,
-  `sale` decimal(18,8) NOT NULL,
-  `date_original` date NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('exchange_rates', function (Blueprint $table) {
+            $table->date('date');
+            $table->decimal('sale_original', 18, 8);
+            $table->decimal('purchase_original', 18, 8);
+            $table->decimal('purchase', 18, 8);
+            $table->decimal('sale', 18, 8);
+            $table->date('date_original');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->primary(['date']);
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `exchange_rates`');
+        Schema::dropIfExists('exchange_rates');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

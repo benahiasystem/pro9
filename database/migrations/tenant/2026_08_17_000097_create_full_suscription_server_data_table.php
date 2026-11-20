@@ -1,43 +1,41 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `full_suscription_server_data` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `person_id` int(10) unsigned DEFAULT '0'
- * - `host` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `ip` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `user` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - person_id: bigint
+ * - host: varchar(255)
+ * - ip: varchar(45)
+ * - user: varchar(255)
+ * - password: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `full_suscription_server_data` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `person_id` int(10) unsigned DEFAULT '0',
-  `host` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `ip` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `user` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('full_suscription_server_data', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('person_id')->nullable()->default('0');
+            $table->string('host', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('ip', 45)->collation('pro9_ci_ai')->nullable();
+            $table->string('user', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('password', 255)->collation('C')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "full_suscription_server_data" ADD CONSTRAINT "full_suscription_server_data_person_id_range" CHECK ("person_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `full_suscription_server_data`');
+        Schema::dropIfExists('full_suscription_server_data');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

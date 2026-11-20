@@ -12,6 +12,8 @@ use App\Models\Tenant\{
     PaymentMethodType,
 };
 use Carbon\Carbon;
+use App\Services\Payments\PaymentLinkAmounts;
+use App\Support\Exact\Decimal as D;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Modules\Finance\Http\Controllers\IncomeController;
@@ -118,11 +120,11 @@ trait PaymentLinkPaymentTrait
      * Obtener el saldo pendiente del comprobante
      *
      * @param  Document $record
-     * @return float
+     * @return string
      */
     public function getPendingPayment($record)
     {
-        return round((float) $record->total - (float) $record->payments()->sum('payment'), 2);
+        return PaymentLinkAmounts::pending($record);
     }
 
 
@@ -199,10 +201,10 @@ trait PaymentLinkPaymentTrait
 
         if(!$record) throw new Exception('No se encontró el comprobante asociado al link de pago');
 
-        $total = round((float) $row->total, 2);
+        $total = PaymentLinkAmounts::input($row->total);
         $pending = $this->getPendingPayment($record);
 
-        if($total > $pending) throw new Exception("El saldo pendiente de {$record->number_full} ({$pending}) es menor al monto del link de pago ({$total})");
+        if(D::of($total)->isGreaterThan($pending)) throw new Exception("El saldo pendiente de {$record->number_full} ({$pending}) es menor al monto del link de pago ({$total})");
 
         $inputs = array_merge($this->getPaymentInputs($total), [
             $instance['foreign_key'] => $record->id,
@@ -253,7 +255,7 @@ trait PaymentLinkPaymentTrait
      * en base de datos y/o para la generación del pdf
      *
      * @param  PaymentLink $payment_link
-     * @param  float $total
+     * @param  string $total
      * @return array
      */
     private function getIncomeInputs($payment_link, $total)
@@ -271,7 +273,7 @@ trait PaymentLinkPaymentTrait
 
         if(!$establishment_id) throw new Exception('No se encontró el establecimiento para registrar el ingreso');
 
-        $total = round((float) $total, 2);
+        $total = PaymentLinkAmounts::input($total);
         $date_of_issue = Carbon::now()->format('Y-m-d');
 
         return [
@@ -310,7 +312,7 @@ trait PaymentLinkPaymentTrait
      *
      * Datos base del pago generado a partir del link de pago
      *
-     * @param  float $payment
+     * @param  string $payment
      * @param  string|null $date_of_payment
      * @return array
      */

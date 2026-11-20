@@ -10,6 +10,7 @@ class LegendType extends ModelCatalog
 
     protected $table = "cat_legend_types";
     public $incrementing = false;
+    protected $keyType = 'string';
 
     
     public function scopeFilterLegendsForest($query)

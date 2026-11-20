@@ -9,7 +9,7 @@ return new class extends Migration
     public function up()
     {
         // Denuncias mínimas: sin updated_at, sin detalle, sin email, sin captcha.
-        Schema::connection('system')->create('marketplace_reports', function (Blueprint $table) {
+        Schema::create('marketplace_reports', function (Blueprint $table) {
             $table->id();
 
             $table->unsignedBigInteger('store_id')->index();
@@ -34,6 +34,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::connection('system')->dropIfExists('marketplace_reports');
+        Schema::dropIfExists('marketplace_reports');
     }
 };

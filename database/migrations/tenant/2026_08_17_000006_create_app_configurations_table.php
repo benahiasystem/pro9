@@ -1,51 +1,48 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `app_configurations` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `show_image_item` tinyint(1) NOT NULL DEFAULT '1'
- * - `print_format_pdf` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ticket'
- * - `card_color` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'multicolored'
- * - `theme_color` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'blue'
- * - `header_waves` tinyint(1) NOT NULL DEFAULT '0'
- * - `direct_send_documents_whatsapp` tinyint(1) NOT NULL DEFAULT '0'
- * - `primary_color` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '#020F3C' COMMENT 'Color principal para la nueva app movil - hexadecimal'
- * - `direct_print` tinyint(1) NOT NULL DEFAULT '0'
- * - `app_mode` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'default'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - show_image_item: boolean
+ * - print_format_pdf: varchar(255)
+ * - card_color: varchar(255)
+ * - theme_color: varchar(255)
+ * - header_waves: boolean
+ * - direct_send_documents_whatsapp: boolean
+ * - primary_color: varchar(255)
+ * - direct_print: boolean
+ * - app_mode: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `app_configurations` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `show_image_item` tinyint(1) NOT NULL DEFAULT '1',
-  `print_format_pdf` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ticket',
-  `card_color` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'multicolored',
-  `theme_color` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'blue',
-  `header_waves` tinyint(1) NOT NULL DEFAULT '0',
-  `direct_send_documents_whatsapp` tinyint(1) NOT NULL DEFAULT '0',
-  `primary_color` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '#020F3C' COMMENT 'Color principal para la nueva app movil - hexadecimal',
-  `direct_print` tinyint(1) NOT NULL DEFAULT '0',
-  `app_mode` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'default',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('app_configurations', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->boolean('show_image_item')->default(true);
+            $table->string('print_format_pdf', 255)->collation('pro9_ci_ai')->default('ticket');
+            $table->string('card_color', 255)->collation('pro9_ci_ai')->default('multicolored');
+            $table->string('theme_color', 255)->collation('pro9_ci_ai')->default('blue');
+            $table->boolean('header_waves')->default(false);
+            $table->boolean('direct_send_documents_whatsapp')->default(false);
+            $table->string('primary_color', 255)->collation('pro9_ci_ai')->nullable()->default('#020F3C')->comment('Color principal para la nueva app movil - hexadecimal');
+            $table->boolean('direct_print')->default(false);
+            $table->string('app_mode', 255)->collation('pro9_ci_ai')->default('default');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `app_configurations`');
+        Schema::dropIfExists('app_configurations');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

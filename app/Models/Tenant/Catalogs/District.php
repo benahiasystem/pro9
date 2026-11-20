@@ -13,6 +13,7 @@ class District extends ModelCatalog
     use UsesTenantConnection;
 
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 
     // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA

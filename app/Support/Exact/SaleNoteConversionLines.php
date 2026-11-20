@@ -3,6 +3,7 @@
 namespace App\Support\Exact;
 
 use App\Models\Tenant\SaleNote;
+use App\Services\Fiscal\InvoiceModifiers;
 use Illuminate\Validation\ValidationException;
 
 // ######## INICIO CALCULOS EXACTOS SAB ########
@@ -67,10 +68,13 @@ final class SaleNoteConversionLines
                 $row['price_type']=$prices[$row['price_type_id']] ?? null;
                 $transport=$selectAll ? $row : array_intersect_key($row,array_flip(['item_id','quantity','unit_price','item','calculation_snapshot']));
                 foreach ($selectAll ? $decimalFields : ['quantity','unit_price'] as $field) if (isset($transport[$field])) $transport[$field]=Decimal::canonical($transport[$field]);
+                $source=['sale_note_id'=>\App\Database\IntegerTransport::value($note->id),
+                    'sale_note_item_id'=>\App\Database\IntegerTransport::value($line->id)];
+                if ($selectAll) $transport['source_sale_note_items']=[$source];
                 $rows[]=$transport;
                 $row['currency_type_id']=$note->currency_type_id;
                 $row['exchange_rate_sale']=$context[3];
-                $row['conversion_source']=['sale_note_id'=>$note->id,'sale_note_item_id'=>$line->id];
+                $row['conversion_source']=$source;
                 yield $row;
             }
         }
@@ -103,6 +107,13 @@ final class SaleNoteConversionLines
                 $conditions['pack_inventory']=['warehouse_id'=>$pack['warehouse_id'],'components'=>array_map(
                     fn($component)=>['item_id'=>$component['item_id'],'quantity'=>self::normalizedFraction(Decimal::of($component['quantity']))],$pack['components'])];
             }
+            $componentFactors = InvoiceModifiers::saleNoteFactors(
+                $conditions['item'],
+                $row['item_id'],
+                $row['quantity'] ?? Decimal::represent($quantity),
+                $quantity,
+            );
+            if ($componentFactors) $conditions['component_factors'] = $componentFactors;
             foreach (['unit_price','unit_value','percentage_igv'] as $field) $conditions[$field]=self::normalizedFraction(self::operand($row,$field,$operands));
             foreach (['discounts','charges'] as $kind) {
                 $conditions[$kind]=[];

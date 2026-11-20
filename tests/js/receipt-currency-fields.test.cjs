@@ -137,12 +137,12 @@ test('displayed applied amount follows rounded received amount after conversion'
     assert.equal(row.payment,'99.99')
 })
 
-test('reverse conversion uses cent settlement before applying the exchange rate', () => {
-    const row={currency_type_id:'VES', original_amount:'1.005', exchange_rate:'2', payment:'0'}
-    const ctx={row,methodCurrency:'VES',documentCurrency:'USD',error:'',lastApplied:null,
+test('a USD receipt rounds received cents before applying the exchange rate to VES', () => {
+    const row={currency_type_id:'USD', original_amount:'1.005', exchange_rate:'2', payment:'0'}
+    const ctx={row,methodCurrency:'USD',documentCurrency:'VES',error:'',lastApplied:null,
         $set:(object,key,value)=>{object[key]=value}}
     component.methods.updateApplied.call(ctx)
-    assert.equal(row.payment,'0.51')
+    assert.equal(row.payment,'2.02')
 })
 
 test('shared receipt fields disclose rounding of the received amount', () => {

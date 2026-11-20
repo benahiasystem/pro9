@@ -17,8 +17,9 @@ $document_number = $document->number_full;
     $document_base = ($document->note) ? $document->note : null;
     $payments = $document->payments->filter(fn ($payment) => !data_get($payment, 'reversed_at'));
     $third_party_sale = \App\Services\Fiscal\HkaDomesticInvoicePolicy::applies($document);
-    $discount_for_totals = $third_party_sale ? (float) $document->total_discount : (float) $document->total_discount_with_igv;
-    $igtf_for_totals = $third_party_sale ? collect($document->taxes ?? [])->where('tax_kind', 'IGTF')->sum('amount') : 0;
+    $ticket_totals = \App\Support\Exact\InvoicePdfSummary::ticketTotals($document, $third_party_sale);
+    $discount_for_totals = $ticket_totals['discount'];
+    $igtf_for_totals = $ticket_totals['igtf'];
 
     if($document_base) {
         /* ######## INICIO NUMERACIÓN FISCAL VENEZUELA ######## */
@@ -92,9 +93,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     <tr>
         <td class="text-center" style="text-transform: uppercase;">
             {{ ($establishment->address !== '-')? $establishment->address : '' }}
-            {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-            {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-            {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+            {{ (!empty($establishment->district->description))? ', '.$establishment->district->description : '' }}
+            {{ (!empty($establishment->province->description))? ', '.$establishment->province->description : '' }}
+            {{ (!empty($establishment->department->description))? '- '.$establishment->department->description : '' }}
         </td>
     </tr>
 
@@ -425,7 +426,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         @foreach($no_fusionados as $row)
             @php
                 $item_code = $row->item->internal_id;
-                $item_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity'));
+                $item_quantity = \App\Support\Exact\InvoicePdfSummary::quantity($row);
                 $use_name_product_pdf = !empty($row->name_product_pdf);
                 $item_description_html = null;
 
@@ -484,17 +485,17 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         @endforeach
                     @endif
                     @if($row->discounts)
-                        @foreach($row->discounts as $dtos)
+                        @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') as $dtos)
                             @if(!($dtos->from_global_distribution ?? false))
-                                <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description ?? 'Descuento' }}</small>
+                                <br/><small>{{ ($dtos->is_amount ?? false) ? '' : \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos).'%' }} {{$dtos->description ?? 'Descuento' }}</small>
                             @endif
                         @endforeach
                     @endif
 
                     @if($row->charges)
-                        @foreach($row->charges as $charge)
-                            <br/><small>{{ $document->currency_type->symbol}} {{ $charge->amount}}
-                                ({{ $charge->factor * 100 }}%) {{$charge->description ?? 'Cargo' }}</small>
+                        @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'charges') as $charge)
+                            <br/><small>{{ $document->currency_type->symbol}} {{ \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($charge->amount_exact ?? $charge->amount_without_rounded ?? $charge->amount ?? 0)) }}
+                                ({{ \App\Support\Exact\PdfAmounts::adjustmentPercent($charge) }}%) {{$charge->description ?? 'Cargo' }}</small>
                         @endforeach
                     @endif
 
@@ -520,7 +521,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
                     @php
                         $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
-                        $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
+                        $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getInvoiceLotDateOfDue($row->item->IdLoteSelected) : '';
                     @endphp
                     @if($lot)
                         <small style="display:block; font-weight: normal; font-size: 7px;">
@@ -620,10 +621,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
 
 
-    @if($document->subtotal > 0)
+    @if(\App\Support\Exact\PdfAmounts::read($document, 'subtotal')->isGreaterThan(0))
         @php
-            $labelSubtotal = $discount_for_totals > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
-            $subtotal = $document->subtotal + $discount_for_totals - ($third_party_sale ? $document->total_charge : 0);
+            $labelSubtotal = $discount_for_totals->isGreaterThan(0) ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
+            $subtotal = $ticket_totals['subtotal'];
         @endphp
         <tr>
             <td colspan="2" class="text-right font-bold desc">{{ $labelSubtotal }}: {{ $document->currency_type->symbol }}</td>
@@ -631,21 +632,22 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </tr>
     @endif
 
-    @if($discount_for_totals > 0)
+    @if($discount_for_totals->isGreaterThan(0))
         <tr>
             <td colspan="2" class="text-right font-bold desc">DESCUENTO
                 TOTAL: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold desc">{{ number_format($discount_for_totals, 2) }}</td>
+            <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format($discount_for_totals, 2) }}</td>
         </tr>
     @endif
 
     @if($document->total_charge > 0)
         @if($document->charges)
             @php
-                $total_factor = 0;
-                foreach($document->charges as $charge) {
-                    $total_factor = ($total_factor + $charge->factor) * 100;
-                }
+                $total_factor = \App\Support\Exact\Decimal::of(0);
+            foreach (\App\Support\Exact\PdfAmounts::adjustments($document, 'charges') as $charge) {
+                $total_factor = $total_factor->plus(\App\Support\Exact\PdfAmounts::adjustmentPercentValue($charge));
+            }
+            $total_factor = \App\Support\Exact\Decimal::represent($total_factor);
             @endphp
             <tr>
                 <td colspan="2" class="text-right font-bold desc">CARGOS ({{$total_factor}}
@@ -659,15 +661,15 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             </tr>
         @endif
     @endif
-    @if($igtf_for_totals > 0)
+    @if($igtf_for_totals->isGreaterThan(0))
         <tr>
             <td colspan="2" class="text-right font-bold desc">IGTF: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold desc">{{ number_format($igtf_for_totals, 2) }}</td>
+            <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format($igtf_for_totals, 2) }}</td>
         </tr>
     @endif
 
         <tr>
-            <td colspan="3" class="text-left font-bold desc">Productos: {{ \App\Support\Exact\PdfQuantities::summary($document->items) }}</td>
+            <td colspan="3" class="text-left font-bold desc">Productos: {{ \App\Support\Exact\InvoicePdfSummary::quantities($document->items) }}</td>
         </tr>
         <tr>
             <td colspan="2" class="text-right font-bold desc" style="white-space: nowrap;">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>

@@ -174,10 +174,12 @@
         public function scopeOrderByPersonPriority($query)
         {
             $ids = IdentityDocument::ids();
-            $quotedIds = implode(', ', array_map(static fn ($id) => "'{$id}'", $ids));
+            $priority = 'CASE id';
+            foreach ($ids as $position => $id) $priority .= ' WHEN ? THEN '.($position + 1);
+            $priority .= ' ELSE 0 END';
 
             return $query->whereIn('id', $ids)
-                ->orderByRaw("FIELD(id, {$quotedIds})");
+                ->orderByRaw($priority, $ids);
         }
 
     }

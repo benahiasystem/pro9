@@ -56,6 +56,7 @@ class TransferReasonType extends ModelCatalog
 
     protected $table = "cat_transfer_reason_types";
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 
     protected $fillable = [

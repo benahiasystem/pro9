@@ -60,6 +60,6 @@ Aplicar un único contrato funcional en todos los canales de venta: Facturas (`0
 - Ejecutar `CurrentNoteInputTest` para comprobar notas de crédito/débito externas, rechazo de referencias de otros tipos y rechazo temprano de Boletas en creación/edición. Esta prueba no sustituye la verificación de persistencia de notas sobre documentos locales en una base temporal.
 
 - `CurrentLocalDocumentReferenceTest` complementa las referencias externas con consultas reales en memoria para notas locales de crédito/débito, documentos inexistentes y referencias no admitidas.
-- Retirar el selector comentado de Boleta del carrito de restaurante. Los mensajes de restricción NRUS en las validaciones API/Web deben concordar con `nrusDocumentTypeIds()` (sólo Nota de venta); no anunciar series de Boleta que ya no existen.
+- Retirar el selector comentado de Boleta del carrito de restaurante.
 
 - El diálogo de conversión de cotizaciones ofrece la Factura del catálogo permitido y la Nota de venta existente; no propone Boleta. Al cambiar de cliente conserva el tipo seleccionado si sigue disponible. Verificar ambos selectores, la serie y los cobros/cuotas con `quotation-conversion-receipts.test.cjs` y el flujo compilado.

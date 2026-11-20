@@ -10,6 +10,7 @@ class ChargeDiscountType extends ModelCatalog
 
     protected $table = "cat_charge_discount_types";
     public $incrementing = false;
+    protected $keyType = 'string';
 
     public function scopeWhereType($query, $type)
     {

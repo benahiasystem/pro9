@@ -5,6 +5,7 @@ use Illuminate\Database\Capsule\Manager;
 use Symfony\Component\Process\Process;
 use Tests\Support\SeriesDatabaseTestCase;
 
+/** @group postgres-integration */
 class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
 {
     private $database;
@@ -12,13 +13,12 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
 
     protected function configureConnections(Manager $manager): void
     {
-        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requires an isolated temporary MySQL database.');
-        $env = \Dotenv\Dotenv::parse(file_get_contents(dirname(__DIR__, 2) . '/.env'));
-        $config = ['driver' => 'mysql', 'host' => getenv('DB_HOST') ?: $env['DB_HOST'], 'port' => getenv('DB_PORT') ?: ($env['DB_PORT'] ?? 3306),
-            'username' => $env['DB_USERNAME'], 'password' => $env['DB_PASSWORD'], 'database' => 'information_schema', 'charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'prefix' => ''];
+        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requires an isolated temporary PostgreSQL database.');
+        $config = \Tests\Support\PostgresTestEnvironment::connection();
         $manager->addConnection($config, 'control');
-        $this->database = 'sab_series_test_' . bin2hex(random_bytes(6));
-        $manager->getConnection('control')->statement('CREATE DATABASE `' . $this->database . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        \Tests\Support\PostgresTestEnvironment::assertServer($manager->getConnection('control'));
+        $this->database = 'pro9_series_test_' . bin2hex(random_bytes(6));
+        $manager->getConnection('control')->statement('CREATE DATABASE "' . $this->database . '" TEMPLATE template0');
         $config['database'] = $this->database;
         $this->connection = $config;
         $manager->addConnection($config, 'tenant');
@@ -26,18 +26,41 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
 
     protected function createTable(string $table, string $columns): void
     {
-        $columns = str_replace(['AUTOINCREMENT', ' TEXT'], ['AUTO_INCREMENT', ' VARCHAR(255)'], $columns);
-        $this->db->statement("CREATE TABLE $table ($columns) ENGINE=InnoDB");
+        $columns = str_replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'BIGSERIAL PRIMARY KEY', $columns);
+        $this->db->statement("CREATE TABLE $table ($columns)");
     }
 
     protected function tearDown(): void
     {
         try {
-            if ($this->database && preg_match('/^sab_series_test_[a-f0-9]{12}$/', $this->database)) {
+            if ($this->database && preg_match('/\Apro9_series_test_[a-f0-9]{12}\z/', $this->database)) {
                 $this->manager->getConnection('tenant')->disconnect();
-                $this->manager->getConnection('control')->statement('DROP DATABASE `' . $this->database . '`');
+                $this->manager->getConnection('control')->statement('DROP DATABASE "' . $this->database . '" WITH (FORCE)');
             }
         } finally { parent::tearDown(); }
+    }
+
+    /** Observe the real PostgreSQL wait, rather than merely a connected worker. */
+    private function waitForLock(Process $process, float $deadline): string
+    {
+        $header = null;
+        while (microtime(true) < $deadline) {
+            if (preg_match('/\AREADY ([1-9][0-9]*)\n/', $process->getOutput(), $match)) {
+                $header = $match[0];
+                $activity = $this->manager->getConnection('control')->selectOne(
+                    'SELECT wait_event_type, datname FROM pg_stat_activity WHERE pid = ?', [$match[1]]
+                );
+                if ($activity && $activity->datname === $this->database && $activity->wait_event_type === 'Lock') {
+                    self::assertTrue($process->isRunning());
+                    self::assertSame($header, $process->getOutput());
+                    return $header;
+                }
+            }
+            if (!$process->isRunning()) break;
+            usleep(10000);
+        }
+        self::fail('Worker did not reach its PostgreSQL lock barrier. Exit: '.var_export($process->getExitCode(), true)
+            .' Output: '.$process->getOutput().' Error: '.$process->getErrorOutput());
     }
 
     /** @dataProvider requestedNumbers */
@@ -53,29 +76,26 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
         $this->db->beginTransaction();
         try {
             $this->db->table('companies')->where('id', 1)->lockForUpdate()->first();
-            for ($i = 0; $i < 2; $i++) {
+            for ($i = 0; $i < 20; $i++) {
                 $process = new Process([PHP_BINARY, dirname(__DIR__) . '/Support/series_concurrency_worker.php']);
-                $process->setInput(json_encode(['connection' => $this->connection, 'number' => $requested, 'series' => $code, 'branch' => $separateBranches ? $i + 1 : 1], JSON_THROW_ON_ERROR));
-                $process->setTimeout(20); $process->start(); $processes[] = $process;
+                $process->setInput(json_encode(['connection' => $this->connection, 'number' => $requested, 'series' => $code, 'branch' => $separateBranches ? ($i % 2) + 1 : 1], JSON_THROW_ON_ERROR));
+                $process->setTimeout(90); $process->start(); $processes[] = $process;
             }
-            $deadline = microtime(true) + 10;
-            foreach ($processes as $process) {
-                while (!str_contains($process->getOutput(), "READY\n")) {
-                    if (!$process->isRunning() || microtime(true) > $deadline) self::fail('Worker failed before lock barrier.');
-                    usleep(10000);
-                }
-                self::assertTrue($process->isRunning());
-                self::assertSame("READY\n", $process->getOutput());
+            $deadline = microtime(true) + 60;
+            $headers = [];
+            foreach ($processes as $index => $process) {
+                $headers[$index] = $this->waitForLock($process, $deadline);
             }
+            self::assertCount(20, array_unique($headers), 'Each worker must own an independent PostgreSQL connection.');
             $this->db->commit();
             $results = [];
-            foreach ($processes as $process) {
+            foreach ($processes as $index => $process) {
                 self::assertSame(0, $process->wait(), $process->getErrorOutput());
-                $results[] = json_decode(substr($process->getOutput(), strlen("READY\n")), true, 512, JSON_THROW_ON_ERROR);
+                $results[] = json_decode(substr($process->getOutput(), strlen($headers[$index])), true, 512, JSON_THROW_ON_ERROR);
             }
             $numbers = $this->db->table('documents')->orderBy('number')->pluck('number')->map(fn ($n) => (int) $n)->all();
-            self::assertSame($separateBranches ? [100, 100] : ($requested === '#' ? [100, 101] : [100]), $numbers);
-            self::assertSame(($separateBranches || $requested === '#') ? 0 : 1, count(array_filter($results, fn ($r) => !empty($r['duplicate']))));
+            self::assertSame($separateBranches ? ($requested === '#' ? array_merge(...array_map(static fn ($n)=>[$n,$n],range(100,109))) : [100,100]) : ($requested === '#' ? range(100,119) : [100]), $numbers);
+            self::assertSame($requested === '#' ? 0 : ($separateBranches ? 18 : 19), count(array_filter($results, fn ($r) => !empty($r['duplicate']))));
         } finally {
             if ($this->db->transactionLevel()) $this->db->rollBack();
             foreach ($processes as $process) if ($process->isRunning()) $process->stop();
@@ -98,16 +118,11 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
             $number = \App\Services\SeriesNumbering::next($model, '01', 'FF01', '#', 1);
             $this->db->table('documents')->insert(['document_type_id' => '01', 'series' => 'FF01', 'number' => $number, 'fiscal_environment' => 'demo', 'establishment_id' => 1]);
             $worker->start();
-            $deadline = microtime(true) + 10;
-            while (!str_contains($worker->getOutput(), "READY\n")) {
-                if (!$worker->isRunning() || microtime(true) > $deadline) self::fail('Delete worker failed before lock barrier.');
-                usleep(10000);
-            }
-            self::assertTrue($worker->isRunning());
-            self::assertSame("READY\n", $worker->getOutput());
+            $deadline = microtime(true) + 60;
+            $header = $this->waitForLock($worker, $deadline);
             $this->db->commit();
             self::assertSame(0, $worker->wait(), $worker->getErrorOutput());
-            $result = json_decode(substr($worker->getOutput(), strlen("READY\n")), true, 512, JSON_THROW_ON_ERROR);
+            $result = json_decode(substr($worker->getOutput(), strlen($header)), true, 512, JSON_THROW_ON_ERROR);
             self::assertFalse($result['success']);
             self::assertSame(1, $this->db->table('series')->count());
             self::assertSame(1, $this->db->table('documents')->count());

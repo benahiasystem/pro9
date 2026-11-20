@@ -157,10 +157,10 @@ trait HkaAutoSendPersistenceCases
         self::assertEquals(1, $after['auto_send_hka']);
         unset($after['auto_send_hka']);
         self::assertSame($before, $after);
-        $column = $db->selectOne("SHOW COLUMNS FROM configurations WHERE Field = 'auto_send_hka'");
-        self::assertSame('tinyint(1)', $column->Type);
-        self::assertSame('NO', $column->Null);
-        self::assertEquals('1', $column->Default);
+        $column = \App\Database\SchemaInspector::column($db, 'configurations', 'auto_send_hka');
+        self::assertSame('boolean', $column->type);
+        self::assertFalse((bool)$column->nullable);
+        self::assertSame('true', $column->default);
         $db->table('configurations')->update(['auto_send_hka' => false]);
         self::assertFalse($upgrade->upgrade($db));
         self::assertFalse($upgrade->upgrade($db, true));

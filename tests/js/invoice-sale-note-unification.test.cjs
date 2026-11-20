@@ -74,4 +74,55 @@ for (const [file, invoice] of [['resources/js/views/tenant/sale_notes/form.vue',
         assert.equal(ctx.form.items[0].quantity,'0.3')
         assert.equal(ctx.form.items[0].total,'37.5')
     })
+
+    if (invoice) test('invoice unifies only equivalent presentation quantities', async () => {
+        const presented = (presentation) => {
+            const line = build('1')
+            line.item.presentation = presentation
+            return line
+        }
+        const finitePairs = [
+            [{quantity_unit: '1'}, {quantity_unit: '2'}],
+            [{id: '7', quantity_unit: '1'}, {id: '7', quantity_unit: '2'}],
+            [{id: '7', quantity_unit: '0.333333333333', calculation_snapshot: {values: {quantity_unit: {n: '1', d: '3'}}}},
+                {id: '7', quantity_unit: '0.333333333333', quantity_unit_exact: {n: '333333333333', d: '1000000000000'}}],
+        ]
+        for (const barcode of [false, true]) {
+            for (const [first, second] of finitePairs) {
+                const ctx = context()
+                ctx.config.show_unify_amount_items = !barcode
+                if (barcode) ctx.$refs.item_search_quick_sale = {search_item_by_barcode: true}
+                ctx.shouldUnifyAmountItems = should.bind(ctx)
+                ctx.getUnifiedItemIndex = index.bind(ctx)
+                ctx.form.items = [presented(first)]
+
+                await run.call(ctx, presented(second))
+                assert.equal(ctx.form.items.length, 2)
+                assert.deepEqual(JSON.parse(JSON.stringify(ctx.form.items[0].item.presentation)), first)
+                assert.deepEqual(JSON.parse(JSON.stringify(ctx.form.items[1].item.presentation)), second)
+                await run.call(ctx, presented(first))
+                assert.equal(ctx.form.items.length, 2)
+                assert.equal(ctx.form.items[0].quantity, '2')
+                assert.equal(ctx.form.items[1].quantity, '1')
+            }
+        }
+    })
+
+    if (invoice) test('invoice preserves separate source rows under automatic and barcode grouping',async()=>{
+        for (const barcode of [false,true]) {
+            const ctx=context()
+            ctx.config.show_unify_amount_items=!barcode
+            if (barcode) ctx.$refs.item_search_quick_sale={search_item_by_barcode:true}
+            ctx.shouldUnifyAmountItems=should.bind(ctx);ctx.getUnifiedItemIndex=index.bind(ctx)
+            const first={...build('1'),source_sale_note_items:[{sale_note_item_id:'9007199254740992'}]}
+            const second={...build('1'),source_sale_note_items:[{sale_note_item_id:'9007199254740993'}]}
+            ctx.form.items=[first]
+            await run.call(ctx,second)
+            await run.call(ctx,build('1'))
+            assert.equal(ctx.form.items.length,3)
+            assert.equal(ctx.form.items[0].source_sale_note_items[0].sale_note_item_id,'9007199254740992')
+            assert.equal(ctx.form.items[1].source_sale_note_items[0].sale_note_item_id,'9007199254740993')
+            assert.equal(ctx.form.items[2].quantity,'1')
+        }
+    })
 }

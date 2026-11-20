@@ -1,71 +1,67 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `system_activity_logs` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `user_id` int(10) unsigned DEFAULT NULL
- * - `system_activity_log_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `date` date NOT NULL
- * - `time` time NOT NULL
- * - `origin_id` int(11) DEFAULT NULL
- * - `origin_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `ip` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `device_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `device_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `platform_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `platform_version` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `browser_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `browser_version` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `request_email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `route` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `location` json DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - user_id: bigint
+ * - system_activity_log_type_id: varchar(255)
+ * - date: date
+ * - time: time
+ * - origin_id: bigint
+ * - origin_type: varchar(255)
+ * - ip: varchar(255)
+ * - device_name: varchar(255)
+ * - device_type: varchar(255)
+ * - platform_name: varchar(255)
+ * - platform_version: varchar(255)
+ * - browser_name: varchar(255)
+ * - browser_version: varchar(255)
+ * - request_email: varchar(255)
+ * - route: varchar(255)
+ * - location: json
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `system_activity_logs` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned DEFAULT NULL,
-  `system_activity_log_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `date` date NOT NULL,
-  `time` time NOT NULL,
-  `origin_id` int(11) DEFAULT NULL,
-  `origin_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `ip` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `device_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `device_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `platform_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `platform_version` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `browser_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `browser_version` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `request_email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `route` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `location` json DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `payment_index` (`origin_id`,`origin_type`),
-  KEY `system_activity_logs_user_id_foreign` (`user_id`),
-  KEY `system_activity_logs_auth_transaction_type_index` (`system_activity_log_type_id`),
-  KEY `system_activity_logs_date_index` (`date`),
-  KEY `system_activity_logs_time_index` (`time`),
-  KEY `system_activity_logs_device_type_index` (`device_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('system_activity_logs', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id')->nullable();
+            $table->string('system_activity_log_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->date('date');
+            $table->time('time');
+            $table->bigInteger('origin_id')->nullable();
+            $table->string('origin_type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('ip', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('device_name', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('device_type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('platform_name', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('platform_version', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('browser_name', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('browser_version', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('request_email', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('route', 255)->collation('pro9_ci_ai')->nullable();
+            $table->json('location')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['origin_id', 'origin_type'], 'system_activity_logs_payment_index');
+            $table->index(['user_id'], 'system_activity_logs_user_id_foreign');
+            $table->index(['system_activity_log_type_id'], 'system_activity_logs_auth_transaction_type_index');
+            $table->index(['date'], 'system_activity_logs_date_index');
+            $table->index(['time'], 'system_activity_logs_time_index');
+            $table->index(['device_type'], 'system_activity_logs_device_type_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `system_activity_logs`');
+        Schema::dropIfExists('system_activity_logs');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

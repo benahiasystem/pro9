@@ -1,58 +1,55 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `sale_note_payments` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `sale_note_id` int(10) unsigned NOT NULL
- * - `date_of_payment` date NOT NULL
- * - `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `change` decimal(30,12) DEFAULT NULL
- * - `payment` decimal(30,12) NOT NULL
- * - `currency_type_id` varchar(255) DEFAULT NULL
- * - `original_amount` decimal(30,12) DEFAULT NULL
- * - `exchange_rate` decimal(18,8) DEFAULT NULL
- * - `exchange_rate_source` varchar(255) DEFAULT NULL
- * - `exchange_rate_date` date DEFAULT NULL
- * - `payment_method_snapshot` json DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - sale_note_id: bigint
+ * - date_of_payment: date
+ * - payment_method_type_id: char(2)
+ * - reference: varchar(255)
+ * - change: numeric(30,12)
+ * - payment: numeric(30,12)
+ * - currency_type_id: varchar(255)
+ * - original_amount: numeric(30,12)
+ * - exchange_rate: numeric(18,8)
+ * - exchange_rate_source: varchar(255)
+ * - exchange_rate_date: date
+ * - payment_method_snapshot: json
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `sale_note_payments` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `sale_note_id` int(10) unsigned NOT NULL,
-  `date_of_payment` date NOT NULL,
-  `payment_method_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `reference` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `change` decimal(30,12) DEFAULT NULL,
-  `payment` decimal(30,12) NOT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `original_amount` decimal(30,12) DEFAULT NULL,
-  `exchange_rate` decimal(18,8) DEFAULT NULL,
-  `exchange_rate_source` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `exchange_rate_date` date DEFAULT NULL,
-  `payment_method_snapshot` json DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `sale_note_payments_sale_note_id_foreign` (`sale_note_id`),
-  KEY `sale_note_payments_payment_method_type_id_foreign` (`payment_method_type_id`),
-  KEY `sale_note_payments_date_of_payment_index` (`date_of_payment`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('sale_note_payments', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('sale_note_id');
+            $table->date('date_of_payment');
+            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai');
+            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('change', 30, 12)->nullable();
+            $table->decimal('payment', 30, 12);
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('original_amount', 30, 12)->nullable();
+            $table->decimal('exchange_rate', 18, 8)->nullable();
+            $table->string('exchange_rate_source', 255)->collation('pro9_ci_ai')->nullable();
+            $table->date('exchange_rate_date')->nullable();
+            $table->json('payment_method_snapshot')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['sale_note_id'], 'sale_note_payments_sale_note_id_foreign');
+            $table->index(['payment_method_type_id'], 'sale_note_payments_payment_method_type_id_foreign');
+            $table->index(['date_of_payment'], 'sale_note_payments_date_of_payment_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `sale_note_payments`');
+        Schema::dropIfExists('sale_note_payments');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

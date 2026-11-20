@@ -28,9 +28,7 @@ class CreateBusinessTurnsTable extends Migration
 
         $this->seedDefaults();
 
-        if (DB::getDriverName() === 'mysql') {
-            DB::statement('ALTER TABLE business_turns AUTO_INCREMENT = 7');
-        }
+
     }
 
     public function down()

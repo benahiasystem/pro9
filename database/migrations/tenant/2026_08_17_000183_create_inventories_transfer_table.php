@@ -1,68 +1,69 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `inventories_transfer` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `establishment_id` int(10) unsigned NOT NULL
- * - `external_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `document_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `series` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `number` int(11) DEFAULT NULL
- * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `warehouse_id` int(10) unsigned DEFAULT NULL
- * - `warehouse_destination_id` int(10) unsigned DEFAULT NULL
- * - `transfer_collect_id` int(10) unsigned DEFAULT NULL
- * - `quantity` decimal(30,12) NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `user_id` int(10) unsigned DEFAULT '0' COMMENT 'usuario que crea el registro'
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - establishment_id: bigint
+ * - external_id: char(36)
+ * - fiscal_environment: varchar(16)
+ * - document_type_id: varchar(255)
+ * - series: varchar(255)
+ * - number: integer
+ * - filename: varchar(255)
+ * - description: varchar(255)
+ * - warehouse_id: bigint
+ * - warehouse_destination_id: bigint
+ * - transfer_collect_id: bigint
+ * - quantity: numeric(30,12)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - user_id: bigint
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `inventories_transfer` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `establishment_id` int(10) unsigned NOT NULL,
-  `external_id` char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `document_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `series` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `number` int(11) DEFAULT NULL,
-  `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `warehouse_id` int(10) unsigned DEFAULT NULL,
-  `warehouse_destination_id` int(10) unsigned DEFAULT NULL,
-  `transfer_collect_id` int(10) unsigned DEFAULT NULL,
-  `quantity` decimal(30,12) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `user_id` int(10) unsigned DEFAULT '0' COMMENT 'usuario que crea el registro',
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `inventories_transfer_branch_number_unique` (`establishment_id`,`fiscal_environment`,`document_type_id`,`series`,`number`),
-  KEY `inventories_transfer_establishment_id_foreign` (`establishment_id`),
-  KEY `inventories_transfer_warehouse_id_foreign` (`warehouse_id`),
-  KEY `inventories_transfer_warehouse_destination_id_foreign` (`warehouse_destination_id`),
-  KEY `inventories_transfer_fiscal_environment_foreign` (`fiscal_environment`),
-  KEY `inventories_transfer_document_type_id_foreign` (`document_type_id`),
-  KEY `inventories_transfer_transfer_collect_id_foreign` (`transfer_collect_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('inventories_transfer', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('establishment_id');
+            $table->char('external_id', 36)->collation('pro9_ci_ai')->nullable();
+            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai')->nullable();
+            $table->string('document_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('series', 255)->collation('pro9_ci_ai')->nullable();
+            $table->integer('number')->nullable();
+            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('description', 255)->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('warehouse_id')->nullable();
+            $table->bigInteger('warehouse_destination_id')->nullable();
+            $table->bigInteger('transfer_collect_id')->nullable();
+            $table->decimal('quantity', 30, 12);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->bigInteger('user_id')->nullable()->default('0')->comment('usuario que crea el registro');
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->unique(['establishment_id', 'fiscal_environment', 'document_type_id', 'series', 'number'], 'inventories_transfer_branch_number_unique');
+            $table->index(['establishment_id'], 'inventories_transfer_establishment_id_foreign');
+            $table->index(['warehouse_id'], 'inventories_transfer_warehouse_id_foreign');
+            $table->index(['warehouse_destination_id'], 'inventories_transfer_warehouse_destination_id_foreign');
+            $table->index(['fiscal_environment'], 'inventories_transfer_fiscal_environment_foreign');
+            $table->index(['document_type_id'], 'inventories_transfer_document_type_id_foreign');
+            $table->index(['transfer_collect_id'], 'inventories_transfer_transfer_collect_id_foreign');
+        });
+        DB::statement('ALTER TABLE "inventories_transfer" ADD CONSTRAINT "inventories_transfer_number_range" CHECK ("number" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "inventories_transfer" ADD CONSTRAINT "inventories_transfer_warehouse_id_range" CHECK ("warehouse_id" >= 0)');
+        DB::statement('ALTER TABLE "inventories_transfer" ADD CONSTRAINT "inventories_transfer_warehouse_destination_id_range" CHECK ("warehouse_destination_id" >= 0)');
+        DB::statement('ALTER TABLE "inventories_transfer" ADD CONSTRAINT "inventories_transfer_user_id_range" CHECK ("user_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `inventories_transfer`');
+        Schema::dropIfExists('inventories_transfer');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

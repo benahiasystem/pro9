@@ -27,13 +27,16 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
     $m27_cashier = strtoupper(optional($document->user)->name ?? '');
 
-    $m27_igv_percentage = collect($document->items)
-        ->map(function ($it) { return (float) ($it->percentage_igv ?? 0); })
-        ->filter()
-        ->max();
-    $m27_igv_percentage = $m27_igv_percentage ? rtrim(rtrim(number_format($m27_igv_percentage, 2, '.', ''), '0'), '.') : null;
+    $m27_igv_percentage = null;
+    foreach ($document->items as $rate_item) {
+        $rate_value = \App\Support\Exact\Decimal::read($rate_item, 'percentage_igv');
+        if (!$rate_value->isZero() && ($m27_igv_percentage === null || $rate_value->isGreaterThan($m27_igv_percentage))) {
+            $m27_igv_percentage = $rate_value;
+        }
+    }
+    $m27_igv_percentage = $m27_igv_percentage === null ? null : rtrim(rtrim(\App\Support\Exact\Decimal::format($m27_igv_percentage, 2, '.', ''), '0'), '.');
 
-    $m27_total_products = \App\Support\Exact\PdfQuantities::summary($document->items);
+    $m27_total_products = \App\Support\Exact\InvoicePdfSummary::quantities($document->items);
 
     $m27_barcode = preg_replace('/[^0-9A-Za-z\-]/', '', $document_number);
 
@@ -81,9 +84,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     <tr>
         <td class="m27-head-line" style="text-transform: uppercase;">
             {{ ($establishment->address !== '-')? $establishment->address : '' }}
-            {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-            {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-            {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+            {{ (!empty($establishment->district->description))? ', '.$establishment->district->description : '' }}
+            {{ (!empty($establishment->province->description))? ', '.$establishment->province->description : '' }}
+            {{ (!empty($establishment->department->description))? '- '.$establishment->department->description : '' }}
         </td>
     </tr>
     @if($establishment->telephone !== '-' && $establishment->telephone !== '')
@@ -145,9 +148,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="m27-label align-top">Dirección:</td>
             <td class="m27-value">
                 {{ $customer->address }}
-                {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
-                {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
-                {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
+                {{ (!empty($customer->district->description))? ', '.$customer->district->description : '' }}
+                {{ (!empty($customer->province->description))? ', '.$customer->province->description : '' }}
+                {{ (!empty($customer->department->description))? '- '.$customer->department->description : '' }}
             </td>
         </tr>
     @endif
@@ -192,7 +195,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     @foreach($document->items as $row)
         @php
             $item_code = $row->item->internal_id;
-            $item_quantity = ((int)$row->quantity != $row->quantity) ? $row->quantity : number_format($row->quantity, 0);
+            $item_quantity = \App\Support\Exact\PdfQuantities::line($row);
             $item_description = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $row->item->description))));
             $item_description = \App\CoreFacturalo\Helpers\Template\TemplateHelper::stripLeadingItemCode($item_description, $item_code);
             if (mb_strlen($item_description) > $max_chars_description) {
@@ -210,9 +213,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @endforeach
                 @endif
                 @if($row->discounts)
-                    @foreach($row->discounts as $dtos)
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
-                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
+                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos).'%' }} {{$dtos->description }}</small>
                         @endif
                     @endforeach
                 @endif

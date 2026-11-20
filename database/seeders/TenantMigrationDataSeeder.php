@@ -16,10 +16,11 @@ class TenantMigrationDataSeeder extends Seeder
         $geography = require database_path('seeders/data/venezuela_geopolitical_data.php');
         $tables = array_replace($payload['tables'], $geography['tables']);
         $connection = DB::connection();
-        $connection->unprepared('SET FOREIGN_KEY_CHECKS=0');
+
 
         try {
             $connection->transaction(function () use ($connection, $tables) {
+                $connection->statement('SET CONSTRAINTS ALL DEFERRED');
                 foreach ($tables as $table => $definition) {
                     if (!$connection->getSchemaBuilder()->hasTable($table)) {
                         throw new RuntimeException("No existe la tabla requerida por el seeder: {$table}.");
@@ -38,7 +39,7 @@ class TenantMigrationDataSeeder extends Seeder
                 }
             });
         } finally {
-            $connection->unprepared('SET FOREIGN_KEY_CHECKS=1');
+            \App\Database\SequenceSynchronizer::sync($connection);
         }
     }
 }

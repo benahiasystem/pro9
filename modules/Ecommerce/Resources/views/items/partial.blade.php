@@ -90,10 +90,9 @@
                 @php
                     $activeCampaign = null;
                     $hasActiveOffer = false;
-                    $activeOfferPrice = (float) $record->sale_unit_price;
                     $compareAtPrice = null;
                     $offerExpiresAt = null;
-                    $stock = (float) $record->getStockByWarehouseMain();
+                    $stock = \App\Support\Exact\Decimal::represent($record->getStockByWarehouseMain());
                     $stockThreshold = 10;
 
                     if (isset($campaigns) && count($campaigns) > 0) {
@@ -106,22 +105,6 @@
                         $stockThreshold = method_exists($activeCampaign, 'stockThreshold')
                             ? $activeCampaign->stockThreshold()
                             : (int) ($activeCampaign->sp_stock_threshold ?: 10);
-
-                        if (method_exists($activeCampaign, 'hasActiveDiscount')
-                            ? $activeCampaign->hasActiveDiscount()
-                            : ($activeCampaign->sp_discount_price && (! $activeCampaign->end_date || $activeCampaign->end_date > now()))
-                        ) {
-                            $hasActiveOffer = true;
-                            $activeOfferPrice = method_exists($activeCampaign, 'discountedPrice')
-                                ? $activeCampaign->discountedPrice((float) $record->sale_unit_price)
-                                : (float) $record->sale_unit_price;
-                            $compareAtPrice = method_exists($activeCampaign, 'compareAtPrice')
-                                ? $activeCampaign->compareAtPrice((float) $record->sale_unit_price)
-                                : null;
-                            if (! $compareAtPrice) {
-                                $hasActiveOffer = false;
-                            }
-                        }
 
                         // Evergreen: si venció, rollForwardCountdownIfNeeded ya sumó +1 día en el modelo.
                         if (method_exists($activeCampaign, 'hasActiveCountdown')
@@ -136,9 +119,9 @@
                     $activeOfferPrice = $campaignPricing['final_price'];
                     $compareAtPrice = $campaignPricing['compare_at_price'];
                     $hasActiveOffer = $campaignPricing['has_social_proof_price'] || $campaignPricing['has_real_discount'];
-                    $displayPrice = (float) $activeOfferPrice;
-                    $oldPrice = ($hasActiveOffer && $compareAtPrice) ? (float) $compareAtPrice : null;
-                    $savings = $oldPrice !== null ? max(0, $oldPrice - $displayPrice) : 0;
+                    $displayPrice = $activeOfferPrice;
+                    $oldPrice = ($hasActiveOffer && $compareAtPrice !== null) ? $compareAtPrice : null;
+                    $savings = $oldPrice !== null ? \App\Support\Exact\Decimal::readRequired($campaignPricing,'compare_at_price')->minus(\App\Support\Exact\Decimal::readRequired($campaignPricing,'final_price')) : \App\Support\Exact\Decimal::of(0);
                     $showPrices = $storefront_show_prices ?? true;
                     $ratingCount = rand(45, 120);
                     $purchaseCount = $activeCampaign
@@ -151,9 +134,10 @@
                     $qvProduct = [
                         'id' => $record->id,
                         'description' => $record->description,
-                        'sale_unit_price' => $displayPrice,
-                        'original_price' => (float) $record->sale_unit_price,
-                        'compare_at_price' => $compareAtPrice,
+                        'sale_unit_price' => $showPrices ? $displayPrice : null,
+                        'original_price' => $showPrices ? $campaignPricing['base_price'] : null,
+                        'compare_at_price' => $showPrices ? $compareAtPrice : null,
+                        'campaign_pricing_snapshot' => $showPrices ? $campaignPricing['calculation_snapshot'] : null,
                         'discount_campaign_id' => $campaignPricing['discount_campaign_id'],
                         'discount_campaign_name' => $campaignPricing['discount_campaign_name'],
                         'campaign_discount_percent' => $campaignPricing['real_discount_percentage'],
@@ -168,7 +152,7 @@
                         'sale_affectation_igv_type_id' => $record->sale_affectation_igv_type_id ?? '10',
                         'unit_type_id' => $record->unit_type_id ?? 'UND',
                         'internal_id' => $record->internal_id,
-                        'stock' => (int) $stock,
+                        'stock' => $stock,
                     ];
                 @endphp
 
@@ -183,12 +167,12 @@
 
                     @if($showPrices)
                     <div class="price-box preview d-flex align-items-end justify-content-start w-100 mb-1" style="gap: 10px">
-                        <span class="product-price">{{ optional($record->currency_type)->symbol ?? 'Bs.' }} {{ number_format($displayPrice, 2) }}</span>
+                        <span class="product-price">{{ optional($record->currency_type)->symbol ?? 'Bs.' }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($campaignPricing,'final_price')) }}</span>
                         @if($oldPrice !== null)
-                            <span class="old-price">{{ optional($record->currency_type)->symbol ?? 'Bs.' }} {{ number_format($oldPrice, 2) }}</span>
-                            @if($savings > 0)
+                            <span class="old-price">{{ optional($record->currency_type)->symbol ?? 'Bs.' }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($campaignPricing,'compare_at_price')) }}</span>
+                            @if($savings->isPositive())
                             <span class="tag-ecommerce warning">
-                                Ahorras {{ optional($record->currency_type)->symbol ?? 'Bs.' }} {{ number_format($savings, 2) }}
+                                Ahorras {{ optional($record->currency_type)->symbol ?? 'Bs.' }} {{ \App\Support\Exact\Decimal::format($savings) }}
                             </span>
                             @endif
                         @endif
@@ -204,7 +188,7 @@
 
                     @if($activeCampaign && $activeCampaign->sp_stock_alert && $stock > 0 && $stock <= $stockThreshold)
                     <div class="text-danger font-weight-bold small mb-1" style="animation: sp-qv-pulse 2s infinite;">
-                        <i class="fas fa-fire"></i> ¡Se agota rápido! Solo quedan {{ number_format($stock, 0) }} unidades.
+                        <i class="fas fa-fire"></i> ¡Se agota rápido! Solo quedan {{ $stock }} unidades.
                     </div>
                     @endif
 
@@ -226,7 +210,7 @@
                     <?php
                     if($stock > 0){?>
                         <span class="stock-dot success"></span>
-                        <span><b>En stock</b> · {{number_format($stock, 0)}} unidades disponibles</span>
+                        <span><b>En stock</b> · {{$stock}} unidades disponibles</span>
                     <?php
                     }else{?>
                         <span class="stock-dot danger"></span>
@@ -243,7 +227,7 @@
 
                 <div class="product-action w-100 d-flex align-items-center justify-content-between" style="gap: 10px"
                     data-qv-scope
-                    data-unit-price="{{ $displayPrice }}"
+                    data-unit-price="{{ $showPrices ? $displayPrice : '' }}"
                     data-symbol="{{ optional($record->currency_type)->symbol ?? 'Bs.' }}"
                     data-qv-product="{{ e(json_encode($qvProduct)) }}">
                     @php
@@ -268,7 +252,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
                             </button>
                         </div>
-                        <input class="input-quantity text-center qv-quantity" type="number" min="1" value="1"
+                        <input class="input-quantity text-center qv-quantity" type="text" inputmode="decimal" value="1"
                             oninput="qvUpdatePrice(qvScope(this))" onchange="qvSync(this)">
                         <div class="input-group-append">
                             <button class="btn btn-outline-secondary btn-input-group" type="button" onclick="qvStep(this, 1)">
@@ -282,7 +266,7 @@
                         <svg clip-rule="evenodd" fill-rule="evenodd" height="24" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 512 512" width="24" xmlns="http://www.w3.org/2000/svg" id="fi_4893746"><path d="m211.892 383.468c24.344 0 44.108 19.764 44.108 44.108s-19.764 44.108-44.108 44.108-44.108-19.764-44.108-44.108 19.764-44.108 44.108-44.108zm176.22 0c24.344 0 44.108 19.764 44.108 44.108s-19.764 44.108-44.108 44.108-44.108-19.764-44.108-44.108 19.764-44.108 44.108-44.108zm-288.464-273.226s63.534 222.705 63.534 222.705c6.591 23.103 27.703 39.034 51.727 39.034h157.478c33.502 0 61.98-24.47 67.023-57.59 4.821-31.664 11.838-77.75 17.065-112.081 2.869-18.84-2.626-37.994-15.046-52.449-12.42-14.454-30.529-22.769-49.586-22.769h-235.394l-8.72-30.567c-7.633-26.757-32.085-45.209-59.91-45.209-23.033 0-51.825 0-51.825 0-13.798 0-25 11.202-25 25s11.202 25 25 25h51.825c5.494 0 10.321 3.643 11.829 8.926zm71.066 66.85h221.129c4.482 0 8.741 1.956 11.663 5.355 2.921 3.4 4.213 7.905 3.539 12.337 0 0-17.066 112.081-17.066 112.081-1.323 8.693-8.798 15.116-17.592 15.116h-157.478c-1.693 0-3.181-1.122-3.645-2.751 0 0-40.55-142.138-40.55-142.138z"></path></svg>
                         <span class="font-weight-bold qv-add-label" style="white-space: nowrap;">
                             @if($showPrices ?? ($storefront_show_prices ?? true))
-                                Agregar a Carrito · {{ optional($record->currency_type)->symbol ?? 'Bs.' }} {{ number_format($displayPrice, 2) }}
+                                Agregar a Carrito · {{ optional($record->currency_type)->symbol ?? 'Bs.' }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($campaignPricing,'final_price')) }}
                             @else
                                 Agregar a Carrito
                             @endif

@@ -1,0 +1,93 @@
+# ########## INICIO CAMBIO POSTGRESQL 17
+services:
+  postgres:
+    image: supabase/postgres:17.11.0.019@sha256:eca9f664ced0c453ae499e75bb503283831c94f2eef69fc2e69bf86f70278ddc
+    platform: linux/amd64
+    cpus: 2
+    mem_limit: 768m
+    shm_size: 256mb
+    command: ["postgres", "-D", "/etc/postgresql", "-c", "pro9.test_run=${PRO9_POSTGRES_RUN_ID}"]
+    environment:
+      POSTGRES_USER: supabase_admin
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${PRO9_POSTGRES_PASSWORD}
+    volumes:
+      - ${PRO9_POSTGRES_DATA}:/var/lib/postgresql/data
+      - postgres_config:/etc/postgresql-custom
+    networks: [test]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "supabase_admin", "-d", "postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+  php:
+    image: pro9-postgres-php-test:17.11
+    build:
+      context: .
+      dockerfile: docker/php.Dockerfile
+      target: testing
+    cpus: 2
+    mem_limit: 1536m
+    working_dir: /var/www/pro9
+    tmpfs:
+      - /pro9-backup-faults:rw,nosuid,noexec,size=1m,mode=1777
+    environment:
+      APP_ENV: testing
+      LC_ALL: C
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      TENANCY_KEY: postgresql-test-only
+      DB_CONNECTION: system
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: postgres
+      DB_USERNAME: supabase_admin
+      DB_PASSWORD: ${PRO9_POSTGRES_PASSWORD}
+      DB_PROVISIONER_USERNAME: supabase_admin
+      DB_PROVISIONER_PASSWORD: ${PRO9_POSTGRES_PASSWORD}
+      DB_PROVISIONER_DATABASE: postgres
+      PRO9_POSTGRES_TESTS: "1"
+      PRO9_FISCAL_EXCLUDE_ACCOUNTING: ${PRO9_FISCAL_EXCLUDE_ACCOUNTING:-0}
+      PRO9_TEST_INVOICES_VES_ONLY: ${PRO9_TEST_INVOICES_VES_ONLY:-0}
+      PRO9_HTTP_ACCEPTANCE_VES_ONLY: ${PRO9_HTTP_ACCEPTANCE_VES_ONLY:-0}
+      PRO9_POSTGRES_FAST_FIXTURES: "1"
+      PRO9_PAYMENT_BENCHMARK: "1"
+      PRO9_POSTGRES_RUN_ID: ${PRO9_POSTGRES_RUN_ID}
+      PRO9_POSTGRES_QUERY_PROFILE: ${PRO9_POSTGRES_QUERY_PROFILE:-0}
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: array
+    volumes:
+      - ./:/var/www/pro9
+      - ${PRO9_TEST_STORAGE}:/var/www/pro9/storage
+      - ${PRO9_TEST_BOOTSTRAP_CACHE}:/var/www/pro9/bootstrap/cache
+    networks: [test]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  accounting-av:
+    profiles: [accounting]
+    image: clamav/clamav@sha256:45fe5149fbee5a46509c9848ef20d0c354b7b2323c9369f285939a37cf33422a
+    platform: linux/amd64
+    entrypoint: ["clamd", "--config-file=/etc/clamav/clamd-postgresql-test.conf"]
+    user: "100:101"
+    cpus: 1.5
+    mem_limit: 4g
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,noexec,size=128m,mode=1777
+    volumes:
+      - ./docker/clamd-postgresql-test.conf:/etc/clamav/clamd-postgresql-test.conf:ro
+      - ${PRO9_POSTGRES_AV_DEFINITIONS}:/var/lib/clamav:ro
+    networks: [test]
+    healthcheck:
+      test: ["CMD", "clamdscan", "--config-file=/etc/clamav/clamd-postgresql-test.conf", "--ping=1"]
+      interval: 2s
+      timeout: 3s
+      retries: 90
+volumes:
+  postgres_config:
+networks:
+  test:
+    internal: true
+# ######### FIN CAMBIO POSTGRESQL 17

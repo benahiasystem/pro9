@@ -227,7 +227,7 @@ class ExactReceivablesTest extends TestCase
         self::assertStringContainsString('0.01',$html);
         $pdf=\Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->output();
         self::assertStringStartsWith('%PDF-',$pdf);
-        if ($path=getenv('SAB_MIXED_RECEIVABLE_PDF_PATH')) file_put_contents($path,$pdf);
+        if ($path=getenv('PRO9_MIXED_RECEIVABLE_PDF_PATH')) file_put_contents($path,$pdf);
     }
 
     public function test_real_xlsx_export_has_text_amounts_composite_identity_and_original_fractions(): void
@@ -281,7 +281,7 @@ class ExactReceivablesTest extends TestCase
         self::assertSame('1/3',(string)D::readRequired(iterator_to_array($rows)[1],'total'));
         $bytes = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->output();
         self::assertStringStartsWith('%PDF-',$bytes);
-        if ($path = getenv('SAB_EXACT_RECEIVABLE_PDF_PATH')) file_put_contents($path,$bytes);
+        if ($path = getenv('PRO9_EXACT_RECEIVABLE_PDF_PATH')) file_put_contents($path,$bytes);
     }
 
     public function test_payables_pdf_shows_original_currency_and_historical_equivalents(): void
@@ -302,7 +302,7 @@ class ExactReceivablesTest extends TestCase
         self::assertSame('1/3',(string)D::readRequired($row,'total'));
         $bytes=\Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->output();
         self::assertStringStartsWith('%PDF-',$bytes);
-        if ($path=getenv('SAB_EXACT_PAYABLE_PDF_PATH')) file_put_contents($path,$bytes);
+        if ($path=getenv('PRO9_EXACT_PAYABLE_PDF_PATH')) file_put_contents($path,$bytes);
     }
 }
 // ######## FIN CALCULOS EXACTOS SAB ########

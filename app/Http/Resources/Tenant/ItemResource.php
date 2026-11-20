@@ -152,7 +152,7 @@
                 'line' => $this->line,
                 'lots' => $this->lots->transform(function ($row, $key) {
                     return [
-                        'id' => $row->id,
+                        'id' => \App\Database\IntegerTransport::value($row->id),
                         'series' => $row->series,
                         'date' => $row->date,
                         'item_id' => $row->item_id,

@@ -6,7 +6,7 @@ const compiler = require('vue-template-compiler'), babel = require('@babel/core'
 const parser = require('@babel/parser'), generate = require('@babel/generator').default
 const Vue = require('vue')
 const runtime = require('./support/exact-runtime.cjs')
-const {exactAmount, exactSnapshot, normalizeExchangeRate} = runtime('exchange-rate-math')
+const {exactAmount, exactSnapshot, exactValue, normalizeExchangeRate} = runtime('exchange-rate-math')
 const {documentTotals} = runtime('exact-document')
 const {calculateRowItem} = require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/functions.js'))
 const {defaultChangeDisbursements, validateChangeDisbursements} = require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/change-disbursements.js'))
@@ -245,8 +245,8 @@ test('the form binding retains a labelled previous quote only while updating', a
 test('the invoice total uses the quoted total with IGTF and updates after a new quote', async () => {
     const declaration = parser.parse(formSource.script.content, {sourceType:'module'}).program.body.find(node => node.type === 'ExportDefaultDeclaration').declaration
     const computed = declaration.properties.find(node => node.key?.name === 'computed').value.properties
-    const actual = vm.runInNewContext(`({${generate(computed.find(node => node.key?.name === 'invoiceTotalWithIgtf')).code}})`, {exactAmount})
-    const row = formSource.template.content.match(/<tr v-if="form.total > 0 && fiscalPaymentsApplicable && !isUpdateDocument" class="invoice-total-due" data-testid="invoice-total-with-igtf">[\s\S]*?<\/tr>/)[0]
+    const actual = vm.runInNewContext(`({${['invoiceTotalWithIgtf', 'hasPositiveInvoiceTotal'].map(name => generate(computed.find(node => node.key?.name === name)).code).join(',')}})`, {exactAmount, exactValue})
+    const row = formSource.template.content.match(/<tr\b[^>]*data-testid="invoice-total-with-igtf"[^>]*>[\s\S]*?<\/tr>/)[0]
     const view = new Vue({...compiler.compileToFunctions(`<table>${row}</table>`), computed:actual,
         data:() => ({form:{total:'250', total_payable:'250.00'}, documentCurrencySymbol:'Bs.', fiscalPaymentsApplicable:true,
             isUpdateDocument:false, igtfQuoteError:'', fiscalQuoteKey:'', igtfQuoteKey:null, igtfQuoteLoading:false, displayFiscalQuote:null})})
@@ -320,8 +320,8 @@ test('the actual receipt template updates bolivar change without recreating the 
     const methods = declaration.properties.find(node => node.key?.name === 'methods').value.properties
     const actual = vm.runInNewContext(`({${['fiscalEquivalent','hasFiscalChange'].map(name => generate(methods.find(node => node.key?.name === name)).code).join(',')}})`, {exactAmount, normalizeExchangeRate})
     const computed = declaration.properties.find(node => node.key?.name === 'computed').value.properties
-    const changeComputed = vm.runInNewContext(`({${['fiscalChangeReceipts','fiscalChangeTotal'].map(name => generate(computed.find(node => node.key?.name === name)).code).join(',')}})`, {exactAmount, normalizeExchangeRate})
-    const detail = formSource.template.content.match(/<tr v-if="form.total > 0 && fiscalPaymentsApplicable && !isUpdateDocument" data-testid="invoice-change">[\s\S]*?<\/tr>/)[0]
+    const changeComputed = vm.runInNewContext(`({${['fiscalChangeReceipts','fiscalChangeTotal','hasPositiveInvoiceTotal'].map(name => generate(computed.find(node => node.key?.name === name)).code).join(',')}})`, {exactAmount, exactValue, normalizeExchangeRate})
+    const detail = formSource.template.content.match(/<tr\b[^>]*data-testid="invoice-change"[^>]*>[\s\S]*?<\/tr>/)[0]
     const view = new Vue({...compiler.compileToFunctions(`<table><tbody>${detail}</tbody></table>`), computed:changeComputed, methods:{...actual, fiscalSourceForQuote:()=>null},
         data:() => ({form:{total:'9116.24',currency_type_id:'VES',exchange_rate_sale:'911.62430000'}, fiscalPaymentsApplicable:true, isUpdateDocument:false,
             igtfQuoteKey:'current', fiscalQuoteKey:'current', igtfQuoteLoading:false,

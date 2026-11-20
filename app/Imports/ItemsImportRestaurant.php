@@ -215,7 +215,7 @@ class ItemsImportRestaurant implements ToCollection
     {
         return Item::query()
             ->whereRaw(
-                "TRIM(REPLACE(REPLACE(REPLACE(internal_id, CHAR(9), ''), CHAR(10), ''), CHAR(13), '')) = ?",
+                "TRIM(REPLACE(REPLACE(REPLACE(internal_id COLLATE \"C\", CHR(9), ''), CHR(10), ''), CHR(13), '')) = ?",
                 [$internal_id]
             )
             ->first();

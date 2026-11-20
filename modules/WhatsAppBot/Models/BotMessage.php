@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class BotMessage extends Model
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     use UsesTenantConnection;
 
     protected $table = 'bot_messages';

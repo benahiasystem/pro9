@@ -21,12 +21,21 @@ final class ClassifiedCashReport
                 $credit[$document->currency_type_id]=$credit[$document->currency_type_id]->plus(D::max($balance,0));
             }
             $data['credit_pending']=array_map(fn($v)=>D::represent($v),$credit);
+            $data['credit_pending_snapshot']=D::snapshot($credit);
             $data['rows']=self::rowsForReport($data['rows'],$type);
             $data['groups']=self::groupRows($data['rows']);
             $data['show_detail']=$type!=='cash_simple' && !($options['summary'] ?? false);
             return ['header'=>HeaderDataBuilder::build($cash),'classified'=>$data,'cash'=>$cash,
                 'title'=>CashReportRegistry::get($type)['label']];
         });
+    }
+
+    /** Preserve the scalar transport while reading the original fraction at every consumer. */
+    public static function pendingCredit(array $classified, string $currency): \Brick\Math\BigRational
+    {
+        if (!in_array($currency,['VES','USD'],true)) throw new \InvalidArgumentException('Moneda de crédito pendiente inválida.');
+        return D::readRequired(['calculation_snapshot'=>$classified['credit_pending_snapshot'] ?? null]
+            + ($classified['credit_pending'] ?? []),$currency);
     }
 
     public static function rowsForReport(array $rows, string $type): array

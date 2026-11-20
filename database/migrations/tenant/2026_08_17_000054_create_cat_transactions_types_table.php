@@ -1,33 +1,31 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial del catálogo HKA `cat_transactions_types` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL, clave primaria
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `active` tinyint(1) NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: varchar(2)
+ * - description: varchar(255)
+ * - active: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_transactions_types` (
-  `id` varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `active` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_transactions_types', function (Blueprint $table) {
+            $table->string('id', 2)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->boolean('active');
+            $table->primary(['id']);
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_transactions_types`');
+        Schema::dropIfExists('cat_transactions_types');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -1,42 +1,39 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `person_types` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `description` text COLLATE utf8mb4_unicode_ci NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `price_label_id` int(10) unsigned DEFAULT NULL
- * - `enabled_description_person_type` tinyint(1) NOT NULL DEFAULT '0'
- * - `description_person_type` text COLLATE utf8mb4_unicode_ci
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - description: text
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - price_label_id: bigint
+ * - enabled_description_person_type: boolean
+ * - description_person_type: text
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `person_types` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `description` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `price_label_id` int(10) unsigned DEFAULT NULL,
-  `enabled_description_person_type` tinyint(1) NOT NULL DEFAULT '0',
-  `description_person_type` text COLLATE utf8mb4_unicode_ci,
-  PRIMARY KEY (`id`),
-  KEY `person_types_price_label_id_foreign` (`price_label_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('person_types', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->text('description')->collation('pro9_ci_ai');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->bigInteger('price_label_id')->nullable();
+            $table->boolean('enabled_description_person_type')->default(false);
+            $table->text('description_person_type')->collation('pro9_ci_ai')->nullable();
+            $table->index(['price_label_id'], 'person_types_price_label_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `person_types`');
+        Schema::dropIfExists('person_types');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

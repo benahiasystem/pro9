@@ -42,9 +42,9 @@ test('dashboard debtor groups operate on retained fractions and stock shows all 
     const debt = (n,d) => ({total_to_pay:'0.333333333333',status:'vencido',calculation_snapshot:{version:1,values:{total_to_pay:{n,d}}}})
     const rows = [debt('1','3'),debt('2','3')]
     const total = debtors.computed.urgentTotal.call({urgentDebts:rows})
-    assert.equal(total.decimal(),'1')
+    assert.equal(exactRuntime('exchange-rate-math').exactAmount(total).decimal(),'1')
     const groups = debtors.computed.dateGroups.call({visibleDebts:rows})
-    assert.equal(groups[0].total.decimal(),'1')
+    assert.equal(exactRuntime('exchange-rate-math').exactAmount(groups[0].total).decimal(),'1')
     assert.equal(debtors.filters.dbMoney(total),'1')
     assert.equal(debtors.filters.dbMoney('0.123456789012'),'0,123456789012')
     assert.equal(debtors.filters.dbMoney('999999999999999999.99'),'999.999.999.999.999.999,99')

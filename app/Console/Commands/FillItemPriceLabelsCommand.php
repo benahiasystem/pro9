@@ -8,6 +8,8 @@ use App\Models\Tenant\ItemUnitTypePrice;
 use App\Models\Tenant\PriceLabel;
 use Hyn\Tenancy\Models\Website;
 use Illuminate\Console\Command;
+use App\Support\Exact\Decimal;
+use Brick\Math\BigRational;
 
 class FillItemPriceLabelsCommand extends Command
 {
@@ -115,7 +117,8 @@ class FillItemPriceLabelsCommand extends Command
                                 continue;
                             }
                             if (!$dry) {
-                                ItemUnitTypePrice::where('id', $existing->get($label->id))
+                                // Model events preserve the copied fraction as well as its decimal.
+                                ItemUnitTypePrice::findOrFail($existing->get($label->id))
                                     ->update(['price' => $basePrice, 'is_active' => true]);
                             }
                             $updated++;
@@ -147,7 +150,7 @@ class FillItemPriceLabelsCommand extends Command
      * los selectores actuales de presentaciones en POS y documentos.
      * Mismo criterio de barcode que ItemController::store.
      */
-    private function createBaseUnitType(Item $item, float $basePrice): ItemUnitType
+    private function createBaseUnitType(Item $item, BigRational $basePrice): ItemUnitType
     {
         $unitType = ItemUnitType::create([
             'item_id'       => $item->id,
@@ -170,15 +173,16 @@ class FillItemPriceLabelsCommand extends Command
      * Precio base: precio principal de la presentación, o precio de venta del item.
      * (price_default es un flag, no un monto.)
      */
-    private function resolveBasePrice(?ItemUnitType $unitType, Item $item): ?float
+    private function resolveBasePrice(?ItemUnitType $unitType, Item $item): ?BigRational
     {
-        if ($unitType && $unitType->price1 !== null && (float) $unitType->price1 > 0) {
-            return (float) $unitType->price1;
+        if ($unitType && $unitType->getRawOriginal('price1') !== null) {
+            $price=Decimal::read($unitType,'price1');
+            if ($price->isPositive()) return $price;
         }
 
-        $salePrice = $item->sale_unit_price ?? null;
-        if ($salePrice !== null && (float) $salePrice > 0) {
-            return (float) $salePrice;
+        if ($item->getRawOriginal('sale_unit_price') !== null) {
+            $price=Decimal::read($item,'sale_unit_price');
+            if ($price->isPositive()) return $price;
         }
 
         return null;

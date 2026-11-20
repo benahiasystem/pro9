@@ -4,6 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Modules\Accounting\Support\{TenantSchema as Schema, TenantDB as DB};
 
+use Modules\Accounting\Support\PostgresIntegrity as Integrity;
+
 return new class extends Migration {
     protected $connection = 'tenant';
 
@@ -28,15 +30,14 @@ return new class extends Migration {
             $t->foreign(['organization_id', 'company_id', 'supersedes_id'], 'fk_accounting_attachment_previous')->references(['organization_id', 'company_id', 'id'])->on('accounting_attachments')->restrictOnDelete();
         });
         Schema::table('accounting_audit_events', fn(Blueprint $t) => $t->index(['company_id', 'resource_type', 'resource_id', 'sequence'], 'ix_accounting_audit_case'));
-        if (Schema::getConnection()->getDriverName() === 'mysql') {
-            DB::unprepared("CREATE TRIGGER accounting_attachment_upd BEFORE UPDATE ON accounting_attachments FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Soporte conservado inmutable'");
-            DB::unprepared("CREATE TRIGGER accounting_attachment_del BEFORE DELETE ON accounting_attachments FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Soporte conservado inmutable'");
-        }
+        Integrity::reject('accounting_attachments', 'accounting_attachment_upd', 'UPDATE', 'Soporte conservado inmutable');
+        Integrity::reject('accounting_attachments', 'accounting_attachment_del', 'DELETE', 'Soporte conservado inmutable');
     }
 
     public function down(): void
     {
-        if (Schema::getConnection()->getDriverName() === 'mysql') { DB::unprepared('DROP TRIGGER IF EXISTS accounting_attachment_upd'); DB::unprepared('DROP TRIGGER IF EXISTS accounting_attachment_del'); }
+        Integrity::drop('accounting_attachments', 'accounting_attachment_upd');
+        Integrity::drop('accounting_attachments', 'accounting_attachment_del');
         Schema::table('accounting_audit_events', fn(Blueprint $t) => $t->dropIndex('ix_accounting_audit_case'));
         Schema::table('accounting_attachments', function (Blueprint $t) {
             $t->dropForeign('fk_accounting_attachment_previous'); $t->dropUnique('uq_accounting_attachment_content'); $t->dropUnique('uq_accounting_attachment_successor');

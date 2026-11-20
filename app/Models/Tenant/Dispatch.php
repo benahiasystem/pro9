@@ -152,6 +152,16 @@ class Dispatch extends ModelTenant
 
     public function emission() { return $this->hasOne(DispatchEmission::class); }
 
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    public function getNumberAttribute($value)
+    {
+        // Match integer transport within PHP's range and retain the full unsigned range as text.
+        if ($value === null) return null;
+        $integer=filter_var($value,FILTER_VALIDATE_INT);
+        return $integer === false ? $value : $integer;
+    }
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     protected $casts = [
         'hka_data' => 'array',
         'date_of_issue' => 'date',

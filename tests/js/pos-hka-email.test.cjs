@@ -15,6 +15,97 @@ function load(file, globals = {}) {
  return component;
 }
 const dialog = load('resources/js/views/tenant/pos/partials/options.vue');
+test('POS enables and validates payment using the exact invoice total', async () => {
+ const pos = load('resources/js/views/tenant/pos/index.vue');
+ const payment = load('resources/js/views/tenant/pos/partials/payment.vue');
+ const runtime = require('./support/exact-runtime.cjs');
+ const {exactSnapshot} = runtime('exchange-rate-math');
+ const {documentTotals} = runtime('exact-document');
+ const amount = {n: '1', d: '10000000000000'};
+ const line = {affectation_igv_type_id: '20', calculation_snapshot: exactSnapshot({
+  total_value: amount, total_base_igv: amount, total_igv: '0', total_other_taxes: '0', total_discount: '0', total_charge: '0',
+ })};
+ const totals = documentTotals([line]);
+ assert.equal(totals.total, '0');
+ for (const [documentType, values, allowed] of [
+  ['01', totals, true],
+  ['01', {total: '0', calculation_snapshot: exactSnapshot({total: '0'})}, false],
+  ['01', {total: '0', calculation_snapshot: exactSnapshot({total: {n: '-1', d: amount.d}})}, false],
+  ['80', totals, false],
+ ]) {
+  const errors = [];
+  let checked = false;
+  const form = {...values, document_type_id: documentType, items: [line], series_id: 1, customer_id: 2,
+   payments: [], payment_condition_id: '02', date_of_issue: moment().format('YYYY-MM-DD')};
+  const ctx = {
+   form, refreshScaleTotals: () => true, validateRestrictSaleItemsCpe: () => ({success: true}),
+   validateRestrictSellerDiscount: () => ({success: true}), asignPlateNumberToItems: async () => {},
+   ensureFiscalPaymentsReady: async () => { checked = true; return false; },
+   $http: {post: () => assert.fail('La prueba no emite un documento')},
+   $message: {error: message => errors.push(message), warning: message => errors.push(message)},
+  };
+  await payment.methods.clickPayment.call(ctx);
+  assert.equal(pos.computed.canPay.call(ctx), allowed, `Botón de cobro para ${documentType}`);
+  assert.equal(checked, allowed, `Validación de cobro para ${documentType}`);
+  assert.deepEqual(errors, allowed ? [] : ['El total debe ser mayor a 0']);
+ }
+});
+test('fast checkout validates the current cart before trying to submit a receipt', async () => {
+ const parent = compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/pos/fast.vue', 'utf8'));
+ const paymentTag = parent.template.content.match(/<fast-payment\b[\s\S]*?>/)[0];
+ const boundCount = paymentTag.match(/:rows-items="([^"]+)"/)?.[1];
+ const checkout = load('resources/js/views/tenant/pos/partials/fast_payment.vue');
+
+ for (const items of [[], [{quantity: '1', unit_type_id: 'UND'}]]) {
+  const warnings = [];
+  let checkedPayments = false;
+  const form = {items, document_type_id: '01', series_id: 2, payments: [], date_of_issue: moment().format('YYYY-MM-DD')};
+  const ctx = {form, rowsItems: boundCount && vm.runInNewContext(boundCount, {form}), businessTurns: {active: false},
+   asignPlateNumberToItems: async () => {},
+   ensureFiscalPaymentsReady: async () => { checkedPayments = true; return false; },
+   $message: {warning: message => warnings.push(message), error: message => warnings.push(message)},
+   $http: {post: () => assert.fail('La prueba nunca debe emitir un documento')},
+  };
+  await checkout.methods.clickPayment.call(ctx);
+  assert.deepEqual(warnings, items.length ? [] : ['Debe agregar productos']);
+  assert.equal(checkedPayments, items.length > 0);
+ }
+});
+for (const file of ['index.vue', 'partials/fast_payment.vue', 'partials/fast_payment_garage.vue']) {
+ test(`${file} validates whole invoice quantities without losing their exact fraction`, async () => {
+  const component = load('resources/js/views/tenant/pos/' + file);
+  const fraction = {values: {quantity: {n: '3000000000001', d: '3000000000000'}}};
+  const cases = [
+   [{quantity: '9007199254740993.1', unit_type_id: 'UND'}, 'decimales'],
+   [{quantity: '1', unit_type_id: 'SERV', calculation_snapshot: fraction}, 'decimales'],
+   [{quantity: '1', unit_type_id: 'UND', quantity_input: {amount: '3000000000001', unit_price: '3000000000000'}}, 'decimales'],
+   [{quantity: '9007199254740993', unit_type_id: 'UND'}, null],
+   [{quantity: '1.5', unit_type_id: 'KGM'}, null],
+   [{quantity: '2', unit_type_id: 'UND', calculation_snapshot: fraction}, null],
+   [{quantity: '0', unit_type_id: 'UND'}, 'mayor a 0'],
+   [{quantity: '1', unit_type_id: 'UND', calculation_snapshot: {values: {quantity: {n: '1', d: '0'}}}}, 'incorrecta'],
+   ...(file === 'partials/fast_payment.vue' ? [] : [[{quantity: '1.5', unit_type_id: 'UND'}, 'decimales', '80']]),
+  ];
+
+  for (const [row, message, type = '01'] of cases) {
+   const errors = [];
+   let validated = false;
+   const context = {
+    form: {items: [{aux_quantity: '1', total: '1', ...row}], total: '1', exchange_rate_sale: '1',
+     customer_id: 1, series_id: 1, date_of_issue: moment().format('YYYY-MM-DD'), document_type_id: type, currency_type_id: 'VES'},
+    establishment: {id: 1}, rowsItems: 1, businessTurns: {}, configuration: {},
+    sleep: async () => { validated = true; }, asignPlateNumberToItems: async () => {},
+    ensureFiscalPaymentsReady: async () => { validated = true; return false; },
+    $message: {error: value => errors.push(value), warning: value => errors.push(value)},
+    $http: {post: () => assert.fail('La validación de esta prueba no debe emitir una factura')},
+   };
+   await component.methods.clickPayment.call(context);
+   assert.equal(validated, message === null, JSON.stringify(row));
+   if (message === null) assert.deepEqual(errors, []);
+   else assert.match(errors[0], new RegExp(message));
+  }
+ });
+}
 test('fast checkout applies a directly entered amount to a new cash receipt only when its method and destination exist',async()=>{
  const component=load('resources/js/views/tenant/pos/partials/fast_payment.vue'), warnings=[];
  const ctx={form:{currency_type_id:'VES',payments:[]},enter_amount:'0.30',singleAmountLocked:false,
@@ -30,13 +121,16 @@ test('fast checkout applies a directly entered amount to a new cash receipt only
 test('fast checkout preserves an authorized series and selects a series for a replaced form',()=>{
  const component=load('resources/js/views/tenant/pos/partials/fast_payment.vue'),warnings=[];
  const ctx={all_series:[{id:1,document_type_id:'01',number:'FF01'},{id:2,document_type_id:'01',number:''},
-  {id:3,document_type_id:'80',number:'NV01'}],form:{document_type_id:'01',series_id:2},$message:{warning:m=>warnings.push(m)}};
+  {id:3,document_type_id:'80',number:'NV01'}],form:{document_type_id:'01',currency_type_id:'VES',series_id:'2'},$message:{warning:m=>warnings.push(m)}};
  ctx.filterSeries=component.methods.filterSeries.bind(ctx);
  ctx.filterSeries();assert.equal(ctx.form.series_id,2);
  ctx.form={document_type_id:'01',series_id:null};component.watch.form.call(ctx);assert.equal(ctx.form.series_id,1);
  ctx.form.document_type_id='80';component.watch['form.document_type_id'].call(ctx);assert.equal(ctx.form.series_id,3);
  ctx.form={document_type_id:'08',series_id:null};component.watch.form.call(ctx);assert.equal(ctx.form.series_id,null);assert.equal(warnings.length,0);
  ctx.filterSeries();assert.equal(warnings.length,1);
+ ctx.all_series=[{id:'9007199254740992',document_type_id:'01'},{id:'9007199254740993',document_type_id:'01'}];
+ ctx.form={document_type_id:'01',currency_type_id:'VES',series_id:'9007199254740993'};
+ ctx.filterSeries();assert.equal(ctx.form.series_id,'9007199254740993');
 });
 
 for (const file of ['payment.vue', 'fast_payment.vue']) {
@@ -82,7 +176,9 @@ test('standard POS only applies a default series authorized for the active docum
         form: {},
         $message: {warning: message => assert.fail(message)},
     };
-    ctx.filterSeries = payment.methods.filterSeries.bind(ctx);
+    for (const name of ['filterSeries', 'selectDocumentType', 'refreshScaleTotals']) {
+        ctx[name] = payment.methods[name].bind(ctx);
+    }
     payment.methods.setDefaultDocumentType.call(ctx);
     assert.equal(ctx.form.series_id, 1);
 
@@ -126,10 +222,44 @@ test('POS shows a rejected line error and keeps its draft available for correcti
   asignPlateNumberToItems:async()=>{},ensureFiscalPaymentsReady:async()=>true,
   $http:{post:async()=>{throw {response:{status:422,data:{'items.price_input.amount':['Precio inválido']}}}}},
   $message:{error:m=>messages.push(m),warning:m=>messages.push(m)}};
+ ctx.refreshScaleTotals=component.methods.refreshScaleTotals.bind(ctx);
  await component.methods.clickPayment.call(ctx);
  assert.deepEqual(messages,['Precio inválido']);assert.equal(ctx.form,form);assert.equal(form.items[0].quantity,'3');
  assert.equal(ctx.locked_submit,false);assert.equal(ctx.loading_submit,false);
 });
+
+test('POS preserves the invoice payment condition when there are no receipt rows', async () => {
+    const component = load('resources/js/views/tenant/pos/partials/payment.vue')
+    const summary = require('./helpers/load-module.cjs')(path.resolve('resources/js/mixins/payment-settlement-summary.js')).default
+    for (const [condition, total, balance, allowed] of [['01','0.004','0.00',true], ['01','1','1.00',false], ['02','1','1.00',true]]) {
+        const sent = [], warnings = []
+        const form = {document_type_id: '01', currency_type_id: 'VES', payment_condition_id: condition,
+            total, items: [{quantity: '1'}], payments: [], series_id: 1, date_of_issue: moment().format('YYYY-MM-DD')}
+        const context = {form, localInvoiceSettlement: true, localQuoteReady: true, igtfQuote: {balance},
+            get settlementPaymentBlocked() { return summary.computed.settlementPaymentBlocked.call(this) },
+            refreshScaleTotals: () => true, validateRestrictSaleItemsCpe: () => ({success: true}),
+            validateRestrictSellerDiscount: () => ({success: true}), asignPlateNumberToItems: async () => {},
+            ensureFiscalPaymentsReady: async () => true, prepareCalculationSubmission: payload => payload,
+            $message: {error() {}, warning: message => warnings.push(message)},
+            $http: {post: async (url, payload) => { sent.push([url, payload.payment_condition_id]); return {data: {success: false}} }},
+        }
+        await component.methods.clickPayment.call(context)
+        assert.equal(form.payment_condition_id, condition)
+        assert.deepEqual(sent, allowed ? [['/documents', condition]] : [])
+        assert.equal(warnings.length, allowed ? 0 : 1)
+    }
+})
+
+test('Garage displays the exact IVA rate for VES invoices', () => {
+    const component = load('resources/js/views/tenant/pos/partials/fast_payment_garage.vue')
+    const form = {document_type_id: '01', currency_type_id: 'VES'}
+    for (const [percentageIgv, expected] of [['0', '0'], ['0.1625', '16.25'], ['0.16', '16'], [null, '16']]) {
+        assert.equal(component.computed.ivaPercentageLabel.call({form, percentageIgv}), expected)
+    }
+    form.document_type_id = '80'
+    assert.equal(component.computed.ivaPercentageLabel.call({form, percentageIgv: '0.1625'}), '16')
+})
+
 function context(post, delivery = {provider:'hka',can_send:true,status:null}) {
  const messages=[], ctx={...dialog.data(),resource:'documents',form:{id:44,customer_email:'test@example.test',email_delivery:delivery},
  $http:{post},$set:(obj,k,v)=>obj[k]=v,$message:Object.fromEntries(['success','warning','error','info'].map(k=>[k,m=>messages.push(m)])),messages};
@@ -304,7 +434,7 @@ for (const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue'])
   const component=load('resources/js/views/tenant/pos/partials/'+file)
   const source=fs.readFileSync('resources/js/views/tenant/pos/partials/'+file,'utf8')
   assert.match(source,/mixins:\s*\[paymentSettlementSummary,/)
-  const instance=new Vue({mixins:[summary],data:()=>({form:{payment_condition_id:'01',total:'100',payments:[{payment:'100',currency_type_id:'USD',original_amount:'33.33',exchange_rate:'3'}]},
+  const instance=new Vue({mixins:[summary],data:()=>({form:{payment_condition_id:'01',currency_type_id:'VES',total:'100',payments:[{payment:'100',currency_type_id:'USD',original_amount:'33.33',exchange_rate:'3'}]},
     amount:'100',enter_amount:'100',difference:'0',button_payment:false}),
    methods:{inputAmount:component.methods.inputAmount,setDifference:component.methods.setDifference || (()=>{}),
     getTotal:()=>100,lStoPayment:()=>{}}})
@@ -332,6 +462,40 @@ for (const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue'])
  })
 }
 // ######## FIN MONEDA DEL MEDIO DE COBRO ########
+
+test('invoice checkout restores the original receipt and guards pending cash quotes', async () => {
+ const Vue=require('vue')
+ const summary=require('./helpers/load-module.cjs')(path.resolve('resources/js/mixins/payment-settlement-summary.js')).default
+ const payment={id:1,payment:'0.335',calculation_snapshot:{version:1,values:{payment:{n:'3349999999999',d:'10000000000000'}}}}
+ for (const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) {
+  const component=load('resources/js/views/tenant/pos/partials/'+file,{localStorage:{getItem:()=>JSON.stringify({payments:[payment]})}})
+  const instance=new Vue({mixins:[summary],data:()=>({
+   form:{document_type_id:'01',payment_condition_id:'01',payments:[]},
+   useLocalCalculations:true,igtfQuote:null,igtfQuoteError:null,igtfQuoteLoading:false,button_payment:false,
+  }),methods:{getFormPosLocalStorage:component.methods.getFormPosLocalStorage,inputAmount(){ this.button_payment=false }}})
+  instance.getFormPosLocalStorage()
+  await Vue.nextTick()
+  assert.equal(instance.amount,'0.33')
+  assert.equal(instance.enter_amount,'0.33')
+  assert.deepEqual(JSON.parse(JSON.stringify(instance.form.payments[0])),payment)
+  assert.equal(instance.settlementPaymentBlocked,true)
+  instance.igtfQuote={balance:'0.00',balance_exact:{n:'1',d:'1000'}}
+  assert.equal(instance.settlementPaymentBlocked,false)
+  instance.igtfQuoteLoading=true
+  assert.equal(instance.settlementPaymentBlocked,true)
+  instance.igtfQuoteLoading=false
+  instance.igtfQuote={balance:'0.01'}
+  assert.equal(instance.settlementPaymentBlocked,true)
+  if (file === 'payment.vue') assert.equal(component.computed.differenceText.call(instance),'0.01')
+  instance.igtfQuote=null
+  instance.igtfQuoteError='Falló la cotización'
+  assert.equal(instance.settlementPaymentBlocked,true)
+  instance.form.payment_condition_id='02'
+  assert.equal(instance.settlementPaymentBlocked,false)
+  await Vue.nextTick()
+  instance.$destroy()
+ }
+})
 
 test('POS does not describe bank or unclassified excess as cash change', () => {
   const summary = require('./helpers/load-module.cjs')(path.resolve('resources/js/mixins/payment-settlement-summary.js')).default
@@ -445,6 +609,7 @@ for (const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue'])
   const instance=new Vue({mixins:[summary],data:()=>({form:{payment_condition_id:'01',total:'100',payments:[{payment:'30'}]},
     payments:[],amount:'30',enter_amount:'45.50',difference:'-70',button_payment:true}),
    methods:{enterAmount:component.methods.enterAmount,clickPayment:component.methods.clickPayment,
+    ...(component.methods.refreshScaleTotals ? {refreshScaleTotals:component.methods.refreshScaleTotals} : {}),
     inputAmount:component.methods.inputAmount,setDifference:component.methods.setDifference || (()=>{}),
     getTotal:()=>100,lStoPayment:()=>{}}})
   const messages=[];instance.$eventHub={$emit:()=>{}};instance.$message={warning:m=>messages.push(m)}

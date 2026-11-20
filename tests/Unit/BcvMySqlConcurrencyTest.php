@@ -6,19 +6,18 @@ use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
+/** @group postgres-integration */
 class BcvMySqlConcurrencyTest extends TestCase
 {
     public function test_parallel_queries_keep_the_first_daily_rate(): void
     {
-        if (getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') $this->markTestSkipped('Requiere MySQL temporal aislado.');
-        $env = \Dotenv\Dotenv::parse(file_get_contents(dirname(__DIR__, 2).'/.env'));
-        $connection = ['driver' => 'mysql', 'host' => getenv('DB_HOST') ?: $env['DB_HOST'],
-            'port' => getenv('DB_PORT') ?: ($env['DB_PORT'] ?? 3306), 'username' => $env['DB_USERNAME'], 'password' => $env['DB_PASSWORD'],
-            'database' => 'information_schema', 'charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'prefix' => ''];
+        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
+        $connection = \Tests\Support\PostgresTestEnvironment::connection();
         config()->set('database.connections.bcv_control', $connection);
         $control = DB::connection('bcv_control');
-        $database = 'sab_bcv_test_'.bin2hex(random_bytes(6));
-        $control->statement('CREATE DATABASE `'.$database.'`');
+        \Tests\Support\PostgresTestEnvironment::assertServer($control);
+        $database = 'pro9_bcv_test_'.bin2hex(random_bytes(6));
+        $control->statement('CREATE DATABASE "'.$database.'" TEMPLATE template0');
         $connection['database'] = $database;
         config()->set('database.connections.bcv_test', $connection);
         $db = DB::connection('bcv_test');
@@ -29,19 +28,19 @@ class BcvMySqlConcurrencyTest extends TestCase
             $db->statement('CREATE TABLE exchange_rates (date DATE PRIMARY KEY, date_original DATE NOT NULL,
                 sale DECIMAL(18,8) NOT NULL, purchase DECIMAL(18,8) NOT NULL,
                 sale_original DECIMAL(18,8) NOT NULL, purchase_original DECIMAL(18,8) NOT NULL,
-                created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL) ENGINE=InnoDB');
+                created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL)');
             $db->beginTransaction();
             // Invisible a los SELECT de workers, pero bloquea sus INSERT hasta liberar la barrera.
             $db->table('exchange_rates')->insert(['date' => '2026-10-07', 'date_original' => '2026-10-07',
                 'sale' => 1, 'purchase' => 1, 'sale_original' => 1, 'purchase_original' => 1]);
-            foreach (['111.12345678', '222.45678901'] as $rate) {
+            foreach (array_map(static fn ($i)=>($i+111).'.12345678',range(0,19)) as $rate) {
                 $process = new Process([PHP_BINARY, dirname(__DIR__).'/Support/bcv_concurrency_worker.php']);
                 $process->setInput(json_encode(['connection' => $connection, 'rate' => $rate]));
-                $process->setTimeout(25);
+                $process->setTimeout(90);
                 $process->start();
                 $processes[] = $process;
             }
-            $deadline = microtime(true) + 15;
+            $deadline = microtime(true) + 60;
             foreach ($processes as $process) {
                 while (!str_contains($process->getOutput(), "READY\n")) {
                     if (!$process->isRunning() || microtime(true) > $deadline) self::fail('Worker no llegó a la barrera BCV.');
@@ -55,17 +54,18 @@ class BcvMySqlConcurrencyTest extends TestCase
                 self::assertSame(0, $process->wait(), $process->getErrorOutput());
                 $results[] = json_decode(substr($process->getOutput(), strlen("READY\n")), true);
             }
-            self::assertSame($results[0], $results[1]);
+            foreach ($results as $result) self::assertSame($results[0],$result);
             self::assertSame(1, $db->table('exchange_rates')->count());
-            self::assertContains($results[0]['sale'], ['111.12345678', '222.45678901']);
+            self::assertContains($results[0]['sale'], array_map(static fn ($i)=>($i+111).'.12345678',range(0,19)));
             self::assertEquals($results[0]['sale'], $db->table('exchange_rates')->value('sale'));
             // Dos bases temporales: ninguna tasa puede compartirse entre clientes.
-            $control->statement('CREATE DATABASE `'.$secondDatabase.'`');
+            $control->statement('CREATE DATABASE "'.$secondDatabase.'" TEMPLATE template0');
             $secondCreated = true;
-            $control->statement('CREATE TABLE `'.$secondDatabase.'`.exchange_rates LIKE `'.$database.'`.exchange_rates');
+
             $secondConnection = $connection;
             $secondConnection['database'] = $secondDatabase;
             config()->set('database.connections.bcv_test_b', $secondConnection);
+            DB::connection('bcv_test_b')->statement('CREATE TABLE exchange_rates (date DATE PRIMARY KEY, date_original DATE NOT NULL, sale NUMERIC(18,8) NOT NULL, purchase NUMERIC(18,8) NOT NULL, sale_original NUMERIC(18,8) NOT NULL, purchase_original NUMERIC(18,8) NOT NULL, created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL)');
             $active = 'bcv_test';
             $tenancy = $this->getMockBuilder(\Hyn\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
             $tenancy->method('tenantName')->willReturnCallback(function () use (&$active) { return $active; });
@@ -84,9 +84,9 @@ class BcvMySqlConcurrencyTest extends TestCase
             foreach ($processes as $process) if ($process->isRunning()) $process->stop();
             \Carbon\Carbon::setTestNow();
             DB::purge('bcv_test_b');
-            if ($secondCreated) $control->statement('DROP DATABASE `'.$secondDatabase.'`');
+            if ($secondCreated) $control->statement('DROP DATABASE "'.$secondDatabase.'" WITH (FORCE)');
             DB::purge('bcv_test');
-            $control->statement('DROP DATABASE `'.$database.'`');
+            $control->statement('DROP DATABASE "'.$database.'" WITH (FORCE)');
             DB::purge('bcv_control');
         }
     }

@@ -9,7 +9,7 @@
 
       <div v-if="labels.length" class="pm-body">
         <div class="pm-chart">
-          <apexchart type="donut" height="220" :options="chartOptions" :series="values"></apexchart>
+          <apexchart type="donut" height="220" :options="chartOptions" :series="series"></apexchart>
         </div>
         <ul class="pm-legend">
           <li v-for="(label, index) in labels" :key="index" class="pm-legend-item">
@@ -26,6 +26,8 @@
 </template>
 
 <script>
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { readOriginal, readVector, chartCoordinate, originalNumber, formatUnitOriginal } from "../../../../../../../resources/js/helpers/dashboard-originals";
 export default {
   name: "PaymentMethods",
   props: {
@@ -33,9 +35,10 @@ export default {
   },
   data() {
     return {
+      fetchVersion: 0, loading: true, fetchFailed: false,
       labels: [],
       values: [],
-      total: 0,
+      total: null,
       subtitle: "Distribucion de cobros - mes actual",
       palette: ["var(--primary)", "var(--danger)", "var(--success)", "var(--info)", "var(--warning)", "#ffdd00"],
     };
@@ -52,7 +55,10 @@ export default {
     },
   },
   computed: {
+    series() { return this.values.map(chartCoordinate); },
     emptyText() {
+      if (this.loading) return "Cargando cobros…";
+      if (this.fetchFailed) return "No se pudieron cargar los cobros.";
       return this.subtitle ? `Sin cobros registrados (${this.subtitle.toLowerCase()}).` : "Sin cobros registrados.";
     },
     chartOptions() {
@@ -72,7 +78,7 @@ export default {
                 value: {
                   fontSize: "18px",
                   fontWeight: 700,
-                  formatter: (val) => "Bs. " + this.formatK(val),
+                  formatter: () => this.total === null ? "—" : "Bs. " + this.formatK(this.total),
                 },
                 total: {
                   show: true,
@@ -90,42 +96,35 @@ export default {
           theme: "dark",
           style: { fontSize: "12px" },
           y: {
-            formatter: (val) =>
-              "Bs. " +
-              Number(val).toLocaleString("es-PE", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              }),
+            formatter: (_coordinate, options) => formatUnitOriginal(this.values[options && options.seriesIndex], 'money'),
           },
         },
       };
     },
   },
   methods: {
-    fetchData() {
-      this.$http.get("/dashboard/payment-methods", { params: this.filters || {} }).then((response) => {
+    async fetchData() {
+      const version = ++this.fetchVersion; this.loading = true; this.fetchFailed = false;
+      this.labels = []; this.values = []; this.total = null;
+      try {
+        const response = await this.$http.get("/dashboard/payment-methods", {params: {...(this.filters || {})}});
+        if (version !== this.fetchVersion) return;
         const data = response.data;
-        this.labels = data.labels || [];
-        this.values = data.values || [];
-        this.total = data.total || 0;
-        this.subtitle = data.subtitle || this.subtitle;
-      });
+        this.labels = data.labels || []; this.values = readVector(data, 'values_fractions');
+        this.total = readOriginal(data, 'total'); this.subtitle = data.subtitle || this.subtitle;
+      } catch (_) {
+        if (version === this.fetchVersion) this.fetchFailed = true;
+      } finally {
+        if (version === this.fetchVersion) this.loading = false;
+      }
     },
-    formatK(val) {
-      const num = Number(val) || 0;
-      if (Math.abs(num) >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-      return num.toFixed(0);
-    },
+    formatK(val) { return originalNumber(val); },
   },
   filters: {
-    pmMoney(value) {
-      const num = Number(value) || 0;
-      if (Math.abs(num) >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-      if (Math.abs(num) >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-      return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    },
+    pmMoney(value) { return originalNumber(value); },
   },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

@@ -9,8 +9,13 @@ final class DocumentEditPolicy
 {
     public static function reason(Document $document): ?string
     {
+        return self::reasonWithRelatedNotes($document);
+    }
+
+    private static function reasonWithRelatedNotes(Document $document, ?bool $hasRelatedNotes = null): ?string
+    {
         if (FiscalNote::ordinary($document)) return 'Una nota registrada conserva sus partidas e importes; utilice sus acciones de ajustes y devolución.';
-        if (FiscalNote::hasRelatedNotes($document)) return 'La factura tiene notas registradas y debe conservar sus partidas e importes originales.';
+        if ($hasRelatedNotes ?? FiscalNote::hasRelatedNotes($document)) return 'La factura tiene notas registradas y debe conservar sus partidas e importes originales.';
         if ($document->isVoidedOrRejected()) return 'El comprobante está anulado o no está vigente.';
         if ($document->document_type_id !== '01' && !(bool) ($document->getAttributes()['is_editable'] ?? false)) return 'La edición de este comprobante está deshabilitada.';
         $emission = $document->emission;
@@ -24,9 +29,9 @@ final class DocumentEditPolicy
             'cancelled' => 'La operación fiscal está cancelada.'][$status] ?? 'La factura tiene un control fiscal y no puede editarse.';
     }
 
-    public static function view(Document $document): array
+    public static function view(Document $document, ?bool $hasRelatedNotes = null): array
     {
-        $reason = self::reason($document);
+        $reason = self::reasonWithRelatedNotes($document, $hasRelatedNotes);
         $user = auth()->user();
         if (!$reason && !($user instanceof \App\Models\Tenant\User && ($user->type === 'admin' || (int) $user->establishment_id === (int) $document->establishment_id))) {
             $reason = 'No tiene permiso para editar comprobantes de esta sucursal.';

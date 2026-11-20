@@ -1,7 +1,7 @@
 <?php
 /** Explicit DEMO acceptance runner. Reads only the selected tenant's connection credentials.
  * All commercial writes use a newly created, disposable database. Never sends email.
- * Usage: SAB_FISCAL_MYSQL_TESTS=1 php -d memory_limit=1G scripts/verify_hka_notes_demo.php bbc.localhost [paid-extended|credit-extended]
+ * Usage: PRO9_POSTGRES_TESTS=1 php -d memory_limit=1G scripts/verify_hka_notes_demo.php bbc.localhost [paid-extended|credit-extended]
  */
 require dirname(__DIR__).'/vendor/autoload.php';
 use App\Models\Tenant\{Company, Document, Person, Item};
@@ -10,7 +10,7 @@ use App\CoreFacturalo\Facturalo;
 use Illuminate\Support\Str;
 
 $root=dirname(__DIR__); $host=$argv[1] ?? '';
-if (!$host || getenv('SAB_FISCAL_MYSQL_TESTS') !== '1') exit("Specify a source host and explicitly enable isolated MySQL tests.\n");
+if (!$host || getenv('PRO9_POSTGRES_TESTS') !== '1') exit("Specify a source host and explicitly enable isolated MySQL tests.\n");
 $app=require $root.'/bootstrap/app.php';$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 $hostname=Hyn\Tenancy\Models\Hostname::where('fqdn',$host)->firstOrFail();
 app(Hyn\Tenancy\Environment::class)->tenant($hostname->website);
@@ -32,9 +32,9 @@ try {
     config(['hka_notes.contract_probe'=>true]); // Explicit isolated acceptance probe; does not enable the runtime capability.
     $owned=$db->getDatabaseName();$connection=$db->getConfig();
     $cleanupReserve=str_repeat(' ',8*1024*1024);
-    $cleanupPdo=new PDO('mysql:host='.$connection['host'].';port='.$connection['port'].';dbname=information_schema;charset=utf8mb4',$connection['username'],$connection['password']);
+    $cleanupPdo=new PDO('pgsql:host='.$connection['host'].';port='.$connection['port'].';dbname=postgres',$connection['username'],$connection['password']);
     register_shutdown_function(static function () use ($owned,$cleanupPdo,&$cleanupReserve) {
-        if (!preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/D',$owned)) return;
+        if (!preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/D',$owned)) return;
         $cleanupReserve=null;
         $cleanupPdo->exec('DROP DATABASE IF EXISTS `'.$owned.'`');
     });

@@ -24,6 +24,8 @@
 <script>
 import KpiSparkline from '../../views/KpiSparkline.vue'
 import { changeLabelForPeriod, formatKpi, formatValue, themeColors } from '../registry'
+import { readOriginal, readVector, compareOriginal, absoluteOriginal, originalText, chartCoordinate } from '../../../../../../../resources/js/helpers/dashboard-originals'
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
 
 /** KPI (valor + delta) con sparkline opcional (kpi_spark). */
 export default {
@@ -40,46 +42,45 @@ export default {
       return this.dataset.unit || 'money'
     },
     valueStr() {
-      return formatKpi(this.dataset.totals.current, this.unit)
+      return formatKpi(readOriginal(this.dataset.totals, 'current'), this.unit)
     },
     hasDelta() {
       const totals = this.dataset.totals || {}
-      if (totals.delta === null || totals.delta === undefined) return false
-      // Sin valor previo real no hay comparación (espejo de RowTop.changes).
-      return !!Number(totals.previous)
+      const previous = readOriginal(totals, 'previous')
+      return previous !== null && readOriginal(totals, 'delta') !== null && compareOriginal(previous, '0') !== 0
     },
     deltaUp() {
-      return (Number(this.dataset.totals.delta) || 0) >= 0
+      const sign = compareOriginal(readOriginal(this.dataset.totals, 'delta'), '0')
+      return sign !== null && sign >= 0
     },
     deltaStr() {
-      return Math.abs(Number(this.dataset.totals.delta) || 0).toFixed(1) + '%'
+      const text = originalText(absoluteOriginal(readOriginal(this.dataset.totals, 'delta')), 1)
+      return text === '—' ? text : text + '%'
     },
     changeLabel() {
       return changeLabelForPeriod(this.period)
     },
+    sparkOriginals() {
+      return readVector((this.dataset.series || [])[0], 'data_fractions')
+    },
     sparkData() {
-      const serie = (this.dataset.series || [])[0]
-      return serie && serie.data && serie.data.length ? serie.data : [0, 0]
+      return this.sparkOriginals.map(chartCoordinate)
     },
     sparkLabels() {
       return this.dataset.labels || []
     },
     sparkColor() {
-      // La línea sigue la inclinación real de la curva: sube en verde, baja en rojo.
       const theme = themeColors()
-      const data = this.sparkData
-      if (data.length >= 2) {
-        const rising = (Number(data[data.length - 1]) || 0) >= (Number(data[0]) || 0)
-        return rising ? theme.success : theme.danger
-      }
-      return this.deltaUp ? theme.success : theme.danger
+      const known = this.sparkOriginals.filter(value => value !== null)
+      if (known.length >= 2) return compareOriginal(known[known.length - 1], known[0]) >= 0 ? theme.success : theme.danger
+      return this.hasDelta ? (this.deltaUp ? theme.success : theme.danger) : theme.muted
     },
     sparkFormatter() {
-      const unit = this.unit
-      return value => formatValue(value, unit)
+      return (_coordinate, options) => formatValue(this.sparkOriginals[options && options.dataPointIndex], this.unit)
     },
   },
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

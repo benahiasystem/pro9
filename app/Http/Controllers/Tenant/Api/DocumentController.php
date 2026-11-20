@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Tenant\Api;
 
 use App\CoreFacturalo\Facturalo;
+use App\Database\IntegerTransport;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Tenant\DocumentCollection;
 use App\Models\Tenant\Document;
@@ -107,7 +108,8 @@ class DocumentController extends Controller
      */
     public function record($id)
     {
-        $record = Document::whereTypeUser()->find($id);
+        $id = IntegerTransport::positiveKey($id);
+        $record = $id === null ? null : Document::whereTypeUser()->find($id);
 
         if (!$record) {
             return response()->json([

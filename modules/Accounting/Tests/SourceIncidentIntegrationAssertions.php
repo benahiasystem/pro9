@@ -183,7 +183,7 @@ trait SourceIncidentIntegrationAssertions
     {
         $fixture = $this->postedNativeCase(); $observed = $this->observeNative($fixture, []); $case = $observed['case'];
         $result = app(SourceIncidentService::class)->resolve($case['incident']['id'], $case['incident']['version'], [...$observed['input'], 'action' => 'acknowledge_metadata'], $this->admin->id, 'source-immutable-' . Str::uuid());
-        try { DB::table('accounting_source_resolutions')->where('id', $result['resolution']['id'])->update(['reason' => 'Otra explicación posterior']); $this->fail('La resolución no se sobrescribe.'); }
+        try { DB::transaction(fn() => DB::table('accounting_source_resolutions')->where('id', $result['resolution']['id'])->update(['reason' => 'Otra explicación posterior'])); $this->fail('La resolución no se sobrescribe.'); }
         catch (\Illuminate\Database\QueryException $e) { $this->assertStringContainsString('inmutable', strtolower($e->getMessage())); }
         $migration = require dirname(__DIR__) . '/Database/Migrations/2026_11_12_001400_preserve_source_resolutions.php';
         $this->expectException(\RuntimeException::class); $this->expectExceptionMessage('eliminar resoluciones'); $migration->down();

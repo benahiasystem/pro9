@@ -10,15 +10,16 @@ function load(path,runtime={}){
     return exports.default;
 }
 test('reopening POS payments restores entered receipts instead of suggesting the gross total',async()=>{
+    const settlement=require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/payment-settlement-summary.js')).default
     for(const file of ['payment','fast_payment','fast_payment_garage']) {
         const component=load(`resources/js/views/tenant/pos/partials/${file}.vue`);
         const rows=[{payment:20,original_amount:20},{payment:84,original_amount:84}];
         const input={focus(){},select(){}};
-        const ctx={form:{total:116,payments:rows},collectionTarget:'116.00',getTotal:()=>116,$nextTick:async()=>{},
+        const ctx={...settlement.methods,form:{total:116,payments:rows},collectionTarget:'116.00',getTotal:()=>116,$nextTick:async()=>{},
             $refs:{enter_amount:{$el:{getElementsByTagName:()=>[input],querySelector:()=>input}}}};
         await component.methods.setInitialAmount.call(ctx);
         assert.equal(ctx.amount,'104',file);assert.equal(ctx.enter_amount,'104',file);assert.deepEqual(ctx.form.payments,rows);
-        const restore={form:{total:116,payments:[]},$set:(o,k,v)=>o[k]=v,inputAmount(){this.recalculated=true}};
+        const restore={...settlement.methods,form:{total:116,payments:[]},$set:(o,k,v)=>o[k]=v,inputAmount(){this.recalculated=true}};
         const key=file==='fast_payment_garage'?'form_pos_garage':'form_pos';
         const restored=load(`resources/js/views/tenant/pos/partials/${file}.vue`,{localStorage:{getItem:requested=>requested===key?JSON.stringify({payment_condition_id:'01',payments:rows}):null}});
         restored.methods.getFormPosLocalStorage.call(restore);

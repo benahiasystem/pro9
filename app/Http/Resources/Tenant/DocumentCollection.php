@@ -3,6 +3,8 @@
 namespace App\Http\Resources\Tenant;
 
 use App\Models\Tenant\EmailSendLog;
+use App\Models\Tenant\SaleNote;
+use App\Services\Fiscal\DocumentEditPolicy;
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 use App\Support\Venezuela\Localization;
 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
@@ -22,13 +24,36 @@ class DocumentCollection extends ResourceCollection
         $this->collection = new \Illuminate\Database\Eloquent\Collection($this->collection->map(
             fn ($row) => $row instanceof \Illuminate\Http\Resources\Json\JsonResource ? $row->resource : $row
         )->all());
+        // ########## INICIO CAMBIO POSTGRESQL 17
+        if ($this->collection->isNotEmpty() && $this->collection->first()->getConnection()->getDriverName()==='pgsql') {
+            return \App\Support\Exact\ReadBalanceScope::run($this->collection,fn ()=>$this->renderRows($request));
+        }
+        return $this->renderRows($request);
+    }
+
+    private function renderRows($request)
+    {
+        // ######### FIN CAMBIO POSTGRESQL 17
         $this->collection->loadMissing('emission');
+        $this->collection->filter(fn ($row) => $row->document_type_id === '01')
+            ->loadMissing(['affected_documents.document', 'reference_guides', 'dispatch']);
         \App\Services\Fiscal\HkaCreditInvoice::preload($this->collection);
         if (\App\Services\Fiscal\IslrRetentionService::available()) $this->collection->loadMissing(['received_retentions.islr_operations']);
         if (\App\Services\Fiscal\IvaRetentionService::available()) $this->collection->loadMissing(['fiscal_data','received_retentions.operations']);
         \App\Services\Fiscal\FiscalIdentity::preload($this->collection);
-        return $this->collection->transform(function ($row, $key) use ($request) {
-            $edit = \App\Services\Fiscal\DocumentEditPolicy::view($row);
+        $mailLogs=$this->collection->isEmpty() ? collect() : EmailSendLog::Document()->whereIn('relation_id',$this->collection->modelKeys())->get()->groupBy('relation_id');
+        $saleNotes = $this->collection->isEmpty() ? collect() : SaleNote::query()
+            ->whereIn('document_id', $this->collection->modelKeys())
+            ->orWhereIn('id', $this->collection->pluck('sale_note_id')->filter()->unique()->values())
+            ->get();
+        $saleNotesByDocument = $saleNotes->groupBy('document_id');
+        $saleNotesById = $saleNotes->keyBy('id');
+        $formattedSaleNotes = [];
+
+        return $this->collection->map(function ($row) use ($request, $mailLogs, $saleNotesByDocument, $saleNotesById, &$formattedSaleNotes) {
+            $hasRegisteredNotes = $row->document_type_id === '01'
+                && $row->affected_documents->contains(fn ($note) => $note->creation_key !== null);
+            $edit = DocumentEditPolicy::view($row, $hasRegisteredNotes);
             $has_pdf = true;
             $btn_note = false;
             $btn_guide = true; // Boton para generar orden de entrega
@@ -66,17 +91,6 @@ class DocumentCollection extends ResourceCollection
                 $btn_guide = true;
             }
 
-            if ($row->affected_documents) {
-                $row->affected_documents->each(function ($note) use (&$btn_note, $row) {
-                    if ($row->state_type_id === '05' && ($note->note_credit_type_id === '01' && $note->document->state_type_id === '05')) {
-                        // Credit limits are enforced per original line; ND remains available.
-                    }
-                });
-            }
-
-            if (in_array($row->document_type_id, ['01'])) {
-            }
-
             // $btn_recreate_document = config('tenant.recreate_document');
             $btn_recreate_document = auth()->user()->recreate_documents;
 
@@ -87,15 +101,22 @@ class DocumentCollection extends ResourceCollection
 
             $total_payment = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::sum($row->payments->map(fn ($payment) => $payment->exactValue('payment'))));
 
-            $balance = \App\Support\Exact\Decimal::represent($row->balance);
+            $balance = $row->exactBalance();
 
-            $nvs = $row->getNvCollection();
+            $linkedNotes = $saleNotesByDocument->get($row->id, collect());
+            $sourceNote = $saleNotesById->get($row->sale_note_id);
+            if ($sourceNote && !$linkedNotes->contains('id', $sourceNote->id)) {
+                $linkedNotes = $linkedNotes->concat([$sourceNote]);
+            }
+            $nvs = $linkedNotes->sortBy('id', SORT_REGULAR)->values()->map(function (SaleNote $note) use (&$formattedSaleNotes) {
+                return $formattedSaleNotes[$note->id] ??= $note->getCollectionData();
+            });
 
             $order_note = $row->getOrderNoteCollection();
             // Regresa si se hn enviado correos
             $email_send_it = false;
             $email_send_it_array = [];
-            $send_it = EmailSendLog::Document()->FindRelationId($row->id)->get();
+            $send_it = $mailLogs->get($row->id,collect());
             if (count($send_it) > 0) {
                 /** @var EmailSendLog $log*/
                 foreach ($send_it as $log) {
@@ -185,7 +206,7 @@ class DocumentCollection extends ResourceCollection
                 'email_send_it_array' => $email_send_it_array,
                 'external_id' => $row->external_id,
 
-                'notes' => (in_array($row->document_type_id, ['01'])) ? $row->affected_documents->transform(function ($row) {
+                'notes' => (in_array($row->document_type_id, ['01'])) ? $row->affected_documents->map(function ($row) {
                     return [
                         'id' => $row->id,
                         'document_id' => $row->document_id,
@@ -196,7 +217,8 @@ class DocumentCollection extends ResourceCollection
                 }) : null,
                 'sales_note' => $nvs,
                 'order_note' => $order_note,
-                'balance' => $balance,
+                'balance' => \App\Support\Exact\Decimal::represent($balance),
+                'has_open_balance' => $balance->isPositive(),
                 'guides' => !empty($row->guides) ? (array) $row->guides : null,
                 'purchase_order' => $row->purchase_order,
                 'is_editable' => $edit['can_edit'],

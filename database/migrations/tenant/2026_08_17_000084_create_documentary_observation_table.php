@@ -1,37 +1,35 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `documentary_observation` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `doc_file_id` int(10) unsigned DEFAULT '0' COMMENT 'Expediente relacionado'
- * - `observation` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Conjunto de etapas.'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - doc_file_id: bigint
+ * - observation: text
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `documentary_observation` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `doc_file_id` int(10) unsigned DEFAULT '0' COMMENT 'Expediente relacionado',
-  `observation` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Conjunto de etapas.',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('documentary_observation', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('doc_file_id')->nullable()->default('0')->comment('Expediente relacionado');
+            $table->text('observation')->collation('pro9_ci_ai')->nullable()->comment('Conjunto de etapas.');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "documentary_observation" ADD CONSTRAINT "documentary_observation_doc_file_id_range" CHECK ("doc_file_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `documentary_observation`');
+        Schema::dropIfExists('documentary_observation');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

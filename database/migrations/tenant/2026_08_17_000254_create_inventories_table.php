@@ -1,69 +1,69 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `inventories` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `type` enum('1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `detail` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `item_id` int(10) unsigned NOT NULL
- * - `warehouse_id` int(10) unsigned NOT NULL
- * - `warehouse_destination_id` int(10) unsigned DEFAULT NULL
- * - `inventory_transaction_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `quantity` decimal(30,12) NOT NULL
- * - `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `inventories_transfer_id` int(10) unsigned DEFAULT NULL
- * - `comments` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `date_of_issue` date DEFAULT NULL
- * - `guide_id` int(10) unsigned DEFAULT NULL
- * - `system_stock` decimal(30,12) DEFAULT NULL
- * - `real_stock` decimal(30,12) DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - type: varchar(255)
+ * - description: varchar(255)
+ * - detail: varchar(255)
+ * - item_id: bigint
+ * - warehouse_id: bigint
+ * - warehouse_destination_id: bigint
+ * - inventory_transaction_id: varchar(255)
+ * - quantity: numeric(30,12)
+ * - lot_code: varchar(255)
+ * - inventories_transfer_id: bigint
+ * - comments: varchar(255)
+ * - date_of_issue: date
+ * - guide_id: bigint
+ * - system_stock: numeric(30,12)
+ * - real_stock: numeric(30,12)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `inventories` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `type` enum('1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `detail` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `item_id` int(10) unsigned NOT NULL,
-  `warehouse_id` int(10) unsigned NOT NULL,
-  `warehouse_destination_id` int(10) unsigned DEFAULT NULL,
-  `inventory_transaction_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `quantity` decimal(30,12) NOT NULL,
-  `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `inventories_transfer_id` int(10) unsigned DEFAULT NULL,
-  `comments` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `date_of_issue` date DEFAULT NULL,
-  `guide_id` int(10) unsigned DEFAULT NULL,
-  `system_stock` decimal(30,12) DEFAULT NULL,
-  `real_stock` decimal(30,12) DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `inventories_item_id_foreign` (`item_id`),
-  KEY `inventories_warehouse_id_foreign` (`warehouse_id`),
-  KEY `inventories_inventory_transaction_id_foreign` (`inventory_transaction_id`),
-  KEY `inventories_inventories_transfer_id_foreign` (`inventories_transfer_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('inventories', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('detail', 255)->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('item_id');
+            $table->bigInteger('warehouse_id');
+            $table->bigInteger('warehouse_destination_id')->nullable();
+            $table->string('inventory_transaction_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('quantity', 30, 12);
+            $table->string('lot_code', 255)->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('inventories_transfer_id')->nullable();
+            $table->string('comments', 255)->collation('pro9_ci_ai')->nullable();
+            $table->date('date_of_issue')->nullable();
+            $table->bigInteger('guide_id')->nullable();
+            $table->decimal('system_stock', 30, 12)->nullable();
+            $table->decimal('real_stock', 30, 12)->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['item_id'], 'inventories_item_id_foreign');
+            $table->index(['warehouse_id'], 'inventories_warehouse_id_foreign');
+            $table->index(['inventory_transaction_id'], 'inventories_inventory_transaction_id_foreign');
+            $table->index(['inventories_transfer_id'], 'inventories_inventories_transfer_id_foreign');
+        });
+        DB::statement('ALTER TABLE "inventories" ADD CONSTRAINT "inventories_type_check" CHECK ("type" IN (\'1\',\'2\',\'3\'))');
+        DB::statement('ALTER TABLE "inventories" ADD CONSTRAINT "inventories_warehouse_destination_id_range" CHECK ("warehouse_destination_id" >= 0)');
+        DB::statement('ALTER TABLE "inventories" ADD CONSTRAINT "inventories_guide_id_range" CHECK ("guide_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `inventories`');
+        Schema::dropIfExists('inventories');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

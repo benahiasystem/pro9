@@ -4,11 +4,14 @@ const parser=require('@babel/parser')
 const {parseComponent}=require('vue-template-compiler')
 const auditVueTemplate=require('./exact_vue_audit.cjs')
 const guardProof=require('./exact_guard_proof.cjs')
+const exactComparisonNodes=require('./exact_compare_proof.cjs')
 const coverage=require('./exact_source_coverage.cjs')
+const scopes=require('./exact_audit_scope.cjs')
 const {validReview,diagnostics,matchesProof}=require('./exact_audit_registry.cjs')
 const root=path.resolve(__dirname,'..'), matches=[], errors=[], seen=new Map()
 const registryFile=path.join(root,'config/exact_rounding_registry.json')
-const registry=fs.existsSync(registryFile)?JSON.parse(fs.readFileSync(registryFile,'utf8')):{}
+const scope=scopes.argument(process.argv)
+const registry=scopes.reviewsForScope(fs.existsSync(registryFile)?JSON.parse(fs.readFileSync(registryFile,'utf8')):{},scope)
 const evidenceCache=new Map()
 const business=/amount|price|quantity|subtotal|total|cost|stock|balance|igv|iva|igtf|discount|charge|retention|point|commission|profit|interest|payment|payable|fee|rate|precio|cantidad|importe|monto|saldo|costo|descuento|puntos|comision|merma/i
 let scanned=0
@@ -20,7 +23,8 @@ function finding(file,line,symbol,operation,expression,technical_proof=null) {
     const review=registry[id], valid=validReview(review,root,evidenceCache) && review.source.file===file && review.source.symbol===symbol && review.source.operation===operation && review.source.operation_language==='javascript' && matchesProof(review,technical_proof)
     matches.push({id,file,line,symbol,operation,expression,review:'consumer_or_boundary_review',technical_proof,status:valid?'justified':'pending',classification:valid?review:{category:'pending',justification:null,evidence:[]}})
 }
-function analyze(source,file,offset,context,expression=false) {
+function analyze(source,file,offset,context,expression=false,origin=null) {
+    let templateTextNodes = new Set(), undefinedNodes = new Set(), comparedSigns = new Set()
     function visit(node,frames=[]) {
         if(!node || typeof node!=='object')return
         let scope=frames
@@ -33,7 +37,7 @@ function analyze(source,file,offset,context,expression=false) {
         } else if(['BinaryExpression','AssignmentExpression','UpdateExpression'].includes(node.type) && !['in','instanceof','='].includes(node.operator))op='native_'+node.operator
         else if(node.type==='UnaryExpression' && ['+','-','~'].includes(node.operator))op='native_unary_'+node.operator
         else if(node.type==='ObjectProperty' && node.key?.name==='type' && node.value?.name==='Number')op='numeric_type'
-        if(op)finding(file,node.loc.start.line+offset,scope.join('::')||context,op,text,guardProof(node))
+        if(op)finding(file,node.loc.start.line+offset,scope.join('::')||context,op,text,guardProof(node,templateTextNodes,undefinedNodes) || (comparedSigns.has(node) ? 'exact_compare_result' : null))
         for(const [key,value]of Object.entries(node))if(!['loc','comments','tokens','errors','extra'].includes(key)) {
             if(Array.isArray(value))value.forEach(child=>visit(child,scope))
             else if(value && typeof value==='object')visit(value,scope)
@@ -41,7 +45,11 @@ function analyze(source,file,offset,context,expression=false) {
     }
     try {
         const options={sourceType:'unambiguous',allowReturnOutsideFunction:true,plugins:['typescript','jsx']}
-        visit(expression?parser.parseExpression(source,options):parser.parse(source,options))
+        const ast=expression?parser.parseExpression(source,options):parser.parse(source,options)
+        if (expression && origin === 'vue_text_interpolation') templateTextNodes=guardProof.vueTextConcatenations(ast)
+        undefinedNodes=guardProof.globalUndefinedIdentifiers(ast,context === '{template}')
+        if (!expression && source.includes('compare')) comparedSigns=exactComparisonNodes(ast,path.resolve(root,file),path.resolve(root,'resources/js/helpers/exchange-rate-math.js'))
+        visit(ast)
     } catch(error) {errors.push({file,line:(error.loc?.line||1)+offset,context,message:error.reasonCode||error.message,excerpt:source.split('\n')[(error.loc?.line||1)-1]?.trim().slice(0,170)})}
 }
 function cleanBlade(source) {
@@ -95,6 +103,8 @@ const coverage_missing=coverage.missingSources(expectedSources,scanned_files)
 matches.sort((a,b)=>a.file.localeCompare(b.file)||a.line-b.line||a.id.localeCompare(b.id))
 const registry_errors=diagnostics(matches,registry,'javascript')
 const pending=matches.filter(row=>row.status==='pending').length
-process.stdout.write(JSON.stringify({scanned_javascript_templates:scanned,javascript_review:matches,parse_errors:errors,registry_errors,coverage_missing,scanned_files,source_hashes,source_policy,pending},null,2)+'\n')
-if(errors.length || (process.argv.includes('--check') && (pending || registry_errors.length || coverage_missing.length)))process.exitCode=1
+const result={scanned_javascript_templates:scanned,javascript_review:matches,parse_errors:errors,registry_errors,coverage_missing,scanned_files,source_hashes,source_policy,pending}
+if(scope!==null)result.scope=scopes.summary(matches,registry_errors,scanned_files,scopes.policy(root,scope))
+process.stdout.write(JSON.stringify(result,null,2)+'\n')
+if(errors.length || (process.argv.includes('--check') && ((result.scope?.pending??pending) || (result.scope?.registry_errors??registry_errors).length || coverage_missing.length)))process.exitCode=1
 // ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

@@ -24,6 +24,6 @@
     </tbody>
 </table>
 @isset($classified['credit_pending'])
-<p>Crédito pendiente: Bs. {{ \App\Support\Exact\Decimal::format($classified['credit_pending']['VES']) }} · USD {{ \App\Support\Exact\Decimal::format($classified['credit_pending']['USD']) }}</p>
+<p>Crédito pendiente: Bs. {{ \App\Support\Exact\Decimal::format(\Modules\CashReport\Services\ClassifiedCashReport::pendingCredit($classified,'VES')) }} · USD {{ \App\Support\Exact\Decimal::format(\Modules\CashReport\Services\ClassifiedCashReport::pendingCredit($classified,'USD')) }}</p>
 @endisset
 {{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}

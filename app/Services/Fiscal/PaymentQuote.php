@@ -4,6 +4,7 @@ namespace App\Services\Fiscal;
 
 use App\Services\Payments\ReceiptChange;
 use App\Support\Exact\Decimal as D;
+use Brick\Math\BigRational;
 
 /** Read-only quote: saving must independently revalidate under its transaction locks. */
 final class PaymentQuote
@@ -16,7 +17,10 @@ final class PaymentQuote
             || !empty($row['source_technical_service_payment_id']);
     }
 
-    /** @param callable(string): array $issuerAt */
+    /**
+     * @param BigRational|float|int|string $payable Stored exact balance or decimal draft amount.
+     * @param callable(string): array $issuerAt
+     */
     public static function calculate(array $payments, string $currency, $documentRate, $payable, callable $issuerAt, bool $enabled, $rate, bool $later = false): array
     {
         $normalized = [];
@@ -50,10 +54,10 @@ final class PaymentQuote
             $normalized[] = array_merge($row, $values);
         }
 
-        $payable = D::of(D::input($payable, 'principal_due'));
+        if (!($payable instanceof BigRational)) {
+            $payable = D::of(D::input($payable, 'principal_due'));
+        }
         if ($payable->isNegative()) FiscalAmounts::error('principal_due', 'El saldo no puede ser negativo.');
-        $applied = D::sum(array_map(fn ($row) => D::readRequired($row, 'payment'), $normalized));
-        if ($later && $applied->isGreaterThan($payable)) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');
         if (!$later) $normalized = ReceiptChange::apply($normalized, $payable, $currency);
 
         $result = [];
@@ -67,6 +71,13 @@ final class PaymentQuote
                 !$reused && D::of($row['change'] ?? 0)->isPositive());
             $values = \App\Services\Payments\TenderedReceipt::withAllocation($values, $row['_tendered_input'] ?? null);
             if (isset($row['_settlement_payment'])) $values = ReceiptChange::withSettlement($values, $row['_settlement_payment']);
+            if ($later) {
+                $remaining = $payable->minus($applied);
+                $values = ReceiptChange::settleClosingBalance($values, $remaining);
+                if (D::readRequired($values, 'payment')->isGreaterThan($remaining)) {
+                    FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');
+                }
+            }
             $row = array_merge($row, $values);
             $applied = $applied->plus(D::readRequired($values, 'payment'));
             $tax = D::readRequired($row, 'tax_amount');

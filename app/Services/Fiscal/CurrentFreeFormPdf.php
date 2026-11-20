@@ -12,9 +12,14 @@ final class CurrentFreeFormPdf
     {
         if ($document->fiscal_emission_mode!=='free_form' || !in_array($document->document_type_id,['01','07','08'],true)) return null;
         // Paper invoice paths read collections and balances from one cut.
-        if (in_array($format, ['a4', 'a5'], true) && $document->document_type_id === '01' && $document->getConnection()->transactionLevel() === 0) {
-            return \App\Support\Exact\ReadSnapshot::run($document->getConnection(), fn () => self::bytesIfRegistered($document, $format));
+        if (in_array($format, ['a4', 'a5'], true) && $document->document_type_id === '01') {
+            return \App\Support\Exact\ReadSnapshot::run($document->getConnection(), fn () => self::renderRegistered($document, $format));
         }
+        return self::renderRegistered($document, $format);
+    }
+
+    private static function renderRegistered(Document $document, string $format): ?string
+    {
         // A caller may still hold a model loaded before the control was recorded.
         $document=$document->fresh() ?? $document;
         $registration=$document->emission->response['free_form_control'] ?? null;

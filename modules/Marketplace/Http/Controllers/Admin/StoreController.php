@@ -31,7 +31,7 @@ class StoreController extends Controller
         }
 
         $stores = $query->withCount('contactRequests')
-            ->orderByRaw("FIELD(status, 'pending', 'approved', 'rejected', 'disabled')")
+            ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'approved' THEN 2 WHEN 'rejected' THEN 3 WHEN 'disabled' THEN 4 ELSE 0 END")
             ->orderBy('name')
             ->paginate(20);
 
@@ -78,7 +78,7 @@ class StoreController extends Controller
         $total = (clone $query)->count();
 
         $items = $query
-            ->orderByRaw("FIELD(status, 'blocked', 'active', 'inactive')")
+            ->orderByRaw("CASE status WHEN 'blocked' THEN 1 WHEN 'active' THEN 2 WHEN 'inactive' THEN 3 ELSE 0 END")
             ->orderByDesc('reports_count')
             ->orderBy('name')
             ->limit($limit)

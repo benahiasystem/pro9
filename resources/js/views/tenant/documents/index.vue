@@ -222,7 +222,7 @@
                             {{ formatDateLong(row.date_of_issue) }}
                         </td>
                         <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
-                        <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.balance > 0 && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
+                        <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': hasOpenBalance(row) && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
                         <td v-if="col.visible && col.key === 'customer'" :key="col.key">
                             <feSpecularLighting
                                 role="button"
@@ -316,7 +316,7 @@
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
                         <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total) }} <template v-if="columns.total_igv && columns.total_igv.visible"><br> <small class="text-muted">IVA {{ row.currency_type_symbol }} {{ formatDecimal(row.total_igv) }}</small></template></td>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
-                        <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': row.balance > 0, 'text-success': row.balance == 0 }">{{ row.currency_type_symbol }} {{ formatDecimal(row.balance) }}</td>
+                        <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': hasOpenBalance(row), 'text-success': !hasOpenBalance(row) && row.balance == 0 }">{{ row.currency_type_symbol }} {{ formatDecimal(row.balance) }}</td>
                         <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key">{{ row.purchase_order }}</td>
                         <td v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end" @click.stop>
                         <el-dropdown trigger="click" size="small">
@@ -1105,6 +1105,9 @@ export default {
         openOptionsFromDrawer(recordId) {
             this.showDetailDrawer = false;
             this.clickOptions(recordId);
+        },
+        hasOpenBalance(row) {
+            return row.has_open_balance ?? (exactAmount(row.balance ?? '0').compare(0) > 0);
         },
         isDateWarning(date_due) {
             if (!date_due) return false;

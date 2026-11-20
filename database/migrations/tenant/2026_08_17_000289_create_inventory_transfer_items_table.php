@@ -1,42 +1,39 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `inventory_transfer_items` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `inventory_transfer_id` int(10) unsigned NOT NULL
- * - `item_lots_group_id` int(10) unsigned DEFAULT NULL
- * - `item_lot_id` int(10) unsigned DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - inventory_transfer_id: bigint
+ * - item_lots_group_id: bigint
+ * - item_lot_id: bigint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `inventory_transfer_items` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `inventory_transfer_id` int(10) unsigned NOT NULL,
-  `item_lots_group_id` int(10) unsigned DEFAULT NULL,
-  `item_lot_id` int(10) unsigned DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `inventory_transfer_items_inventory_transfer_id_foreign` (`inventory_transfer_id`),
-  KEY `inventory_transfer_items_item_lots_group_id_foreign` (`item_lots_group_id`),
-  KEY `inventory_transfer_items_item_lot_id_foreign` (`item_lot_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('inventory_transfer_items', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('inventory_transfer_id');
+            $table->bigInteger('item_lots_group_id')->nullable();
+            $table->bigInteger('item_lot_id')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->index(['inventory_transfer_id'], 'inventory_transfer_items_inventory_transfer_id_foreign');
+            $table->index(['item_lots_group_id'], 'inventory_transfer_items_item_lots_group_id_foreign');
+            $table->index(['item_lot_id'], 'inventory_transfer_items_item_lot_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `inventory_transfer_items`');
+        Schema::dropIfExists('inventory_transfer_items');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

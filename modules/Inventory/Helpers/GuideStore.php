@@ -13,6 +13,7 @@ use Modules\Inventory\Models\Warehouse;
 use Modules\Store\Helpers\DocumentData;
 use Modules\Template\Formats\InternalFormat;
 use Exception;
+use App\Support\Exact\Decimal;
 
 
 class GuideStore
@@ -57,7 +58,7 @@ class GuideStore
 //                $row['unit_cost'] = $item->unit_cost;
 //            }
 
-            $row['quantity'] = floatval($row['stock_add']);
+            $row['quantity'] = Decimal::inputRational($row['stock_add'], 'items.quantity');
             $row['unit_cost'] = 0; //floatval($row['unit_cost']);
             $row['total'] = 0; //$row['quantity'] * $row['unit_cost'];
             $row['item_id'] = $row['id'];

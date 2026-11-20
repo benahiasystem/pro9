@@ -209,6 +209,7 @@
 
 <script>
 import {whatsappNumber} from "@helpers/phone";
+import {exactAmount} from "@helpers/exchange-rate-math";
     export default {
         props: [
             'documentPaymentId',
@@ -275,12 +276,10 @@ import {whatsappNumber} from "@helpers/phone";
                     })
 
             },
-            getPayment(){
-
-                if(this.currencyTypeId === 'VES') return this.payment
-
-                return _.round(this.payment * this.exchangeRateSale, 2)
-
+            getPayment() {
+                if (this.currencyTypeId === 'VES') return this.payment ?? ''
+                if (this.currencyTypeId !== 'USD' || this.payment == null || this.exchangeRateSale == null) return ''
+                return exactAmount(this.payment).times(this.exchangeRateSale).decimal(2)
             },
             onSuccess(response, file, fileList) {
 

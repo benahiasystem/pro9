@@ -12,6 +12,8 @@
 
 <script>
 import { formatCompact, formatValue, themeColors, themePalette } from '../registry'
+import { readOriginal, readVector, sumOriginal, ratioOriginal, relativeWidth, chartCoordinate, formatAxisTick } from '../../../../../../../resources/js/helpers/dashboard-originals'
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
 
 /**
  * Renderer genérico ApexCharts: line, area, bar, barh, pie, donut, radial.
@@ -86,28 +88,37 @@ export default {
         return label ? name + ' (' + label + '): ' : name + ': '
       }
     },
+    breakdownOriginals() {
+      return readVector(this.dataset.breakdown, 'values_fractions')
+    },
     breakdownTotal() {
-      return (this.dataset.breakdown.values || []).reduce((a, b) => a + (Number(b) || 0), 0)
+      return sumOriginal(this.breakdownOriginals)
+    },
+    circularTotal() {
+      return readOriginal(this.dataset.totals, 'current') || this.breakdownTotal
+    },
+    radialPercent() {
+      const first = this.breakdownOriginals[0]
+      return this.unit === 'percent' ? first : ratioOriginal(first, this.breakdownTotal)
     },
     chartSeries() {
       const d = this.dataset
-
       if (this.type === 'pie' || this.type === 'donut') {
-        return (d.breakdown.values || []).map(v => Number(v) || 0)
+        return this.breakdownOriginals.some(value => value === null) ? [] : this.breakdownOriginals.map(chartCoordinate)
       }
-
-      if (this.type === 'radial') {
-        const first = Number((d.breakdown.values || [])[0]) || 0
-        if (this.unit === 'percent') return [Math.min(100, Math.round(first))]
-        const total = this.breakdownTotal
-        return [total > 0 ? Math.min(100, Math.round((first / total) * 100)) : 0]
+      if (this.type === 'radial') return [relativeWidth(this.radialPercent, '100')]
+      if (this.type === 'barh') return [{name: '', data: this.breakdownOriginals.map(chartCoordinate)}]
+      return (d.series || []).map(serie => ({name: serie.name, data: readVector(serie, 'data_fractions').map(chartCoordinate)}))
+    },
+    valueTooltip() {
+      return (_coordinate, options) => {
+        if (this.type === 'radial') return formatValue(this.radialPercent, 'percent')
+        if (!options) return '—'
+        const value = (this.type === 'pie' || this.type === 'donut') ? this.breakdownOriginals[options.seriesIndex]
+          : this.type === 'barh' ? this.breakdownOriginals[options.dataPointIndex]
+          : readVector((this.dataset.series || [])[options.seriesIndex], 'data_fractions')[options.dataPointIndex]
+        return formatValue(value, this.unit)
       }
-
-      if (this.type === 'barh') {
-        return [{ name: '', data: (d.breakdown.values || []).map(v => Number(v) || 0) }]
-      }
-
-      return (d.series || []).map(s => ({ name: s.name, data: s.data }))
     },
     chartOptions() {
       const d = this.dataset
@@ -125,7 +136,7 @@ export default {
           intersect: !this.sharedTooltip,
           x: { formatter: this.tooltipXFormatter },
           y: {
-            formatter: v => formatValue(v, this.unit),
+            formatter: this.valueTooltip,
             title: { formatter: this.seriesTitleFormatter },
           },
         },
@@ -141,7 +152,7 @@ export default {
           legend,
           markers: { size: 0, hover: { size: 5 } },
           xaxis: { categories: d.labels, tickAmount: 8, labels: { style: axisStyle }, axisBorder: { show: false }, axisTicks: { show: false } },
-          yaxis: { labels: { formatter: v => formatCompact(v, this.unit), style: axisStyle } },
+          yaxis: { labels: { formatter: v => formatAxisTick(v, this.unit), style: axisStyle } },
         })
       }
 
@@ -154,7 +165,7 @@ export default {
           plotOptions: { bar: { borderRadius: 4, columnWidth: '52%' } },
           legend,
           xaxis: { categories: d.labels, tickAmount: 10, labels: { style: axisStyle }, axisBorder: { show: false }, axisTicks: { show: false } },
-          yaxis: { labels: { formatter: v => formatCompact(v, this.unit), style: axisStyle } },
+          yaxis: { labels: { formatter: v => formatAxisTick(v, this.unit), style: axisStyle } },
         })
       }
 
@@ -163,7 +174,7 @@ export default {
           colors: this.palette,
           plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '55%', distributed: true } },
           legend: { show: false },
-          xaxis: { categories: d.breakdown.labels, labels: { formatter: v => formatCompact(v, this.unit), style: axisStyle } },
+          xaxis: { categories: d.breakdown.labels, labels: { formatter: v => formatAxisTick(v, this.unit), style: axisStyle } },
           yaxis: { labels: { style: axisStyle, maxWidth: 140 } },
         })
       }
@@ -184,13 +195,14 @@ export default {
                 labels: {
                   show: true,
                   name: { fontSize: '11px', color: theme.muted },
-                  value: { fontSize: '17px', fontWeight: 700, formatter: v => formatCompact(+v, this.unit) },
+                  value: { fontSize: '17px', fontWeight: 700, formatter: () => formatCompact(this.circularTotal, this.unit) },
                   total: {
                     show: true,
+                    showAlways: true,
                     label: 'Total',
                     fontSize: '11px',
                     color: theme.muted,
-                    formatter: () => formatCompact(this.dataset.totals.current !== null ? this.dataset.totals.current : this.breakdownTotal, this.unit),
+                    formatter: () => formatCompact(this.circularTotal, this.unit),
                   },
                 },
               },
@@ -211,7 +223,7 @@ export default {
             track: { background: theme.grid },
             dataLabels: {
               name: { fontSize: '12px', color: theme.muted },
-              value: { fontSize: '22px', fontWeight: 600, formatter: v => Math.round(v) + '%' },
+              value: { fontSize: '22px', fontWeight: 600, formatter: () => formatValue(this.radialPercent, 'percent') },
             },
           },
         },
@@ -219,6 +231,7 @@ export default {
     },
   },
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

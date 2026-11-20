@@ -10,6 +10,7 @@ class HkaIvaRetentionPayloadTest extends TestCase
 {
     public function test_mixed_iva_rates_keep_the_full_taxable_base_and_reject_an_ambiguous_partial_base(): void
     {
+        config(['database.connections.tenant'=>['driver'=>'sqlite','database'=>':memory:','prefix'=>'']]);\Illuminate\Support\Facades\DB::purge('tenant');
         $document=new Document;
         $document->setRawAttributes(['total_taxed'=>200,'total_igv'=>24,'currency_type_id'=>'VES','exchange_rate_sale'=>'10.00000000']);
         $reduced=new \App\Models\Tenant\DocumentTax;$reduced->setRawAttributes(['tax_kind'=>'IVA','percentage'=>8,'base'=>100,'amount'=>8]);

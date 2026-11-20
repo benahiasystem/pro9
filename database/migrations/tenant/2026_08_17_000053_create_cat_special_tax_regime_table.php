@@ -1,33 +1,32 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial del catálogo HKA `cat_special_tax_regime` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` tinyint unsigned NOT NULL, clave primaria local
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `active` tinyint(1) NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: smallint
+ * - description: varchar(255)
+ * - active: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_special_tax_regime` (
-  `id` tinyint unsigned NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `active` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_special_tax_regime', function (Blueprint $table) {
+            $table->smallInteger('id');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->boolean('active');
+            $table->primary(['id']);
+        });
+        DB::statement('ALTER TABLE "cat_special_tax_regime" ADD CONSTRAINT "cat_special_tax_regime_id_range" CHECK ("id" BETWEEN 0 AND 255)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_special_tax_regime`');
+        Schema::dropIfExists('cat_special_tax_regime');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -1,119 +1,117 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `configuration_ecommerce` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `information_contact_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `information_contact_email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `information_contact_phone` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `information_contact_address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `phone_whatsapp` text COLLATE utf8mb4_unicode_ci
- * - `script_paypal` text COLLATE utf8mb4_unicode_ci
- * - `logo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `link_youtube` text COLLATE utf8mb4_unicode_ci
- * - `link_twitter` text COLLATE utf8mb4_unicode_ci
- * - `link_tiktok` text COLLATE utf8mb4_unicode_ci
- * - `link_instagram` text COLLATE utf8mb4_unicode_ci
- * - `color_ecommerce` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `link_facebook` text COLLATE utf8mb4_unicode_ci
- * - `tag_support` text COLLATE utf8mb4_unicode_ci
- * - `tag_dollar` text COLLATE utf8mb4_unicode_ci
- * - `tag_shipping` text COLLATE utf8mb4_unicode_ci
- * - `token_public_culqui` text COLLATE utf8mb4_unicode_ci
- * - `token_private_culqui` text COLLATE utf8mb4_unicode_ci
- * - `title_one_customised_link` text COLLATE utf8mb4_unicode_ci
- * - `title_two_customised_link` text COLLATE utf8mb4_unicode_ci
- * - `title_three_customised_link` text COLLATE utf8mb4_unicode_ci
- * - `customised_link_one` text COLLATE utf8mb4_unicode_ci
- * - `customised_link_two` text COLLATE utf8mb4_unicode_ci
- * - `customised_link_three` text COLLATE utf8mb4_unicode_ci
- * - `preferences` json DEFAULT NULL
- * - `publicidad_activa` tinyint(1) NOT NULL DEFAULT '0'
- * - `publicidad_texto` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `publicidad_color_fondo` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '#000000'
- * - `publicidad_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `terms_conditions` longtext COLLATE utf8mb4_unicode_ci
- * - `privacy_policy` longtext COLLATE utf8mb4_unicode_ci
- * - `about_us` longtext COLLATE utf8mb4_unicode_ci
- * - `delivery_no_coverage_message` text COLLATE utf8mb4_unicode_ci
- * - `enable_electronic_documents` tinyint(1) NOT NULL DEFAULT '0'
- * - `enable_store_pickup` tinyint(1) NOT NULL DEFAULT '0'
- * - `quotation_enabled` tinyint(1) NOT NULL DEFAULT '0'
- * - `quotation_mode` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'quote_and_sell'
- * - `quotation_show_prices` tinyint(1) NOT NULL DEFAULT '1'
- * - `quotation_success_message` text COLLATE utf8mb4_unicode_ci
- * - `quotation_validity_days` tinyint(3) unsigned NOT NULL DEFAULT '7'
- * - `quotation_terms` text COLLATE utf8mb4_unicode_ci
- * - `enable_yape` tinyint(1) NOT NULL DEFAULT '0'
- * - `enable_transfer` tinyint(1) NOT NULL DEFAULT '0'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - information_contact_name: varchar(255)
+ * - information_contact_email: varchar(255)
+ * - information_contact_phone: varchar(255)
+ * - information_contact_address: varchar(255)
+ * - phone_whatsapp: text
+ * - script_paypal: text
+ * - logo: varchar(255)
+ * - link_youtube: text
+ * - link_twitter: text
+ * - link_tiktok: text
+ * - link_instagram: text
+ * - color_ecommerce: varchar(255)
+ * - link_facebook: text
+ * - tag_support: text
+ * - tag_dollar: text
+ * - tag_shipping: text
+ * - token_public_culqui: text
+ * - token_private_culqui: text
+ * - title_one_customised_link: text
+ * - title_two_customised_link: text
+ * - title_three_customised_link: text
+ * - customised_link_one: text
+ * - customised_link_two: text
+ * - customised_link_three: text
+ * - preferences: json
+ * - publicidad_activa: boolean
+ * - publicidad_texto: varchar(255)
+ * - publicidad_color_fondo: varchar(255)
+ * - publicidad_link: varchar(255)
+ * - terms_conditions: text
+ * - privacy_policy: text
+ * - about_us: text
+ * - delivery_no_coverage_message: text
+ * - enable_electronic_documents: boolean
+ * - enable_store_pickup: boolean
+ * - quotation_enabled: boolean
+ * - quotation_mode: varchar(30)
+ * - quotation_show_prices: boolean
+ * - quotation_success_message: text
+ * - quotation_validity_days: smallint
+ * - quotation_terms: text
+ * - enable_yape: boolean
+ * - enable_transfer: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `configuration_ecommerce` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `information_contact_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `information_contact_email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `information_contact_phone` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `information_contact_address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `phone_whatsapp` text COLLATE utf8mb4_unicode_ci,
-  `script_paypal` text COLLATE utf8mb4_unicode_ci,
-  `logo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `link_youtube` text COLLATE utf8mb4_unicode_ci,
-  `link_twitter` text COLLATE utf8mb4_unicode_ci,
-  `link_tiktok` text COLLATE utf8mb4_unicode_ci,
-  `link_instagram` text COLLATE utf8mb4_unicode_ci,
-  `color_ecommerce` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `link_facebook` text COLLATE utf8mb4_unicode_ci,
-  `tag_support` text COLLATE utf8mb4_unicode_ci,
-  `tag_dollar` text COLLATE utf8mb4_unicode_ci,
-  `tag_shipping` text COLLATE utf8mb4_unicode_ci,
-  `token_public_culqui` text COLLATE utf8mb4_unicode_ci,
-  `token_private_culqui` text COLLATE utf8mb4_unicode_ci,
-  `title_one_customised_link` text COLLATE utf8mb4_unicode_ci,
-  `title_two_customised_link` text COLLATE utf8mb4_unicode_ci,
-  `title_three_customised_link` text COLLATE utf8mb4_unicode_ci,
-  `customised_link_one` text COLLATE utf8mb4_unicode_ci,
-  `customised_link_two` text COLLATE utf8mb4_unicode_ci,
-  `customised_link_three` text COLLATE utf8mb4_unicode_ci,
-  `preferences` json DEFAULT NULL,
-  `publicidad_activa` tinyint(1) NOT NULL DEFAULT '0',
-  `publicidad_texto` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `publicidad_color_fondo` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '#000000',
-  `publicidad_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `terms_conditions` longtext COLLATE utf8mb4_unicode_ci,
-  `privacy_policy` longtext COLLATE utf8mb4_unicode_ci,
-  `about_us` longtext COLLATE utf8mb4_unicode_ci,
-  `delivery_no_coverage_message` text COLLATE utf8mb4_unicode_ci,
-  `enable_electronic_documents` tinyint(1) NOT NULL DEFAULT '0',
-  `enable_store_pickup` tinyint(1) NOT NULL DEFAULT '0',
-  `quotation_enabled` tinyint(1) NOT NULL DEFAULT '0',
-  `quotation_mode` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'quote_and_sell',
-  `quotation_show_prices` tinyint(1) NOT NULL DEFAULT '1',
-  `quotation_success_message` text COLLATE utf8mb4_unicode_ci,
-  `quotation_validity_days` tinyint(3) unsigned NOT NULL DEFAULT '7',
-  `quotation_terms` text COLLATE utf8mb4_unicode_ci,
-  `enable_yape` tinyint(1) NOT NULL DEFAULT '0',
-  `enable_transfer` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('configuration_ecommerce', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('information_contact_name', 255)->collation('pro9_ci_ai');
+            $table->string('information_contact_email', 255)->collation('pro9_ci_ai');
+            $table->string('information_contact_phone', 255)->collation('pro9_ci_ai');
+            $table->string('information_contact_address', 255)->collation('pro9_ci_ai')->nullable();
+            $table->text('phone_whatsapp')->collation('pro9_ci_ai')->nullable();
+            $table->text('script_paypal')->collation('pro9_ci_ai')->nullable();
+            $table->string('logo', 255)->collation('pro9_ci_ai')->nullable();
+            $table->text('link_youtube')->collation('pro9_ci_ai')->nullable();
+            $table->text('link_twitter')->collation('pro9_ci_ai')->nullable();
+            $table->text('link_tiktok')->collation('pro9_ci_ai')->nullable();
+            $table->text('link_instagram')->collation('pro9_ci_ai')->nullable();
+            $table->string('color_ecommerce', 255)->collation('pro9_ci_ai')->nullable();
+            $table->text('link_facebook')->collation('pro9_ci_ai')->nullable();
+            $table->text('tag_support')->collation('pro9_ci_ai')->nullable();
+            $table->text('tag_dollar')->collation('pro9_ci_ai')->nullable();
+            $table->text('tag_shipping')->collation('pro9_ci_ai')->nullable();
+            $table->text('token_public_culqui')->collation('C')->nullable();
+            $table->text('token_private_culqui')->collation('C')->nullable();
+            $table->text('title_one_customised_link')->collation('pro9_ci_ai')->nullable();
+            $table->text('title_two_customised_link')->collation('pro9_ci_ai')->nullable();
+            $table->text('title_three_customised_link')->collation('pro9_ci_ai')->nullable();
+            $table->text('customised_link_one')->collation('pro9_ci_ai')->nullable();
+            $table->text('customised_link_two')->collation('pro9_ci_ai')->nullable();
+            $table->text('customised_link_three')->collation('pro9_ci_ai')->nullable();
+            $table->json('preferences')->nullable();
+            $table->boolean('publicidad_activa')->default(false);
+            $table->string('publicidad_texto', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('publicidad_color_fondo', 255)->collation('pro9_ci_ai')->default('#000000');
+            $table->string('publicidad_link', 255)->collation('pro9_ci_ai')->nullable();
+            $table->text('terms_conditions')->collation('pro9_ci_ai')->nullable();
+            $table->text('privacy_policy')->collation('pro9_ci_ai')->nullable();
+            $table->text('about_us')->collation('pro9_ci_ai')->nullable();
+            $table->text('delivery_no_coverage_message')->collation('pro9_ci_ai')->nullable();
+            $table->boolean('enable_electronic_documents')->default(false);
+            $table->boolean('enable_store_pickup')->default(false);
+            $table->boolean('quotation_enabled')->default(false);
+            $table->string('quotation_mode', 30)->collation('pro9_ci_ai')->default('quote_and_sell');
+            $table->boolean('quotation_show_prices')->default(true);
+            $table->text('quotation_success_message')->collation('pro9_ci_ai')->nullable();
+            $table->smallInteger('quotation_validity_days')->default('7');
+            $table->text('quotation_terms')->collation('pro9_ci_ai')->nullable();
+            $table->boolean('enable_yape')->default(false);
+            $table->boolean('enable_transfer')->default(false);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "configuration_ecommerce" ADD CONSTRAINT "configuration_ecommerce_quotation_validity_days_range" CHECK ("quotation_validity_days" BETWEEN 0 AND 255)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `configuration_ecommerce`');
+        Schema::dropIfExists('configuration_ecommerce');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

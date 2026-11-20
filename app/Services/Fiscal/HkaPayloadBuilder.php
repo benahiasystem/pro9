@@ -38,7 +38,7 @@ final class HkaPayloadBuilder
         $thirdParty = ($fiscal['transaction_type_id'] ?? '01') === '99' || ($ordinaryNote && !empty($fiscal['third_party']));
         $operation = $d['invoice']['operation_type_id'] ?? '0101';
         $exportation = \App\Services\ExportInvoicePolicy::isExport($operation);
-        if ((!$exportation && ($operation !== '0101' || ($d['total_exportation'] ?? 0) > 0)) || (!$thirdParty && !empty($fiscal['third_party'])) || !empty($fiscal['conditional_data'])) {
+        if ((!$exportation && ($operation !== '0101' || D::read($d, 'total_exportation')->isPositive())) || (!$thirdParty && !empty($fiscal['third_party'])) || !empty($fiscal['conditional_data'])) {
             FiscalAmounts::error('fiscal_data','La operación, régimen o condición fiscal seleccionada no está habilitada.');
         }
         if ($thirdParty && !$ordinaryNote) {
@@ -94,7 +94,7 @@ final class HkaPayloadBuilder
             $reference=$d['reference'] ?? [];
             foreach (['number','date_of_issue','total','control_number'] as $key) if (!isset($reference[$key]) || $reference[$key]==='') FiscalAmounts::error('reference.'.$key,'La nota requiere la referencia fiscal completa de la factura.');
             $id += ['serieFacturaAfectada'=>$reference['series'] ?? '', 'numeroFacturaAfectada'=>(string)$reference['number'],
-                'fechaFacturaAfectada'=>self::date($reference['date_of_issue']), 'montoFacturaAfectada'=>self::money($reference['total']),
+                'fechaFacturaAfectada'=>self::date($reference['date_of_issue']), 'montoFacturaAfectada'=>self::money(D::read($reference, 'total')),
                 'comentarioFacturaAfectada'=>$d['note']['note_description'] ?? ''];
         }
         $lines=[];
@@ -102,18 +102,26 @@ final class HkaPayloadBuilder
             if ($exportation && (($line['affectation_igv_type_id'] ?? null) !== 'EXP' || ($line['item']['unit_type_id'] ?? '') === 'SERV' || !D::read($line,'total_igv')->isZero() || !D::read($line,'percentage_igv')->isZero() || ($line['iva_rate']['code'] ?? '') !== 'E')) FiscalAmounts::error('items', 'La exportación exige bienes con afectación Exportación y IVA 0 %.');
             $unit=$line['item']['hka_unit_code'] ?? null;
             if (!$unit) FiscalAmounts::error('items','Falta equivalencia HKA de unidad de medida.');
+            if (!isset($line['unit_value'])) FiscalAmounts::error('items','Falta el precio unitario del snapshot fiscal.');
             $code=$line['iva_rate']['code'] ?? null;
             if (!in_array($code,['G','R','A','E'],true)) FiscalAmounts::error('items','Falta clasificación de alícuota HKA.');
+            $quantity = D::read($line, 'quantity');
+            $hkaQuantity = D::represent($quantity, 4);
+            if ($quantity->isPositive() && $hkaQuantity === '0') {
+                FiscalAmounts::error('items', 'La cantidad de la partida no puede representarse con cuatro decimales en HKA.');
+            }
+            $discount = D::read($line, 'total_discount');
+            $charge = D::read($line, 'total_charge');
             $lines[]=['numeroLinea'=>(string)($i+1), 'indicadorBienoServicio'=>($line['item']['unit_type_id'] ?? '')==='SERV' ? '2':'1',
                 'descripcion'=>$line['item']['description'], 'codigoPLU'=>$line['item']['internal_id'] ?? '',
-                'cantidad'=>D::represent(D::read($line,'quantity'), 4), 'unidadMedida'=>$unit, 'precioUnitario'=>D::represent($line['unit_value'], 4, true),
-                'descuentoMonto'=>self::money($line['total_discount'] ?? 0), 'recargoMonto'=>self::money($line['total_charge'] ?? 0),
+                'cantidad'=>$hkaQuantity, 'unidadMedida'=>$unit, 'precioUnitario'=>D::represent(D::read($line,'unit_value'), 4, true),
+                'descuentoMonto'=>self::money($discount), 'recargoMonto'=>self::money($charge),
                 'precioItem'=>self::money(D::read($line,'total_value')), 'codigoImpuesto'=>$code,
                 'tasaIVA'=>self::money(D::read($line,'percentage_igv')), 'valorIVA'=>self::money(D::read($line,'total_igv')),
                 'valorTotalItem'=>self::money(D::read($line,'total'))];
-            if (($exportation || $thirdParty) && (($line['total_discount'] ?? 0) > 0 || ($line['total_charge'] ?? 0) > 0)) {
+            if (($exportation || $thirdParty) && ($discount->isPositive() || $charge->isPositive())) {
                 $lines[$i]['precioAntesDescuento'] = \App\Services\ExchangeRates\ExchangeRateMath::finalAmount(
-                    D::read($line,'unit_value')->multipliedBy(D::read($line,'quantity'))
+                    D::read($line,'unit_value')->multipliedBy($quantity)
                 );
             }
         }
@@ -132,16 +140,16 @@ final class HkaPayloadBuilder
             $method=$p['payment_method_snapshot']['hka_code'] ?? null;
             if (!$method) FiscalAmounts::error('payments','Falta equivalencia HKA de medio de pago.');
             $paymentTax=D::readRequired($p,'tax_amount');
-            if ($ordinaryNote && $d['document_type_id'] === '08' && !array_filter($d['taxes'],fn ($t)=>$t['tax_kind'] === 'IGTF' && ($t['document_payment_id'] ?? null) === ($p['id'] ?? null))) $paymentTax=D::of(0);
+            if ($ordinaryNote && $d['document_type_id'] === '08' && !array_filter($d['taxes'],fn ($t)=>HkaNotePayments::isReceiptTax($t, $p))) $paymentTax=D::of(0);
             $forms[]=['forma'=>$method,'moneda'=>$p['currency_type_id'],'monto'=>self::money(D::readRequired($p,'original_amount')->plus($paymentTax)),
                 'fecha'=>self::date($p['date_of_payment']),'tipoCambio'=>(string)$p['exchange_rate']];
         }
         $forms=HkaNotePayments::append($d,$forms);
         $totals=['nroItems'=>(string)count($lines),'montoGravadoTotal'=>self::money(D::read($d,'total_taxed')),
-            'montoExentoTotal'=>self::money($exportation ? $d['total_exportation'] : $d['total_exonerated']),
+            'montoExentoTotal'=>self::money(D::read($d, $exportation ? 'total_exportation' : 'total_exonerated')),
             'subtotal'=>self::money(D::read($d,'total_value')),
             'totalIVA'=>self::money(D::read($d,'total_igv')),'montoTotalConIVA'=>self::money(D::read($d,'total')->minus($igtf)),
-            'totalAPagar'=>self::money(D::read($d,'total')),'totalDescuento'=>self::money($exportation ? 0 : $d['total_discount']),
+            'totalAPagar'=>self::money(D::read($d,'total')),'totalDescuento'=>self::money($exportation ? 0 : D::read($d, 'total_discount')),
             'totalRecargos'=>self::money($exportation ? 0 : D::read($d,'total_charge')),'totalIGTF'=>self::money($igtf),'totalIGTF_VES'=>self::money($igtfVes),
             'impuestosSubtotal'=>$taxes,'formasPago'=>$forms];
         $header=['identificacionDocumento'=>$id,'comprador'=>['tipoIdentificacion'=>$identity,'numeroIdentificacion'=>$number,
@@ -186,7 +194,11 @@ final class HkaPayloadBuilder
                 $payload['documentoElectronico']['infoAdicional'][] = ['campo'=>'Condición fiscal '.$label,'valor'=>'Sujeto Pasivo Especial'];
             }
         }
-        if ($ordinaryNote || $thirdParty || $specialRegime || (!$exportation && ($d['document_type_id'] === '01' || $transaction === '98') && ($d['currency_type_id'] === 'USD' || $igtf->isGreaterThan(0)))) $payload = HkaDomesticMoney::adapt($payload, $d);
+        if ($ordinaryNote || $thirdParty || $specialRegime || (!$exportation && ($d['document_type_id'] === '01' || $transaction === '98') && ($d['currency_type_id'] === 'USD' || $igtf->isGreaterThan(0)))) {
+            $payload = HkaDomesticMoney::adapt($payload, $d);
+        } elseif (!$exportation && $d['document_type_id'] === '01') {
+            $payload = HkaDomesticMoney::reconcileOrdinaryVesInvoice($payload, $d);
+        }
         $payload=HkaNotePayments::reconcile($payload,$d);
         $payload=HkaCreditInvoice::append($payload,$d);
         (new HkaSchemaValidator())->validate($payload);

@@ -2,6 +2,7 @@
 
 namespace Modules\Hotel\Http\Controllers;
 
+use App\Database\IntegerTransport;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
@@ -47,7 +48,15 @@ class HotelRentController extends Controller
 	{
 		DB::connection('tenant')->beginTransaction();
 		try {
-			[$operationKey, $operationHash] = \App\Services\Payments\HotelOperation::identify($request, 'rent', (int)$roomId);
+			$roomId = IntegerTransport::positiveKey($roomId);
+			if ($roomId === null) \App\Services\Payments\Classification::error('room_id', 'Seleccione una habitación válida.');
+			$customerId = IntegerTransport::positiveKey($request->input('customer_id'));
+			if ($customerId === null) \App\Services\Payments\Classification::error('customer_id', 'Seleccione un cliente válido.');
+			$rateInput = $request->input('hotel_rate_id');
+			$rateId = IntegerTransport::positiveKey($rateInput);
+			if ($rateInput !== null && $rateId === null) \App\Services\Payments\Classification::error('hotel_rate_id', 'Seleccione una tarifa válida.');
+
+			[$operationKey, $operationHash] = \App\Services\Payments\HotelOperation::identify($request, 'rent', $roomId);
 			$room = HotelRoom::query()->lockForUpdate()->findOrFail($roomId);
 			$this->authorizeHotelEstablishment($room->establishment_id);
 			$previous = \App\Services\Payments\HotelOperation::existing($operationKey, $operationHash);
@@ -58,10 +67,11 @@ class HotelRentController extends Controller
 			if ($room->status !== 'DISPONIBLE') {
 				\App\Services\Payments\Classification::error('room', 'La habitación seleccionada no está disponible.');
 			}
-			$this->createSaleNoteWithinTransaction($request, (int)$request->customer_id, (int)$room->establishment_id,
+			$this->createSaleNoteWithinTransaction($request, $customerId, (int)$room->establishment_id,
 				$request->payment_status === 'PAID' ? [$request->product] : []);
 
-			$request->merge(['hotel_room_id' => $roomId]);
+			$request->merge(['hotel_room_id' => $roomId, 'customer_id' => $customerId]);
+			if ($rateId !== null) $request->merge(['hotel_rate_id' => $rateId]);
 			$request->merge(['establishment_id' => $room->establishment_id]);
 			$now = now();
 			$request->merge(['input_date' => $now->format('Y-m-d')]);
@@ -120,8 +130,13 @@ class HotelRentController extends Controller
     {
         $data = $request->input('sale_note');
         $existingId = $request->input('sale_note_id');
-        if ($data === null && !$existingId) return;
-        if (($data !== null && !is_array($data)) || ($data !== null && $existingId)) {
+        if ($existingId === '') $existingId = null;
+        if ($existingId !== null) {
+            $existingId = IntegerTransport::positiveKey($existingId);
+            if ($existingId === null) \App\Services\Payments\Classification::error('sale_note_id', 'Seleccione una nota de venta válida.');
+        }
+        if ($data === null && $existingId === null) return;
+        if ($data !== null && (!is_array($data) || $existingId !== null)) {
             \App\Services\Payments\Classification::error('sale_note', 'La nota de venta no es válida.');
         }
         if ($data !== null) {
@@ -285,7 +300,7 @@ class HotelRentController extends Controller
 
 		$products = HotelRentItem::select(
 				'hotel_rent_items.*', 
-				DB::raw("IFNULL(CONCAT(sale_notes.series, '-', sale_notes.number), '') as document")
+				DB::raw("COALESCE((sale_notes.series || '-' || sale_notes.number::text), '') as document")
 			)
 			->leftJoin('hotel_rent_orders', 'hotel_rent_items.hotel_rent_order_id', '=', 'hotel_rent_orders.id')
 			->leftJoin('sale_notes', 'hotel_rent_orders.sale_note_id', '=', 'sale_notes.id')
@@ -310,8 +325,9 @@ class HotelRentController extends Controller
 	public function addProductsToRoom(HotelRentItemRequest $request, $rentId)
 	{
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
+        $rentId = $this->checkoutRentKey($rentId);
         return DB::connection('tenant')->transaction(function () use ($request, $rentId) {
-		[$operationKey, $operationHash] = \App\Services\Payments\HotelOperation::identify($request, 'products', (int)$rentId);
+		[$operationKey, $operationHash] = \App\Services\Payments\HotelOperation::identify($request, 'products', $rentId);
 		$rent = HotelRent::query()->lockForUpdate()->findOrFail($rentId);
 		$this->authorizeCheckout($rent);
 		$previous = \App\Services\Payments\HotelOperation::existing($operationKey, $operationHash);
@@ -373,8 +389,8 @@ class HotelRentController extends Controller
 
 	$items = HotelRentItem::select(
 			'hotel_rent_items.*', 
-			DB::raw("IFNULL(CONCAT(sale_notes.series, '-', sale_notes.number), '') as document"),
-			DB::raw("IFNULL(sale_notes.total, 0) as sale_note_total")
+			DB::raw("COALESCE((sale_notes.series || '-' || sale_notes.number::text), '') as document"),
+			DB::raw("COALESCE(sale_notes.total, 0) as sale_note_total")
 		)
 		->leftJoin('hotel_rent_orders', 'hotel_rent_items.hotel_rent_order_id', '=', 'hotel_rent_orders.id')
 		->leftJoin('sale_notes', 'hotel_rent_orders.sale_note_id', '=', 'sale_notes.id')
@@ -432,8 +448,8 @@ class HotelRentController extends Controller
     }
     // Older tenants may still have an integer column; never silently discard cents.
     if (!\App\Support\Exact\Persistence::enabled($rent)) {
-      $column = $rent->getConnection()->selectOne('SELECT DATA_TYPE AS data_type FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?', ['hotel_rents', 'arrears']);
-      if (!$column || $column->data_type !== 'int') {
+      $column = $rent->getConnection()->selectOne('SELECT DATA_TYPE AS data_type FROM information_schema.COLUMNS WHERE table_schema=current_schema() AND TABLE_NAME = ? AND COLUMN_NAME = ?', ['hotel_rents', 'arrears']);
+      if (!$column || $column->data_type !== 'integer') {
         \App\Services\Payments\Classification::error('arrears', 'No se puede verificar la precisión del recargo en esta instalación.');
       }
       $arrears = \App\Support\Exact\Decimal::input($arrears, 'arrears', 0, 10);
@@ -467,8 +483,8 @@ class HotelRentController extends Controller
     $paid = true;
     if ($expected->isGreaterThan(0)) {
       $type = $input['checkout_document_type'] ?? null;
-      $id = $input['checkout_document_id'] ?? null;
-      if (!in_array($type, ['01', '80'], true) || !is_scalar($id) || !ctype_digit((string)$id) || (int)$id < 1) {
+      $id = \App\Database\IntegerTransport::positiveKey($input['checkout_document_id'] ?? null);
+      if (!in_array($type, ['01', '80'], true) || $id === null) {
         \App\Services\Payments\Classification::error('checkout_document', 'Indique el comprobante de la estancia para finalizar el cobro pendiente.');
       }
       $query = $type === '80' ? SaleNote::query() : Document::query();
@@ -531,7 +547,8 @@ class HotelRentController extends Controller
     /** Create the checkout document and finalize the rent in one tenant transaction. */
     public function atomicCheckout(Request $request, $rentId)
     {
-        [$key,$hash]=\App\Services\Payments\HotelOperation::identify($request,'checkout',(int)$rentId);
+        $rentId = $this->checkoutRentKey($rentId);
+        [$key,$hash]=\App\Services\Payments\HotelOperation::identify($request,'checkout',$rentId);
         if (!$key) \App\Services\Payments\Classification::error('operation_key','Indique un identificador de operación.');
         $data=$request->input('document');
         if (!is_array($data) || !in_array($data['document_type_id'] ?? null,['01','80'],true)) {
@@ -551,7 +568,8 @@ class HotelRentController extends Controller
                 return $this->atomicCheckoutResponse($rent,$previous);
             }
             if ($rent->status === 'FINALIZADO') \App\Services\Payments\Classification::error('checkout','La estancia ya fue finalizada.');
-            if ((int)($data['customer_id'] ?? 0)!==(int)$rent->customer_id || (int)($data['establishment_id'] ?? 0)!==(int)$rent->establishment_id) {
+            if (IntegerTransport::positiveKey($data['customer_id'] ?? null) !== (int) $rent->customer_id
+                || IntegerTransport::positiveKey($data['establishment_id'] ?? null) !== (int) $rent->establishment_id) {
                 \App\Services\Payments\Classification::error('document','El cliente y la sucursal deben coincidir con la estancia.');
             }
             $type=$data['document_type_id'];
@@ -578,7 +596,11 @@ class HotelRentController extends Controller
                     'operation_type_id'=>$data['operation_type_id'] ?? '0101'];
                 $data['transport']=$data['transport'] ?? null;
                 if (empty($data['series']) && !empty($data['series_id'])) {
-                    $data['series']=Series::query()->whereKey($data['series_id'])->where('document_type_id','01')
+                    $seriesId = \App\Database\IntegerTransport::positiveKey($data['series_id']);
+                    if ($seriesId === null) {
+                        \App\Services\Payments\Classification::error('series_id', 'Seleccione una serie de factura válida.');
+                    }
+                    $data['series']=Series::query()->whereKey($seriesId)->where('document_type_id','01')
                         ->where('establishment_id',$rent->establishment_id)->value('number');
                 }
                 if (!isset($data['series']) || is_string($data['series'])) $data['series']=\App\Services\SeriesNumbering::normalizeCode($data['series'] ?? null);
@@ -608,6 +630,7 @@ class HotelRentController extends Controller
     /** A locking read distinguishes a completed request from one that never committed. */
     public function checkoutOperationStatus($rentId, string $key)
     {
+        $rentId = $this->checkoutRentKey($rentId);
         if (!\Illuminate\Support\Str::isUuid($key)) \App\Services\Payments\Classification::error('operation_key','Identificador de operación inválido.');
         return DB::connection('tenant')->transaction(function () use ($rentId,$key) {
             $rent=HotelRent::query()->lockForUpdate()->findOrFail($rentId);
@@ -617,6 +640,15 @@ class HotelRentController extends Controller
             if ($rent->status==='FINALIZADO') \App\Services\Payments\Classification::error('checkout','La estancia ya fue finalizada por otra operación.');
             return response()->json(['success'=>true,'found'=>false]);
         });
+    }
+
+    private function checkoutRentKey($rentId): int
+    {
+        $key = IntegerTransport::positiveKey($rentId);
+        if ($key === null) {
+            \App\Services\Payments\Classification::error('rent_id', 'Seleccione una estancia válida.');
+        }
+        return $key;
     }
 
     private function atomicCheckoutResponse(HotelRent $rent, array $operation)

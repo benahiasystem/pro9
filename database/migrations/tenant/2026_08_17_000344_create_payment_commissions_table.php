@@ -1,29 +1,38 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// One commission per actual recorded receipt; the financial movement is separate.
-return new class extends Migration {
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - source_global_payment_id: bigint
+ * - currency_type_id: varchar(255)
+ * - date_of_payment: date
+ * - amount: numeric(30,12)
+ * - calculation_snapshot: json
+ */
+return new class extends Migration
+{
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `payment_commissions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `source_global_payment_id` int(10) unsigned NOT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date_of_payment` date NOT NULL,
-  `amount` decimal(30,12) NOT NULL,
-  `calculation_snapshot` json DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `payment_commissions_source_unique` (`source_global_payment_id`),
-  KEY `payment_commissions_currency_fk` (`currency_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('payment_commissions', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('source_global_payment_id');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->date('date_of_payment');
+            $table->decimal('amount', 30, 12);
+            $table->json('calculation_snapshot')->nullable();
+            $table->unique(['source_global_payment_id'], 'payment_commissions_source_unique');
+            $table->index(['currency_type_id'], 'payment_commissions_currency_fk');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `payment_commissions`');
+        Schema::dropIfExists('payment_commissions');
     }
 };
+// ######### FIN CAMBIO POSTGRESQL 17

@@ -379,7 +379,7 @@ export default {
         getFormats() {
             return this.$http.get(`/${this.resource}/getFormats`).then(response => {
                 if (response.data !== '') {
-                    this.formatos = (response.data.formats || []).filter(f => f.name !== 'nrus')
+                    this.formatos = (response.data.formats || [])
                 }
             });
         },

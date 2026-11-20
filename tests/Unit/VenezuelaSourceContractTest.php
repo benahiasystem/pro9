@@ -62,22 +62,22 @@ class VenezuelaSourceContractTest extends TestCase
     public function consolidated_schema_supports_venezuela_currency_geography_and_people(): void
     {
         $currency = $this->migrationSource('cat_currency_types');
-        self::assertStringContainsString('CREATE TABLE `cat_currency_types`', $currency);
-        self::assertStringContainsString('`id` varchar(255)', $currency);
+        self::assertStringContainsString('Schema::create(\'cat_currency_types\'', $currency);
+        self::assertStringContainsString('$table->string(\'id\', 255)', $currency);
         self::assertStringNotContainsString("'VE" . "D'", $currency);
 
-        self::assertStringContainsString('`id` char(2)', $this->migrationSource('departments'));
-        self::assertStringContainsString('`department_id` char(2)', $this->migrationSource('provinces'));
-        self::assertStringContainsString('`province_id` char(4)', $this->migrationSource('districts'));
-        self::assertStringContainsString("DEFAULT 'VE'", $this->migrationSource('origin_addresses'));
+        self::assertStringContainsString('$table->char(\'id\', 2)', $this->migrationSource('departments'));
+        self::assertStringContainsString('$table->char(\'department_id\', 2)', $this->migrationSource('provinces'));
+        self::assertStringContainsString('$table->char(\'province_id\', 4)', $this->migrationSource('districts'));
+        self::assertStringContainsString('->default(\'VE\')', $this->migrationSource('origin_addresses'));
 
         $persons = $this->migrationSource('persons');
-        self::assertStringContainsString('`website` text', $persons);
-        self::assertStringContainsString('`observation` longtext', $persons);
+        self::assertStringContainsString('$table->text(\'website\')', $persons);
+        self::assertStringContainsString('$table->text(\'observation\')', $persons);
 
         $foreignKeys = $this->foreignKeyMigrationSource();
-        self::assertStringContainsString('ALTER TABLE `provinces` ADD CONSTRAINT', $foreignKeys);
-        self::assertStringContainsString('ALTER TABLE `districts` ADD CONSTRAINT', $foreignKeys);
+        self::assertStringContainsString('ALTER TABLE "provinces" ADD CONSTRAINT', $foreignKeys);
+        self::assertStringContainsString('ALTER TABLE "districts" ADD CONSTRAINT', $foreignKeys);
     }
 
     /** @test */
@@ -112,7 +112,7 @@ class VenezuelaSourceContractTest extends TestCase
         self::assertStringContainsString("'currency_type_symbol' =>", $collection);
         self::assertStringContainsString('{{ row.currency_type_symbol }}', $list);
         self::assertStringContainsString('Localization::nationalCurrencyId()', $controller);
-        self::assertStringContainsString('Localization::currencySymbol($currencyTypeId)', $controller);
+        self::assertStringContainsString('Localization::currencySymbol($currency)', $controller);
         self::assertStringContainsString('v-for="option in availableCurrencyTypes"', $purchaseItem);
         self::assertStringContainsString(':label="option.symbol"', $purchaseItem);
         self::assertStringContainsString(':value="option.id"', $purchaseItem);
@@ -170,7 +170,7 @@ class VenezuelaSourceContractTest extends TestCase
             $source = (string) file_get_contents($path);
             if (
                 preg_match('/\b' . preg_quote($legacyName, '/') . '\b/i', $source) === 1
-                || preg_match('/' . preg_quote($legacySymbol, '/') . '(?=\s|[.<&{\d"\'`$]|$)/', $source) === 1
+                || preg_match('/' . preg_quote($legacySymbol, '/') . '(?=\\s|[.<&{\\d"\'"$]|$)/', $source) === 1
             ) {
                 $violations[] = $path;
             }

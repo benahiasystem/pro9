@@ -37,8 +37,8 @@ trait ElectronicDocumentTrait
                         "users.name as user_name, ".
                         "{$table}.date_of_issue as date_of_issue, ".
                         "{$table}.time_of_issue as time_of_issue,".
-                        "cat_document_types.id AS 'document_type_id',".
-                        "cat_document_types.description AS 'document_type_description',".
+                        "cat_document_types.id AS document_type_id,".
+                        "cat_document_types.description AS document_type_description,".
                         "{$table}.series as series,".
                         "{$table}.number as number,".
                         "CONCAT({$table}.series, '-', {$table}.number) as number_full,".
@@ -89,12 +89,12 @@ trait ElectronicDocumentTrait
     public function getBaseQueryVoided($table, $document_type_id, $request, $document_type_description)
     {
         // Relacionar anulaciones con los documentos afectados.
-        $relatedCpes = "(SELECT GROUP_CONCAT(CONCAT(d.series, '-', d.number) ORDER BY d.id SEPARATOR ', ') "
+        $relatedCpes = "(SELECT string_agg((d.series || '-' || d.number::text), ', ' ORDER BY d.id) "
                 . "FROM voided_documents vd "
                 . "INNER JOIN documents d ON d.id = vd.document_id "
                 . "WHERE vd.voided_id = {$table}.id)";
 
-        $numberFull = "CONCAT({$table}.identifier, IFNULL(CONCAT(' → ', {$relatedCpes}), ''))";
+        $numberFull = "({$table}.identifier || COALESCE((' → ' || {$relatedCpes}), ''))";
 
         $query = DB::connection('tenant')
                     ->table($table)
@@ -105,9 +105,9 @@ trait ElectronicDocumentTrait
                         "users.name as user_name, ".
                         "{$table}.date_of_issue as date_of_issue, ".
                         // Las RA/RC no tienen time_of_issue; usar hora de registro
-                        "TIME({$table}.created_at) as time_of_issue,".
-                        "'{$document_type_id}' AS 'document_type_id',".
-                        "'{$document_type_description}' AS 'document_type_description',".
+                        "CAST({$table}.created_at AS time) as time_of_issue,".
+                        "'{$document_type_id}' AS document_type_id,".
+                        "'{$document_type_description}' AS document_type_description,".
                         "null as series,".
                         "null as number,".
                         "{$numberFull} as number_full,".

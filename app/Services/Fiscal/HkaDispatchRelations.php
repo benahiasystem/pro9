@@ -79,7 +79,27 @@ final class HkaDispatchRelations
         if ((string)($body['codigo'] ?? '')==='404' && ($body['mensaje'] ?? '')==='Relación no encontrada' && ($body['validaciones'] ?? null)===['Relación no encontrada en nuestra base de datos.']) return false;
         if (!empty($body['validaciones'])) return null;
         if ((string)($body['codigo'] ?? '')!=='200' || !is_array($body['relacionados'] ?? null)) return null;
-        foreach ($body['relacionados'] as $row) if (is_array($row) && (string)($row['tipoDocumento'] ?? '')===$target['tipoDocumento'] && (string)($row['numeroDocumento'] ?? '')===$target['numeroDocumento'] && (string)($row['serie'] ?? '')===$target['serie']) return true;
-        return false;
+        $incomplete = false;
+        foreach ($body['relacionados'] as $row) {
+            if (!is_array($row)) {
+                $incomplete = true;
+                continue;
+            }
+            $type = $row['tipoDocumento'] ?? null;
+            $number = $row['numeroDocumento'] ?? null;
+            $series = $row['serie'] ?? null;
+            if ((!is_string($type) && !is_int($type)) || (!is_string($number) && !is_int($number))
+                || (!is_string($series) && !is_int($series))
+                || !preg_match('/^[0-9]{1,2}$/D', (string) $type)
+                || !preg_match('/^[0-9]{1,19}$/D', (string) $number)) {
+                $incomplete = true;
+                continue;
+            }
+            if ((string) $type === $target['tipoDocumento'] && (string) $number === $target['numeroDocumento']
+                && (string) $series === $target['serie']) {
+                return true;
+            }
+        }
+        return $incomplete ? null : false;
     }
 }

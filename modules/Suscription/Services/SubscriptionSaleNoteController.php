@@ -10,6 +10,12 @@ class SubscriptionSaleNoteController extends SaleNoteController
 {
     private array $previousFiles = [];
 
+    /** PaymentsSuscriptionController restores every overwritten PDF if its batch fails. */
+    protected function compensatesPdfOnRollback(): bool
+    {
+        return true;
+    }
+
     public function uploadFile($filename, $file_content, $file_type)
     {
         if ($file_type === 'sale_note') {

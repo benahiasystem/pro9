@@ -1,9 +1,11 @@
 <?php
 // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
 
 namespace Modules\Dashboard\Widgets;
 
 use App\Models\Tenant\Company;
+use App\Support\Exact\Decimal as D;
 
 /**
  * Fuentes de widgets propias del módulo Dashboard. Cada una envuelve la
@@ -29,15 +31,43 @@ class DefaultWidgetSources
      */
     private static function kpiFromGlobal($global, $trendKey, $totalKey)
     {
-        $trend = $global['trend'] ?? [];
-        $serie = array_map('floatval', $trend[$trendKey] ?? []);
-        $labels = $trend['labels'] ?? [];
-        $count = count($serie);
-        $previous = $count >= 2 ? $serie[$count - 2] : null;
-
+        $trend=$global['trend'];$values=[];
+        foreach ($trend['calculation_snapshots'] as $snapshot) $values[]=static::original(['calculation_snapshot'=>$snapshot],$trendKey);
+        $count=count($values);$previous=$count>=2 ? $values[$count-2] : null;
         return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
-            ->serie($labels, [['name' => '', 'data' => $serie]])
-            ->totals((float) ($global[$totalKey] ?? 0), $previous);
+            ->serie($trend['labels'],[['name'=>'','data'=>$values]])
+            ->totals(static::original($global,$totalKey),$previous);
+    }
+
+    private static function original(array $record, string $field): \Brick\Math\BigRational
+    {
+        $snapshot=$record['calculation_snapshot'] ?? null;
+        if (!is_array($snapshot) || ($snapshot['version'] ?? null)!==D::VERSION
+            || !is_array($snapshot['values'][$field] ?? null)) {
+            throw new \UnexpectedValueException('Falta la fracción original del widget: '.$field);
+        }
+        return D::of($snapshot['values'][$field]);
+    }
+
+    private static function fractions(array $values): array
+    {
+        return array_map(static function ($value) {
+            if ($value===null) return null;
+            if (!is_array($value) || !isset($value['n'],$value['d'])) {
+                throw new \UnexpectedValueException('El vector del widget requiere fracciones n/d.');
+            }
+            return D::of($value);
+        },$values);
+    }
+
+    private static function graphValues(array $dataset): array
+    {
+        if (array_key_exists('data_fractions',$dataset)) return self::fractions($dataset['data_fractions']);
+        $snapshot=$dataset['calculation_snapshot'] ?? null;
+        if (!is_array($snapshot) || ($snapshot['version'] ?? null)!==D::VERSION || !is_array($snapshot['values'] ?? null)) {
+            throw new \UnexpectedValueException('El gráfico del widget carece de sus operandos originales.');
+        }
+        return self::fractions(array_values($snapshot['values']));
     }
 
     /**
@@ -92,8 +122,8 @@ class DefaultWidgetSources
                 $graph = $data['graph'];
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
-                    ->breakdown($graph['labels'], $graph['datasets'][0]['data'])
-                    ->totals((float) $data['totals']['total'])
+                    ->breakdown($graph['labels'], static::graphValues($graph['datasets'][0]))
+                    ->totals(static::original($data['totals'],'total'))
                     ->meta(['totals' => $data['totals']]);
             }),
 
@@ -109,8 +139,8 @@ class DefaultWidgetSources
                 $graph = $data['graph'];
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
-                    ->breakdown($graph['labels'], $graph['datasets'][0]['data'])
-                    ->totals((float) $data['totals']['total'])
+                    ->breakdown($graph['labels'], static::graphValues($graph['datasets'][0]))
+                    ->totals(static::original($data['totals'],'total'))
                     ->meta(['totals' => $data['totals']]);
             }, function () {
                 return true;
@@ -128,12 +158,12 @@ class DefaultWidgetSources
                 $graph = $data['graph'];
 
                 $series = array_map(function ($dataset) {
-                    return ['name' => $dataset['label'], 'data' => $dataset['data']];
+                    return ['name' => $dataset['label'], 'data' => static::graphValues($dataset)];
                 }, $graph['datasets']);
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
                     ->serie($graph['labels'], $series)
-                    ->totals((float) ($data['totals']['total'] ?? 0))
+                    ->totals(static::original($data['totals'],'total'))
                     ->meta(['totals' => $data['totals']]);
             }),
 
@@ -146,15 +176,15 @@ class DefaultWidgetSources
                 'default_type' => 'bar',
             ]), function (WidgetContext $ctx) {
                 $data = $ctx->salesWeek();
-                $current = array_map('floatval', $data['current']);
-                $previous = array_map('floatval', $data['previous']);
+                $current = static::fractions($data['current_fractions']);
+                $previous = static::fractions($data['previous_fractions']);
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
                     ->serie($data['labels'], [
                         ['name' => 'Periodo filtrado', 'data' => $current],
                         ['name' => 'Periodo anterior', 'data' => $previous],
                     ])
-                    ->totals(array_sum($current), array_sum($previous))
+                    ->totals(static::original($data,'current_total'), static::original($data,'previous_total'))
                     ->meta([
                         'subtitle' => $data['subtitle'] ?? null,
                         'previous_labels' => $data['previous_labels'] ?? [],
@@ -170,15 +200,15 @@ class DefaultWidgetSources
                 'default_type' => 'line',
             ]), function (WidgetContext $ctx) {
                 $data = $ctx->salesGrowth();
-                $current = array_map('floatval', $data['current']);
-                $previous = array_map('floatval', $data['previous']);
+                $current = static::fractions($data['current_fractions']);
+                $previous = static::fractions($data['previous_fractions']);
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
                     ->serie($data['categories'], [
                         ['name' => $data['current_label'], 'data' => $current],
                         ['name' => $data['previous_label'], 'data' => $previous],
                     ])
-                    ->totals(array_sum($current), array_sum($previous));
+                    ->totals(static::original($data,'current_total'), static::original($data,'previous_total'));
             }),
 
             new CallbackWidgetSource(array_merge($module, [
@@ -190,15 +220,15 @@ class DefaultWidgetSources
                 'default_type' => 'bar',
             ]), function (WidgetContext $ctx) {
                 $data = $ctx->monthlyComparison();
-                $sales = array_map('floatval', $data['sales']);
-                $purchases = array_map('floatval', $data['purchases']);
+                $sales = static::fractions($data['sales_fractions']);
+                $purchases = static::fractions($data['purchases_fractions']);
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
                     ->serie($data['categories'], [
                         ['name' => 'Ventas', 'data' => $sales],
                         ['name' => 'Compras', 'data' => $purchases],
                     ])
-                    ->totals(array_sum($sales));
+                    ->totals(static::original($data,'sales_total'));
             }),
 
             new CallbackWidgetSource(array_merge($module, [
@@ -221,12 +251,12 @@ class DefaultWidgetSources
 
                 $values = $items->map(function ($row) {
                     $row = (array) $row;
-                    return (float) ($row['total'] ?? 0);
+                    return static::original($row,'total');
                 })->all();
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
                     ->breakdown($labels, $values)
-                    ->totals(array_sum($values))
+                    ->totals(D::sum($values))
                     ->meta(['items' => $items->values()->all()]);
             }),
         ];
@@ -268,15 +298,15 @@ class DefaultWidgetSources
                 'default_type' => 'area',
             ]), function (WidgetContext $ctx) {
                 $data = $ctx->cashFlow();
-                $income = array_map('floatval', $data['income']);
-                $egress = array_map('floatval', $data['egress']);
+                $income = static::fractions($data['income_fractions']);
+                $egress = static::fractions($data['egress_fractions']);
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
                     ->serie($data['labels'], [
                         ['name' => 'Ingresos', 'data' => $income],
                         ['name' => 'Egresos', 'data' => $egress],
                     ])
-                    ->totals(array_sum($income) - array_sum($egress))
+                    ->totals(static::original($data,'net_total'))
                     ->meta(['subtitle' => $data['subtitle'] ?? null]);
             }),
 
@@ -291,8 +321,8 @@ class DefaultWidgetSources
                 $data = $ctx->paymentMethods();
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
-                    ->breakdown($data['labels'], $data['values'])
-                    ->totals((float) $data['total'])
+                    ->breakdown($data['labels'], static::fractions($data['values_fractions']))
+                    ->totals(static::original($data,'total'))
                     ->meta(['subtitle' => $data['subtitle'] ?? null]);
             }),
 
@@ -311,9 +341,9 @@ class DefaultWidgetSources
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
                     ->breakdown(
                         $items->pluck('customer')->all(),
-                        $items->pluck('total_to_pay')->all()
+                        $items->map(static fn($row)=>static::original($row,'total_to_pay'))->all()
                     )
-                    ->totals((float) ($data['total'] ?? 0))
+                    ->totals(static::original($data,'total'))
                     ->meta([
                         'items' => $items->values()->all(),
                         'count' => $data['count'] ?? 0,
@@ -333,8 +363,8 @@ class DefaultWidgetSources
                 $data = $ctx->monthGoal();
 
                 return WidgetDataset::make(WidgetDataset::UNIT_PERCENT)
-                    ->breakdown(['Avance'], [(float) ($data['percent'] ?? 0)])
-                    ->totals((float) ($data['percent'] ?? 0))
+                    ->breakdown(['Avance'], [static::original($data,'percent')])
+                    ->totals(static::original($data,'percent'))
                     ->meta($data);
             }),
 
@@ -354,8 +384,8 @@ class DefaultWidgetSources
                 $totals = $data['totals'];
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
-                    ->breakdown(['Ingreso', 'Egreso'], [(float) $totals['total_income'], (float) $totals['total_egress']])
-                    ->totals((float) $totals['utility'])
+                    ->breakdown(['Ingreso', 'Egreso'], [static::original($totals,'total_income'), static::original($totals,'total_egress')])
+                    ->totals(static::original($totals,'utility'))
                     ->meta(['totals' => $totals]);
             }),
 
@@ -371,8 +401,8 @@ class DefaultWidgetSources
                 $graph = $data['graph'];
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
-                    ->breakdown($graph['labels'], $graph['datasets'][0]['data'])
-                    ->totals((float) str_replace(',', '', $data['totals']['all_totals']))
+                    ->breakdown($graph['labels'], static::graphValues($graph['datasets'][0]))
+                    ->totals(static::original($data['totals'],'all_totals'))
                     ->meta(['totals' => $data['totals']]);
             }),
         ];
@@ -394,12 +424,9 @@ class DefaultWidgetSources
                 $data = $ctx->dataAditional()['purchase'];
                 $graph = $data['graph'];
 
-                // El dataset 'Total' del helper trae labels, no montos; se recalcula.
-                $perception = array_map('floatval', $graph['datasets'][0]['data']);
-                $purchases = array_map('floatval', $graph['datasets'][1]['data']);
-                $total = array_map(function ($p, $c) {
-                    return $p + $c;
-                }, $perception, $purchases);
+                $perception=static::graphValues($graph['datasets'][0]);
+                $purchases=static::graphValues($graph['datasets'][1]);
+                $total=static::graphValues($graph['datasets'][2]);
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
                     ->serie($graph['labels'], [
@@ -407,7 +434,7 @@ class DefaultWidgetSources
                         ['name' => 'Total compras', 'data' => $purchases],
                         ['name' => 'Total', 'data' => $total],
                     ])
-                    ->totals((float) str_replace(',', '', $data['totals']['total']))
+                    ->totals(static::original($data['totals'],'total'))
                     ->meta(['totals' => $data['totals']]);
             }),
         ];
@@ -435,7 +462,7 @@ class DefaultWidgetSources
                     ->breakdown(
                         $customers->pluck('name')->all(),
                         $customers->map(function ($row) {
-                            return (float) str_replace(',', '', ((array) $row)['total']);
+                            return static::original((array)$row,'total');
                         })->all()
                     )
                     ->totals(null)
@@ -465,13 +492,14 @@ class DefaultWidgetSources
                 return WidgetDataset::make(WidgetDataset::UNIT_COUNT)
                     ->breakdown(
                         $items->pluck('product')->all(),
-                        $items->pluck('stock')->all()
+                        $items->map(static fn($row)=>static::original($row,'stock'))->all()
                     )
-                    ->totals((float) ($data['total'] ?? 0))
+                    ->totals($data['total'])
                     ->meta(['items' => $items->values()->all()]);
             }),
         ];
     }
 
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

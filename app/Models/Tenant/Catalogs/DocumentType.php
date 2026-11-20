@@ -72,6 +72,7 @@
         public const CREDIT_NOTE_ID = '07';
 
         public $incrementing = false;
+    protected $keyType = 'string';
         public $timestamps = false;
         protected $table = "cat_document_types";
         protected $fillable = [

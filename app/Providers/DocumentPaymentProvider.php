@@ -53,9 +53,9 @@ class DocumentPaymentProvider extends ServiceProvider
     private function transaction_payment($document_payment){
 
         $document = $document_payment->document;
-        $balance = $document->fresh()->balance;
+        $balance = $document->fresh()->exactBalance();
 
-        if($balance <= 0){
+        if ($balance->isLessThanOrEqualTo(0)) {
 
             $document->total_canceled = true;
             $document->update();

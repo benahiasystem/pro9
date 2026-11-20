@@ -16,9 +16,9 @@ class ExactReadSnapshotTest extends TestCase
             private object $pdo;
             public function __construct() { $this->pdo = new \stdClass(); }
             public function getPdo() { return $this->pdo; }
-            public function getDriverName() { return 'mysql'; }
+            public function getDriverName() { return 'pgsql'; }
             public function transactionLevel() { return $this->level; }
-            public function statement($sql) { $this->statements[] = $sql; }
+            public function statement($sql) {if ($this->level !== 1) throw new \LogicException('El aislamiento debe establecerse dentro de la transacción.');$this->statements[] = $sql; }
             public function transaction($callback) {
                 $this->level++;
                 try { return $callback(); } finally { $this->level--; }
@@ -34,7 +34,7 @@ class ExactReadSnapshotTest extends TestCase
         self::assertSame(0,$connection->level);
     }
 
-    public function test_an_existing_mysql_transaction_does_not_silently_downgrade_consistency(): void
+    public function test_an_existing_postgresql_transaction_does_not_silently_downgrade_consistency(): void
     {
         $connection = $this->connection(); $connection->level = 1;
         $this->expectException(\LogicException::class);

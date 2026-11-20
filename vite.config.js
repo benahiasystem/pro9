@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue2';
 import laravel from 'laravel-vite-plugin';
 import path from 'path';
+import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 
 
 export default defineConfig({
@@ -13,10 +15,28 @@ export default defineConfig({
     strictPort: true,
   },
   plugins: [
+    {
+      name: 'pro9-frontend-source-manifest',
+      apply: 'build',
+      generateBundle() {
+        const sources = new Set(['vite.config.js', 'package.json', 'package-lock.json']);
+        for (const id of this.getModuleIds()) {
+          const filename = id.split('?')[0];
+          if (!path.isAbsolute(filename) || filename.includes('/node_modules/')) continue;
+          const relative = path.relative(__dirname, filename);
+          if (!relative.startsWith('..') && fs.existsSync(filename) && fs.statSync(filename).isFile()) sources.add(relative);
+        }
+        const files = Object.fromEntries([...sources].sort().map(filename => [filename,
+          createHash('sha256').update(fs.readFileSync(path.resolve(__dirname, filename))).digest('hex')]));
+        this.emitFile({type: 'asset', fileName: 'frontend-sources.json',
+          source: JSON.stringify({version: 1, files}, null, 2) + '\n'});
+      },
+    },
     laravel({
       input: [
         'resources/js/system.js',
         'resources/js/app.js',
+        'resources/js/storefront-amounts.js',
         'modules/ClaimsBook/Resources/assets/js/app.js',
         'modules/Ecommerce/Resources/assets/js/frontend/cart-app.js',
         'modules/Ecommerce/Resources/assets/js/frontend/product-social-app.js',

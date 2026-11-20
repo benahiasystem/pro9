@@ -17,10 +17,14 @@ test('the invoice form displays the cash-payment error for flat and wrapped resp
     }})
     assert.ok(handler)
     const callback=vm.runInNewContext(`(function(error) ${generate(handler.body).code})`)
+    const creation=require('./support/exact-runtime.cjs')('document-creation')
+    const documentSubmission=vm.runInNewContext(`({${generate(methods.find(n=>n.key?.name==='documentSubmission')).code}}).documentSubmission`,creation)
+    const fiscal=require('./helpers/load-module.cjs')(require('node:path').resolve('resources/js/mixins/fiscal-payment-settings.js')).default
     const message='Una factura al contado requiere cobrar el total.'
     for (const data of [{payments:[message]}, {errors:{payments:[message]}}, {message:{payments:[message]}}]) {
         const messages=[]
-        const state={firstValidationError:first, $message:{error:message=>messages.push(message)}}
+        const state={firstValidationError:first,documentSubmission,handleCalculationChanged:fiscal.methods.handleCalculationChanged,
+            isUpdateDocument:false,form:{total:'0',payments:[]},activeInvoicePayments:[],$message:{error:message=>messages.push(message)}}
         callback.call(state,{response:{status:422,data}})
         assert.equal(messages[0],message)
         assert.equal(state.errors.payments[0],message)

@@ -16,6 +16,6 @@ final class FiscalNoteBalance
         $retentions="(SELECT COALESCE(SUM(r.applied_amount),0) FROM document_received_retentions r WHERE r.document_id=$id)";
         $fund="GREATEST(0,(SELECT COALESCE(SUM(f.amount),0) FROM document_guarantee_funds f WHERE f.document_id=$id)-(SELECT COALESCE(SUM(a.amount),0) FROM document_note_adjustments a WHERE a.affected_document_id=$id AND a.kind='fund' AND a.status='applied'))";
         $refund="(SELECT COALESCE(SUM(rf.amount),0) FROM document_note_refunds rf WHERE rf.affected_document_id=$id AND rf.component='principal' AND rf.reversed_at IS NULL)";
-        return "IF($alias.document_type_id='07' OR ($alias.document_type_id='08' AND $alias.state_type_id IN ('09','11')),0,($total-IF($alias.document_type_id='01',$credit,0)-$payments-$retentions-$fund+IF($alias.document_type_id='01',$refund,0)))";
+        return "CASE WHEN $alias.document_type_id='07' OR ($alias.document_type_id='08' AND $alias.state_type_id IN ('09','11')) THEN 0 ELSE ($total-(CASE WHEN $alias.document_type_id='01' THEN $credit ELSE 0 END)-$payments-$retentions-$fund+(CASE WHEN $alias.document_type_id='01' THEN $refund ELSE 0 END)) END";
     }
 }

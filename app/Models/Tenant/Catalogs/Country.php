@@ -9,5 +9,6 @@ class Country extends ModelCatalog
     use UsesTenantConnection;
 
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 }

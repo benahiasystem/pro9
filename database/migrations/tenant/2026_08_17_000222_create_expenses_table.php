@@ -1,76 +1,73 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `expenses` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `user_id` int(10) unsigned NOT NULL
- * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `expense_type_id` int(10) unsigned NOT NULL
- * - `establishment_id` int(10) unsigned NOT NULL
- * - `supplier_id` int(10) unsigned NOT NULL
- * - `expense_reason_id` int(10) unsigned NOT NULL DEFAULT '1'
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `state_type_id` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `date_of_issue` date NOT NULL
- * - `time_of_issue` time NOT NULL
- * - `supplier` json NOT NULL
- * - `exchange_rate_sale` decimal(18,8) NOT NULL
- * - `total` decimal(30,12) NOT NULL
- * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - user_id: bigint
+ * - fiscal_environment: varchar(16)
+ * - expense_type_id: bigint
+ * - establishment_id: bigint
+ * - supplier_id: bigint
+ * - expense_reason_id: bigint
+ * - currency_type_id: varchar(255)
+ * - external_id: char(36)
+ * - state_type_id: char(2)
+ * - number: varchar(255)
+ * - date_of_issue: date
+ * - time_of_issue: time
+ * - supplier: json
+ * - exchange_rate_sale: numeric(18,8)
+ * - total: numeric(30,12)
+ * - filename: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `expenses` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `expense_type_id` int(10) unsigned NOT NULL,
-  `establishment_id` int(10) unsigned NOT NULL,
-  `supplier_id` int(10) unsigned NOT NULL,
-  `expense_reason_id` int(10) unsigned NOT NULL DEFAULT '1',
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `state_type_id` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `date_of_issue` date NOT NULL,
-  `time_of_issue` time NOT NULL,
-  `supplier` json NOT NULL,
-  `exchange_rate_sale` decimal(18,8) NOT NULL,
-  `total` decimal(30,12) NOT NULL,
-  `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `expenses_filename_unique` (`filename`),
-  KEY `expenses_user_id_foreign` (`user_id`),
-  KEY `expenses_establishment_id_foreign` (`establishment_id`),
-  KEY `expenses_supplier_id_foreign` (`supplier_id`),
-  KEY `expenses_expense_type_id_foreign` (`expense_type_id`),
-  KEY `expenses_currency_type_id_foreign` (`currency_type_id`),
-  KEY `expenses_expense_reason_id_foreign` (`expense_reason_id`),
-  KEY `expenses_fiscal_environment_foreign` (`fiscal_environment`),
-  KEY `expenses_state_type_id_foreign` (`state_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('expenses', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id');
+            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('expense_type_id');
+            $table->bigInteger('establishment_id');
+            $table->bigInteger('supplier_id');
+            $table->bigInteger('expense_reason_id')->default('1');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->char('state_type_id', 2)->collation('pro9_ci_ai')->nullable();
+            $table->string('number', 255)->collation('pro9_ci_ai')->nullable();
+            $table->date('date_of_issue');
+            $table->time('time_of_issue');
+            $table->json('supplier');
+            $table->decimal('exchange_rate_sale', 18, 8);
+            $table->decimal('total', 30, 12);
+            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->unique(['filename'], 'expenses_filename_unique');
+            $table->index(['user_id'], 'expenses_user_id_foreign');
+            $table->index(['establishment_id'], 'expenses_establishment_id_foreign');
+            $table->index(['supplier_id'], 'expenses_supplier_id_foreign');
+            $table->index(['expense_type_id'], 'expenses_expense_type_id_foreign');
+            $table->index(['currency_type_id'], 'expenses_currency_type_id_foreign');
+            $table->index(['expense_reason_id'], 'expenses_expense_reason_id_foreign');
+            $table->index(['fiscal_environment'], 'expenses_fiscal_environment_foreign');
+            $table->index(['state_type_id'], 'expenses_state_type_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `expenses`');
+        Schema::dropIfExists('expenses');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

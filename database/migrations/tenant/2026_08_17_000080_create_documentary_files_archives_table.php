@@ -1,45 +1,46 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `documentary_files_archives` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `user_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'usuario asociado'
- * - `documentary_file_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Solicitud asociada'
- * - `documentary_office_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'etapa asociada'
- * - `observation` longtext COLLATE utf8mb4_unicode_ci COMMENT 'observacion'
- * - `attached_file` longtext COLLATE utf8mb4_unicode_ci COMMENT 'etapa asociada'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `documentary_guides_number_id` int(10) unsigned NOT NULL DEFAULT '0'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - user_id: bigint
+ * - documentary_file_id: bigint
+ * - documentary_office_id: bigint
+ * - observation: text
+ * - attached_file: text
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - documentary_guides_number_id: bigint
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `documentary_files_archives` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'usuario asociado',
-  `documentary_file_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Solicitud asociada',
-  `documentary_office_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'etapa asociada',
-  `observation` longtext COLLATE utf8mb4_unicode_ci COMMENT 'observacion',
-  `attached_file` longtext COLLATE utf8mb4_unicode_ci COMMENT 'etapa asociada',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `documentary_guides_number_id` int(10) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('documentary_files_archives', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id')->default('0')->comment('usuario asociado');
+            $table->bigInteger('documentary_file_id')->default('0')->comment('Solicitud asociada');
+            $table->bigInteger('documentary_office_id')->default('0')->comment('etapa asociada');
+            $table->text('observation')->collation('pro9_ci_ai')->nullable()->comment('observacion');
+            $table->text('attached_file')->collation('pro9_ci_ai')->nullable()->comment('etapa asociada');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->bigInteger('documentary_guides_number_id')->default('0');
+        });
+        DB::statement('ALTER TABLE "documentary_files_archives" ADD CONSTRAINT "documentary_files_archives_user_id_range" CHECK ("user_id" >= 0)');
+        DB::statement('ALTER TABLE "documentary_files_archives" ADD CONSTRAINT "documentary_files_archives_documentary_file_id_range" CHECK ("documentary_file_id" >= 0)');
+        DB::statement('ALTER TABLE "documentary_files_archives" ADD CONSTRAINT "documentary_files_archives_documentary_office_id_range" CHECK ("documentary_office_id" >= 0)');
+        DB::statement('ALTER TABLE "documentary_files_archives" ADD CONSTRAINT "documentary_files_archives_documentary_guides_number_id_range" CHECK ("documentary_guides_number_id" >= 0)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `documentary_files_archives`');
+        Schema::dropIfExists('documentary_files_archives');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

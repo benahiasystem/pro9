@@ -1,39 +1,37 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `cat_accounting_ledger_code_account` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `code_account` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Codigo de plan de cuenta'
- * - `name` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre de cuenta'
- * - `disabled` tinyint(3) unsigned DEFAULT '0' COMMENT 'Permite realizar modificaciones'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - code_account: varchar(255)
+ * - name: text
+ * - disabled: smallint
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_accounting_ledger_code_account` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `code_account` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Codigo de plan de cuenta',
-  `name` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre de cuenta',
-  `disabled` tinyint(3) unsigned DEFAULT '0' COMMENT 'Permite realizar modificaciones',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_accounting_ledger_code_account', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('code_account', 255)->collation('pro9_ci_ai')->comment('Codigo de plan de cuenta');
+            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre de cuenta');
+            $table->smallInteger('disabled')->nullable()->default('0')->comment('Permite realizar modificaciones');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "cat_accounting_ledger_code_account" ADD CONSTRAINT "cat_accounting_ledger_code_account_disabled_range" CHECK ("disabled" BETWEEN 0 AND 255)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_accounting_ledger_code_account`');
+        Schema::dropIfExists('cat_accounting_ledger_code_account');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

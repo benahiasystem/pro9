@@ -36,7 +36,7 @@
 
         public static function getSystemModuleConnection(): Builder
         {
-            return DB::connection('system')->table('modules');
+            return DB::connection()->table('modules');
         }
 
         public function getModuleLevelData($module_id): array
@@ -58,7 +58,7 @@
 
         public static function getSystemModuleLevelConnection(): Builder
         {
-            return DB::connection('system')->table('module_levels');
+            return DB::connection()->table('module_levels');
         }
 
         /**

@@ -7,6 +7,10 @@ use Hyn\Tenancy\Traits\UsesSystemConnection;
 
 class HistoryResource extends Model
 {
+    // ########## INICIO CAMBIO POSTGRESQL 17
+    use \App\Database\HasPostgresIdentity;
+    // ######### FIN CAMBIO POSTGRESQL 17
+
     use UsesSystemConnection;
 
     protected $fillable = [

@@ -111,6 +111,8 @@
                     </div>
                 </template>
 
+                <small class="text-danger" v-if="errors.documents">{{ errors.documents[0] }}</small>
+
                 <div class="pl-total" :class="{'has-danger': errors.total}">
                     <template v-if="form.with_document">
                         <div class="pl-total__summary">
@@ -138,6 +140,8 @@
 </template>
 
 <script>
+    import { paymentLinkAmount, paymentLinkTotal } from '@helpers/payment-link-amounts'
+    import { formatMoneyExact } from '@helpers/format-money-exact'
 
     export default {
         props: ['showDialog', 'recordId'],
@@ -165,10 +169,7 @@
                 return !!(this.form.documents && this.form.documents.length > 0)
             },
             formattedTotal() {
-                return Number(this.form.total || 0).toLocaleString('es-PE', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                })
+                return this.form.total === null ? '—' : formatMoneyExact(this.form.total || '0')
             }
         },
         watch: {
@@ -299,19 +300,18 @@
             },
             changeDocumentPayment(row) {
 
-                // solo números con hasta 2 decimales
-                row.payment = String(row.payment).replace(/[^\d.]/g, '')
-
                 this.calculateTotal()
 
             },
             calculateTotal() {
 
-                const total = this.form.documents.reduce((accumulator, row) => {
-                    return accumulator + (parseFloat(row.payment) || 0)
-                }, 0)
-
-                this.form.total = _.round(total, 2)
+                try {
+                    this.form.total = paymentLinkTotal(this.form.documents)
+                    this.errors = {...this.errors, documents: null}
+                } catch (error) {
+                    this.form.total = null
+                    this.errors = {...this.errors, documents: [error.message]}
+                }
 
             },
             create() {
@@ -334,8 +334,21 @@
             },
             submit() {
 
+                let payload
+                try {
+                    const documents = this.form.with_document ? this.form.documents : []
+                    if (this.form.with_document && !documents.length) throw new Error('Seleccione una factura')
+                    payload = {
+                        ...this.form,
+                        total: documents.length ? paymentLinkTotal(documents) : paymentLinkAmount(this.form.total),
+                        documents: documents.map(row => ({...row, payment: paymentLinkAmount(row.payment)}))
+                    }
+                } catch (error) {
+                    return this.$message.error(error.message)
+                }
+
                 this.loading_submit = true
-                this.$http.post(`${this.resource}/store`, this.form)
+                this.$http.post(`${this.resource}/store`, payload)
 
                     .then(response => {
                         if (response.data.success) {

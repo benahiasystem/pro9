@@ -1,43 +1,41 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `price_labels` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `position` tinyint(4) NOT NULL COMMENT 'Orden de visualización del precio'
- * - `label` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Etiqueta personalizada del precio (ej: Precio Mayorista)'
- * - `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Si está activo para usar en ventas'
- * - `is_default` tinyint(1) NOT NULL DEFAULT '0'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - position: smallint
+ * - label: varchar(50)
+ * - is_active: boolean
+ * - is_default: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `price_labels` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `position` tinyint(4) NOT NULL COMMENT 'Orden de visualización del precio',
-  `label` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Etiqueta personalizada del precio (ej: Precio Mayorista)',
-  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Si está activo para usar en ventas',
-  `is_default` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `price_labels_position_unique` (`position`),
-  KEY `price_labels_is_active_position_index` (`is_active`,`position`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('price_labels', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->smallInteger('position')->comment('Orden de visualización del precio');
+            $table->string('label', 50)->collation('pro9_ci_ai')->comment('Etiqueta personalizada del precio (ej: Precio Mayorista)');
+            $table->boolean('is_active')->default(true)->comment('Si está activo para usar en ventas');
+            $table->boolean('is_default')->default(false);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['position'], 'price_labels_position_unique');
+            $table->index(['is_active', 'position'], 'price_labels_is_active_position_index');
+        });
+        DB::statement('ALTER TABLE "price_labels" ADD CONSTRAINT "price_labels_position_range" CHECK ("position" BETWEEN -128 AND 127)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `price_labels`');
+        Schema::dropIfExists('price_labels');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

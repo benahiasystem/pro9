@@ -91,7 +91,6 @@
                 @php
                     $activeCampaign = null;
                     $hasActiveOffer = false;
-                    $activeOfferPrice = (float) $record->sale_unit_price;
                     $compareAtPrice = null;
                     $offerExpiresAt = null;
                     $stockThreshold = 10;
@@ -106,22 +105,6 @@
                         $stockThreshold = method_exists($activeCampaign, 'stockThreshold')
                             ? $activeCampaign->stockThreshold()
                             : (int) ($activeCampaign->sp_stock_threshold ?: 10);
-
-                        if (method_exists($activeCampaign, 'hasActiveDiscount')
-                            ? $activeCampaign->hasActiveDiscount()
-                            : ($activeCampaign->sp_discount_price && (! $activeCampaign->end_date || $activeCampaign->end_date > now()))
-                        ) {
-                            $hasActiveOffer = true;
-                            $activeOfferPrice = method_exists($activeCampaign, 'discountedPrice')
-                                ? $activeCampaign->discountedPrice((float) $record->sale_unit_price)
-                                : (float) $record->sale_unit_price;
-                            $compareAtPrice = method_exists($activeCampaign, 'compareAtPrice')
-                                ? $activeCampaign->compareAtPrice((float) $record->sale_unit_price)
-                                : null;
-                            if (! $compareAtPrice) {
-                                $hasActiveOffer = false;
-                            }
-                        }
 
                         // Evergreen: si venció, rollForwardCountdownIfNeeded ya sumó +1 día en el modelo.
                         if (method_exists($activeCampaign, 'hasActiveCountdown')
@@ -150,15 +133,15 @@
                     <div class="price-box my-2">
                         <template v-if="compareAtPrice">
                             <span class="old-price text-muted text-decoration-line-through mr-2">
-                                @{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}
+                                @{{ product.currency_type_symbol }} @{{ formatPrice(compareAtPrice, 'compare_at_price') }}
                             </span>
                             <span class="product-price text-danger font-weight-bold" style="font-size: 1.5rem;">
-                                @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
+                                @{{ product.currency_type_symbol }} @{{ formatPrice(activeOfferPrice, 'final_price') }}
                             </span>
                         </template>
                         <template v-else>
                             <span class="product-price font-weight-bold" style="font-size: 1.5rem;">
-                                @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
+                                @{{ product.currency_type_symbol }} @{{ formatPrice(activeOfferPrice, 'final_price') }}
                             </span>
                         </template>
                     </div>
@@ -170,7 +153,7 @@
                     </div>
 
                     <div v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold" class="text-danger font-weight-bold small mt-1" style="animation: sp-pulse 2s infinite;">
-                        <i class="fas fa-fire"></i> ¡Se agota rápido! Solo quedan @{{ Math.round(stock) }} unidades.
+                        <i class="fas fa-fire"></i> ¡Se agota rápido! Solo quedan @{{ stock }} unidades.
                     </div>
 
                     <div v-if="socialProofConfig.sp_views_count" class="text-muted small mt-2">
@@ -216,7 +199,7 @@
                             </a>
                         </p>
                     @endif
-                <p class="product-stock">Disponible: <span>{{number_format(($record->stock), 0)}} </span>
+                <p class="product-stock">Disponible: <span>{{\App\Support\Exact\Decimal::represent($record->stock)}} </span>
                 <?php
                 if($record->stock > 0){?>
                     <span
@@ -265,7 +248,7 @@
                                     <path d="M5 12l14 0" />
                                 </svg>
                             </button>
-                            <input type="number" class="input-quantity mx-2" v-model.number="quantity" min="1" style="width: 50px; text-align: center;" @change="onQuantityInput">
+                            <input type="text" inputmode="decimal" class="input-quantity mx-2" v-model="quantity" style="width: 50px; text-align: center;" @change="onQuantityInput">
                             <button @click.stop.prevent="incrementQuantity(product)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                             </button>
@@ -502,8 +485,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 product: {
                     id: {{ $record->id }},
                     description: @json($record->description),
-                    sale_unit_price: {{ $record->sale_unit_price }},
-                    sale_unit_price_display: @json($record->sale_unit_price),
+                    sale_unit_price: @json(($storefront_show_prices ?? true) ? $activeOfferPrice : null),
+                    sale_unit_price_display: @json(($storefront_show_prices ?? true) ? $activeOfferPrice : null),
                     image_small: @json($record->image ?? 'imagen-no-disponible.jpg'),
                     image: @json($record->image ?? 'imagen-no-disponible.jpg'),
                     sale_affectation_igv_type_id: @json($record->sale_affectation_igv_type_id ?? '10'),
@@ -511,20 +494,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     currency_type_symbol: @json($record->currency_type['symbol'] ?? 'Bs.'),
                     unit_type_id: @json($record->unit_type_id ?? 'UND'),
                     internal_id: @json($record->internal_id ?? ''),
-                    original_price: {{ number_format((float) $record->sale_unit_price, 2, '.', '') }},
-                    compare_at_price: {{ $compareAtPrice !== null ? number_format((float) $compareAtPrice, 2, '.', '') : 'null' }},
+                    original_price: @json(($storefront_show_prices ?? true) ? $campaignPricing['base_price'] : null),
+                    campaign_pricing_snapshot: @json(($storefront_show_prices ?? true) ? $campaignPricing['calculation_snapshot'] : null),
+                    compare_at_price: @json(($storefront_show_prices ?? true) ? $compareAtPrice : null),
                     discount_campaign_id: {{ $campaignPricing['discount_campaign_id'] ?: 'null' }},
                     discount_campaign_name: @json($campaignPricing['discount_campaign_name']),
-                    campaign_discount_percent: {{ number_format((float) $campaignPricing['real_discount_percentage'], 2, '.', '') }},
+                    campaign_discount_percent: @json($campaignPricing['real_discount_percentage']),
                     campaign_discount_embedded: {{ $campaignPricing['has_real_discount'] ? 'true' : 'false' }},
                 },
                 cartQuantities: {},
-                quantity: 1,
-                stock: {{ (float) $record->stock }},
+                quantity: '1',
+                stock: @json(\App\Support\Exact\Decimal::represent($record->stock)),
                 stockThreshold: {{ (int) $stockThreshold }},
                 hasActiveOffer: {{ $hasActiveOffer ? 'true' : 'false' }},
-                activeOfferPrice: {{ number_format((float) $activeOfferPrice, 2, '.', '') }},
-                compareAtPrice: {{ $compareAtPrice !== null ? number_format((float) $compareAtPrice, 2, '.', '') : 'null' }},
+                activeOfferPrice: @json(($storefront_show_prices ?? true) ? $activeOfferPrice : null),
+                compareAtPrice: @json(($storefront_show_prices ?? true) ? $compareAtPrice : null),
                 offerExpiresAt: {{ $offerExpiresAt ? (int) \Carbon\Carbon::parse($offerExpiresAt)->getTimestamp() : 'null' }},
                 socialProofConfig: {
                     sp_countdown: {{ ($activeCampaign && $activeCampaign->sp_countdown) ? 'true' : 'false' }},
@@ -638,6 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.href = match.url;
                     }
                 },
+                formatPrice(value, field) {return window.Pro9StorefrontAmounts.money(this.product.campaign_pricing_snapshot?.values?.[field] ?? value);},
                 addOrUpdateCart(item) {
                     let array = localStorage.getItem('products_cart');
                     array = array ? JSON.parse(array) : [];
@@ -645,10 +630,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const cartItem = {
                         ...item,
                         sale_unit_price: this.activeOfferPrice,
-                        original_price: parseFloat(item.sale_unit_price),
+                        original_price: item.original_price,
                         has_discount: this.hasActiveOffer,
                         quantity: this.quantity,
-                        stock: Math.round(this.stock),
+                        stock: this.stock,
                     };
 
                     if (typeof cartAddOrUpdateItem === 'function') {
@@ -680,22 +665,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     return this.cartQuantities[id] || 0;
                 },
                 onQuantityInput() {
-                    if (this.quantity < 1) this.quantity = 1;
+                    this.quantity = window.Pro9StorefrontAmounts.quantity(this.quantity);
                 },
                 loadCartQuantities() {
                     let array = localStorage.getItem('products_cart');
                     array = array ? JSON.parse(array) : [];
                     let obj = {};
                     array.forEach(function(item) {
-                        obj[item.id] = item.quantity || 1;
+                        obj[item.id] = window.Pro9StorefrontAmounts.quantity(item.quantity ?? '1');
                     });
                     this.cartQuantities = obj;
                 },
                 incrementQuantity(item) {
-                    this.quantity++;
+                    this.quantity = window.Pro9StorefrontAmounts.quantity(window.Pro9StorefrontAmounts.amount(this.quantity).plus('1').decimal());
                 },
                 decrementQuantity(item) {
-                    if (this.quantity > 1) this.quantity--;
+                    const next = window.Pro9StorefrontAmounts.amount(this.quantity).minus('1');
+                    if (next.compare('0') > 0) this.quantity = next.decimal();
                 },
                 removeFromCart(item) {
                     let array = localStorage.getItem('products_cart');

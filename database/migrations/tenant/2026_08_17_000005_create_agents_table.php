@@ -1,43 +1,40 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `agents` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `internal_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `telephone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - name: varchar(255)
+ * - internal_id: varchar(255)
+ * - email: varchar(255)
+ * - telephone: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `agents` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `internal_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `telephone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `agents_internal_id_unique` (`internal_id`),
-  KEY `agents_name_index` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('agents', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('internal_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('email', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('telephone', 255)->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['internal_id'], 'agents_internal_id_unique');
+            $table->index(['name'], 'agents_name_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `agents`');
+        Schema::dropIfExists('agents');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

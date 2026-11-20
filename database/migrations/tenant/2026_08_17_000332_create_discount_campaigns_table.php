@@ -1,50 +1,47 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `discount_campaigns` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `discount_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'percentage'
- * - `value` decimal(30,12) NOT NULL
- * - `starts_at` datetime DEFAULT NULL
- * - `expires_at` datetime DEFAULT NULL
- * - `is_active` tinyint(1) NOT NULL DEFAULT '1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `deleted_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - name: varchar(255)
+ * - discount_type: varchar(255)
+ * - value: numeric(30,12)
+ * - starts_at: timestamp
+ * - expires_at: timestamp
+ * - is_active: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - deleted_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `discount_campaigns` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `discount_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'percentage',
-  `value` decimal(30,12) NOT NULL,
-  `starts_at` datetime DEFAULT NULL,
-  `expires_at` datetime DEFAULT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `deleted_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `discount_campaigns_is_active_starts_at_expires_at_index` (`is_active`,`starts_at`,`expires_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('discount_campaigns', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('discount_type', 255)->collation('pro9_ci_ai')->default('percentage');
+            $table->decimal('value', 30, 12);
+            $table->timestamp('starts_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['is_active', 'starts_at', 'expires_at'], 'discount_campaigns_is_active_starts_at_expires_at_index');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `discount_campaigns`');
+        Schema::dropIfExists('discount_campaigns');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

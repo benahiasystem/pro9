@@ -18,5 +18,6 @@ class OperationType extends ModelCatalog
 
     protected $table = "cat_operation_types";
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 }

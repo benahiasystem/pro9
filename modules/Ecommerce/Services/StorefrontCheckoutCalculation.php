@@ -47,7 +47,7 @@ final class StorefrontCheckoutCalculation
             if (!in_array($affectation,['10','20'],true)) FiscalAmounts::error('items','El producto requiere una afectación de IVA vigente.');
             $currency=(string)$item->currency_type_id;
             if (!in_array($currency,['VES','USD'],true)) FiscalAmounts::error('items','El producto requiere una moneda válida.');
-            if ($currency==='USD' && $rate===null) $rate=$this->exchangeRate();
+            if ($currency==='USD' && $rate===null) $rate=self::exchangeRate();
             $source=$this->campaigns->exactForItem($item);
             $price=D::convert(D::of($source['final_price']),$currency,'VES',$rate);
             $amount=$price->multipliedBy($quantity);
@@ -162,7 +162,8 @@ final class StorefrontCheckoutCalculation
             'calculation_snapshot'=>$line['calculation_snapshot']];
     }
 
-    private function exchangeRate(): string
+    /** Common catalog rate for checkout and public campaign estimates. */
+    public static function exchangeRate(): string
     {
         $record=ExchangeRate::where('date','<=',date('Y-m-d'))->orderByDesc('date')->first();
         $rate=$record ? ExchangeRateMath::optionalRate($record->getRawOriginal('sale')) : null;

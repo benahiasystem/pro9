@@ -103,17 +103,6 @@ class Functions
         return \App\Services\SeriesNumbering::resolve($inputs['document_type_id'], $code, (int) $inputs['establishment_id']);
     }
 
-    private static function validateNrusSeries($series): void
-    {
-        if (! $series || ! (bool) optional(Configuration::first())->isNrus()) {
-            return;
-        }
-
-        if (! in_array($series->document_type_id, SeriesCodeGenerator::nrusDocumentTypeIds(), true)) {
-            throw new Exception("Para empresas NRUS solo están disponibles las series de Nota de venta.");
-        }
-    }
-
     public static function findAffectedDocument($inputs)
     {
         return Document::find($inputs['affected_document_id']);

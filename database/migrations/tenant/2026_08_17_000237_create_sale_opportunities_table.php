@@ -1,91 +1,88 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `sale_opportunities` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `user_id` int(10) unsigned NOT NULL
- * - `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `establishment_id` int(10) unsigned NOT NULL
- * - `establishment` json NOT NULL
- * - `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `prefix` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `date_of_issue` date NOT NULL
- * - `time_of_issue` time NOT NULL
- * - `customer_id` int(10) unsigned NOT NULL
- * - `customer` json NOT NULL
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `exchange_rate_sale` decimal(18,8) NOT NULL
- * - `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_free` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_unaffected` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total_value` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `total` decimal(30,12) NOT NULL
- * - `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `detail` text COLLATE utf8mb4_unicode_ci
- * - `observation` text COLLATE utf8mb4_unicode_ci
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - user_id: bigint
+ * - external_id: char(36)
+ * - establishment_id: bigint
+ * - establishment: json
+ * - fiscal_environment: varchar(16)
+ * - state_type_id: char(2)
+ * - prefix: varchar(255)
+ * - date_of_issue: date
+ * - time_of_issue: time
+ * - customer_id: bigint
+ * - customer: json
+ * - currency_type_id: varchar(255)
+ * - exchange_rate_sale: numeric(18,8)
+ * - total_exportation: numeric(30,12)
+ * - total_free: numeric(30,12)
+ * - total_taxed: numeric(30,12)
+ * - total_unaffected: numeric(30,12)
+ * - total_exonerated: numeric(30,12)
+ * - total_igv: numeric(30,12)
+ * - total_taxes: numeric(30,12)
+ * - total_value: numeric(30,12)
+ * - total: numeric(30,12)
+ * - filename: varchar(255)
+ * - detail: text
+ * - observation: text
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `sale_opportunities` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `establishment_id` int(10) unsigned NOT NULL,
-  `establishment` json NOT NULL,
-  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `prefix` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `date_of_issue` date NOT NULL,
-  `time_of_issue` time NOT NULL,
-  `customer_id` int(10) unsigned NOT NULL,
-  `customer` json NOT NULL,
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `exchange_rate_sale` decimal(18,8) NOT NULL,
-  `total_exportation` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_free` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_taxed` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_unaffected` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_exonerated` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_igv` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_taxes` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total_value` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `total` decimal(30,12) NOT NULL,
-  `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `detail` text COLLATE utf8mb4_unicode_ci,
-  `observation` text COLLATE utf8mb4_unicode_ci,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `sale_opportunities_user_id_foreign` (`user_id`),
-  KEY `sale_opportunities_establishment_id_foreign` (`establishment_id`),
-  KEY `sale_opportunities_customer_id_foreign` (`customer_id`),
-  KEY `sale_opportunities_fiscal_environment_foreign` (`fiscal_environment`),
-  KEY `sale_opportunities_state_type_id_foreign` (`state_type_id`),
-  KEY `sale_opportunities_currency_type_id_foreign` (`currency_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('sale_opportunities', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id');
+            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->bigInteger('establishment_id');
+            $table->json('establishment');
+            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
+            $table->char('state_type_id', 2)->collation('pro9_ci_ai');
+            $table->string('prefix', 255)->collation('pro9_ci_ai');
+            $table->date('date_of_issue');
+            $table->time('time_of_issue');
+            $table->bigInteger('customer_id');
+            $table->json('customer');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->decimal('exchange_rate_sale', 18, 8);
+            $table->decimal('total_exportation', 30, 12)->default('0.00');
+            $table->decimal('total_free', 30, 12)->default('0.00');
+            $table->decimal('total_taxed', 30, 12)->default('0.00');
+            $table->decimal('total_unaffected', 30, 12)->default('0.00');
+            $table->decimal('total_exonerated', 30, 12)->default('0.00');
+            $table->decimal('total_igv', 30, 12)->default('0.00');
+            $table->decimal('total_taxes', 30, 12)->default('0.00');
+            $table->decimal('total_value', 30, 12)->default('0.00');
+            $table->decimal('total', 30, 12);
+            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->text('detail')->collation('pro9_ci_ai')->nullable();
+            $table->text('observation')->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['user_id'], 'sale_opportunities_user_id_foreign');
+            $table->index(['establishment_id'], 'sale_opportunities_establishment_id_foreign');
+            $table->index(['customer_id'], 'sale_opportunities_customer_id_foreign');
+            $table->index(['fiscal_environment'], 'sale_opportunities_fiscal_environment_foreign');
+            $table->index(['state_type_id'], 'sale_opportunities_state_type_id_foreign');
+            $table->index(['currency_type_id'], 'sale_opportunities_currency_type_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `sale_opportunities`');
+        Schema::dropIfExists('sale_opportunities');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

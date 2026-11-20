@@ -1,63 +1,66 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `suscription_orders` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `external_id` varchar(6) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `number` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `suscription_id` bigint(20) unsigned DEFAULT NULL
- * - `type` enum('new_suscription','suscription_order') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'suscription_order'
- * - `person_number` varchar(25) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `count_rejected_payments` int(11) NOT NULL DEFAULT '0'
- * - `amount` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `date_of_issue` timestamp NULL DEFAULT NULL
- * - `date_of_due` timestamp NULL DEFAULT NULL
- * - `date_of_payment` timestamp NULL DEFAULT NULL
- * - `status` enum('pending','paid','canceled','rejected','expired') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending'
- * - `documentable_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `documentable_id` bigint(20) unsigned DEFAULT NULL
- * - `count_notification` int(11) NOT NULL DEFAULT '0'
- * - `date_notification` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - external_id: varchar(6)
+ * - number: varchar(20)
+ * - suscription_id: numeric(20,0)
+ * - type: varchar(255)
+ * - person_number: varchar(25)
+ * - count_rejected_payments: integer
+ * - amount: numeric(30,12)
+ * - date_of_issue: timestamp
+ * - date_of_due: timestamp
+ * - date_of_payment: timestamp
+ * - status: varchar(255)
+ * - documentable_type: varchar(255)
+ * - documentable_id: numeric(20,0)
+ * - count_notification: integer
+ * - date_notification: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `suscription_orders` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `external_id` varchar(6) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `number` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `suscription_id` bigint(20) unsigned DEFAULT NULL,
-  `type` enum('new_suscription','suscription_order') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'suscription_order',
-  `person_number` varchar(25) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `count_rejected_payments` int(11) NOT NULL DEFAULT '0',
-  `amount` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `date_of_issue` timestamp NULL DEFAULT NULL,
-  `date_of_due` timestamp NULL DEFAULT NULL,
-  `date_of_payment` timestamp NULL DEFAULT NULL,
-  `status` enum('pending','paid','canceled','rejected','expired') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending',
-  `documentable_type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `documentable_id` bigint(20) unsigned DEFAULT NULL,
-  `count_notification` int(11) NOT NULL DEFAULT '0',
-  `date_notification` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `suscription_orders_external_id_unique` (`external_id`),
-  KEY `suscription_orders_type_index` (`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('suscription_orders', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('external_id', 6)->collation('C')->nullable();
+            $table->string('number', 20)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('suscription_id', 20, 0)->nullable();
+            $table->string('type', 255)->collation('pro9_ci_ai')->default('suscription_order');
+            $table->string('person_number', 25)->collation('pro9_ci_ai')->nullable();
+            $table->integer('count_rejected_payments')->default('0');
+            $table->decimal('amount', 30, 12)->default('0.00');
+            $table->timestamp('date_of_issue')->nullable();
+            $table->timestamp('date_of_due')->nullable();
+            $table->timestamp('date_of_payment')->nullable();
+            $table->string('status', 255)->collation('pro9_ci_ai')->default('pending');
+            $table->string('documentable_type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->decimal('documentable_id', 20, 0)->nullable();
+            $table->integer('count_notification')->default('0');
+            $table->timestamp('date_notification')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->unique(['external_id'], 'suscription_orders_external_id_unique');
+            $table->index(['type'], 'suscription_orders_type_index');
+        });
+        DB::statement('ALTER TABLE "suscription_orders" ADD CONSTRAINT "suscription_orders_suscription_id_range" CHECK ("suscription_id" BETWEEN 0 AND 18446744073709551615)');
+        DB::statement('ALTER TABLE "suscription_orders" ADD CONSTRAINT "suscription_orders_type_check" CHECK ("type" IN (\'new_suscription\',\'suscription_order\'))');
+        DB::statement('ALTER TABLE "suscription_orders" ADD CONSTRAINT "suscription_orders_count_rejected_payments_range" CHECK ("count_rejected_payments" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "suscription_orders" ADD CONSTRAINT "suscription_orders_status_check" CHECK ("status" IN (\'pending\',\'paid\',\'canceled\',\'rejected\',\'expired\'))');
+        DB::statement('ALTER TABLE "suscription_orders" ADD CONSTRAINT "suscription_orders_documentable_id_range" CHECK ("documentable_id" BETWEEN 0 AND 18446744073709551615)');
+        DB::statement('ALTER TABLE "suscription_orders" ADD CONSTRAINT "suscription_orders_count_notification_range" CHECK ("count_notification" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `suscription_orders`');
+        Schema::dropIfExists('suscription_orders');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

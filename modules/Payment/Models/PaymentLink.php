@@ -4,6 +4,7 @@
 namespace Modules\Payment\Models;
 
 use Carbon\Carbon;
+use App\Support\Exact\Decimal as D;
 use Eloquent;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -269,20 +270,20 @@ class PaymentLink extends ModelTenant
 
                         if(!$document) return null;
 
-                        $total_payments = (float) $document->payments()->sum('payment');
-                        $payment = (float) $row->total;
+                        $payment = D::represent($row->exactValue('total'), 2, true);
 
                         // si el link ya fue pagado, su monto esta incluido en los pagos del comprobante
-                        $applied = $row->is_paid ? $payment : 0;
+                        $applied = $row->is_paid ? $row->exactValue('total') : D::of(0);
+                        $pending = D::represent(D::max(0, $document->exactBalance()->plus($applied)), 2, true);
 
                         return [
                             'instance_type' => self::getInstanceTypeByRecordType($row->record_type),
                             'document_id' => $document->id,
                             'number_full' => $document->number_full,
                             'currency_type_id' => $document->currency_type_id,
-                            'total' => (float) $document->total,
+                            'total' => $document->total,
                             // se devuelve el monto aplicado por este link para poder editarlo
-                            'pending' => round((float) $document->total - $total_payments + $applied, 2),
+                            'pending' => $pending,
                             'payment' => $payment,
                             'status' => $row->status,
                             'status_description' => $row->status_description,
@@ -573,7 +574,7 @@ class PaymentLink extends ModelTenant
 
                         return [
                             'number_full' => $record->number_full,
-                            'total' => (float) $row->total,
+                            'total' => D::represent($row->exactValue('total'), 2, true),
                         ];
 
                     })

@@ -14,6 +14,10 @@ use App\Support\Exact\{Decimal, FractionSheet, LegacyKardexRow};
 class KardexExport implements FromView, ShouldAutoSize, WithEvents
 {
     use Exportable;
+    public $balance;
+    public $records;
+    public $company;
+    public $establishment;
     
     public function balance($balance) {
         $this->balance = $balance;

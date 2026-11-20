@@ -1,38 +1,35 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Tipos de alícuota del catálogo HKA, para instalaciones nuevas.
- * Los porcentajes reproducen el manual y no configuran el cálculo fiscal de SAB.
- * Inventario de columnas:
- * - `id` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL, código HKA
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `percentage` decimal(30,12) NOT NULL, valor de referencia del manual
- * - `tax_kind` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL, familia de impuesto
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: varchar(4)
+ * - description: varchar(255)
+ * - percentage: numeric(30,12)
+ * - tax_kind: varchar(16)
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_iva_rate_types` (
-  `id` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `percentage` decimal(30,12) NOT NULL,
-  `tax_kind` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_iva_rate_types', function (Blueprint $table) {
+            $table->string('id', 4)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->decimal('percentage', 30, 12);
+            $table->string('tax_kind', 16)->collation('pro9_ci_ai');
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->primary(['id']);
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_iva_rate_types`');
+        Schema::dropIfExists('cat_iva_rate_types');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

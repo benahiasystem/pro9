@@ -1,42 +1,39 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `pending_account_commissions` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `seller_id` int(10) unsigned NOT NULL
- * - `amount` decimal(30,12) NOT NULL
- * - `commission_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - seller_id: bigint
+ * - amount: numeric(30,12)
+ * - commission_type: varchar(255)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `pending_account_commissions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `seller_id` int(10) unsigned NOT NULL,
-  `amount` decimal(30,12) NOT NULL,
-  `commission_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `pending_account_commissions_seller_id_foreign` (`seller_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('pending_account_commissions', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('seller_id');
+            $table->decimal('amount', 30, 12);
+            $table->string('commission_type', 255)->collation('pro9_ci_ai');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['seller_id'], 'pending_account_commissions_seller_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `pending_account_commissions`');
+        Schema::dropIfExists('pending_account_commissions');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

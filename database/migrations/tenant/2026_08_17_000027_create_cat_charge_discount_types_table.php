@@ -1,39 +1,39 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `cat_charge_discount_types` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `active` tinyint(1) NOT NULL
- * - `base` tinyint(1) NOT NULL
- * - `level` enum('item','global') COLLATE utf8mb4_unicode_ci NOT NULL
- * - `type` enum('discount','charge') COLLATE utf8mb4_unicode_ci NOT NULL
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: varchar(255)
+ * - active: boolean
+ * - base: boolean
+ * - level: varchar(255)
+ * - type: varchar(255)
+ * - description: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_charge_discount_types` (
-  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `active` tinyint(1) NOT NULL,
-  `base` tinyint(1) NOT NULL,
-  `level` enum('item','global') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` enum('discount','charge') COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  KEY `cat_charge_discount_types_id_index` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_charge_discount_types', function (Blueprint $table) {
+            $table->string('id', 255)->collation('pro9_ci_ai');
+            $table->boolean('active');
+            $table->boolean('base');
+            $table->string('level', 255)->collation('pro9_ci_ai');
+            $table->string('type', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->index(['id'], 'cat_charge_discount_types_id_index');
+        });
+        DB::statement('ALTER TABLE "cat_charge_discount_types" ADD CONSTRAINT "cat_charge_discount_types_level_check" CHECK ("level" IN (\'item\',\'global\'))');
+        DB::statement('ALTER TABLE "cat_charge_discount_types" ADD CONSTRAINT "cat_charge_discount_types_type_check" CHECK ("type" IN (\'discount\',\'charge\'))');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_charge_discount_types`');
+        Schema::dropIfExists('cat_charge_discount_types');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

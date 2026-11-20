@@ -83,7 +83,7 @@ class VenezuelaIvaContractTest extends TestCase
         // Numeric behavior is exercised by FiscalLineCalculationTest and fiscal-row.test.cjs.
 
         $quotation = (string) file_get_contents(app_path('Http/Controllers/Tenant/QuotationController.php'));
-        self::assertStringContainsString('Localization::taxPercentage()', $quotation);
+        self::assertStringContainsString('CommercialCalculation::defer', $quotation);
 
         foreach ([
             'app/Models/Tenant/DocumentItem.php',
@@ -218,32 +218,50 @@ class VenezuelaIvaContractTest extends TestCase
     }
 
     /** @test */
-    public function garage_pos_displays_the_dynamic_sixteen_percent_iva_rate(): void
+    public function garage_pos_displays_the_configured_iva_rate_and_uses_the_invoice_snapshot(): void
     {
         $garage = (string) file_get_contents(resource_path('js/views/tenant/pos/garage.vue'));
         $payment = (string) file_get_contents(resource_path('js/views/tenant/pos/partials/fast_payment_garage.vue'));
 
         self::assertStringContainsString(':percentage-igv="percentage_igv"', $garage);
         self::assertSame(1, substr_count($payment, 'IVA ({{ ivaPercentageLabel }}%)'));
-        self::assertStringContainsString('Number(form.total_igv).toFixed(2)', $payment);
+        self::assertStringContainsString("money(checkoutValue(form, 'total_igv'))", $payment);
+        self::assertStringNotContainsString('Number(form.total_igv).toFixed(2)', $payment);
         self::assertStringNotContainsString('total_plastic_bag_taxes', $payment);
-        self::assertStringContainsString('(Number(this.percentageIgv) || 0.16) * 100', $payment);
+        self::assertStringContainsString('exactAmount(rate).times(100).decimal()', $payment);
         self::assertStringNotContainsString('IVA (18%)', $payment);
     }
 
     /** @test */
     public function iva_change_markers_are_balanced(): void
     {
-        $diff = shell_exec('git diff --unified=0 -- . ":(exclude)public/build" ":(exclude)public/js"') ?: '';
-
-        self::assertSame(
-            substr_count($diff, '########## INICIO CAMBIO IGV A IVA'),
-            substr_count($diff, '######### FIN CAMBIO IGV A IVA')
-        );
-        self::assertSame(
-            substr_count($diff, '########## INICIO CAMBIO AFECTACIÓN IVA'),
-            substr_count($diff, '######### FIN CAMBIO AFECTACIÓN IVA')
-        );
+        $files=[];
+        if (getenv('PRO9_POSTGRES_TESTS')==='1') {
+            $files=\Tests\Support\PostgresTestEnvironment::source()['files'];
+        } else {
+            // Static standalone check: never depends on Git status or a database.
+            foreach (['app','modules','resources','database','config'] as $directory) {
+                foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(base_path($directory),\FilesystemIterator::SKIP_DOTS)) as $file) {
+                    if ($file->isFile()) $files[substr($file->getPathname(),strlen(base_path())+1)]=hash_file('sha256',$file->getPathname());
+                }
+            }
+        }
+        $checked=0;$marked=0;
+        foreach ($files as $file=>$hash) {
+            if (!preg_match('~^(?:app|modules|resources|database|config)/.*\.(?:php|js|vue|scss)$~D',$file)) continue;
+            if ($hash===null) {self::assertFileDoesNotExist(base_path($file));continue;}
+            self::assertFileExists(base_path($file));
+            self::assertSame($hash,hash_file('sha256',base_path($file)),$file);
+            $source=file_get_contents(base_path($file));++$checked;
+            if (str_contains($source,'########## INICIO CAMBIO IGV A IVA') || str_contains($source,'########## INICIO CAMBIO AFECTACIÓN IVA')) ++$marked;
+            foreach ([['########## INICIO CAMBIO IGV A IVA','######### FIN CAMBIO IGV A IVA'],
+                ['########## INICIO CAMBIO AFECTACIÓN IVA','######### FIN CAMBIO AFECTACIÓN IVA']] as [$start,$end]) {
+                self::assertSame(substr_count($source,$start),substr_count($source,$end),$file);
+            }
+        }
+        self::assertGreaterThan(0,$checked,'No se permite omitir el inventario de fuentes.');
+        self::assertGreaterThan(0,$marked,'El inventario debe incluir las unidades fiscales.');
+        fwrite(STDERR,json_encode(['iva_source_files_checked'=>$checked,'iva_marked_files'=>$marked]).PHP_EOL);
     }
 
     private function activeSourceContract(): string

@@ -1,37 +1,37 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `suscription_payment_reminders` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT
- * - `reminder_days` int(11) NOT NULL DEFAULT '0'
- * - `reminder_type` enum('before','same_day','after') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'before'
- * - `reminder_time` time NOT NULL
- * - `shipping_medium` enum('email','whatsapp') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'email'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - reminder_days: integer
+ * - reminder_type: varchar(255)
+ * - reminder_time: time
+ * - shipping_medium: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `suscription_payment_reminders` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `reminder_days` int(11) NOT NULL DEFAULT '0',
-  `reminder_type` enum('before','same_day','after') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'before',
-  `reminder_time` time NOT NULL,
-  `shipping_medium` enum('email','whatsapp') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'email',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('suscription_payment_reminders', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->integer('reminder_days')->default('0');
+            $table->string('reminder_type', 255)->collation('pro9_ci_ai')->default('before');
+            $table->time('reminder_time');
+            $table->string('shipping_medium', 255)->collation('pro9_ci_ai')->default('email');
+        });
+        DB::statement('ALTER TABLE "suscription_payment_reminders" ADD CONSTRAINT "suscription_payment_reminders_reminder_days_range" CHECK ("reminder_days" BETWEEN -2147483648 AND 2147483647)');
+        DB::statement('ALTER TABLE "suscription_payment_reminders" ADD CONSTRAINT "suscription_payment_reminders_reminder_type_check" CHECK ("reminder_type" IN (\'before\',\'same_day\',\'after\'))');
+        DB::statement('ALTER TABLE "suscription_payment_reminders" ADD CONSTRAINT "suscription_payment_reminders_shipping_medium_check" CHECK ("shipping_medium" IN (\'email\',\'whatsapp\'))');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `suscription_payment_reminders`');
+        Schema::dropIfExists('suscription_payment_reminders');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

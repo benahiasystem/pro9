@@ -1,0 +1,262 @@
+{
+  "php_excluded": [
+    "Tests\\Unit\\BillingPdfPostgresTest::test_actual_invoice_credit_and_debit_pdfs_keep_exact_data_and_fit_active_formats with data set #1",
+    "Tests\\Unit\\ClassifiedCashWorkbookTest::test_product_report_keeps_exact_lines_and_separate_currencies_in_pdf_and_excel",
+    "Tests\\Unit\\ClassifiedCreditPostgresTest::test_cash_credit_accumulator_keeps_original_fractions_before_display_rounding",
+    "Tests\\Unit\\CommercialAnalysisAmountsTest::test_currency_and_frozen_units_keep_fractional_quantities_separate",
+    "Tests\\Unit\\ContasisPostgresTest::test_contasis_formats_persisted_exact_values_and_real_other_taxes",
+    "Tests\\Unit\\CurrentPdfRenderingTest::test_issuer_igtf_retentions_and_ves_totals_use_persisted_snapshots",
+    "Tests\\Unit\\DashboardKpiPostgresTest::test_daily_points_preserve_the_original_fraction_and_a_separate_raw_total",
+    "Tests\\Unit\\DashboardKpiPostgresTest::test_growth_totals_sum_fractions_before_the_monthly_projection",
+    "Tests\\Unit\\DashboardPaymentMethodsPostgresTest::test_payment_categories_sum_original_fractions_before_the_total_is_rounded",
+    "Tests\\Unit\\DashboardRankingsPostgresTest::test_customer_ranking_converts_credit_notes_at_their_historical_rate",
+    "Tests\\Unit\\DashboardRankingsPostgresTest::test_small_periodic_sales_remain_positive_in_both_rankings",
+    "Tests\\Unit\\DashboardSalesPostgresTest::test_historical_rate_fraction_cannot_be_silently_rounded_to_eight_places",
+    "Tests\\Unit\\DashboardSalesPostgresTest::test_invalid_usd_rate_rolls_back_the_read_without_reusing_a_failed_snapshot",
+    "Tests\\Unit\\DashboardSalesPostgresTest::test_materialized_chart_and_range_keep_fractions_across_multiple_batches",
+    "Tests\\Unit\\DashboardSalesPostgresTest::test_net_sales_add_debits_subtract_credits_and_preserve_the_document_type_scope",
+    "Tests\\Unit\\DashboardSalesPostgresTest::test_range_converts_the_original_fraction_before_the_final_rounding",
+    "Tests\\Unit\\DashboardSeriesPostgresTest::test_cash_flow_keeps_raw_period_totals_separate_from_rounded_daily_points",
+    "Tests\\Unit\\DashboardSeriesPostgresTest::test_weekday_chart_converts_the_original_usd_fraction_without_rounding_it_to_zero",
+    "Tests\\Unit\\DashboardUtilityPostgresTest::test_global_kpis_keep_the_original_sales_average_utility_and_settled_receivable",
+    "Tests\\Unit\\DashboardUtilityPostgresTest::test_month_goal_uses_the_unrounded_goal_sales_and_daily_forecast",
+    "Tests\\Unit\\DashboardUtilityPostgresTest::test_six_month_global_trend_keeps_empty_months_and_original_last_month_fraction",
+    "Tests\\Unit\\DashboardUtilityPostgresTest::test_utility_converts_current_catalog_cost_and_adds_expenses_before_rounding",
+    "Tests\\Unit\\DashboardUtilityPostgresTest::test_utility_uses_the_original_usd_line_fraction_before_final_presentation",
+    "Tests\\Unit\\DashboardUtilityPostgresTest::test_zero_disabled_goal_keeps_its_sales_and_forecast_without_dividing_by_zero",
+    "Tests\\Unit\\DocumentCurrencyTotalsTest::*",
+    "Tests\\Unit\\ExactConsolidatedConsumersTest::*",
+    "Tests\\Unit\\ExactReceivablesTest::test_mixed_currency_pdf_lines_and_summary_have_an_explicit_rounding_adjustment",
+    "Tests\\Unit\\ExactReceivablesTest::test_pdf_displays_documentary_total_and_settled_balance_from_the_same_exact_rows",
+    "Tests\\Unit\\ExactReceivablesTest::test_real_xlsx_export_has_text_amounts_composite_identity_and_original_fractions",
+    "Tests\\Unit\\ExactReportTicketRenderingTest::test_local_ticket_retains_the_exact_total_and_renders_a_pdf",
+    "Tests\\Unit\\ExactSalesConsolidatedTest::test_fractions_survive_grouping_historical_conversion_and_credit_notes",
+    "Tests\\Unit\\ExactSalesConsolidatedTest::test_missing_operands_or_historical_rate_fail with data set #1",
+    "Tests\\Unit\\ExactSalesConsolidatedTest::test_missing_operands_or_historical_rate_fail with data set #2",
+    "Tests\\Unit\\ExportInvoiceTest::test_export_adjustments_distribute_cent_residuals_and_currency_rounding_without_duplicate_discount",
+    "Tests\\Unit\\ExportInvoiceTest::test_export_payload_preserves_the_incoterm_buyer_and_currency_totals with data set #1",
+    "Tests\\Unit\\ExportInvoiceTest::test_export_payload_preserves_the_incoterm_buyer_and_currency_totals with data set #3",
+    "Tests\\Unit\\ExportInvoiceTest::test_export_payload_preserves_the_incoterm_buyer_and_currency_totals with data set #5",
+    "Tests\\Unit\\ExportInvoiceTest::test_global_export_adjustments_preserve_local_totals_and_follow_hka_subtotal_rules",
+    "Tests\\Unit\\ExportInvoiceTest::test_incomplete_or_inconsistent_exports_are_rejected",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_automatic_intermediation_matches_evaluation_quote_preview_and_initial_persistence",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_credit_invoice_from_sale_note_reuses_cross_currency_receipt_and_keeps_balance",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_customer_report_keeps_notes_currencies_and_filters_in_list_and_excel",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_dashboard_sales_kpi_uses_exact_snapshot_and_exchange_rate",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_debit_service_uses_the_exact_adjustment_operand_on_postgresql with data set \"convertido a USD\"",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_debit_service_uses_the_exact_adjustment_operand_on_postgresql with data set \"edición con fracción desactualizada\"",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_debit_service_uses_the_exact_adjustment_operand_on_postgresql with data set \"fracción positiva menor a doce decimales\"",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_debit_service_uses_the_exact_adjustment_operand_on_postgresql with data set \"importe manual igual al decimal visible\"",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_detailed_profit_preserves_currency_exact_costs_and_exports",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_document_receivable_kpi_uses_current_balance_after_foreign_receipt_reversal",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_document_sales_kpis_preserve_fractions_large_values_and_snapshot",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_igtf_settings_and_invoice_preserve_eight_decimal_rate",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_inclusive_forty_dollars_preserve_exact_tax_and_cash_in_a_mixed_invoice",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_invoice_default_cash_change_leaves_the_open_general_cash_register",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_invoice_dollar_change_can_leave_cash_and_a_bolivar_bank_account",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_invoice_mobile_payment_change_is_an_outflow_of_its_bank_account",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_invoice_total_tendered_includes_igtf_and_preserves_the_actual_eight_twenty_change",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_islr_different_rates_declared_authority_and_net_capability",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_iva_fiscal_ves_is_independent_from_usd_settlement_rate",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_iva_net_forecast_idempotence_hka_and_audited_replacement",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_local_calculation_detects_new_igtf_configuration_from_another_connection",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_payment_quote_matches_persisted_invoice_and_rejects_stale_tax",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_pending_commission_keeps_currency_period_reversals_and_unknown_fixed_amount",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_pos_cash_documents_report_uses_cash_links_filters_and_exact_exports",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_retired_igtf_exception_is_rejected_across_entrypoints_without_partial_writes",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_sales_commission_separates_currencies_exactly_and_never_invents_fixed_currency",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_tip_report_preserves_exact_amount_and_filters_document_branch",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_usd_invoice_installments_discount_ves_bank_receipt",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_user_commission_uses_exact_profit_and_marks_cost_as_estimated",
+    "Tests\\Unit\\HkaCreditInvoiceTest::test_a_new_abono_cannot_be_completed_with_a_fictitious_full_credit",
+    "Tests\\Unit\\HkaCreditInvoiceTest::test_all_excluded_variants_fail_the_contract_eligibility",
+    "Tests\\Unit\\HkaCreditInvoiceTest::test_contado_keeps_existing_forms_even_with_a_preserved_creation_marker",
+    "Tests\\Unit\\HkaCreditInvoiceTest::test_declaration_uses_final_hka_money_without_mutating_the_sale",
+    "Tests\\Unit\\HkaCreditInvoiceTest::test_unverified_contract_never_adds_a_fiscal_payment",
+    "Tests\\Unit\\HkaCustomerIdentityTest::test_domestic_numeric_identity_uses_the_central_catalog",
+    "Tests\\Unit\\HkaIslrRetentionTest::test_payload_and_transport_use_frozen_currency_and_json_get_delete",
+    "Tests\\Unit\\HkaIslrRetentionTest::test_query_verifies_only_returned_fields_and_stops_at_conflicts",
+    "Tests\\Unit\\HkaIvaRetentionPayloadTest::test_frozen_invoice_currency_and_taxable_base_are_distinct_from_retained_iva",
+    "Tests\\Unit\\HkaNotePaymentsTest::*",
+    "Tests\\Unit\\HkaPayloadBuilderTest::test_exports_are_not_enabled_by_catalog_presence",
+    "Tests\\Unit\\HkaPayloadBuilderTest::test_missing_fiscal_payment_method_blocks_preparation",
+    "Tests\\Unit\\HkaPayloadBuilderTest::test_missing_identity_mapping_blocks_preparation",
+    "Tests\\Unit\\HkaPayloadBuilderTest::test_missing_optional_contacts_are_not_invented",
+    "Tests\\Unit\\HkaPayloadBuilderTest::test_missing_unit_price_blocks_preparation",
+    "Tests\\Unit\\HkaPayloadBuilderTest::test_new_payloads_include_frozen_receiver_contacts_and_payment_condition",
+    "Tests\\Unit\\HkaPayloadBuilderTest::test_payloads_match_the_pinned_contract",
+    "Tests\\Unit\\HkaPayloadBuilderTest::test_unverified_hka_net_retention_blocks_emission_without_fabricating_payments",
+    "Tests\\Unit\\InvoiceOtherTaxesPostgresTest::test_invoice_edit_preserves_omitted_other_tax_details_and_revalues_them_at_the_new_rate",
+    "Tests\\Unit\\InvoicePaperPdfDataTest::test_received_tender_includes_igtf_once_and_change_uses_actual_currencies",
+    "Tests\\Unit\\InvoicePaperPdfDataTest::test_usd_preview_projects_ves_from_the_draft_not_an_older_snapshot",
+    "Tests\\Unit\\InvoicePaymentPreviewCurrencyTest::test_a4_preview_keeps_inclusive_tender_igtf_and_change_without_a_fictitious_balance",
+    "Tests\\Unit\\InvoiceSpreadsheetImportTest::test_actual_xlsx_imports_preserve_large_numeric_tokens_and_public_payloads with data set \"excel-USD\"",
+    "Tests\\Unit\\InvoiceSpreadsheetImportTest::test_actual_xlsx_imports_preserve_large_numeric_tokens_and_public_payloads with data set \"first-USD\"",
+    "Tests\\Unit\\InvoiceSpreadsheetImportTest::test_actual_xlsx_imports_preserve_large_numeric_tokens_and_public_payloads with data set \"second-USD\"",
+    "Tests\\Unit\\InvoiceSpreadsheetImportTest::test_api_validation_maps_are_shown_without_warnings_and_http_errors_are_never_registered with data set \"excel-USD\"",
+    "Tests\\Unit\\InvoiceSpreadsheetImportTest::test_api_validation_maps_are_shown_without_warnings_and_http_errors_are_never_registered with data set \"first-USD\"",
+    "Tests\\Unit\\InvoiceSpreadsheetImportTest::test_api_validation_maps_are_shown_without_warnings_and_http_errors_are_never_registered with data set \"second-USD\"",
+    "Tests\\Unit\\PrepaymentConsumersPostgresTest::test_invoice_rejects_a_local_advance_for_another_customer_or_currency with data set #1",
+    "Tests\\Unit\\PrepaymentSelectionPostgresTest::test_invoice_selector_filters_by_buyer_currency_branch_and_environment",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_regime_money_including_discounts_charges_exempt_and_igtf_is_adapted_once",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #10",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #11",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #14",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #15",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #18",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #19",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #2",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #22",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #23",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #26",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #27",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #3",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #6",
+    "Tests\\Unit\\SpecialTaxRegimeTest::test_seven_regimes_both_currencies_and_ownerships_preserve_money_and_iva with data set #7",
+    "Tests\\Unit\\ThirdPartyInvoiceTest::test_builder_rejects_missing_third_party_credit_unpaid_and_notes_and_omits_absent_email",
+    "Tests\\Unit\\ThirdPartyInvoiceTest::test_hka_adjustments_preserve_local_iva_and_reconcile_usd_with_igtf",
+    "Tests\\Unit\\ThirdPartyInvoiceTest::test_hka_third_party_contract_keeps_buyer_issuer_and_money_separate with data set #1",
+    "Tests\\Unit\\ThirdPartyInvoiceTest::test_hka_third_party_contract_keeps_buyer_issuer_and_money_separate with data set #3",
+    "Tests\\Unit\\ThirdPartyInvoiceTest::test_usd_cent_allocation_keeps_exempt_sales_and_post_tax_discounts_balanced"
+  ],
+  "javascript_excluded": {
+    "tests/js/document-item-edit-quantity.test.cjs": [
+      "invoice line editor restores fixed discounts in the price currency without modifying stored amounts"
+    ],
+    "tests/js/document-report-search.test.cjs": [
+      "sales page totals sum displayed decimals by currency and exclude rejected credit notes"
+    ],
+    "tests/js/exact-calculation.test.cjs": [
+      "reopening lines restores original inputs for server recalculation"
+    ],
+    "tests/js/export-invoice-ui.test.cjs": [
+      "loading an existing export preserves its rate, collections and object-serialized header adjustments"
+    ],
+    "tests/js/invoice-cash-total.test.cjs": [
+      "USD invoices update their suggested payment and explicit edits stop automatic changes even at the same amount"
+    ],
+    "tests/js/invoice-decimal-input.test.cjs": [
+      "a global percentage keeps its value when the document currency changes",
+      "fixed global discounts preserve their original fraction across currency changes and repeated recalculation",
+      "a converted subprecision discount can be explicitly cleared and failed currency changes restore its source",
+      "actual export discount calculation consumes the converted fraction and keeps it in the submitted adjustments",
+      "reopening a tiny export discount keeps its original percentage and exact amount",
+      "reopening mixed domestic lines restores only the global fraction, including when its current preference is disabled"
+    ],
+    "tests/js/invoice-payment-link-total.test.cjs": [
+      "invoice payment links convert to bolivars before rounding once to cents"
+    ],
+    "tests/js/invoice-payment-progress.test.cjs": [
+      "USD document amounts convert to bolívares using the document rate before presentation",
+      "pending evaluations retain labelled amounts without a blank flash and failures stay unavailable",
+      "large exact amounts and a fractional conversion keep their cents"
+    ],
+    "tests/js/invoice-tax-summary.test.cjs": [
+      "real form initialization and total calculation update IVA after quantity, discounts, currency, rate and item removal",
+      "IVA converts the snapshot fraction before rounding and preserves amounts above the JavaScript safe integer",
+      "invalid conversion data stays unavailable and configured tax rates remain reactive",
+      "document currency symbol follows the selected currency when the catalog loads or changes"
+    ],
+    "tests/js/local-calculations.test.cjs": [
+      "amounts recalculate locally without HTTP per key and preserve entered money",
+      "a pending context cannot allow duplicate confirmation or a replaced draft",
+      "zero installment weights use an equal allocation and currency changes remain exact",
+      "server corrections need another click and internal tax conversion preserves the review",
+      "a method or manual rate edit updates taxes locally without requesting a new context",
+      "credit excludes retained cash from the local result and payload and restores it for cash sales"
+    ],
+    "tests/js/pos-hka-email.test.cjs": [
+      "POS previews exact cash change in each received currency in server allocation order",
+      "payment.vue initializes the default using the document currency",
+      "fast_payment.vue initializes the default using the document currency",
+      "fast_payment_garage.vue initializes the default using the document currency",
+      "multiple_payment.vue defaults to the current classification and a compatible destination",
+      "multiple_payment_garage.vue defaults to the current classification and a compatible destination"
+    ],
+    "tests/js/pos-quantity-currency.test.cjs": [
+      "remounting the POS invoice checkout preserves its original discount mode and amount"
+    ],
+    "tests/js/sale-note-invoice-submit.test.cjs": [
+      "sale note conversion submits a USD invoice with its recorded exchange rate",
+      "conversion obtains a missing exchange rate and sends it without replacing it"
+    ],
+    "tests/js/fiscal-row.test.cjs": [
+      "export context calculates goods at zero IVA and preserves currency conversion",
+      "VES and USD conversion retains quantities and tax"
+    ],
+    "tests/js/invoice-editable-rows.test.cjs": [
+      "invoice displays a documentary price once and compares costs in their original currency"
+    ]
+  },
+  "php_adapted": {
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_saved_credit_installments_preserve_cross_currency_receipt_through_conversion_and_pdf": "Conserva la factura VES con cobro USD y verifica fracciones de facturas VES en PDF y XLSX con ambas opciones de conversión.",
+    "Tests\\Unit\\ExactHttpAcceptanceTest::test_production_kernel_routes_and_api_authentication_run_against_disposable_postgresql": "El total por moneda se verifica con la factura VES y el detalle de API ejecuta sólo su caso en VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_fresh_tenant_migrations_seed_rollback_and_repeat": "Conserva instalación, repetición, emisión e IGTF con una factura VES que recibe USD.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_special_tax_regimes_persist_settle_edit_freeze_and_emit_after_commit": "Todos los regímenes y compradores, con factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_third_party_invoices_persist_freeze_edit_and_emit_after_commit": "Todos los terceros, con factura VES y cobro USD en el escenario IGTF.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_export_invoices_persist_freeze_edit_and_emit_after_commit": "Todos los Incoterms, con factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_note_currency_regime_and_service_matrix": "Conserva los regímenes, motivos, referencias y servicios con facturas en VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_free_form_invoices_credit_and_debit_match_cash_products_and_local_pdfs": "Conserva facturas y notas VES, pago USD de una nota, controles físicos y resolución de PDF.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_credit_invoice_confirmation_preserves_full_receivable_and_later_collection": "Conserva la cuenta por cobrar y su abono posterior con factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_credit_invoice_discount_and_charge_preserve_exact_totals_and_declaration": "Comprueba descuento, cargo, saldo y declaración fiscal con factura VES.",
+    "Tests\\Unit\\ExactMySqlContinuationTest::test_tender_credit_check_and_reversal_use_the_same_mysql_fractions": "Cierra la factura VES con un recibo USD y conserva la fracción del ajuste de liquidación.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_exact_calculations_survive_postgresql_reads_grouping_discounts_and_rollback with data set \"digital\"": "Conserva agrupaciones, rollback y el reporte de saldos con una factura fraccional VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_exact_calculations_survive_postgresql_reads_grouping_discounts_and_rollback with data set \"forma libre\"": "Conserva agrupaciones, rollback y el reporte de saldos con una factura fraccional VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_spe_buyer_and_commercial_issuer_matrix_in_common_web_pos_garage_persistence": "Conserva compradores, emisores, Web, POS y Garage, contado, crédito y recuperación con factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_automatic_subscription_invoice_has_no_unverified_cash_receipt with data set \"digital\"": "Conserva la factura de suscripción VES y la aplicación posterior de un cobro USD en modo digital.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_automatic_subscription_invoice_has_no_unverified_cash_receipt with data set \"forma libre\"": "Conserva la factura de suscripción VES y la aplicación posterior de un cobro USD en forma libre.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_document_list_totals_use_supported_types_exact_fractions_and_separate_currencies": "Conserva las fracciones, los importes grandes, los filtros y la lectura concurrente en facturas y notas VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_sale_note_invoice_preserves_unedited_original_unit_prices with data set \"agrupados\"": "Conserva las partidas agrupadas y separadas, precios ambiguos, edición y servicios con factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_sale_note_invoice_preserves_unedited_original_unit_prices with data set \"agrupados sin identificadores\"": "Conserva las partidas agrupadas y separadas, precios ambiguos, edición y servicios con factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_sale_note_invoice_preserves_unedited_original_unit_prices with data set \"separados con igual proyección\"": "Conserva las partidas agrupadas y separadas, precios ambiguos, edición y servicios con factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_sale_note_invoice_preserves_unedited_original_unit_prices with data set \"precios ambiguos sin identificadores\"": "Conserva las partidas agrupadas y separadas, precios ambiguos, edición y servicios con factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_sale_note_invoice_preserves_unedited_original_unit_prices with data set \"precio editado\"": "Conserva las partidas agrupadas y separadas, precios ambiguos, edición y servicios con factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_sale_note_invoice_preserves_unedited_original_unit_prices with data set \"servicio sin inventario\"": "Conserva las partidas agrupadas y separadas, precios ambiguos, edición y servicios con factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_invoice_from_order_sale_note_keeps_the_original_fractional_price with data set \"precio fraccionario\"": "Conserva precio fraccionario, partidas invertidas y rollback de orden a nota y factura VES.",
+    "Tests\\Unit\\FiscalEmissionSchemaTest::test_invoice_from_order_sale_note_keeps_the_original_fractional_price with data set \"partidas invertidas\"": "Conserva precio fraccionario, partidas invertidas y rollback de orden a nota y factura VES.",
+    "Tests\\Unit\\SystemDashboardSalesTotalTest::test_sales_total_uses_document_amounts_without_loading_payments": "Conserva los totales, filtros y aislamiento de cobros con documentos VES en SQLite temporal."
+  },
+  "javascript_adapted": {
+    "tests/js/local-calculations.test.cjs": {
+      "switching invoice and sale note preserves the latest total delivered and invalidates stale tendered amounts": "Alterna la nota de venta y la factura VES con cobros mixtos. Comprueba la tasa aplicada al USD, el vuelto y los totales en VES."
+    },
+    "tests/js/quotation-conversion-receipts.test.cjs": {
+      "quotation conversion keeps retention and suggested installments exact for large amounts": "Conserva el escenario VES, los descuentos y las cuotas de la cotización; omite la variante USD."
+    },
+    "tests/js/pos-quantity-currency.test.cjs": {
+      "index.vue: blurCalculateQuantity conserva la tasa al cambiar la cantidad en ambas monedas": "Verifica el precio de catálogo USD en una factura VES cuando se edita la cantidad.",
+      "index.vue: blurCalculateQuantity2 conserva la tasa al cambiar la cantidad en ambas monedas": "Verifica el precio de catálogo USD en una factura VES cuando se edita la cantidad.",
+      "fast.vue: blurCalculateQuantity conserva la tasa al cambiar la cantidad en ambas monedas": "Verifica el precio de catálogo USD en una factura VES cuando se edita la cantidad.",
+      "fast.vue: blurCalculateQuantity2 conserva la tasa al cambiar la cantidad en ambas monedas": "Verifica el precio de catálogo USD en una factura VES cuando se edita la cantidad.",
+      "garage.vue: blurCalculateQuantity conserva la tasa al cambiar la cantidad en ambas monedas": "Verifica el precio de catálogo USD en una factura VES cuando se edita la cantidad.",
+      "garage.vue: blurCalculateQuantity2 conserva la tasa al cambiar la cantidad en ambas monedas": "Verifica el precio de catálogo USD en una factura VES cuando se edita la cantidad."
+    },
+    "tests/js/exact-note-conversion.test.cjs": {
+      "note modal transports the server groups without regrouping products or fetching current catalog prices": "Conserva las aserciones con factura VES y permite cobros USD."
+    },
+    "tests/js/igtf-settings-ui.test.cjs": {
+      "checkout quotes the full receipt and requires review if the tax changes": "Conserva las aserciones con factura VES y permite cobros USD.",
+      "a pending quote cannot update a payment after its amount changes": "Conserva las aserciones con factura VES y permite cobros USD.",
+      "a pending quote cannot update a checkout whose payment list was replaced": "Conserva las aserciones con factura VES y permite cobros USD.",
+      "closing the payment dialog discards a pending quote": "Conserva las aserciones con factura VES y permite cobros USD.",
+      "an already populated checkout displays a quote on creation": "Conserva las aserciones con factura VES y permite cobros USD.",
+      "a pending conversion quote cannot update a replaced document receipt list": "Conserva las aserciones con factura VES y permite cobros USD."
+    },
+    "tests/js/fiscal-payment-ui.test.cjs": {
+      "total tendered includes IGTF and preserves the customer entry through reactive recalculations": "Conserva el importe entregado, IGTF y liquidación de un cobro USD con total documental VES."
+    },
+    "tests/js/default-receipt-methods.test.cjs": {
+      "VES credit installments divide the balance after a USD receipt by cents": "Comprueba cuotas en VES después de un cobro USD."
+    },
+    "tests/js/invoice-payment-validation.test.cjs": {
+      "late catalog resolves only still-pending new rows and preserves selections": "Conserva el caso con factura VES."
+    },
+    "tests/js/invoice-prepayment-scope.test.cjs": {
+      "invoice advance options follow the current buyer, currency and branch despite late responses": "Conserva el caso con factura VES."
+    },
+    "tests/js/subscription-invoice-receipts.test.cjs": {
+      "Suscription blocks conversion when no valid exchange rate is available": "Conserva el caso con factura VES.",
+      "FullSuscription blocks conversion when no valid exchange rate is available": "Conserva el caso con factura VES."
+    }
+  }
+}

@@ -1,39 +1,36 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `item_warehouse_prices` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `item_id` int(10) unsigned NOT NULL
- * - `warehouse_id` int(10) unsigned NOT NULL
- * - `price` decimal(30,12) NOT NULL DEFAULT '0.000000'
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - item_id: bigint
+ * - warehouse_id: bigint
+ * - price: numeric(30,12)
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `item_warehouse_prices` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `item_id` int(10) unsigned NOT NULL,
-  `warehouse_id` int(10) unsigned NOT NULL,
-  `price` decimal(30,12) NOT NULL DEFAULT '0.000000',
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `item_warehouse_prices_item_id_foreign` (`item_id`),
-  KEY `item_warehouse_prices_warehouse_id_foreign` (`warehouse_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('item_warehouse_prices', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('item_id');
+            $table->bigInteger('warehouse_id');
+            $table->decimal('price', 30, 12)->default('0.000000');
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['item_id'], 'item_warehouse_prices_item_id_foreign');
+            $table->index(['warehouse_id'], 'item_warehouse_prices_warehouse_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `item_warehouse_prices`');
+        Schema::dropIfExists('item_warehouse_prices');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

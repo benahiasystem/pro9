@@ -13,6 +13,7 @@ class DocumentEmail extends Mailable
 
     public $company;
     public $pdf;
+    public $excel;
 
     public function __construct($company, $pdf, $excel)
     {

@@ -7,7 +7,7 @@ return new class extends Migration
 {
     public function up()
     {
-        $module = DB::connection('system')->table('modules')
+        $module = DB::connection()->table('modules')
             ->where('value', 'suscription_app')
             ->first();
 
@@ -29,19 +29,19 @@ return new class extends Migration
         ];
 
         foreach ($levels as $level) {
-            $exists = DB::connection('system')->table('module_levels')
+            $exists = DB::connection()->table('module_levels')
                 ->where('value', $level['value'])
                 ->exists();
 
             if (!$exists) {
-                DB::connection('system')->table('module_levels')->insert($level);
+                DB::connection()->table('module_levels')->insert($level);
             }
         }
     }
 
     public function down()
     {
-        DB::connection('system')->table('module_levels')
+        DB::connection()->table('module_levels')
             ->whereIn('value', [
                 'suscription_app_pending_payments',
                 'suscription_app_payment_reminders',

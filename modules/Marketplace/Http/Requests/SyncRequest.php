@@ -44,9 +44,12 @@ class SyncRequest extends FormRequest
             'items.*.barcode' => ['nullable', 'string', 'max:64'],
             'items.*.category' => ['nullable', 'string', 'max:120'],
             // Precio del producto. Se guarda siempre; solo se muestra si la
-            // tienda tiene show_prices. Sin tope de decimales aquí: la columna
-            // es decimal(10,2).
-            'items.*.price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            // tienda tiene show_prices. Conserva doce decimales sin redondear
+            // y el límite comercial previo de 99999999.99.
+            'items.*.price' => ['nullable', function ($attribute, $value, $fail) {
+                try { \Modules\Marketplace\Support\CatalogPrice::input($value, $attribute); }
+                catch (\Illuminate\Validation\ValidationException $error) { $fail($error->errors()[$attribute][0]); }
+            }],
             'items.*.description' => ['nullable', 'string', 'max:1000'],
             'items.*.image_hash' => ['nullable', 'string', 'max:64'],
             'items.*.image_base64' => ['nullable', 'string'],

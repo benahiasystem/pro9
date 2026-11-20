@@ -2,107 +2,106 @@
 
 namespace Modules\Dashboard\Widgets;
 
-/**
- * Shape normalizado que toda fuente de widget entrega al frontend.
- * Los renderers genéricos (kpi, line, bar, donut, table, ranking, etc.)
- * consumen únicamente este contrato; `meta` transporta extras libres
- * para los componentes custom.
- */
+use App\Support\Exact\Decimal as D;
+
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+/** Numeric coordinates are final projections; text and original fractions travel with them. */
 class WidgetDataset
 {
-    const UNIT_MONEY = 'money';
-    const UNIT_COUNT = 'count';
-    const UNIT_PERCENT = 'percent';
+    const UNIT_MONEY='money';
+    const UNIT_COUNT='count';
+    const UNIT_PERCENT='percent';
 
     private $unit;
-    private $labels = [];
-    private $series = [];
-    private $breakdown = ['labels' => [], 'values' => []];
-    private $totals = ['current' => null, 'previous' => null, 'delta' => null];
-    private $meta = [];
+    private $labels=[];
+    private $series=[];
+    private $breakdown=['labels'=>[],'values'=>[],'values_exact'=>[],'values_fractions'=>[]];
+    private $totals;
+    private $meta=[];
 
-    public function __construct($unit = self::UNIT_MONEY)
+    public function __construct($unit=self::UNIT_MONEY)
     {
-        $this->unit = $unit;
+        if (!in_array($unit,[self::UNIT_MONEY,self::UNIT_COUNT,self::UNIT_PERCENT],true)) throw new \InvalidArgumentException('Unidad de widget inválida.');
+        $this->unit=$unit;$this->totals(null);
     }
 
-    public static function make($unit = self::UNIT_MONEY)
+    public static function make($unit=self::UNIT_MONEY) {return new static($unit);}
+
+    private static function amount($value): \Brick\Math\BigRational
     {
-        return new static($unit);
+        if (is_float($value) || is_bool($value) || $value===null || $value==='') {
+            throw new \UnexpectedValueException('El widget requiere el operando original, no una proyección binaria o ausente.');
+        }
+        try {return D::of($value);}
+        catch (\Throwable $error) {throw new \UnexpectedValueException('Operando original del widget inválido.',0,$error);}
     }
 
-    /**
-     * Serie temporal: etiquetas del eje X + una o más series con nombre.
-     *
-     * @param array $labels
-     * @param array $series [['name' => string, 'data' => float[]], ...]
-     */
+    private function text($value): string
+    {
+        return $this->unit===self::UNIT_COUNT ? D::represent($value)
+            : D::format($value,$this->unit===self::UNIT_PERCENT ? 1 : 2,'.','');
+    }
+
+    private function project(array $values): array
+    {
+        $data=$exact=$fractions=[];
+        foreach ($values as $value) {
+            if ($value===null) {$data[]=null;$exact[]=null;$fractions[]=null;continue;}
+            $value=self::amount($value);$text=$this->text($value);
+            $data[]=(float)$text;$exact[]=$text;$fractions[]=D::fraction($value);
+        }
+        return ['data'=>$data,'exact'=>$exact,'fractions'=>$fractions];
+    }
+
     public function serie(array $labels, array $series)
     {
-        $this->labels = array_values($labels);
-        $this->series = array_map(function ($s) {
-            return [
-                'name' => (string) ($s['name'] ?? ''),
-                'data' => array_map(function ($v) {
-                    return round((float) $v, 2);
-                }, array_values($s['data'] ?? [])),
-            ];
-        }, array_values($series));
-
-        return $this;
+        $projected=[];
+        foreach ($series as $serie) {
+            $values=array_values($serie['data'] ?? []);
+            if (count($values)!==count($labels)) throw new \InvalidArgumentException('Las etiquetas y puntos del widget no coinciden.');
+            $projection=$this->project($values);
+            $projected[]=['name'=>(string)($serie['name'] ?? ''),'data'=>$projection['data'],
+                'data_exact'=>$projection['exact'],'data_fractions'=>$projection['fractions']];
+        }
+        $this->labels=array_values($labels);$this->series=$projected;return $this;
     }
 
-    /**
-     * Desglose categórico (donut, barras horizontales, ranking, tabla).
-     */
     public function breakdown(array $labels, array $values)
     {
-        $this->breakdown = [
-            'labels' => array_map('strval', array_values($labels)),
-            'values' => array_map(function ($v) {
-                return round((float) $v, 2);
-            }, array_values($values)),
-        ];
-
+        if (count($labels)!==count($values)) throw new \InvalidArgumentException('Las categorías y valores del widget no coinciden.');
+        $projection=$this->project(array_values($values));
+        $this->breakdown=['labels'=>array_map('strval',array_values($labels)),'values'=>$projection['data'],
+            'values_exact'=>$projection['exact'],'values_fractions'=>$projection['fractions']];
         return $this;
     }
 
-    public function totals($current, $previous = null)
+    public function totals($current, $previous=null)
     {
-        $current = is_null($current) ? null : round((float) $current, 2);
-        $previous = is_null($previous) ? null : round((float) $previous, 2);
-
-        $delta = null;
-        if (!is_null($current) && !is_null($previous)) {
-            $delta = $previous == 0.0
-                ? ($current > 0 ? 100.0 : 0.0)
-                : round((($current - $previous) / $previous) * 100, 1);
+        $current=$current===null ? null : self::amount($current);$previous=$previous===null ? null : self::amount($previous);
+        $values=[];
+        if ($current!==null) $values['current']=$current;
+        if ($previous!==null) $values['previous']=$previous;
+        $delta=null;
+        if ($current!==null && $previous!==null) {
+            $delta=$previous->isZero() ? D::of($current->isPositive() ? 100 : 0)
+                : $current->minus($previous)->dividedBy($previous)->multipliedBy(100)->simplified();
+            $values['delta']=$delta;
         }
-
-        $this->totals = ['current' => $current, 'previous' => $previous, 'delta' => $delta];
-
+        $currentText=$current===null ? null : $this->text($current);$previousText=$previous===null ? null : $this->text($previous);
+        $deltaText=$delta===null ? null : D::format($delta,1,'.','');
+        $this->totals=['current'=>$currentText===null ? null : (float)$currentText,
+            'previous'=>$previousText===null ? null : (float)$previousText,'delta'=>$deltaText===null ? null : (float)$deltaText,
+            'current_exact'=>$currentText,'previous_exact'=>$previousText,'delta_exact'=>$deltaText,
+            'calculation_snapshot'=>D::snapshot($values)];
         return $this;
     }
 
-    /**
-     * Extras libres para componentes custom (filas de deudores, meta del mes, etc.).
-     */
-    public function meta(array $meta)
-    {
-        $this->meta = array_merge($this->meta, $meta);
-
-        return $this;
-    }
+    public function meta(array $meta) {$this->meta=array_merge($this->meta,$meta);return $this;}
 
     public function toArray()
     {
-        return [
-            'unit' => $this->unit,
-            'labels' => $this->labels,
-            'series' => $this->series,
-            'breakdown' => $this->breakdown,
-            'totals' => $this->totals,
-            'meta' => $this->meta,
-        ];
+        return ['unit'=>$this->unit,'labels'=>$this->labels,'series'=>$this->series,
+            'breakdown'=>$this->breakdown,'totals'=>$this->totals,'meta'=>$this->meta];
     }
 }
+// ######## FIN CALCULOS EXACTOS PRO9 ########

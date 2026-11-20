@@ -66,7 +66,7 @@ final class IvaRetentionService extends ReceivedRetentionService
         $data = validator($input, ['enabled' => 'required|boolean', 'fiscal_context' => 'nullable|array'])->validate();
         $prevision = null;
         if ($data['enabled']) {
-            if ($document->document_type_id !== '01' || $document->total_igv <= 0 || $document->isVoidedOrRejected()) FiscalAmounts::error('document', 'La previsión IVA requiere una factura vigente con IVA.');
+            if ($document->document_type_id !== '01' || $document->isVoidedOrRejected() || !$document->exactValue('total_igv')->isPositive()) FiscalAmounts::error('document', 'La previsión IVA requiere una factura vigente con IVA.');
             $prevision = static::proposal($document->customer_id, $document->date_of_issue->format('Y-m-d'), $document->exactValue('total_igv'),
                 $document->exactValue('total_taxed'), $document->currency_type_id, $data['fiscal_context'] ?? []);
             if (!$prevision['eligible']) FiscalAmounts::error('customer_id', 'El cliente o la operación no acreditan retención IVA.');
@@ -83,7 +83,7 @@ final class IvaRetentionService extends ReceivedRetentionService
         if (!$saved) return;
         $proposal = static::proposal($document->customer_id,$document->date_of_issue->format('Y-m-d'),$document->exactValue('total_igv'),
             $document->exactValue('total_taxed'),$document->currency_type_id,$saved['fiscal_context'] ?? []);
-        $value = $proposal['eligible'] && $document->total_igv > 0 ? array_replace($saved,$proposal) : null;
+        $value = $proposal['eligible'] ? array_replace($saved,$proposal) : null;
         $document->fiscal_data()->update(['iva_retention_prevision'=>$value ? json_encode($value,JSON_THROW_ON_ERROR) : null]);
         $document->unsetRelation('fiscal_data');
     }

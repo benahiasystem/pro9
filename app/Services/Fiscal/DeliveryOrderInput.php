@@ -67,6 +67,8 @@ final class DeliveryOrderInput
         $driver=$needsDriver ? Driver::where('is_active',true)->findOrFail($input['driver_id'] ?? null) : null;
         $transport=$needsDriver ? Transport::where('is_active',true)->findOrFail($input['transport_id'] ?? null) : null;
         $dispatcher=$input['transport_mode_type_id']==='01' ? Dispatcher::where('is_active',true)->findOrFail($input['dispatcher_id']) : null;
+        $invoice = !empty($input['reference_document_id']) ? Document::findOrFail($input['reference_document_id']) : null;
+        if ($invoice) DeliveryOrderInvoiceReference::assertDocument($invoice, $establishment->id, $customer?->id);
         $rows=[];$usedSerials=[];
         $warehouse=\Modules\Inventory\Models\Warehouse::where('establishment_id',$establishment->id)->orderBy('id')->firstOrFail();
         foreach ($input['items'] as $row) {
@@ -86,8 +88,10 @@ final class DeliveryOrderInput
             if ($item->lots_enabled && !$lot) FiscalAmounts::error('items','Seleccione el lote del producto.');
             if ($lot) {
                 $record=\Modules\Item\Models\ItemLotsGroup::where('item_id',$item->id)->findOrFail($lot);
-                $returned=$editing && ($editing->discountsPhysicalStock() || empty($input['id'])) ? $editing->items->filter(fn($l)=>(int)$l->item_id===(int)$item->id && (int)($l->item->IdLoteSelected ?? 0)===(int)$lot)->map(fn($l)=>$l->exactValue('quantity'))->pipe(fn($q)=>D::sum($q)) : D::of(0);
-                if ($record->exactValue('quantity')->plus($returned)->isLessThan($row['quantity'])) FiscalAmounts::error('items','El lote no tiene existencias suficientes.');
+                if (!$invoice) {
+                    $returned=$editing && ($editing->discountsPhysicalStock() || empty($input['id'])) ? $editing->items->filter(fn($l)=>(int)$l->item_id===(int)$item->id && (int)($l->item->IdLoteSelected ?? 0)===(int)$lot)->map(fn($l)=>$l->exactValue('quantity'))->pipe(fn($q)=>D::sum($q)) : D::of(0);
+                    if ($record->exactValue('quantity')->plus($returned)->isLessThan($row['quantity'])) FiscalAmounts::error('items','El lote no tiene existencias suficientes.');
+                }
             }
             $resolvedSerials=[];
             foreach ($serials ?: [] as $serial) {
@@ -95,7 +99,7 @@ final class DeliveryOrderInput
                 if (isset($usedSerials[$record->id])) FiscalAmounts::error('items','Un serial solo puede aparecer una vez en la orden.');
                 $usedSerials[$record->id]=true;
                 $owned=$editing && ($editing->discountsPhysicalStock() || empty($input['id'])) && $editing->items->contains(fn($l)=>(int)$l->item_id===(int)$item->id && collect($l->item->lots ?? [])->contains(fn($s)=>(int)((array)$s)['id']===(int)$record->id));
-                if ($record->has_sale && !$owned) FiscalAmounts::error('items','El serial ya fue utilizado.');
+                if ($record->has_sale && !$owned && !$invoice) FiscalAmounts::error('items','El serial ya fue utilizado.');
                 $resolvedSerials[]=$record->toArray();
             }
             if ($item->series_enabled && !D::of(count($resolvedSerials))->isEqualTo(D::of($row['quantity']))) FiscalAmounts::error('items','La cantidad debe coincidir con los seriales seleccionados.');
@@ -103,14 +107,18 @@ final class DeliveryOrderInput
                 'item'=>['description'=>$item->description,'model'=>$item->model,'internal_id'=>$item->internal_id,'item_type_id'=>$item->item_type_id,'item_code'=>$item->item_code,'item_code_gs1'=>$item->item_code_gs1,'unit_type_id'=>$item->unit_type_id,'hka_unit_code'=>$item->unit_type->hka_code,
                     'IdLoteSelected'=>$lot,'lots'=>$resolvedSerials,'weight'=>$row['weight'] ?? null,'unit_price'=>$valued ? ($row['unit_price'] ?? null) : null,'valuation'=>$valuation,'total'=>$valuation['total'] ?? null]];
         }
-        $references=[];
-        foreach (['reference_document_id'=>Document::class,'reference_sale_note_id'=>\App\Models\Tenant\SaleNote::class,'reference_quotation_id'=>\App\Models\Tenant\Quotation::class,'reference_order_note_id'=>\Modules\Order\Models\OrderNote::class,'reference_order_form_id'=>\Modules\Order\Models\OrderForm::class] as $field=>$model) {
+        if ($invoice) DeliveryOrderInvoiceReference::assertItems($invoice->items, $rows);
+        $references=['reference_document_id'=>$invoice?->id];
+        foreach (['reference_sale_note_id'=>\App\Models\Tenant\SaleNote::class,'reference_quotation_id'=>\App\Models\Tenant\Quotation::class,'reference_order_note_id'=>\Modules\Order\Models\OrderNote::class,'reference_order_form_id'=>\Modules\Order\Models\OrderForm::class] as $field=>$model) {
             $references[$field]=$input[$field] ?? null;
             if ($references[$field]) {
                 $record=$model::findOrFail($references[$field]);self::authorize((int)$record->establishment_id);
-                if ((int)$record->establishment_id!==(int)$establishment->id || ($customer && (int)$record->customer_id!==(int)$customer->id) || in_array($record->state_type_id,['09','11'],true) || ($field==='reference_document_id' && $record->document_type_id!=='01')) FiscalAmounts::error($field,'El documento relacionado debe estar vigente y pertenecer a la sucursal y al cliente.');
-                if (in_array($field,['reference_document_id','reference_sale_note_id','reference_order_note_id'],true)) {
-                    $available=$record->items->groupBy('item_id')->map(fn($lines)=>D::sum($lines->map(fn($line)=>$line->exactValue('quantity')->multipliedBy($line->item->presentation->quantity_unit ?? 1))));
+                if ((int)$record->establishment_id!==(int)$establishment->id || ($customer && (int)$record->customer_id!==(int)$customer->id) || in_array($record->state_type_id,['09','11'],true)) FiscalAmounts::error($field,'El documento relacionado debe estar vigente y pertenecer a la sucursal y al cliente.');
+                if (in_array($field,['reference_sale_note_id','reference_order_note_id'],true)) {
+                    $available = $record->items->groupBy('item_id')->map(static function ($lines) {
+                        return D::sum($lines->map(fn ($line) => $line->exactValue('quantity')
+                            ->multipliedBy($line->item->presentation->quantity_unit ?? 1)));
+                    });
                     foreach (collect($rows)->groupBy('item_id') as $itemId=>$lines) if (D::sum($lines->pluck('quantity'))->isGreaterThan($available[$itemId] ?? 0)) FiscalAmounts::error('items','Las cantidades y productos deben corresponder al documento comercial de origen.');
                 }
             }

@@ -241,7 +241,7 @@
                         </table>
                     </div>
                 </div>
-                <div class="col-md-12 text-center pt-2" v-if="showAddButton && (document.total_difference > 0)">
+                <div class="col-md-12 text-center pt-2" v-if="showAddButton && hasOutstandingBalance()">
                     <template v-if="permissions.create_payment">
                         <el-button :loading="loadingFetch" type="primary" icon="el-icon-plus" @click="clickAddRow">Nuevo</el-button>
                     </template>
@@ -272,7 +272,7 @@
 
 <script>
 import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
-import {exactAmount, exactValue} from '../../../../helpers/exchange-rate-math'
+import {exactAmount, exactInput, exactValue} from '../../../../helpers/exchange-rate-math'
 import IgtfPaymentFields from "./igtf_fields.vue"
 
     import {deletable} from '../../../../mixins/deletable'
@@ -327,7 +327,8 @@ import IgtfPaymentFields from "./igtf_fields.vue"
         //     }
         // },
         methods: {
-            // ######## INICIO CALCULOS EXACTOS SAB ########
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            hasOutstandingBalance() { return exactValue(this.document, 'total_difference').compare(0) > 0; },
             hasPaymentAdjustment(row) { return exactValue(row, 'payment_adjustment').compare(0) !== 0; },
             paymentAdjustmentText(row) {
                 const value = exactValue(row, 'payment_adjustment');
@@ -354,9 +355,13 @@ import IgtfPaymentFields from "./igtf_fields.vue"
 
                 if(!row.payment_method_type_id) return this.getObjectResponse(false, 'El campo método de pago es obligatorio.')
 
-                if(!row.payment || row.payment <= 0 || isNaN(row.payment)) return this.getObjectResponse(false, 'El campo monto es obligatorio y debe ser mayor que 0.')
-
-                return this.getObjectResponse(true)
+                try {
+                    const amount = exactInput(String(row.payment ?? ''))
+                    if (exactAmount(amount).compare(0) > 0) return this.getObjectResponse(true)
+                } catch (_) {
+                    // Present a validation error before opening the new payment link.
+                }
+                return this.getObjectResponse(false, 'El campo monto es obligatorio y debe ser mayor que 0.')
 
             },
             showDialogLinkPayment(row){

@@ -1,36 +1,35 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial del catálogo HKA `cat_providers_types` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` tinyint unsigned NOT NULL, clave primaria local
- * - `code` varchar(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL, código HKA
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `active` tinyint(1) NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: smallint
+ * - code: varchar(2)
+ * - description: varchar(255)
+ * - active: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_providers_types` (
-  `id` tinyint unsigned NOT NULL,
-  `code` varchar(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `active` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `cat_providers_types_code_unique` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_providers_types', function (Blueprint $table) {
+            $table->smallInteger('id');
+            $table->string('code', 2)->collation('pro9_ci_ai')->nullable();
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->boolean('active');
+            $table->primary(['id']);
+            $table->unique(['code'], 'cat_providers_types_code_unique');
+        });
+        DB::statement('ALTER TABLE "cat_providers_types" ADD CONSTRAINT "cat_providers_types_id_range" CHECK ("id" BETWEEN 0 AND 255)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_providers_types`');
+        Schema::dropIfExists('cat_providers_types');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

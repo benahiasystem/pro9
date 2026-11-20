@@ -1,101 +1,101 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `suscription_plans` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `cat_period_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con el periodo de tiempo'
- * - `name` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre del plan'
- * - `description` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Descripcion del plan'
- * - `total` decimal(30,12) DEFAULT '0.00' COMMENT 'El total del costo del plan'
- * - `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `quantity_period` int(10) unsigned DEFAULT NULL
- * - `unlimited` tinyint(1) NOT NULL DEFAULT '0'
- * - `trial_days` int(11) DEFAULT NULL
- * - `status` tinyint(1) NOT NULL DEFAULT '1'
- * - `exchange_rate_sale` decimal(18,8) DEFAULT '0.000'
- * - `total_prepayment` decimal(30,12) DEFAULT '0.00'
- * - `total_charge` decimal(30,12) DEFAULT '0.00'
- * - `total_discount` decimal(30,12) DEFAULT '0.00'
- * - `total_exportation` decimal(30,12) DEFAULT '0.00'
- * - `total_free` decimal(30,12) DEFAULT '0.00'
- * - `total_taxed` decimal(30,12) DEFAULT '0.00'
- * - `total_unaffected` decimal(30,12) DEFAULT '0.00'
- * - `total_exonerated` decimal(30,12) DEFAULT '0.00'
- * - `total_igv` decimal(30,12) DEFAULT '0.00'
- * - `total_igv_free` decimal(30,12) DEFAULT '0.00'
- * - `total_base_other_taxes` decimal(30,12) DEFAULT '0.00'
- * - `total_other_taxes` decimal(30,12) DEFAULT '0.00'
- * - `total_taxes` decimal(30,12) DEFAULT '0.00'
- * - `total_value` decimal(30,12) DEFAULT '0.00'
- * - `charges` json DEFAULT NULL
- * - `attributes` json DEFAULT NULL
- * - `discounts` json DEFAULT NULL
- * - `prepayments` json DEFAULT NULL
- * - `related` json DEFAULT NULL
- * - `perception` json DEFAULT NULL
- * - `legends` json DEFAULT NULL
- * - `terms_condition` longtext COLLATE utf8mb4_unicode_ci
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - cat_period_id: bigint
+ * - name: text
+ * - description: text
+ * - total: numeric(30,12)
+ * - currency_type_id: varchar(255)
+ * - payment_method_type_id: varchar(255)
+ * - quantity_period: bigint
+ * - unlimited: boolean
+ * - trial_days: integer
+ * - status: boolean
+ * - exchange_rate_sale: numeric(18,8)
+ * - total_prepayment: numeric(30,12)
+ * - total_charge: numeric(30,12)
+ * - total_discount: numeric(30,12)
+ * - total_exportation: numeric(30,12)
+ * - total_free: numeric(30,12)
+ * - total_taxed: numeric(30,12)
+ * - total_unaffected: numeric(30,12)
+ * - total_exonerated: numeric(30,12)
+ * - total_igv: numeric(30,12)
+ * - total_igv_free: numeric(30,12)
+ * - total_base_other_taxes: numeric(30,12)
+ * - total_other_taxes: numeric(30,12)
+ * - total_taxes: numeric(30,12)
+ * - total_value: numeric(30,12)
+ * - charges: json
+ * - attributes: json
+ * - discounts: json
+ * - prepayments: json
+ * - related: json
+ * - perception: json
+ * - legends: json
+ * - terms_condition: text
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `suscription_plans` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `cat_period_id` int(10) unsigned DEFAULT '0' COMMENT 'Relacion con el periodo de tiempo',
-  `name` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nombre del plan',
-  `description` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Descripcion del plan',
-  `total` decimal(30,12) DEFAULT '0.00' COMMENT 'El total del costo del plan',
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `payment_method_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `quantity_period` int(10) unsigned DEFAULT NULL,
-  `unlimited` tinyint(1) NOT NULL DEFAULT '0',
-  `trial_days` int(11) DEFAULT NULL,
-  `status` tinyint(1) NOT NULL DEFAULT '1',
-  `exchange_rate_sale` decimal(18,8) DEFAULT '0.000',
-  `total_prepayment` decimal(30,12) DEFAULT '0.00',
-  `total_charge` decimal(30,12) DEFAULT '0.00',
-  `total_discount` decimal(30,12) DEFAULT '0.00',
-  `total_exportation` decimal(30,12) DEFAULT '0.00',
-  `total_free` decimal(30,12) DEFAULT '0.00',
-  `total_taxed` decimal(30,12) DEFAULT '0.00',
-  `total_unaffected` decimal(30,12) DEFAULT '0.00',
-  `total_exonerated` decimal(30,12) DEFAULT '0.00',
-  `total_igv` decimal(30,12) DEFAULT '0.00',
-  `total_igv_free` decimal(30,12) DEFAULT '0.00',
-  `total_base_other_taxes` decimal(30,12) DEFAULT '0.00',
-  `total_other_taxes` decimal(30,12) DEFAULT '0.00',
-  `total_taxes` decimal(30,12) DEFAULT '0.00',
-  `total_value` decimal(30,12) DEFAULT '0.00',
-  `charges` json DEFAULT NULL,
-  `attributes` json DEFAULT NULL,
-  `discounts` json DEFAULT NULL,
-  `prepayments` json DEFAULT NULL,
-  `related` json DEFAULT NULL,
-  `perception` json DEFAULT NULL,
-  `legends` json DEFAULT NULL,
-  `terms_condition` longtext COLLATE utf8mb4_unicode_ci,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('suscription_plans', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('cat_period_id')->nullable()->default('0')->comment('Relacion con el periodo de tiempo');
+            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre del plan');
+            $table->text('description')->collation('pro9_ci_ai')->comment('Descripcion del plan');
+            $table->decimal('total', 30, 12)->nullable()->default('0.00')->comment('El total del costo del plan');
+            $table->string('currency_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('payment_method_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('quantity_period')->nullable();
+            $table->boolean('unlimited')->default(false);
+            $table->integer('trial_days')->nullable();
+            $table->boolean('status')->default(true);
+            $table->decimal('exchange_rate_sale', 18, 8)->nullable()->default('0.000');
+            $table->decimal('total_prepayment', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_charge', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_discount', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_exportation', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_free', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_taxed', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_unaffected', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_exonerated', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_igv', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_igv_free', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_base_other_taxes', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_other_taxes', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_taxes', 30, 12)->nullable()->default('0.00');
+            $table->decimal('total_value', 30, 12)->nullable()->default('0.00');
+            $table->json('charges')->nullable();
+            $table->json('attributes')->nullable();
+            $table->json('discounts')->nullable();
+            $table->json('prepayments')->nullable();
+            $table->json('related')->nullable();
+            $table->json('perception')->nullable();
+            $table->json('legends')->nullable();
+            $table->text('terms_condition')->collation('pro9_ci_ai')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+        });
+        DB::statement('ALTER TABLE "suscription_plans" ADD CONSTRAINT "suscription_plans_cat_period_id_range" CHECK ("cat_period_id" >= 0)');
+        DB::statement('ALTER TABLE "suscription_plans" ADD CONSTRAINT "suscription_plans_quantity_period_range" CHECK ("quantity_period" BETWEEN 0 AND 4294967295)');
+        DB::statement('ALTER TABLE "suscription_plans" ADD CONSTRAINT "suscription_plans_trial_days_range" CHECK ("trial_days" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `suscription_plans`');
+        Schema::dropIfExists('suscription_plans');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

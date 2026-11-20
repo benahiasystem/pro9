@@ -11,10 +11,21 @@ const output = {};
 vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,
     {exports:output, _, require:name=>exactRuntime(name)|| (name==='moment'?require('moment'):name.includes('vuex')?{mapState:()=>({}),mapActions:()=>({})}:{})});
 const c=output.default;
+test('reopening an export percentage discount keeps its decimal factor exactly',()=>{
+    const ctx={is_amount:false,total_global_discount:'0',form:{currency_type_id:'VES'},
+        setInvoiceGlobalDiscount:c.methods.setInvoiceGlobalDiscount}
+    const discounts=[{discount_type_id:'03',factor:'0.29',is_amount:false}]
+    const restored=c.methods.prepareDataGlobalDiscount.call(ctx,{discounts})
+    assert.equal(restored.length,1);assert.equal(restored[0],discounts[0])
+    assert.equal(ctx.total_global_discount,'29')
+    c.methods.prepareDataGlobalDiscount.call(ctx,{discounts:[{factor:'0.123456789012',is_amount:false}]})
+    assert.equal(ctx.total_global_discount,'12.3456789012')
+    assert.equal(c.methods.recalculateDecimalTotalTaxed('9007199254740993.11','0.1'),'9007199254740993.01')
+})
 test('the operation selector receives the catalog loaded by the form in create and edit contexts',async()=>{
     for(const operations of [[{id:'0101',description:'Venta interna'}],
         [{id:'0101',description:'Venta interna'},{id:'0201',description:'Exportación FOB'},{id:'0202',description:'Exportación CIF'},{id:'0203',description:'Exportación EXW'}]]) {
-        const ctx={resource:'documents',configuration:{},form:{},isNrus:false,idUser:1,operation_types:[],
+        const ctx={resource:'documents',configuration:{},form:{},idUser:1,operation_types:[],
             $store:{commit(){}},$http:{get:async url=>{
                 assert.equal(url,'/documents/tables');
                 return {data:{document_types_invoice:[{id:'01'}],operation_types:operations,establishments:[{id:1}],
@@ -47,12 +58,14 @@ test('export lookup selects foreign customers and discards an obsolete response'
 });
 test('export header discount is counted once and never introduces IVA',()=>{
     const ctx={isExportInvoice:true,is_amount:false,total_global_discount:10,recordDiscountsGlobal:{discount_type_id:'03',description:'Discount'},
-        configuration:{global_discount_type_id:'02'},form:{discounts:[{discount_type_id:'03',amount:20}],total_discount:0,total_discount_item:0},$message:{error:()=>assert.fail('valid discount')}};
+        configuration:{global_discount_type_id:'02'},form:{discounts:[{discount_type_id:'03',amount:20}],total_discount:0,total_discount_item:0},
+        invoiceGlobalDiscountExact:c.methods.invoiceGlobalDiscountExact,$message:{error:()=>assert.fail('valid discount')}};
     ctx.deleteDiscountGlobal=()=>c.methods.deleteDiscountGlobal.call(ctx); ctx.setGlobalDiscount=(...args)=>c.methods.setGlobalDiscount.call(ctx,...args);
     for(let i=0;i<2;i++){c.methods.discountGlobalItems.call(ctx,{total_exportation:200}); assert.equal(ctx.form.discounts.length,1); assert.equal(ctx.form.total,'180'); assert.equal(ctx.form.total_discount,'20');}
 });
 test('an export discount above its base is rejected',()=>{
-    const messages=[]; const ctx={isExportInvoice:true,is_amount:true,total_global_discount:201,form:{total:200},deleteDiscountGlobal(){},$message:{error:m=>messages.push(m)}};
+    const messages=[]; const ctx={isExportInvoice:true,is_amount:true,total_global_discount:201,form:{total:200},
+        invoiceGlobalDiscountExact:c.methods.invoiceGlobalDiscountExact,deleteDiscountGlobal(){},$message:{error:m=>messages.push(m)}};
     c.methods.discountGlobalItems.call(ctx,{total_exportation:200}); assert.equal(messages.length,1); assert.equal(ctx.form.total,200);
 });
 test('export recalculation includes header charges once and updates payment totals after adjustments',()=>{
@@ -67,7 +80,8 @@ test('export recalculation includes header charges once and updates payment tota
             clearGlobalDistributionDiscounts(){},verifyRecalculateTotalTaxed:()=>false,
             setTotalDefaultPayment(){paymentTotals.push(this.form.total)},setPendingAmount(){},calculateFee(){},setTotalPointsBySale(){},
             chargeGlobal:()=>assert.fail('Domestic automatic charges must not run for export')};
-        for(const method of ['sumDiscountsNoBaseByItem','discountGlobalItems','deleteDiscountGlobal','setGlobalDiscount','applyExportGlobalCharge'])
+        for(const method of ['sumDiscountsNoBaseByItem','discountGlobalItems','deleteDiscountGlobal','setGlobalDiscount','applyExportGlobalCharge',
+            'invoiceGlobalDiscountExact','invoiceGlobalChargeExact','setInvoiceGlobalCharge'])
             ctx[method]=(...args)=>c.methods[method].apply(ctx,args);
         for(let i=0;i<3;i++)c.methods.calculateTotal.call(ctx);
         const net=enabledDiscount?'95':'105';
@@ -95,7 +109,8 @@ test('loading an existing export preserves its rate, collections and object-seri
         chargeGlobal:()=>assert.fail('Automatic domestic charges cannot replace saved export charges')};
     Object.defineProperty(ctx,'isExportInvoice',{get:()=>['0201','0202','0203'].includes(ctx.form.operation_type_id)});
     for(const method of ['restoreFiscalOptions','sumDiscountsNoBaseByItem','discountGlobalItems','deleteDiscountGlobal','setGlobalDiscount','applyExportGlobalCharge',
-        'prepareDataGlobalDiscount','calculateTotal','changeDateOfIssue'])ctx[method]=(...args)=>c.methods[method].apply(ctx,args);
+        'prepareDataGlobalDiscount','calculateTotal','changeDateOfIssue','invoiceGlobalDiscountExact','setInvoiceGlobalDiscount',
+        'restoreInvoiceGlobalDiscount','invoiceGlobalChargeExact','setInvoiceGlobalCharge'])ctx[method]=(...args)=>c.methods[method].apply(ctx,args);
     const payments=[{id:4,payment:'95.00',currency_type_id:'USD'}];
     await c.methods.onSetFormData.call(ctx,{id:1,document_type_id:'01',currency_type_id:'USD',exchange_rate_sale:'40.12345678',
         date_of_issue:'2026-10-09',invoice:{operation_type_id:'0201',date_of_due:'2026-11-09'},customer_id:9,customer:{id:9},payments,fee:[],
@@ -106,6 +121,11 @@ test('loading an existing export preserves its rate, collections and object-seri
     assert.deepEqual(Array.from(ctx.form.charges,row=>[row.charge_type_id,row.amount]),[['50','5']]);
     assert.deepEqual(JSON.parse(JSON.stringify(ctx.existingPayments)),payments);assert.deepEqual(ctx.form.payments,payments);
     assert.equal(ctx.thirdPartyMode,false);assert.equal(ctx.specialTaxRegimeMode,false);
+    await c.methods.onSetFormData.call(ctx,{id:2,document_type_id:'01',currency_type_id:'USD',exchange_rate_sale:'40.12345678',
+        date_of_issue:'2026-10-10',invoice:{operation_type_id:'0201',date_of_due:'2026-11-10'},customer_id:9,customer:{id:9},payments:[],fee:[],
+        charges:{},discounts:{},items:[{affectation_igv_type_id:'EXP',quantity:1,unit_price:100,total_value:100,total:100,total_igv:0,total_charge:0,total_discount:0,discounts:[]}]});
+    assert.equal(ctx.total_global_discount,'0');assert.equal(ctx.recordDiscountsGlobal,null);assert.equal(ctx.invoiceGlobalDiscountSource,null);
+    assert.equal(ctx.form.total,'100');assert.equal(ctx.form.discounts.length,0);
 });
 test('all affected forms compile their templates',()=>{
     for(const file of ['documents/invoice_generate.vue','documents/partials/item.vue','persons/form.vue','documents/partials/detail-drawer.vue']){

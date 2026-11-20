@@ -3,7 +3,7 @@
 namespace App\Services\Fiscal;
 
 use App\Models\Tenant\Document;
-use App\Services\ExchangeRates\ExchangeRateMath;
+use App\Support\Exact\Decimal as D;
 
 final class HkaIslrRetentionCapability
 {
@@ -17,9 +17,7 @@ final class HkaIslrRetentionCapability
             if (($row['tax_kind'] ?? '') === 'ISLR' && in_array($row['application_status'] ?? '',['pending_validation','applied'],true)) $expected=true;
         }
         if (!$expected) return false;
-        $paid = ExchangeRateMath::rational(0);
-        foreach ($snapshot['payments'] ?? [] as $row) if (empty($row['reversed_at'])) $paid=$paid->plus($row['payment'] ?? 0);
-        return $paid->isLessThan(ExchangeRateMath::rational($snapshot['total'] ?? 0)->minus('0.005'));
+        return HkaSettlement::hasCollectionShortfall($snapshot);
     }
 
     public static function reason(Document $document): ?string
@@ -27,9 +25,9 @@ final class HkaIslrRetentionCapability
         if (!$document->exists || $document->document_type_id !== '01' || $document->fiscal_emission_mode !== 'digital'
             || $document->fiscal_environment !== 'demo' || !IslrRetentionService::available($document)) return null;
         $document->loadMissing(['fiscal_data','payments','received_retentions']);
-        return self::blockedSnapshot(['document_type_id'=>$document->document_type_id,'total'=>$document->total,
+        return self::blockedSnapshot(['document_type_id'=>$document->document_type_id,'total'=>D::read($document, 'total'),
             'fiscal_data'=>$document->fiscal_data ? $document->fiscal_data->toArray() : [],
-            'received_retentions'=>$document->received_retentions->toArray(),'payments'=>$document->payments->toArray()]) ? self::BLOCK_REASON : null;
+            'received_retentions'=>$document->received_retentions->toArray(),'payments'=>$document->payments]) ? self::BLOCK_REASON : null;
     }
 
     public static function assertSnapshot(array $snapshot): void

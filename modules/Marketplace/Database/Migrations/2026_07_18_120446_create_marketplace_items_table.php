@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::connection('system')->create('marketplace_items', function (Blueprint $table) {
+        Schema::create('marketplace_items', function (Blueprint $table) {
             $table->id();
 
             $table->unsignedBigInteger('store_id');
@@ -58,6 +58,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::connection('system')->dropIfExists('marketplace_items');
+        Schema::dropIfExists('marketplace_items');
     }
 };

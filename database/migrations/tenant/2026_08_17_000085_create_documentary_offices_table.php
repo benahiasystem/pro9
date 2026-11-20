@@ -1,45 +1,44 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `documentary_offices` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `description` varchar(250) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `active` tinyint(1) NOT NULL DEFAULT '1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `days` mediumint(8) unsigned NOT NULL DEFAULT '0'
- * - `default` tinyint(3) unsigned NOT NULL DEFAULT '0'
- * - `color` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - name: varchar(50)
+ * - description: varchar(250)
+ * - active: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - days: bigint
+ * - default: smallint
+ * - color: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `documentary_offices` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(250) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT '1',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `days` mediumint(8) unsigned NOT NULL DEFAULT '0',
-  `default` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `color` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('documentary_offices', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name', 50)->collation('pro9_ci_ai');
+            $table->string('description', 250)->collation('pro9_ci_ai')->nullable();
+            $table->boolean('active')->default(true);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->bigInteger('days')->default('0');
+            $table->smallInteger('default')->default('0');
+            $table->string('color', 255)->collation('pro9_ci_ai')->nullable();
+        });
+        DB::statement('ALTER TABLE "documentary_offices" ADD CONSTRAINT "documentary_offices_days_range" CHECK ("days" BETWEEN 0 AND 16777215)');
+        DB::statement('ALTER TABLE "documentary_offices" ADD CONSTRAINT "documentary_offices_default_range" CHECK ("default" BETWEEN 0 AND 255)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `documentary_offices`');
+        Schema::dropIfExists('documentary_offices');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

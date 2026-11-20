@@ -3,12 +3,68 @@ namespace Tests\Support;
 
 use App\Models\Tenant\{Company, Person, Document, User};
 use App\Services\Fiscal\{FiscalProfileService, FiscalDocumentPersistence, HkaEmission, HkaPdf, HkaIgtfNote, SpecialTaxpayerPolicy};
+use App\Support\Exact\Decimal as D;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 
 trait SpePersistenceCases
 {
+    public function test_igtf_settings_and_invoice_preserve_eight_decimal_rate(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $company = Company::firstOrFail();
+        $company->forceFill(['fiscal_emission_mode' => 'free_form'])->save();
+        FiscalProfileService::store($company, SpeProfiles::profile());
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) {
+                return validator($this->all(), $rules)->validate();
+            });
+        }
+        $settings = new \App\Http\Controllers\Tenant\DocumentFiscalController();
+        $setRate = static function (string $rate) use ($settings): array {
+            return $settings->settingsStore(\Illuminate\Http\Request::create('/companies/igtf', 'POST', [
+                'enabled' => true,
+                'rate' => $rate,
+            ]));
+        };
+        self::assertTrue($setRate('3.12345678')['success']);
+
+        $input['currency_type_id'] = 'USD';
+        $input['exchange_rate_sale'] = '10';
+        $input['payments'] = [[
+            'date_of_payment' => '2026-09-10', 'payment_method_type_id' => '10',
+            'payment' => '232', 'original_amount' => '232', 'currency_type_id' => 'USD',
+            'exchange_rate' => '10', 'payment_destination_id' => 'cash',
+            'operation_key' => (string) Str::uuid(),
+        ]];
+        $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $receipt = $document->payments()->whereNull('receipt_parent_id')->firstOrFail();
+        self::assertSame('subject', $receipt->igtf_status);
+        self::assertSame('7.25', \App\Support\Exact\Decimal::canonical($receipt->tax_amount));
+        self::assertTrue(\App\Support\Exact\Decimal::of('7.2464197296')->isEqualTo(
+            $receipt->exactValue('tax_exact')
+        ));
+        self::assertTrue($document->exactBalance()->isZero());
+        self::assertSame('3.12345678', \App\Support\Exact\Decimal::canonical($settings->settings()['data']['rate']));
+        $audit = $db->table('fiscal_configuration_audits')->latest('id')->first();
+        $changed = json_decode($audit->changed_values, true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('3.12345678', \App\Support\Exact\Decimal::canonical($changed['after']['igtf_rate']));
+
+        $audits = $db->table('fiscal_configuration_audits')->count();
+        foreach (['3.123456789', '0', '0.000000001', '100.00000001'] as $invalid) {
+            try {
+                $setRate($invalid);
+                self::fail('La tasa inválida no debe guardarse.');
+            } catch (ValidationException $error) {
+                self::assertArrayHasKey('rate', $error->errors());
+            }
+        }
+        self::assertSame($audits, $db->table('fiscal_configuration_audits')->count());
+        self::assertSame('3.12345678', \App\Support\Exact\Decimal::canonical($company->fresh()->igtf_rate));
+    }
+
     // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
     public function test_automatic_intermediation_matches_evaluation_quote_preview_and_initial_persistence(): void
     {
@@ -157,6 +213,89 @@ trait SpePersistenceCases
         $credit=(new \App\CoreFacturalo\Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh();
         self::assertSame('9.69',\App\Support\Exact\Decimal::represent($credit->exactBalance()));
         self::assertSame('9.69',\App\Support\Exact\Decimal::represent($credit->fee->first()->exactValue('amount')));
+    }
+
+    public function test_ves_invoice_uses_bcv_rate_for_mixed_cash_and_keeps_fiscal_totals_in_ves(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode'=>'digital', 'igtf_enabled'=>false]);
+        $db->table('configurations')->update(['auto_send_hka'=>true]);
+        $db->table('item_warehouse')->where('item_id', $input['items'][0]['item_id'])->update(['stock'=>'12']);
+
+        $date = $input['date_of_issue'];
+        $bcvUrl = 'https://bcv.example.test/rate/';
+        config(['services.bcv.token'=>str_repeat('a', 64), 'services.bcv.url'=>$bcvUrl]);
+        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::preventStrayRequests();
+        Http::fake([$bcvUrl=>Http::response(['dolar'=>'10.12345678'])]);
+        self::assertFalse($db->table('exchange_rates')->where('date', $date)->exists());
+
+        $rates = $app->make(\App\Services\ExchangeRates\TenantExchangeRateService::class);
+        $previous = \Carbon\Carbon::getTestNow();
+        \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse($date.' 10:00:00', 'America/Caracas'));
+        try {
+            $official = $rates->exchange($date)['sale'];
+            self::assertSame('10.12345678', $official);
+            self::assertSame($official, $rates->exchange($date)['sale']);
+            self::assertSame($official, $db->table('exchange_rates')->where('date', $date)->value('sale'));
+            Http::assertSentCount(1);
+        } finally {
+            \Carbon\Carbon::setTestNow($previous);
+        }
+
+        Http::swap(new \Illuminate\Http\Client\Factory);
+        $sent = [];
+        $mode = 'normal';
+        $this->fakeSpeHka($db, $app, $sent, $mode);
+
+        $input['currency_type_id'] = 'VES';
+        $input['exchange_rate_sale'] = $official;
+        $input['exchange_rate_date'] = $date;
+        $input['exchange_rate_source'] = 'bcv';
+        $base = ['date_of_payment'=>$date, 'financial_intermediation'=>'none', 'payment_destination_id'=>'cash'];
+        $ves = $base + ['payment_method_type_id'=>'01', 'currency_type_id'=>'VES', 'original_amount'=>'130.77',
+            'payment'=>'130.77', 'exchange_rate'=>$official];
+        $usd = $base + ['payment_method_type_id'=>'10', 'currency_type_id'=>'USD', 'original_amount'=>'10',
+            'payment'=>'101.23', 'exchange_rate'=>$official, 'exchange_rate_source'=>'bcv', 'exchange_rate_date'=>$date];
+
+        $channels = ['WEB', 'POS', 'GARAGE'];
+        foreach ($channels as $channel) {
+            foreach ([[$ves, $usd], [$usd, $ves]] as $payments) {
+                $before = $db->table('global_payments')->count();
+                $input['source_module'] = $channel;
+                $input['external_id'] = (string) Str::uuid();
+                $input['payments'] = array_map(fn ($row) => $row + ['operation_key'=>(string) Str::uuid()], $payments);
+                $facturalo = new \App\CoreFacturalo\Facturalo();
+                if ($channel === 'WEB') $facturalo->forWebDocuments();
+                $invoice = $facturalo->save($input)->getDocument()->fresh();
+                self::assertSame($channel, $invoice->source_module);
+                self::assertSame('VES', $invoice->currency_type_id);
+                self::assertSame($official, $invoice->exchange_rate_sale);
+                self::assertTrue($invoice->exactValue('total')->isEqualTo('232'));
+                self::assertTrue($invoice->exactBalance()->isZero());
+                self::assertSame($before + 2, $db->table('global_payments')->count());
+
+                $receipts = $invoice->payments->whereNull('receipt_parent_id')->keyBy('currency_type_id');
+                self::assertCount(2, $receipts);
+                self::assertTrue($receipts['VES']->exactValue('payment')->isEqualTo('130.77'));
+                self::assertTrue($receipts['USD']->exactValue('payment')->isEqualTo('101.23'));
+                self::assertTrue($receipts['USD']->exactValue('original_amount')->isEqualTo('10'));
+                self::assertSame($official, $receipts['USD']->exchange_rate);
+                self::assertSame('bcv', $receipts['USD']->exchange_rate_source);
+                self::assertSame($date, $receipts['USD']->exchange_rate_date->format('Y-m-d'));
+
+                self::assertSame('confirmed', $invoice->emission->status);
+                $header = $invoice->emission->payload['documentoElectronico']['encabezado'];
+                self::assertSame('VES', $header['identificacionDocumento']['moneda']);
+                self::assertSame('232.00', $header['totales']['totalAPagar']);
+                $forms = collect($header['totales']['formasPago'])->keyBy('moneda');
+                self::assertCount(2, $forms);
+                self::assertSame('130.77', $forms['VES']['monto']);
+                self::assertSame('10.00', $forms['USD']['monto']);
+                self::assertSame($official, $forms['USD']['tipoCambio']);
+            }
+        }
+        self::assertCount(2 * count($channels), $sent);
     }
 
     public function test_web_invoice_dollar_change_preserves_net_igtf_and_one_cash_movement(): void
@@ -433,6 +572,128 @@ trait SpePersistenceCases
         self::assertSame(1,\App\Models\Tenant\DocumentTax::where('document_payment_id',$receipt->id)->count());
     }
 
+    public function test_later_payment_quote_rounds_the_original_invoice_balance_once(): void
+    {
+        [$db, , $input] = $this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode' => 'free_form']);
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $input['payment_condition_id'] = '02';
+        $input['payments'] = [];
+        $input['items'][0] = array_replace($input['items'][0], [
+            'quantity' => '1',
+            'unit_price' => '2',
+            'affectation_igv_type_id' => '20',
+        ]);
+        $input['guarantee_fund'] = ['base' => '2', 'percentage' => '49.750000000016', 'amount' => '0.995'];
+        $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        self::assertSame('2.00', D::represent($document->exactValue('total_payable'), 2, true));
+        $original = D::of('1.00499999999968');
+        self::assertTrue($original->isEqualTo($document->exactBalance(true)));
+        self::assertSame('1.005', D::represent($original));
+
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) {
+                return validator($this->all(), $rules)->validate();
+            });
+        }
+        $controller = new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController();
+        $row = [
+            'date_of_payment' => '2026-09-10', 'payment_method_type_id' => '01',
+            'currency_type_id' => 'VES', 'payment' => '0.50', 'payment_destination_id' => 'cash',
+            'operation_key' => (string) Str::uuid(),
+        ];
+        $request = \Illuminate\Http\Request::create('/documents/payment-quote', 'POST', [
+            'document_id' => $document->id, 'payments' => [$row],
+        ]);
+        $quote = $controller($request)['data'];
+        self::assertSame('1.00', $quote['principal_due']);
+        self::assertSame('0.50', $quote['principal_applied']);
+        self::assertSame('0.50', $quote['balance']);
+        self::assertSame(0, $document->payments()->count());
+
+        FiscalDocumentPersistence::payment($document, $row);
+        $remaining = $document->fresh()->exactBalance(true);
+        self::assertTrue($remaining->isEqualTo($original->minus('0.50')));
+        self::assertSame($quote['balance'], D::represent($remaining, 2, true));
+    }
+
+    /** @dataProvider laterPaymentClosingCases */
+    public function test_later_payment_quote_adjusts_each_closing_receipt_like_persistence(string $percentage, string $balance, array $receipts): void
+    {
+        [$db, , $input] = $this->bootHkaFixture();
+        $db->table('companies')->update(['fiscal_emission_mode' => 'free_form', 'igtf_enabled' => false]);
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $input['payment_condition_id'] = '02';
+        $input['payments'] = [];
+        $input['items'][0] = array_replace($input['items'][0], [
+            'quantity' => '1', 'unit_price' => '2', 'affectation_igv_type_id' => '20',
+        ]);
+        $input['guarantee_fund'] = ['base' => '2', 'percentage' => $percentage, 'amount' => '0.995'];
+        $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $original = D::of($balance);
+        self::assertTrue($original->isEqualTo($document->exactBalance(true)));
+        if (!\Illuminate\Http\Request::hasMacro('validate')) {
+            \Illuminate\Http\Request::macro('validate', function (array $rules) {
+                return validator($this->all(), $rules)->validate();
+            });
+        }
+        $controller = new \App\Http\Controllers\Tenant\DocumentPaymentQuoteController();
+        $quote = static function (array $rows) use ($controller, $document): array {
+            return $controller(\Illuminate\Http\Request::create('/documents/payment-quote', 'POST', [
+                'document_id' => $document->id, 'payments' => $rows,
+            ]))['data'];
+        };
+        $base = ['date_of_payment' => '2026-09-10', 'payment_destination_id' => 'cash'];
+        $rows = array_map(static fn (array $row) => $row + $base + ['operation_key' => (string) Str::uuid()], $receipts);
+        $ves = ['payment_method_type_id' => '01', 'currency_type_id' => 'VES'] + $base;
+        $over = array_replace($ves, ['payment' => '1.02', 'original_amount' => '1.02']);
+        $afterClosure = array_replace($ves, ['payment' => '0.01', 'original_amount' => '0.01']);
+        foreach ([[$over], [...$rows, $afterClosure]] as $invalid) {
+            try {
+                $quote($invalid);
+                self::fail('La cotización debe rechazar cobros superiores al saldo remanente.');
+            } catch (ValidationException $error) {
+                self::assertArrayHasKey('payment', $error->errors());
+            }
+        }
+
+        $result = $quote($rows);
+        self::assertSame(D::represent($original, 2, true), $result['principal_due']);
+        self::assertSame($result['principal_due'], $result['principal_applied']);
+        self::assertSame('0.00', $result['balance']);
+        self::assertSame(0, $document->payments()->count());
+
+        $remaining = $original;
+        foreach ($rows as $index => $row) {
+            $expected = $index === array_key_last($rows) ? $remaining : D::of($row['payment']);
+            $saved = FiscalDocumentPersistence::payment($document, $row);
+            self::assertTrue($expected->isEqualTo($saved->exactValue('payment')));
+            self::assertSame(D::represent($expected), $result['payments'][$index]['payment']);
+            self::assertSame($result['payments'][$index]['currency_type_id'], $saved->currency_type_id);
+            self::assertSame($result['payments'][$index]['original_amount'], D::represent($saved->exactValue('original_amount'), 2, true));
+            self::assertTrue($expected->minus($saved->exactValue('converted_principal'))->isEqualTo($saved->exactValue('payment_adjustment')));
+            $remaining = $remaining->minus($expected);
+        }
+        self::assertTrue($document->fresh()->exactBalance(true)->isZero());
+    }
+
+    public static function laterPaymentClosingCases(): array
+    {
+        $ves = static fn (string $value) => [
+            'payment_method_type_id' => '01', 'currency_type_id' => 'VES', 'payment' => $value, 'original_amount' => $value,
+        ];
+        $usd = [
+            'payment_method_type_id' => '10', 'currency_type_id' => 'USD',
+            'payment' => '0.51', 'original_amount' => '0.02', 'exchange_rate' => '25.5',
+        ];
+        return [
+            'medio centavo por arriba' => ['49.749999999984', '1.00500000000032', [$ves('1.01')]],
+            'medio centavo por debajo' => ['49.750000000016', '1.00499999999968', [$ves('1.00')]],
+            'cierre en otra moneda' => ['49.749999999984', '1.00500000000032', [$ves('0.50'), $usd]],
+            'cierre tras una moneda distinta' => ['49.749999999984', '1.00500000000032', [$usd, $ves('0.50')]],
+        ];
+    }
+
     public function test_spe_invoice_reuses_a_sale_note_receipt_without_new_igtf(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture();
@@ -443,16 +704,7 @@ trait SpePersistenceCases
         $input['exchange_rate_sale']='10';
         $saleInput=array_replace($input,['id'=>null,'series'=>'NV01','document_type_id'=>'80','prefix'=>'NV','payments'=>[]]);
         $note=\App\Models\Tenant\SaleNote::create($controller->mergeData($saleInput));
-        // This fixture boots warehouse observers but not the global Kardex provider.
-        // Supply both movements of the original sale before testing receipt reuse.
-        $ledger=new class { use \App\Traits\KardexTrait; };
-        $db->transaction(function () use ($input,$note,$ledger) {
-            foreach ($input['items'] as $line) {
-                $note->items()->create($line);
-                $ledger->saveKardex('sale',$line['item_id'],$note->id,$line['quantity'],'sale_note');
-                $ledger->updateStock($line['item_id'],$line['quantity'],true);
-            }
-        });
+        foreach ($input['items'] as $line) $note->items()->create($line);
         $controller->savePayments($note,[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>'10',
             'payment_destination_id'=>'cash','currency_type_id'=>'USD','original_amount'=>'5',
             'exchange_rate'=>'10','payment'=>'50']]);
@@ -482,7 +734,7 @@ trait SpePersistenceCases
             }
             if (str_ends_with($request->url(), '/EstadoDocumento')) {
                 $identity=$request->data();
-                $stored=\App\Models\Tenant\DocumentEmission::whereRaw("REPLACE(operation_key, '-', '') = ?",[$identity['transaccionId']])->firstOrFail();
+                $stored=\App\Models\Tenant\DocumentEmission::whereRaw("REPLACE(operation_key COLLATE \"C\", '-', '') = ?",[$identity['transaccionId']])->firstOrFail();
                 $identity=$stored->payload['documentoElectronico']['encabezado']['identificacionDocumento'];
                 return Http::response(['codigo'=>'200','estado'=>$identity+['estadoDocumento'=>'Procesado','numeroControl'=>'00-'.str_pad((string)(10000+(int)($identity['numeroDocumento'] ?? '0')+(($identity['tipoDocumento'] ?? '01')==='03'?20000:0)),8,'0',STR_PAD_LEFT)]]);
             }
@@ -512,7 +764,8 @@ trait SpePersistenceCases
                 'number'=>(string)(24000000+count($buyers)),'name'=>'DEMO '.$name,'country_id'=>'VE','address'=>'DEMO Caracas','email'=>'qa@example.test']);
             FiscalProfileService::store($person,$profile);$buyers[$name]=$person;
         }
-        foreach($buyers as $name=>$buyer) foreach(['WEB','POS','GARAGE'] as $channel) foreach(['VES','USD'] as $currency) foreach(['01','02'] as $condition){
+        $currencies = $this->invoiceTestCurrencies();
+        foreach($buyers as $name=>$buyer) foreach(['WEB','POS','GARAGE'] as $channel) foreach($currencies as $currency) foreach(['01','02'] as $condition){
             $case=array_replace($input,['source_module'=>$channel,'customer_id'=>$buyer->id,'customer'=>$buyer->toArray(),'currency_type_id'=>$currency,'exchange_rate_sale'=>'40.12345678',
                 'payment_condition_id'=>$condition,'external_id'=>(string)Str::uuid(), 'payments'=>$condition==='02'?[]:[['payment'=>232,'date_of_payment'=>'2026-09-10','payment_method_type_id'=>$currency==='USD'?'10':'01','financial_intermediation'=>'none']],
                 'fee'=>$condition==='02'?[['date'=>'2026-10-10','currency_type_id'=>$currency,'amount'=>232]]:[]]);
@@ -528,18 +781,18 @@ trait SpePersistenceCases
             self::assertEquals($condition==='01'&&$currency==='USD'?6.96:0,$doc->taxes()->where('tax_kind','IGTF')->sum('amount'));
             self::assertCount($condition==='02'?1:0,$doc->fee);
         }
-        self::assertCount(108,$sent);
+        self::assertCount(54 * count($currencies), $sent);
         $control=Person::findOrFail($input['customer_id']);
         foreach(['natural','personal_firm','legal'] as $nature){
             $company->number=($nature==='legal'?'J':'V').'123456789';$company->save();
             FiscalProfileService::store($company,SpeProfiles::profile(['rif'=>($nature==='legal'?'J':'V').'-12345678-9','nature'=>$nature==='legal'?'legal':'natural','personal_firm'=>$nature==='personal_firm','iva_agent_basis'=>$nature==='natural'?'none':'SNAT/2025/000054']));
-            foreach(['WEB','POS','GARAGE'] as $channel)foreach(['VES','USD']as$currency)foreach(['01','02']as$condition){
+            foreach(['WEB','POS','GARAGE'] as $channel)foreach($currencies as $currency)foreach(['01','02']as$condition){
                 $case=array_replace($input,['source_module'=>$channel,'currency_type_id'=>$currency,'payment_condition_id'=>$condition,'external_id'=>(string)Str::uuid(),
                     'payments'=>$condition==='02'?[]:[['date_of_payment'=>'2026-09-10','payment_method_type_id'=>$currency==='USD'?'10':'01','payment'=>232,'financial_intermediation'=>'none']]]);
                 $doc=(new \App\CoreFacturalo\Facturalo)->save($case)->getDocument()->fresh();self::assertSame('confirmed',$doc->emission->status);self::assertSame($nature==='legal'?'legal':'natural',$doc->issuer['fiscal_profile']['nature']);
             }
         }
-        self::assertCount(144,$sent);
+        self::assertCount(72 * count($currencies), $sent);
         $before=count($sent);$db->beginTransaction();(new \App\CoreFacturalo\Facturalo)->save($case);$db->rollBack();self::assertSame($before,count($sent));
         $frozen=$doc->emission->payload;FiscalProfileService::store($company,SpeProfiles::profile(['effective_from'=>'2026-09-11','spe'=>false,'iva_agent_basis'=>'none']));
         self::assertSame($frozen,$doc->fresh()->emission->payload);self::assertTrue($doc->fresh()->issuer['fiscal_profile']['spe']);
@@ -606,7 +859,7 @@ trait SpePersistenceCases
         $pdf->WriteHTML($html);
         $reportPdf=$pdf->Output('','S');
         self::assertStringStartsWith('%PDF-',$reportPdf);
-        if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/igtf-document-report.pdf',$reportPdf);
+        if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/igtf-document-report.pdf',$reportPdf);
         foreach (['report_pdf_standard','report_pdf_simple'] as $viewName) {
             $rejectedRecords=new \Illuminate\Database\Eloquent\Collection([$rejectedNote]);
             $rejectedHtml=view('report::documents.'.$viewName,['records'=>$rejectedRecords,'company'=>$company,

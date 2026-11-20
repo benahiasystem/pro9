@@ -16,7 +16,8 @@ use App\Models\Tenant\{
 use Carbon\Carbon;
 use Exception;
 use Modules\Document\Helpers\DocumentHelper;
-use Modules\Dashboard\Helpers\DashboardData;
+use App\Services\Plans\SalesLimit;
+use App\Support\Exact\Decimal as D;
 
 
 trait LockedEmissionTrait
@@ -127,7 +128,7 @@ trait LockedEmissionTrait
         
         if($start_billing_cycle)
         {
-            $plan = $this->getClientPlan(['id', 'name', 'sales_limit', 'sales_unlimited', 'include_sale_notes_sales_limit']);
+            $plan = $this->getClientPlan(['id', 'name', 'sales_limit', 'calculation_snapshot', 'sales_unlimited', 'include_sale_notes_sales_limit']);
 
             if(!$plan->isSalesUnlimited())
             {
@@ -139,12 +140,8 @@ trait LockedEmissionTrait
                     $end_date = $start_end_date['end_date']->format('Y-m-d');
     
                     //obtener totales
-                    $totals = $this->getTotalsDocumentSaleNote($start_date, $end_date, $plan->includeSaleNotesSalesLimit());
-    
-                    if($totals['total'] > $plan->sales_limit)
-                    {
-                        return $this->getResponse(true, 'Ha superado el límite de ventas permitido.');
-                    }
+                    SalesLimit::defer($start_date,$end_date,(bool)$plan->includeSaleNotesSalesLimit(),D::readRequired($plan,'sales_limit'));
+
                 }
             }
         }
@@ -162,26 +159,7 @@ trait LockedEmissionTrait
      */
     public function getTotalsDocumentSaleNote($start_date, $end_date, $include_sale_notes = false)
     {
-        $dashboard_data = new DashboardData();
-                
-        //total cpe
-        $document_totals = $dashboard_data->document_totals_globals($start_date, $end_date);
-
-        // total nota venta
-        $sale_note_totals = 0;
-
-        if($include_sale_notes)
-        {
-            $sale_note_totals = $dashboard_data->sale_note_totals_global($start_date, $end_date);
-        }
-
-        $total = $document_totals + $sale_note_totals;
-
-        return [
-            'sale_note_totals' => $sale_note_totals,
-            'document_totals' => $document_totals,
-            'total' => $total,
-        ];
+        return SalesLimit::read($start_date,$end_date,(bool)$include_sale_notes);
     }
 
     

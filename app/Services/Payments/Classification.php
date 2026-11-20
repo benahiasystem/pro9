@@ -107,7 +107,7 @@ final class Classification
         $query = \App\Models\Tenant\PaymentMethodType::active()
             ->where('collection_kind', 'cash')->where('currency_type_id', $currency);
         // Orden binario UTF-8 coherente con la comparación de códigos del frontend.
-        if ($query->getModel()->getConnection()->getDriverName() === 'mysql') $query->orderByRaw('BINARY id');
+        if ($query->getModel()->getConnection()->getDriverName() === 'pgsql') $query->orderByRaw('id COLLATE "C"');
         else $query->orderBy('id');
         if ($query->getModel()->getConnection()->transactionLevel() > 0) $query->lockForUpdate();
         $method = $query->first();

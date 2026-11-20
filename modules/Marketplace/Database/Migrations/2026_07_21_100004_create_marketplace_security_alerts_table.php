@@ -20,7 +20,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::connection('system')->create('marketplace_security_alerts', function (Blueprint $table) {
+        Schema::create('marketplace_security_alerts', function (Blueprint $table) {
             $table->id();
 
             $table->unsignedBigInteger('store_id')->nullable()->index();
@@ -35,6 +35,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::connection('system')->dropIfExists('marketplace_security_alerts');
+        Schema::dropIfExists('marketplace_security_alerts');
     }
 };

@@ -146,12 +146,15 @@ class WidgetContext
     public function monthlyComparison()
     {
         return $this->remember('monthly_comparison', function () {
-            return (new DashboardKpi())->monthlyComparison($this->rangeFilters());
+            $period=match ($this->filters['period']) {
+                'date'=>'today', 'last_week','between_dates'=>'week', 'between_months'=>'year', 'all'=>'all', default=>'month',
+            };
+            return (new DashboardKpi())->monthlyComparison(array_replace($this->rangeFilters(),['period'=>$period]));
         });
     }
 
     /**
-     * DashboardKpi espera date_start/date_end ya resueltos (sin period/month_*).
+     * Fechas resueltas y periodo original; "all" permite obtener los límites históricos.
      */
     private function rangeFilters()
     {
@@ -161,6 +164,7 @@ class WidgetContext
             'establishment_id' => $resolved['establishment_id'],
             'date_start' => $resolved['date_start'],
             'date_end' => $resolved['date_end'],
+            'period' => $resolved['period'],
         ];
     }
 }

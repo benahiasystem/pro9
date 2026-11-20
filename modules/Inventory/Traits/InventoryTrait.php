@@ -373,6 +373,19 @@ trait InventoryTrait
             'quantity' => $quantity,
         ]);
     }
+
+    private function moveInvoiceModifiers(\App\Models\Tenant\DocumentItem $line, int $direction): void
+    {
+        $components = \App\Services\Fiscal\InvoiceModifiers::components($line->item);
+        if (!$components) return;
+
+        $quantity = $line->exactValue('quantity')->multipliedBy($direction);
+        foreach ($components as $component) {
+            $delta = $quantity->multipliedBy(\App\Support\Exact\Decimal::of($component['quantity_exact']));
+            $this->createInventoryKardex($line->document, $component['item_id'], $delta, $line->warehouse_id);
+            $this->updateStock($component['item_id'], $delta, $line->warehouse_id);
+        }
+    }
     /**
      * Actualiza el stock
      *
@@ -481,6 +494,32 @@ trait InventoryTrait
         $sale_note_item = $this->findSaleNoteItem($sale_note_item_id);
         $sale_note_item->inventory_kardex_id = $sale_note_kardex->id;
         $sale_note_item->update();
+        return $sale_note_kardex;
+    }
+
+    private function reverseSaleNoteComponents(SaleNoteItem $line): void
+    {
+        $snapshot = $line->calculation_snapshot;
+        $record = $snapshot['inputs']['sale_note_component_movements'] ?? null;
+        if (!$record || $record['reversed']) return;
+
+        $note = $line->sale_note;
+        $movements = $note->inventory_kardex()->whereKey($record['ids'])->orderBy('id')->lockForUpdate()->get();
+        if ($movements->count() !== count($record['ids'])) {
+            \App\Services\Fiscal\FiscalAmounts::error('inventory', 'Faltan movimientos originales de los componentes de la nota.');
+        }
+        foreach ($movements as $movement) {
+            $quantity = $movement->exactValue('quantity')->negated();
+            if (!$quantity->isPositive()) {
+                \App\Services\Fiscal\FiscalAmounts::error('inventory', 'El movimiento original del componente debe ser una salida.');
+            }
+            $this->updateStock($movement->item_id, $quantity, $movement->warehouse_id);
+            $this->createInventoryKardex($note, $movement->item_id, $quantity, $movement->warehouse_id);
+        }
+        if ($line->exists) {
+            $snapshot['inputs']['sale_note_component_movements']['reversed'] = true;
+            $line->forceFill(['calculation_snapshot' => $snapshot])->saveQuietly();
+        }
     }
     /**
      * Borra el kardex basado en el id de  $inventory_kardex_id
@@ -556,6 +595,7 @@ trait InventoryTrait
      */
     public function getQuantityUnitPresentation($model_item)
     {
+        if ($model_item instanceof \App\Models\Tenant\DocumentItem) return \App\Services\Fiscal\FiscalNoteInventory::presentationQuantity($model_item->item);
         return isset($model_item->item->presentation->quantity_unit)
             ? \App\Support\Exact\Decimal::read($model_item->item->presentation,'quantity_unit') : \App\Support\Exact\Decimal::of(1);
     }
@@ -595,20 +635,11 @@ trait InventoryTrait
         }
         // lotes
 
-        // series
-        if (isset($item->item->lots))
-        {
-            foreach ($item->item->lots as $it)
-            {
-                if ($it->has_sale)
-                {
-                    $item_lot = ItemLot::find($it->id);
-                    $item_lot->has_sale = false;
-                    $item_lot->save();
-                }
-            }
+        foreach (\App\Services\Fiscal\FiscalNoteInventory::selectedSerials((array) ($item->item->lots ?? [])) as $serial) {
+            $itemLot = ItemLot::findOrFail($serial->id);
+            $itemLot->has_sale = false;
+            $itemLot->save();
         }
-        // series
 
     }
 

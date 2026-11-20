@@ -10,6 +10,7 @@ class NoteCreditType extends ModelCatalog
     
     protected $table = "cat_note_credit_types";
     public $incrementing = false;
+    protected $keyType = 'string';
 
     public const PAYMENT_DATE_ADJUSTMENTS_CODE = '13';
 

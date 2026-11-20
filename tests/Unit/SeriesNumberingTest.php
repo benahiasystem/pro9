@@ -159,7 +159,7 @@ class SeriesNumberingTest extends SeriesDatabaseTestCase
 
     public function test_free_series_of_one_to_twenty_characters_work_for_every_type_and_mode(): void
     {
-        foreach (array_unique(array_column(\App\Services\SeriesCodeGenerator::availableTypes(false), 'document_type_id')) as $type) {
+        foreach (array_unique(array_column(\App\Services\SeriesCodeGenerator::availableTypes(), 'document_type_id')) as $type) {
             foreach (['normal', 'dedicated', 'contingency'] as $mode) {
                 foreach (['X', 'AB01', 'ABCDEFGHIJKLMNOP1234', 'abc-DEF-01', '-A--1-'] as $code) {
                     $request = SeriesRequest::create('/', 'POST', ['establishment_id' => 1, 'document_type_id' => $type,

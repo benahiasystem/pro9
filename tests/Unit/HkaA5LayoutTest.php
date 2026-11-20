@@ -102,6 +102,22 @@ class HkaA5LayoutTest extends TestCase
         }
     }
 
+    public function test_amount_tokens_keep_all_digits_while_geometry_changes(): void
+    {
+        $tokens=['0.10','0.20','0.30','0.333333333333',
+            '123456789012345678.123456789012','-0.000000000001'];
+        $source='BT /F1 10 Tf ';
+        foreach ($tokens as $index=>$text) {
+            $y=250-$index*20;
+            $source.="1 0 0 1 10 $y Tm ($text) Tj ";
+        }
+        $draws=$this->draws($this->convert($source.'ET'));
+        self::assertSame($tokens,array_column($draws,'text'));
+        foreach ($draws as $draw) {
+            self::assertEqualsWithDelta($draw['matrix'][0]*.97,$draw['matrix'][3]*.53,1e-6);
+        }
+    }
+
     public function test_mixed_font_labels_and_values_stay_together_and_left_aligned(): void
     {
         $valueX = 10 + $this->width('Customer:', 'F2') + 3;

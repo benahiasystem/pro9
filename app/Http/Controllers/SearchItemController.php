@@ -66,13 +66,13 @@
          *
          * @return \Illuminate\Database\Eloquent\Builder[]|\Illuminate\Database\Eloquent\Collection
          */
-        public static function getNotServiceItem(Request $request = null, $id = 0)
+        public static function getNotServiceItem(Request $request = null, $id = 0, bool $forInvoice = false)
         {
 
             self::validateRequest($request);
             $search_by_barcode = $request->has('search_by_barcode') && (bool)$request->search_by_barcode;
             $input = self::setInputByRequest($request);
-            $item = self::getAllItemBase($request, false, $id);
+            $item = self::getAllItemBase($request, false, $id, $forInvoice);
 
             // el filtro por almacén no debe depender de la búsqueda por código de barras o coincidencias
             // if ($search_by_barcode === false && $input != null) {
@@ -128,7 +128,7 @@
          *
          * @return \Illuminate\Database\Eloquent\Builder
          */
-        public static function getAllItemBase(Request $request = null, $service = false, $id = 0)
+        public static function getAllItemBase(Request $request = null, $service = false, $id = 0, bool $forInvoice = false)
         {
 
             self::validateRequest($request);
@@ -159,9 +159,11 @@
             if($production !== false) {
                 // busqueda de insumos, no se lista por codigo de barra o por series
                 $search_item_by_series = false;
-            } else {
-                $item->with('warehousePrices');
-                $ItemToSearchBySeries->with('warehousePrices');
+            }
+            if (!$production || $forInvoice) {
+                $warehousePrices = $forInvoice ? 'billingWarehousePrices' : 'warehousePrices';
+                $item->with($warehousePrices);
+                $ItemToSearchBySeries->with($warehousePrices);
             }
 
             $alt_item = $item;
@@ -322,13 +324,13 @@
          *
          * @return Item[]|\Illuminate\Database\Eloquent\Builder[]|\Illuminate\Database\Eloquent\Collection|Builder[]|Collection|mixed
          */
-        public static function getServiceItem(Request $request = null, $id = 0)
+        public static function getServiceItem(Request $request = null, $id = 0, bool $forInvoice = false)
         {
             self::validateRequest($request);
             $search_by_barcode = $request->has('search_by_barcode') && (bool)$request->search_by_barcode;
             $input = self::setInputByRequest($request);
             /** @var Item $item */
-            $item = self::getAllItemBase($request, true, $id);
+            $item = self::getAllItemBase($request, true, $id, $forInvoice);
 
             if ($search_by_barcode === false && $input != null) {
                 self::SetWarehouseToUser($item);
@@ -548,7 +550,7 @@
          *
          * @return \Illuminate\Database\Eloquent\Collection|Collection
          */
-        public static function getItemsToDocuments(Request $request = null, $id = 0)
+        public static function getItemsToDocuments(Request $request = null, $id = 0, bool $forInvoice = false)
         {
             // Generar clave de caché basada en todos los parámetros del request
             $cacheParams = [
@@ -563,6 +565,7 @@
                 'production' => $request ? $request->input('production') : null,
             ];
 
+            if ($forInvoice) $cacheParams['for_invoice'] = true;
             $cacheKey = 'items_documents_' . md5(json_encode($cacheParams));
 
             // Usar método centralizado de caché (instanciar Controller temporalmente ya que este es método estático)
@@ -571,10 +574,10 @@
                 $cacheKey,
                 ['items_list'],
                 600, // 10 minutos
-                function () use ($request, $id) {
-                    $items_not_services = self::getNotServiceItem($request, $id);
-                    $items_services = self::getServiceItem($request, $id);
-                    return self::TransformToModal($items_not_services->merge($items_services));
+                function () use ($request, $id, $forInvoice) {
+                    $items_not_services = self::getNotServiceItem($request, $id, $forInvoice);
+                    $items_services = self::getServiceItem($request, $id, $forInvoice);
+                    return self::TransformToModal($items_not_services->merge($items_services), forInvoice: $forInvoice);
                 },
                 [
                     'section' => 'Items Documents',
@@ -589,13 +592,13 @@
          *
          * @return \Illuminate\Database\Eloquent\Collection|Collection
          */
-        public static function TransformToModal($items, Warehouse $warehouse = null)
+        public static function TransformToModal($items, Warehouse $warehouse = null, bool $forInvoice = false)
         {
             /** @var Item[]|\Illuminate\Database\Eloquent\Builder[]|\Illuminate\Database\Eloquent\Collection|Builder[]|Collection|mixed $items */
             return $items
-                ->transform(function ($row) use ($warehouse) {
+                ->transform(function ($row) use ($warehouse, $forInvoice) {
                     /** @var Item $row */
-                    return $row->getDataToItemModal($warehouse);
+                    return $row->getDataToItemModal($warehouse, forInvoice: $forInvoice);
                 });
 
         }
@@ -660,6 +663,8 @@
                 $warehouse_id = ($warehouse) ? $warehouse->id : null;
             }
 
+            (new \Illuminate\Database\Eloquent\Collection($items->all()))->loadMissing('billingWarehousePrices');
+
             return $items->transform(function ($row) use ($warehouse_id, $warehouse) {
                 /** @var Item $row */
 
@@ -668,7 +673,7 @@
                 $temp =   [
                     'id' => $row->id,
                     'sale_unit_price' => $unit_price,
-                    'calculation_snapshot' => $row->selectionPriceSnapshot($warehouse_id),
+                    'calculation_snapshot' => $row->selectionPriceSnapshot($warehouse_id, forInvoice: true),
                     'purchase_unit_price' => $row->purchase_unit_price,
                     'unit_type_id' => $row->unit_type_id,
                     'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,

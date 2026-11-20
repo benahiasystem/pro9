@@ -4,6 +4,7 @@ namespace Modules\Ecommerce\Services;
 
 use App\Models\Tenant\EcommerceCampaign;
 use App\Models\Tenant\Item;
+use App\Support\Exact\Decimal as D;
 use Illuminate\Support\Collection;
 use Modules\Ecommerce\Models\Tenant\DiscountCampaign;
 
@@ -41,37 +42,47 @@ class CampaignPriceService
 
     public function forItem(Item $item): array
     {
-        $basePrice = round((float) $item->sale_unit_price, 2);
+        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        $exact = $this->exactForItem($item);
+        $basePrice = D::of($exact['base_price']);
+        $discount = D::of($exact['discount']);
+        $finalPrice = D::of($exact['final_price']);
         $socialProof = EcommerceCampaign::current();
-        $compareAtPrice = $socialProof && $socialProof->hasActiveDiscount()
-            ? $socialProof->compareAtPrice($basePrice)
-            : null;
-
-        $campaign = $this->activeDiscountCampaigns()
-            ->filter(fn (DiscountCampaign $candidate) => $candidate->appliesTo((int) $item->id, $item->category_id ? (int) $item->category_id : null))
-            ->sortByDesc('value')
-            ->first();
-
-        $discount = $campaign ? $campaign->calculateDiscount($basePrice) : 0;
-        $finalPrice = round(max(0, $basePrice - $discount), 2);
+        $hasSocialProof = $socialProof !== null && $socialProof->hasActiveDiscount();
+        $compareAtPrice = null;
+        if ($hasSocialProof) {
+            $value = D::readRequired($socialProof, 'discount_value');
+            if ($value->isNegative()) {
+                \App\Services\Fiscal\FiscalAmounts::error('items', 'El precio de referencia de la campaña no es válido.');
+            }
+            $anchor = $socialProof->discount_type === 'percentage'
+                ? $basePrice->multipliedBy(D::of(1)->plus($value->dividedBy(100)))
+                : $basePrice->plus($value);
+            if ($anchor->isGreaterThan($basePrice)) $compareAtPrice = $anchor;
+        }
         // Sin anclaje de Social Proof, una campaña real usa el precio base como
         // precio anterior tachado. Si Social Proof está activo, prevalece su
         // anclaje ficticio más alto y la campaña sigue descontando sobre la base.
-        if ($campaign && $discount > 0 && $compareAtPrice === null) {
+        if (!$discount->isZero() && $compareAtPrice === null) {
             $compareAtPrice = $basePrice;
         }
-
+        $values = ['base_price'=>$basePrice, 'final_price'=>$finalPrice, 'real_discount'=>$discount,
+            'real_discount_percentage'=>D::of($exact['percentage'])];
+        if ($compareAtPrice !== null) $values['compare_at_price'] = $compareAtPrice;
         return [
-            'base_price' => $basePrice,
-            'compare_at_price' => $compareAtPrice,
-            'final_price' => $finalPrice,
-            'real_discount' => $discount,
-            'real_discount_percentage' => $campaign ? (float) $campaign->value : 0,
-            'discount_campaign_id' => $campaign?->id,
-            'discount_campaign_name' => $campaign?->name,
-            'has_social_proof_price' => $socialProof !== null && $socialProof->hasActiveDiscount(),
-            'has_real_discount' => $campaign !== null && $discount > 0,
+            'base_price' => D::represent($basePrice),
+            'compare_at_price' => $compareAtPrice === null ? null : D::represent($compareAtPrice),
+            'final_price' => D::represent($finalPrice),
+            'real_discount' => D::represent($discount),
+            'real_discount_percentage' => D::represent($exact['percentage']),
+            'discount_campaign_id' => $exact['campaign_id'],
+            'discount_campaign_name' => $exact['campaign_name'],
+            'has_social_proof_price' => $hasSocialProof,
+            'has_real_discount' => !$discount->isZero(),
+            // Public prices only. Never copy the item's full snapshot (which includes costs).
+            'calculation_snapshot' => D::snapshot($values),
         ];
+        // ######## FIN CALCULOS EXACTOS PRO9 ########
     }
 
     private function activeDiscountCampaigns(): Collection

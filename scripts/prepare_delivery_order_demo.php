@@ -56,7 +56,7 @@ if ($mode==='audit') {
 
 if ($mode==='prepare') {
     foreach (['creation_key'=>'char(36) NULL','creation_hash'=>'char(64) NULL','hka_data'=>'json NULL'] as $column=>$definition) if (!$db->getSchemaBuilder()->hasColumn('dispatches',$column)) $db->statement('ALTER TABLE `dispatches` ADD `'.$column.'` '.$definition);
-    if (!$db->select("SHOW INDEX FROM dispatches WHERE Key_name='dispatches_creation_unique'")) $db->statement('ALTER TABLE dispatches ADD UNIQUE KEY dispatches_creation_unique (creation_key)');
+    if (!\App\Database\SchemaInspector::indexes($db,'dispatches','dispatches_creation_unique')) $db->statement('CREATE UNIQUE INDEX dispatches_creation_unique ON dispatches (creation_key)');
     if (!$db->getSchemaBuilder()->hasTable('dispatch_emissions')) {
         (require $root.'/database/migrations/tenant/2026_08_17_000342_create_dispatch_emissions_table.php')->up();
         $db->statement('ALTER TABLE dispatch_emissions ADD CONSTRAINT dispatch_emissions_dispatch_foreign FOREIGN KEY (dispatch_id) REFERENCES dispatches(id)');

@@ -1,31 +1,110 @@
 <?php
 namespace App\Services\Fiscal;
 
-use App\Models\Tenant\{DocumentItem, Item, Document};
+use App\Models\Tenant\{DocumentItem, Item, Document, ItemUnitType};
+use App\Database\IntegerTransport;
 use Modules\Inventory\Models\ItemWarehouse;
 use Modules\Item\Models\{ItemLot, ItemLotsGroup};
 use App\Support\Exact\Decimal as D;
 
 final class FiscalNoteInventory
 {
+    public static function selectedSerials(array $serials): array
+    {
+        return array_values(array_filter($serials, static fn ($serial) =>
+            filter_var(data_get($serial, 'has_sale'), FILTER_VALIDATE_BOOLEAN)));
+    }
+
     /** Preserve physical composition when an invoice is first persisted. */
-    public static function capture(array $line, ?array $frozenComponents=null): array
+    public static function capture(array $line, ?array $frozenComponents=null, ?bool $frozenIsSet=null): array
     {
         $item=Item::findOrFail($line['item_id']);
-        $line['item']['is_set']=(bool)$item->is_set;
+        $line['item']['is_set']=$frozenIsSet ?? (bool)$item->is_set;
         $components=[];
-        if ($item->is_set) {
+        if ($line['item']['is_set']) {
+            $presentation=(array)($line['item']['presentation'] ?? []);
+            // The commercial pack composition keeps its existing rule. Only freeze
+            // its presentation from the catalog or a finite legacy input, never
+            // from client-supplied fraction/snapshot metadata.
+            if ($presentation && $frozenComponents === null) {
+                if (isset($presentation['id'])) {
+                    $id=IntegerTransport::positiveKey($presentation['id']);
+                    $unit=$id === null ? null : ItemUnitType::where('item_id',$item->id)->whereKey($id)->lockForUpdate()->first();
+                    if (!$unit) FiscalAmounts::error('items.presentation','La presentación no pertenece al producto seleccionado.');
+                    $factor=D::readRequired($unit,'quantity_unit');
+                    $presentation=array_replace($presentation,$unit->only(['id','item_id','description','unit_type_id']));
+                    $line['item']['unit_type_id']=$unit->unit_type_id;
+                } else $factor=D::of(D::input($presentation['quantity_unit'] ?? 1,'items.presentation.quantity_unit'));
+                if (!$factor->isPositive()) FiscalAmounts::error('items.presentation','La presentación debe tener una cantidad positiva.');
+                $presentation['quantity_unit']=D::represent($factor);
+                $presentation['quantity_unit_exact']=D::fraction($factor);
+                $presentation['calculation_snapshot']=D::snapshot(['quantity_unit'=>$factor]);
+                $line['item']['presentation']=$presentation;
+            }
             if ($frozenComponents !== null) $components=$frozenComponents;
             else foreach ($item->sets as $component) if ($component->individual_item->unit_type_id !== 'SERV') $components[]=['item_id'=>$component->individual_item_id,'quantity'=>$component->exactValue('quantity')];
-        } elseif ($item->unit_type_id !== 'SERV') $components[]=['item_id'=>$item->id,'quantity'=>(string)($line['item']['presentation']['quantity_unit'] ?? 1)];
+        } else {
+            $presentation=(array)($line['item']['presentation'] ?? []);
+            $factor=D::of(1);
+            if ($frozenComponents !== null) {
+                $components=$frozenComponents;
+                foreach ($components as $component) {
+                    $component=(array)$component;
+                    if (empty($component['invoice_modifier']) && (string)$component['item_id']===(string)$item->id) $factor=D::of($component['quantity_exact'] ?? $component['quantity']);
+                }
+            } else {
+                if (isset($presentation['id'])) {
+                    $id=IntegerTransport::positiveKey($presentation['id']);
+                    $unit=$id === null ? null : ItemUnitType::where('item_id',$item->id)->whereKey($id)->lockForUpdate()->first();
+                    if (!$unit) FiscalAmounts::error('items.presentation','La presentación no pertenece al producto seleccionado.');
+                    $factor=D::readRequired($unit,'quantity_unit');
+                    $presentation=array_replace($presentation,$unit->only(['id','item_id','description','unit_type_id']));
+                    $line['item']['unit_type_id']=$unit->unit_type_id;
+                } elseif ($presentation) {
+                    // Legacy scalar presentations remain finite decimals, never client-supplied fractions.
+                    $factor=D::of(D::input($presentation['quantity_unit'] ?? 1,'items.presentation.quantity_unit'));
+                }
+                if ($item->unit_type_id !== 'SERV') $components[]=['item_id'=>$item->id,'quantity'=>$factor];
+            }
+            if (!$factor->isPositive()) FiscalAmounts::error('items.presentation','La presentación debe tener una cantidad positiva.');
+            if ($presentation) {
+                $presentation['quantity_unit']=D::represent($factor);
+                $presentation['quantity_unit_exact']=D::fraction($factor);
+                $presentation['calculation_snapshot']=D::snapshot(['quantity_unit'=>$factor]);
+                $line['item']['presentation']=$presentation;
+            }
+        }
+        if ($item->unit_type_id !== 'SERV' || $line['item']['is_set']) {
+            $components = array_merge($components, $line['_invoice_modifier_components'] ?? []);
+        }
         foreach ($components as &$component) {
-            $quantity=D::of($component['quantity_exact'] ?? $component['quantity'] ?? 0);
+            if (isset($component['merged_total'])) {
+                $lineQuantity = D::readRequired($line, 'quantity');
+                if (!$lineQuantity->isPositive()) FiscalAmounts::error('items', 'La partida fusionada debe tener una cantidad positiva.');
+                $quantity = D::of($component['merged_total'])->dividedBy($lineQuantity);
+                unset($component['merged_total']);
+            } else {
+                $quantity = D::of($component['quantity_exact'] ?? $component['quantity'] ?? 0);
+            }
             if (empty($component['item_id']) || !$quantity->isPositive()) FiscalAmounts::error('items','La composición del producto debe tener cantidades positivas.');
             $component['quantity']=D::represent($quantity); $component['quantity_exact']=D::fraction($quantity);
         }
         unset($component);
         $line['item']['inventory_components']=$components;
+        unset($line['_invoice_components'],$line['_invoice_is_set'],$line['_invoice_modifier_components']);
         return $line;
+    }
+
+    /** A fiscal line uses the factor frozen at persistence, independent of the current catalog. */
+    public static function presentationQuantity($item): \Brick\Math\BigRational
+    {
+        $item=(array)$item;
+        $presentation=(array)($item['presentation'] ?? []);
+        if (isset($presentation['quantity_unit_exact'])) return D::of($presentation['quantity_unit_exact']);
+        // Earlier persisted fiscal lines retain their original factor only in
+        // calculation_snapshot. capture() normalizes all new input first.
+        $presentation['quantity_unit']=$presentation['quantity_unit'] ?? 1;
+        return D::readRequired($presentation,'quantity_unit');
     }
 
     public static function snapshot(DocumentItem $source, $quantity, array $posted): array
@@ -37,7 +116,9 @@ final class FiscalNoteInventory
         if (D::of($quantity)->isLessThanOrEqualTo(0)) { $item['lots']=[]; $item['IdLoteSelected']=null; return $item; }
         if (!isset($item['inventory_components'])) {
             if (!empty($item['is_set'])) FiscalAmounts::error('items','El pack original no conserva su composición de inventario.');
-            $item['inventory_components']=($item['unit_type_id'] ?? '') === 'SERV' ? [] : [['item_id'=>$source->item_id,'quantity'=>(string)($item['presentation']['quantity_unit'] ?? 1)]];
+            $factor=self::presentationQuantity($item);
+            $item['inventory_components']=($item['unit_type_id'] ?? '') === 'SERV' ? [] : [['item_id'=>$source->item_id,
+                'quantity'=>D::represent($factor),'quantity_exact'=>D::fraction($factor)]];
         }
         $used=DocumentItem::where('affected_document_item_id',$source->id)->whereHas('document',fn ($q)=>$q->whereNotIn('state_type_id',Document::VOIDED_REJECTED_IDS))->get();
         // ######## INICIO DEVOLUCIÓN EXACTA POR LOTE ########
@@ -82,17 +163,17 @@ final class FiscalNoteInventory
                 'compromise_quantity_exact'=>D::fraction($lot['quantity'])],$normalized);
         }
         // ######## FIN DEVOLUCIÓN EXACTA POR LOTE ########
-        $serials=array_filter($item['lots'] ?? [],fn ($l)=>!empty($l['has_sale']));
+        $serials=self::selectedSerials((array) ($item['lots'] ?? []));
         $usedSerials=[];
         foreach ($used as $prior) foreach ((array)($prior->item->lots ?? []) as $serial) $usedSerials[]=((array)$serial)['id'];
         $serials=array_values(array_filter($serials,fn ($l)=>!in_array($l['id'],$usedSerials,true)));
         if ($serials) {
-            $physical=D::of($quantity)->multipliedBy(!empty($item['lot_serial_assignments_verified']) ? ($item['presentation']['quantity_unit'] ?? 1) : 1);
+            $physical=D::of($quantity)->multipliedBy(!empty($item['lot_serial_assignments_verified']) ? self::presentationQuantity($item) : 1);
             if (!$physical->simplified()->getDenominator()->isEqualTo(1) || $physical->isGreaterThan(count($serials))) FiscalAmounts::error('items.quantity','La devolución de unidades con serial requiere cantidades físicas enteras disponibles.');
             $expected=[];
             if (!empty($item['lot_serial_assignments_verified'])) {
                 foreach ($item['IdLoteSelected'] ?? [] as $lot) {
-                    $lot=(array)$lot; $amount=D::of($lot['compromise_quantity_exact'] ?? $lot['compromise_quantity'])->multipliedBy($item['presentation']['quantity_unit'] ?? 1);
+                    $lot=(array)$lot; $amount=D::of($lot['compromise_quantity_exact'] ?? $lot['compromise_quantity'])->multipliedBy(self::presentationQuantity($item));
                     if (!$amount->simplified()->getDenominator()->isEqualTo(1)) FiscalAmounts::error('items.lot_returns','Cada lote con seriales requiere cantidades físicas enteras.');
                     $expected[(string)$lot['id']]=$amount;
                 }
@@ -140,7 +221,7 @@ final class FiscalNoteInventory
             $lot=(array)$lot;
             $record=ItemLotsGroup::query()->lockForUpdate()->findOrFail($lot['id']);
             if ($record->item_id != $line->item_id) FiscalAmounts::error('items.lot_returns','El lote no corresponde al producto original.');
-            $record->quantity=$record->exactValue('quantity')->plus(D::of($lot['compromise_quantity_exact'] ?? $lot['compromise_quantity'])->multipliedBy($line->item->presentation->quantity_unit ?? 1)->multipliedBy($direction));
+            $record->quantity=$record->exactValue('quantity')->plus(D::of($lot['compromise_quantity_exact'] ?? $lot['compromise_quantity'])->multipliedBy(self::presentationQuantity($line->item))->multipliedBy($direction));
             if (D::of($record->quantity)->isNegative()) FiscalAmounts::error('inventory','El lote no respalda la reversión.');
             if (!$checkOnly) $record->save();
         }

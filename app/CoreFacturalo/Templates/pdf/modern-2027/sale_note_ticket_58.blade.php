@@ -119,14 +119,14 @@
         <td class="m27-label m27-label-sm">Cajero:</td>
         <td class="m27-value m27-value-sm">{{ $m27_cashier }}</td>
     </tr>
-    @if ($customer->address !== '')
+    @if (($customer->address ?? '') !== '')
         <tr>
             <td class="m27-label m27-label-sm align-top">Dirección:</td>
             <td class="m27-value m27-value-sm">
                 {{ strtoupper($customer->address) }}
-                {{ ($customer->district_id !== '-')? ', '.strtoupper($customer->district->description) : '' }}
-                {{ ($customer->province_id !== '-')? ', '.strtoupper($customer->province->description) : '' }}
-                {{ ($customer->department_id !== '-')? '- '.strtoupper($customer->department->description) : '' }}
+                {{ (!empty($customer->district->description))? ', '.strtoupper($customer->district->description) : '' }}
+                {{ (!empty($customer->province->description))? ', '.strtoupper($customer->province->description) : '' }}
+                {{ (!empty($customer->department->description))? '- '.strtoupper($customer->department->description) : '' }}
             </td>
         </tr>
     @endif

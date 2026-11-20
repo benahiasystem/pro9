@@ -1,6 +1,7 @@
 <?php
 namespace Tests\Unit;
 use App\Services\Fiscal\{HkaPayloadBuilder,FiscalAmounts};
+use App\Support\Exact\Decimal as D;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
@@ -52,6 +53,100 @@ class HkaPayloadBuilderTest extends TestCase
         self::assertArrayNotHasKey('tipoDePago', $header['identificacionDocumento']);
         self::assertSame('No', $header['comprador']['notificar']);
     }
+    public function test_missing_unit_price_blocks_preparation(): void
+    {
+        $snapshot = json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'), true);
+        unset($snapshot['items'][0]['unit_value']);
+        try {
+            (new HkaPayloadBuilder())->build($snapshot);
+            self::fail('El precio unitario ausente no se puede sustituir por cero.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('items', $exception->errors());
+        }
+    }
+
+    /** @dataProvider ordinaryVesAmounts */
+    public function test_ordinary_ves_payload_reconciles_frozen_lines_and_tax_groups(
+        array $figures,
+        array $expected,
+        string $compensatingGlobalAdjustment = '0',
+    ): void
+    {
+        $snapshot = json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'), true, 512, JSON_THROW_ON_ERROR);
+        $prototype = $snapshot['items'][0];
+        $snapshot = array_replace($snapshot, [
+            'currency_type_id' => 'VES', 'items' => [], 'payments' => [], 'taxes' => [], 'total_discount' => '0', 'total_charge' => '0',
+        ]);
+        $taxGroups = [];
+        $discounts = [];
+        foreach ($figures as $figure) {
+            [$code, $base, $tax] = $figure;
+            $discount = $figure[3] ?? '0';
+            $discounts[] = $discount;
+            $rate = $code === 'E' ? '0' : '16';
+            $snapshot['items'][] = array_replace($prototype, [
+                'unit_value' => D::represent(D::of($base)->plus($discount)),
+                'total_value' => $base, 'total_base_igv' => $base, 'quantity' => '1',
+                'total_igv' => $tax, 'total' => D::represent(D::of($base)->plus($tax)),
+                'total_discount' => $discount, 'total_charge' => '0', 'percentage_igv' => $rate,
+                'iva_rate' => ['code' => $code, 'percentage' => $rate],
+            ]);
+            $taxGroups[$code] = [
+                'tax_kind' => 'IVA', 'code' => $code, 'percentage' => $rate,
+                'base' => D::represent(D::of($taxGroups[$code]['base'] ?? 0)->plus($base)),
+                'amount' => D::represent(D::of($taxGroups[$code]['amount'] ?? 0)->plus($tax)),
+            ];
+        }
+        $snapshot['taxes'] = array_values($taxGroups);
+        $snapshot['total_taxed'] = $taxGroups['G']['base'] ?? '0';
+        $snapshot['total_exonerated'] = $taxGroups['E']['base'] ?? '0';
+        $snapshot['total_igv'] = D::represent(D::sum(array_column($taxGroups, 'amount')));
+        $snapshot['total_value'] = D::represent(D::sum(array_column($taxGroups, 'base')));
+        $snapshot['total'] = D::represent(D::of($snapshot['total_value'])->plus($snapshot['total_igv']));
+        $snapshot['total_discount'] = D::represent(D::sum($discounts)->plus($compensatingGlobalAdjustment));
+        $snapshot['total_charge'] = $compensatingGlobalAdjustment;
+        $before = $snapshot;
+
+        $payload = (new HkaPayloadBuilder())->build($snapshot)['documentoElectronico'];
+        $totals = $payload['encabezado']['totales'];
+        $lines = $payload['detallesItems'];
+        foreach (['montoGravadoTotal', 'montoExentoTotal', 'totalIVA', 'totalAPagar'] as $index => $field) {
+            self::assertSame($expected[$index], $totals[$field]);
+        }
+        self::assertSame($totals['totalAPagar'], D::represent(D::sum(array_column($lines, 'valorTotalItem')), 2, true));
+        self::assertSame($totals['subtotal'], D::represent(D::sum(array_column($lines, 'precioItem')), 2, true));
+        self::assertSame(D::represent($snapshot['total_discount'], 2, true), $totals['totalDescuento']);
+        self::assertSame(D::represent($snapshot['total_charge'], 2, true), $totals['totalRecargos']);
+        foreach ($totals['impuestosSubtotal'] as $tax) {
+            $group = array_filter($lines, fn ($line) => $line['codigoImpuesto'] === $tax['codigoTotalImp']);
+            self::assertSame($tax['baseImponibleImp'], D::represent(D::sum(array_column($group, 'precioItem')), 2, true));
+            self::assertSame($tax['valorTotalImp'], D::represent(D::sum(array_column($group, 'valorIVA')), 2, true));
+        }
+        foreach ($lines as $index => $line) {
+            self::assertSame($line['valorTotalItem'], D::represent(D::of($line['precioItem'])->plus($line['valorIVA']), 2, true));
+            self::assertSame(D::represent($discounts[$index], 2, true), $line['descuentoMonto']);
+            self::assertSame(D::represent($snapshot['items'][$index]['unit_value'], 4, true), $line['precioUnitario']);
+            self::assertSame('0.00', $line['recargoMonto']);
+            self::assertArrayNotHasKey('precioAntesDescuento', $line);
+        }
+        self::assertSame($before, $snapshot);
+    }
+
+    public function ordinaryVesAmounts(): array
+    {
+        return [
+            'dos líneas exentas' => [[['E', '0.005', '0'], ['E', '0.005', '0']], ['0.00', '0.01', '0.00', '0.01']],
+            'IVA redondeado por grupo' => [[['G', '0.035', '0.0056'], ['G', '0.035', '0.0056']], ['0.07', '0.00', '0.01', '0.08']],
+            'base repartida entre alícuotas' => [[['E', '0.005', '0'], ['G', '0.005', '0.0008']], ['0.00', '0.01', '0.00', '0.01']],
+            'base e IVA aportan una fracción de centavo' => [[['G', '0.0049', '0.000784']], ['0.01', '0.00', '0.00', '0.01']],
+            'se conservan descuentos de línea y ajustes globales compensados' => [
+                [['E', '0.005', '0', '0.01'], ['E', '0.005', '0', '0.01']],
+                ['0.00', '0.01', '0.00', '0.01'],
+                '1',
+            ],
+        ];
+    }
+
     public function test_missing_identity_mapping_blocks_preparation(): void
     {
         $d=json_decode(file_get_contents(__DIR__.'/../Fixtures/Hka/invoice.json'),true);unset($d['customer']['hka_identity_code']);

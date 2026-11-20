@@ -95,18 +95,18 @@
             <template>
                 <div class="fp-total-row d-flex justify-content-between py-1">
                     <span class="fp-total-label">Subtotal</span>
-                    <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ money(form.total_taxed) }}</span>
+                    <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ money(checkoutValue(form, 'total_taxed')) }}</span>
                 </div>
-                <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
+                <div class="fp-total-row d-flex justify-content-between py-1">
                     <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
                     <span class="fp-total-label">IVA ({{ ivaPercentageLabel }}%)</span>
                     <!-- ######### FIN CAMBIO AFECTACIÓN IVA -->
                     <!-- ########### FIN CAMBIO IVA VENEZUELA -->
-                    <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ money(form.total_igv) }}</span>
+                    <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ money(checkoutValue(form, 'total_igv')) }}</span>
                 </div>
                 <div class="fp-total-row d-flex justify-content-between py-1">
                     <span class="fp-total-label">Descuento</span>
-                    <span class="fp-total-val text-danger">{{ currencyTypeActive.symbol }} {{ money(form.total_discount) }}</span>
+                    <span class="fp-total-val text-danger">{{ currencyTypeActive.symbol }} {{ money(checkoutValue(form, 'total_discount')) }}</span>
                 </div>
             </template>
             <!-- Gran total -->
@@ -128,7 +128,7 @@
         <!-- Botón Pagar -->
         <div class="px-1 pt-1 pb-1">
             <el-button
-                :disabled="stockBlocked || singleAmountInvalid || (button_payment && form.payment_condition_id !== '02')"
+                :disabled="stockBlocked || singleAmountInvalid || (settlementPaymentBlocked && form.payment_condition_id !== '02')"
                 :loading="loading_submit"
                 class="fp-pay-btn w-100"
                 @click="clickPayment"
@@ -253,8 +253,10 @@ import paymentSettlementSummary from "@mixins/payment-settlement-summary"
 // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {exactAmount,exactSum} from '../../../../helpers/exchange-rate-math'
+import {sameInvoiceRecordId} from '../../../../helpers/invoice-lots'
+import {posInvoiceQuantityError, samePosId} from '../../../../helpers/pos-invoice-line'
 
-import {checkoutTotals} from '../../../../helpers/exact-commercial'
+import {applyInvoiceCheckoutDiscount, checkoutTotals} from '../../../../helpers/exact-commercial'
 
 import documentCreationMixin from "@mixins/document-creation"
 import IgtfPaymentFields from "../../documents/partials/igtf_fields.vue"
@@ -344,25 +346,23 @@ export default {
             this.$emit('series-filtered', newSeries.length);
         },
         customer: {
-            handler(valueNew, valueOld) {
-                if (!_.isNull(valueNew)) {
+            handler(valueNew) {
+                if (valueNew?.id != null) {
                     if (!this.userTouchedDiscount) {
                         this.enabled_discount = valueNew.has_discount;
                         this.discount_type = valueNew.discount_type;
                         this.discount_amount = valueNew.discount_amount;
                     }
+                    if (!this.customerById(valueNew.id)) this.all_customers.push(valueNew);
+                    if (!samePosId(this.form.customer_id, valueNew.id)) this.form.customer_id = valueNew.id;
                 } else {
+                    this.form.customer_id = null;
                     this.enabled_discount = false;
                     this.discount_type = '01';
                     this.discount_amount = 0;
                     this.userTouchedDiscount = false;
                 }
 
-                const index = this.all_customers.findIndex(cliente => cliente.id === valueNew.id);
-                if (index === -1) {
-                    this.all_customers.push(valueNew)
-                    this.form.customer_id = (valueNew) ? valueNew.id : null;
-                }
                 this.inputDiscountAmount();
             }
         },
@@ -400,13 +400,13 @@ export default {
         // ########## INICIO CAMBIO AFECTACIÓN IVA
         ivaPercentageLabel()
         {
+            if (this.form?.document_type_id === '01') {
+                const rate = this.percentageIgv == null || this.percentageIgv === '' ? '0.16' : this.percentageIgv;
+                return exactAmount(rate).times(100).decimal();
+            }
             return Number((Number(this.percentageIgv) || 0.16) * 100).toFixed(0);
         },
         // ######### FIN CAMBIO AFECTACIÓN IVA
-        isNrus()
-        {
-            return !!((this.configuration && this.configuration.is_nrus) || (this.config && this.config.is_nrus));
-        },
         disabledDiscountForSeller()
         {
             return this.configuration.restrict_seller_discount && this.typeUser === 'seller';
@@ -417,6 +417,9 @@ export default {
         }
     },
     methods: {
+        customerById(id) {
+            return this.all_customers.find(customer => samePosId(customer?.id, id));
+        },
         money(value) { try { return exactAmount(value).final(2); } catch (_) { return String(value); } },
         changeFiscalPaymentCondition(value) {
             this.$set(this.form, 'payment_condition_id', value)
@@ -428,9 +431,7 @@ export default {
         },
         openPlateNumberDialog() {
             this.showDialogPlateNumber = true;
-            let customer = _.find(this.all_customers, {
-                id: this.form.customer_id
-            });
+            const customer = this.customerById(this.form.customer_id);
 
             if (!customer) {
                 this.messageBoxPlate =  'Debe seleccionar un cliente para guardar la placa.'
@@ -476,15 +477,12 @@ export default {
         changeCustomer() {
             // console.log('clien 13')
 
-            let customer = _.find(this.all_customers, {
-                id: this.form.customer_id
-            });
-            this.customer = customer;
+            this.customer = this.customerById(this.form.customer_id) ?? null;
 
             // Solo cambia el tipo de documento si el usuario no ha seleccionado manualmente
             if (!this.userSelectedDocType) {
                 // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-                if (this.configuration.default_document_type_80 || this.isNrus) {
+                if (this.configuration.default_document_type_80) {
                     this.form.document_type_id = "80";
                 } else {
                     this.form.document_type_id = "01";
@@ -556,11 +554,6 @@ export default {
         handleFn113() {
             const code = this.form.document_type_id
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            if (this.isNrus) {
-                this.form.document_type_id = '80'
-                this.filterSeries()
-                return
-            }
             this.form.document_type_id = code == '01' ? '80' : '01'
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
@@ -592,7 +585,7 @@ export default {
         },
         keyupEnterAmount() {
 
-            if (this.button_payment && this.form.payment_condition_id !== '02') {
+            if (this.settlementPaymentBlocked && this.form.payment_condition_id !== '02') {
                 return this.$message.warning("El monto a pagar es menor al total")
             }
 
@@ -616,17 +609,22 @@ export default {
         changeEnabledDiscount() {
             if (!this.enabled_discount) {
                 this.discount_amount = 0
-                this.deleteDiscountGlobal()
+                if (this.form.document_type_id !== '01') this.deleteDiscountGlobal()
                 this.reCalculateTotal()
             }
         },
         normalizeDiscountAmount() {
+            if (this.form.document_type_id === '01') {
+                if (this.discount_amount === '' || this.discount_amount === null) this.discount_amount = 0
+                return
+            }
             if (this.discount_amount === '' || this.discount_amount === null || isNaN(parseFloat(this.discount_amount))) {
                 this.discount_amount = 0
                 this.inputDiscountAmount()
             }
         },
         inputDiscountAmount() {
+            if (this.form.document_type_id === '01') return applyInvoiceCheckoutDiscount(this)
             if (this.enabled_discount) {
                 if (this.discount_amount && !isNaN(this.discount_amount) && parseFloat(this.discount_amount) > 0) {
                     if (this.discount_amount >= this.form.total) {
@@ -709,7 +707,9 @@ export default {
                 }
                 if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
                     this.userTouchedAmount = (this.form.payments || []).length > 0
-                    this.amount = exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
+                    this.amount = this.localInvoiceSettlement
+                        ? this.appliedReceiptTotal(this.form.payments || [])
+                        : exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
                     this.enter_amount = this.useLocalCalculations ? this.enteredReceiptAmount(this.form.payments || []) : this.amount
                     this.inputAmount()
                 }
@@ -765,7 +765,7 @@ export default {
         // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
         async enterAmount() {
             const rows = this.form.payments || []
-            if (rows.length !== 1 || this.singleAmountLocked) return
+            if (rows.length !== 1 || this.singleAmountLocked || this.singleAmountInvalid) return
             const text = String(this.enter_amount ?? '').trim()
             if (text && !/^\d+(?:\.\d*)?$/.test(text)) return
             const entered = exactAmount(!text ? '0' : (text.endsWith('.') ? text.slice(0, -1) : text)).decimal()
@@ -858,7 +858,7 @@ export default {
 
             this.series = _.filter(this.all_series, {'document_type_id': this.form.document_type_id});
             // Cambiar el cliente o recargar las opciones no debe reemplazar la serie elegida.
-            const selectedSeries = this.series.find(series => series.id === this.form.series_id);
+            const selectedSeries = this.series.find(series => sameInvoiceRecordId(series.id, this.form.series_id));
             this.form.series_id = selectedSeries ? selectedSeries.id : (this.series.length > 0 ? this.series[0].id : null);
 
             if (!this.form.series_id) {
@@ -975,6 +975,7 @@ export default {
         },
         async clickPayment() {
             if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
+            if (this.form.document_type_id === '01' && this.enabled_discount && !applyInvoiceCheckoutDiscount(this)) return
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             if (this.singleAmountInvalid) return this.$message.warning('Indique un monto válido.')
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
@@ -994,15 +995,21 @@ export default {
                 }
             }
 
-            if (this.button_payment && this.form.payment_condition_id !== '02') {
+            if (this.settlementPaymentBlocked && this.form.payment_condition_id !== '02') {
                 return this.$message.warning('El monto a pagar es menor al total');
             }
 
             let unit_type_notAllowed = ['SERV','UND'];
 
+            const isInvoice = this.form.document_type_id === '01'
+            let invoiceQuantityError
             let errorZeroQuantity = false
             let errorFloatQuantity = false
             let existError = this.form.items.some(item => {
+                if (isInvoice) {
+                    invoiceQuantityError = posInvoiceQuantityError(item)
+                    return Boolean(invoiceQuantityError)
+                }
                 if (Number(item.quantity) == 0) {
                     errorZeroQuantity = true
                     return true;
@@ -1016,6 +1023,7 @@ export default {
             });
 
             if(existError) {
+                if (isInvoice) return this.$message.error(invoiceQuantityError)
                 if (errorZeroQuantity) {
                     this.$message.error('Los productos deben tener cantidades mayor a 0');
                 }

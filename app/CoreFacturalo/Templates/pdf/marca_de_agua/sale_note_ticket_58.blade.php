@@ -77,15 +77,15 @@
         <td><p class="desc">{{ $customer->identity_document_type->description }}:</p></td>
         <td><p class="desc">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
     </tr>
-    @if ($customer->address !== '')
+    @if (($customer->address ?? '') !== '')
         <tr>
             <td class="align-top"><p class="desc">Dirección:</p></td>
             <td>
                 <p class="desc">
                     {{ strtoupper($customer->address) }}
-                    {{ ($customer->district_id !== '-')? ', '.strtoupper($customer->district->description) : '' }}
-                    {{ ($customer->province_id !== '-')? ', '.strtoupper($customer->province->description) : '' }}
-                    {{ ($customer->department_id !== '-')? '- '.strtoupper($customer->department->description) : '' }}
+                    {{ (!empty($customer->district->description))? ', '.strtoupper($customer->district->description) : '' }}
+                    {{ (!empty($customer->province->description))? ', '.strtoupper($customer->province->description) : '' }}
+                    {{ (!empty($customer->department->description))? '- '.strtoupper($customer->department->description) : '' }}
                 </p>
             </td>
         </tr>

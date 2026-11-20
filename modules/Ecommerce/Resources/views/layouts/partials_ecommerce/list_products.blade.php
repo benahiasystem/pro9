@@ -1,3 +1,13 @@
+@php
+    $storefrontPricingService = app(\Modules\Ecommerce\Services\CampaignPriceService::class);
+    $storefrontOutOfStock = static function ($item, $config): bool {
+        if (!$config) return false;
+        $stock = \App\Support\Exact\Decimal::sum($item->warehouses->map(
+            fn($warehouse) => \App\Support\Exact\Decimal::readRequired($warehouse,'stock')
+        ));
+        return !$stock->isPositive() && !optional($item)->variations_stock;
+    };
+@endphp
 @foreach ($dataPaginate as $item)
     @php
         $configuration = \App\Models\Tenant\Configuration::first();
@@ -12,31 +22,13 @@
 
         $activeCampaign = null;
         $hasActiveOffer = false;
-        $activeOfferPrice = (float) $item->sale_unit_price;
         $compareAtPrice = null;
         if (isset($campaigns) && count($campaigns) > 0) {
             $activeCampaign = $campaigns instanceof \Illuminate\Support\Collection
                 ? $campaigns->first()
                 : (is_array($campaigns) ? ($campaigns[0] ?? null) : $campaigns);
         }
-        if ($activeCampaign && (
-            method_exists($activeCampaign, 'hasActiveDiscount')
-                ? $activeCampaign->hasActiveDiscount()
-                : ($activeCampaign->sp_discount_price && (! $activeCampaign->end_date || $activeCampaign->end_date > now()))
-        )) {
-            $hasActiveOffer = true;
-            // Precio de venta = catálogo; el %/monto arma el precio tachado "antes".
-            $activeOfferPrice = method_exists($activeCampaign, 'discountedPrice')
-                ? $activeCampaign->discountedPrice((float) $item->sale_unit_price)
-                : (float) $item->sale_unit_price;
-            $compareAtPrice = method_exists($activeCampaign, 'compareAtPrice')
-                ? $activeCampaign->compareAtPrice((float) $item->sale_unit_price)
-                : null;
-            if (! $compareAtPrice) {
-                $hasActiveOffer = false;
-            }
-        }
-        $campaignPricing = app(\Modules\Ecommerce\Services\CampaignPriceService::class)->forItem($item);
+        $campaignPricing = $storefrontPricingService->forItem($item);
         $activeOfferPrice = $campaignPricing['final_price'];
         $compareAtPrice = $campaignPricing['compare_at_price'];
         $hasActiveOffer = $campaignPricing['has_social_proof_price'] || $campaignPricing['has_real_discount'];
@@ -45,13 +37,14 @@
         // salen de sus variaciones y la compra pasa por el modal de opciones.
         $variationSelector = ($variationSelectors ?? [])[$item->id] ?? null;
         $variationCombinations = $variationSelector ? collect($variationSelector['combinations']) : null;
-        $variationStock = $variationCombinations ? (float) $variationCombinations->sum('stock') : 0;
-        $variationMinPrice = $variationCombinations && $variationCombinations->count()
-            ? (float) $variationCombinations->min('price')
-            : null;
+        $variationStock = $variationCombinations ? \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::sum($variationCombinations->pluck('stock'))) : '0';
+        $pricedVariations = $variationCombinations ? $variationCombinations->filter(fn($row) => $row['price'] !== null) : collect();
+        $variationMinPrice = $pricedVariations->isEmpty() ? null : $pricedVariations->sort(
+            fn($left,$right) => \App\Support\Exact\Decimal::of($left['price'])->compareTo(\App\Support\Exact\Decimal::of($right['price']))
+        )->first()['price'];
         $isOutOfStock = $variationSelector
             ? ($configuration ? $variationStock <= 0 : false)
-            : stock($item, $configuration);
+            : $storefrontOutOfStock($item, $configuration);
     @endphp
     <div class="col-6 mb-2 {{ \Route::currentRouteName() == 'tenant.ecommerce.index' ? 'col-md-3' : 'col-md-4' }}">
         <div class="product product-style h-100 m-0 d-flex flex-column {{ $isOutOfStock ? 'productdisabled' : '' }}"
@@ -104,7 +97,7 @@
                         @endphp
                         @if($displayStock > 0)
                         <h3 class="product-stock">Disponible:
-                            <span>{{ number_format($displayStock, 0) }}</span>
+                            <span>{{ \App\Support\Exact\Decimal::represent($displayStock) }}</span>
                         </h3>
                         @else
                         <h3 class="product-stock text-danger">
@@ -118,12 +111,12 @@
                     <div class="price-box-ecommerce">
                         @if(!is_null($variationMinPrice))
                             <span class="variation-price-from">Desde</span>
-                            <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ number_format($variationMinPrice, 2) }}</span>
+                            <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ \App\Support\Exact\Decimal::format($variationMinPrice) }}</span>
                         @else
                             @if($compareAtPrice)
-                                <span class="old-price">{{ $item->currency_type['symbol'] }} {{ number_format($compareAtPrice, 2) }}</span>
+                                <span class="old-price">{{ $item->currency_type['symbol'] }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($campaignPricing,'compare_at_price')) }}</span>
                             @endif
-                            <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ number_format($activeOfferPrice, 2) }}</span>
+                            <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($campaignPricing,'final_price')) }}</span>
                         @endif
                     </div>
                     @endif
@@ -144,9 +137,10 @@
                             $cartProductPayload = [
                                 'id' => $item->id,
                                 'description' => $item->description,
-                                'sale_unit_price' => $hasActiveOffer ? $activeOfferPrice : (float) $item->sale_unit_price,
-                                'original_price' => (float) $item->sale_unit_price,
-                                'compare_at_price' => $compareAtPrice,
+                                'sale_unit_price' => ($storefront_show_prices ?? true) ? $activeOfferPrice : null,
+                                'original_price' => ($storefront_show_prices ?? true) ? $campaignPricing['base_price'] : null,
+                                'compare_at_price' => ($storefront_show_prices ?? true) ? $compareAtPrice : null,
+                                'campaign_pricing_snapshot' => ($storefront_show_prices ?? true) ? $campaignPricing['calculation_snapshot'] : null,
                                 'discount_campaign_id' => $campaignPricing['discount_campaign_id'],
                                 'discount_campaign_name' => $campaignPricing['discount_campaign_name'],
                                 'campaign_discount_percent' => $campaignPricing['real_discount_percentage'],
@@ -161,7 +155,7 @@
                                 'sale_affectation_igv_type_id' => $item->sale_affectation_igv_type_id ?? '10',
                                 'unit_type_id' => $item->unit_type_id ?? 'UND',
                                 'internal_id' => $item->internal_id ?? '',
-                                'stock' => (int) $item->getStockByWarehouseMain(),
+                                'stock' => \App\Support\Exact\Decimal::represent($item->getStockByWarehouseMain()),
                             ];
                         @endphp
                         <a href="javascript:void(0)" role="button" class="paction add-cart" data-product='@json($cartProductPayload)' title="Add to Cart">
@@ -176,20 +170,6 @@
     </div>
 
 @endforeach
-
-<?php
-
-    function stock($item, $config)
-    {
-        if($config) {
-            $stock=0;
-            foreach ($item->warehouses as $key => $value) {
-                $stock += $value->stock;
-            }
-            return ($stock > 0) || optional($item)->variations_stock ? false : true;
-        }
-    }
-?>
 
 <style>
     /* .product-style {
@@ -468,11 +448,11 @@
     var lastFocused = null;
 
     function money(symbol, value) {
-        return (symbol || 'Bs.') + ' ' + Number(value).toFixed(2);
+        return (symbol || 'Bs.') + ' ' + window.Pro9StorefrontAmounts.money(value);
     }
 
     function inStock(combination) {
-        return Number(combination.stock) > 0;
+        return window.Pro9StorefrontAmounts.amount(combination.stock).compare('0') > 0;
     }
 
     // No todas las variantes usan todas las variables: puede existir una "Talla L"
@@ -578,8 +558,8 @@
     }
 
     function stockBadge(stock) {
-        if (stock <= 0) return '<span class="vmodal__badge vmodal__badge--out">Sin stock</span>';
-        if (stock <= 5) return '<span class="vmodal__badge vmodal__badge--low">Últimas unidades</span>';
+        if (window.Pro9StorefrontAmounts.amount(stock).compare('0') <= 0) return '<span class="vmodal__badge vmodal__badge--out">Sin stock</span>';
+        if (window.Pro9StorefrontAmounts.amount(stock).compare('5') <= 0) return '<span class="vmodal__badge vmodal__badge--low">Últimas unidades</span>';
         return '<span class="vmodal__badge vmodal__badge--ok">En stock</span>';
     }
 
@@ -654,8 +634,8 @@
 
         var symbol = combination.currency_type_symbol;
         var html = '<span class="now">' + money(symbol, combination.price) + '</span>';
-        if (combination.compare_at_price && Number(combination.compare_at_price) > Number(combination.price)) {
-            var off = Math.round((1 - Number(combination.price) / Number(combination.compare_at_price)) * 100);
+        if (combination.compare_at_price && window.Pro9StorefrontAmounts.amount(combination.compare_at_price).compare(combination.price) > 0) {
+            var off = window.Pro9StorefrontAmounts.amount(combination.compare_at_price).minus(combination.price).dividedBy(combination.compare_at_price).times('100').final(0);
             html += '<span class="was">' + money(symbol, combination.compare_at_price) + '</span>';
             if (off > 0) html += '<span class="off">-' + off + '%</span>';
         }
@@ -663,13 +643,13 @@
 
         if (combination.image_url) imageEl.src = combination.image_url;
 
-        var stock = Math.floor(Number(combination.stock));
+        var stock = window.Pro9StorefrontAmounts.input(String(combination.stock));
         stockEl.innerHTML = '<span>Disponible: ' + stock + '</span>' + stockBadge(stock);
 
         var codes = [combination.internal_id, combination.barcode].filter(function (code) { return !!code; });
         codesEl.textContent = codes.join(' · ');
 
-        submitEl.disabled = stock <= 0;
+        submitEl.disabled = window.Pro9StorefrontAmounts.amount(stock).compare('0') <= 0;
     }
 
     function renderList() {
@@ -677,8 +657,8 @@
         var current = matchedCombination();
 
         selector.combinations.forEach(function (combination) {
-            var stock = Math.floor(Number(combination.stock));
-            var available = stock > 0;
+            var stock = window.Pro9StorefrontAmounts.input(String(combination.stock));
+            var available = window.Pro9StorefrontAmounts.amount(stock).compare('0') > 0;
             var codes = [combination.internal_id, combination.barcode].filter(function (code) { return !!code; });
 
             var row = document.createElement('div');

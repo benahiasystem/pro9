@@ -37,6 +37,7 @@ use Modules\Item\Models\WebPlatform;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 use Modules\Purchase\Models\WeightedAverageCost;
 use Modules\Purchase\Helpers\WeightedAverageCostHelper;
+use App\Support\Exact\Decimal as D;
 
 
 /**
@@ -1123,6 +1124,11 @@ class Item extends ModelTenant
         return $this->hasMany(ItemWarehousePrice::class, 'item_id')->select('id','item_id', 'price', 'warehouse_id');
     }
 
+    public function billingWarehousePrices(): HasMany
+    {
+        return $this->warehousePrices()->addSelect('calculation_snapshot');
+    }
+
     /**
      * @return HasMany
      */
@@ -1139,9 +1145,10 @@ class Item extends ModelTenant
     }
 
     // ######## INICIO CALCULOS EXACTOS SAB ########
-    public static function exactSaleUnitPriceByWarehouse(Item $item, int $warehouseId): \Brick\Math\BigRational
+    public static function exactSaleUnitPriceByWarehouse(Item $item, int $warehouseId, bool $forInvoice = false): \Brick\Math\BigRational
     {
-        $warehousePrice = $item->warehousePrices->where('item_id', $item->id)
+        $prices = $forInvoice ? $item->billingWarehousePrices : $item->warehousePrices;
+        $warehousePrice = $prices->where('item_id', $item->id)
             ->where('warehouse_id', $warehouseId)
             ->first();
 
@@ -1149,25 +1156,25 @@ class Item extends ModelTenant
             : \App\Support\Exact\Decimal::readRequired($item, 'sale_unit_price');
     }
 
-    public function modalPriceValues(int $warehouseId): array
+    public function modalPriceValues(int $warehouseId, bool $forInvoice = false): array
     {
-        $sale = self::exactSaleUnitPriceByWarehouse($this, $warehouseId);
+        $sale = self::exactSaleUnitPriceByWarehouse($this, $warehouseId, $forInvoice);
         $purchase = $this->exactValue('purchase_unit_price');
         $multiplier = \App\Support\Venezuela\Localization::exactTaxMultiplier();
         $base = $this->purchase_has_igv ? $purchase->dividedBy($multiplier) : $purchase;
         $gross = $this->purchase_has_igv ? $purchase : $base->multipliedBy($multiplier);
         $values = ['unit_price'=>$sale, 'sale_unit_price'=>$sale, 'purchase_unit_value'=>$base, 'purchase_unit_price'=>$gross];
-        $snapshot = $this->selectionPriceSnapshot($warehouseId);
+        $snapshot = $this->selectionPriceSnapshot($warehouseId, $forInvoice);
         $snapshot['values'] = array_replace($snapshot['values'], array_map([\App\Support\Exact\Decimal::class, 'fraction'], $values));
         return array_merge(\App\Support\Exact\Decimal::values($values), ['calculation_snapshot'=>$snapshot]);
     }
 
     /** Raw purchase prices and selected sale price; warehouse stock has a separate source. */
-    public function selectionPriceSnapshot(int $warehouseId): array
+    public function selectionPriceSnapshot(int $warehouseId, bool $forInvoice = false): array
     {
         $snapshot = $this->calculation_snapshot ?? \App\Support\Exact\Decimal::snapshot([]);
         unset($snapshot['values']['stock']);
-        $price = self::exactSaleUnitPriceByWarehouse($this, $warehouseId);
+        $price = self::exactSaleUnitPriceByWarehouse($this, $warehouseId, $forInvoice);
         $snapshot['values']['sale_unit_price'] = $snapshot['values']['unit_price'] = \App\Support\Exact\Decimal::fraction($price);
         $snapshot['inputs']['selected_warehouse_id'] = $warehouseId;
         return $snapshot;
@@ -1262,7 +1269,8 @@ class Item extends ModelTenant
         $extended_description = false,
         $series = null,
         $search_item_by_series = false,
-        $aditional_data = true
+        $aditional_data = true,
+        bool $forInvoice = false
     ) {
 
         if ($warehouse == null) {
@@ -1322,7 +1330,7 @@ class Item extends ModelTenant
         if ($with_lots_has_sale == true) {
             $lots = $this->item_lots->where('has_sale', false)->transform(function ($row) {
                 return [
-                    'id'           => $row->id,
+                    'id'           => \App\Database\IntegerTransport::value($row->id),
                     'series'       => $row->series,
                     'date'         => $row->date,
                     'item_id'      => $row->item_id,
@@ -1355,7 +1363,7 @@ class Item extends ModelTenant
         }
 
         // ######## INICIO CALCULOS EXACTOS SAB ########
-        $prices = $this->modalPriceValues($warehouse->id);
+        $prices = $this->modalPriceValues($warehouse->id, $forInvoice);
         $purchase_unit_price = $prices['purchase_unit_price'];
         $purchase_unit_value = $prices['purchase_unit_value'];
         // ######## FIN CALCULOS EXACTOS SAB ########
@@ -1387,7 +1395,7 @@ class Item extends ModelTenant
             'currency_type_id'                 => $this->currency_type_id,
             'currency_type_symbol'             => $currency->symbol,
             'has_igv'                          => (bool)$this->has_igv,
-            'sale_unit_price'                  => self::getSaleUnitPriceByWarehouse($this, $warehouse->id),
+            'sale_unit_price'                  => $prices['sale_unit_price'],
             'purchase_has_igv'                 => $this->purchase_has_igv,
             'purchase_unit_value'              => $purchase_unit_value,
             'purchase_unit_price'              => $purchase_unit_price,
@@ -1406,7 +1414,7 @@ class Item extends ModelTenant
             'CatItemStatus' => $ItemStatus,
             'CatItemSize' => $ItemSize,
             'CatItemUnitBusiness' => $ItemUnitBusiness,
-            'item_unit_types' => $this->getItemUnitTypesWithPrices(),
+            'item_unit_types' => $this->getItemUnitTypesWithPrices($forInvoice),
             'warehouses' => collect($this->warehouses)->transform(function ($warehouses) use ($warehouse) {
                 return [
                     'warehouse_description' => $warehouses->warehouse->description,
@@ -1456,7 +1464,7 @@ class Item extends ModelTenant
                     ->with(['variationValues.value', 'variationValues.variable'])
                     ->orderBy('id')
                     ->get()
-                    ->map(function ($variation) {
+                    ->map(function ($variation) use ($forInvoice) {
                         return [
                             'id' => $variation->id,
                             'description' => $variation->description,
@@ -1465,8 +1473,8 @@ class Item extends ModelTenant
                             'internal_id' => $variation->internal_id,
                             'barcode' => $variation->barcode,
                             'stock' => $variation->getStockByWarehouse(),
-                            'stock_min' => (float) $variation->stock_min,
-                            'sale_unit_price' => (float) $variation->sale_unit_price,
+                            'stock_min' => $forInvoice ? D::represent(D::readRequired($variation, 'stock_min')) : (float) $variation->stock_min,
+                            'sale_unit_price' => $forInvoice ? D::represent(D::readRequired($variation, 'sale_unit_price')) : (float) $variation->sale_unit_price,
                             'unit_type_id' => $variation->unit_type_id,
                         ];
                     })
@@ -1540,19 +1548,28 @@ class Item extends ModelTenant
             }
 
             $row->loadMissing('prices.priceLabel');
+            $quantity = D::readRequired($row, 'quantity_unit');
+            $presentationValues = ['quantity_unit' => $quantity];
+            foreach (['price1', 'price2', 'price3'] as $field) {
+                if ($row->getAttribute($field) !== null) $presentationValues[$field] = D::readRequired($row, $field);
+            }
             $labels_id = $row->prices->pluck('price_label_id')->toArray();
-            $prices = $row->prices->map(function ($price) use ($row, $configuration) {
+            $prices = $row->prices->map(function ($price) use ($row, $quantity) {
                 $price_label = $price->priceLabel;
+                $amount = D::readRequired($price, 'price');
 
                 return [
                     'id' => $price->id,
+                    'item_unit_type_id' => $row->id,
+                    'item_unit_type_price_id' => $price->id,
                     'price_label_id' => $price->price_label_id,
                     'position' => $price_label->position,
                     'description' => $row->description,
                     'unit_type_id' => $row->unit_type_id,
-                    'quantity_unit' => (float)number_format($row->quantity_unit, $configuration->decimal_quantity, ".", ""),
+                    'quantity_unit' => D::represent($quantity),
                     'label' => $price_label->label,
-                    'price' => $price ? number_format($price->price, 2, '.', '') : 0,
+                    'price' => D::represent($amount),
+                    'calculation_snapshot' => D::snapshot(['price' => $amount, 'quantity_unit' => $quantity]),
                     'is_active' => $price ? (bool)$price->is_active : false,
                 ];
             });
@@ -1575,7 +1592,11 @@ class Item extends ModelTenant
                 'description' => "{$row->description}",
                 'item_id' => $row->item_id,
                 'unit_type_id' => $row->unit_type_id,
-                'quantity_unit' => (float)number_format($row->quantity_unit, $configuration->decimal_quantity, ".", ""),
+                'quantity_unit' => D::represent($quantity),
+                'calculation_snapshot' => D::snapshot($presentationValues),
+                'price1' => isset($presentationValues['price1']) ? D::represent($presentationValues['price1']) : null,
+                'price2' => isset($presentationValues['price2']) ? D::represent($presentationValues['price2']) : null,
+                'price3' => isset($presentationValues['price3']) ? D::represent($presentationValues['price3']) : null,
                 'price_default' => $row->price_default,
                 'barcode' => $row->barcode ?? '',
                 'prices' => $prices->toArray(),
@@ -1589,7 +1610,7 @@ class Item extends ModelTenant
      *
      * @return array|\Illuminate\Support\Collection
      */
-    protected function getItemUnitTypesWithPrices()
+    protected function getItemUnitTypesWithPrices(bool $forInvoice = false)
     {
         // Si ya es un array plano, retornar tal cual
         $allPricesLabel = PriceLabel::all();
@@ -1616,7 +1637,7 @@ class Item extends ModelTenant
                         }
                     }
                 });
-                return $this->item_unit_types->map(function ($row) use ($allPricesLabel) {
+                return $this->item_unit_types->map(function ($row) use ($allPricesLabel, $forInvoice) {
 
                     if (is_array($row)) {
                         $prices = collect($row['prices']);
@@ -1626,29 +1647,22 @@ class Item extends ModelTenant
 
                     $labels_id = $prices->pluck('price_label_id')->toArray();
 
-                    $prices =  $prices->map(function($price)  {
-                        if (is_array($price)) {
-                            $price = (object) $price; // Convertir array a objeto para acceder a propiedades
-                            return [
-                                'id'             => $price->id,
-                                'price_label_id' => $price->price_label_id,
-                                'position'       => $price->position,
-                                'label'          => $price->label,
-                                'price'          => $price ? number_format($price->price, 2, '.', '') : 0,
-                                'is_active'      => $price ? (bool) $price->is_active : false,
-                            ];
-                        } else {
-                            $price_label = $price->priceLabel;
-                                return [
-                                    'id'             => $price->id,
-                                    'price_label_id' => $price->price_label_id,
-                                    'position'       => $price_label->position,
-                                    'label'          => $price_label->label,
-                                    'price'          => $price ? number_format($price->price, 2, '.', '') : 0,
-                                    'is_active'      => $price ? (bool) $price->is_active : false,
-                                ];
-
+                    $prices = $prices->map(function ($source) use ($forInvoice) {
+                        $price = (object) $source;
+                        $label = is_array($source) ? $price : $price->priceLabel;
+                        $value = $forInvoice ? D::readRequired($source, 'price') : null;
+                        $row = [
+                            'id'             => $price->id,
+                            'price_label_id' => $price->price_label_id,
+                            'position'       => $label->position,
+                            'label'          => $label->label,
+                            'price'          => $forInvoice ? D::represent($value, 2, true) : number_format($price->price, 2, '.', ''),
+                            'is_active'      => (bool) $price->is_active,
+                        ];
+                        if ($forInvoice) {
+                            $row['calculation_snapshot'] = D::snapshot(['price' => $value]);
                         }
+                        return $row;
                     });
 
                     $missingLabel = $allPricesLabel->whereNotIn('id', $labels_id)->first();
@@ -1823,7 +1837,7 @@ class Item extends ModelTenant
             'sale_unit_price_with_igv' => "{$currency->symbol} $salePriceWithIgv",
             'purchase_unit_price' => "{$currency->symbol} {$this->purchase_unit_price}",
             'created_at' => ($this->created_at) ? $this->created_at->format('Y-m-d H:i:s') : '',
-            'updated_at' => ($this->created_at) ? $this->updated_at->format('Y-m-d H:i:s') : '',
+            'updated_at' => $this->updated_at?->format('Y-m-d H:i:s') ?? '',
             'warehouses' => collect($this->warehouses)->transform(function ($row) {
                 return [
                     'warehouse_description' => $row->warehouse->description,
@@ -2213,15 +2227,26 @@ class Item extends ModelTenant
             $extra = $row['item']['extra'];
 
 
-            $colors_id = isset($extra['colors']) ? (int)$extra['colors'] : null;
-            $CatItemUnitsPerPackage_id = isset($extra['CatItemUnitsPerPackage']) ? (int)$extra['CatItemUnitsPerPackage'] : null;
-            $CatItemMoldProperty_id = isset($extra['CatItemMoldProperty']) ? (int)$extra['CatItemMoldProperty'] : null;
-            $CatItemProductFamily_id = isset($extra['CatItemProductFamily']) ? (int)$extra['CatItemProductFamily'] : null;
-            $CatItemMoldCavity_id = isset($extra['CatItemMoldCavity']) ? (int)$extra['CatItemMoldCavity'] : null;
-            $CatItemPackageMeasurement_id = isset($extra['CatItemPackageMeasurement']) ? (int)$extra['CatItemPackageMeasurement'] : null;
-            $CatItemStatus_id = isset($extra['CatItemStatus']) ? (int)$extra['CatItemStatus'] : null;
-            $CatItemUnitBusiness_id = isset($extra['CatItemUnitBusiness']) ? (int)$extra['CatItemUnitBusiness'] : null;
-            $CatItemSize_id = isset($extra['CatItemSize']) ? (int)$extra['CatItemSize'] : null;
+            $extraKey = static function (string $field) use ($extra): ?int {
+                $value = $extra[$field] ?? null;
+                if ($value === null) return null;
+                if ($value === 0 || $value === '0') return 0;
+                $id = \App\Database\IntegerTransport::positiveKey($value);
+                if ($id === null) {
+                    \App\Services\Fiscal\FiscalAmounts::error('items.item.extra.'.$field, 'Seleccione un identificador de catálogo válido.');
+                }
+                return $id;
+            };
+
+            $colors_id = $extraKey('colors');
+            $CatItemUnitsPerPackage_id = $extraKey('CatItemUnitsPerPackage');
+            $CatItemMoldProperty_id = $extraKey('CatItemMoldProperty');
+            $CatItemProductFamily_id = $extraKey('CatItemProductFamily');
+            $CatItemMoldCavity_id = $extraKey('CatItemMoldCavity');
+            $CatItemPackageMeasurement_id = $extraKey('CatItemPackageMeasurement');
+            $CatItemStatus_id = $extraKey('CatItemStatus');
+            $CatItemUnitBusiness_id = $extraKey('CatItemUnitBusiness');
+            $CatItemSize_id = $extraKey('CatItemSize');
 
 
             $array['item']['extra']["colors"] = $colors_id;
@@ -2898,7 +2923,7 @@ class Item extends ModelTenant
      * @param  string $barcode_presentation
      * @return array
      */
-    public function getItemUnitTypesBarcode($search_item_by_barcode_presentation = false, $barcode_presentation)
+    public function getItemUnitTypesBarcode($search_item_by_barcode_presentation, $barcode_presentation)
     {
         return $search_item_by_barcode_presentation ? $this->item_unit_types()->where('barcode', $barcode_presentation)->get() : $this->item_unit_types;
     }
@@ -3361,6 +3386,7 @@ class Item extends ModelTenant
         $configuration =  Configuration::first();
         $currency = $this->currency_type;
         $decimal_units = (int)$configuration->decimal_quantity;
+        $salePrice = D::readRequired($this, 'sale_unit_price');
 
         return [
             'id' => $this->id,
@@ -3373,7 +3399,8 @@ class Item extends ModelTenant
             'item_code' => $this->item_code,
             'barcode' => $this->barcode,
             'currency_type_symbol' => $currency->symbol,
-            'sale_unit_price' => $this->generalApplyNumberFormat($this->sale_unit_price),
+            'sale_unit_price' => $this->generalApplyNumberFormat($salePrice),
+            'calculation_snapshot' => D::snapshot(['sale_unit_price' => $salePrice]),
             'purchase_unit_price' => $this->generalApplyNumberFormat($this->purchase_unit_price),
             'unit_type_id' => $this->unit_type_id,
             'sale_affectation_igv_type_id' => $this->sale_affectation_igv_type_id,
@@ -3385,7 +3412,7 @@ class Item extends ModelTenant
             'quantity' => 0,
             'item_unit_types' => $this->item_unit_types->transform(function ($row) use ($decimal_units) {
                 /** @var ItemUnitType $row */
-                return $row->getCollectionData($decimal_units);
+                return $row->getCollectionData($decimal_units, withExactAmounts: true);
             }),
             'stock' => $this->getWarehouseCurrentStock($warehouse),
             // inventario (app): minimo y flags de lotes/series para bloquear traslado/ajuste

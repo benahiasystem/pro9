@@ -11,36 +11,32 @@ use PHPUnit\Framework\TestCase;
 
 final class TenantDBIsolationTest extends TestCase
 {
-    public function test_a_retried_transaction_keeps_a_consistent_snapshot_without_changing_the_session_default(): void
+    public static function retryableStates(): array { return [['40001'], ['40P01']]; }
+
+    /** @dataProvider retryableStates */
+    public function test_a_retried_transaction_keeps_a_consistent_snapshot_without_changing_the_session_default(string $state): void
     {
-        if (getenv('ACCOUNTING_ISOLATED_TESTS') !== '1' || getenv('ACCOUNTING_TEST_DATABASE') !== 'accounting_module_test' || getenv('ACCOUNTING_TEST_HOST') !== 'accounting-db') {
-            throw new \RuntimeException('Esta prueba exige la base temporal y la red aislada.');
-        }
-        $previous = Facade::getFacadeApplication();
-        $container = new Container();
-        $container->instance('config', new Repository(['database' => ['default' => 'tenant']]));
-        $manager = new Manager($container);
-        $config = ['driver' => 'mysql', 'host' => 'accounting-db', 'database' => 'accounting_module_test', 'username' => getenv('ACCOUNTING_TEST_USERNAME'), 'password' => getenv('ACCOUNTING_TEST_PASSWORD'), 'charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'prefix' => '', 'strict' => true];
-        $manager->addConnection($config, 'tenant');
-        $manager->addConnection($config, 'writer');
-        $container->instance('db', $manager->getDatabaseManager());
-        Facade::setFacadeApplication($container);
-        Facade::clearResolvedInstance('db');
-        $connection = $manager->getConnection('tenant');
-        $writer = $manager->getConnection('writer');
+        if (getenv('PRO9_POSTGRES_TESTS') !== '1') self::markTestSkipped('Utilice PostgreSQL temporal aislado.');
+        $fixture = new \Tests\Support\AccountingPostgresFixture();
+        $fixture->start(false);
+        $connection = \Illuminate\Support\Facades\DB::connection('tenant');
+        $config = $connection->getConfig();
+        config(['database.connections.writer' => $config]);
+        $writer = \Illuminate\Support\Facades\DB::connection('writer');
+        \Tests\Support\PostgresTestEnvironment::assertServer($writer);
         $table = 'accounting_test_snapshot_' . bin2hex(random_bytes(6));
         try {
-            $connection->statement("CREATE TABLE {$table} (id INT PRIMARY KEY) ENGINE=InnoDB");
+            $connection->statement("CREATE TABLE {$table} (id integer PRIMARY KEY)");
             $connection->table($table)->insert(['id' => 1]);
             // This discarded, scratch-only session deliberately differs from
             // the module's requirement. Production never sets SESSION options.
-            $connection->statement('SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED');
+            $connection->statement('SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ COMMITTED');
             $attempts = 0;
-            $counts = TenantDB::transaction(function () use (&$attempts, $connection, $writer, $table) {
+            $counts = TenantDB::transaction(function () use (&$attempts, $connection, $writer, $table, $state) {
                 ++$attempts;
                 $before = $connection->table($table)->count();
                 if ($attempts === 1) {
-                    throw new \PDOException('Deadlock found when trying to get lock', 40001);
+                    $connection->unprepared("DO \$controlled\$ BEGIN RAISE EXCEPTION USING ERRCODE = '{$state}', MESSAGE = 'Controlled transaction retry'; END; \$controlled\$;");
                 }
                 $writer->table($table)->insert(['id' => 2]);
                 return TenantDB::readSnapshot(fn() => [$before, $connection->table($table)->count()]);
@@ -48,7 +44,7 @@ final class TenantDBIsolationTest extends TestCase
             $this->assertSame(2, $attempts);
             $this->assertSame([1, 1], $counts);
             $this->assertSame(2, $connection->table($table)->count());
-            $this->assertSame('READ-COMMITTED', $connection->selectOne('SELECT @@session.tx_isolation AS mode')->mode);
+            $this->assertSame('read committed', $connection->selectOne('SHOW default_transaction_isolation')->default_transaction_isolation);
             try {
                 $connection->transaction(fn() => TenantDB::readSnapshot(fn() => null));
                 $this->fail('Una transacción ajena no acredita una lectura consistente.');
@@ -57,10 +53,7 @@ final class TenantDBIsolationTest extends TestCase
             }
         } finally {
             $connection->statement("DROP TABLE IF EXISTS {$table}");
-            $manager->getDatabaseManager()->purge('tenant');
-            $manager->getDatabaseManager()->purge('writer');
-            Facade::setFacadeApplication($previous);
-            Facade::clearResolvedInstance('db');
+            $fixture->close();
         }
     }
 }

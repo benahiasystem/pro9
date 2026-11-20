@@ -9,7 +9,7 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::connection('system')->create('marketplace_settings', function (Blueprint $table) {
+        Schema::create('marketplace_settings', function (Blueprint $table) {
             $table->id();
             $table->string('key', 60)->unique();
             $table->text('value')->nullable();
@@ -18,7 +18,7 @@ return new class extends Migration
         });
 
         // Defaults en la propia migración: no hay seeder.
-        DB::connection('system')->table('marketplace_settings')->insert([
+        DB::connection()->table('marketplace_settings')->insert([
             [
                 // El marketplace nace apagado: nada es público hasta que el admin
                 // lo enciende deliberadamente desde Ajustes.
@@ -72,6 +72,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::connection('system')->dropIfExists('marketplace_settings');
+        Schema::dropIfExists('marketplace_settings');
     }
 };

@@ -1,5 +1,6 @@
 <?php
 namespace App\Services\Fiscal;
+use App\Database\IntegerTransport;
 
 use App\Services\ExchangeRates\ExchangeRateMath as Math;
 use App\Support\Exact\Decimal as D;
@@ -7,6 +8,13 @@ use App\Support\Exact\Decimal as D;
 /** Fiscal settlement declarations are not receipts and never enter financial ledgers. */
 final class HkaNotePayments
 {
+    public static function isReceiptTax(array $tax, array $payment): bool
+    {
+        $id = IntegerTransport::positiveKey($payment['id'] ?? null);
+        return $tax['tax_kind'] === 'IGTF' && $id !== null
+            && IntegerTransport::positiveKey($tax['document_payment_id'] ?? null) === $id;
+    }
+
     public static function append(array $snapshot, array $forms): array
     {
         if (!HkaNotePolicy::snapshot($snapshot)) return $forms;
@@ -16,12 +24,12 @@ final class HkaNotePayments
         if (!$credit) foreach ($snapshot['payments'] ?? [] as $payment) {
             if (!empty($payment['reversed_at']) || !empty($payment['receipt_parent_id'])) continue;
             $remaining = $remaining->minus(isset($payment['payment']) ? D::read($payment,'payment') : D::convert(D::read($payment,'original_amount'),$payment['currency_type_id'],$snapshot['currency_type_id'],$payment['exchange_rate']));
-            foreach ($snapshot['taxes'] ?? [] as $tax) if ($tax['tax_kind'] === 'IGTF' && ($tax['document_payment_id'] ?? null) === ($payment['id'] ?? null)) $remaining = $remaining->minus(D::read($tax,'amount'));
+            foreach ($snapshot['taxes'] ?? [] as $tax) if (self::isReceiptTax($tax, $payment)) $remaining = $remaining->minus(D::read($tax,'amount'));
         }
         if ($credit) $forms = [];
+        if ($remaining->isLessThan('-0.005')) FiscalAmounts::error('payments', 'Los cobros de la ND superan su total.');
         $amount = Math::finalAmount($remaining);
-        if ($amount < -0.005) FiscalAmounts::error('payments', 'Los cobros de la ND superan su total.');
-        if ($amount > 0) $forms[] = ['forma'=>'99', 'descripcion'=>$credit ? 'Crédito comercial por nota de crédito' : 'Crédito comercial pendiente de cobro',
+        if (D::of($amount)->isGreaterThan(0)) $forms[] = ['forma'=>'99', 'descripcion'=>$credit ? 'Crédito comercial por nota de crédito' : 'Crédito comercial pendiente de cobro',
             'moneda'=>$snapshot['currency_type_id'], 'monto'=>$amount, 'fecha'=>\Carbon\Carbon::parse($snapshot['date_of_issue'])->format('d/m/Y'),
             'tipoCambio'=>(string)$snapshot['exchange_rate_sale']];
         return $forms;

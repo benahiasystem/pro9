@@ -1,48 +1,45 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `supplies` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `cost` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `waste_percentage` decimal(30,12) NOT NULL DEFAULT '0.00'
- * - `stock` decimal(30,12) NOT NULL DEFAULT '0.0000'
- * - `minimum_stock` decimal(30,12) NOT NULL DEFAULT '0.0000'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - name: varchar(255)
+ * - cost: numeric(30,12)
+ * - unit_type_id: varchar(255)
+ * - waste_percentage: numeric(30,12)
+ * - stock: numeric(30,12)
+ * - minimum_stock: numeric(30,12)
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `supplies` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `cost` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `unit_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `waste_percentage` decimal(30,12) NOT NULL DEFAULT '0.00',
-  `stock` decimal(30,12) NOT NULL DEFAULT '0.0000',
-  `minimum_stock` decimal(30,12) NOT NULL DEFAULT '0.0000',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `supplies_unit_type_id_foreign` (`unit_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('supplies', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->decimal('cost', 30, 12)->default('0.00');
+            $table->string('unit_type_id', 255)->collation('pro9_ci_ai');
+            $table->decimal('waste_percentage', 30, 12)->default('0.00');
+            $table->decimal('stock', 30, 12)->default('0.0000');
+            $table->decimal('minimum_stock', 30, 12)->default('0.0000');
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['unit_type_id'], 'supplies_unit_type_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `supplies`');
+        Schema::dropIfExists('supplies');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

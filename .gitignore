@@ -29,7 +29,6 @@ error_log
 .env.dusk.local
 debug.log
 phpunit.dusk.xml
-docker-compose.yml
 
 /ssh
 /.project
@@ -53,3 +52,5 @@ public/porto-light/js/bloquear_cliente.js
 /.accounting-staging/
 /.accounting-isolated/
 /public/contabilidad/
+# Full exact-audit logs are archived as gzip; CI also retains the generated plain logs.
+/informes/evidencias/postgresql_17_implementacion/resultados/*-exactitud-*.log

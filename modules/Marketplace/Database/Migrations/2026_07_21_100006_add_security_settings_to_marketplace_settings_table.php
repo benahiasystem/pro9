@@ -26,7 +26,7 @@ return new class extends Migration
         ];
 
         foreach ($rows as $row) {
-            DB::connection('system')->table('marketplace_settings')->updateOrInsert(
+            DB::connection()->table('marketplace_settings')->updateOrInsert(
                 ['key' => $row['key']],
                 ['value' => $row['value'], 'type' => $row['type']]
             );
@@ -35,7 +35,7 @@ return new class extends Migration
 
     public function down()
     {
-        DB::connection('system')->table('marketplace_settings')
+        DB::connection()->table('marketplace_settings')
             ->whereIn('key', ['contact_limit_per_hour', 'contact_retention_days', 'arco_email'])
             ->delete();
     }

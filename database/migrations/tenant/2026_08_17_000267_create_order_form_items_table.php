@@ -1,41 +1,38 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `order_form_items` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `order_form_id` int(10) unsigned NOT NULL
- * - `item_id` int(10) unsigned NOT NULL
- * - `item` json NOT NULL
- * - `quantity` decimal(30,12) NOT NULL
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - order_form_id: bigint
+ * - item_id: bigint
+ * - item: json
+ * - quantity: numeric(30,12)
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `order_form_items` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `order_form_id` int(10) unsigned NOT NULL,
-  `item_id` int(10) unsigned NOT NULL,
-  `item` json NOT NULL,
-  `quantity` decimal(30,12) NOT NULL,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`),
-  KEY `order_form_items_order_form_id_foreign` (`order_form_id`),
-  KEY `order_form_items_item_id_foreign` (`item_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('order_form_items', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('order_form_id');
+            $table->bigInteger('item_id');
+            $table->json('item');
+            $table->decimal('quantity', 30, 12);
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+            $table->index(['order_form_id'], 'order_form_items_order_form_id_foreign');
+            $table->index(['item_id'], 'order_form_items_item_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `order_form_items`');
+        Schema::dropIfExists('order_form_items');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

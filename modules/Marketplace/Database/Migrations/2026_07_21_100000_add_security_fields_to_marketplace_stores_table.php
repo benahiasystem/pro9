@@ -23,7 +23,7 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::connection('system')->table('marketplace_stores', function (Blueprint $table) {
+        Schema::table('marketplace_stores', function (Blueprint $table) {
             $table->boolean('show_address')->default(false)->after('address');
             $table->string('address_zone', 120)->nullable()->after('show_address');
             $table->char('secret_hash', 64)->nullable()->after('app_version');
@@ -33,7 +33,7 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::connection('system')->table('marketplace_stores', function (Blueprint $table) {
+        Schema::table('marketplace_stores', function (Blueprint $table) {
             $table->dropColumn(['show_address', 'address_zone', 'secret_hash', 'hidden_at']);
         });
     }

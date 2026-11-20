@@ -53,7 +53,7 @@ class CatalogCounters
     {
         DB::connection('system')->statement('
             UPDATE marketplace_items i
-            SET i.recommendations_count = (
+            SET recommendations_count = (
                 SELECT COUNT(*) FROM marketplace_recommendations r WHERE r.item_id = i.id
             )
             WHERE i.id = ?
@@ -80,7 +80,7 @@ class CatalogCounters
     {
         DB::connection('system')->statement('
             UPDATE marketplace_stores s
-            SET s.recommendations_count = (
+            SET recommendations_count = (
                 SELECT COUNT(DISTINCT r.visitor_id)
                 FROM marketplace_recommendations r
                 INNER JOIN marketplace_items i ON i.id = r.item_id
@@ -103,13 +103,14 @@ class CatalogCounters
     {
         DB::connection('system')->statement('
             UPDATE marketplace_categories c
-            SET c.items_count = (
+            SET items_count = (
                 SELECT COUNT(*)
                 FROM marketplace_items i
                 INNER JOIN marketplace_stores s ON s.id = i.store_id
                 WHERE i.category_id = c.id
                   AND i.status = ?
                   AND s.status = ?
+                  AND s.hidden_at IS NULL
             )
         ', [Item::STATUS_ACTIVE, Store::STATUS_APPROVED]);
     }

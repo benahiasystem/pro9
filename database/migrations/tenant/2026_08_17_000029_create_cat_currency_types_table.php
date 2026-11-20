@@ -1,35 +1,34 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `cat_currency_types` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `active` tinyint(1) NOT NULL
- * - `symbol` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: varchar(255)
+ * - active: boolean
+ * - symbol: varchar(255)
+ * - description: varchar(255)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_currency_types` (
-  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `active` tinyint(1) NOT NULL,
-  `symbol` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  KEY `cat_currency_types_id_index` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_currency_types', function (Blueprint $table) {
+            $table->string('id', 255)->collation('pro9_ci_ai');
+            $table->boolean('active');
+            $table->string('symbol', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->index(['id'], 'cat_currency_types_id_index');
+            $table->unique(['id'], 'cat_currency_types_id_pg_unique');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_currency_types`');
+        Schema::dropIfExists('cat_currency_types');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

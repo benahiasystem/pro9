@@ -5,6 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Modules\Accounting\Support\TenantSchema as Schema;
 use Modules\Accounting\Support\TenantDB as DB;
 
+use Modules\Accounting\Support\PostgresIntegrity as Integrity;
+
 return new class extends Migration
 {
     protected $connection = 'tenant';
@@ -51,10 +53,8 @@ return new class extends Migration
                 $t->foreign(['organization_id', 'company_id', 'import_job_id'], 'accounting_import_' . $suffix . '_job')->references(['organization_id', 'company_id', 'id'])->on('accounting_import_jobs')->restrictOnDelete();
             });
         }
-        if (DB::getDriverName() === 'mysql') {
-            DB::unprepared("CREATE TRIGGER accounting_import_receipt_upd BEFORE UPDATE ON accounting_import_receipts FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Referencia de importacion aceptada inmutable'");
-            DB::unprepared("CREATE TRIGGER accounting_import_receipt_del BEFORE DELETE ON accounting_import_receipts FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Referencia de importacion aceptada conservada'");
-        }
+        Integrity::reject('accounting_import_receipts', 'accounting_import_receipt_upd', 'UPDATE', 'Referencia de importacion aceptada inmutable');
+        Integrity::reject('accounting_import_receipts', 'accounting_import_receipt_del', 'DELETE', 'Referencia de importacion aceptada conservada');
     }
 
     public function down(): void

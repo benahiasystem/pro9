@@ -63,7 +63,8 @@
                                 ></el-checkbox>
                             </th>-->
                             <th>
-                                <el-input-number v-model="row.compromise_quantity"
+                                <el-input v-if="exactQuantities" v-model="row.compromise_quantity" inputmode="decimal"></el-input>
+                                <el-input-number v-else v-model="row.compromise_quantity"
                                                  v-bind:class="{ 'text-danger': (row.compromise_quantity > row.quantity) }"></el-input-number>
                             </th>
 
@@ -90,6 +91,8 @@
 </template>
 
 <script>
+import {exactAmount, exactSum} from '../../../../helpers/exchange-rate-math'
+import {lotQuantity, selectedInvoiceLots} from '../../../../helpers/invoice-lots'
 export default {
     name: 'ItemLotsGroup',
     props: ["showDialog",
@@ -98,7 +101,7 @@ export default {
         'stock',
         'recordId',
         'quantity',
-        'compromiseAllQuantity'
+        'compromiseAllQuantity', 'exactQuantities'
     ],
     data() {
         return {
@@ -118,13 +121,24 @@ export default {
 
     },
     computed: {
+        sourceLots() {
+            return this.lotsGroupAll ?? this.lotsGroup ?? []
+        },
         lotsGroupOrdered() {
             return _.orderBy(this.lots_group_, 'date_of_due', this.orderT)
         },
         quantityCompleted() {
+            if (this.exactQuantities) {
+                try { return exactSum(this.sourceLots.filter(x=>x.checked).map(x=>lotQuantity(x.quantity))).compare(this.quantity)>=0 }
+                catch (_) { return false }
+            }
             return this.lots_group_.filter(x => x.checked == true).reduce((accum, item) => accum + Number(item.quantity), 0) >= this.quantity
         },
         toAttend() {
+            if (this.exactQuantities) {
+                try { return exactAmount(this.quantity).minus(exactSum(this.sourceLots.map(x=>lotQuantity(x.compromise_quantity)))).decimal() }
+                catch (_) { return '—' } // An incomplete decimal stays editable; submit reports the error.
+            }
             return this.quantity - this.lots_group_.filter(x => x.compromise_quantity > 0).reduce((accum, item) => accum + Number(item.compromise_quantity), 0)
         },
         showCompromiseAllQuantity() {
@@ -146,7 +160,7 @@ export default {
             this.$message.success('La cantidad comprometida de todos los lotes fue actualizada')
         },
         setTotalQuantityToCompromise(row, show_message = true) {
-            row.compromise_quantity = parseFloat(row.quantity)
+            row.compromise_quantity = this.exactQuantities ? lotQuantity(row.quantity) : parseFloat(row.quantity)
             if (show_message) this.$message.success('Cantidad asignada')
         },
         orderData() {
@@ -172,9 +186,11 @@ export default {
                 this.$message.warning('La cantidad está completada');
             }*/
             this.lots_group_[index].checked = event
-            this.idSelected = this.lots_group_.filter(x => x.checked == true).map(x => x.id);
-            let sum = this.lots_group_.filter(x => x.checked == true).reduce((accum, item) => accum + Number(item.quantity), 0)
-            if (sum >= this.quantity) {
+            const assignments = this.exactQuantities ? this.sourceLots : this.lots_group_
+            this.idSelected = assignments.filter(x => x.checked == true).map(x => x.id);
+            const sum = this.exactQuantities ? exactSum(assignments.filter(x=>x.checked).map(x=>lotQuantity(x.quantity)))
+                : this.lots_group_.filter(x => x.checked == true).reduce((accum, item) => accum + Number(item.quantity), 0)
+            if (this.exactQuantities ? sum.compare(this.quantity)>=0 : sum >= this.quantity) {
                 this.$message.warning('La cantidad está completada.');
             }
         },
@@ -188,6 +204,13 @@ export default {
             this.set_compromise_all_quantity = false
         },
         async submit() {
+            if (this.exactQuantities) {
+                try {
+                    const lots=selectedInvoiceLots(this.sourceLots,this.quantity)
+                    this.$emit('addRowLotGroup',lots);this.$emit('update:showDialog',false)
+                } catch (error) { this.$message.warning(error.message) }
+                return;
+            }
             //validar cantidad comprometida igual a cantidad pedida
             let compromise_quantity = this.lots_group_.filter(x => x.compromise_quantity > 0).reduce((accum, item) => accum + Number(item.compromise_quantity), 0)
             if (compromise_quantity != this.quantity) {

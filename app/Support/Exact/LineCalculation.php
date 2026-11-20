@@ -2,6 +2,8 @@
 
 namespace App\Support\Exact;
 
+use Brick\Math\BigRational;
+
 // ######## INICIO CALCULOS EXACTOS SAB ########
 /** Pure, server-owned inclusive-price line calculation; no database or HKA side effects. */
 final class LineCalculation
@@ -22,6 +24,17 @@ final class LineCalculation
         return self::calculate($line,$percentage,$preserved);
     }
 
+    public static function quantity(array $line, ?BigRational $original = null): BigRational
+    {
+        if (empty($line['quantity_input'])) {
+            return $original ?? Decimal::of(Decimal::input($line['quantity'], 'items.quantity'));
+        }
+        $source = $line['quantity_input'];
+        $sourcePrice = self::priceInput($source['unit_price'] ?? null, 'items.quantity_input.unit_price');
+        if (!$sourcePrice->isPositive()) \App\Services\Fiscal\FiscalAmounts::error('items.quantity', 'El precio debe ser positivo.');
+        return Decimal::of(Decimal::input($source['amount'] ?? null, 'items.quantity_input.amount'))->dividedBy($sourcePrice);
+    }
+
     public static function calculate(array $line, $percentage, array $preserved = []): array
     {
         foreach (['quantity_input'=>['unit_price','amount'], 'price_input'=>['amount','currency_type_id']] as $field=>$required) {
@@ -33,13 +46,7 @@ final class LineCalculation
         if (isset($line['price_input']['includes_iva']) && !is_bool($line['price_input']['includes_iva'])) {
             \App\Services\Fiscal\FiscalAmounts::error('items.price_input.includes_iva','Indique si el precio incluye IVA.');
         }
-        $quantity = isset($preserved['quantity']) ? Decimal::of($preserved['quantity']) : Decimal::of(Decimal::input($line['quantity'], 'items.quantity'));
-        if (!empty($line['quantity_input'])) {
-            $source = $line['quantity_input'];
-            $sourcePrice = Decimal::of(Decimal::input($source['unit_price'], 'items.quantity_input.unit_price'));
-            if ($sourcePrice->isLessThanOrEqualTo(0)) \App\Services\Fiscal\FiscalAmounts::error('items.quantity', 'El precio debe ser positivo.');
-            $quantity = Decimal::of(Decimal::input($source['amount'], 'items.quantity_input.amount'))->dividedBy($sourcePrice);
-        }
+        $quantity = self::quantity($line, isset($preserved['quantity']) ? Decimal::of($preserved['quantity']) : null);
         $price = isset($preserved['unit_price']) ? Decimal::of($preserved['unit_price']) : Decimal::of(Decimal::input($line['unit_price'], 'items.unit_price'));
         if (!empty($line['price_input'])) {
             $source = $line['price_input'];
@@ -93,10 +100,10 @@ final class LineCalculation
                 'quantity_input'=>$line['quantity_input'] ?? null, 'price_input'=>$line['price_input'] ?? null])]);
     }
 
-    /** A manual POS line total can imply a non-terminating unit price. */
-    private static function priceInput($input): \Brick\Math\BigRational
+    /** A manual line total or a frozen list price can imply a non-terminating unit price. */
+    public static function priceInput($input, string $field = 'items.price_input.amount'): BigRational
     {
-        if (!is_array($input)) return Decimal::of(Decimal::input($input, 'items.price_input.amount'));
+        if (!is_array($input)) return Decimal::of(Decimal::input($input, $field));
         try {
             foreach (['n','d'] as $part) {
                 if (!isset($input[$part]) || !is_string($input[$part]) || strlen(ltrim($input[$part],'-')) > 80) {
@@ -107,7 +114,7 @@ final class LineCalculation
             if ($value->abs()->isGreaterThan(Decimal::of('999999999999999999.999999999999'))) throw new \InvalidArgumentException();
             return $value;
         } catch (\Throwable $error) {
-            \App\Services\Fiscal\FiscalAmounts::error('items.price_input.amount','Indique un precio válido dentro del rango permitido.');
+            \App\Services\Fiscal\FiscalAmounts::error($field,'Indique un precio válido dentro del rango permitido.');
         }
     }
 }

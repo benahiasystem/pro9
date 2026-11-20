@@ -49,9 +49,9 @@ use Modules\FullSuscription\Models\Tenant\SuscriptionPlan;
             if ($request->filled('q')) {
                 $q = $request->q;
                 $query->where(function ($sub) use ($q) {
-                    $sub->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(parent_customer, '$.name')) LIKE ?",        ["%{$q}%"])
-                        ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(parent_customer, '$.number')) LIKE ?",      ["%{$q}%"])
-                        ->orWhereRaw("JSON_UNQUOTE(JSON_EXTRACT(parent_customer, '$.description')) LIKE ?", ["%{$q}%"]);
+                    $sub->where('parent_customer->name', 'like', "%{$q}%")
+                        ->orWhere('parent_customer->number', 'like', "%{$q}%")
+                        ->orWhere('parent_customer->description', 'like', "%{$q}%");
                 });
             }
 

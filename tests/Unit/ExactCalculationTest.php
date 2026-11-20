@@ -107,4 +107,46 @@ class ExactCalculationTest extends TestCase
         $serialized['unit_price']='6';
         self::assertSame('1000',LineCalculation::fromRecord($serialized,'0')['total']);
     }
+
+    public function test_original_and_edited_quantities_drive_exact_discount_and_charge_bases(): void
+    {
+        $input = [
+            'quantity' => '0.333333333333',
+            'unit_price' => '100',
+            'calculation_snapshot' => Decimal::snapshot(['quantity' => Decimal::of('1/3')]),
+            'discounts' => [['discount_type_id' => '00', 'percentage' => '10']],
+            'charges' => [['percentage' => '5']],
+        ];
+        $cases = [
+            [$input, '1/3', '100/3', '10/3', '5/3', '95/3'],
+            [array_replace($input, ['quantity' => '0.4']), '0.4', '40', '4', '2', '38'],
+            [$input + ['quantity_input' => ['amount' => '2', 'unit_price' => '3']], '2/3', '200/3', '20/3', '10/3', '190/3'],
+        ];
+        foreach ($cases as [$payload, $quantity, $base, $discount, $charge, $total]) {
+            $line = LineCalculation::fromRecord($payload, '0');
+            self::assertTrue(Decimal::readRequired($line, 'quantity')->isEqualTo($quantity));
+            self::assertSame(Decimal::represent($base), $line['discounts'][0]['base']);
+            self::assertSame(Decimal::represent($base), $line['charges'][0]['base']);
+            self::assertSame(Decimal::represent($discount), $line['discounts'][0]['amount']);
+            self::assertSame(Decimal::represent($charge), $line['charges'][0]['amount']);
+            self::assertSame(Decimal::fraction($discount), $line['discounts'][0]['amount_exact']);
+            self::assertSame(Decimal::fraction($charge), $line['charges'][0]['amount_exact']);
+            self::assertTrue(Decimal::readRequired($line, 'total')->isEqualTo($total));
+        }
+    }
+
+    public function test_price_from_catalog_fraction_divides_the_captured_amount_without_rounding(): void
+    {
+        $third = ['n' => '1', 'd' => '3'];
+        $line = LineCalculation::calculate([
+            'quantity' => '3', 'unit_price' => '0.333333333333',
+            'quantity_input' => ['amount' => '1', 'unit_price' => $third],
+            'price_input' => ['amount' => $third, 'currency_type_id' => 'VES', 'includes_iva' => true],
+            'currency_type_id' => 'VES', 'exchange_rate_sale' => '1',
+        ], '0');
+        self::assertSame('3', $line['quantity']);
+        self::assertSame('1', $line['total']);
+        self::assertSame($third, $line['calculation_snapshot']['values']['unit_price']);
+        self::assertSame($third, $line['calculation_snapshot']['inputs']['quantity_input']['unit_price']);
+    }
 }

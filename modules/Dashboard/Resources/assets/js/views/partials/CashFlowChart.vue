@@ -18,6 +18,8 @@
 </template>
 
 <script>
+// ######## INICIO CALCULOS EXACTOS PRO9 ########
+import { readVector, chartCoordinate, formatUnitOriginal, formatAxisTick } from "../../../../../../../resources/js/helpers/dashboard-originals";
 export default {
   name: "CashFlowChart",
   props: {
@@ -25,6 +27,7 @@ export default {
   },
   data() {
     return {
+      fetchVersion: 0, loading: true, fetchFailed: false,
       labels: [],
       income: [],
       egress: [],
@@ -48,8 +51,8 @@ export default {
   computed: {
     series() {
       return [
-        { name: "Ingresos", data: this.income },
-        { name: "Egresos", data: this.egress },
+        { name: "Ingresos", data: this.income.map(chartCoordinate) },
+        { name: "Egresos", data: this.egress.map(chartCoordinate) },
       ];
     },
     chartOptions() {
@@ -79,12 +82,8 @@ export default {
         },
         tooltip: {
           y: {
-            formatter: (val) =>
-              "Bs. " +
-              Number(val).toLocaleString("es-PE", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              }),
+            formatter: (_coordinate, options) => formatUnitOriginal(
+              (options && options.seriesIndex === 1 ? this.egress : this.income)[options && options.dataPointIndex], 'money'),
           },
         },
       };
@@ -98,22 +97,26 @@ export default {
       if (success) this.incomeColor = success;
       if (warning) this.egressColor = warning;
     },
-    fetchData() {
-      this.$http.get("/dashboard/cash-flow", { params: this.filters || {} }).then((response) => {
+    async fetchData() {
+      const version = ++this.fetchVersion; this.loading = true; this.fetchFailed = false;
+      this.labels = []; this.income = []; this.egress = [];
+      try {
+        const response = await this.$http.get("/dashboard/cash-flow", {params: {...(this.filters || {})}});
+        if (version !== this.fetchVersion) return;
         const data = response.data;
         this.labels = data.labels || [];
-        this.income = data.income || [];
-        this.egress = data.egress || [];
+        this.income = readVector(data, 'income_fractions'); this.egress = readVector(data, 'egress_fractions');
         this.subtitle = data.subtitle || this.subtitle;
-      });
+      } catch (_) {
+        if (version === this.fetchVersion) this.fetchFailed = true;
+      } finally {
+        if (version === this.fetchVersion) this.loading = false;
+      }
     },
-    formatK(val) {
-      const num = Number(val) || 0;
-      if (Math.abs(num) >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, "") + "K";
-      return num.toFixed(0);
-    },
+    formatK(val) { return formatAxisTick(val, 'count'); },
   },
 };
+// ######## FIN CALCULOS EXACTOS PRO9 ########
 </script>
 
 <style scoped>

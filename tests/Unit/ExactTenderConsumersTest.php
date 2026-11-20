@@ -32,7 +32,7 @@ class ExactTenderConsumersTest extends TestCase
         Schema::connection('tenant')->create('payment_method_types',function ($t) {
             $t->string('id'); $t->boolean('is_active')->default(true);$t->string('description')->default('Prueba');
             $t->string('hka_code')->default('99');$t->string('collection_kind');$t->string('cash_currency_type_id')->nullable();
-            $t->string('currency_type_id')->default('VES');
+            $t->string('currency_type_id')->default('VES');$t->integer('bank_account_id')->nullable();
         });
         DB::connection('tenant')->table('payment_method_types')->insert([['id'=>'01','collection_kind'=>'cash','cash_currency_type_id'=>'VES'],['id'=>'10','collection_kind'=>'cash','cash_currency_type_id'=>'USD'],['id'=>'04','collection_kind'=>'account','cash_currency_type_id'=>null]]);
         DB::connection('tenant')->table('payment_method_types')->where('id','10')->update(['currency_type_id'=>'USD']);
@@ -42,6 +42,7 @@ class ExactTenderConsumersTest extends TestCase
         DB::connection('tenant')->table('cash')->insert(['id'=>1,'user_id'=>1,'state'=>true]);
         Schema::connection('tenant')->create('bank_accounts',function($t) {$t->increments('id');$t->string('description')->default('Cuenta VES');$t->string('currency_type_id')->default('VES');$t->boolean('status')->default(true);});
         DB::connection('tenant')->table('bank_accounts')->insert(['id'=>1]);
+        DB::connection('tenant')->table('payment_method_types')->where('id','04')->update(['bank_account_id'=>1]);
         Schema::connection('tenant')->create('document_payments',function($t) {$t->increments('id');$t->json('payment_method_snapshot')->nullable();$t->dateTime('reversed_at')->nullable();});
         Schema::connection('tenant')->create('hotel_rent_item_payments',function($t) {$t->increments('id');$t->integer('source_sale_note_payment_id')->nullable();});
         Schema::connection('tenant')->create('users',function($t) {$t->increments('id');});

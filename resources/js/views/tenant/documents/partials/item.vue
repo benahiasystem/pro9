@@ -149,7 +149,7 @@
                                                             </span>
                                                             <span class="d-flex align-items-center">
                                                                 <small class="me-2"
-                                                                       :class="variationsTotalStock(option) > 0 ? 'text-success' : 'text-danger'">
+                                                                       :class="variationStockClass({stock: variationsTotalStock(option)})">
                                                                     Stock en variaciones: {{ variationsTotalStock(option) }}
                                                                 </small>
                                                                 <i :class="expanded_parent_ids.includes(option.id) ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
@@ -186,7 +186,7 @@
                                                                 <span class="text-end" style="line-height: 1.3;">
                                                                     {{ option.currency_type_symbol }} {{ variation.sale_unit_price }}
                                                                     <small class="d-block" :class="variationStockClass(variation)">
-                                                                        <template v-if="variation.stock > 0">{{ formatVariationStock(variation.stock) }} disponibles</template>
+                                                                        <template v-if="variationStockClass(variation) !== 'text-danger'">{{ formatVariationStock(variation.stock) }} disponibles</template>
                                                                         <template v-else>Sin stock</template>
                                                                     </small>
                                                                 </span>
@@ -337,14 +337,16 @@
                             class="form-group"
                         >
                             <label class="control-label">Cantidad</label>
-                            <el-input-number
+                            <el-input
                                 ref="inputQuantity"
                                 v-model="form.quantity"
                                 @change="onQuantityChange"
                                 :disabled="form.item.calculate_quantity"
-                                :min="getMinQuantity()"
-                                :step="quantityStep"
-                            ></el-input-number>
+                                inputmode="decimal"
+                            >
+                                <el-button slot="prepend" icon="el-icon-minus" aria-label="Reducir cantidad" :disabled="form.item.calculate_quantity" @click="clickDecrease"></el-button>
+                                <el-button slot="append" icon="el-icon-plus" aria-label="Aumentar cantidad" :disabled="form.item.calculate_quantity" @click="clickIncrease"></el-button>
+                            </el-input>
                             <small
                                 v-if="errors.quantity"
                                 class="form-control-feedback"
@@ -743,6 +745,8 @@
                                                                     v-model="
                                                                         row.amount
                                                                     "
+                                                                    @input.native="forgetRestoredDiscount(row, $event)"
+                                                                    @compositionend.native="forgetRestoredDiscount(row, $event)"
                                                                 ></el-input>
                                                             </template>
                                                             <template v-else>
@@ -993,6 +997,7 @@
             :lots-group="form.lots_group"
             :itemId="form.item_id"
             :quantity="form.quantity"
+            :exact-quantities="Boolean(isFromInvoice || isOpenFromInvoice || isEditItemNote)"
             :showDialog.sync="showDialogLots"
             @addRowLotGroup="addRowLotGroup"
         >
@@ -1014,6 +1019,8 @@
             :itemId="form.item_id"
             :lots="lots"
             :quantity="form.quantity"
+            :exact-quantities="Boolean(isFromInvoice || isOpenFromInvoice || isEditItemNote)"
+            :exact-quantity="serialPickerExactQuantity"
             @addRowSelectLot="addRowSelectLot"
             :inputSearch="input_search_by_serie"
             :documentId="documentId"
@@ -1075,7 +1082,7 @@
 </style>
 
 <script>
-import {exactAmount, exactValue} from "../../../../helpers/exchange-rate-math"
+import {exactAmount, exactInput, exactValue} from "../../../../helpers/exchange-rate-math"
 
 import ItemForm from "../../items/form.vue";
 import VariationChips from "../../items/partials/variation_chips.vue";
@@ -1088,6 +1095,7 @@ import {
 } from "../../../../helpers/functions";
 import WarehousesDetail from "./select_warehouses.vue";
 import SelectLotsForm from "./lots.vue";
+import {serialIdKey, sameInvoiceRecordId} from "../../../../helpers/invoice-lots";
 
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import VueCkeditor from "vue-ckeditor5";
@@ -1167,6 +1175,8 @@ export default {
             change_affectation_igv_type_id: false,
             activePanel: 0,
             total_item: 0,
+            editedOriginalPriceInput: null,
+            catalogItemCurrencyTypeId: null,
             item_unit_types: [],
             item_unit_type: {},
             showWarehousesDetail: false,
@@ -1236,6 +1246,11 @@ export default {
         this.canCreateProduct();
     },
     computed: {
+        serialPickerExactQuantity() {
+            if (!(this.isFromInvoice || this.isOpenFromInvoice || this.isEditItemNote)) return null;
+            try { return this.currentExactQuantity().fraction(); }
+            catch (_) { return null; }
+        },
         isExportation() {
             return ['0201', '0202', '0203'].includes(this.operationTypeId);
         },
@@ -1485,33 +1500,60 @@ export default {
                 return value;
             }
 
-            const normalized = String(value).replace(",", ".");
-            const parsed = Number.parseFloat(normalized);
-
-            return Number.isNaN(parsed) ? value : parsed;
+            return String(value).replace(",", ".");
         },
         onQuantityChange(value) {
-            if (this.form.quantity_input && exactAmount(value || '0').decimal() !==
-                exactAmount(this.form.quantity_input.amount).dividedBy(this.form.quantity_input.unit_price).decimal()) {
+            const normalized = this.normalizeDecimal(value);
+            let quantity;
+            try { quantity = exactAmount(normalized || '0'); }
+            catch (_) { this.errors = {...this.errors, quantity: ['Ingrese una cantidad decimal válida.']}; return; }
+            if (this.errors) delete this.errors.quantity;
+            const input = this.form.quantity_input;
+            const inputQuantity = input ? exactAmount(input.amount).dividedBy(input.unit_price) : null;
+            if (this.recordItem?._from_delivery_order) {
+                const original = inputQuantity ?? exactValue(this.form, 'quantity');
+                const displayed = original.decimal();
+                if (quantity.compare(displayed) !== 0) {
+                    try {
+                        this.form.quantity_input = {amount: exactInput(normalized || '0'), unit_price: '1'};
+                    } catch (error) {
+                        this.form.quantity = displayed;
+                        this.errors = {...this.errors, quantity: [error.message]};
+                        return;
+                    }
+                }
+            } else if (inputQuantity && quantity.decimal() !== inputQuantity.decimal()) {
                 this.form.quantity_input = null;
             }
-            this.form.quantity = this.normalizeDecimal(value);
+            this.form.quantity = normalized;
             this.calculateTotal();
         },
         validateQuantity() {
+            if (this.isFromInvoice || this.isOpenFromInvoice) {
+                try {
+                    this.form.quantity = this.normalizeDecimal(this.form.quantity || '0');
+                    const quantity = this.currentExactQuantity();
+                    if (this.form.item.calculate_quantity) {
+                        if (quantity.compare(0) <= 0) throw new Error('Indique una cantidad mayor que cero.');
+                    } else if (quantity.compare(this.getMinQuantity()) < 0) {
+                        this.setMinQuantity();
+                        this.form.quantity_input = {amount: this.form.quantity, unit_price: '1'};
+                    }
+                    this.calculateTotal();
+                    return true;
+                } catch (error) {
+                    this.$message.error(error.message);
+                    return false;
+                }
+            }
             if (!this.form.quantity) {
                 this.setMinQuantity();
             }
 
-            if (isNaN(Number(this.form.quantity))) {
-                this.setMinQuantity();
-            }
-
-            if (typeof parseFloat(this.form.quantity) !== "number") {
-                this.setMinQuantity();
-            }
-
-            if (this.form.quantity <= this.getMinQuantity()) {
+            let quantity;
+            try { quantity = exactAmount(this.normalizeDecimal(this.form.quantity)); }
+            catch (_) { this.$message.error('Ingrese una cantidad decimal válida.'); return false; }
+            if (quantity.compare(this.getMinQuantity()) <= 0) {
                 this.setMinQuantity();
             }
 
@@ -1525,13 +1567,26 @@ export default {
             return 0.01;
         },
         setMinQuantity() {
-            this.form.quantity = this.getMinQuantity();
+            this.form.quantity = String(this.getMinQuantity());
+        },
+        adjustInvoiceQuantity(step) {
+            const minimum = exactAmount(this.getMinQuantity());
+            const requested = this.currentExactQuantity().plus(step);
+            const quantity = requested.compare(minimum) < 0 ? minimum : requested;
+            this.form.quantity = quantity.decimal();
+            // quantity_input represents a quotient. Use the reciprocal to keep the exact quantity.
+            this.form.quantity_input = {amount: '1', unit_price: exactAmount(1).dividedBy(quantity).fraction()};
+            this.calculateTotal();
         },
         clickDecrease() {
+            if (this.isFromInvoice || this.isOpenFromInvoice) {
+                this.adjustInvoiceQuantity(exactAmount(0).minus(this.quantityStep || 1));
+                return;
+            }
             this.form.quantity_input = null;
-            this.form.quantity = exactAmount(this.form.quantity).minus(1).decimal();
+            this.form.quantity = exactAmount(this.form.quantity).minus(this.quantityStep || 1).decimal();
 
-            if (this.form.quantity <= this.getMinQuantity()) {
+            if (exactAmount(this.form.quantity).compare(this.getMinQuantity()) <= 0) {
                 this.setMinQuantity();
                 return;
             }
@@ -1539,8 +1594,12 @@ export default {
             this.calculateTotal();
         },
         clickIncrease() {
+            if (this.isFromInvoice || this.isOpenFromInvoice) {
+                this.adjustInvoiceQuantity(this.quantityStep || 1);
+                return;
+            }
             this.form.quantity_input = null;
-            this.form.quantity = exactAmount(this.form.quantity).plus(1).decimal();
+            this.form.quantity = exactAmount(this.form.quantity).plus(this.quantityStep || 1).decimal();
             this.calculateTotal();
         },
         async searchRemoteItems(input) {
@@ -1676,6 +1735,8 @@ export default {
         initForm() {
             this.errors = {};
             this.readonly_total = 0;
+            this.editedOriginalPriceInput = null;
+            this.catalogItemCurrencyTypeId = null;
 
             this.form = {
                 // category_id: [1],
@@ -1690,6 +1751,7 @@ export default {
                 suggested_price: 0,
                 quantity: '1',
                 quantity_input: null,
+                source_sale_note_items: [],
                 price_input: null,
                 unit_price: 0,
                 unit_price_value: 0,
@@ -1759,22 +1821,21 @@ export default {
                 }
                 this.form.quantity = this.normalizeDecimal(this.recordItem.quantity);
                 this.form.unit_price_value = this.recordItem.input_unit_price_value;
+                this.restoreEditedPrice();
 
                 this.form.warehouse_id = this.recordItem.warehouse_id;
                 this.isUpdateWarehouseId = this.recordItem.warehouse_id;
 
                 if (this.isOpenFromInvoice) {
                     this.form.attributes = this.recordItem.attributes;
-                    this.form.discounts = this.prepareDiscountsForEdit(
-                        this.recordItem.discounts
-                    );
                     this.form.charges = this.recordItem.charges;
                 }
 
                 if (this.isEditItemNote) {
-                    this.form.item.currency_type_id = this.currencyTypeIdActive;
-                    this.form.item.currency_type_symbol =
-                        this.currencyTypeIdActive == "VES" ? "Bs." : "$";
+                    if (!this.editedOriginalPriceInput) {
+                        this.form.item.currency_type_id = this.currencyTypeIdActive;
+                        this.form.item.currency_type_symbol = this.currencyTypeIdActive == "VES" ? "Bs." : "$";
+                    }
 
                     if (
                         this.documentTypeId == "07" &&
@@ -1809,6 +1870,9 @@ export default {
                         this.form.affectation_igv_type_id = this.recordItem.item.original_affectation_igv_type_id;
                     }
                 }
+                if (this.isOpenFromInvoice) {
+                    this.form.discounts = this.prepareDiscountsForEdit(this.recordItem.discounts);
+                }
                 this.restoreEditedQuantity();
 
                 if (this.recordItem.item.exchanged_for_points)
@@ -1826,6 +1890,14 @@ export default {
         },
         setPresentationEditItem() {
             if (!_.isEmpty(this.recordItem.item.presentation)) {
+                if (this.isFromInvoice || this.isOpenFromInvoice || this.isEditItemNote) {
+                    const presentation = {...this.recordItem.item.presentation};
+                    this.item_unit_type = presentation;
+                    this.form.item_unit_type_id = presentation.id;
+                    this.form.item.unit_type_id = presentation.unit_type_id;
+                    this.selected_price_id = null;
+                    return;
+                }
                 this.selectedPrice(this.recordItem.item.presentation);
                 this.getSelectedClass(this.recordItem.item.presentation);
             }
@@ -1839,52 +1911,38 @@ export default {
                         }`
                     )
                     .then(response => {
-                        let all_lots = this.form.item.lots;
-                        let available_lots = response.data;
+                        const all_lots = this.form.item.lots;
+                        if (!Array.isArray(response.data)) return;
+                        const available = new Set(response.data.map(lot => serialIdKey(lot.id)));
+                        available.delete(null);
 
-                        all_lots.forEach((lot, index) => {
-                            let exist_lot = _.find(available_lots, it => {
-                                return it.id == lot.id;
-                            });
-
-                            if (!exist_lot) {
-                                this.form.item.lots.splice(index, 1);
-                            }
-                        });
+                        const retained = all_lots.filter(lot => available.has(serialIdKey(lot.id)));
+                        all_lots.splice(0, all_lots.length, ...retained);
                     })
                     .catch(error => {})
                     .then(() => {});
             }
         },
-        /**
-         * El calculo guarda en `amount` el monto NETO de los descuentos que
-         * afectan la base imponible (monto tecleado / 1.18). El input del modal
-         * es ese mismo campo y al guardar se vuelve a leer como monto CON IGV,
-         * asi que hay que devolverlo a bruto al abrir. Sin esto el descuento se
-         * divide entre el IGV en cada edicion y se va achicando solo.
-         *
-         * Se trabaja sobre copias: mientras el modal esta abierto la fila
-         * original no se toca, y si se cancela no queda a medio editar.
-         */
+        itemToDocumentConversion() {
+            const itemCurrency = this.form.item.currency_type_id || this.currencyTypeIdActive;
+            if (itemCurrency === this.currencyTypeIdActive) return exactAmount(1);
+            const rate = exactAmount(this.exchangeRateSale);
+            return itemCurrency === 'VES' ? exactAmount(1).dividedBy(rate) : rate;
+        },
         prepareDiscountsForEdit(discounts) {
             const list = discounts ? Object.values(discounts) : [];
-            const igv_factor = 1 + this.percentageIgv;
+            const ivaFactor = this.form.affectation_igv_type_id === '10' ? exactAmount(1).plus(this.percentageIgv) : exactAmount(1);
 
             return list.map(discount => {
-                const row = Object.assign({}, discount);
+                const row = {...discount};
 
-                const affects_base = row.discount_type
-                    ? !!row.discount_type.base
-                    : row.discount_type_id === "00";
-
-                // Solo con monto fijo: si es porcentaje, el input es
-                // row.percentage y amount se recalcula al guardar.
-                if (affects_base && row.is_amount) {
-                    const net = row.amount_without_rounded
-                        ? parseFloat(row.amount_without_rounded)
-                        : parseFloat(row.amount);
-
-                    row.amount = _.round(net * igv_factor, 2);
+                if (row.is_amount) {
+                    // Los descuentos guardados usan la moneda documental. El input usa la del precio.
+                    const onBase = row.discount_type?.base || row.discount_type_id === '00';
+                    const stored = exactAmount(row.amount_exact ?? row.amount_without_rounded ?? row.amount ?? '0');
+                    const gross = stored.times(onBase ? ivaFactor : 1).dividedBy(this.itemToDocumentConversion());
+                    row.amount = gross.decimal();
+                    row._edit_fixed_gross = {input: row.amount, exact: gross.fraction()};
                 }
 
                 return row;
@@ -1914,9 +1972,16 @@ export default {
                 { id: discount_type_id }
             );
         },
+        forgetRestoredDiscount(discount, event) {
+            // Element UI can suppress its input emission when the decimal equals the visible value.
+            if (event.isComposing || event.target?.tagName !== 'INPUT') return;
+            delete discount._edit_fixed_gross;
+        },
         changeIsDiscountAmount(index) {
-            this.form.discounts[index].amount = 0;
-            this.form.discounts[index].percentage = 0;
+            const discount = this.form.discounts[index];
+            delete discount._edit_fixed_gross;
+            discount.amount = 0;
+            discount.percentage = 0;
         },
         clickAddCharge() {
             this.form.charges.push({
@@ -1984,7 +2049,9 @@ export default {
             }
         },
         variationsTotalStock(option) {
-            return (option.variations || []).reduce((total, variation) => total + parseFloat(variation.stock || 0), 0)
+            return (option.variations || [])
+                .reduce((total, variation) => total.plus(variation.stock || '0'), exactAmount(0))
+                .decimal()
         },
         variationGroups(option) {
             const groups = []
@@ -2000,13 +2067,13 @@ export default {
                         key,
                         name: color_attribute ? color_attribute.value : null,
                         color: color_attribute ? color_attribute.color : null,
-                        stock: 0,
+                        stock: exactAmount(0),
                         variations: [],
                     }
                     groups.push(index[key])
                 }
 
-                index[key].stock += parseFloat(variation.stock || 0)
+                index[key].stock = index[key].stock.plus(variation.stock || '0')
                 index[key].variations.push({
                     ...variation,
                     rest_attributes: attributes.filter(attribute => attribute !== color_attribute),
@@ -2016,14 +2083,12 @@ export default {
             return groups
         },
         formatVariationStock(stock) {
-            const value = parseFloat(stock || 0)
-            return Number.isInteger(value) ? `${value}` : `${parseFloat(value.toFixed(2))}`
+            return exactAmount(stock || '0').decimal(2)
         },
         variationStockClass(variation) {
-            const stock = parseFloat(variation.stock || 0)
-            if (stock <= 0) return 'text-danger'
-            const stock_min = parseFloat(variation.stock_min || 0)
-            return stock <= stock_min ? 'text-warning' : 'text-success'
+            const stock = exactAmount(variation.stock || '0')
+            if (stock.compare(0) <= 0) return 'text-danger'
+            return stock.compare(variation.stock_min || '0') <= 0 ? 'text-warning' : 'text-success'
         },
         async selectVariation(variation) {
             this.loading_search = true
@@ -2033,8 +2098,11 @@ export default {
                 if (!full_item) {
                     return this.$message.error('No se pudo cargar la variación seleccionada')
                 }
-                if (!this.items.find(row => row.id === full_item.id)) {
+                const existingIndex = this.items.findIndex(row => sameInvoiceRecordId(row.id, full_item.id));
+                if (existingIndex === -1) {
                     this.items.push(full_item)
+                } else {
+                    this.items.splice(existingIndex, 1, full_item)
                 }
                 this.form.item_id = full_item.id
                 if (this.$refs.selectSearchNormal) {
@@ -2046,7 +2114,7 @@ export default {
             }
         },
         async changeItem() {
-            const selected_item = _.find(this.items, {'id': this.form.item_id});
+            const selected_item = this.items.find(row => sameInvoiceRecordId(row.id, this.form.item_id));
             if (!selected_item) {
                 return;
             }
@@ -2073,27 +2141,33 @@ export default {
 
             this.clearExtraInfoItem()
 
-            this.form.item = _.find(this.items, {'id': this.form.item_id});
+            this.form.item_id = selected_item.id;
+            this.form.item = {...selected_item};
             this.form.item = this.setExtraFieldOfitem(this.form.item)
-            this.form.item_unit_types = _.find(this.items, {'id': this.form.item_id}).item_unit_types
+            this.catalogItemCurrencyTypeId = this.form.item.currency_type_id;
+            this.form.item_unit_types = selected_item.item_unit_types
             this.form.unit_price_value = this.form.item.sale_unit_price;
+            this.form.has_igv = this.isExportation ? false : this.form.item.has_igv;
+            if (this.isFromInvoice) this.editedOriginalPriceInput = null;
 
             // Aplicar precio según la opción seleccionada
             if (this.selectedOptionPrice !== 1 && this.form.item_unit_types.length) {
                 let price_label_id = null;
                 if (typeof this.selectedOptionPrice === 'string') {
                     if (this.selectedOptionPrice.startsWith('price_label_')) {
-                        price_label_id = parseInt(this.selectedOptionPrice.replace('price_label_', ''));
+                        price_label_id = this.selectedOptionPrice.replace('price_label_', '');
                     } else if (this.selectedOptionPrice.startsWith('price')) {
-                        price_label_id = parseInt(this.selectedOptionPrice.replace('price', ''));
+                        price_label_id = this.selectedOptionPrice.replace('price', '');
                     }
                 }
 
                 if (price_label_id) {
                     let first_list = this.form.item_unit_types[0];
                     if (first_list.prices && Array.isArray(first_list.prices)) {
-                        const foundPrice = first_list.prices.find(p => p.price_label_id === price_label_id);
-                        if (foundPrice && Number(foundPrice.price) > 0) {
+                        const foundPrice = first_list.prices.find(p => this.isFromInvoice
+                            ? String(p.price_label_id) === price_label_id
+                            : p.price_label_id === parseInt(price_label_id));
+                        if (foundPrice && (this.isFromInvoice ? exactValue(foundPrice, 'price').compare(0) > 0 : Number(foundPrice.price) > 0)) {
                             this.selectedPrice(first_list, foundPrice);
                         }
                     }
@@ -2101,8 +2175,6 @@ export default {
             }
 
             this.lots = this.form.item.lots;
-
-            this.form.has_igv = this.isExportation ? false : this.form.item.has_igv;
 
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
             const selectableAffectation = resolveSelectableAffectationType(
@@ -2183,21 +2255,47 @@ export default {
             }
         },
         // ######## INICIO CALCULOS EXACTOS SAB ########
+        restoreEditedPrice(saved = this.recordItem?.price_input || this.recordItem?.calculation_snapshot?.inputs?.price_input) {
+            this.editedOriginalPriceInput = null;
+            if (!saved) return;
+            const amount = exactAmount(saved.amount);
+            this.editedOriginalPriceInput = {...saved, amount:amount.fraction(), display:amount.decimal(),
+                catalog_currency_type_id:this.form.item.currency_type_id};
+            this.form.item.currency_type_id = saved.currency_type_id;
+            this.form.item.currency_type_symbol = saved.currency_type_id === 'VES' ? 'Bs.' : '$';
+            this.form.unit_price_value = amount.decimal();
+            this.form.has_igv = saved.includes_iva !== false;
+        },
+        currentPriceInputAmount() {
+            const original = this.editedOriginalPriceInput;
+            const displayed = String(this.form.unit_price_value || '0');
+            if (original && exactAmount(displayed).compare(original.display) === 0
+                && this.form.item.currency_type_id === original.currency_type_id
+                && (this.form.has_igv !== false) === (original.includes_iva !== false)) {
+                return original.amount;
+            }
+            return displayed;
+        },
         restoreEditedQuantity() {
             const row = this.recordItem;
             this.form.record_id = row.record_id || row.id || null;
+            this.form.source_sale_note_items = (row.source_sale_note_items || []).map(source => ({...source}));
             this.form.quantity = this.normalizeDecimal(row.quantity);
             this.form.calculation_snapshot = row.calculation_snapshot || null;
             this.form.quantity_input = row.quantity_input || row.calculation_snapshot?.inputs?.quantity_input || null;
             if (this.form.item.calculate_quantity) {
-                this.total_item = exactValue(row, 'quantity').times(this.form.unit_price_value || '0').decimal();
+                const price = this.isFromInvoice ? this.currentPriceInputAmount() : this.form.unit_price_value || '0';
+                this.total_item = exactValue(row, 'quantity').times(price).decimal();
             }
             this.calculateTotal();
         },
         calculateQuantity() {
-            if (this.form.item.calculate_quantity && exactAmount(this.form.unit_price_value || '0').compare(0) > 0) {
-                this.form.quantity_input = {amount: String(this.total_item || '0'), unit_price: String(this.form.unit_price_value)};
-                this.form.quantity = exactAmount(this.total_item || '0').dividedBy(this.form.unit_price_value).decimal();
+            if (this.form.item.calculate_quantity) {
+                const price = this.isFromInvoice ? this.currentPriceInputAmount() : String(this.form.unit_price_value || '0');
+                if (exactAmount(price).compare(0) > 0) {
+                    this.form.quantity_input = {amount: String(this.total_item || '0'), unit_price: price};
+                    this.form.quantity = exactAmount(this.total_item || '0').dividedBy(price).decimal();
+                }
             }
             this.calculateTotal();
         },
@@ -2212,7 +2310,8 @@ export default {
             const quantity = this.form.quantity_input
                 ? exactAmount(this.form.quantity_input.amount).dividedBy(this.form.quantity_input.unit_price)
                 : this.currentExactQuantity();
-            this.readonly_total = quantity.times(this.form.unit_price_value || '0').decimal();
+            const price = this.isFromInvoice ? this.currentPriceInputAmount() : this.form.unit_price_value || '0';
+            this.readonly_total = quantity.times(price).decimal();
         },
         // ######## FIN CALCULOS EXACTOS SAB ########
         cleanTotalItem() {
@@ -2220,22 +2319,21 @@ export default {
         },
         async validateCurrentStock() {
             this.loading_dialog = true;
-
+            const quantity = this.currentExactQuantity();
             const data = {
                 item_id: this.form.item_id,
-                quantity: this.form.quantity,
+                quantity: quantity.decimal(),
+                quantity_exact: quantity.fraction(),
                 warehouse_id: this.form.warehouse_id,
                 presentation: this.item_unit_type
             };
 
-            const response = await this.$http.post(
-                `/validate-current-item-stock`,
-                data
-            );
-
-            this.loading_dialog = false;
-
-            return response.data;
+            try {
+                const response = await this.$http.post('/validate-current-item-stock', data);
+                return response.data;
+            } finally {
+                this.loading_dialog = false;
+            }
         },
         applyValidateStock() {
             return (
@@ -2258,23 +2356,6 @@ export default {
                     "No puede agregar el producto, está restringido para venta."
                 );
 
-            if (this.applyValidateStock()) {
-                const validate_current_stock = await this.validateCurrentStock();
-                if (!validate_current_stock.success)
-                    return this.$message.error(validate_current_stock.message);
-            }
-
-            if (this.config.condition_sale_purchase_price_to_item) {
-                if (
-                    this.form.unit_price_value < this.form.item.purchase_unit_price
-                )
-                {
-                    return this.$message.error(
-                        "El Precio Unitario debe ser mayor o igual al costo de compra"
-                    );
-                }
-            }
-
             if (
                 !this.form.item.description ||
                 !this.form.item.description.trim().length
@@ -2282,14 +2363,23 @@ export default {
                 return this.$message.error("La descripción es requerida");
             }
 
-            if (parseFloat(this.form.unit_price_value) <= 0) {
+            const displayedPrice = String(this.form.unit_price_value);
+            const validPriceSyntax = /^\d+(?:\.\d{0,12})?$/.test(displayedPrice);
+            const priceInputAmount = validPriceSyntax ? this.currentPriceInputAmount() : null;
+            if (!validPriceSyntax || exactAmount(this.isFromInvoice ? priceInputAmount : displayedPrice).compare(0) <= 0) {
                 return this.$message.error("El Precio Unitario debe ser mayor a 0");
             }
 
             // if(this.form.quantity < this.getMinQuantity()){
             //     return this.$message.error(`La cantidad no puede ser inferior a ${this.getMinQuantity()}`);
             // }
-            this.validateQuantity();
+            if (this.validateQuantity() === false) return false;
+
+            if (this.applyValidateStock()) {
+                const validate_current_stock = await this.validateCurrentStock();
+                if (!validate_current_stock.success)
+                    return this.$message.error(validate_current_stock.message);
+            }
 
             if (this.form.item.lots_enabled) {
                 if (!this.form.IdLoteSelected)
@@ -2301,7 +2391,9 @@ export default {
 
             let affectation_igv_type_id = this.form.affectation_igv_type_id;
             // let unit_price = (this.form.has_igv) ? this.form.unit_price_value : this.form.unit_price_value * 1.18;
-            let unit_price = this.form.unit_price_value;
+            const originalPrice = this.editedOriginalPriceInput;
+            let exactUnitPrice = exactAmount(priceInputAmount);
+            let unit_price = exactUnitPrice.decimal();
             if (this.form.has_igv === false) {
                 if (
                     affectation_igv_type_id === "20" ||
@@ -2311,29 +2403,29 @@ export default {
                     // do nothing
                     // exonerado de igv
                 } else {
-                    unit_price =
-                        exactAmount(this.form.unit_price_value).times(exactAmount(1).plus(this.percentageIgv)).decimal();
+                    exactUnitPrice = exactUnitPrice.times(exactAmount(1).plus(this.percentageIgv));
+                    unit_price = exactUnitPrice.decimal();
                 }
             }
 
             //validar precio compra y venta
-            if (this.configuration) {
-                if (this.configuration.validate_purchase_sale_unit_price) {
-                    let val_purchase_unit_price = parseFloat(
-                        this.form.item.purchase_unit_price
-                    );
-
-                    if (val_purchase_unit_price > parseFloat(unit_price)) {
+            if (this.config.condition_sale_purchase_price_to_item || this.configuration?.validate_purchase_sale_unit_price) {
+                    let val_purchase_unit_price = exactValue(this.form.item,'purchase_unit_price');
+                    const costCurrency = this.catalogItemCurrencyTypeId || originalPrice?.catalog_currency_type_id || this.form.item.currency_type_id;
+                    if (costCurrency !== this.form.item.currency_type_id) {
+                        val_purchase_unit_price = costCurrency === 'VES' ? val_purchase_unit_price.dividedBy(this.exchangeRateSale)
+                            : val_purchase_unit_price.times(this.exchangeRateSale);
+                    }
+                    if (val_purchase_unit_price.compare(exactUnitPrice) > 0) {
                         return this.$message.error(
-                            `El precio de compra no puede ser superior al precio de venta (P. Compra: ${val_purchase_unit_price})`
+                            `El precio de compra no puede ser superior al precio de venta (P. Compra: ${val_purchase_unit_price.decimal()})`
                         );
                     }
-                }
             }
 
             this.form.input_unit_price_value = this.form.unit_price_value;
 
-            this.form.price_input = {amount: String(this.form.unit_price_value), currency_type_id: this.form.item.currency_type_id || this.currencyTypeIdActive, includes_iva: this.form.has_igv !== false};
+            this.form.price_input = {amount: priceInputAmount, currency_type_id: this.form.item.currency_type_id || this.currencyTypeIdActive, includes_iva: this.form.has_igv !== false};
             this.form.unit_price = unit_price;
             this.form.item.unit_price = unit_price;
             this.form.item.presentation = this.item_unit_type;
@@ -2366,26 +2458,31 @@ export default {
             const igvFactor = affectation_igv_type_id === '10' ? exactAmount(1).plus(this.percentageIgv) : exactAmount(1);
             const quantity = this.currentExactQuantity();
             const itemCurrency = this.form.item.currency_type_id || this.currencyTypeIdActive;
-            const conversion = itemCurrency === this.currencyTypeIdActive ? exactAmount(1)
-                : itemCurrency === 'VES' ? exactAmount(1).dividedBy(this.exchangeRateSale) : exactAmount(this.exchangeRateSale);
-            const gross = exactAmount(unit_price).times(quantity).times(conversion);
-            this.form.discounts.forEach(discount => {
+            const conversion = this.itemToDocumentConversion();
+            const gross = exactUnitPrice.times(quantity).times(conversion);
+            const preparedDiscounts = this.form.discounts.map(discount => {
                 const onBase = discount.discount_type?.base || discount.discount_type_id === '00';
                 const base = onBase ? gross.dividedBy(igvFactor) : gross;
+                const restored = discount._edit_fixed_gross;
+                const fixedGross = restored && exactAmount(discount.amount || '0').compare(restored.input) === 0
+                    ? exactAmount(restored.exact) : exactAmount(discount.amount || '0');
                 const amount = discount.is_amount
-                    ? exactAmount(discount.amount || '0').times(conversion).dividedBy(onBase ? igvFactor : 1)
+                    ? fixedGross.times(conversion).dividedBy(onBase ? igvFactor : 1)
                     : base.times(discount.percentage || '0').dividedBy(100);
-                discount.base = base.decimal();
-                discount.amount = amount.decimal();
-                discount.amount_exact = amount.fraction();
-                discount.amount_without_rounded = amount.decimal();
-                discount.factor = base.compare(0) > 0 ? amount.dividedBy(base).decimal() : '0';
-                discount.use_input_amount = true;
+                const prepared = {...discount, base: base.decimal(), amount: amount.decimal(), amount_exact: amount.fraction(),
+                    amount_without_rounded: amount.decimal(), factor: base.compare(0) > 0 ? amount.dividedBy(base).decimal() : '0', use_input_amount: true};
+                delete prepared._edit_fixed_gross;
+                return prepared;
             });
             // ######## FIN CALCULOS EXACTOS SAB ########
 
+            const catalogCurrency = this.catalogItemCurrencyTypeId || originalPrice?.catalog_currency_type_id || itemCurrency;
+            const catalogPrice = catalogCurrency === itemCurrency ? exactUnitPrice
+                : itemCurrency === 'VES' ? exactUnitPrice.dividedBy(this.exchangeRateSale) : exactUnitPrice.times(this.exchangeRateSale);
+            const calculationItem = {...this.form.item, currency_type_id:catalogCurrency,
+                currency_type_symbol:catalogCurrency === 'VES' ? 'Bs.' : '$', unit_price:catalogPrice.decimal()};
             this.row = calculateRowItem(
-                this.form,
+                {...this.form, item:calculationItem, discounts: preparedDiscounts},
                 this.currencyTypeIdActive,
                 this.exchangeRateSale,
                 this.percentageIgv,
@@ -2405,7 +2502,10 @@ export default {
             });
 
             if (this.form.item.series_enabled) {
-                if (select_lots.length != this.form.quantity)
+                const mismatchedSeries = this.isFromInvoice
+                    ? quantity.compare(select_lots.length) !== 0
+                    : select_lots.length != this.form.quantity;
+                if (mismatchedSeries)
                     return this.$message.error(
                         "La cantidad de series seleccionadas son diferentes a la cantidad a vender"
                     );
@@ -2447,13 +2547,22 @@ export default {
         validateTotalItem() {
             this.errors = {};
 
-            if (this.form.item.calculate_quantity) {
-                if (this.total_item < 0.01)
-                    this.$set(this.errors, "total_item", [
-                        "total venta item debe ser mayor a 0.01"
-                    ]);
+            if (!this.form.item.calculate_quantity) return this.errors;
+            let belowMinimum;
+            if (this.isFromInvoice || this.isOpenFromInvoice) {
+                try {
+                    belowMinimum = exactAmount(this.total_item || '0').compare('0.01') < 0;
+                } catch (_) {
+                    belowMinimum = true;
+                }
+            } else {
+                belowMinimum = this.total_item < 0.01;
             }
-
+            if (belowMinimum) {
+                this.$set(this.errors, "total_item", [
+                    "total venta item debe ser mayor a 0.01"
+                ]);
+            }
             return this.errors;
         },
         async reloadDataItems(item_id) {
@@ -2505,11 +2614,12 @@ export default {
         },
         isSelectedPrice(item_unit_type) {
             if (!_.isEmpty(this.item_unit_type)) {
-                return this.item_unit_type.id === item_unit_type.id;
+                return sameInvoiceRecordId(this.item_unit_type.id, item_unit_type.id);
             }
             return false;
         },
         selectedPrice(row, price = null) {
+            if (this.isFromInvoice) this.editedOriginalPriceInput = null;
             if (this.isSelectedPrice(row) && !price) {
                 this.form.item_unit_type_id = null;
                 this.item_unit_type = {};
@@ -2523,6 +2633,14 @@ export default {
                 if (price) {
                     value = price.price;
                     this.selected_price_id = price.id;
+                    if (this.isFromInvoice && price.calculation_snapshot?.values?.price) {
+                        this.restoreEditedPrice({
+                            amount: exactValue(price, 'price').fraction(),
+                            currency_type_id: this.form.item.currency_type_id || this.currencyTypeIdActive,
+                            includes_iva: this.form.has_igv !== false,
+                        });
+                        value = this.form.unit_price_value;
+                    }
                 } else {
                     switch (row.price_default) {
                         case 1:

@@ -82,9 +82,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="desc text-uppercase">
             <br>
             {{ ($establishment->address !== '-')? $establishment->address : '' }}
-            {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-            {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-            {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+            {{ (!empty($establishment->district->description))? ', '.$establishment->district->description : '' }}
+            {{ (!empty($establishment->province->description))? ', '.$establishment->province->description : '' }}
+            {{ (!empty($establishment->department->description))? '- '.$establishment->department->description : '' }}
         </td>
     </tr>
 
@@ -121,9 +121,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             Cliente: {{ $customer->name }} <br>
             {{ $customer->identity_document_type->description }}: {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }} <br>
             Dirección: {{ $customer->address }}
-            {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
-            {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
-            {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
+            {{ (!empty($customer->district->description))? ', '.$customer->district->description : '' }}
+            {{ (!empty($customer->province->description))? ', '.$customer->province->description : '' }}
+            {{ (!empty($customer->department->description))? '- '.$customer->department->description : '' }}
         </td>
     </tr>
 
@@ -237,7 +237,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="border-top-bottom desc text-right">TOTAL</td>
     </tr>
     @foreach($document->items as $row)
-        @php $visible_quantity = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::read($row, 'quantity')); @endphp
+        @php $visible_quantity = \App\Support\Exact\InvoicePdfSummary::quantity($row); @endphp
         @if(strlen($visible_quantity) > 7)
             <tr><td colspan="5" class="text-left desc">Cantidad: {{ $visible_quantity }}</td></tr>
         @endif
@@ -272,17 +272,17 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @endforeach
                 @endif
                 @if($row->discounts)
-                    @foreach($row->discounts as $dtos)
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
-                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
+                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos).'%' }} {{$dtos->description }}</small>
                         @endif
                     @endforeach
                 @endif
 
                 @if($row->charges)
-                    @foreach($row->charges as $charge)
-                        <br/><small>{{ $document->currency_type->symbol}} {{ $charge->amount}}
-                            ({{ $charge->factor * 100 }}%) {{$charge->description }}</small>
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'charges') as $charge)
+                        <br/><small>{{ $document->currency_type->symbol}} {{ \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::of($charge->amount_exact ?? $charge->amount_without_rounded ?? $charge->amount ?? 0)) }}
+                            ({{ \App\Support\Exact\PdfAmounts::adjustmentPercent($charge) }}%) {{$charge->description }}</small>
                     @endforeach
                 @endif
 
@@ -337,10 +337,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
 
 
+    @php
+        $invoiceDiscountWithIgv = \App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv');
+    @endphp
     @if($document->subtotal > 0)
         @php
-            $labelSubtotal = $document->total_discount_with_igv > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
-            $subtotal = $document->total_discount_with_igv > 0 ? \App\Support\Exact\PdfAmounts::read($document, 'subtotal')->plus(\App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::represent(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2))) : \App\Support\Exact\PdfAmounts::read($document, 'subtotal');
+            $labelSubtotal = $invoiceDiscountWithIgv->isPositive() ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
+            $subtotal = $invoiceDiscountWithIgv->isPositive() ? \App\Support\Exact\PdfAmounts::read($document, 'subtotal')->plus($invoiceDiscountWithIgv) : \App\Support\Exact\PdfAmounts::read($document, 'subtotal');
         @endphp
         <tr>
             <td colspan="3" class="desc-ticket text-uppercase">{{ $labelSubtotal }}:
@@ -350,24 +353,25 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </tr>
     @endif
 
-    @if($document->total_discount_with_igv > 0)
+    @if($invoiceDiscountWithIgv->isPositive())
         <tr>
             <td colspan="3"
                 class="desc-ticket text-uppercase">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}
                 :
                 {{ $document->currency_type->symbol }}</td>
             <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv'), 2) }}</td>
+                class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format($invoiceDiscountWithIgv, 2) }}</td>
         </tr>
     @endif
 
     @if($document->total_charge > 0)
         @if($document->charges)
             @php
-                $total_factor = 0;
-                foreach($document->charges as $charge) {
-                    $total_factor = ($total_factor + $charge->factor) * 100;
-                }
+                $total_factor = \App\Support\Exact\Decimal::of(0);
+            foreach (\App\Support\Exact\PdfAmounts::adjustments($document, 'charges') as $charge) {
+                $total_factor = $total_factor->plus(\App\Support\Exact\PdfAmounts::adjustmentPercentValue($charge));
+            }
+            $total_factor = \App\Support\Exact\Decimal::represent($total_factor);
             @endphp
             <tr>
                 <td colspan="3" class="desc-ticket text-uppercase">CARGOS ({{$total_factor}}%):

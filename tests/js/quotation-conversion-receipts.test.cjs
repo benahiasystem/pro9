@@ -323,3 +323,64 @@ test('quotation credit installments account for retention and applied receipts w
     assert.equal(first.amount,'20');assert.equal(second.amount,'30.00')
     ctx.document.total_pending_payment='0';calculate.call(ctx);assert.equal(second.amount,'0.00')
 })
+
+test('quotation conversion keeps retention and suggested installments exact for large amounts', () => {
+    const source = compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/quotations/partials/options.vue', 'utf8'))
+    const tree = parser.parse(source.script.content, {sourceType: 'module'})
+    const methods = tree.program.body.find(node => node.type === 'ExportDefaultDeclaration').declaration.properties.find(node => node.key.name === 'methods').value
+    const load = require('./helpers/load-module.cjs')
+    const path = require('node:path')
+    const helpers = {
+        ...load(path.resolve('resources/js/helpers/document-creation.js')),
+        ...load(path.resolve('resources/js/helpers/exchange-rate-math.js')),
+        _: require('lodash'),
+    }
+    const names = ['changeRetention', 'setTotalPendingAmountRetention', 'calculateAmountToPayments', 'calculateFee', 'getTotal']
+    const implementations = names.map(name => generate(methods.properties.find(node => node.key?.name === name)).code)
+    const context = vm.runInNewContext('({' + implementations.join(',') + '})', helpers)
+
+    for (const currency of (process.env.PRO9_TEST_INVOICES_VES_ONLY === '1' ? ['VES'] : ['VES', 'USD'])) {
+        const document = {
+            currency_type_id: currency,
+            payment_condition_id: '02',
+            has_retention: true,
+            total: '9007199254740993.01',
+            payments: [{payment: '0.25'}],
+            fee: [{amount: '0'}, {amount: '0'}],
+        }
+        const form = {...context, document, config: {igv_retention_percentage: '75'}}
+        form.changeRetention()
+        assert.equal(document.retention.amount, '6755399441055744.76')
+        assert.equal(document.total_pending_payment, '2251799813685248.25')
+        assert.equal(document.fee[0].amount, '1125899906842624.00')
+        assert.equal(document.fee[1].amount, '1125899906842624.00')
+        assert.equal(document.payments[0].payment, '0.25')
+
+        document.has_retention = false
+        form.changeRetention()
+        assert.equal(form.getTotal(), document.total)
+    }
+
+    const document = {
+        currency_type_id: 'VES', payment_condition_id: '03', has_retention: true,
+        total: '0.01', payments: [], fee: [{amount: '0'}],
+    }
+    const form = {...context, document, config: {igv_retention_percentage: '49.9999'}}
+    form.changeRetention()
+    assert.equal(document.retention.percentage, '0.50000')
+    assert.equal(document.retention.amount, '0.01')
+    assert.equal(document.total_pending_payment, '0')
+
+    document.payment_condition_id = '01'
+    form.setTotalPendingAmountRetention('0.01')
+    assert.equal(document.total_pending_payment, 0)
+
+    const messages = []
+    form.$message = {error: message => messages.push(message)}
+    form.config = {}
+    form.changeRetention()
+    assert.equal(document.has_retention, false)
+    assert.equal(Object.keys(document.retention).length, 0)
+    assert.equal(form.getTotal(), document.total)
+    assert.equal(messages.length, 1)
+})

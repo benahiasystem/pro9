@@ -17,6 +17,7 @@ class AddDataModuleForFinance extends Migration
         DB::table('modules')->insert([ 
             ['id'=> 12, 'value' => 'finance', 'description' => 'Finanzas']
         ]);
+        \App\Database\SequenceSynchronizer::sync(\Illuminate\Support\Facades\DB::connection());
     }
 
     /**

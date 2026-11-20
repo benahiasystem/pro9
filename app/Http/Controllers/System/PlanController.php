@@ -124,7 +124,10 @@ class PlanController extends Controller
         $plan->fill($request->all());
 
         if ($request->has('module_permissions')) {
-            $plan->module_permissions = $request->input('module_permissions');
+            $permissions = $request->input('module_permissions');
+            $plan->module_permissions = is_array($permissions)
+                ? array_intersect_key($permissions, array_flip(['business', 'modules', 'apps', 'levels']))
+                : null;
         }
 
         $plan->save();

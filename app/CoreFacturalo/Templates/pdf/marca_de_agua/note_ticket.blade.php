@@ -63,9 +63,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     <tr>
         <td class="text-center" style="text-transform: uppercase;">
             {{ ($establishment->address !== '-')? $establishment->address : '' }}
-            {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-            {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-            {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+            {{ (!empty($establishment->district->description))? ', '.$establishment->district->description : '' }}
+            {{ (!empty($establishment->province->description))? ', '.$establishment->province->description : '' }}
+            {{ (!empty($establishment->department->description))? '- '.$establishment->department->description : '' }}
         </td>
     </tr>
     <tr>
@@ -107,9 +107,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td>
                 <p class="desc">
                     {{ $customer->address }}
-                    {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
-                    {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
-                    {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
+                    {{ (!empty($customer->district->description))? ', '.$customer->district->description : '' }}
+                    {{ (!empty($customer->province->description))? ', '.$customer->province->description : '' }}
+                    {{ (!empty($customer->department->description))? '- '.$customer->department->description : '' }}
                 </p>
             </td>
         </tr>
@@ -175,11 +175,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <tr>
             <td class="text-center desc-9 align-top font-bold">{{ $row->item->internal_id }}</td>
             <td class="text-center desc-9 align-top">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
+                {{ \App\Support\Exact\PdfQuantities::line($row) }}
             </td>
             <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td>
             <td class="text-left desc-9 align-top">
@@ -191,9 +187,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @endforeach
                 @endif
                 @if($row->discounts)
-                    @foreach($row->discounts as $dtos)
+                    @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
-                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
+                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos).'%' }} {{$dtos->description }}</small>
                         @endif
                     @endforeach
                 @endif

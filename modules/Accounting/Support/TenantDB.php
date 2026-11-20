@@ -5,26 +5,22 @@ namespace Modules\Accounting\Support;
 use Illuminate\Support\Facades\DB;
 final class TenantDB
 {
-    use \Illuminate\Database\DetectsConcurrencyErrors;
     private static ?\WeakMap $consistent = null;
 
     /** Own the isolation of this transaction, without changing session defaults. */
     public static function transaction(callable $callback, int $attempts = 1): mixed
     {
         $connection = DB::connection('tenant');
+        $attempts = max(1, min(3, $attempts));
         if ($connection->transactionLevel() > 0) {
-            return $connection->transaction($callback, $attempts);
+            return $connection->transaction($callback, 1);
         }
         self::$consistent ??= new \WeakMap();
         $pdo = $connection->getPdo();
         for ($attempt = 1; ; ++$attempt) {
-            // MySQL consumes SET TRANSACTION at BEGIN. Reapply it for every
-            // deadlock retry, even when SAB's session default differs.
-            if ($connection->getDriverName() === 'mysql') {
-                $connection->statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
-            }
             try {
-                return $connection->transaction(function () use ($pdo, $callback) {
+                return $connection->transaction(function () use ($connection, $pdo, $callback) {
+                    $connection->statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
                     self::$consistent[$pdo] = true;
                     try {
                         return $callback();
@@ -33,7 +29,7 @@ final class TenantDB
                     }
                 });
             } catch (\Throwable $error) {
-                if ($attempt >= $attempts || !(new self())->causedByConcurrencyError($error)) {
+                if ($attempt >= $attempts || !\App\Database\SqlErrors::retryable($error)) {
                     throw $error;
                 }
             }
@@ -53,7 +49,7 @@ final class TenantDB
     public static function assertReadSnapshot(): void
     {
         $connection = DB::connection('tenant');
-        if ($connection->transactionLevel() < 1 || $connection->getDriverName() === 'mysql' && (self::$consistent === null || !isset(self::$consistent[$connection->getPdo()]))) {
+        if ($connection->transactionLevel() < 1 || self::$consistent === null || !isset(self::$consistent[$connection->getPdo()])) {
             throw new \LogicException('Inicia la lectura consistente del informe antes de una transacción ajena al módulo.');
         }
     }

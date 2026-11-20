@@ -147,7 +147,7 @@
                         </table>
                     </div>
                 </div>
-                <div class="col-md-12 text-center pt-2" v-if="showAddButton && (document.total_difference > 0)">
+                <div class="col-md-12 text-center pt-2" v-if="showAddButton && hasOutstandingBalance()">
                     <el-button :loading="loadingFetch" type="primary" icon="el-icon-plus" @click="clickAddRow">Nuevo</el-button>
                 </div>
             </div>
@@ -221,7 +221,8 @@
                 })
         },
         methods: {
-            // ######## INICIO CALCULOS EXACTOS SAB ########
+            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            hasOutstandingBalance() { return exactValue(this.document, 'total_difference').compare(0) > 0; },
             hasCashAdjustment(row) { return exactValue(row, 'cash_adjustment').compare(0) !== 0; },
             hasChange(row) { return exactValue(row, 'change').compare(0) !== 0; },
             cashAdjustmentText(row) {

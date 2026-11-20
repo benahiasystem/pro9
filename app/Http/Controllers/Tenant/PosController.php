@@ -28,6 +28,8 @@ use Modules\Finance\Traits\FinanceTrait;
 use App\Models\Tenant\Company;
 use Modules\BusinessTurn\Models\BusinessTurn;
 use App\Http\Resources\Tenant\PosCollection;
+use App\Support\Exact\Decimal as D;
+use App\Support\Exact\PosCatalogPrice;
 use App\Models\Tenant\Catalogs\{
     ChargeDiscountType
 };
@@ -107,11 +109,11 @@ class PosController extends Controller
 
             if($row->warehouse_prices->count() > 0)
             {
-                $sale_unit_price = $row->warehouse_prices->first()->price;
+                $sale_unit_price = D::readRequired($row->warehouse_prices->first(), 'price');
             }
             else
             {
-                $sale_unit_price = $row->sale_unit_price;
+                $sale_unit_price = D::readRequired($row, 'sale_unit_price');
             }
 
             return [
@@ -123,7 +125,8 @@ class PosController extends Controller
                 'currency_type_id' => $row->currency_type_id,
                 'internal_id' => $row->internal_id,
                 'currency_type_symbol' => $row->currency_type->symbol,
-                'sale_unit_price' => number_format($sale_unit_price, $configuration->decimal_quantity, ".", ""),
+                'sale_unit_price' => D::represent($sale_unit_price),
+                'calculation_snapshot' => PosCatalogPrice::values($row, $sale_unit_price)['calculation_snapshot'],
                 'purchase_unit_price' => $row->purchase_unit_price,
                 'unit_type_id' => $row->unit_type_id,
                 'aux_unit_type_id' => $row->unit_type_id,
@@ -134,8 +137,8 @@ class PosController extends Controller
                 'edit_unit_price' => false,
                 'has_igv' => (bool)$row->has_igv,
                 'aux_quantity' => 1,
-                'aux_sale_unit_price' => number_format($row->sale_unit_price, $configuration->decimal_quantity, ".", ""),
-                'edit_sale_unit_price' => number_format($row->sale_unit_price, $configuration->decimal_quantity, ".", ""),
+                'aux_sale_unit_price' => D::represent(D::readRequired($row, 'sale_unit_price')),
+                'edit_sale_unit_price' => D::represent(D::readRequired($row, 'sale_unit_price')),
                 'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $row->image) : asset("/logo/{$row->image}"),
                 'sets' => collect($row->sets)->transform(function ($r) {
                     return [
@@ -310,7 +313,7 @@ class PosController extends Controller
         return ['data' => $this->transformCustomers($customers)];
     }
 
-    public function table($table)
+    public function table($table, ?Request $request = null)
     {
         if ($table === 'customers') {
             return $this->transformCustomers(
@@ -321,9 +324,20 @@ class PosController extends Controller
         if ($table === 'items') {
 
             $configuration = Configuration::first();
-            $items = $this->catalogItems()->orderBy('description')->take(100)->get();
+            $query = $this->catalogItems()->orderBy('description')->take(100);
+            $warehouseId = null;
+            $request ??= app()->bound('request') ? request() : null;
+            if ($request?->query('document_type_id') === '01' && $configuration->active_warehouse_prices) {
+                $warehouseId = auth()->user()->establishment->warehouse?->id;
+                if ($warehouseId !== null) {
+                    $query->with(['billingWarehousePrices' => fn ($prices) => $prices->where('warehouse_id', $warehouseId)]);
+                }
+            }
+            $items = $query->get();
             $stock = PosCatalogStock::forItems($items);
-            $items->transform(function (Item $row) use ($configuration, $stock) {
+            $items->transform(function (Item $row) use ($configuration, $stock, $warehouseId) {
+                    $selected = $warehouseId === null ? null : Item::exactSaleUnitPriceByWarehouse($row, $warehouseId, true);
+                    $price = PosCatalogPrice::values($row, $selected);
                     $full_description = ($row->internal_id) ? $row->internal_id . ' - ' . $row->description : $row->description;
                     $currency = $row->currency_type;
                     if(empty($currency )){
@@ -338,7 +352,7 @@ class PosController extends Controller
                         'currency_type_id' => $row->currency_type_id,
                         'internal_id' => $row->internal_id,
                         'currency_type_symbol' => $currency->symbol,
-                        'sale_unit_price' => number_format($row->sale_unit_price, $configuration->decimal_quantity, ".", ""),
+                        ...$price,
                         'purchase_unit_price' => $row->purchase_unit_price,
                         'unit_type_id' => $row->unit_type_id,
                         'aux_unit_type_id' => $row->unit_type_id,
@@ -349,8 +363,8 @@ class PosController extends Controller
                         'is_set' => (bool)$row->is_set,
                         'edit_unit_price' => false,
                         'aux_quantity' => 1,
-                        'edit_sale_unit_price' => number_format($row->sale_unit_price, $configuration->decimal_quantity, ".", ""),
-                        'aux_sale_unit_price' => number_format($row->sale_unit_price, $configuration->decimal_quantity, ".", ""),
+                        'edit_sale_unit_price' => $price['sale_unit_price'],
+                        'aux_sale_unit_price' => $price['sale_unit_price'],
                         'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $row->image) : asset("/logo/{$row->image}"),
                         'warehouses' => collect($row->warehouses)->transform(function ($row) {
                             return [
@@ -395,8 +409,23 @@ class PosController extends Controller
         return $configuration;
     }
 
-    public function validate_stock($item_id, $quantity)
+    public function validate_stock($item_id, $quantity, Request $request)
     {
+        $quantity=D::of(D::input($quantity,'quantity'));
+        if ($request->has('quantity_exact')) {
+            try {
+                $fraction=json_decode($request->query('quantity_exact'),true,8,JSON_THROW_ON_ERROR);
+                foreach (['n','d'] as $part) {
+                    if (!is_string($fraction[$part] ?? null) || !preg_match('/^[0-9]{1,128}$/D',$fraction[$part])) throw new \InvalidArgumentException();
+                }
+                $exact=D::of($fraction);
+                if (!$quantity->isEqualTo(D::of(D::represent($exact)))) throw new \InvalidArgumentException();
+                $quantity=$exact;
+            } catch (\Throwable $exception) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['quantity'=>'La cantidad no coincide con su fracción exacta.']);
+            }
+        }
+        if ($quantity->isNegative()) throw \Illuminate\Validation\ValidationException::withMessages(['quantity'=>'La cantidad debe ser positiva.']);
 
         $inventory_configuration = InventoryConfiguration::firstOrFail();
         $warehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
@@ -404,13 +433,12 @@ class PosController extends Controller
         $item = Item::findOrFail($item_id);
 
         if ($item->is_set) {
-            $quantity = 1 * $quantity;
             $sets = $item->sets;
 
             foreach ($sets as $set) {
                 $individual_item = $set->individual_item;
-                $individual_quantity = $set->quantity * 1;
-                $total_item_quantity = $individual_quantity * $quantity;
+                $individual_quantity = D::readRequired($set,'quantity');
+                $total_item_quantity = $individual_quantity->multipliedBy($quantity);
                 $item_warehouse = ItemWarehouse::where([
                         ['item_id', $individual_item->id],
                         ['warehouse_id', $warehouse->id]]
@@ -421,11 +449,11 @@ class PosController extends Controller
                         'message' => "El producto seleccionado no está disponible en su almacén!"
                     ];
 
-                $stock = $item_warehouse->stock - $total_item_quantity;
+                $stock = D::readRequired($item_warehouse,'stock')->minus($total_item_quantity);
 
 
                 if ($item_warehouse->item->unit_type_id !== 'SERV') {
-                    if (($inventory_configuration->stock_control) && ($stock < 0)) {
+                    if (($inventory_configuration->stock_control) && $stock->isNegative()) {
                         return [
                             'success' => false,
                             'message' => "El producto {$item_warehouse->item->description} registrado en el conjunto {$item->description} no tiene suficiente stock!"
@@ -451,11 +479,11 @@ class PosController extends Controller
                     'message' => "El producto seleccionado no está disponible en su almacén!"
                 ];
 
-            $stock = $item_warehouse->stock - $quantity;
+            $stock = D::readRequired($item_warehouse,'stock')->minus($quantity);
 
 
             if ($item_warehouse->item->unit_type_id !== 'SERV') {
-                if (($inventory_configuration->stock_control) && ($stock < 0)) {
+                if (($inventory_configuration->stock_control) && $stock->isNegative()) {
                     return [
                         'success' => false,
                         'message' => "El producto {$item_warehouse->item->description} no tiene suficiente stock!"

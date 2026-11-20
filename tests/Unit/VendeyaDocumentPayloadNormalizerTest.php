@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Support\Exact\Decimal;
 use App\Support\Venezuela\VendeyaDocumentPayloadNormalizer;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -118,5 +119,26 @@ class VendeyaDocumentPayloadNormalizerTest extends TestCase
         self::assertStringContainsString("=== 'VENDEYA'", $source);
         self::assertStringContainsString('User::query()->whereKey($sellerId)->exists()', $source);
         self::assertStringContainsString('$inputs[\'codigo_vendedor\'] = auth()->id();', $source);
+    }
+
+    public function test_vendeya_invoice_sums_declared_and_computed_amounts_as_decimals(): void
+    {
+        config()->set('venezuela.tax.rate', '0.08');
+        $exempt = '9007199254740993.000000000001';
+        $payload = VendeyaDocumentPayloadNormalizer::normalize([
+            'source_module'=>'VENDEYA', 'codigo_tipo_documento'=>'01', 'codigo_tipo_moneda'=>'USD',
+            'items'=>[
+                ['cantidad'=>'1', 'precio_unitario'=>$exempt, 'total_item'=>$exempt, 'codigo_tipo_afectacion_igv'=>'20'],
+                ['cantidad'=>'0.1', 'precio_unitario'=>'0.2', 'codigo_tipo_afectacion_igv'=>'10'],
+            ],
+        ]);
+
+        self::assertSame($exempt, (string) $payload['items'][0]['total_item']);
+        self::assertSame('0.02', (string) $payload['items'][1]['total_item']);
+        self::assertSame(8.0, $payload['items'][1]['porcentaje_igv']);
+        $base = Decimal::of('0.02')->dividedBy('1.08');
+        self::assertSame(Decimal::represent($base), (string) $payload['totales']['total_operaciones_gravadas']);
+        self::assertSame(Decimal::represent(Decimal::of('0.02')->minus($base)), (string) $payload['totales']['total_igv']);
+        self::assertSame('9007199254740993.020000000001', (string) $payload['totales']['total_venta']);
     }
 }

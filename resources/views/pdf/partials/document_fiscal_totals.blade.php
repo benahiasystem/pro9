@@ -31,15 +31,16 @@
     @endforeach
     @php($islrPrevision = $document->relationLoaded('fiscal_data') ? optional($document->getRelation('fiscal_data'))->islr_retention_prevision : null)
     @if($islrPrevision)
-    <tr><td>Retención ISLR prevista (informativa)</td><td style="text-align:right">{{ \App\Support\Exact\Decimal::format($islrPrevision['amount'], 2) }}</td></tr>
+    <tr><td>Retención ISLR prevista (informativa)</td><td style="text-align:right">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($islrPrevision, 'amount'), 2) }}</td></tr>
     @endif
     @php($prevision = $document->relationLoaded('fiscal_data') ? optional($document->getRelation('fiscal_data'))->iva_retention_prevision : null)
     @if($prevision)
-    <tr><td>Retención IVA prevista (informativa)</td><td style="text-align:right">{{ \App\Support\Exact\Decimal::format($prevision['amount'], 2) }}</td></tr>
-    <tr><td>Saldo pendiente</td><td style="text-align:right">{{ \App\Support\Exact\Decimal::format($document->balance, 2) }}</td></tr>
+    <tr><td>Retención IVA prevista (informativa)</td><td style="text-align:right">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($prevision, 'amount'), 2) }}</td></tr>
+    <tr><td>Saldo pendiente</td><td style="text-align:right">{{ \App\Support\Exact\Decimal::format($document->exactBalance(), 2) }}</td></tr>
     @endif
-    @if($document->guarantee_amount > 0)
-    <tr><td>Fondo de garantía</td><td style="text-align:right">{{ \App\Support\Exact\Decimal::format($document->guarantee_amount, 2) }}</td></tr>
+    @php($guaranteeAmount = $document->exactGuaranteeAmount())
+    @if($guaranteeAmount->isPositive())
+    <tr><td>Fondo de garantía</td><td style="text-align:right">{{ \App\Support\Exact\Decimal::format($guaranteeAmount, 2) }}</td></tr>
     @endif
     @if($document->currency_type_id === 'USD' && $document->currency_totals)
     <tr><td>Tasa VES/USD ({{ $document->exchange_rate_source }}, {{ optional($document->exchange_rate_date)->format('d/m/Y') }})</td><td style="text-align:right">{{ str_replace('.', ',', \App\Services\ExchangeRates\ExchangeRateMath::rate($document->exchange_rate_sale)) }}</td></tr>

@@ -36,5 +36,22 @@ class ExactDateFormatProofTest extends TestCase
             ['$date?->format("Y-m-d");',null],
         ];
     }
+
+    public function test_resolved_children_are_available_when_a_parent_expression_is_visited(): void
+    {
+        require_once dirname(__DIR__,2).'/scripts/exact_guard_proof.php';
+        $parser=(new \PhpParser\ParserFactory())->createForNewestSupportedVersion();
+        $nodes=\exactAuditResolveNames($parser->parse('<?php use Carbon\\Carbon as Clock; use function count as nativeCount; Clock::parse($text)->format("Y-m-d"); nativeCount($rows) > 0;'));
+        $visitor=new class extends \PhpParser\NodeVisitorAbstract {
+            public array $proofs=[];
+            public function enterNode(\PhpParser\Node $node) {
+                if ($node instanceof \PhpParser\Node\Expr\MethodCall || $node instanceof \PhpParser\Node\Expr\BinaryOp) {
+                    $this->proofs[]=\exactAuditGuardProof($node);
+                }
+            }
+        };
+        $traverser=new \PhpParser\NodeTraverser();$traverser->addVisitor($visitor);$traverser->traverse($nodes);
+        self::assertSame(['known_date_format','native_counter_comparison'],$visitor->proofs);
+    }
 }
 // ######## FIN AUDITORIA CALCULOS EXACTOS SAB ########

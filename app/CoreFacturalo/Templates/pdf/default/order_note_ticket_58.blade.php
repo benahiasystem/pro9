@@ -99,15 +99,15 @@
         <td><p class="desc">{{ $customer->identity_document_type->description }}:</p></td>
         <td><p class="desc">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
     </tr>
-    @if ($customer->address !== '')
+    @if (($customer->address ?? '') !== '')
         <tr>
             <td class="align-top"><p class="desc">Dirección:</p></td>
             <td>
                 <p class="desc">
                     {{ $customer->address }}
-                    {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
-                    {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
-                    {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
+                    {{ (!empty($customer->district->description))? ', '.$customer->district->description : '' }}
+                    {{ (!empty($customer->province->description))? ', '.$customer->province->description : '' }}
+                    {{ (!empty($customer->department->description))? '- '.$customer->department->description : '' }}
                 </p>
             </td>
         </tr>

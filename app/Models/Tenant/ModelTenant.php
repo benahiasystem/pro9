@@ -26,6 +26,7 @@
     {
         use UsesTenantConnection;
         use \App\Support\Exact\HasExactValues;
+        use \App\Database\HasPostgresIdentity;
 
         // ######## INICIO CALCULOS EXACTOS SAB ########
         protected static function booted()
@@ -138,7 +139,14 @@
             foreach (['exchange_rate_sale', 'exchange_rate'] as $column) {
                 if (array_key_exists($column, $this->attributes) && ($this->getCasts()[$column] ?? '') === 'decimal:8') {
                     $value = $this->attributes[$column];
-                    if ($value !== null) $this->attributes[$column] = is_numeric($value) && $value == 0
+                    if ($value === null) continue;
+
+                    $isFiscalRate = $this instanceof Document || $this instanceof DocumentPayment;
+                    // Keep the legacy zero sentinel without rounding a nonzero fiscal rate to zero.
+                    $isZero = is_numeric($value) && ($isFiscalRate
+                        ? preg_match('/\A[+-]?(?:0+(?:\.0*)?|\.0+)(?:[eE][+-]?[0-9]+)?\z/', trim((string) $value)) === 1
+                        : $value == 0);
+                    $this->attributes[$column] = $isZero
                         ? '0.00000000' : \App\Services\ExchangeRates\ExchangeRateMath::rate($value, $column);
                 }
             }

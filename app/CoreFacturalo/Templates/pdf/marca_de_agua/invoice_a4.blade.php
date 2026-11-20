@@ -70,7 +70,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     } else {
         $cycle_items = 0;
     }
-    $total_weight = 0;
+    $total_weight = \App\Support\Exact\InvoicePdfSummary::netWeight($document->items);
 
     $logo = null;
 
@@ -154,9 +154,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     <h5>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
-                        {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-                        {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-                        {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+                        {{ (!empty($establishment->district->description))? ', '.$establishment->district->description : '' }}
+                        {{ (!empty($establishment->province->description))? ', '.$establishment->province->description : '' }}
+                        {{ (!empty($establishment->department->description))? '- '.$establishment->department->description : '' }}
                     </h6>
 
                     @isset($establishment->trade_address)
@@ -193,9 +193,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     <h5>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
-                        {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-                        {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-                        {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
+                        {{ (!empty($establishment->district->description))? ', '.$establishment->district->description : '' }}
+                        {{ (!empty($establishment->province->description))? ', '.$establishment->province->description : '' }}
+                        {{ (!empty($establishment->department->description))? '- '.$establishment->department->description : '' }}
                     </h6>
 
                     @isset($establishment->trade_address)
@@ -270,7 +270,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         $addressParts[] = $customer->department->description;
                     }
 
-                    $fullAddress = implode(', ', $addressParts);
+                    $fullAddress = implode(', ', array_filter($addressParts, static fn($part) => trim((string)$part) !== ''));
                 @endphp
 
                 @if ($fullAddress)
@@ -458,7 +458,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 $showSerieColumn = false;
                 $showLoteColumn = false;
                 foreach ($document->items as $row) {
-                    if ($row->item->lots) {
+                    if (!empty($row->item->lots)) {
                         $showSerieColumn = true;
                         break;
                     }
@@ -506,11 +506,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <tr>
                 <td class="p-1 text-center align-top desc cell-solid-rl">{{ $row->item->internal_id }}</td>
                 <td class="p-1 text-center align-top desc cell-solid-rl">
-                    @if(((int)$row->quantity != $row->quantity))
-                        {{ $row->quantity }}
-                    @else
-                        {{ number_format($row->quantity, 0) }}
-                    @endif
+                    {{ \App\Support\Exact\PdfQuantities::line($row) }}
                 </td>
                 <td class="p-1 text-center align-top desc cell-solid-rl" style="white-space:nowrap;">{{ $row->item->unit_type_id === 'UND' ? 'UNIDADES' : $row->item->unit_type_id }}</td>
                 <td class="p-1 text-left align-top desc text-upp cell-solid-rl">
@@ -525,17 +521,15 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @if($row->attributes)
                         @foreach($row->attributes as $attr)
                             @if($attr->attribute_type_id === '5032')
-                            @php
-                                $total_weight += $attr->value * $row->quantity;
-                            @endphp
+
                             @endif
                             <br/><span style="font-size: 9px">{!! $attr->description !!} : {{ $attr->value }}</span>
                         @endforeach
                     @endif
                     {{-- @if($row->discounts)
-                        @foreach($row->discounts as $dtos)
+                        @foreach(\App\Support\Exact\PdfAmounts::adjustments($row, 'discounts') as $dtos)
                             @if(!($dtos->from_global_distribution ?? false))
-                                <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                                <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : \App\Support\Exact\PdfAmounts::adjustmentPercent($dtos).'%' }} {{$dtos->description }}</span>
                             @endif
                         @endforeach
                     @endif --}}
@@ -571,7 +565,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
                 @php
                     $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
-                    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
+                    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getInvoiceLotDateOfDue($row->item->IdLoteSelected) : '';
                 @endphp
 
                 @if($showLoteColumn)
@@ -658,29 +652,15 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="{{ 6 + count($invoicePdf['igtf'] ?? []) }}">
                 @php
                     // Solo contar productos (no servicios) para total bultos
-                    $total_packages = 0;
-                    $has_product = false;
-                    foreach ($document->items as $itRow) {
-                        $itemType = $itRow->item->item_type_id ?? null;
-                        $unitType = $itRow->item->unit_type_id ?? null;
-                        // Considerar como producto si no es servicio ('02') y unidad no es 'SERV'
-                        if (!in_array($itemType, ['02']) && $unitType !== 'SERV') {
-                            $total_packages += $itRow->quantity;
-                            $has_product = true;
-                        }
-                    }
+                    $total_packages = \App\Support\Exact\InvoicePdfSummary::packages($document->items);
                 @endphp
-                @if($total_packages > 0 && $has_product)
+                @if($total_packages->isGreaterThan(0))
                     <strong>Total bultos:</strong>
-                    @if(((int)$total_packages != $total_packages))
-                        {{ $total_packages }}
-                    @else
-                        {{ number_format($total_packages, 0) }}
-                    @endif
+                    {{ \App\Support\Exact\InvoicePdfSummary::packageText($total_packages) }}
                     <br>
                 @endif
-                @if($total_weight > 0)
-                    <strong>Total Peso:</strong> {{ $total_weight }} KG
+                @if($total_weight->isGreaterThan(0))
+                    <strong>Total Peso:</strong> {{ \App\Support\Exact\Decimal::represent($total_weight) }} KG
                     <br>
                 @endif
                 @foreach($document->additional_information as $information)

@@ -39,7 +39,8 @@
 </template>
 
 <script>
-import {exactAmount} from '@helpers/exchange-rate-math'
+import {exactAmount, exactSum, exactValue} from '@helpers/exchange-rate-math'
+import {documentTotals} from '@helpers/exact-document'
 
 import { functions, fnRestrictSaleItemsCpe, operationsForDiscounts } from '@mixins/functions'
 import { sumAmountDiscountsNoBaseByItem } from '@helpers/functions'
@@ -77,14 +78,55 @@ export default {
         this.global_discount_types = this.globalDiscountTypes
         await this.getPercentageIgv()
         await this.setConfigGlobalDiscountType()
-        await this.setDataDiscounts()
+        if (this.form.document_type_id !== '01') await this.setDataDiscounts()
     },
     methods: 
     {
         clickRemoveItem(index) 
         {
+            if (this.form.document_type_id === '01') {
+                this.removeInvoiceItem(index)
+                return
+            }
             this.form.items.splice(index, 1)
             this.calculateTotal()
+        },
+        removeInvoiceItem(index) {
+            const items = this.form.items.filter((_, position) => position !== index)
+            const discounts = Object.values(this.form.discounts || {})
+            try {
+                const lines = items.map(row => ({...row, discounts: Object.values(row.discounts || {})}))
+                const raw = documentTotals(lines)
+                const adjusted = items.length ? discounts.map(discount => {
+                    const type = discount.discount_type_id
+                    if (!['02', '03'].includes(type)) return discount
+                    const taxable = type === '02'
+                    const distributed = exactSum(lines.filter(row => !taxable || row.affectation_igv_type_id === '10')
+                        .flatMap(row => (row.discounts || []).filter(entry => entry.from_global_distribution &&
+                            entry.discount_type_id === (taxable ? '00' : '01'))
+                            .map(entry => entry.amount_exact ?? entry.amount)))
+                    const base = exactValue(raw, taxable ? 'total_taxed' : 'total').plus(distributed)
+                    const percentageBased = discount.is_amount === false || discount.is_amount === 0
+                    const amount = percentageBased
+                        ? base.times(discount.percentage ?? exactAmount(discount.factor ?? 0).times(100)).dividedBy(100)
+                        : exactAmount(discount.amount_exact ?? discount.amount ?? 0)
+                    if (amount.compare(0) < 0 || amount.compare(base) > 0) throw new Error('El descuento supera su base o es negativo.')
+                    return {...discount, amount: amount.decimal(), amount_exact: amount.fraction(),
+                        base: base.decimal(),
+                        factor: percentageBased ? discount.factor : (base.compare(0) > 0 ? amount.dividedBy(base).decimal() : '0')}
+                }) : discounts
+                const totals = items.length
+                    ? documentTotals(lines, adjusted, Object.values(this.form.charges || {}),
+                        exactValue(this.form, 'total_prepayment').fraction(), this.form.prepayments, {splitDistributedTaxBases: true})
+                    : raw
+                if (exactValue(totals, 'total').compare(0) < 0) throw new Error('El descuento o anticipo supera el saldo de la factura.')
+                for (const [key, value] of Object.entries({...totals, items, discounts: adjusted})) {
+                    this.$set(this.form, key, value)
+                }
+                this.$emit('items-changed')
+            } catch (error) {
+                this.$message.error(error.message)
+            }
         },
         async calculateTotal() 
         {

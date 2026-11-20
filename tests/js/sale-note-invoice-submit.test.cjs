@@ -13,7 +13,7 @@ function loadScript(source, resolveImport = require) {
         configFile: false, babelrc: false,
         plugins: ['@babel/plugin-transform-modules-commonjs'],
     }).code;
-    vm.runInNewContext(code, {exports, require: resolveImport, $: Object.assign(() => [], {each() {}})});
+    vm.runInNewContext(code, {exports, require: resolveImport, _: require('lodash'), $: Object.assign(() => [], {each() {}})});
     return exports;
 }
 
@@ -47,6 +47,7 @@ function conversion(currency, rate, fetchedRate) {
         fnValidateRestrictSaleItemsCpe: () => ({success: true}),
         ensureFiscalPaymentsReady: async () => true,
         $message: {error: message => errors.push(message)},
+        $set: (object, key, value) => { object[key] = value; },
         $eventHub: {$emit() {}}, $emit() {},
         $http: {
             get: async url => {
@@ -87,6 +88,41 @@ test('conversion obtains a missing exchange rate and sends it without replacing 
     assert.deepEqual(errors, []);
     assert.equal(requests[0].url, '/services/exchange/2026-10-01');
     assert.equal(requests.find(request => request.method === 'post').document.exchange_rate_sale, '42.50000000');
+});
+
+test('conversion obtains a missing exchange rate for a VES invoice', async () => {
+    const {ctx, requests, errors} = conversion('VES', 0, '42.50');
+    await ctx.submit();
+    assert.deepEqual(errors, []);
+    assert.equal(requests[0].url, '/services/exchange/2026-10-01');
+    const post = requests.find(request => request.method === 'post');
+    assert.equal(post.url, '/documents');
+    assert.equal(post.document.currency_type_id, 'VES');
+    assert.equal(post.document.exchange_rate_sale, '42.50000000');
+});
+
+test('sale note conversion submits the entire lot quantity with the original identifier', async () => {
+    const {ctx, requests, errors} = conversion('VES', 40);
+    const quantity = '9007199254740993.000000000001';
+    const id = '9007199254740995';
+    ctx.document.items = [{quantity, item: {lots_enabled: true, lots_group: [
+        {id, code: 'LOTE-ALFA', compromise_quantity: quantity},
+    ]}}];
+    await ctx.submit();
+    assert.deepEqual(errors, []);
+    const [item] = requests.find(request => request.method === 'post').document.items;
+    assert.equal(item.IdLoteSelected[0].compromise_quantity, quantity);
+    assert.equal(item.IdLoteSelected[0].id, id);
+    assert.equal(item.item.IdLoteSelected, item.IdLoteSelected);
+});
+
+test('sale note conversion rejects lot quantities that only match after rounding', async () => {
+    const {ctx, requests, errors} = conversion('VES', 40);
+    ctx.document.items = [{quantity: '1.000000000001', item: {lots_enabled: true, description: 'Producto de prueba'},
+        IdLoteSelected: [{id: 1, compromise_quantity: '1'}]}];
+    await ctx.submit();
+    assert.equal(requests.length, 0);
+    assert.match(errors[0], /requiere asignación de lotes válida/);
 });
 
 test('invalid exchange rate blocks conversion before saving or marking the note converted', async () => {
@@ -196,5 +232,45 @@ test('sale note conversion sends credit receipts and keeps installments out of a
     assert.equal(posts[1].document.fee.length, 0);
     assert.equal(posts[1].document.payments[0].payment, '25');
     assert.equal(ctx.document.fee[0].amount, '75');
+});
+
+test('sale note conversion sends each scheduled installment without losing its cents', async () => {
+    const {ctx, requests, errors} = conversion('VES', 40);
+    ctx.form.sale_note = {fee: [
+        {id: 7, date: '2026-11-01', currency_type_id: 'VES', amount: '100000000000000.01'},
+        {id: 8, date: '2026-12-01', currency_type_id: 'VES', amount: '100000000000000.02'},
+    ]};
+    ctx.document.payment_condition_id = '02';
+    ctx.changePaymentCondition();
+    await ctx.submit();
+
+    assert.deepEqual(errors, []);
+    const post = requests.find(request => request.method === 'post');
+    assert.ok(post);
+    assert.deepEqual(Array.from(post.document.fee, row => [row.id, row.date, row.amount]), [
+        [null, '2026-11-01', '100000000000000.01'],
+        [null, '2026-12-01', '100000000000000.02'],
+    ]);
+});
+
+test('cash conversion keeps the dated credit draft without validating its unused installments', async () => {
+    for (const date of ['2026-09-30', '2026-10-01']) {
+        const {ctx, requests, errors} = conversion('VES', 40);
+        const installment = {date, amount: '75.01', currency_type_id: 'VES'};
+        ctx.document.fee = [installment];
+        ctx.document.payment_condition_id = '02';
+        await ctx.submit();
+        assert.equal(requests.filter(request => request.method === 'post').length, 0);
+        assert.match(errors.pop(), /Verificar fechas de pago/);
+
+        ctx.document.payment_condition_id = '01';
+        ctx.changePaymentCondition();
+        await ctx.submit();
+        const posts = requests.filter(request => request.method === 'post');
+        assert.equal(posts.length, 1);
+        assert.equal(posts[0].document.fee.length, 0);
+        assert.deepEqual(ctx.document.fee, [installment]);
+        assert.deepEqual(errors, []);
+    }
 });
 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########

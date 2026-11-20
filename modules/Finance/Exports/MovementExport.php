@@ -11,6 +11,12 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 
 class MovementExport implements FromView, ShouldAutoSize, WithTitle, \Maatwebsite\Excel\Concerns\WithEvents
 {
+    // Explicit properties preserve the public export contract on PHP 8.2.
+    public $company;
+    public $establishment;
+    public $newFormat;
+    public $records;
+
     use Exportable;
 
     public function title(): string

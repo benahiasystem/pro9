@@ -3,6 +3,7 @@
     namespace Modules\Production\Http\Controllers;
 
     use App\Http\Requests\Tenant\ItemRequest;
+    use App\Http\Resources\Tenant\ItemCollection;
     use App\Imports\ItemsImport;
     use App\Models\Tenant\Catalogs\AffectationIgvType;
     use App\Models\Tenant\Catalogs\AttributeType;
@@ -174,7 +175,7 @@
 
             } catch (Exception $e) {
 
-                return ($e->getCode() == '23000') ? ['success' => false,'message' => 'El producto compuesto esta siendo usado por otros registros, no puede eliminar'] : ['success' => false,'message' => 'Error inesperado, no se pudo eliminar el producto compuesto'];
+                return (\App\Database\SqlErrors::reference($e)) ? ['success' => false,'message' => 'El producto compuesto esta siendo usado por otros registros, no puede eliminar'] : ['success' => false,'message' => 'Error inesperado, no se pudo eliminar el producto compuesto'];
 
             }
 

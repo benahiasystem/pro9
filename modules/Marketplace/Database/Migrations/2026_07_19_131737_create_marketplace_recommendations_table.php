@@ -15,7 +15,7 @@ return new class extends Migration
         // responder «¿ya recomendé esto?» en cada carga de la pantalla. Sin esa
         // respuesta el pulgar no puede reflejar la realidad, y una interfaz que
         // finge que el clic contó es peor que no tener la función.
-        Schema::connection('system')->create('marketplace_recommendations', function (Blueprint $table) {
+        Schema::create('marketplace_recommendations', function (Blueprint $table) {
             $table->id();
 
             $table->unsignedBigInteger('store_id')->index();
@@ -54,6 +54,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::connection('system')->dropIfExists('marketplace_recommendations');
+        Schema::dropIfExists('marketplace_recommendations');
     }
 };

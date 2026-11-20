@@ -26,6 +26,30 @@ vm.runInNewContext(code, {exports: exportsObject, _: {round:(value,places=0)=>Ma
 }})
 const component = exportsObject.default
 
+test('only the invoice in the delivery-order dialog uses the original price and quantity', () => {
+    const math = require('./helpers/load-module.cjs')(path.resolve('resources/js/helpers/exchange-rate-math.js'));
+    const price = {n: '1', d: '7'};
+    const quantity = {n: '1', d: '3'};
+    const item = {
+        id: '9007199254740993', sale_unit_price: '0.1429', sale_unit_price_exact: price,
+        sale_affectation_igv_type_id: '10', currency_type_id: 'VES', has_igv: true,
+    };
+    const lines = [
+        {item_id: '9007199254740992', quantity: '9'},
+        {item_id: item.id, quantity: '0.333333333333', calculation_snapshot: math.exactSnapshot({quantity})},
+    ];
+    const context = {document: {document_type_id: '01'}, currencyTypeIdActive: 'VES', exchangeRateSale: '1', percentage_igv: '0.16'};
+    const invoice = component.methods.onGetItems.call(context, item, lines);
+    assert.equal(invoice.item_id, item.id);
+    assert.equal(math.exactValue(invoice, 'quantity').compare(quantity), 0);
+    assert.equal(math.exactValue(invoice, 'unit_price').compare(price), 0);
+    assert.equal(math.exactValue(invoice, 'total').compare({n: '1', d: '21'}), 0);
+    context.document.document_type_id = '80';
+    const note = component.methods.onGetItems.call(context, item, lines);
+    assert.equal(math.exactValue(note, 'quantity').compare('0.333333333333'), 0);
+    assert.equal(note.unit_price, '0.1429');
+});
+
 test('delivery order conversion exposes the configured receipt currency and fiscal fields', () => {
     assert.deepEqual(compiler.compile(parsed.template.content).errors, [])
     assert.match(parsed.template.content, /<igtf-payment-fields[^>]*:payment-methods="payment_method_types"/s)
@@ -100,18 +124,20 @@ test('delivery order defaults to a currently classified receipt method', async (
 
 test('delivery order converts item prices using the document rate, not a default rate', async () => {
     const observed=[]
-    const ctx={resource:'dispatches',recordId:1,document:{date_of_issue:'2026-11-02',currency_type_id:'VES',payments:[]},
-        form:{},exchangeRateSale:1,percentage_igv:'0.16',
+    const ctx={resource:'dispatches',recordId:1,document:{date_of_issue:'2026-11-02',document_type_id:'01',currency_type_id:'VES',payments:[]},
+        form:{},currencyTypeIdActive:'VES',exchangeRateSale:1,percentage_igv:'0.16',
         $http:{get:async()=>({data:{document_types_invoice:[],series:[],payment_destinations:[],payment_method_types:[],
             affectation_igv_types:[{id:'10'}],payment_conditions:[],dispatch:{id:1,establishment_id:1,date_of_issue:'2026-10-01',series:'T',number:1,
                 items:[{item_id:1,quantity:'0.1'},{item_id:1,quantity:'0.2'}]},items:[{id:1,currency_type_id:'USD',sale_unit_price:'10',has_igv:true}]}})},
         getPercentageIgv:async()=>{},getCustomer:async()=>{},validateIdentityDocumentType:async()=>{},
-        searchExchangeRateByDate:async()=> '40.00000000',onGetItems(item){observed.push(this.exchangeRateSale);return item},
+        searchExchangeRateByDate:async()=> '40.00000000',
+        onGetItems(item,lines){observed.push(this.exchangeRateSale);return component.methods.onGetItems.call(this,item,lines)},
         onCalculateTotals:async()=>{},clickAddPayment:async()=>{}}
     await component.methods.create.call(ctx)
     assert.deepEqual(observed,['40.00000000'])
     assert.equal(ctx.document.exchange_rate_sale,'40.00000000')
     assert.equal(ctx.items[0].quantity,'0.3')
+    assert.equal(ctx.items[0].unit_price,'400')
 })
 
 test('delivery order keeps source price exact when IVA is added and currency is converted',()=>{
@@ -200,3 +226,55 @@ test('delivery order sends credit receipts and omits installments only for cash'
     assert.equal(document.fee[0],fee)
     assert.deepEqual(messages,['Conservar borrador','Conservar borrador'])
 })
+
+test('delivery order calculates invoice retention without losing cents or mutating the source', () => {
+    const form = {dispatch: {id: 1}};
+    const document = {
+        document_type_id: '01', total: '9007199254740993.01', has_retention: true,
+        payment_condition_id: '02', payments: [], fee: [],
+    };
+    const ctx = {form, document, configuration: {igv_retention_percentage: '75'}};
+    for (const name of ['setTotalPendingAmountRetention', 'calculateAmountToPayments', 'calculatePayments', 'calculateFee']) {
+        ctx[name] = component.methods[name].bind(ctx);
+    }
+    component.methods.changeRetention.call(ctx);
+    assert.equal(document.retention.base, '9007199254740993.01');
+    assert.equal(String(document.retention.amount), '6755399441055744.76');
+    assert.equal(document.retention.percentage, '0.75000');
+    assert.equal(document.total_pending_payment, '2251799813685248.25');
+    assert.deepEqual(form, {dispatch: {id: 1}});
+
+    document.has_retention = false;
+    component.methods.changeRetention.call(ctx);
+    assert.equal(document.total_pending_payment, 0);
+    assert.equal(Object.keys(document.retention).length, 0);
+});
+
+test('delivery order refreshes the invoice retention when the amount or payment condition changes', () => {
+    const fee = {amount: '80.00'};
+    const document = {
+        document_type_id: '01', total: '100', has_retention: true,
+        payment_condition_id: '02', payments: [{payment: '100'}], fee: [fee],
+        items: [], discounts: [], charges: [],
+    };
+    const ctx = {document, configuration: {igv_retention_percentage: '75'}};
+    for (const name of ['changeRetention', 'setTotalPendingAmountRetention', 'calculateAmountToPayments', 'calculatePayments', 'calculateFee']) {
+        ctx[name] = component.methods[name].bind(ctx);
+    }
+    ctx.changeRetention();
+    assert.equal(document.total_pending_payment, '25');
+
+    document.payment_condition_id = '01';
+    component.methods.changePaymentCondition.call(ctx);
+    assert.equal(document.total_pending_payment, 0);
+
+    document.payment_condition_id = '02';
+    component.methods.changePaymentCondition.call(ctx);
+    assert.equal(document.total_pending_payment, '25');
+
+    component.methods.onCalculateTotals.call(ctx);
+    assert.equal(document.retention.base, document.total);
+    assert.equal(document.retention.amount, '0.00');
+    assert.equal(document.total_pending_payment, '0');
+    assert.equal(fee.amount, '80.00');
+});

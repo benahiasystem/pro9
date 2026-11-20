@@ -2,6 +2,7 @@
 
 namespace App\Services\Fiscal;
 
+use App\Database\IntegerTransport;
 use App\Support\Exact\Decimal as D;
 use Modules\Inventory\Models\{InventoryConfiguration, ItemWarehouse};
 use Modules\Item\Models\ItemLot;
@@ -17,8 +18,8 @@ final class OrderSerialInventory
         foreach ($item->lots ?? [] as $serial) {
             $serial=(array)$serial;
             if (!filter_var($serial['has_sale'] ?? false,FILTER_VALIDATE_BOOLEAN)) continue;
-            $id=(int)($serial['id'] ?? 0);
-            if ($id<=0 || isset($selected[$id])) FiscalAmounts::error('items','Los seriales deben ser válidos y no pueden repetirse.');
+            $id=IntegerTransport::positiveKey($serial['id'] ?? null);
+            if ($id===null || isset($selected[$id])) FiscalAmounts::error('items','Los seriales deben ser válidos y no pueden repetirse.');
             $selected[$id]=true;
         }
         if (!$selected) return null;

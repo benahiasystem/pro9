@@ -16,7 +16,7 @@ return new class extends Migration
      */
     public function up()
     {
-        DB::connection('system')->table('marketplace_settings')->updateOrInsert(
+        DB::connection()->table('marketplace_settings')->updateOrInsert(
             ['key' => 'currency_symbol'],
             ['value' => 'Bs.', 'type' => 'string']
         );
@@ -24,7 +24,7 @@ return new class extends Migration
 
     public function down()
     {
-        DB::connection('system')->table('marketplace_settings')
+        DB::connection()->table('marketplace_settings')
             ->where('key', 'currency_symbol')
             ->delete();
     }

@@ -2,6 +2,7 @@
 
 namespace Modules\MobileApp\Http\Requests\Api;
 
+use App\Rules\PositiveBigint;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,7 +23,7 @@ class ReceivedPaymentClaimRequest extends FormRequest
     public function rules()
     {
         return [
-            'document_id'            => ['required', 'integer', 'exists:tenant.documents,id'],
+            'document_id'            => ['bail', 'required', new PositiveBigint(), 'exists:tenant.documents,id'],
             'payment_method_type_id' => ['required', Rule::exists('tenant.payment_method_types', 'id')->where('is_active', 1)],
             'payment_destination_id' => ['nullable'],
             'currency_type_id' => ['sometimes', Rule::in(['VES', 'USD'])],

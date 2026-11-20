@@ -1,55 +1,52 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `promotions` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `image` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
- * - `item_id` int(10) unsigned DEFAULT NULL
- * - `category_id` int(10) unsigned DEFAULT NULL
- * - `custom_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `spot_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL
- * - `status` tinyint(1) NOT NULL DEFAULT '1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `apply_restaurant` tinyint(1) DEFAULT '0'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - name: varchar(255)
+ * - description: varchar(255)
+ * - type: varchar(255)
+ * - image: varchar(255)
+ * - item_id: bigint
+ * - category_id: bigint
+ * - custom_link: varchar(255)
+ * - spot_url: varchar(255)
+ * - status: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - apply_restaurant: boolean
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `promotions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `type` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `image` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `item_id` int(10) unsigned DEFAULT NULL,
-  `category_id` int(10) unsigned DEFAULT NULL,
-  `custom_link` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `spot_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `status` tinyint(1) NOT NULL DEFAULT '1',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `apply_restaurant` tinyint(1) DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `promotions_item_id_foreign` (`item_id`),
-  KEY `promotions_category_id_foreign` (`category_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('promotions', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('image', 255)->collation('pro9_ci_ai');
+            $table->bigInteger('item_id')->nullable();
+            $table->bigInteger('category_id')->nullable();
+            $table->string('custom_link', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('spot_url', 255)->collation('pro9_ci_ai')->nullable();
+            $table->boolean('status')->default(true);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->boolean('apply_restaurant')->nullable()->default(false);
+            $table->index(['item_id'], 'promotions_item_id_foreign');
+            $table->index(['category_id'], 'promotions_category_id_foreign');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `promotions`');
+        Schema::dropIfExists('promotions');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

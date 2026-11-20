@@ -1,46 +1,52 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
-// ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
-/**
- * document_fiscal_data: esquema inicial para instalaciones nuevas.
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `document_id` int(10) unsigned NOT NULL
- * - `provider_type_id` tinyint unsigned DEFAULT NULL
- * - `transaction_type_id` varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '01'
- * - `special_tax_regime_id` tinyint unsigned DEFAULT NULL
- * - `catalog_snapshot` json NOT NULL
- * - `third_party` json DEFAULT NULL
- * - `third_party_person_id` int(10) unsigned DEFAULT NULL, FK persons with restricted deletion
- * - `iva_retention_prevision` json DEFAULT NULL (informational, no settlement)
- * - `islr_retention_prevision` json DEFAULT NULL (declared concept/base/percentage/subtrahend)
- * - `conditional_data` json DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - document_id: bigint
+ * - provider_type_id: smallint
+ * - transaction_type_id: varchar(2)
+ * - special_tax_regime_id: smallint
+ * - catalog_snapshot: json
+ * - third_party: json
+ * - third_party_person_id: bigint
+ * - conditional_data: json
+ * - iva_retention_prevision: json
+ * - islr_retention_prevision: json
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
-return new class extends Migration {
-    public function up(): void {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `document_fiscal_data` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `document_id` int(10) unsigned NOT NULL,
-  `provider_type_id` tinyint unsigned DEFAULT NULL,
-  `transaction_type_id` varchar(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '01',
-  `special_tax_regime_id` tinyint unsigned DEFAULT NULL,
-  `catalog_snapshot` json NOT NULL,
-  `third_party` json DEFAULT NULL,
-  `third_party_person_id` int(10) unsigned DEFAULT NULL,
-  `conditional_data` json DEFAULT NULL,
-  `iva_retention_prevision` json DEFAULT NULL,
-  `islr_retention_prevision` json DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `document_fiscal_data_document_unique` (`document_id`),
-  KEY `document_fiscal_data_third_party_person_id_foreign` (`third_party_person_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('document_fiscal_data', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('document_id');
+            $table->smallInteger('provider_type_id')->nullable();
+            $table->string('transaction_type_id', 2)->collation('pro9_ci_ai')->default('01');
+            $table->smallInteger('special_tax_regime_id')->nullable();
+            $table->json('catalog_snapshot');
+            $table->json('third_party')->nullable();
+            $table->bigInteger('third_party_person_id')->nullable();
+            $table->json('conditional_data')->nullable();
+            $table->json('iva_retention_prevision')->nullable();
+            $table->json('islr_retention_prevision')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->unique(['document_id'], 'document_fiscal_data_document_unique');
+            $table->index(['third_party_person_id'], 'document_fiscal_data_third_party_person_id_foreign');
+        });
     }
-    public function down(): void { DB::unprepared('DROP TABLE IF EXISTS `document_fiscal_data`'); }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('document_fiscal_data');
+    }
 };
-// ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

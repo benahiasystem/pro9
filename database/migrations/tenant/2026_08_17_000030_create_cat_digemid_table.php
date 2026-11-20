@@ -1,63 +1,63 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `cat_digemid` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `item_id` int(10) unsigned NOT NULL COMMENT 'Id de la tabla de item'
- * - `cod_digemid` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Codigo digmid'
- * - `nom_prod` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Nombre segun digemid'
- * - `concent` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Dosificacion segun digemid'
- * - `nom_form_farm` longtext COLLATE utf8mb4_unicode_ci
- * - `nom_form_farm_simplif` longtext COLLATE utf8mb4_unicode_ci
- * - `presentac` longtext COLLATE utf8mb4_unicode_ci
- * - `fracciones` longtext COLLATE utf8mb4_unicode_ci
- * - `fec_vcto_reg_sanitario` longtext COLLATE utf8mb4_unicode_ci
- * - `num_reg_san` longtext COLLATE utf8mb4_unicode_ci
- * - `nom_titular` longtext COLLATE utf8mb4_unicode_ci
- * - `prices` longtext COLLATE utf8mb4_unicode_ci
- * - `max_prices` int(10) unsigned DEFAULT '0'
- * - `active` tinyint(3) unsigned NOT NULL DEFAULT '0'
- * - `last_update` timestamp NULL DEFAULT NULL
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - item_id: bigint
+ * - cod_digemid: text
+ * - nom_prod: text
+ * - concent: text
+ * - nom_form_farm: text
+ * - nom_form_farm_simplif: text
+ * - presentac: text
+ * - fracciones: text
+ * - fec_vcto_reg_sanitario: text
+ * - num_reg_san: text
+ * - nom_titular: text
+ * - prices: text
+ * - max_prices: bigint
+ * - active: smallint
+ * - last_update: timestamp
+ * - created_at: timestamp
+ * - updated_at: timestamp
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `cat_digemid` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `item_id` int(10) unsigned NOT NULL COMMENT 'Id de la tabla de item',
-  `cod_digemid` longtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Codigo digmid',
-  `nom_prod` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Nombre segun digemid',
-  `concent` longtext COLLATE utf8mb4_unicode_ci COMMENT 'Dosificacion segun digemid',
-  `nom_form_farm` longtext COLLATE utf8mb4_unicode_ci,
-  `nom_form_farm_simplif` longtext COLLATE utf8mb4_unicode_ci,
-  `presentac` longtext COLLATE utf8mb4_unicode_ci,
-  `fracciones` longtext COLLATE utf8mb4_unicode_ci,
-  `fec_vcto_reg_sanitario` longtext COLLATE utf8mb4_unicode_ci,
-  `num_reg_san` longtext COLLATE utf8mb4_unicode_ci,
-  `nom_titular` longtext COLLATE utf8mb4_unicode_ci,
-  `prices` longtext COLLATE utf8mb4_unicode_ci,
-  `max_prices` int(10) unsigned DEFAULT '0',
-  `active` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `last_update` timestamp NULL DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('cat_digemid', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('item_id')->comment('Id de la tabla de item');
+            $table->text('cod_digemid')->collation('pro9_ci_ai')->comment('Codigo digmid');
+            $table->text('nom_prod')->collation('pro9_ci_ai')->nullable()->comment('Nombre segun digemid');
+            $table->text('concent')->collation('pro9_ci_ai')->nullable()->comment('Dosificacion segun digemid');
+            $table->text('nom_form_farm')->collation('pro9_ci_ai')->nullable();
+            $table->text('nom_form_farm_simplif')->collation('pro9_ci_ai')->nullable();
+            $table->text('presentac')->collation('pro9_ci_ai')->nullable();
+            $table->text('fracciones')->collation('pro9_ci_ai')->nullable();
+            $table->text('fec_vcto_reg_sanitario')->collation('pro9_ci_ai')->nullable();
+            $table->text('num_reg_san')->collation('pro9_ci_ai')->nullable();
+            $table->text('nom_titular')->collation('pro9_ci_ai')->nullable();
+            $table->text('prices')->collation('pro9_ci_ai')->nullable();
+            $table->bigInteger('max_prices')->nullable()->default('0');
+            $table->smallInteger('active')->default('0');
+            $table->timestamp('last_update')->nullable();
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        DB::statement('ALTER TABLE "cat_digemid" ADD CONSTRAINT "cat_digemid_item_id_range" CHECK ("item_id" >= 0)');
+        DB::statement('ALTER TABLE "cat_digemid" ADD CONSTRAINT "cat_digemid_max_prices_range" CHECK ("max_prices" BETWEEN 0 AND 4294967295)');
+        DB::statement('ALTER TABLE "cat_digemid" ADD CONSTRAINT "cat_digemid_active_range" CHECK ("active" BETWEEN 0 AND 255)');
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `cat_digemid`');
+        Schema::dropIfExists('cat_digemid');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

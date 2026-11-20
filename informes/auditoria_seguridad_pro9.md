@@ -269,6 +269,8 @@ Regresión: visitante no puede imprimir por ID; usuario autorizado sí; enlaces 
 
 ### [PRO9-SEC-013] GET público de Padrón ejecuta TRUNCATE
 
+Actualización PostgreSQL 17, 11/11/2026: las rutas de carga/demo pasan a POST con autenticación web y autorización de administrador antes de descargar o modificar datos. La carga usa una transacción PostgreSQL y revierte el vaciado cuando el archivo no es válido. Regresión temporal: `PostgresImplementationTest::test_legacy_delimited_import_is_atomic_and_requires_an_authenticated_admin`. El hallazgo y la evidencia siguientes describen el estado histórico; consultar el resultado de la nueva prueba para acreditar la corrección.
+
 **Severidad: Alta. Confianza: Alta. CWE-306 / CWE-862 / CWE-352.**
 
 Evidencia: `modules/Padron/Routes/web.php:14`, `:19`; `modules/Padron/Providers/RouteServiceProvider.php:48`; `modules/Padron/Http/Controllers/PadronController.php:158`, `:162`, `:186`; `database/migrations/tenant/2026_08_17_000129_create_padrones_table.php:38`.

@@ -53,6 +53,7 @@ class UnitType extends ModelCatalog
     
     protected $table = "cat_unit_types";
     public $incrementing = false;
+    protected $keyType = 'string';
     public $timestamps = false;
 
     protected $fillable = [

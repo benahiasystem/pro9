@@ -8,14 +8,14 @@ class AddIsForcedToSystemSkinsTable extends Migration
 {
     public function up()
     {
-        Schema::connection('system')->table('system_skins', function (Blueprint $table) {
+        Schema::table('system_skins', function (Blueprint $table) {
             $table->boolean('is_forced')->default(false)->after('is_tenant_default');
         });
     }
 
     public function down()
     {
-        Schema::connection('system')->table('system_skins', function (Blueprint $table) {
+        Schema::table('system_skins', function (Blueprint $table) {
             $table->dropColumn('is_forced');
         });
     }

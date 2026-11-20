@@ -208,7 +208,7 @@ trait JobReportTrait
         Auth::logout();
     }
 
-    public function jobBatchFinished(Batch $batch, int $trayId, int $website_id, $filename = null, $format)
+    public function jobBatchFinished(Batch $batch, int $trayId, int $website_id, $filename, $format)
     {
         $website = $this->findWebsite($website_id);
         $tenancy = app(Environment::class);

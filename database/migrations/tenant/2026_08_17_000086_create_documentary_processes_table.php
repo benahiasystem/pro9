@@ -1,47 +1,44 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-// ######## INICIO ESQUEMA INICIAL VENEZUELA ########
-/**
- * Estructura inicial de `documentary_processes` para instalaciones nuevas.
- * Inventario de columnas:
- * - `id` int(10) unsigned NOT NULL AUTO_INCREMENT
- * - `name` text COLLATE utf8mb4_unicode_ci NOT NULL
- * - `description` text COLLATE utf8mb4_unicode_ci
- * - `price` decimal(30,12) NOT NULL DEFAULT '0.00000'
- * - `active` tinyint(1) NOT NULL DEFAULT '1'
- * - `created_at` timestamp NULL DEFAULT NULL
- * - `updated_at` timestamp NULL DEFAULT NULL
- * - `documentary_offices` longtext COLLATE utf8mb4_unicode_ci COMMENT 'etapas que contiene'
- * - `documentary_offices_order` longtext COLLATE utf8mb4_unicode_ci
- * - `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1'
+// ########## INICIO CAMBIO POSTGRESQL 17
+/** Instalaciones nuevas. Inventario de columnas:
+ * - id: bigint (secuencia)
+ * - name: text
+ * - description: text
+ * - price: numeric(30,12)
+ * - active: boolean
+ * - created_at: timestamp
+ * - updated_at: timestamp
+ * - documentary_offices: text
+ * - documentary_offices_order: text
+ * - calculation_snapshot: json
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::unprepared(<<<'SQL'
-CREATE TABLE `documentary_processes` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` text COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text COLLATE utf8mb4_unicode_ci,
-  `price` decimal(30,12) NOT NULL DEFAULT '0.00000',
-  `active` tinyint(1) NOT NULL DEFAULT '1',
-  `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL,
-  `documentary_offices` longtext COLLATE utf8mb4_unicode_ci COMMENT 'etapas que contiene',
-  `documentary_offices_order` longtext COLLATE utf8mb4_unicode_ci,
-  `calculation_snapshot` json DEFAULT NULL COMMENT 'Exact decimal fractions v1',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-SQL);
+        Schema::create('documentary_processes', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->text('name')->collation('pro9_ci_ai');
+            $table->text('description')->collation('pro9_ci_ai')->nullable();
+            $table->decimal('price', 30, 12)->default('0.00000');
+            $table->boolean('active')->default(true);
+            $table->timestamp('created_at')->nullable();
+            $table->timestamp('updated_at')->nullable();
+            $table->text('documentary_offices')->collation('pro9_ci_ai')->nullable()->comment('etapas que contiene');
+            $table->text('documentary_offices_order')->collation('pro9_ci_ai')->nullable();
+            $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
+        });
     }
 
     public function down(): void
     {
-        DB::unprepared('DROP TABLE IF EXISTS `documentary_processes`');
+        Schema::dropIfExists('documentary_processes');
     }
 };
-// ######## FIN ESQUEMA INICIAL VENEZUELA ########
+// ######### FIN CAMBIO POSTGRESQL 17

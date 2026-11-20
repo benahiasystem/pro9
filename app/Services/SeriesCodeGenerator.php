@@ -20,10 +20,6 @@ class SeriesCodeGenerator
         'U4' => 'AT',
     ];
 
-    /**
-     * Tipos de serie disponibles para empresas NRUS.
-     */
-    public const NRUS_SERIES_KEYS = ['sale_note'];
 
     /**
      * Catálogo canónico de tipos de serie con su prefijo y categoría (tabs de la UI).
@@ -162,37 +158,10 @@ class SeriesCodeGenerator
         return null;
     }
 
-    /**
-     * Catálogo de tipos permitido según el régimen de la empresa.
-     *
-     * @param  bool $is_nrus
-     * @return array<int, array<string, string|int>>
-     */
-    public static function availableTypes(bool $is_nrus = false): array
+    /** @return array<int, array<string, string|int>> */
+    public static function availableTypes(): array
     {
-        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-        $availableTypes = self::SERIES_TYPES;
-
-        if (! $is_nrus) {
-            return $availableTypes;
-        }
-
-        return array_values(array_filter($availableTypes, function ($type) {
-            return in_array($type['key'], self::NRUS_SERIES_KEYS, true);
-        }));
-        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-    }
-
-    /**
-     * IDs de documento permitidos para empresas NRUS.
-     *
-     * @return array<int, string>
-     */
-    public static function nrusDocumentTypeIds(): array
-    {
-        return array_values(array_unique(array_map(function ($type) {
-            return $type['document_type_id'];
-        }, self::availableTypes(true))));
+        return self::SERIES_TYPES;
     }
 
     /**
