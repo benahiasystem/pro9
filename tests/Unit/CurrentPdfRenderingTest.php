@@ -300,7 +300,7 @@ class CurrentPdfRenderingTest extends TestCase
         $logoDirectory=sys_get_temp_dir().'/sab-a4-logo-'.bin2hex(random_bytes(6));
         mkdir($logoDirectory.'/storage/uploads/logos',0775,true);
         copy($public.'/logo/tulogo.png',$logoDirectory.'/storage/uploads/logos/a4-test.png');
-        $this->app->instance('path.public',$logoDirectory);
+        $this->app->usePublicPath($logoDirectory);
         config()->set('filesystems.disks.public',['driver'=>'local','root'=>$logoDirectory.'/storage']);
         \Illuminate\Support\Facades\Storage::forgetDisk('public');
         try {
@@ -327,7 +327,7 @@ class CurrentPdfRenderingTest extends TestCase
             }
             }
         } finally {
-            $this->app->instance('path.public',$public);
+            $this->app->usePublicPath($public);
             config()->set('filesystems.disks.public',$disk);
             \Illuminate\Support\Facades\Storage::forgetDisk('public');
             (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($logoDirectory);

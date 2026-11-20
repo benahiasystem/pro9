@@ -4,15 +4,20 @@
     "keywords": ["framework", "laravel"],
     "license": "MIT",
     "type": "project",
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/culqi/culqi-php.git"
+        }
+    ],
     "require": {
+        "php": "^8.2",
         "ext-pdo_pgsql": "*",
         "barryvdh/laravel-dompdf": "^2.0",
         "binarytorch/larecipe": "^2.6",
         "culqi/culqi-php": "2.0.4",
         "enshrined/svg-sanitize": "^1.1",
         "fabpot/goutte": "^4.0",
-        "fideloper/proxy": "^4.0",
-        "fruitcake/laravel-cors": "^2.0.5",
         "graham-campbell/markdown": "^15.0",
         "guzzlehttp/guzzle": "^7.2",
         "html2text/html2text": "^4.3",
@@ -20,7 +25,7 @@
         "imangazaliev/didom": "^1.16",
         "intervention/image": "^2.7",
         "jenssegers/agent": "^2.6",
-        "laravel/framework": "^9.0",
+        "laravel/framework": "^10.0",
         "laravel/tinker": "^2.7",
         "laravel/ui": "^4.0",
         "laravelcollective/html": "^6.2",
@@ -28,7 +33,7 @@
         "mercadopago/dx-php": "^2.6",
         "mpdf/mpdf": "^8.0.13",
         "mpdf/qrcode": "^1.2",
-        "nwidart/laravel-modules": "^9.0",
+        "nwidart/laravel-modules": "^10.0",
         "picqer/php-barcode-generator": "^2.2",
         "predis/predis": "^3.3",
         "rap2hpoutre/laravel-log-viewer": "^2.3",
@@ -95,6 +100,5 @@
         	"block-insecure": false
     	}
     },
-    "minimum-stability": "dev",
     "prefer-stable": true
 }

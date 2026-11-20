@@ -622,6 +622,24 @@ final class PostgresImplementationTest extends \Tests\TestCase
             $events->dispatch(new \Illuminate\Queue\Events\JobProcessed('temporary',$job));
             self::assertNull($environment->tenant());self::assertSame([],config('database.connections.tenant'));
         }
+
+        config(['queue.connections.database.connection'=>'system']);
+        $queue=app('queue')->connection('database');
+        $worker=app('queue.worker');
+        foreach ($sites as $site) {
+            $queue->push(new TenantQueueWriteFixture($site->id,'worker:'.$site->uuid), '', 'tenant-isolation');
+        }
+        foreach ($sites as $site) {
+            $worker->runNextJob('database','tenant-isolation',new \Illuminate\Queue\WorkerOptions(sleep: 0));
+            self::assertNull($environment->tenant());
+            self::assertSame([],config('database.connections.tenant'));
+        }
+        self::assertSame(0,$queue->size('tenant-isolation'));
+        foreach ($sites as $site) {
+            $config=app(\Hyn\Tenancy\Database\Connection::class)->generateConfigurationArray($site);
+            self::assertSame('worker:'.$site->uuid,$this->connect($config)->table('companies')->where('id',1)->value('name'));
+        }
+
         $environment->tenant($sites[0]);$job=$this->createMock(\Illuminate\Contracts\Queue\Job::class);$job->method('payload')->willReturn(['website_id'=>$sites[1]->id]);
         $events->dispatch(new \Illuminate\Queue\Events\JobProcessing('temporary',$job));
         $events->dispatch(new \Illuminate\Queue\Events\JobExceptionOccurred('temporary',$job,new \RuntimeException('Injected worker failure')));
@@ -653,5 +671,17 @@ final class PostgresImplementationTest extends \Tests\TestCase
         } finally {unlink($file);DB::setDefaultConnection('system');}
     }
 
+}
+
+final class TenantQueueWriteFixture
+{
+    public function __construct(public int $website_id, private string $name)
+    {
+    }
+
+    public function handle(): void
+    {
+        DB::connection('tenant')->table('companies')->where('id',1)->update(['name'=>$this->name]);
+    }
 }
 // ######### FIN CAMBIO POSTGRESQL 17

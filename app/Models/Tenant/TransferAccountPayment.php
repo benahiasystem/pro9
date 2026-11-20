@@ -36,10 +36,8 @@
             'origin_id' => 'int',
             'destiny_id' => 'int',
             'amount' => 'string',
-            'user_id' => 'int'
-        ];
-        protected $dates = [
-            'date_of_movement'
+            'user_id' => 'int',
+            'date_of_movement' => 'datetime',
         ];
         protected $fillable = [
             'origin_id',

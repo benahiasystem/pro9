@@ -84,14 +84,14 @@ class PaymentMethodCreationTest extends TestCase
         return $data;
     }
 
-    public function postJson($uri, array $data = [], array $headers = [])
+    public function postJson($uri, array $data = [], array $headers = [], $options = 0)
     {
-        return parent::postJson($uri, $this->withBank($data), $headers);
+        return parent::postJson($uri, $this->withBank($data), $headers, $options);
     }
 
-    public function putJson($uri, array $data = [], array $headers = [])
+    public function putJson($uri, array $data = [], array $headers = [], $options = 0)
     {
-        return parent::putJson($uri, $this->withBank($data), $headers);
+        return parent::putJson($uri, $this->withBank($data), $headers, $options);
     }
 
     // ######## INICIO TRAZABILIDAD CONFIGURACION DEL MEDIO ########

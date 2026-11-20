@@ -173,11 +173,6 @@
             'date_of_issue' => 'date',
         ];
 
-        protected $dates = [
-            'date_of_issue',
-            // 'time_of_issue'
-        ];
-
         public static function boot()
         {
             parent::boot();
