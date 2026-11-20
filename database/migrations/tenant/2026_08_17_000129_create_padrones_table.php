@@ -33,21 +33,21 @@ return new class extends Migration
     {
         Schema::create('padrones', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('ruc', 255)->collation('pro9_ci_ai');
-            $table->string('nombre_razon_social', 155)->collation('pro9_ci_ai');
-            $table->string('estado_contribuyente', 100)->collation('pro9_ci_ai');
-            $table->string('condicion_domicilio', 100)->collation('pro9_ci_ai');
-            $table->string('ubigeo', 50)->collation('pro9_ci_ai');
-            $table->string('tipo_via', 20)->collation('pro9_ci_ai');
-            $table->string('nombre_via', 50)->collation('pro9_ci_ai');
-            $table->string('codigo_zona', 155)->collation('pro9_ci_ai');
-            $table->string('tipo_zona', 20)->collation('pro9_ci_ai');
-            $table->string('numero', 155)->collation('pro9_ci_ai');
-            $table->string('interior', 50)->collation('pro9_ci_ai');
-            $table->string('lote', 20)->collation('pro9_ci_ai');
-            $table->string('departamento', 100)->collation('pro9_ci_ai');
-            $table->string('manzana', 20)->collation('pro9_ci_ai');
-            $table->string('kilometro', 20)->collation('pro9_ci_ai');
+            $table->string('ruc', 255)->collation('sab_ci_ai');
+            $table->string('nombre_razon_social', 155)->collation('sab_ci_ai');
+            $table->string('estado_contribuyente', 100)->collation('sab_ci_ai');
+            $table->string('condicion_domicilio', 100)->collation('sab_ci_ai');
+            $table->string('ubigeo', 50)->collation('sab_ci_ai');
+            $table->string('tipo_via', 20)->collation('sab_ci_ai');
+            $table->string('nombre_via', 50)->collation('sab_ci_ai');
+            $table->string('codigo_zona', 155)->collation('sab_ci_ai');
+            $table->string('tipo_zona', 20)->collation('sab_ci_ai');
+            $table->string('numero', 155)->collation('sab_ci_ai');
+            $table->string('interior', 50)->collation('sab_ci_ai');
+            $table->string('lote', 20)->collation('sab_ci_ai');
+            $table->string('departamento', 100)->collation('sab_ci_ai');
+            $table->string('manzana', 20)->collation('sab_ci_ai');
+            $table->string('kilometro', 20)->collation('sab_ci_ai');
             $table->smallInteger('status')->default('1');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

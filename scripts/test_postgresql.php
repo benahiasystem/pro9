@@ -29,15 +29,15 @@ if ($vesInvoicesOnly && ($suite!=='all' || $phpunit)) {
 $currencyPolicy=$vesInvoicesOnly
     ? json_decode(file_get_contents($root.'/tests/Infrastructure/postgresql_ves_invoice_scope.json'),true,512,JSON_THROW_ON_ERROR)
     : null;
-$runId='pro9-pgtest-'.bin2hex(random_bytes(6));
-$cache=(getenv('XDG_CACHE_HOME') ?: (getenv('HOME').'/.cache')).'/pro9-postgres-tests/'.$runId;
+$runId='sab-pgtest-'.bin2hex(random_bytes(6));
+$cache=(getenv('XDG_CACHE_HOME') ?: (getenv('HOME').'/.cache')).'/sab-postgres-tests/'.$runId;
 foreach (['data','storage/framework/cache/data','storage/framework/views','storage/framework/sessions','storage/logs','storage/app','bootstrap-cache'] as $directory) if (!mkdir($cache.'/'.$directory,0700,true) && !is_dir($cache.'/'.$directory)) throw new RuntimeException('No se pudo preparar la ejecución temporal.');
-$environment=getenv();$environment['PRO9_POSTGRES_RUN_ID']=$runId;$environment['PRO9_POSTGRES_PASSWORD']=bin2hex(random_bytes(24));
-$environment['PRO9_POSTGRES_DATA']=$cache.'/data';$environment['PRO9_TEST_STORAGE']=$cache.'/storage';$environment['PRO9_TEST_BOOTSTRAP_CACHE']=$cache.'/bootstrap-cache';
-$environment['PRO9_POSTGRES_AV_DEFINITIONS']=$cache.'/scanner-signatures';
+$environment=getenv();$environment['SAB_POSTGRES_RUN_ID']=$runId;$environment['SAB_POSTGRES_PASSWORD']=bin2hex(random_bytes(24));
+$environment['SAB_POSTGRES_DATA']=$cache.'/data';$environment['SAB_TEST_STORAGE']=$cache.'/storage';$environment['SAB_TEST_BOOTSTRAP_CACHE']=$cache.'/bootstrap-cache';
+$environment['SAB_POSTGRES_AV_DEFINITIONS']=$cache.'/scanner-signatures';
 if ($vesInvoicesOnly) {
-    $environment['PRO9_HTTP_ACCEPTANCE_VES_ONLY']='1';
-    $environment['PRO9_TEST_INVOICES_VES_ONLY']='1';
+    $environment['SAB_HTTP_ACCEPTANCE_VES_ONLY']='1';
+    $environment['SAB_TEST_INVOICES_VES_ONLY']='1';
 }
 $excludedGroups = ['browser-fixture', 'accounting-attachments'];
 $compose=['docker','compose','--env-file','/dev/null','--project-name',$runId,'--file',$root.'/docker-compose.postgresql.test.yml'];
@@ -66,7 +66,7 @@ $cleanup=static function () use (&$cleaned,&$started,&$cleanupOk,$compose,$envir
     if ($cleaned) return $cleanupOk;$cleaned=true;
     if ($started && command(array_merge($compose,['down','--volumes','--remove-orphans','--timeout','10']),$environment)!==0) $cleanupOk=false;
     // The database directory is owned by PostgreSQL inside the private test mount.
-    if (command(['docker','run','--rm','--entrypoint','sh','-v',$cache.':/pro9_test_cleanup','supabase/postgres:17.11.0.019@sha256:eca9f664ced0c453ae499e75bb503283831c94f2eef69fc2e69bf86f70278ddc','-c','find /pro9_test_cleanup -mindepth 1 -delete'],$environment)!==0) $cleanupOk=false;
+    if (command(['docker','run','--rm','--entrypoint','sh','-v',$cache.':/sab_test_cleanup','supabase/postgres:17.11.0.019@sha256:eca9f664ced0c453ae499e75bb503283831c94f2eef69fc2e69bf86f70278ddc','-c','find /sab_test_cleanup -mindepth 1 -delete'],$environment)!==0) $cleanupOk=false;
     if (!@rmdir($cache)) $cleanupOk=false;return $cleanupOk;
 };
 register_shutdown_function($cleanup);
@@ -98,7 +98,7 @@ try {
     $runtime=array_merge($compose,['run','--rm','--no-deps','php','php','-d','memory_limit=768M']);
     $filters=['install'=>'PostgresImplementationTest|FiscalEmissionSchemaTest::test_fresh|FiscalEmissionSchemaTest::test_central','concurrency'=>'Concurrency|concurrent|parallel','http'=>'ExactHttpAcceptanceTest','backup'=>'PostgresImplementationTest|fixture_snapshot','performance'=>'PostgresPerformanceTest','accounting'=>postgresqlFunctionalFilters()['accounting']];
     $tests=['vendor/bin/phpunit','--exclude-group',implode(',', $excludedGroups),'--printer','Tests\Support\FiscalProgressPrinter'];
-    $junitDirectory='/var/www/pro9/informes/evidencias/postgresql_17_implementacion/resultados/';
+    $junitDirectory='/var/www/sab/informes/evidencias/postgresql_17_implementacion/resultados/';
     if (in_array($suite, ['all','performance'], true) && !$phpunit) {
         $discovery=$runId.'-discovery.xml';
         if (command(array_merge($runtime,['vendor/bin/phpunit','--list-tests-xml',$junitDirectory.$discovery]),$environment)!==0) {

@@ -24,9 +24,9 @@ return new class extends Migration
         Schema::create('series_device_groups', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('establishment_id')->comment('El grupo vive en un establecimiento');
-            $table->string('name', 255)->collation('pro9_ci_ai')->comment('Nombre del grupo: ej. Caja 1');
-            $table->string('module_value', 255)->collation('pro9_ci_ai')->nullable()->comment('Modulo asociado (uno solo). Catalogo extensible');
-            $table->string('bound_device_name', 255)->collation('pro9_ci_ai')->nullable()->comment('Nombre del equipo vinculado (clave de vinculo)');
+            $table->string('name', 255)->collation('sab_ci_ai')->comment('Nombre del grupo: ej. Caja 1');
+            $table->string('module_value', 255)->collation('sab_ci_ai')->nullable()->comment('Modulo asociado (uno solo). Catalogo extensible');
+            $table->string('bound_device_name', 255)->collation('sab_ci_ai')->nullable()->comment('Nombre del equipo vinculado (clave de vinculo)');
             $table->bigInteger('bound_user_id')->nullable()->comment('Usuario que vinculo el grupo');
             $table->timestamp('bound_at')->nullable()->comment('Fecha de vinculo al equipo');
             $table->timestamp('created_at')->nullable();

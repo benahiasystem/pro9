@@ -34,10 +34,10 @@ return new class extends Migration
             $table->bigInteger('payment_method_type_id')->nullable();
             $table->boolean('has_card')->default(false);
             $table->bigInteger('card_brand_id')->nullable();
-            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('reference', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('payment', 30, 12);
             $table->boolean('state')->default(false);
-            $table->string('reference_payment', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('reference_payment', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

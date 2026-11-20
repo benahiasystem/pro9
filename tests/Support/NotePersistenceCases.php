@@ -346,7 +346,7 @@ trait NotePersistenceCases
         $formats=[];
         foreach (['default','Plantilla_personalizable','modern-2027','marca_de_agua'] as $theme) foreach (['a4','a5','ticket'] as $format) $formats[]=[$theme,$format];
         $formats[]=['default','ticket_58'];
-        $dir=getenv('PRO9_NOTE_LOT_PDF_DIR') ?: sys_get_temp_dir().'/sab-note-lots-'.bin2hex(random_bytes(5));
+        $dir=getenv('SAB_NOTE_LOT_PDF_DIR') ?: sys_get_temp_dir().'/sab-note-lots-'.bin2hex(random_bytes(5));
         if (!is_dir($dir)) mkdir($dir,0700,true);
         try {
             foreach ($formats as [$theme,$format]) {
@@ -402,7 +402,7 @@ trait NotePersistenceCases
                 if (in_array($format,['ticket','ticket_58'],true)) self::assertSame(1,substr_count($text,"\f"),$theme.'/'.$format.' no debe cortar el ticket de muestra.');
             }
         } finally {
-            if (!getenv('PRO9_NOTE_LOT_PDF_DIR')) (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($dir);
+            if (!getenv('SAB_NOTE_LOT_PDF_DIR')) (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($dir);
         }
     }
 
@@ -1047,7 +1047,7 @@ trait NotePersistenceCases
                 $credit=$printedCredit->fresh(); $credit->customer=$customer; $credit->establishment=$establishment;
                 $ticket=(new Facturalo())->createPdf($credit,'credit','ticket_58','string');
                 self::assertStringStartsWith('%PDF-',$ticket);
-                if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/control-ticket-58.pdf',$ticket);
+                if ($dir=getenv('SAB_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/control-ticket-58.pdf',$ticket);
             }
             if ($print->id===$comparisonCredit->id) {
                 self::assertStringContainsString('Control actual de factura afectada',$html);
@@ -1090,10 +1090,10 @@ trait NotePersistenceCases
                     self::assertStringStartsWith('%PDF-',$mail->rawAttachments[0]['data']);
                     self::assertNotSame('%PDF-original-before-control',$mail->rawAttachments[0]['data']);
                     self::assertSame('%PDF-original-before-control',\Illuminate\Support\Facades\Storage::disk('tenant')->get($path));
-                    if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/control-current-'.$type.'.pdf',$current);
+                    if ($dir=getenv('SAB_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/control-current-'.$type.'.pdf',$current);
                 } finally { $db->table('documents')->where('id',$print->id)->update((array)$original); }
             }
-            if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/'.$type.'-'.$print->currency_type_id.'.pdf',$bytes);
+            if ($dir=getenv('SAB_FREE_FORM_NOTE_EVIDENCE')) file_put_contents($dir.'/'.$type.'-'.$print->currency_type_id.'.pdf',$bytes);
         }
         \App\Services\Fiscal\FiscalDocumentPersistence::reverse($debitPayment,'Reversión sintética');
         self::assertSame('11.6',\App\Support\Exact\Decimal::represent($printedDebit->fresh()->exactBalance()));
@@ -1162,7 +1162,7 @@ trait NotePersistenceCases
         $brandPdf=new \Dompdf\Dompdf(); $brandPdf->loadHtml($brandHtml); $brandPdf->render();
         $brandBytes=$brandPdf->output();
         self::assertStringStartsWith('%PDF-',$brandBytes);
-        if ($dir=getenv('PRO9_BRAND_REPORT_EVIDENCE')) file_put_contents($dir.'/marcas.pdf',$brandBytes);
+        if ($dir=getenv('SAB_BRAND_REPORT_EVIDENCE')) file_put_contents($dir.'/marcas.pdf',$brandBytes);
         config(['excel'=>require base_path('config/excel.php')]);
         $export=(new \Modules\Report\Exports\SalesByBrandExport())->records($records)->company($company)
             ->establishment($establishment)->dateStart($date_start)->dateEnd($date_end);
@@ -1170,7 +1170,7 @@ trait NotePersistenceCases
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('PRO9_BRAND_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/marcas.xlsx');
+            if ($dir=getenv('SAB_BRAND_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/marcas.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
             $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
             $fraction=\App\Support\Exact\Decimal::fraction($expected);
@@ -1181,7 +1181,7 @@ trait NotePersistenceCases
             ->establishment($establishment)->filters(['user_type'=>'VENDEDOR'])->categories(collect())->categories_services(collect());
         $accountFile=(new \Maatwebsite\Excel\Writer($temp))->export($accountExport,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('PRO9_FREE_FORM_NOTE_EVIDENCE')) copy($accountFile->getLocalPath(),$dir.'/estado-cuenta.xlsx');
+            if ($dir=getenv('SAB_FREE_FORM_NOTE_EVIDENCE')) copy($accountFile->getLocalPath(),$dir.'/estado-cuenta.xlsx');
             $accountBook=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($accountFile->getLocalPath());
             $sheet=$accountBook->getActiveSheet(); $totals=[];
             foreach ($sheet->getRowIterator() as $row) {
@@ -1232,7 +1232,7 @@ trait NotePersistenceCases
         $commercial=(new \Modules\Report\Exports\CommercialAnalysisExport())->records(collect([$customer->fresh()]))->company($company)->categories($categories);
         $commercialFile=(new \Maatwebsite\Excel\Writer($temp))->export($commercial,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('PRO9_COMMERCIAL_REPORT_EVIDENCE')) copy($commercialFile->getLocalPath(),$dir.'/analisis-comercial.xlsx');
+            if ($dir=getenv('SAB_COMMERCIAL_REPORT_EVIDENCE')) copy($commercialFile->getLocalPath(),$dir.'/analisis-comercial.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($commercialFile->getLocalPath());
             $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
             self::assertContains($analysisVes,$values); self::assertContains($mixedCurrencies ? '220.40' : '0.00',$values); self::assertContains('2 KG; 1 UND',$values);
@@ -1263,7 +1263,7 @@ trait NotePersistenceCases
             $itemExport=(new \Modules\Report\Exports\ItemExport())->records($itemLines)->company($company)->establishment($establishment)->setWithExtraData($extra);
             $itemFile=(new \Maatwebsite\Excel\Writer($temp))->export($itemExport,\Maatwebsite\Excel\Excel::XLSX);
             try {
-                if ($dir=getenv('PRO9_ITEM_REPORT_EVIDENCE')) copy($itemFile->getLocalPath(),$dir.'/producto-'.($extra?'extra':'normal').'.xlsx');
+                if ($dir=getenv('SAB_ITEM_REPORT_EVIDENCE')) copy($itemFile->getLocalPath(),$dir.'/producto-'.($extra?'extra':'normal').'.xlsx');
                 $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($itemFile->getLocalPath());
                 $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
                 self::assertContains('Total VES',$values);

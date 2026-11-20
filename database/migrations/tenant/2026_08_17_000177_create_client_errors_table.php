@@ -19,10 +19,10 @@ return new class extends Migration
     {
         Schema::create('client_errors', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('code', 255)->collation('pro9_ci_ai');
-            $table->string('client_error_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('original_message', 255)->collation('pro9_ci_ai');
-            $table->string('user_message', 255)->collation('pro9_ci_ai');
+            $table->string('code', 255)->collation('sab_ci_ai');
+            $table->string('client_error_type_id', 255)->collation('sab_ci_ai');
+            $table->string('original_message', 255)->collation('sab_ci_ai');
+            $table->string('user_message', 255)->collation('sab_ci_ai');
             $table->index(['client_error_type_id'], 'client_errors_client_error_type_id_foreign');
             $table->index(['code'], 'client_errors_code_index');
         });

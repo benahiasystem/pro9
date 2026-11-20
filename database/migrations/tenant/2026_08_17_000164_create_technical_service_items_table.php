@@ -48,7 +48,7 @@ return new class extends Migration
             $table->json('item')->nullable()->comment('Json con el contenido de item');
             $table->decimal('quantity', 30, 12)->nullable()->default('0.0000')->comment('Cantidad de item usado');
             $table->decimal('unit_value', 30, 12)->nullable()->default('0.000000')->comment('unit_value');
-            $table->text('affectation_igv_type_id')->collation('pro9_ci_ai')->nullable()->comment('Tipo de afectacion dde igv. cat_affectation_igv_types');
+            $table->text('affectation_igv_type_id')->collation('sab_ci_ai')->nullable()->comment('Tipo de afectacion dde igv. cat_affectation_igv_types');
             $table->decimal('total_base_igv', 30, 12)->nullable()->default('0.00')->comment('Monto base del IGV');
             $table->decimal('percentage_igv', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_igv', 30, 12)->nullable()->default('0.00');
@@ -56,7 +56,7 @@ return new class extends Migration
             $table->decimal('percentage_other_taxes', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_other_taxes', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_taxes', 30, 12)->nullable()->default('0.00');
-            $table->text('price_type_id')->collation('pro9_ci_ai')->nullable();
+            $table->text('price_type_id')->collation('sab_ci_ai')->nullable();
             $table->decimal('unit_price', 30, 12)->nullable()->default('0.000000');
             $table->decimal('total_value', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_charge', 30, 12)->nullable()->default('0.00');
@@ -65,9 +65,9 @@ return new class extends Migration
             $table->json('attributes')->nullable()->comment('Atributos');
             $table->json('discounts')->nullable()->comment('Descuentos');
             $table->json('charges')->nullable()->comment('Cargos');
-            $table->text('additional_information')->collation('pro9_ci_ai')->nullable()->comment('Informacion adicional');
+            $table->text('additional_information')->collation('sab_ci_ai')->nullable()->comment('Informacion adicional');
             $table->bigInteger('warehouse_id')->nullable()->default('0')->comment('Id de item');
-            $table->text('name_product_pdf')->collation('pro9_ci_ai')->nullable()->comment('Nombre de producto en el pdf');
+            $table->text('name_product_pdf')->collation('sab_ci_ai')->nullable()->comment('Nombre de producto en el pdf');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

@@ -45,18 +45,18 @@ function recoveryFile(string $relativePath, string $contents): void
     verifyRecovery(file_put_contents($file, $contents) === strlen($contents), 'No se pudo escribir el archivo temporal.');
 }
 
-$project = getenv('PRO9_RECOVERY_PROJECT') ?: '';
+$project = getenv('SAB_RECOVERY_PROJECT') ?: '';
 $mode = $argv[1] ?? '';
 verifyRecovery(PHP_SAPI === 'cli' && getenv('APP_ENV') === 'testing'
-    && preg_match('/^pro9-infra-[a-f0-9]{12}(?:-destination)?$/D', $project) === 1
+    && preg_match('/^sab-infra-[a-f0-9]{12}(?:-destination)?$/D', $project) === 1
     && getenv('DB_HOST') === 'postgres'
-    && getenv('DB_DATABASE') === (str_ends_with($project, '-destination') ? 'pro9_infra_destination' : 'pro9_infra_central'),
+    && getenv('DB_DATABASE') === (str_ends_with($project, '-destination') ? 'sab_infra_destination' : 'sab_infra_central'),
     'Use únicamente el proyecto Compose temporal del sondeo.');
 require dirname(__DIR__, 2).'/vendor/autoload.php';
 $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 $runtime = DB::connection('system');
-$marker = $runtime->selectOne("SELECT current_setting('pro9.test_run', true) AS marker, current_setting('server_version_num') AS version");
+$marker = $runtime->selectOne("SELECT current_setting('sab.test_run', true) AS marker, current_setting('server_version_num') AS version");
 verifyRecovery($marker->marker === $project && (int) $marker->version === 170011, 'La conexión no pertenece al sondeo temporal previsto.');
 $destination = str_ends_with($project, '-destination');
 $central = DB::connection('central_migrator');
@@ -77,7 +77,7 @@ if ($mode === 'seed') {
         ]);
         $created = app(ClientController::class)->store($request);
         verifyRecovery($created['success'] ?? false, $created['message'] ?? 'Falló el alta temporal.');
-        $website = Website::where('uuid', 'pro9_recovery_'.$slug)->firstOrFail();
+        $website = Website::where('uuid', 'sab_recovery_'.$slug)->firstOrFail();
         $db = tenantRecoveryConnection($website);
         $db->table('users')->update(['api_token' => $token($slug), 'email_verified_at' => '2026-11-17 12:00:00']);
         $db->statement('CREATE TABLE recovery_amounts (id bigserial PRIMARY KEY, company_id bigint NOT NULL REFERENCES companies(id), amount numeric(30,12) NOT NULL, snapshot json NOT NULL)');
@@ -118,7 +118,7 @@ if ($mode === 'tenants') {
     $result['shared_file_sha256'] = hash_file('sha256', $shared);
     if ($destination) verifyRecovery((fileperms($shared) & 0777) === 0644, 'Permisos del upload restaurado inválidos.');
     foreach ($companies as $slug => $number) {
-        $website = Website::where('uuid', 'pro9_recovery_'.$slug)->firstOrFail();
+        $website = Website::where('uuid', 'sab_recovery_'.$slug)->firstOrFail();
         $db = tenantRecoveryConnection($website);
         verifyRecovery($db->table('companies')->where('id', 1)->value('number') === $number, 'No coincidió la identidad del tenant.');
         $file = storage_path('app/tenancy/tenants/'.$website->uuid.'/receipt.pdf');
@@ -132,7 +132,7 @@ if ($mode === 'tenants') {
             has_database_privilege(current_user, ?, 'CONNECT') AS central_access,
             has_database_privilege(current_user, ?, 'CONNECT') AS other_access
             FROM pg_database d JOIN pg_roles r ON r.rolname=current_user WHERE d.datname=current_database()",
-            [$central->getDatabaseName(), 'pro9_recovery_'.($slug === 'one' ? 'two' : 'one')]);
+            [$central->getDatabaseName(), 'sab_recovery_'.($slug === 'one' ? 'two' : 'one')]);
         verifyRecovery($acl->owner === $website->uuid && !$acl->rolsuper && !$acl->rolcreatedb && !$acl->rolcreaterole
             && !$acl->central_access && !$acl->other_access, 'Propiedad o aislamiento incorrecto en '.$website->uuid);
         $db->beginTransaction();

@@ -328,8 +328,8 @@ test('hotel recovers pending operations saved before the SAB rename', async () =
     const key='a98c5b98-5964-4f6e-9cff-7c405690a58b'
     const storage=new Map([
         ['sab-hotel-atomic:7','invalid json'],
-        ['pro9-hotel-atomic:7',JSON.stringify({key,type:'80'})],
-        ['pro9-hotel-checkout:7',JSON.stringify({id:42,type:'01'})],
+        ['sab-hotel-atomic:7',JSON.stringify({key,type:'80'})],
+        ['sab-hotel-checkout:7',JSON.stringify({id:42,type:'01'})],
     ])
     globals.window={sessionStorage:{getItem:k=>storage.get(k),removeItem:k=>storage.delete(k),setItem(){throw Error('denegado')}}}
     const read=hotel.method('readPendingHotelOperation')
@@ -343,12 +343,12 @@ test('hotel recovers pending operations saved before the SAB rename', async () =
     ctx.clearAtomicPending=hotel.method('clearAtomicPending')
     await hotel.method('onAtomicCheckout').call(ctx)
     assert.equal(posts,0)
-    assert.equal(storage.has('pro9-hotel-atomic:7'),false)
+    assert.equal(storage.has('sab-hotel-atomic:7'),false)
     assert.equal(storage.has('sab-hotel-atomic:7'),false)
 })
 
 test('hotel finalizes a legacy checkout without creating another document', async () => {
-    const storage=new Map([['pro9-hotel-checkout:7',JSON.stringify({id:42,type:'80',arrears:'0.25'})]])
+    const storage=new Map([['sab-hotel-checkout:7',JSON.stringify({id:42,type:'80',arrears:'0.25'})]])
     globals.window={sessionStorage:{getItem:k=>storage.get(k),removeItem:k=>storage.delete(k)}}
     const pendingCheckout=hotel.method('readPendingHotelOperation')('checkout',7)
     const calls=[]

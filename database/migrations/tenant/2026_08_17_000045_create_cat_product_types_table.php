@@ -17,7 +17,7 @@ return new class extends Migration
     {
         Schema::create('cat_product_types', function (Blueprint $table) {
             $table->smallInteger('id');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->boolean('active');
             $table->primary(['id']);
         });

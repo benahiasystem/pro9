@@ -250,7 +250,7 @@ final class EntryService
         app(EvidenceManifest::class)->posting($e);
         if ($e->source_document_id) {
             $source = SourceDocument::whereKey($e->source_document_id)->lockForUpdate()->firstOrFail();
-            app(Pro9SourceReader::class)->assertCurrent($source);
+            app(SabSourceReader::class)->assertCurrent($source);
             if (!in_array($source->status, ['validated', 'proposed'], true) || $source->source_revision !== $e->source_revision) {
                 throw new ApiProblem('SOURCE_REVALIDATION_REQUIRED', 'El documento de origen requiere validar su versión actual antes de contabilizar.');
             }

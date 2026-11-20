@@ -29,9 +29,9 @@ return new class extends Migration
     {
         Schema::create('custom_fields', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 255)->collation('pro9_ci_ai');
-            $table->string('slug', 255)->collation('pro9_ci_ai');
-            $table->string('type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('name', 255)->collation('sab_ci_ai');
+            $table->string('slug', 255)->collation('sab_ci_ai');
+            $table->string('type', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('required')->default(false);
             $table->json('options')->nullable();
             $table->integer('order')->default('0');

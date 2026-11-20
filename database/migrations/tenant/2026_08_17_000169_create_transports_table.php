@@ -23,10 +23,10 @@ return new class extends Migration
     {
         Schema::create('transports', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('plate_number', 50)->collation('pro9_ci_ai');
-            $table->string('model', 255)->collation('pro9_ci_ai');
-            $table->string('brand', 255)->collation('pro9_ci_ai');
-            $table->string('tuc', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('plate_number', 50)->collation('sab_ci_ai');
+            $table->string('model', 255)->collation('sab_ci_ai');
+            $table->string('brand', 255)->collation('sab_ci_ai');
+            $table->string('tuc', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('is_default')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->nullable();

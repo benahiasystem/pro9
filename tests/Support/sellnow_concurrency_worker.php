@@ -7,7 +7,7 @@ require dirname(__DIR__,2).'/vendor/autoload.php';
 $input=json_decode(stream_get_contents(STDIN),true,512,JSON_THROW_ON_ERROR);
 if (!class_exists('DB')) class_alias(Illuminate\Support\Facades\DB::class,'DB');
 if (!class_exists('Log')) class_alias(Illuminate\Support\Facades\Log::class,'Log');
-if (!preg_match('/\Apro9_fiscal_test_[a-f0-9]{12}\z/', $input['connection']['database'] ?? '')) exit(2);
+if (!preg_match('/\Asab_fiscal_test_[a-f0-9]{12}\z/', $input['connection']['database'] ?? '')) exit(2);
 $app=new Illuminate\Foundation\Application(dirname(__DIR__,2));
 Illuminate\Container\Container::setInstance($app);
 Illuminate\Support\Facades\Facade::setFacadeApplication($app);

@@ -18,7 +18,7 @@ return new class extends Migration
     {
         Schema::create('cat_colors_items', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre del color');
+            $table->text('name')->collation('sab_ci_ai')->comment('Nombre del color');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

@@ -30,7 +30,7 @@
                 <hr>
                 <!-- ########## INICIO CAMBIO POSTGRESQL 17 -->
                 <p class="mb-2">El respaldo PostgreSQL incluye un manifiesto con verificaciones de integridad. Restáurelo primero en una base independiente.</p>
-                <code>php artisan pro9:restore-tenant [empresa] [respaldo.zip]</code>
+                <code>php artisan sab:restore-tenant [empresa] [respaldo.zip]</code>
                 <p class="mb-2">La activación requiere mantenimiento y los trabajos detenidos. Consulte el manual de recuperación antes de utilizar --activate.</p>
                 <!-- ######### FIN CAMBIO POSTGRESQL 17 -->
                 <br>

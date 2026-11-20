@@ -10,7 +10,7 @@ if ($flags !== [] && $flags !== ['--http-multitenant']) {
 }
 $multipleTenants = $flags === ['--http-multitenant'];
 $benchmark = $multipleTenants ? 'benchmark_postgresql_tenants.php' : 'benchmark_postgresql_http.php';
-$name='pro9-reference-'.bin2hex(random_bytes(6));$directory=(getenv('HOME') ?: sys_get_temp_dir()).'/.cache/pro9-postgres-tests/'.$name;
+$name='sab-reference-'.bin2hex(random_bytes(6));$directory=(getenv('HOME') ?: sys_get_temp_dir()).'/.cache/sab-postgres-tests/'.$name;
 foreach (['source','data'] as $part) mkdir($directory.'/'.$part,0700,true);
 $environment=getenv();$baseline='861228462e208d2060c9148b87fd7d7d3f354da5';
 function referenceCommand(array $command,array $environment,?string $cwd=null,?string $output=null): void {
@@ -31,15 +31,15 @@ try {
     }
     $router=str_replace("['127.0.0.1', 'postgres']","['mysql']",file_get_contents($root.'/tests/Support/exact_http_router.php'));
     file_put_contents($directory.'/source/tests/Support/exact_http_router.php',$router);
-    referenceCommand(['docker','build','-t','pro9-mysql-reference-php:temporary','-f',$root.'/tests/Infrastructure/php-mysql-reference.Dockerfile',$root],$environment);
-    referenceCommand(['docker','network','create','--internal','--label','pro9.postgresql.temporary=true',$name],$environment);$network=true;
-    referenceCommand(['docker','run','-d','--name',$name,'--network',$name,'--network-alias','mysql','--label','pro9.postgresql.temporary=true','--memory=768m','--cpus=2','-e','MYSQL_ALLOW_EMPTY_PASSWORD=yes','-v',$directory.'/data:/var/lib/mysql','mysql:5.7.33@sha256:e42a18d0bd0aa746a734a49cbbcc079ccdf6681c474a238d38e79dc0884e0ecc'],$environment);$server=true;
+    referenceCommand(['docker','build','-t','sab-mysql-reference-php:temporary','-f',$root.'/tests/Infrastructure/php-mysql-reference.Dockerfile',$root],$environment);
+    referenceCommand(['docker','network','create','--internal','--label','sab.postgresql.temporary=true',$name],$environment);$network=true;
+    referenceCommand(['docker','run','-d','--name',$name,'--network',$name,'--network-alias','mysql','--label','sab.postgresql.temporary=true','--memory=768m','--cpus=2','-e','MYSQL_ALLOW_EMPTY_PASSWORD=yes','-v',$directory.'/data:/var/lib/mysql','mysql:5.7.33@sha256:e42a18d0bd0aa746a734a49cbbcc079ccdf6681c474a238d38e79dc0884e0ecc'],$environment);$server=true;
     $ready=false;
     for ($i=0;$i<120;$i++) {
         $p=proc_open(['docker','exec',$name,'mysqladmin','--protocol=TCP','--host=127.0.0.1','--connect-timeout=2','ping','--silent'],[0=>['pipe','r'],1=>['file','/dev/null','w'],2=>['file','/dev/null','w']],$pipes);fclose($pipes[0]);if (proc_close($p)===0) {$ready=true;break;}usleep(1000000);
     }
     if (!$ready) throw new RuntimeException('MySQL de referencia no llegó a estar disponible.');
-    $args=['docker','run','--rm','--label','pro9.postgresql.temporary=true','--network',$name,'--memory=1536m','--cpus=2','-e','APP_ENV=testing','-e','DB_HOST=mysql','-e','DB_PORT=3306','-e','PRO9_POSTGRES_TESTS=1','-e','PRO9_FISCAL_MYSQL_TESTS=1','-e','PRO9_FISCAL_SNAPSHOT=0','-v',$directory.'/source:/var/www/pro9','-w','/var/www/pro9','pro9-mysql-reference-php:temporary','php','-d','memory_limit=768M','-d','display_errors=0','tests/Support/'.$benchmark];
+    $args=['docker','run','--rm','--label','sab.postgresql.temporary=true','--network',$name,'--memory=1536m','--cpus=2','-e','APP_ENV=testing','-e','DB_HOST=mysql','-e','DB_PORT=3306','-e','SAB_POSTGRES_TESTS=1','-e','SAB_FISCAL_MYSQL_TESTS=1','-e','SAB_FISCAL_SNAPSHOT=0','-v',$directory.'/source:/var/www/sab','-w','/var/www/sab','sab-mysql-reference-php:temporary','php','-d','memory_limit=768M','-d','display_errors=0','tests/Support/'.$benchmark];
     referenceCommand($args,$environment,null,$directory.'/reference.json');
     $result=json_decode(file_get_contents($directory.'/reference.json'),true,512,JSON_THROW_ON_ERROR);
     $reports = $multipleTenants ? $result : [$result];
@@ -58,7 +58,7 @@ finally {
     $cleanup=[];
     if ($server) $cleanup[]=['docker','rm','-f',$name];
     if ($network) $cleanup[]=['docker','network','rm',$name];
-    $cleanup[]=['docker','run','--rm','--entrypoint','sh','-v',$directory.':/pro9_test_cleanup','supabase/postgres:17.11.0.019@sha256:eca9f664ced0c453ae499e75bb503283831c94f2eef69fc2e69bf86f70278ddc','-c','find /pro9_test_cleanup -mindepth 1 -delete'];
+    $cleanup[]=['docker','run','--rm','--entrypoint','sh','-v',$directory.':/sab_test_cleanup','supabase/postgres:17.11.0.019@sha256:eca9f664ced0c453ae499e75bb503283831c94f2eef69fc2e69bf86f70278ddc','-c','find /sab_test_cleanup -mindepth 1 -delete'];
     foreach ($cleanup as $command) {
         try {referenceCommand($command,$environment);}
         catch (Throwable $error) {fwrite(STDERR,'No se completó la limpieza de referencia: '.$error->getMessage()."\n");$code=1;}

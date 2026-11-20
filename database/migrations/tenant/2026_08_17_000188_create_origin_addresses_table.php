@@ -23,13 +23,13 @@ return new class extends Migration
     {
         Schema::create('origin_addresses', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('address', 255)->collation('pro9_ci_ai');
+            $table->string('address', 255)->collation('sab_ci_ai');
             $table->json('location_id');
             $table->boolean('is_default')->default(false);
             $table->boolean('is_active')->default(true);
-            $table->char('country_id', 2)->collation('pro9_ci_ai')->default('VE');
+            $table->char('country_id', 2)->collation('sab_ci_ai')->default('VE');
             $table->bigInteger('establishment_id')->nullable();
-            $table->string('establishment_code', 4)->collation('pro9_ci_ai')->default('0000');
+            $table->string('establishment_code', 4)->collation('sab_ci_ai')->default('0000');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['country_id'], 'origin_addresses_country_id_foreign');

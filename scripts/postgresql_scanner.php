@@ -7,7 +7,7 @@ function postgresqlPrepareScanner(string $destination, string $report, array $en
     $image = 'clamav/clamav@sha256:45fe5149fbee5a46509c9848ef20d0c354b7b2323c9369f285939a37cf33422a';
     $home = $environment['XDG_CACHE_HOME'] ?? (($environment['HOME'] ?? '').'/.cache');
     if ($home === '' || !str_starts_with($home, '/')) throw new RuntimeException('Falta un caché absoluto para las firmas públicas.');
-    $cache = $home.'/pro9-postgresql-clamav-17-11';
+    $cache = $home.'/sab-postgresql-clamav-17-11';
     if (is_link($cache) || is_link($destination)) throw new RuntimeException('El caché de análisis no admite enlaces simbólicos.');
     if (!is_dir($cache) && !mkdir($cache, 0755, true)) throw new RuntimeException('No se pudo preparar el caché de firmas.');
     $lock = fopen($cache.'.lock', 'c');
@@ -33,10 +33,10 @@ function postgresqlPrepareScanner(string $destination, string $report, array $en
         };
         $fresh = $freshDefinitions();
         if (!$fresh) {
-            $updater=$environment['PRO9_POSTGRES_AV_UPDATER'] ?? '';
-            $run=$environment['PRO9_POSTGRES_RUN_ID'] ?? '';
-            if (!preg_match('/^pro9-pgtest-[a-f0-9]{12}-av-update$/D',$updater) || $updater!==$run.'-av-update') throw new RuntimeException('Falta la identidad privada del actualizador.');
-            $command = ['docker', 'run', '--rm', '--name', $updater,'--label','pro9.postgresql.scanner-run='.$run,
+            $updater=$environment['SAB_POSTGRES_AV_UPDATER'] ?? '';
+            $run=$environment['SAB_POSTGRES_RUN_ID'] ?? '';
+            if (!preg_match('/^sab-pgtest-[a-f0-9]{12}-av-update$/D',$updater) || $updater!==$run.'-av-update') throw new RuntimeException('Falta la identidad privada del actualizador.');
+            $command = ['docker', 'run', '--rm', '--name', $updater,'--label','sab.postgresql.scanner-run='.$run,
                 '--entrypoint', 'sh', '--mount', 'type=bind,src='.$cache.',dst=/definitions', $image, '-c',
                 'cp -n /var/lib/clamav/*.cvd* /definitions/; chown clamav:clamav /definitions; find /definitions -maxdepth 1 -type f -exec chown clamav:clamav {} +; exec freshclam --datadir=/definitions --stdout'];
             if (command($command, $environment, $report.'.update.log') !== 0) {

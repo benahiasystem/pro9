@@ -16,7 +16,7 @@ final class TenantDBIsolationTest extends TestCase
     /** @dataProvider retryableStates */
     public function test_a_retried_transaction_keeps_a_consistent_snapshot_without_changing_the_session_default(string $state): void
     {
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') self::markTestSkipped('Utilice PostgreSQL temporal aislado.');
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') self::markTestSkipped('Utilice PostgreSQL temporal aislado.');
         $fixture = new \Tests\Support\AccountingPostgresFixture();
         $fixture->start(false);
         $connection = \Illuminate\Support\Facades\DB::connection('tenant');

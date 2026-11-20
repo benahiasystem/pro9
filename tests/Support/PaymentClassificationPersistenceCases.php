@@ -327,7 +327,7 @@ trait PaymentClassificationPersistenceCases
         self::assertMatchesRegularExpression('/TOTAL A PAGAR:\s*Bs\.\s*232\.00/u',$text);
         $pdf=(new \App\CoreFacturalo\Facturalo())->createPdf($invoice,'invoice','a4','string');
         self::assertStringStartsWith('%PDF-',$pdf);
-        if ($directory=getenv('PRO9_CONVERSION_PDF_EVIDENCE_DIR')) file_put_contents($directory.'/'.$label.'.pdf',$pdf);
+        if ($directory=getenv('SAB_CONVERSION_PDF_EVIDENCE_DIR')) file_put_contents($directory.'/'.$label.'.pdf',$pdf);
     }
 
     public function test_pos_manual_line_total_accepts_bounded_exact_price_and_persists_its_fraction(): void
@@ -1610,7 +1610,7 @@ trait PaymentClassificationPersistenceCases
         self::assertSame('account',Movement::row($movement->fresh())['method']['collection_kind']);
         self::assertSame('USD',Movement::row($movement->fresh())['currency_type_id']);
 
-        if (getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1') {
+        if (getenv('SAB_TEST_INVOICES_VES_ONLY') === '1') {
             self::assertSame('VES', $document->currency_type_id);
             self::assertSame(1, $db->table('documents')->count());
             return;
@@ -1987,7 +1987,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($note->fresh(),$format,$note->filename);
             $pdf=$printer->getStorage($note->filename,'sale_note');
             $path=sys_get_temp_dir().'/'.$this->database.'/deleted-receipt-'.$design.'-'.$format.'.pdf'; file_put_contents($path,$pdf);
-            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/deleted-receipt-'.$design.'-'.$format.'.pdf',$pdf);
+            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/deleted-receipt-'.$design.'-'.$format.'.pdf',$pdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
             self::assertSame(1,substr_count($text,'Aplicado VES 116.00'),$design.' '.$format);
@@ -2011,7 +2011,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($note->fresh(),$format,$note->filename);
             $pdf=$printer->getStorage($note->filename,'sale_note');
             $path=sys_get_temp_dir().'/'.$this->database.'/no-receipts-'.$design.'-'.$format.'.pdf'; file_put_contents($path,$pdf);
-            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/no-receipts-'.$design.'-'.$format.'.pdf',$pdf);
+            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/no-receipts-'.$design.'-'.$format.'.pdf',$pdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
             self::assertStringContainsString('SALDO: Bs. 232.00',$text,$design.' '.$format);
@@ -3168,7 +3168,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('Recibido VES 0.20',$text);
         $pdf=(new \App\CoreFacturalo\Facturalo())->createPdf($saved,'sale_note','a4','string');
         self::assertStringStartsWith('%PDF-',$pdf);
-        if ($dir=getenv('PRO9_HOTEL_PDF_EVIDENCE_DIR')) file_put_contents($dir.'/hotel-checkin-note.pdf',$pdf);
+        if ($dir=getenv('SAB_HOTEL_PDF_EVIDENCE_DIR')) file_put_contents($dir.'/hotel-checkin-note.pdf',$pdf);
         $displayNote=clone $saved;
         $rows=[];
         foreach ([['1/3','KG'],['2/3','KG'],['0.000000000001','UND']] as [$quantity,$unit]) {
@@ -3191,7 +3191,7 @@ trait PaymentClassificationPersistenceCases
         $db->table('establishments')->where('id',$saved->establishment_id)->update(['template_ticket_pdf'=>'modern-2027']);
         $ticket=(new \App\CoreFacturalo\Facturalo())->createPdf($displayNote,'sale_note','ticket_58','string');
         self::assertStringStartsWith('%PDF-',$ticket);
-        if ($dir=getenv('PRO9_HOTEL_PDF_EVIDENCE_DIR')) file_put_contents($dir.'/hotel-note-units-ticket.pdf',$ticket);
+        if ($dir=getenv('SAB_HOTEL_PDF_EVIDENCE_DIR')) file_put_contents($dir.'/hotel-note-units-ticket.pdf',$ticket);
     }
 
     public function test_purchase_settlement_calculates_exact_lines_and_header_instead_of_trusting_input(): void
@@ -4040,7 +4040,7 @@ trait PaymentClassificationPersistenceCases
         $app->bind('dompdf.wrapper',fn($app)=>new \Barryvdh\DomPDF\PDF(new \Dompdf\Dompdf(),$app['config'],$app['files'],$app['view']));
         \Barryvdh\DomPDF\Facade\Pdf::clearResolvedInstance('dompdf.wrapper');
         $pdf=$controller->pdf($request)->getContent(); self::assertStringStartsWith('%PDF-',$pdf);
-        if ($path=getenv('PRO9_OCCUPANCY_REPORT_PDF_PATH')) file_put_contents($path,$pdf);
+        if ($path=getenv('SAB_OCCUPANCY_REPORT_PDF_PATH')) file_put_contents($path,$pdf);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\ReportHotelExport())->records($records)->rooms($localRooms)->company($company);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
@@ -4103,7 +4103,7 @@ trait PaymentClassificationPersistenceCases
         $app->bind('dompdf.wrapper',fn($app)=>new \Barryvdh\DomPDF\PDF(new \Dompdf\Dompdf(),$app['config'],$app['files'],$app['view']));
         \Barryvdh\DomPDF\Facade\Pdf::clearResolvedInstance('dompdf.wrapper');
         $pdf=$controller->pdf($request)->getContent(); self::assertStringStartsWith('%PDF-',$pdf);
-        if ($path=getenv('PRO9_HOTEL_REPORT_PDF_PATH')) file_put_contents($path,$pdf);
+        if ($path=getenv('SAB_HOTEL_REPORT_PDF_PATH')) file_put_contents($path,$pdf);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\DocumentHotelExport())->records($records)->company($company);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
@@ -4267,7 +4267,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('0.87',$html); self::assertStringContainsString('Proveedor',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('A4','landscape'); $pdf->loadHtml($html); $pdf->render();
         $pdfBytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$pdfBytes);
-        if ($path=getenv('PRO9_FIXED_ASSET_REPORT_PDF_PATH')) file_put_contents($path,$pdfBytes);
+        if ($path=getenv('SAB_FIXED_ASSET_REPORT_PDF_PATH')) file_put_contents($path,$pdfBytes);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\FixedAssetPurchaseExport())->records($records)->company($company)->establishment($establishment)->filters($filters);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
@@ -4322,7 +4322,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('USD',$html); self::assertStringContainsString('0.12',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->loadHtml($html); $pdf->render(); $pdfBytes=$pdf->output();
         self::assertStringStartsWith('%PDF-',$pdfBytes);
-        if ($path=getenv('PRO9_TIP_REPORT_PDF_PATH')) file_put_contents($path,$pdfBytes);
+        if ($path=getenv('SAB_TIP_REPORT_PDF_PATH')) file_put_contents($path,$pdfBytes);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\ReportTipExport())->data(compact('records','company','establishment'));
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
@@ -4439,7 +4439,7 @@ trait PaymentClassificationPersistenceCases
         $pdfPath=sys_get_temp_dir().'/'.$this->database.'/'.$pdfTray->path.'/'.$pdfTray->file_name.'.pdf';
         self::assertFileExists($pdfPath);$pdfBytes=file_get_contents($pdfPath);self::assertStringStartsWith('%PDF-',$pdfBytes);
         self::assertMatchesRegularExpression('/\/MediaBox\s*\[\s*0\s+0\s+1683\.7[0-9]+\s+1190\.5[0-9]+\s*\]/',$pdfBytes);
-        if ($dir=getenv('PRO9_SALES_REPORT_EVIDENCE')) copy($pdfPath,$dir.'/ventas-encolado.pdf');
+        if ($dir=getenv('SAB_SALES_REPORT_EVIDENCE')) copy($pdfPath,$dir.'/ventas-encolado.pdf');
         $smallColumns=clone $columns;foreach ($smallColumns as $name=>$column) $smallColumns->$name=(object)['visible'=>false,'title'=>$name];
         $smallTray=\App\Models\Tenant\DownloadTray::create(['user_id'=>$input['user_id'],'module'=>'REPORT','format'=>'pdf','type'=>'Ventas']);
         $smallJob=new class($smallTray->id,1,$filters,$smallColumns) extends \Modules\Report\Jobs\ProcessDocumentReport {
@@ -4707,7 +4707,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('209.13',$html);self::assertStringContainsString('no representan necesariamente dinero cobrado',$html);
         $pdf=new \Dompdf\Dompdf();$pdf->setPaper('A4','landscape');$pdf->loadHtml($html);$pdf->render();
         self::assertStringStartsWith('%PDF-',$pdf->output());
-        if ($dir=getenv('PRO9_POS_CASH_REPORT_EVIDENCE')) file_put_contents($dir.'/documentos-caja.pdf',$pdf->output());
+        if ($dir=getenv('SAB_POS_CASH_REPORT_EVIDENCE')) file_put_contents($dir.'/documentos-caja.pdf',$pdf->output());
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export(new \Modules\Report\Exports\PosCashDocumentsExport($report,$company),\Maatwebsite\Excel\Excel::XLSX);
@@ -4744,7 +4744,7 @@ trait PaymentClassificationPersistenceCases
         $db->table('documents')->where('id',$invoice->id)->update(['total'=>'0.333333333333','currency_type_id'=>'VES',
             'calculation_snapshot'=>json_encode($snapshot)]);
         $base=(array)$db->table('documents')->where('id',$invoice->id)->first(); unset($base['id']);
-        $vesOnly = getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1';
+        $vesOnly = getenv('SAB_TEST_INVOICES_VES_ONLY') === '1';
         $rows=[['01','VES','0.333333333333','01',$snapshot],['01','USD','0.333333333333','01',$snapshot],
             ['07','VES','0.1','01',null],['08',$vesOnly ? 'VES' : 'USD','0.2','01',null],['01','VES','100','11',null]];
         $ids=[];
@@ -5021,7 +5021,7 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(1001,$count);self::assertSame('232232',\App\Support\Exact\Decimal::represent($total));
             self::assertNotNull($book->getSheetByName('Fracciones exactas'));$book->disconnectWorksheets();
         } finally {$file->delete();}
-        if (getenv('PRO9_FISCAL_TIMING')) fwrite(STDERR,sprintf("Cash documents 1001: %.2fs, peak %.1f MiB\n",microtime(true)-$started,memory_get_peak_usage(true)/1048576));
+        if (getenv('SAB_FISCAL_TIMING')) fwrite(STDERR,sprintf("Cash documents 1001: %.2fs, peak %.1f MiB\n",microtime(true)-$started,memory_get_peak_usage(true)/1048576));
     }
 
     public function test_customer_report_keeps_notes_currencies_and_filters_in_list_and_excel(): void
@@ -5169,7 +5169,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('Totales VES',$html);self::assertStringContainsString('1.00',$html);
         $pdf=new \Dompdf\Dompdf();$pdf->setPaper('A4','landscape');$pdf->loadHtml($html);$pdf->render();
         self::assertStringStartsWith('%PDF-',$pdf->output());
-        if ($dir=getenv('PRO9_SALE_NOTE_REPORT_EVIDENCE')) file_put_contents($dir.'/notas-venta.pdf',$pdf->output());
+        if ($dir=getenv('SAB_SALE_NOTE_REPORT_EVIDENCE')) file_put_contents($dir.'/notas-venta.pdf',$pdf->output());
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\SaleNoteExport())->records($records)->company($company)->establishment($establishment)->filters($filters);
@@ -5231,7 +5231,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('0.33',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('A4','landscape'); $pdf->loadHtml($html); $pdf->render();
         $bytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$bytes);
-        if ($dir=getenv('PRO9_QUOTATION_REPORT_EVIDENCE')) file_put_contents($dir.'/cotizaciones.pdf',$bytes);
+        if ($dir=getenv('SAB_QUOTATION_REPORT_EVIDENCE')) file_put_contents($dir.'/cotizaciones.pdf',$bytes);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\QuotationExport())->records($records)->company($company)->establishment($establishment)->filters($filters);
@@ -6561,7 +6561,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($note->fresh(),'ticket_58',$note->filename);
             $pdf=$printer->getStorage($note->filename,'sale_note');
             $path=sys_get_temp_dir().'/'.$this->database.'/persisted-trace-'.$design.'.pdf'; file_put_contents($path,$pdf);
-            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/persisted-trace-'.$design.'.pdf',$pdf);
+            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/persisted-trace-'.$design.'.pdf',$pdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             foreach (['LOT-PERSISTIDO','2028-12-30','SERIE-PERSISTIDA-1','SERIE-PERSISTIDA-2','116.00','32.00','232.00'] as $expected) self::assertStringContainsString($expected,$extract->getOutput(),$design);
             if ($design==='modern-2027') self::assertStringContainsString('Subtotal: Bs. 200.00',$extract->getOutput());
@@ -6576,7 +6576,7 @@ trait PaymentClassificationPersistenceCases
                 $printer->createPdf($note->fresh(),$format,$note->filename);
                 $pdf=$printer->getStorage($note->filename,'sale_note');
                 $path=sys_get_temp_dir().'/'.$this->database.'/persisted-'.$design.'-'.$format.'.pdf'; file_put_contents($path,$pdf);
-                if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/persisted-'.$design.'-'.$format.'.pdf',$pdf);
+                if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/persisted-'.$design.'-'.$format.'.pdf',$pdf);
                 $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
                 $html=(new \App\CoreFacturalo\Template())->pdf($design,'sale_note',\App\Models\Tenant\Company::active(),$note->fresh(),$format,['is_preview'=>false]);
                 foreach (['LOT-PERSISTIDO','2028-12-30','SERIE-PERSISTIDA-1','SERIE-PERSISTIDA-2'] as $expected) self::assertStringContainsString($expected,$html,$design.' '.$format);
@@ -6611,7 +6611,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($balanceNote,$format,$balanceNote->filename);
             $balancePdf=$printer->getStorage($balanceNote->filename,'sale_note');
             $balancePath=sys_get_temp_dir().'/'.$this->database.'/balance-'.$design.'-'.$format.'.pdf'; file_put_contents($balancePath,$balancePdf);
-            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/balance-'.$design.'-'.$format.'.pdf',$balancePdf);
+            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/balance-'.$design.'-'.$format.'.pdf',$balancePdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$balancePath,'-']); $extract->mustRun();
             self::assertMatchesRegularExpression('/SALDO:\s*Bs\.\s*0\.01/',$extract->getOutput(),$format);
         }
@@ -6626,7 +6626,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($balanceNote,$format,$balanceNote->filename);
             $path=sys_get_temp_dir().'/'.$this->database.'/payable-'.$design.'-'.$format.'.pdf';
             $pdf=$printer->getStorage($balanceNote->filename,'sale_note'); file_put_contents($path,$pdf);
-            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/payable-'.$design.'-'.$format.'.pdf',$pdf);
+            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/payable-'.$design.'-'.$format.'.pdf',$pdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
             foreach (['AJUSTE DE LIQUIDACIÓN: Bs. 0.005','TOTAL LIQUIDABLE: Bs. 232.01','SALDO: Bs. 0.00'] as $expected) self::assertStringContainsString($expected,$text,$design.' '.$format);
@@ -7057,7 +7057,7 @@ trait PaymentClassificationPersistenceCases
         $printer->createPdf($printOrder,'ticket_58','qa-long-order');
         self::assertStringStartsWith('%PDF-',$pdf);
         self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$pdf));
-        if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/order-long.pdf',$pdf);
+        if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/order-long.pdf',$pdf);
     }
 
     public function test_order_consolidated_allocates_header_and_keeps_exact_usd_prices(): void
@@ -7115,7 +7115,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('Bs. 2.70',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->loadHtml($html); $pdf->render();
         $pdfBytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$pdfBytes);
-        if ($dir=getenv('PRO9_ORDER_REPORT_EVIDENCE')) file_put_contents($dir.'/pedidos.pdf',$pdfBytes);
+        if ($dir=getenv('SAB_ORDER_REPORT_EVIDENCE')) file_put_contents($dir.'/pedidos.pdf',$pdfBytes);
         $app->bind('dompdf.wrapper',fn($app)=>new \Barryvdh\DomPDF\PDF(new \Dompdf\Dompdf(),$app['config'],$app['files'],$app['view']));
         \Illuminate\Support\Facades\Facade::setFacadeApplication($app);
         $job=new \Modules\Report\Jobs\ProcessReportSalesConsolidated(1,1,$request->all(),$input['user_id'],'detail','pdf','order_notes');
@@ -7128,7 +7128,7 @@ trait PaymentClassificationPersistenceCases
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temporaryFiles);
         $file=(new \Maatwebsite\Excel\Writer($temporaryFiles))->export($export,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('PRO9_ORDER_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/pedidos.xlsx');
+            if ($dir=getenv('SAB_ORDER_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/pedidos.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
             self::assertContains(['item:'.$line['item_id'],'quantity','3','3','1'],
                 $book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false));
@@ -7202,11 +7202,11 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('No se encontraron registros',$emptyHtml);
         $generalPdf=new \Dompdf\Dompdf(); $generalPdf->setPaper('A4','landscape'); $generalPdf->loadHtml($generalHtml); $generalPdf->render();
         $generalPdfBytes=$generalPdf->output(); self::assertStringStartsWith('%PDF-',$generalPdfBytes);
-        if ($dir=getenv('PRO9_ORDER_REPORT_EVIDENCE')) file_put_contents($dir.'/pedidos-generales.pdf',$generalPdfBytes);
+        if ($dir=getenv('SAB_ORDER_REPORT_EVIDENCE')) file_put_contents($dir.'/pedidos-generales.pdf',$generalPdfBytes);
         $generalExport=(new \Modules\Report\Exports\ReportOrderGeneralExport())->records($records)->company($company);
         $generalFile=(new \Maatwebsite\Excel\Writer($temporaryFiles))->export($generalExport,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('PRO9_ORDER_REPORT_EVIDENCE')) copy($generalFile->getLocalPath(),$dir.'/pedidos-generales.xlsx');
+            if ($dir=getenv('SAB_ORDER_REPORT_EVIDENCE')) copy($generalFile->getLocalPath(),$dir.'/pedidos-generales.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($generalFile->getLocalPath());
             $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
             self::assertContains(['order:'.$order->id,'total','0.9','9','10'],$fractions);
@@ -7312,7 +7312,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringContainsString('0.27',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->loadHtml($html); $pdf->render();
         $bytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$bytes);
-        if ($dir=getenv('PRO9_COMMISSION_REPORT_EVIDENCE')) file_put_contents($dir.'/comisiones.pdf',$bytes);
+        if ($dir=getenv('SAB_COMMISSION_REPORT_EVIDENCE')) file_put_contents($dir.'/comisiones.pdf',$bytes);
         $export=(new \Modules\Report\Exports\UserCommissionExport())->records($records)->amounts($amounts)
             ->company($company)->establishment($establishment);
         $temporaryFiles=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
@@ -7929,7 +7929,7 @@ trait PaymentClassificationPersistenceCases
                 $pdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
                 $bytes=$pdf->Output('', 'S');
                 self::assertStringStartsWith('%PDF-',$bytes,"$design $format");
-                if (($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) && $design==='default' && $format==='a4') {
+                if (($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) && $design==='default' && $format==='a4') {
                     file_put_contents($dir.'/cotizacion.pdf',$bytes);
                 }
             }
@@ -7946,7 +7946,7 @@ trait PaymentClassificationPersistenceCases
         self::assertStringStartsWith('%PDF-',$mail->rawAttachments[0]['data']);
         self::assertSame('qa-quotation.pdf',$mail->rawAttachments[0]['name']);
         self::assertSame('195.6',\App\Support\Exact\Decimal::represent($mail->quotation->exactValue('total')));
-        if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-mail-current.pdf",$mail->rawAttachments[0]['data']);
+        if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-mail-current.pdf",$mail->rawAttachments[0]['data']);
         foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable'] as $design) {
             foreach (['a4','a5','ticket'] as $format) {
                 $html=$template->pdf($design,'quotation',$company,$quotation,$format);
@@ -7959,7 +7959,7 @@ trait PaymentClassificationPersistenceCases
                 $pdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
                 $bytes=$pdf->Output('', 'S');
                 self::assertStringStartsWith('%PDF-',$bytes,"$design $format con ajustes");
-                if (($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) && $design==='default' && $format==='a4') {
+                if (($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) && $design==='default' && $format==='a4') {
                     file_put_contents($dir.'/cotizacion-ajustes.pdf',$bytes);
                 }
             }
@@ -7975,7 +7975,7 @@ trait PaymentClassificationPersistenceCases
                 self::assertStringStartsWith('%PDF-',$bytes,"$design $format");
                 self::assertSame(1,preg_match('/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)/',$bytes,$pageBox),"$design $format page box");
                 self::assertEqualsWithDelta($width*72/25.4,(float)$pageBox[1],0.02,"$design $format width");
-                if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/$design-$format.pdf",$bytes);
+                if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/$design-$format.pdf",$bytes);
             }
         }
         $longQuotation=$quotation->fresh();
@@ -7999,7 +7999,7 @@ trait PaymentClassificationPersistenceCases
                 $printer->createPdf($longQuotation,$format,'qa-quotation-long-ticket');
                 self::assertStringStartsWith('%PDF-',$bytes,"$design $format");
                 self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$bytes),"$design $format paginación");
-                if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/$design-$format-long.pdf",$bytes);
+                if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/$design-$format-long.pdf",$bytes);
             }
         }
         \App\Models\Tenant\TemplateColumnsConfig::create([
@@ -8018,7 +8018,7 @@ trait PaymentClassificationPersistenceCases
         $printer->method('uploadFile')->willReturnCallback(function ($filename,$content) use (&$customPdf) {$customPdf=$content;});
         $printer->createPdf($quotation->fresh(),'ticket_58','qa-quotation-custom');
         self::assertStringStartsWith('%PDF-',$customPdf);
-        if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/custom-hidden-columns.pdf",$customPdf);
+        if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/custom-hidden-columns.pdf",$customPdf);
         $printer=new class extends \App\Http\Controllers\Tenant\QuotationController {
             public $beforeRender;
             protected function renderPdf($quotation,$format_pdf) {
@@ -8040,12 +8040,12 @@ trait PaymentClassificationPersistenceCases
         self::assertStringStartsWith('%PDF-',$preview->getContent());
         self::assertStringStartsWith('inline;',$preview->headers->get('Content-Disposition'));
         self::assertSame(0,$db->table('quotation_payments')->where('quotation_id',$quotation->id)->count());
-        if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-snapshot-preview.pdf",$preview->getContent());
+        if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-snapshot-preview.pdf",$preview->getContent());
         $printer->beforeRender=null;
         $download=$printer->download($quotation->external_id,'ticket_58');
         self::assertStringStartsWith('%PDF-',$download->getContent());
         self::assertStringStartsWith('attachment;',$download->headers->get('Content-Disposition'));
-        if ($dir=getenv('PRO9_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-snapshot-download.pdf",$download->getContent());
+        if ($dir=getenv('SAB_QUOTATION_PDF_EVIDENCE')) file_put_contents("$dir/quotation-snapshot-download.pdf",$download->getContent());
     }
 
     public function test_quotation_receipt_keeps_received_dollars_and_applied_bolivars(): void
@@ -9006,7 +9006,7 @@ trait PaymentClassificationPersistenceCases
             self::assertTrue($document->items()->firstOrFail()->exactValue('unit_price')->isEqualTo(\App\Support\Exact\Decimal::of('38')->dividedBy(3)));
             self::assertStringStartsWith('%PDF-',$pdf);
             $path=sys_get_temp_dir().'/'.$this->database.'/store-'.$type.'.pdf'; file_put_contents($path,$pdf);
-            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/store-'.$type.'.pdf',$pdf);
+            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/store-'.$type.'.pdf',$pdf);
             $reader=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $reader->mustRun();
             self::assertStringContainsString('MOCK-PRODUCTO-VENEZUELA',$reader->getOutput());
             self::assertMatchesRegularExpression('/38[.,]00/',$reader->getOutput());
@@ -9027,7 +9027,7 @@ trait PaymentClassificationPersistenceCases
                     $bytes=$renderer->Output('','S');
                     $renderedPath=sys_get_temp_dir().'/'.$this->database.'/'.$type.'-'.$design.'-'.$format.'.pdf';
                     file_put_contents($renderedPath,$bytes);
-                    if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/'.$type.'-'.$design.'-'.$format.'.pdf',$bytes);
+                    if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/'.$type.'-'.$design.'-'.$format.'.pdf',$bytes);
                     $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$renderedPath,'-']); $extract->mustRun();
                     self::assertStringContainsString('precio unitario mostrado está redondeado',$extract->getOutput(),"$design $format $kind");
                     self::assertMatchesRegularExpression('/38[.,]00/',$extract->getOutput(),"$design $format $kind");
@@ -9065,7 +9065,7 @@ trait PaymentClassificationPersistenceCases
                     }
                     $ticketPath=sys_get_temp_dir().'/'.$this->database.'/'.$type.'-'.$design.'-'.$format.'.pdf';
                     file_put_contents($ticketPath,$ticket);
-                    if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/'.$type.'-'.$design.'-'.$format.'.pdf',$ticket);
+                    if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/'.$type.'-'.$design.'-'.$format.'.pdf',$ticket);
                     self::assertStringStartsWith('%PDF-',$ticket,"$design $format $type");
                     $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$ticketPath,'-']); $extract->mustRun();
                     $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
@@ -9117,7 +9117,7 @@ trait PaymentClassificationPersistenceCases
                         $bytes=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,'invoice','ticket','string');
                     } else $bytes=$renderer->Output('','S');
                     file_put_contents($path,$bytes);
-                    if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/grouped-'.$type.'-'.$design.'.pdf',$bytes);
+                    if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/grouped-'.$type.'-'.$design.'.pdf',$bytes);
                     $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
                     $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
                     foreach (['Por consumo','INDIVIDUAL QA','38.00','10.00','12.67','precio unitario mostrado está redondeado'] as $expected) {
@@ -9144,7 +9144,7 @@ trait PaymentClassificationPersistenceCases
                         $quantityPdf=$printer->getStorage($printDocument->filename,'sale_note');
                         $quantityPath=sys_get_temp_dir().'/'.$this->database.'/large-note-'.$design.'.pdf';
                         file_put_contents($quantityPath,$quantityPdf);
-                        if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-note-'.$design.'.pdf',$quantityPdf);
+                        if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-note-'.$design.'.pdf',$quantityPdf);
                         $extractQuantity=new \Symfony\Component\Process\Process(['pdftotext','-layout',$quantityPath,'-']); $extractQuantity->mustRun();
                         self::assertStringContainsString('9007199254740993',$extractQuantity->getOutput(),$design);
                         if (in_array($design,['default','modern-2027','nrus'],true)) self::assertStringContainsString('9007199254740996',$extractQuantity->getOutput(),$design);
@@ -9168,7 +9168,7 @@ trait PaymentClassificationPersistenceCases
                             $printer->createPdf($printDocument,'ticket_58',$printDocument->filename);
                             $tracePdf=$printer->getStorage($printDocument->filename,'sale_note');
                             $tracePath=sys_get_temp_dir().'/'.$this->database.'/trace-note-58.pdf'; file_put_contents($tracePath,$tracePdf);
-                            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/trace-note-58.pdf',$tracePdf);
+                            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/trace-note-58.pdf',$tracePdf);
                             $traceExtract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$tracePath,'-']); $traceExtract->mustRun();
                             foreach (['LOTE-CONGELADO-123','2031-06-30','SERIAL-CONGELADO-456'] as $expected) self::assertStringContainsString($expected,$traceExtract->getOutput());
                             self::assertStringNotContainsString('SERIAL-NO-SELECCIONADO',$traceExtract->getOutput());
@@ -9182,7 +9182,7 @@ trait PaymentClassificationPersistenceCases
                         $quantityPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,'invoice','ticket','string');
                         $quantityPath=sys_get_temp_dir().'/'.$this->database.'/large-quantity-'.$design.'.pdf';
                         file_put_contents($quantityPath,$quantityPdf);
-                        if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-quantity-'.$design.'.pdf',$quantityPdf);
+                        if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-quantity-'.$design.'.pdf',$quantityPdf);
                         $extractQuantity=new \Symfony\Component\Process\Process(['pdftotext','-layout',$quantityPath,'-']); $extractQuantity->mustRun();
                         self::assertStringContainsString('9007199254740993',$extractQuantity->getOutput(),$design);
                         if ($design==='Plantilla_personalizable') {
@@ -9203,7 +9203,7 @@ trait PaymentClassificationPersistenceCases
                     }
                     $groupPath=sys_get_temp_dir().'/'.$this->database.'/large-group-'.$type.'-'.$design.'.pdf';
                     file_put_contents($groupPath,$groupPdf);
-                    if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-group-'.$type.'-'.$design.'.pdf',$groupPdf);
+                    if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-group-'.$type.'-'.$design.'.pdf',$groupPdf);
                     $groupExtract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$groupPath,'-']); $groupExtract->mustRun();
                     self::assertStringContainsString('9007199254740993',$groupExtract->getOutput(),$design.' '.$type);
                     self::assertStringContainsString('Por consumo',$groupExtract->getOutput(),$design.' '.$type);
@@ -9218,7 +9218,7 @@ trait PaymentClassificationPersistenceCases
                     } else $narrowPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,'invoice','ticket_58','string');
                     $narrowPath=sys_get_temp_dir().'/'.$this->database.'/large-58-'.$type.'-'.$design.'.pdf';
                     file_put_contents($narrowPath,$narrowPdf);
-                    if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-58-'.$type.'-'.$design.'.pdf',$narrowPdf);
+                    if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/large-58-'.$type.'-'.$design.'.pdf',$narrowPdf);
                     $narrowExtract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$narrowPath,'-']); $narrowExtract->mustRun();
                     self::assertStringContainsString('9007199254740993',$narrowExtract->getOutput(),$design.' '.$type);
                     if (in_array($design,['default','marca_de_agua'],true) && $type==='80') {
@@ -9637,7 +9637,7 @@ trait PaymentClassificationPersistenceCases
         $html=view('report::commissions_detail.report_pdf',['records'=>$pdfRows,'company'=>$company])->render();
         self::assertStringContainsString('VES',$html); self::assertStringContainsString('USD',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('a4','landscape'); $pdf->loadHtml($html); $pdf->render(); self::assertStringStartsWith('%PDF-',$pdf->output());
-        if ($dir=getenv('PRO9_DETAILED_PROFIT_EVIDENCE')) file_put_contents($dir.'/utilidades.pdf',$pdf->output());
+        if ($dir=getenv('SAB_DETAILED_PROFIT_EVIDENCE')) file_put_contents($dir.'/utilidades.pdf',$pdf->output());
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $export=(new \Modules\Report\Exports\CommissionDetailExport())->records($records)->company($company)->establishment(null);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
@@ -9894,7 +9894,7 @@ trait PaymentClassificationPersistenceCases
         $html=view('report::pending-account-commissions.report_pdf',compact('company','records'))->render();
         self::assertStringContainsString('Moneda del monto fijo no definida',$html); self::assertStringContainsString('VES',$html); self::assertStringContainsString('USD',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->loadHtml($html); $pdf->render(); $pdfBytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$pdfBytes);
-        if ($dir=getenv('PRO9_PENDING_COMMISSION_EVIDENCE')) file_put_contents($dir.'/comisiones-pendientes.pdf',$pdfBytes);
+        if ($dir=getenv('SAB_PENDING_COMMISSION_EVIDENCE')) file_put_contents($dir.'/comisiones-pendientes.pdf',$pdfBytes);
         $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir()); $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
         $branchRecords=collect([$branchRow]);
         $branchHtml=view('report::pending-account-commissions.report_pdf',['company'=>$company,'records'=>$branchRecords])->render();
@@ -9911,7 +9911,7 @@ trait PaymentClassificationPersistenceCases
         $export=(new \Modules\Report\Exports\PendingAccountCommissionExport())->records($records)->company($company)->establishment(null)->request($request);
         $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('PRO9_PENDING_COMMISSION_EVIDENCE')) copy($file->getLocalPath(),$dir.'/comisiones-pendientes.xlsx');
+            if ($dir=getenv('SAB_PENDING_COMMISSION_EVIDENCE')) copy($file->getLocalPath(),$dir.'/comisiones-pendientes.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
             $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
             self::assertContains(['user:'.$input['user_id'].':VES','total_within_range','0.6','3','5'],$fractions);
@@ -10014,13 +10014,13 @@ trait PaymentClassificationPersistenceCases
             self::assertStringContainsString($display,$html); self::assertStringContainsString('Cliente de compra',$html);
             $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('A4','landscape'); $pdf->loadHtml($html); $pdf->render();
             $bytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$bytes);
-            if ($dir=getenv('PRO9_PURCHASE_REPORT_EVIDENCE')) file_put_contents($dir.'/compras-'.$currency.'.pdf',$bytes);
+            if ($dir=getenv('SAB_PURCHASE_REPORT_EVIDENCE')) file_put_contents($dir.'/compras-'.$currency.'.pdf',$bytes);
             $temp=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
             $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temp);
             $export=(new \Modules\Report\Exports\PurchaseExport())->records($records)->company($company)->establishment($establishment)->filters($filters);
             $file=(new \Maatwebsite\Excel\Writer($temp))->export($export,\Maatwebsite\Excel\Excel::XLSX);
             try {
-                if ($dir=getenv('PRO9_PURCHASE_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/compras-'.$currency.'.xlsx');
+                if ($dir=getenv('SAB_PURCHASE_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/compras-'.$currency.'.xlsx');
                 $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
                 $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
                 self::assertContains($display === '0.43' ? '0.43' : '173.33',$values);
@@ -10148,7 +10148,7 @@ trait PaymentClassificationPersistenceCases
             $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temporaryFiles);
             $file=(new \Maatwebsite\Excel\Writer($temporaryFiles))->export($export,\Maatwebsite\Excel\Excel::XLSX);
             try {
-                if ($dir=getenv('PRO9_GENERAL_ITEM_EVIDENCE')) copy($file->getLocalPath(),$dir.'/compra-'.($isConverted ? 'ves' : 'usd').'.xlsx');
+                if ($dir=getenv('SAB_GENERAL_ITEM_EVIDENCE')) copy($file->getLocalPath(),$dir.'/compra-'.($isConverted ? 'ves' : 'usd').'.xlsx');
                 $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
                 $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
                 self::assertContains($expected,$values);
@@ -10173,7 +10173,7 @@ trait PaymentClassificationPersistenceCases
             $pdf->setPaper('A4','landscape'); $pdf->loadHtml($pdfHtml); $pdf->render();
             $pdfBytes=$pdf->output();
             self::assertStringStartsWith('%PDF-',$pdfBytes);
-            if ($dir=getenv('PRO9_GENERAL_ITEM_EVIDENCE')) file_put_contents($dir.'/compra-'.($isConverted ? 'ves' : 'usd').'.pdf',$pdfBytes);
+            if ($dir=getenv('SAB_GENERAL_ITEM_EVIDENCE')) file_put_contents($dir.'/compra-'.($isConverted ? 'ves' : 'usd').'.pdf',$pdfBytes);
         }
         $backdated=(array)$db->table('purchases')->where('id',$id)->first();
         unset($backdated['id']);
@@ -10901,7 +10901,7 @@ trait PaymentClassificationPersistenceCases
         $legacyHtml=$app['view']->make('finance::movements.new_report_excel',['records'=>$legacy,'company'=>\App\Models\Tenant\Company::firstOrFail(),'establishment'=>$establishment])->render();
         self::assertStringContainsString('Sin moneda',$legacyHtml);
         // ######## FIN MONEDA DEL MEDIO DE COBRO ########
-        if ($directory=getenv('PRO9_PAYMENTS_VISUAL_OUTPUT_DIR')) {
+        if ($directory=getenv('SAB_PAYMENTS_VISUAL_OUTPUT_DIR')) {
             if (!is_dir($directory)) mkdir($directory,0777,true);
             foreach (['a4','ticket80','ticket58'] as $paper) file_put_contents($directory.'/cash-'.$paper.'.pdf',
                 (new \Modules\CashReport\Services\CashReportRenderer())->pdfContent('cash_summary',$cash,['paper'=>$paper]));
@@ -11434,12 +11434,12 @@ trait PaymentClassificationPersistenceCases
             $pdf->WriteHTML($html,\Mpdf\HTMLParserMode::HTML_BODY);
             $bytes=$pdf->Output('','S');
             self::assertStringStartsWith('%PDF-',$bytes);
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-'.$template.'-'.$format.'.pdf',$bytes);
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-'.$template.'-'.$format.'.pdf',$bytes);
         }
         $db->table('establishments')->where('id',$note->establishment_id)->update(['template_ticket_pdf'=>'modern-2027']);
         $productionPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printNote,'sale_note','ticket_58','string');
         self::assertStringStartsWith('%PDF-',$productionPdf);
-        if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-modern-production-58.pdf',$productionPdf);
+        if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-modern-production-58.pdf',$productionPdf);
         $sourceRow=$printNote->payments->first();
         $displayPayments=collect([$sourceRow]);
         foreach ([1,2] as $i) {
@@ -11451,7 +11451,7 @@ trait PaymentClassificationPersistenceCases
         $printNote->setRelation('payments',new \Illuminate\Database\Eloquent\Collection($displayPayments->all()));
         $multiPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printNote,'sale_note','ticket_58','string');
         self::assertStringStartsWith('%PDF-',$multiPdf);
-        if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-modern-multiple-58.pdf',$multiPdf);
+        if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/note-modern-multiple-58.pdf',$multiPdf);
     }
 
     public function test_saved_credit_installments_preserve_cross_currency_receipt_through_conversion_and_pdf(): void
@@ -11750,11 +11750,11 @@ trait PaymentClassificationPersistenceCases
             $pdf->WriteHTML($html);
             $bytes=$pdf->Output('','S');
             self::assertStringStartsWith('%PDF-',$bytes);
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-03-'.$type.'.pdf',$bytes);
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-03-'.$type.'.pdf',$bytes);
             $production=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,$type,'ticket_58','string');
             self::assertStringStartsWith('%PDF-',$production);
             self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$production),$type.' debe caber en una página de ticket.');
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-03-'.$type.'-production.pdf',$production);
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-03-'.$type.'-production.pdf',$production);
             $longDocument=clone $printDocument;
             $longRows=[];
             for ($index=0;$index<8;$index++) {
@@ -11768,7 +11768,7 @@ trait PaymentClassificationPersistenceCases
             self::assertSame(8,substr_count($html,'Cantidad: 0.333333333333'),$type);
             $longPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($longDocument,$type,'ticket_58','string');
             self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$longPdf),$type.' con cantidades largas debe caber en una página.');
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-long-'.$type.'.pdf',$longPdf);
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-long-'.$type.'.pdf',$longPdf);
             if ($type==='sale_note') {
                 $directPdf=null;
                 $direct=$this->getMockBuilder(\App\Http\Controllers\Tenant\SaleNoteController::class)->onlyMethods(['uploadFile'])->getMock();
@@ -11776,7 +11776,7 @@ trait PaymentClassificationPersistenceCases
                 $direct->createPdf($longDocument,'ticket_58','qa-long-sale-note');
                 self::assertStringStartsWith('%PDF-',$directPdf);
                 self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$directPdf));
-                if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-long-sale-note-direct.pdf',$directPdf);
+                if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/credit-long-sale-note-direct.pdf',$directPdf);
             }
         }
         $app['view']->addNamespace('report',base_path('modules/Report/Resources/views'));
@@ -11813,13 +11813,13 @@ trait PaymentClassificationPersistenceCases
             $text=implode("\n",collect($book->getActiveSheet()->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all());
             foreach (['Recibido USD 5','Aplicado VES 50','Cuota #1 — VES 60 — Vence 2026-11-26',
                 'Cuota #2 — VES 122 — Vence 2026-12-26'] as $expected) self::assertStringContainsString($expected,$text);
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) copy($file->getLocalPath(),$dir.'/general-items-receipt.xlsx');
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) copy($file->getLocalPath(),$dir.'/general-items-receipt.xlsx');
             $book->disconnectWorksheets();
         } finally { $file->delete(); }
         $fraction=['n'=>'1','d'=>'3'];
         $fractionalLine=clone $itemRecords->first();
         $fractionalDocument=clone $fractionalLine->document;
-        $vesInvoicesOnly = getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1';
+        $vesInvoicesOnly = getenv('SAB_TEST_INVOICES_VES_ONLY') === '1';
         $fractionalDocument->currency_type_id=$vesInvoicesOnly ? 'VES' : 'USD';
         $fractionalDocument->exchange_rate_sale='400';
         $fractionalLine->setRelation('document',$fractionalDocument);
@@ -11865,7 +11865,7 @@ trait PaymentClassificationPersistenceCases
             $rendered->setPaper('A4','landscape'); $rendered->loadHtml($pdfHtml); $rendered->render();
             $pdfBytes=$rendered->output();
             self::assertStringStartsWith('%PDF-',$pdfBytes);
-            if ($dir=getenv('PRO9_GENERAL_ITEM_EVIDENCE')) {
+            if ($dir=getenv('SAB_GENERAL_ITEM_EVIDENCE')) {
                 $suffix = $vesInvoicesOnly ? ($convert === 'true' ? 'ves-con-bandera-de-conversion' : 'ves') : ($convertedToVes ? 'ves' : 'usd');
                 file_put_contents($dir.'/venta-'.$suffix.'.pdf',$pdfBytes);
             }
@@ -11922,7 +11922,7 @@ trait PaymentClassificationPersistenceCases
         $bundlePdf->setPaper('A4','landscape'); $bundlePdf->loadHtml($bundleHtml); $bundlePdf->render();
         $bundleBytes=$bundlePdf->output();
         self::assertStringStartsWith('%PDF-',$bundleBytes);
-        if ($dir=getenv('PRO9_GENERAL_ITEM_EVIDENCE')) file_put_contents($dir.'/venta-paquete.pdf',$bundleBytes);
+        if ($dir=getenv('SAB_GENERAL_ITEM_EVIDENCE')) file_put_contents($dir.'/venta-paquete.pdf',$bundleBytes);
         $noteLines=(new \Modules\Report\Http\Controllers\ReportGeneralItemController())->getRecordsItems(array_replace($itemFilters,['document_type_id'=>'80']))->get();
         $noteExport=(new \Modules\Report\Exports\GeneralItemExport())->records($noteLines)->type('sale')
             ->document_type_id('80')->request_apply_conversion_to_pen('false');
@@ -11990,7 +11990,7 @@ trait PaymentClassificationPersistenceCases
             $jobFile=sys_get_temp_dir().'/'.$this->database.'/'.$tray->path.'/'.$tray->file_name.'.pdf';
             self::assertFileExists($jobFile);
             self::assertStringStartsWith('%PDF-',file_get_contents($jobFile));
-            if ($dir=getenv('PRO9_GENERAL_ITEM_EVIDENCE')) copy($jobFile,$dir.'/job-'.($docType==='80' ? 'nota' : 'factura').'.pdf');
+            if ($dir=getenv('SAB_GENERAL_ITEM_EVIDENCE')) copy($jobFile,$dir.'/job-'.($docType==='80' ? 'nota' : 'factura').'.pdf');
         }
     }
 
@@ -12086,7 +12086,7 @@ trait PaymentClassificationPersistenceCases
             $pdf->WriteHTML($html);
             $bytes=$pdf->Output('','S');
             self::assertStringStartsWith('%PDF-',$bytes);
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$template.'-'.$format.'.pdf',$bytes);
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$template.'-'.$format.'.pdf',$bytes);
         }
         config(['filesystems.disks.public'=>['driver'=>'local','root'=>sys_get_temp_dir()]]);
         foreach ($printDocument->items as $item) {
@@ -12123,14 +12123,14 @@ trait PaymentClassificationPersistenceCases
             $pdf->WriteHTML($html);
             $bytes=$pdf->Output('','S');
             self::assertStringStartsWith('%PDF-',$bytes,$view);
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$template.'-'.$format.'.pdf',$bytes);
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$template.'-'.$format.'.pdf',$bytes);
         }
         foreach (['default','nrus','marca_de_agua','Plantilla_personalizable','modern-2027'] as $productionTemplate) {
             $db->table('establishments')->where('id',$document->establishment_id)->update(['template_ticket_pdf'=>$productionTemplate]);
             $productionPdf=(new \App\CoreFacturalo\Facturalo())->createPdf($printDocument,'invoice','ticket_58','string');
             self::assertStringStartsWith('%PDF-',$productionPdf,$productionTemplate);
             self::assertSame(1,preg_match_all('/\/Type\s*\/Page\b/',$productionPdf),$productionTemplate.' debe mantener esta muestra en una página.');
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$productionTemplate.'-production-58.pdf',$productionPdf);
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$productionTemplate.'-production-58.pdf',$productionPdf);
         }
         $secondInput=$input;
         $secondInput['sale_note_id']=null; $secondInput['payments']=[]; $secondInput['fee']=[];
@@ -12182,7 +12182,7 @@ trait PaymentClassificationPersistenceCases
                 $pdf->WriteHTML($html);
                 $bytes=$pdf->Output('','S');
                 self::assertStringStartsWith('%PDF-',$bytes);
-                if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/document-report.pdf',$bytes);
+                if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/document-report.pdf',$bytes);
             } else {
                 $workbook=(new \PhpOffice\PhpSpreadsheet\Reader\Html())->loadFromString($html);
                 $file=tempnam(sys_get_temp_dir(),'report-xlsx-');
@@ -12221,7 +12221,7 @@ trait PaymentClassificationPersistenceCases
                 $mixedPdf->WriteHTML($mixedHtml);
                 $bytes=$mixedPdf->Output('','S');
                 self::assertStringStartsWith('%PDF-',$bytes);
-                if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/mixed-currency-report.pdf',$bytes);
+                if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/mixed-currency-report.pdf',$bytes);
             }
         }
         foreach (['report_pdf_standard','report_pdf_simple'] as $reportView) {
@@ -12241,7 +12241,7 @@ trait PaymentClassificationPersistenceCases
             }
             $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('A4','landscape'); $pdf->loadHtml($mixedHtml); $pdf->render();
             $bytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$bytes);
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$reportView.'-mixed.pdf',$bytes);
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/'.$reportView.'-mixed.pdf',$bytes);
         }
         $temporaryFiles=new \Maatwebsite\Excel\Files\TemporaryFileFactory(sys_get_temp_dir());
         $app->instance(\Maatwebsite\Excel\Files\TemporaryFileFactory::class,$temporaryFiles);
@@ -12250,7 +12250,7 @@ trait PaymentClassificationPersistenceCases
             ->establishment($establishment)->filters($filters)->categories($categories)->categories_services($categories_services);
         $standardFile=$writer->export($standard,\Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) copy($standardFile->getLocalPath(),$dir.'/mixed-currency-standard.xlsx');
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) copy($standardFile->getLocalPath(),$dir.'/mixed-currency-standard.xlsx');
             $standardWorkbook=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($standardFile->getLocalPath());
             $sheet=$standardWorkbook->getActiveSheet(); $found=[];
             foreach ($sheet->getRowIterator() as $row) {
@@ -12283,7 +12283,7 @@ trait PaymentClassificationPersistenceCases
         $writer=new \Maatwebsite\Excel\Writer($temporaryFiles);
         $itemFile=$writer->export($itemExport, \Maatwebsite\Excel\Excel::XLSX);
         try {
-            if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) copy($itemFile->getLocalPath(),$dir.'/items-report.xlsx');
+            if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) copy($itemFile->getLocalPath(),$dir.'/items-report.xlsx');
             $reopened=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($itemFile->getLocalPath());
             $text=implode(' ',array_map(fn ($row)=>implode(' ',array_map(fn ($cell)=>(string)$cell,$row)),
                 $reopened->getActiveSheet()->toArray()));
@@ -12465,7 +12465,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($note->fresh(),$format,$note->filename);
             $notePdf=$printer->getStorage($note->filename,'sale_note');
             $path=sys_get_temp_dir().'/'.$this->database.'/partial-usd-'.$design.'-'.$format.'.pdf'; file_put_contents($path,$notePdf);
-            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/partial-usd-'.$design.'-'.$format.'.pdf',$notePdf);
+            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/partial-usd-'.$design.'-'.$format.'.pdf',$notePdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
             foreach (['Recibido USD 5.00','Aplicado VES 50.00'] as $expected) self::assertStringContainsString($expected,$text,$design.' '.$format);
@@ -12572,7 +12572,7 @@ trait PaymentClassificationPersistenceCases
             $printer->createPdf($note->fresh(),$format,$note->filename);
             $balancePdf=$printer->getStorage($note->filename,'sale_note');
             $path=sys_get_temp_dir().'/'.$this->database.'/cross-currency-'.$design.'-'.$format.'.pdf'; file_put_contents($path,$balancePdf);
-            if ($evidence=getenv('PRO9_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/cross-currency-'.$design.'-'.$format.'.pdf',$balancePdf);
+            if ($evidence=getenv('SAB_STORE_PDF_EVIDENCE')) file_put_contents($evidence.'/cross-currency-'.$design.'-'.$format.'.pdf',$balancePdf);
             $extract=new \Symfony\Component\Process\Process(['pdftotext','-layout',$path,'-']); $extract->mustRun();
             $text=preg_replace('/\s+/u',' ',trim($extract->getOutput()));
             foreach (['Recibido USD 30.00','Aplicado VES 232.00','Vuelto USD 6.80'] as $expected) self::assertStringContainsString($expected,$text,$design.' '.$format);
@@ -12952,7 +12952,7 @@ trait PaymentClassificationPersistenceCases
 
     public function test_classified_cash_report_performance_against_legacy_at_1000_and_10000_receipts(): void
     {
-        if (getenv('PRO9_PAYMENT_BENCHMARK') !== '1') $this->markTestSkipped('Medición explícita en PostgreSQL temporal.');
+        if (getenv('SAB_PAYMENT_BENCHMARK') !== '1') $this->markTestSkipped('Medición explícita en PostgreSQL temporal.');
         [$db,$app,$input]=$this->bootHkaFixture(false);
         $cash=Cash::create(['user_id'=>$input['user_id'],'state'=>true,'date_opening'=>'2026-10-26','time_opening'=>'09:00:00','beginning_balance'=>'0']);
         $db->transaction(fn()=>CashLedger::open($cash,[]));

@@ -129,7 +129,7 @@ final class NoteAnnulment
         $hash=hash('sha256',json_encode($data,JSON_THROW_ON_ERROR));
         $claim=$this->locked($note,function ($n,$e,$invoice,$company) use ($data,$hash) {
             $old=self::journal($n);
-            if (DocumentEmission::where('document_id','!=',$n->id)->where(function($q) use($data) { $q->where('response->annulment->operation_key',$data['operation_key'])->orWhereRaw("EXISTS (SELECT 1 FROM json_array_elements(CASE WHEN json_typeof(response->'annulment'->'history')='array' THEN response->'annulment'->'history' ELSE '[]'::json END) AS pro9_history(value) WHERE pro9_history.value->>'operation_key' = ?)",[$data['operation_key']]); })->exists()) abort(409,'La clave de anulación pertenece a otra nota.');
+            if (DocumentEmission::where('document_id','!=',$n->id)->where(function($q) use($data) { $q->where('response->annulment->operation_key',$data['operation_key'])->orWhereRaw("EXISTS (SELECT 1 FROM json_array_elements(CASE WHEN json_typeof(response->'annulment'->'history')='array' THEN response->'annulment'->'history' ELSE '[]'::json END) AS sab_history(value) WHERE sab_history.value->>'operation_key' = ?)",[$data['operation_key']]); })->exists()) abort(409,'La clave de anulación pertenece a otra nota.');
             if (($old['operation_key'] ?? null) === $data['operation_key']) {
                 if ($old['request_hash'] !== $hash) abort(409,'La clave de anulación pertenece a otra solicitud.');
                 return null;

@@ -20,7 +20,7 @@ return new class extends Migration
         Schema::create('income_items', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('income_id');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->decimal('total', 30, 12);
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->index(['income_id'], 'income_items_income_id_foreign');

@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('preprinted_format_templates', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('formats', 255)->collation('pro9_ci_ai');
+            $table->string('formats', 255)->collation('sab_ci_ai');
         });
     }
 

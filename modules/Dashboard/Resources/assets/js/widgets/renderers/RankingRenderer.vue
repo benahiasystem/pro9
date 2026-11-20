@@ -19,7 +19,7 @@
 <script>
 import { formatValue } from '../registry'
 import { readVector, compareOriginal, relativeWidth } from '../../../../../../../resources/js/helpers/dashboard-originals'
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 
 /** Ranking con barras de progreso relativo al mayor valor. */
 export default {
@@ -42,7 +42,7 @@ export default {
     },
   },
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

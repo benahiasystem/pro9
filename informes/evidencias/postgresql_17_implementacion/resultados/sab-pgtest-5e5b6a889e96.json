@@ -1,0 +1,21 @@
+{
+    "run_id": "sab-pgtest-5e5b6a889e96",
+    "suite": "install",
+    "server_version": "17.11",
+    "platform": "linux\/amd64",
+    "exit_code": 0,
+    "databases": "temporary only",
+    "source_sha256": "f30a2dac0ca79929b9d27e8c5702564e8e2314a3a1ba490e872394d3ca6c2250",
+    "source_unchanged": true,
+    "private_scanner": false,
+    "excluded_groups": [
+        "browser-fixture",
+        "accounting-attachments"
+    ],
+    "cleanup_ok": true,
+    "phases": [],
+    "checks": [],
+    "reference_update": null,
+    "error": null,
+    "finished_at": "2026-11-20T02:42:47+00:00"
+}

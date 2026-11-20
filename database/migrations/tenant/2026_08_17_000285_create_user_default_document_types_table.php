@@ -21,7 +21,7 @@ return new class extends Migration
         Schema::create('user_default_document_types', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('user_id');
-            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('document_type_id', 255)->collation('sab_ci_ai');
             $table->bigInteger('series_id');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

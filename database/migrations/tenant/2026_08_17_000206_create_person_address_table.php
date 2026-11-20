@@ -21,10 +21,10 @@ return new class extends Migration
         Schema::create('person_address', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('person_id');
-            $table->char('department_id', 2)->collation('pro9_ci_ai')->nullable();
-            $table->char('province_id', 4)->collation('pro9_ci_ai')->nullable();
-            $table->char('district_id', 6)->collation('pro9_ci_ai')->nullable();
-            $table->string('address', 255)->collation('pro9_ci_ai')->nullable();
+            $table->char('department_id', 2)->collation('sab_ci_ai')->nullable();
+            $table->char('province_id', 4)->collation('sab_ci_ai')->nullable();
+            $table->char('district_id', 6)->collation('sab_ci_ai')->nullable();
+            $table->string('address', 255)->collation('sab_ci_ai')->nullable();
             $table->index(['person_id'], 'person_address_person_id_foreign');
             $table->index(['department_id'], 'person_address_department_id_foreign');
             $table->index(['province_id'], 'person_address_province_id_foreign');

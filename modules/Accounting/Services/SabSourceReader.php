@@ -6,7 +6,7 @@ use App\Support\Exact\Decimal;
 use Modules\Accounting\Domain\{ApiProblem, CompanyContext};
 use Modules\Accounting\Support\TenantDB as DB;
 use Modules\Accounting\Models\{SourceDocument, SourceVersion, ThirdParty, Incident, JournalEntry};
-final class Pro9SourceReader
+final class SabSourceReader
 {
     private const TABLES = ['sales' => 'documents', 'purchases' => 'purchases'];
     private function company(): ?object
@@ -22,7 +22,7 @@ final class Pro9SourceReader
     }
     private function requireLink(): object
     {
-        return $this->company() ?? throw new ApiProblem('PRO9_BOOK_NOT_LINKED', 'Este libro no está vinculado a la empresa de SAB del dominio actual.', 409);
+        return $this->company() ?? throw new ApiProblem('SAB_BOOK_NOT_LINKED', 'Este libro no está vinculado a la empresa de SAB del dominio actual.', 409);
     }
     public function status(): array
     {
@@ -76,20 +76,20 @@ final class Pro9SourceReader
         $id = $document->metadata['source_record_id'] ?? 0;
         $snapshot = $this->snapshot($kind, (int) $id, true);
         if (!hash_equals(app(SourceIncidentService::class)->effectiveHash($document), $snapshot['hash'])) {
-            throw new ApiProblem('PRO9_SOURCE_CHANGED', 'El documento cambió en SAB. Recibe su versión actual y resuelve las observaciones antes de continuar.', 409);
+            throw new ApiProblem('SAB_SOURCE_CHANGED', 'El documento cambió en SAB. Recibe su versión actual y resuelve las observaciones antes de continuar.', 409);
         }
         if (in_array($snapshot['state'], \App\Models\Tenant\ModelTenant::VOIDED_REJECTED_IDS, true)) {
-            throw new ApiProblem('PRO9_SOURCE_NOT_ACTIVE', 'El documento está rechazado o anulado en SAB. Conserva su historial y revisa la corrección correspondiente.');
+            throw new ApiProblem('SAB_SOURCE_NOT_ACTIVE', 'El documento está rechazado o anulado en SAB. Conserva su historial y revisa la corrección correspondiente.');
         }
         if (!in_array($snapshot['state'], \App\Models\Tenant\ModelTenant::STATE_TYPES_ACCEPTED, true)) {
-            throw new ApiProblem('PRO9_SOURCE_STATE_UNSUPPORTED', 'El estado del documento de SAB requiere revisión antes de preparar el efecto contable.');
+            throw new ApiProblem('SAB_SOURCE_STATE_UNSUPPORTED', 'El estado del documento de SAB requiere revisión antes de preparar el efecto contable.');
         }
         if ($kind === 'sales') {
             $row = DB::table('documents')->where('id', $id)->lockForUpdate()->first();
             if (($row->fiscal_emission_mode ?? '') === 'digital') {
                 $emission = DB::table('document_emissions')->where('document_id', $id)->lockForUpdate()->first();
                 if (!$emission || $emission->status !== 'confirmed') {
-                    throw new ApiProblem('PRO9_SOURCE_NOT_FINAL', 'La emisión digital en SAB todavía no está confirmada. Conserva el documento recibido pendiente de validación.');
+                    throw new ApiProblem('SAB_SOURCE_NOT_FINAL', 'La emisión digital en SAB todavía no está confirmada. Conserva el documento recibido pendiente de validación.');
                 }
             }
         }

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Modules\Expense\Models\Expense;
 use Modules\Report\Services\EstimatedPurchaseCost;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Estimated utility: current positive catalogue cost, then eligible purchase history. */
 class DashboardUtility
 {
@@ -119,4 +119,4 @@ class DashboardUtility
         return $quantity;
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

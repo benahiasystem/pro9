@@ -15,8 +15,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payment_link_types', function (Blueprint $table) {
-            $table->char('id', 2)->collation('pro9_ci_ai');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->char('id', 2)->collation('sab_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->primary(['id']);
         });
     }

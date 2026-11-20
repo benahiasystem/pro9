@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('expense_reasons', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
         });
     }
 

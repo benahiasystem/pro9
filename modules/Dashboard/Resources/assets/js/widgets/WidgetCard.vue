@@ -133,7 +133,7 @@ import MonthGoal from '../views/partials/MonthGoal.vue'
 import LowStock from '../views/partials/LowStock.vue'
 import { GRID_GAP, GRID_ROW_HEIGHT, formatValue, recFor, salesTitleForPeriod, themeColors, themePalette, typeById, typesForSource } from './registry'
 import { readOriginal, readVector, compareOriginal, originalDatasetAvailable } from '../../../../../../resources/js/helpers/dashboard-originals'
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 
 // Componentes custom aportados por fuentes del propio módulo Dashboard.
 // Fuentes de otros módulos registran los suyos vía registerCustomComponent.
@@ -276,7 +276,7 @@ export default {
     },
   },
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 <style scoped>
 .wg-cell {

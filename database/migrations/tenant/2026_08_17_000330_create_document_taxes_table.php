@@ -29,8 +29,8 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('document_id');
             $table->bigInteger('document_payment_id')->nullable();
-            $table->string('tax_kind', 16)->collation('pro9_ci_ai');
-            $table->string('code', 32)->collation('pro9_ci_ai');
+            $table->string('tax_kind', 16)->collation('sab_ci_ai');
+            $table->string('code', 32)->collation('sab_ci_ai');
             $table->decimal('percentage', 30, 12)->default('0');
             $table->decimal('base', 30, 12)->default('0');
             $table->decimal('amount', 30, 12)->default('0');

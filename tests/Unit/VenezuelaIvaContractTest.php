@@ -236,7 +236,7 @@ class VenezuelaIvaContractTest extends TestCase
     public function iva_change_markers_are_balanced(): void
     {
         $files=[];
-        if (getenv('PRO9_POSTGRES_TESTS')==='1') {
+        if (getenv('SAB_POSTGRES_TESTS')==='1') {
             $files=\Tests\Support\PostgresTestEnvironment::source()['files'];
         } else {
             // Static standalone check: never depends on Git status or a database.

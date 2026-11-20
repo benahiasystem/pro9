@@ -8,7 +8,7 @@ final class PostgresJunitTest extends \PHPUnit\Framework\TestCase
     protected function setUp(): void
     {
         require_once dirname(__DIR__,2).'/scripts/postgresql_junit.php';
-        $this->directory=sys_get_temp_dir().'/pro9-junit-'.bin2hex(random_bytes(8));
+        $this->directory=sys_get_temp_dir().'/sab-junit-'.bin2hex(random_bytes(8));
         mkdir($this->directory,0700,true);
     }
 

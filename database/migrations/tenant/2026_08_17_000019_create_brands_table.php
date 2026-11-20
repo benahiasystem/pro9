@@ -18,7 +18,7 @@ return new class extends Migration
     {
         Schema::create('brands', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['name'], 'brands_name_index');

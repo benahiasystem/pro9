@@ -9,7 +9,7 @@ namespace Modules\Dashboard\Widgets;
  *
  *     app(WidgetSourceRegistry::class)->register($miFuente);
  */
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class WidgetSourceRegistry
 {
     /** @var WidgetSource[] indexadas por key */
@@ -125,4 +125,4 @@ class WidgetSourceRegistry
         }
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

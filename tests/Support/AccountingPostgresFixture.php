@@ -47,7 +47,7 @@ final class AccountingPostgresFixture
             $this->manager->addConnection($connection, 'control');
             $control = $this->manager->getConnection('control');
             PostgresTestEnvironment::assertServer($control);
-            $name = 'pro9_fiscal_test_'.bin2hex(random_bytes(6));
+            $name = 'sab_fiscal_test_'.bin2hex(random_bytes(6));
             $control->statement('CREATE DATABASE "'.$name.'" TEMPLATE template0');
             $this->database = $name;
             FiscalTemporaryDatabases::register($name, $control->getPdo());

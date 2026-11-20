@@ -21,8 +21,8 @@ return new class extends Migration
     {
         Schema::create('mi_tienda_pe', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('order_number')->collation('pro9_ci_ai')->nullable()->comment('Numero de pedido');
-            $table->text('transaction_code')->collation('pro9_ci_ai')->nullable()->comment('Codigo de pasareña');
+            $table->text('order_number')->collation('sab_ci_ai')->nullable()->comment('Numero de pedido');
+            $table->text('transaction_code')->collation('sab_ci_ai')->nullable()->comment('Codigo de pasareña');
             $table->bigInteger('order_note_id')->nullable()->default('0');
             $table->bigInteger('document_id')->nullable()->default('0');
             $table->timestamp('created_at')->nullable();

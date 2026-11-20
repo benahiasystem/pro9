@@ -25,7 +25,7 @@ return new class extends Migration
             $table->bigInteger('doc_processes_id')->nullable()->default('0')->comment('Requerimiento relacionado');
             $table->bigInteger('doc_file_id')->nullable()->default('0')->comment('Expediente relacionado');
             $table->bigInteger('doc_office_id')->nullable()->default('0')->comment('Etapa actual');
-            $table->text('stages')->collation('pro9_ci_ai')->nullable()->comment('Conjunto de etapas.');
+            $table->text('stages')->collation('sab_ci_ai')->nullable()->comment('Conjunto de etapas.');
             $table->smallInteger('complete')->default('0')->comment('Define si se ha completado');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

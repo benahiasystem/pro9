@@ -16,9 +16,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cat_price_types', function (Blueprint $table) {
-            $table->string('id', 255)->collation('pro9_ci_ai');
+            $table->string('id', 255)->collation('sab_ci_ai');
             $table->boolean('active');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->index(['id'], 'cat_price_types_id_index');
             $table->unique(['id'], 'cat_price_types_id_pg_unique');
         });

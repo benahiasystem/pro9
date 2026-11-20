@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 // ########## INICIO CAMBIO POSTGRESQL 17
 class PostgresRestoreTenant extends \Illuminate\Console\Command
 {
-    protected $signature = 'pro9:restore-tenant {database} {package} {--source=} {--activate}';
+    protected $signature = 'sab:restore-tenant {database} {package} {--source=} {--activate}';
     protected $description = 'Restaura un ZIP PostgreSQL validado en una base independiente';
     public function handle(): int
     {

@@ -1,6 +1,6 @@
 import { ExactAmount, exactAmount } from './exchange-rate-math'
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** UI originals are immutable tokens. Numeric chart coordinates are never fallback operands. */
 function operand(value) {
     if (value instanceof ExactAmount) return value
@@ -120,4 +120,4 @@ export function originalDatasetAvailable(dataset) {
 export function escapeDashboardText(value) {
     return String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]))
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

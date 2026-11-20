@@ -28,14 +28,14 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('payment_link_id');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai')->nullable();
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai')->nullable();
             $table->date('date');
             $table->time('time');
-            $table->char('uuid', 36)->collation('pro9_ci_ai');
-            $table->string('description', 255)->collation('pro9_ci_ai');
-            $table->string('payment_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->char('uuid', 36)->collation('sab_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
+            $table->string('payment_id', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('amount', 30, 12);
-            $table->string('transaction_state_id', 255)->collation('pro9_ci_ai');
+            $table->string('transaction_state_id', 255)->collation('sab_ci_ai');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

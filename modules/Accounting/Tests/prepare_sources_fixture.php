@@ -6,7 +6,7 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use Illuminate\Support\Str;
 use Modules\Accounting\Domain\CompanyContext;
-use Modules\Accounting\Services\{CompanyService, TaxConfigurationService, DocumentService, EntryService, Pro9SourceReader};
+use Modules\Accounting\Services\{CompanyService, TaxConfigurationService, DocumentService, EntryService, SabSourceReader};
 
 try {
     if (!app()->environment('testing') || !config('accounting.isolated_tests') || getenv('ACCOUNTING_FIXTURE_LOCKED') !== '1' || !in_array($argv[1] ?? '', ['http', 'ui'], true)) { throw new RuntimeException('Se requiere el clon aislado y el bloqueo de la suite.'); }
@@ -43,7 +43,7 @@ try {
         $native = array_replace($template, ['external_id' => (string) Str::uuid(), 'unique_filename' => 'ficticio-origen-' . Str::uuid(), 'series' => 'ACCT-' . strtoupper(Str::random(6)), 'number' => $index + 1, 'document_type_id' => '01', 'date_of_issue' => $date, 'state_type_id' => '01', 'currency_type_id' => 'VES',
             'customer' => json_encode(['name' => 'Cliente ficticio de origen', 'number' => 'J-11111111-1']), 'total' => '1160', 'total_value' => '1000', 'total_igv' => '160', 'total_taxes' => '160', 'exchange_rate_sale' => '1', 'calculation_snapshot' => null, 'fiscal_emission_mode' => 'local', 'control_number' => null, 'created_at' => $date . ' 08:00:00', 'updated_at' => $date . ' 08:00:00']);
         $id = $db->table('documents')->insertGetId($native);
-        $document = app(Pro9SourceReader::class)->receive('sales', $id, 3)['data'];
+        $document = app(SabSourceReader::class)->receive('sales', $id, 3)['data'];
         $document = app(DocumentService::class)->validate($document->id, $document->version, ['source_confirmed' => true, 'tax_components' => [['tax' => 'IVA', 'rule_id' => $rule->id, 'base' => '1000', 'amount' => '160']]], 3);
         $entry = app(DocumentService::class)->propose($document->id, $document->version, $date, ['counterparty' => $accounts['1.1.03']->id, 'base' => $accounts['4.1']->id, 'vat' => $accounts['2.1.02']->id, 'rounding' => $accounts['6.4']->id], 3);
         $entry = app(EntryService::class)->transition($entry->id, $entry->version, 3, 'submit');
@@ -55,7 +55,7 @@ try {
             $changes = ['updated_at' => $date . ' 09:00:00'];
             if ($kind === 'monetary') { $changes += ['total' => '2320', 'total_value' => '2000', 'total_igv' => '320', 'total_taxes' => '320']; }
             $db->table('documents')->where('id', $id)->update($changes);
-            $received = app(Pro9SourceReader::class)->receive('sales', $id, 3); $case['incident_id'] = $received['incident_id'];
+            $received = app(SabSourceReader::class)->receive('sales', $id, 3); $case['incident_id'] = $received['incident_id'];
         }
         $result['cases'][$kind] = $case;
     }

@@ -49,7 +49,7 @@ return new class extends Migration
             $table->bigInteger('suscription_plan_id')->nullable()->default('0')->comment('Relacion con planes de suscripcion');
             $table->decimal('quantity', 30, 12)->nullable()->default('0.00');
             $table->decimal('unit_value', 30, 12)->nullable()->default('0.00');
-            $table->char('affectation_igv_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->char('affectation_igv_type_id', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('total_base_igv', 30, 12)->nullable()->default('0.00');
             $table->decimal('percentage_igv', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_igv', 30, 12)->nullable()->default('0.00');
@@ -57,7 +57,7 @@ return new class extends Migration
             $table->decimal('percentage_other_taxes', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_other_taxes', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_taxes', 30, 12)->nullable()->default('0.00');
-            $table->char('price_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->char('price_type_id', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('unit_price', 30, 12)->nullable()->default('0.000000');
             $table->decimal('total_value', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_charge', 30, 12)->nullable()->default('0.00');
@@ -66,10 +66,10 @@ return new class extends Migration
             $table->json('attributes')->nullable();
             $table->json('discounts')->nullable();
             $table->json('charges')->nullable();
-            $table->text('additional_information')->collation('pro9_ci_ai')->nullable();
+            $table->text('additional_information')->collation('sab_ci_ai')->nullable();
             $table->bigInteger('warehouse_id')->nullable()->default('0');
-            $table->string('apply_in_period', 255)->collation('pro9_ci_ai')->default('all');
-            $table->text('name_product_pdf')->collation('pro9_ci_ai')->nullable();
+            $table->string('apply_in_period', 255)->collation('sab_ci_ai')->default('all');
+            $table->text('name_product_pdf')->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

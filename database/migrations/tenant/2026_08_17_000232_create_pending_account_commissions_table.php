@@ -23,7 +23,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('seller_id');
             $table->decimal('amount', 30, 12);
-            $table->string('commission_type', 255)->collation('pro9_ci_ai');
+            $table->string('commission_type', 255)->collation('sab_ci_ai');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

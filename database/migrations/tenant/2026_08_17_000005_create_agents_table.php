@@ -21,10 +21,10 @@ return new class extends Migration
     {
         Schema::create('agents', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 255)->collation('pro9_ci_ai');
-            $table->string('internal_id', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('email', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('telephone', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('name', 255)->collation('sab_ci_ai');
+            $table->string('internal_id', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('email', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('telephone', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->unique(['internal_id'], 'agents_internal_id_unique');

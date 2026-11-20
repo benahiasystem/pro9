@@ -27,14 +27,14 @@ return new class extends Migration
         Schema::create('app_configurations', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->boolean('show_image_item')->default(true);
-            $table->string('print_format_pdf', 255)->collation('pro9_ci_ai')->default('ticket');
-            $table->string('card_color', 255)->collation('pro9_ci_ai')->default('multicolored');
-            $table->string('theme_color', 255)->collation('pro9_ci_ai')->default('blue');
+            $table->string('print_format_pdf', 255)->collation('sab_ci_ai')->default('ticket');
+            $table->string('card_color', 255)->collation('sab_ci_ai')->default('multicolored');
+            $table->string('theme_color', 255)->collation('sab_ci_ai')->default('blue');
             $table->boolean('header_waves')->default(false);
             $table->boolean('direct_send_documents_whatsapp')->default(false);
-            $table->string('primary_color', 255)->collation('pro9_ci_ai')->nullable()->default('#020F3C')->comment('Color principal para la nueva app movil - hexadecimal');
+            $table->string('primary_color', 255)->collation('sab_ci_ai')->nullable()->default('#020F3C')->comment('Color principal para la nueva app movil - hexadecimal');
             $table->boolean('direct_print')->default(false);
-            $table->string('app_mode', 255)->collation('pro9_ci_ai')->default('default');
+            $table->string('app_mode', 255)->collation('sab_ci_ai')->default('default');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

@@ -14,10 +14,10 @@ final class PostgresBackupFailureTest extends \PHPUnit\Framework\TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') {
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') {
             $this->markTestSkipped('Use scripts/test_postgresql.php with its private test mounts.');
         }
-        $this->directory = sys_get_temp_dir().'/pro9-backup-failure-'.bin2hex(random_bytes(8));
+        $this->directory = sys_get_temp_dir().'/sab-backup-failure-'.bin2hex(random_bytes(8));
         self::assertTrue(mkdir($this->directory, 0755));
         file_put_contents($this->directory.'/source.dump', 'PGDMP'.random_bytes(2 * 1024 * 1024));
         chmod($this->directory.'/source.dump', 0644);
@@ -38,7 +38,7 @@ final class PostgresBackupFailureTest extends \PHPUnit\Framework\TestCase
 
     public function test_full_temporary_filesystem_keeps_previous_package_and_removes_all_partials(): void
     {
-        $mount = '/pro9-backup-faults';
+        $mount = '/sab-backup-faults';
         self::assertDirectoryExists($mount, 'The test-only 1 MiB tmpfs is required.');
         $stat = new Process(['stat', '-f', '--format=%T %S %b', $mount]);
         $stat->mustRun();
@@ -54,7 +54,7 @@ final class PostgresBackupFailureTest extends \PHPUnit\Framework\TestCase
         $small = $this->directory.'/small.dump';
         file_put_contents($small, 'PGDMP-small-temporary-probe');
         $backup = new PostgresBackup();
-        $backup->pack(['pro9_temporary_backup_probe' => $small], [], $destination);
+        $backup->pack(['sab_temporary_backup_probe' => $small], [], $destination);
         $previous = hash_file('sha256', $destination);
         $warnings = [];
         $locale = setlocale(LC_MESSAGES, 0);
@@ -68,7 +68,7 @@ final class PostgresBackupFailureTest extends \PHPUnit\Framework\TestCase
         });
         try {
             try {
-                $backup->pack(['pro9_temporary_backup_probe' => $this->directory.'/source.dump'], [], $destination);
+                $backup->pack(['sab_temporary_backup_probe' => $this->directory.'/source.dump'], [], $destination);
                 self::fail('A package larger than the private tmpfs must not be published.');
             } catch (\RuntimeException $error) {
                 self::assertSame('No se pudo cerrar el ZIP; compruebe el espacio disponible.', $error->getMessage());
@@ -80,7 +80,7 @@ final class PostgresBackupFailureTest extends \PHPUnit\Framework\TestCase
         self::assertStringContainsString('No space left on device', implode('\n', $warnings), 'Require ENOSPC, not merely any close failure.');
         self::assertSame($previous, hash_file('sha256', $destination));
         self::assertSame(['previous.zip'], array_values(array_diff(scandir($this->limitedDirectory), ['.', '..'])));
-        self::assertSame(['pro9_temporary_backup_probe'], $backup->verify($destination)['databases']);
+        self::assertSame(['sab_temporary_backup_probe'], $backup->verify($destination)['databases']);
     }
 
     public function test_unprivileged_child_cannot_publish_in_a_read_only_temporary_directory(): void

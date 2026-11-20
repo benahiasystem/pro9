@@ -26,7 +26,7 @@
 </template>
 
 <script>
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import { readOriginal, readVector, chartCoordinate, originalNumber, formatUnitOriginal } from "../../../../../../../resources/js/helpers/dashboard-originals";
 export default {
   name: "PaymentMethods",
@@ -124,7 +124,7 @@ export default {
     pmMoney(value) { return originalNumber(value); },
   },
 };
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

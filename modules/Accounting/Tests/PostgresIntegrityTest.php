@@ -20,7 +20,7 @@ final class PostgresIntegrityTest extends TestCase
 
     private function start(bool $install = false): \Illuminate\Database\Connection
     {
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') self::markTestSkipped('Utilice PostgreSQL temporal aislado.');
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') self::markTestSkipped('Utilice PostgreSQL temporal aislado.');
         $this->fixture = new AccountingPostgresFixture();
         $this->fixture->start($install);
         return DB::connection('tenant');

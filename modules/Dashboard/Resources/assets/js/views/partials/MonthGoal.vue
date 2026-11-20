@@ -18,7 +18,7 @@
 </template>
 
 <script>
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import { readOriginal, relativeWidth, originalText } from "../../../../../../../resources/js/helpers/dashboard-originals";
 export default {
   name: "MonthGoal",
@@ -137,7 +137,7 @@ export default {
     mgMoney(value) { return originalText(value); },
   },
 };
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

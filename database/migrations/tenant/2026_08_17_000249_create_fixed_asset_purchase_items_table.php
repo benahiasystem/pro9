@@ -43,7 +43,7 @@ return new class extends Migration
             $table->json('item');
             $table->decimal('quantity', 30, 12);
             $table->decimal('unit_value', 30, 12);
-            $table->string('affectation_igv_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('affectation_igv_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('total_base_igv', 30, 12);
             $table->decimal('percentage_igv', 30, 12);
             $table->decimal('total_igv', 30, 12);
@@ -51,7 +51,7 @@ return new class extends Migration
             $table->decimal('percentage_other_taxes', 30, 12)->default('0.00');
             $table->decimal('total_other_taxes', 30, 12)->default('0.00');
             $table->decimal('total_taxes', 30, 12);
-            $table->string('price_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('price_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('unit_price', 30, 12);
             $table->decimal('total_value', 30, 12);
             $table->decimal('total_charge', 30, 12)->default('0.00');

@@ -18,7 +18,7 @@ class TenantMigrationOrderContractTest extends TestCase
             self::assertDoesNotMatchRegularExpression('/ADD CONSTRAINT[^;]*FOREIGN KEY/s', file_get_contents($file));
         }
         $quotations = file_get_contents($root . '2026_08_17_000276_create_quotations_table.php');
-        self::assertStringContainsString('$table->string(\'source\', 20)->collation(\'pro9_ci_ai\')->default(\'admin\')', $quotations);
+        self::assertStringContainsString('$table->string(\'source\', 20)->collation(\'sab_ci_ai\')->default(\'admin\')', $quotations);
         self::assertStringNotContainsString('number_year', $quotations);
     }
 }

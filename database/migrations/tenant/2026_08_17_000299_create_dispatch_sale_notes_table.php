@@ -25,9 +25,9 @@ return new class extends Migration
             $table->bigInteger('sale_note_id');
             $table->date('date_dispatch')->nullable();
             $table->time('time_dispatch')->nullable();
-            $table->string('person_pick', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('person_dispatch', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('person_pick', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('reference', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('person_dispatch', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('status')->nullable();
             $table->index(['sale_note_id'], 'dispatch_sale_notes_sale_note_id_foreign');
         });

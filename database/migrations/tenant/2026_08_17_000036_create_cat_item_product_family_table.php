@@ -18,7 +18,7 @@ return new class extends Migration
     {
         Schema::create('cat_item_product_family', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre de familia d eproductos');
+            $table->text('name')->collation('sab_ci_ai')->comment('Nombre de familia d eproductos');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

@@ -48,9 +48,9 @@ final class PostgresPerformanceTest extends TestCase
 
     private function measureWorkloads(array $workloads, string $label): array
     {
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere el ejecutor PostgreSQL temporal.');
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere el ejecutor PostgreSQL temporal.');
         $root = dirname(__DIR__, 2);
-        $reference = getenv('PRO9_POSTGRES_BASELINE_JSON') ?: $root.'/informes/evidencias/postgresql_17_implementacion/referencia_rendimiento_mysql.json';
+        $reference = getenv('SAB_POSTGRES_BASELINE_JSON') ?: $root.'/informes/evidencias/postgresql_17_implementacion/referencia_rendimiento_mysql.json';
         [$baseline, $hash] = $this->readReference($reference);
         $postgres = $this->runBenchmark('benchmark_postgresql_http.php', $workloads);
         $comparisons = $this->compareWorkloads($baseline, $postgres, $workloads);
@@ -116,7 +116,7 @@ final class PostgresPerformanceTest extends TestCase
     {
         $directory = dirname(__DIR__, 2).'/informes/evidencias/postgresql_17_implementacion/resultados';
         self::assertSame($hash, hash_file('sha256', $reference), 'La referencia no debe cambiar durante la medición.');
-        file_put_contents($directory.'/rendimiento-'.getenv('PRO9_POSTGRES_RUN_ID').'-'.$label.'.json', json_encode($report + [
+        file_put_contents($directory.'/rendimiento-'.getenv('SAB_POSTGRES_RUN_ID').'-'.$label.'.json', json_encode($report + [
             'reference_sha256' => $hash, 'comparisons' => $comparisons,
             'temporary_only' => true, 'finished_at' => date(DATE_ATOM),
         ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR).PHP_EOL);

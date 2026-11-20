@@ -13,11 +13,11 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
 
     protected function configureConnections(Manager $manager): void
     {
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requires an isolated temporary PostgreSQL database.');
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requires an isolated temporary PostgreSQL database.');
         $config = \Tests\Support\PostgresTestEnvironment::connection();
         $manager->addConnection($config, 'control');
         \Tests\Support\PostgresTestEnvironment::assertServer($manager->getConnection('control'));
-        $this->database = 'pro9_series_test_' . bin2hex(random_bytes(6));
+        $this->database = 'sab_series_test_' . bin2hex(random_bytes(6));
         $manager->getConnection('control')->statement('CREATE DATABASE "' . $this->database . '" TEMPLATE template0');
         $config['database'] = $this->database;
         $this->connection = $config;
@@ -33,7 +33,7 @@ class SeriesMySqlConcurrencyTest extends SeriesDatabaseTestCase
     protected function tearDown(): void
     {
         try {
-            if ($this->database && preg_match('/\Apro9_series_test_[a-f0-9]{12}\z/', $this->database)) {
+            if ($this->database && preg_match('/\Asab_series_test_[a-f0-9]{12}\z/', $this->database)) {
                 $this->manager->getConnection('tenant')->disconnect();
                 $this->manager->getConnection('control')->statement('DROP DATABASE "' . $this->database . '" WITH (FORCE)');
             }

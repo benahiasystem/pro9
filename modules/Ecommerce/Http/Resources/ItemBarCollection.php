@@ -19,7 +19,7 @@ class ItemBarCollection extends ResourceCollection
     public function toArray($request)
     {
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $showPrices = ConfigurationEcommerce::storefrontShowsPrices();
         $pricingService = app(CampaignPriceService::class);
         return $this->collection->transform(function($row, $key) use($showPrices, $pricingService){
@@ -89,7 +89,7 @@ class ItemBarCollection extends ResourceCollection
 
             ];
         });
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
 

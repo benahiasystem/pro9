@@ -25,10 +25,10 @@ return new class extends Migration
         Schema::create('bot_messages', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->decimal('session_id', 20, 0)->nullable();
-            $table->string('direction', 255)->collation('pro9_ci_ai');
-            $table->string('phone', 30)->collation('pro9_ci_ai');
-            $table->text('body')->collation('pro9_ci_ai')->nullable();
-            $table->string('message_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('direction', 255)->collation('sab_ci_ai');
+            $table->string('phone', 30)->collation('sab_ci_ai');
+            $table->text('body')->collation('sab_ci_ai')->nullable();
+            $table->string('message_id', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('from_me')->default(false);
             $table->json('raw_payload')->nullable();
             $table->timestamp('created_at')->nullable();

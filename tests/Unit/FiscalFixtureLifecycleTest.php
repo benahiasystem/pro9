@@ -38,7 +38,7 @@ final class FiscalFixtureLifecycleTest extends TestCase
             $db=$capsule->getConnection('tenant');
             \Tests\Support\PostgresTestEnvironment::assertServer($db);
             $name=$db->getDatabaseName();
-            self::assertMatchesRegularExpression('/^pro9_fiscal_test_[a-f0-9]{12}$/D',$name);
+            self::assertMatchesRegularExpression('/^sab_fiscal_test_[a-f0-9]{12}$/D',$name);
             $control=$capsule->getConnection('control')->getPdo();
             $capsuleReference=\WeakReference::create($capsule);
             $appReference=\WeakReference::create(Container::getInstance());
@@ -46,7 +46,7 @@ final class FiscalFixtureLifecycleTest extends TestCase
             $fixture->stop();$stopped=true;
             gc_collect_cycles();
             self::assertSame($previous,[Container::getInstance(),Facade::getFacadeApplication(),Model::getConnectionResolver(),Model::getEventDispatcher()]);
-            self::assertSame(getenv('PRO9_POSTGRES_RUN_ID'),$control->query("SELECT current_setting('pro9.test_run',true)")->fetchColumn());
+            self::assertSame(getenv('SAB_POSTGRES_RUN_ID'),$control->query("SELECT current_setting('sab.test_run',true)")->fetchColumn());
             $statement=$control->prepare('SELECT count(*) FROM pg_catalog.pg_database WHERE datname=?');$statement->execute([$name]);
             self::assertSame(0,(int)$statement->fetchColumn());
             self::assertNull($capsuleReference->get(),'The ended test case must release its owned Capsule.');

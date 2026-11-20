@@ -175,7 +175,7 @@ final class WidgetSnapshotPostgresTest extends \PHPUnit\Framework\TestCase
 
         // Persist only public report DTOs from this marked temporary cluster for the compiled UI test.
         \Tests\Support\PostgresTestEnvironment::assertServer($this->db);
-        $source=\Tests\Support\PostgresTestEnvironment::source();$run=getenv('PRO9_POSTGRES_RUN_ID');
+        $source=\Tests\Support\PostgresTestEnvironment::source();$run=getenv('SAB_POSTGRES_RUN_ID');
         $filters=['period'=>'date','date_start'=>$input['date_of_issue']];$context=new WidgetContext($filters);
         $export=['version'=>1,'run_id'=>$run,'source_sha256'=>$source['sha256'],'date'=>$input['date_of_issue'],
             'catalog'=>$registry->catalog(),'datasets'=>$result,'establishment_id'=>$input['establishment_id'],

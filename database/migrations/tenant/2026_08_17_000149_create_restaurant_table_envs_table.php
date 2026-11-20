@@ -23,7 +23,7 @@ return new class extends Migration
     {
         Schema::create('restaurant_table_envs', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
             $table->boolean('active');
             $table->integer('tables_quantity');
             $table->boolean('is_delivery')->default(false);

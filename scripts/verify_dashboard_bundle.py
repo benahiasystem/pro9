@@ -39,7 +39,7 @@ def main():
         parser.error('Se requiere Chrome/Chromium; esta prueba no se omite.')
     fixture = json.loads(args.fixture.read_text())
     run_id = fixture.get('run_id', '')
-    if fixture.get('version') != 1 or not re.fullmatch(r'pro9-pgtest-[a-f0-9]{12}', run_id):
+    if fixture.get('version') != 1 or not re.fullmatch(r'sab-pgtest-[a-f0-9]{12}', run_id):
         parser.error('La muestra debe proceder del ejecutor PostgreSQL temporal.')
     evidence = args.fixture.parent
     recorded = json.loads((evidence / (run_id + '-fuentes.json')).read_text())
@@ -84,7 +84,7 @@ def main():
               'establishment': {'id': fixture['establishment_id'], 'description': 'Sucursal temporal'}}
     page = r'''<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="csrf-token" content="temporary-browser-fixture"><meta name="viewport" content="width=device-width,initial-scale=1">
-CSS<style>body{padding:20px;background:#f4f6fa}#pro9-dashboard-result{font-size:10px;white-space:pre-wrap}*{animation-duration:0s!important;transition-duration:0s!important}</style>
+CSS<style>body{padding:20px;background:#f4f6fa}#sab-dashboard-result{font-size:10px;white-space:pre-wrap}*{animation-duration:0s!important;transition-duration:0s!important}</style>
 <script>
 window.dashboardFixture=FIXTURE;window.dashboardConfig=CONFIG;window.dashboardErrors=[];window.dashboardPending=0;
 window.addEventListener('error',e=>{if(e.message)window.dashboardErrors.push(e.message)});
@@ -98,7 +98,7 @@ localStorage.setItem('company',JSON.stringify(window.dashboardConfig.company));l
 localStorage.setItem('userType','admin');
 </script></head><body>
 <div id="main-wrapper"><tenant-dashboard-index type-user="admin" company-environment="demo" :configuration='CONFIG_ATTRIBUTE'></tenant-dashboard-index></div>
-<pre id="pro9-dashboard-result">pending</pre><script src="/porto-light/vendor/jquery/jquery.js"></script><script type="module" src="/build/ENTRY"></script>
+<pre id="sab-dashboard-result">pending</pre><script src="/porto-light/vendor/jquery/jquery.js"></script><script type="module" src="/build/ENTRY"></script>
 <script>
 document.addEventListener('DOMContentLoaded',async()=>{
  const checks=[],assert=(ok,label)=>{if(!ok)throw new Error(label);checks.push(label)};
@@ -161,8 +161,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
    assert(!!table && table.textContent.includes(String(root.balance.totals.all_totals)),'classic balance table displays the computed total');
   }
   await wait();assert(window.dashboardErrors.length===0,'no delayed rendering errors');
-  document.getElementById('pro9-dashboard-result').textContent=JSON.stringify({ok:true,mode,checks,errors:window.dashboardErrors});
- }catch(error){document.getElementById('pro9-dashboard-result').textContent=JSON.stringify({ok:false,mode,checks,error:String(error),errors:window.dashboardErrors,pending:window.dashboardPending,components:root?children(root).map(vm=>vm.$options.name||vm.$options._componentTag):[]});}
+  document.getElementById('sab-dashboard-result').textContent=JSON.stringify({ok:true,mode,checks,errors:window.dashboardErrors});
+ }catch(error){document.getElementById('sab-dashboard-result').textContent=JSON.stringify({ok:false,mode,checks,error:String(error),errors:window.dashboardErrors,pending:window.dashboardPending,components:root?children(root).map(vm=>vm.$options.name||vm.$options._componentTag):[]});}
 });
 </script></body></html>'''.replace('CONFIG_ATTRIBUTE', html.escape(json.dumps(config), quote=True)).replace('FIXTURE', json.dumps(fixture).replace('<', '\\u003c')).replace('CONFIG', json.dumps(config)).replace('ENTRY', entry['file']).replace('CSS', css)
     requests = []
@@ -238,14 +238,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
     try:
         for mode in ['widgets', 'legacy']:
             screenshot = args.output.with_name(args.output.stem + '-' + mode + '.png')
-            with tempfile.TemporaryDirectory(prefix='pro9-dashboard-browser-') as profile:
+            with tempfile.TemporaryDirectory(prefix='sab-dashboard-browser-') as profile:
                 process = subprocess.run([browser, '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
                     '--no-first-run', '--no-default-browser-check', '--disable-background-networking',
                     '--user-data-dir=' + profile, '--virtual-time-budget=24000', '--window-size=1440,2200',
                     '--screenshot=' + str(screenshot.resolve()), '--dump-dom',
                     'http://127.0.0.1:' + str(server.server_port) + '/?mode=' + mode],
                     capture_output=True, text=True, timeout=55)
-            match = re.search(r'<pre id="pro9-dashboard-result">(.*?)</pre>', process.stdout, re.S)
+            match = re.search(r'<pre id="sab-dashboard-result">(.*?)</pre>', process.stdout, re.S)
             result = json.loads(html.unescape(match[1])) if match and match[1] != 'pending' else {
                 'ok': False, 'mode': mode, 'error': 'El navegador no terminó las comprobaciones.'}
             result.update(exit_code=process.returncode, screenshot=str(screenshot.relative_to(ROOT)))

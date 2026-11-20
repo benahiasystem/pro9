@@ -30,7 +30,7 @@ return new class extends Migration
         Schema::create('document_currency_totals', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('document_id');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('taxed', 30, 12)->default('0');
             $table->decimal('exportation', 30, 12)->default('0');
             $table->decimal('exempt', 30, 12)->default('0');

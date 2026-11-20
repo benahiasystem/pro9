@@ -197,7 +197,7 @@ class VenezuelaInitialCatalogContractTest extends TestCase
         self::assertStringContainsString('$table->boolean(\'discount_stock\')->default(false)', file_get_contents(base_path('database/migrations/tenant/2026_08_17_000313_create_dispatches_table.php')));
         $orderFormMigration = file_get_contents(base_path('database/migrations/tenant/2026_08_17_000229_create_order_forms_table.php'));
         self::assertStringContainsString('$table->string(\'transfer_reason_type_id\', 2)', $orderFormMigration);
-        self::assertStringContainsString('$table->string(\'transfer_reason_description\', 255)->collation(\'pro9_ci_ai\')->nullable()', $orderFormMigration);
+        self::assertStringContainsString('$table->string(\'transfer_reason_description\', 255)->collation(\'sab_ci_ai\')->nullable()', $orderFormMigration);
 
         $dispatchRequest = DispatchRequest::create('/', 'POST', [
             'transfer_reason_type_id' => '24',

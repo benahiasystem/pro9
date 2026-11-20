@@ -203,7 +203,7 @@ import MonthlyComparisonChart from "./MonthlyComparisonChart.vue";
 import SalesGrowthChart from "./SalesGrowthChart.vue";
 import moment from "moment";
 import { readOriginal, readVector, chartCoordinate, originalText, compareOriginal } from "../../../../../../../../resources/js/helpers/dashboard-originals";
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 
 export default {
     name: "NewDashboard",
@@ -473,7 +473,7 @@ export default {
         },
     },
 };
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

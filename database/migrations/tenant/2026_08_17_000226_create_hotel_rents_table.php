@@ -36,8 +36,8 @@ return new class extends Migration
         Schema::create('hotel_rents', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('customer_id');
-            $table->text('customer')->collation('pro9_ci_ai');
-            $table->string('notes', 250)->collation('pro9_ci_ai')->nullable();
+            $table->text('customer')->collation('sab_ci_ai');
+            $table->string('notes', 250)->collation('sab_ci_ai')->nullable();
             $table->integer('towels')->default('1');
             $table->bigInteger('hotel_room_id');
             $table->bigInteger('hotel_rate_id')->nullable();
@@ -45,13 +45,13 @@ return new class extends Migration
             $table->integer('quantity_persons')->default('1');
             $table->json('data_persons')->nullable();
             $table->date('input_date')->nullable();
-            $table->string('input_time', 8)->collation('pro9_ci_ai')->nullable();
-            $table->string('payment_status', 10)->collation('pro9_ci_ai');
+            $table->string('input_time', 8)->collation('sab_ci_ai')->nullable();
+            $table->string('payment_status', 10)->collation('sab_ci_ai');
             $table->date('output_date');
-            $table->string('output_time', 8)->collation('pro9_ci_ai');
+            $table->string('output_time', 8)->collation('sab_ci_ai');
             $table->decimal('arrears', 30, 12)->default('0.000000000000');
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
-            $table->string('status', 10)->collation('pro9_ci_ai')->default('INICIADO');
+            $table->string('status', 10)->collation('sab_ci_ai')->default('INICIADO');
             $table->bigInteger('establishment_id')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

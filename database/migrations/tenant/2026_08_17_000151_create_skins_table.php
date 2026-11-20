@@ -21,8 +21,8 @@ return new class extends Migration
     {
         Schema::create('skins', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 255)->collation('pro9_ci_ai');
-            $table->string('filename', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
+            $table->string('filename', 255)->collation('sab_ci_ai');
             $table->boolean('status')->default(true);
             $table->boolean('is_system')->default(false);
             $table->timestamp('created_at')->nullable();

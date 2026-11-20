@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('suscription_section', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 100)->collation('pro9_ci_ai');
+            $table->string('name', 100)->collation('sab_ci_ai');
         });
     }
 

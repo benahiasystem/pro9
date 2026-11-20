@@ -52,11 +52,11 @@ return new class extends Migration
         Schema::create('suscription_plans', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('cat_period_id')->nullable()->default('0')->comment('Relacion con el periodo de tiempo');
-            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre del plan');
-            $table->text('description')->collation('pro9_ci_ai')->comment('Descripcion del plan');
+            $table->text('name')->collation('sab_ci_ai')->comment('Nombre del plan');
+            $table->text('description')->collation('sab_ci_ai')->comment('Descripcion del plan');
             $table->decimal('total', 30, 12)->nullable()->default('0.00')->comment('El total del costo del plan');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('payment_method_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('payment_method_type_id', 255)->collation('sab_ci_ai')->nullable();
             $table->bigInteger('quantity_period')->nullable();
             $table->boolean('unlimited')->default(false);
             $table->integer('trial_days')->nullable();
@@ -83,7 +83,7 @@ return new class extends Migration
             $table->json('related')->nullable();
             $table->json('perception')->nullable();
             $table->json('legends')->nullable();
-            $table->text('terms_condition')->collation('pro9_ci_ai')->nullable();
+            $table->text('terms_condition')->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

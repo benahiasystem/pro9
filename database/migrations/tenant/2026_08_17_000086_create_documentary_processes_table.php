@@ -24,14 +24,14 @@ return new class extends Migration
     {
         Schema::create('documentary_processes', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('name')->collation('pro9_ci_ai');
-            $table->text('description')->collation('pro9_ci_ai')->nullable();
+            $table->text('name')->collation('sab_ci_ai');
+            $table->text('description')->collation('sab_ci_ai')->nullable();
             $table->decimal('price', 30, 12)->default('0.00000');
             $table->boolean('active')->default(true);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->text('documentary_offices')->collation('pro9_ci_ai')->nullable()->comment('etapas que contiene');
-            $table->text('documentary_offices_order')->collation('pro9_ci_ai')->nullable();
+            $table->text('documentary_offices')->collation('sab_ci_ai')->nullable()->comment('etapas que contiene');
+            $table->text('documentary_offices_order')->collation('sab_ci_ai')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
         });
     }

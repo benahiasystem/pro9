@@ -25,8 +25,8 @@ return new class extends Migration
         Schema::create('series', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('establishment_id');
-            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('number', 255)->collation('pro9_ci_ai')->default('');
+            $table->string('document_type_id', 255)->collation('sab_ci_ai');
+            $table->string('number', 255)->collation('sab_ci_ai')->default('');
             $table->boolean('contingency')->default(false);
             $table->boolean('dedicated')->default(false);
             $table->bigInteger('series_device_group_id')->nullable();

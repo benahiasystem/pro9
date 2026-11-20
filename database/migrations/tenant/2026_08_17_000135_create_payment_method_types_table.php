@@ -29,13 +29,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payment_method_types', function (Blueprint $table) {
-            $table->char('id', 2)->collation('pro9_ci_ai');
-            $table->string('description', 255)->collation('pro9_ci_ai');
-            $table->char('hka_code', 2)->collation('pro9_ci_ai')->nullable();
-            $table->string('collection_kind', 16)->collation('pro9_ci_ai')->default('unclassified');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai')->default('VES');
-            $table->string('iva_rate_type_id', 4)->collation('pro9_ci_ai')->nullable();
-            $table->char('cash_currency_type_id', 3)->collation('pro9_ci_ai')->nullable();
+            $table->char('id', 2)->collation('sab_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
+            $table->char('hka_code', 2)->collation('sab_ci_ai')->nullable();
+            $table->string('collection_kind', 16)->collation('sab_ci_ai')->default('unclassified');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai')->default('VES');
+            $table->string('iva_rate_type_id', 4)->collation('sab_ci_ai')->nullable();
+            $table->char('cash_currency_type_id', 3)->collation('sab_ci_ai')->nullable();
             $table->bigInteger('bank_account_id')->nullable();
             $table->decimal('commission_percentage', 30, 12)->nullable();
             $table->decimal('minimum_commission', 30, 12)->nullable();

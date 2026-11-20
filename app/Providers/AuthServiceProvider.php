@@ -25,6 +25,6 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
-        Auth::provider('pro9_tenant',static fn($app,array $config)=>new \App\Auth\TenantUserProvider($app['hash'],$config['model']));
+        Auth::provider('sab_tenant',static fn($app,array $config)=>new \App\Auth\TenantUserProvider($app['hash'],$config['model']));
     }
 }

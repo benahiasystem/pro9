@@ -33,19 +33,19 @@ return new class extends Migration
     {
         Schema::create('restaurant_tables', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('status', 255)->collation('pro9_ci_ai');
+            $table->string('status', 255)->collation('sab_ci_ai');
             $table->json('products')->nullable();
             $table->decimal('total', 30, 12);
             $table->integer('personas');
-            $table->string('cliente', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('comentarios', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('label', 255)->collation('pro9_ci_ai');
-            $table->string('shape', 255)->collation('pro9_ci_ai');
-            $table->string('environment', 255)->collation('pro9_ci_ai');
-            $table->string('original_environment', 100)->collation('pro9_ci_ai')->nullable()->comment('Ambiente original de la mesa (NULL si no ha sido movida)');
-            $table->string('waiter', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('cliente', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('comentarios', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('label', 255)->collation('sab_ci_ai');
+            $table->string('shape', 255)->collation('sab_ci_ai');
+            $table->string('environment', 255)->collation('sab_ci_ai');
+            $table->string('original_environment', 100)->collation('sab_ci_ai')->nullable()->comment('Ambiente original de la mesa (NULL si no ha sido movida)');
+            $table->string('waiter', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('opening_date')->nullable();
-            $table->string('order_status', 255)->collation('pro9_ci_ai')->default('pending');
+            $table->string('order_status', 255)->collation('sab_ci_ai')->default('pending');
             $table->bigInteger('group_id')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('is_paid')->default(false);

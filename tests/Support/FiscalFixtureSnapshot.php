@@ -26,16 +26,16 @@ final class FiscalFixtureSnapshot
     {
         self::assertTemporaryDatabase($db);
         if (self::$path && is_file(self::$path)) unlink(self::$path);
-        self::$path = tempnam(sys_get_temp_dir(),'pro9-pg-fixture-');
+        self::$path = tempnam(sys_get_temp_dir(),'sab-pg-fixture-');
         (new PostgresBackup())->dump($db->getConfig(),self::$path);
         self::$key=self::key();
         register_shutdown_function(static function (): void { if (self::$path && is_file(self::$path)) unlink(self::$path); });
-        if (getenv('PRO9_POSTGRES_FAST_FIXTURES') === '1') {
+        if (getenv('SAB_POSTGRES_FAST_FIXTURES') === '1') {
             self::$ownerPid = getmypid();
             $config = PostgresTestEnvironment::connection();
             self::$control = new \PDO('pgsql:host='.$config['host'].';port='.$config['port'].';dbname=postgres', $config['username'], $config['password'], [\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);
             if (self::$template) self::$control->exec('DROP DATABASE IF EXISTS "'.self::$template.'" WITH (FORCE)');
-            self::$template = 'pro9_fiscal_test_'.bin2hex(random_bytes(6));
+            self::$template = 'sab_fiscal_test_'.bin2hex(random_bytes(6));
             self::disconnect($db->getDatabaseName());
             self::$control->exec('CREATE DATABASE "'.self::$template.'" TEMPLATE "'.$db->getDatabaseName().'"');
             self::$control->exec('REVOKE ALL ON DATABASE "'.self::$template.'" FROM PUBLIC');
@@ -69,7 +69,7 @@ final class FiscalFixtureSnapshot
     private static function assertTemporaryDatabase(Connection $db): void
     {
         $name=(string)$db->getDatabaseName();
-        if (!preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/D',$name)) throw new \LogicException('El fixture sólo admite bases temporales.');
+        if (!preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/D',$name)) throw new \LogicException('El fixture sólo admite bases temporales.');
         if ($db->selectOne('SELECT current_database() AS name')->name!==$name) throw new \LogicException('La conexión no apunta a su base temporal.');
         PostgresTestEnvironment::assertServer($db);
     }

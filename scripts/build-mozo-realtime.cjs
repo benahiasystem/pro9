@@ -40,7 +40,7 @@ async function build() {
     fs.writeFileSync(path.join(publicDir, authenticated), contents);
     const manifest = { original, authenticated, entry };
     fs.writeFileSync(path.join(publicDir, 'mozo/realtime-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
-    html = html.replace(/\s*<script type="importmap" id="(?:pro9|sab)-realtime-importmap">[\s\S]*?<\/script>\s*/g, '\n');
+    html = html.replace(/\s*<script type="importmap" id="(?:sab|sab)-realtime-importmap">[\s\S]*?<\/script>\s*/g, '\n');
     const imports = JSON.stringify({ imports: { [original]: authenticated } });
     html = html.replace('<script type="module"', `<script type="importmap" id="sab-realtime-importmap">${imports}</script>\n    <script type="module"`);
     fs.writeFileSync(indexPath, html);

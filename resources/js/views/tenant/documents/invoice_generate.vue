@@ -5819,7 +5819,7 @@ export default {
             this.calculateTotal();
         },
         invoiceInputKey(row) {
-            const key=Symbol.for('pro9.invoice.input.identity');
+            const key=Symbol.for('sab.invoice.input.identity');
             if (!row[key]) row[key]=Symbol('invoice-line');
             return row[key];
         },

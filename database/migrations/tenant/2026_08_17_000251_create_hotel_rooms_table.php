@@ -28,9 +28,9 @@ return new class extends Migration
             $table->bigInteger('item_id')->nullable();
             $table->bigInteger('hotel_category_id');
             $table->bigInteger('hotel_floor_id');
-            $table->string('name', 25)->collation('pro9_ci_ai');
-            $table->string('description', 250)->collation('pro9_ci_ai')->nullable();
-            $table->string('status', 255)->collation('pro9_ci_ai')->default('DISPONIBLE');
+            $table->string('name', 25)->collation('sab_ci_ai');
+            $table->string('description', 250)->collation('sab_ci_ai')->nullable();
+            $table->string('status', 255)->collation('sab_ci_ai')->default('DISPONIBLE');
             $table->boolean('active')->default(true);
             $table->bigInteger('establishment_id')->nullable();
             $table->timestamp('created_at')->nullable();

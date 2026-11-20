@@ -15,8 +15,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('fiscal_environments', function (Blueprint $table) {
-            $table->string('id', 16)->collation('pro9_ci_ai');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('id', 16)->collation('sab_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->primary(['id']);
         });
     }

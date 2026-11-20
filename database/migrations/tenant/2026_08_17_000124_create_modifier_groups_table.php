@@ -21,8 +21,8 @@ return new class extends Migration
     {
         Schema::create('modifier_groups', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 255)->collation('pro9_ci_ai');
-            $table->string('selection_type', 255)->collation('pro9_ci_ai')->default('single');
+            $table->string('name', 255)->collation('sab_ci_ai');
+            $table->string('selection_type', 255)->collation('sab_ci_ai')->default('single');
             $table->json('items')->nullable();
             $table->boolean('active')->default(true);
             $table->timestamp('created_at')->nullable();

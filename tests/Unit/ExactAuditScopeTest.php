@@ -38,7 +38,7 @@ final class ExactAuditScopeTest extends \PHPUnit\Framework\TestCase
     public function test_missing_or_excluded_required_sources_cannot_approve_billing(): void
     {
         require_once dirname(__DIR__,2).'/scripts/exact_audit_scope.php';
-        $root=sys_get_temp_dir().'/pro9-scope-test-'.bin2hex(random_bytes(6));mkdir($root.'/config',0700,true);
+        $root=sys_get_temp_dir().'/sab-scope-test-'.bin2hex(random_bytes(6));mkdir($root.'/config',0700,true);
         try {
             file_put_contents($root.'/Invoice.php','<?php');
             foreach ([['Missing.php'],['Invoice.php']] as $required) {

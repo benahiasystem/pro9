@@ -1,4 +1,4 @@
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import { formatCompactOriginal, formatUnitOriginal } from '../../../../../../resources/js/helpers/dashboard-originals'
 /**
  * Registro frontend del dashboard de widgets: tamaños, tipos de gráfica,
@@ -171,7 +171,7 @@ export function formatKpi(value, unit) {
 export function formatValue(value, unit) {
   return formatUnitOriginal(value, unit)
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 
 /**
  * Layout por defecto: réplica del dashboard actual. Se filtra contra el

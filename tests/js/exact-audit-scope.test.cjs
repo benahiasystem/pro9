@@ -27,7 +27,7 @@ test('billing scope retains global findings and diagnostics with PHP JavaScript 
 test('scope defaults remain global and missing required sources fail closed',()=>{
     assert.equal(scope.argument(['--check']),null);assert.equal(scope.argument(['--check','--scope=billing']),'billing')
     assert.throws(()=>scope.argument(['--scope=other']));assert.throws(()=>scope.argument(['--scope=billing','--scope=billing']))
-    const root=fs.mkdtempSync(path.join(os.tmpdir(),'pro9-audit-scope-'));fs.mkdirSync(path.join(root,'config'))
+    const root=fs.mkdtempSync(path.join(os.tmpdir(),'sab-audit-scope-'));fs.mkdirSync(path.join(root,'config'))
     try {
         fs.writeFileSync(path.join(root,'Invoice.php'),'<?php')
         for(const required of ['Missing.php','Invoice.php']) {

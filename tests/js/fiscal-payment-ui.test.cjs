@@ -12,7 +12,7 @@ vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,b
 const component = exportsObject.default;
 test('total tendered includes IGTF and preserves the customer entry through reactive recalculations', async () => {
     const Vue=require('vue');
-    const currencies = process.env.PRO9_TEST_INVOICES_VES_ONLY === '1' ? ['VES'] : ['USD', 'VES'];
+    const currencies = process.env.SAB_TEST_INVOICES_VES_ONLY === '1' ? ['VES'] : ['USD', 'VES'];
     for (const documentCurrency of currencies) {
         const payment=Vue.observable({payment:documentCurrency==='USD' ? '60' : '600',original_amount:'60',
             currency_type_id:'USD',payment_method_type_id:'usd',exchange_rate:'10',igtf_status:'subject'});

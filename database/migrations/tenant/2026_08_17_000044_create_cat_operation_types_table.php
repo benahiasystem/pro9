@@ -18,11 +18,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cat_operation_types', function (Blueprint $table) {
-            $table->string('id', 255)->collation('pro9_ci_ai');
+            $table->string('id', 255)->collation('sab_ci_ai');
             $table->boolean('active');
             $table->boolean('exportation');
-            $table->string('description', 255)->collation('pro9_ci_ai');
-            $table->string('incoterm', 3)->collation('pro9_ci_ai')->nullable();
+            $table->string('description', 255)->collation('sab_ci_ai');
+            $table->string('incoterm', 3)->collation('sab_ci_ai')->nullable();
             $table->index(['id'], 'cat_operation_types_id_index');
             $table->unique(['id'], 'cat_operation_types_id_pg_unique');
         });

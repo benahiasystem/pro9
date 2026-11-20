@@ -17,9 +17,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('districts', function (Blueprint $table) {
-            $table->char('id', 6)->collation('pro9_ci_ai');
-            $table->char('province_id', 4)->collation('pro9_ci_ai');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->char('id', 6)->collation('sab_ci_ai');
+            $table->char('province_id', 4)->collation('sab_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->boolean('active')->default(true);
             $table->index(['province_id'], 'districts_province_id_foreign');
             $table->index(['id'], 'districts_id_index');

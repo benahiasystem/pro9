@@ -39,7 +39,7 @@ final class ClassifiedCreditWorkbookTest extends TestCase
                 $pdf=new \Mpdf\Mpdf(['tempDir'=>sys_get_temp_dir(),'format'=>$format]);
                 $pdf->WriteHTML($html);$bytes=$pdf->Output('','S');
                 self::assertStringStartsWith('%PDF-',$bytes);
-                $temporary=tempnam(sys_get_temp_dir(),'pro9-credit-pdf-');
+                $temporary=tempnam(sys_get_temp_dir(),'sab-credit-pdf-');
                 try {
                     file_put_contents($temporary,$bytes);
                     $extract=new \Symfony\Component\Process\Process(['pdftotext','-raw',$temporary,'-']);
@@ -48,7 +48,7 @@ final class ClassifiedCreditWorkbookTest extends TestCase
                     self::assertStringContainsString('1.00',$plain);
                     self::assertStringContainsString('0.33',$plain);
                     self::assertStringNotContainsString('1.01',$plain);
-                    if ($run=getenv('PRO9_POSTGRES_RUN_ID')) {
+                    if ($run=getenv('SAB_POSTGRES_RUN_ID')) {
                         $directory=base_path('informes/evidencias/postgresql_17_implementacion/resultados/creditos-'.$run);
                         if (!is_dir($directory)) mkdir($directory,0755,true);
                         file_put_contents($directory.'/'.($format==='A4' ? 'a4' : 'ticket_58').'.pdf',$bytes);
@@ -60,7 +60,7 @@ final class ClassifiedCreditWorkbookTest extends TestCase
         self::assertSame($before,$payload);
         self::assertSame(['n'=>'10049999999999999','d'=>'10000000000000000'],Decimal::fraction(ClassifiedCashReport::pendingCredit($payload['classified'],'VES')));
         $export=(new ClassifiedCashExport())->view_name('cashreport::reports.classified_excel')->data($payload);
-        $path=tempnam(sys_get_temp_dir(),'pro9-credit-xlsx-');
+        $path=tempnam(sys_get_temp_dir(),'sab-credit-xlsx-');
         try {
             file_put_contents($path,ExcelFacade::raw($export,Excel::XLSX));
             $book=IOFactory::load($path);

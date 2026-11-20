@@ -85,19 +85,19 @@ SQL;
 
     protected function typeString(Fluent $column)
     {
-        $column->collation ??= $column->name === 'migration' || preg_match('/(?:password|token|secret|uuid|hash|external_id|api_key)/', $column->name) ? 'C' : 'pro9_ci_ai';
+        $column->collation ??= $column->name === 'migration' || preg_match('/(?:password|token|secret|uuid|hash|external_id|api_key)/', $column->name) ? 'C' : 'sab_ci_ai';
         return parent::typeString($column);
     }
 
     protected function typeText(Fluent $column)
     {
-        $column->collation ??= 'pro9_ci_ai';
+        $column->collation ??= 'sab_ci_ai';
         return parent::typeText($column);
     }
 
     protected function typeChar(Fluent $column)
     {
-        $column->collation ??= 'pro9_ci_ai';
+        $column->collation ??= 'sab_ci_ai';
         return parent::typeChar($column);
     }
     protected function typeMediumText(Fluent $column) { return $this->typeText($column); }
@@ -111,7 +111,7 @@ SQL;
     }
     protected function modifyCollate(\Illuminate\Database\Schema\Blueprint $blueprint, Fluent $column)
     {
-        if ($column->collation && str_starts_with($column->collation, 'utf8')) $column->collation = str_ends_with($column->collation, '_bin') ? 'C' : 'pro9_ci_ai';
+        if ($column->collation && str_starts_with($column->collation, 'utf8')) $column->collation = str_ends_with($column->collation, '_bin') ? 'C' : 'sab_ci_ai';
         return parent::modifyCollate($blueprint, $column);
     }
 

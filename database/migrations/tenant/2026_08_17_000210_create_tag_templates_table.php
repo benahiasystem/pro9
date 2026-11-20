@@ -23,7 +23,7 @@ return new class extends Migration
             $table->decimal('width', 8, 2);
             $table->decimal('height', 8, 2);
             $table->bigInteger('establishment_id');
-            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
             $table->boolean('is_default')->default(false);
             $table->index(['establishment_id'], 'tag_templates_establishment_id_foreign');
         });

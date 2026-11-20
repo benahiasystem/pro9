@@ -33,20 +33,20 @@ return new class extends Migration
         Schema::create('guides', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('establishment_id');
-            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->char('external_id', 36)->collation('sab_ci_ai');
             $table->bigInteger('user_id');
             $table->bigInteger('warehouse_id');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
-            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('series', 255)->collation('pro9_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai');
+            $table->string('document_type_id', 255)->collation('sab_ci_ai');
+            $table->string('series', 255)->collation('sab_ci_ai');
             $table->integer('number');
             $table->date('date_of_issue');
             $table->time('time_of_issue');
-            $table->string('inventory_transaction_id', 255)->collation('pro9_ci_ai');
+            $table->string('inventory_transaction_id', 255)->collation('sab_ci_ai');
             $table->bigInteger('guideable_id')->nullable();
-            $table->string('guideable_type', 255)->collation('pro9_ci_ai')->nullable();
-            $table->text('observations')->collation('pro9_ci_ai')->nullable();
-            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('guideable_type', 255)->collation('sab_ci_ai')->nullable();
+            $table->text('observations')->collation('sab_ci_ai')->nullable();
+            $table->string('filename', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['establishment_id'], 'guides_establishment_id_foreign');

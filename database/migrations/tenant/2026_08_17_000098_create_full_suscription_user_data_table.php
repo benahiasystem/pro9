@@ -23,10 +23,10 @@ return new class extends Migration
         Schema::create('full_suscription_user_data', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('person_id')->nullable()->default('0');
-            $table->string('discord_user', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('slack_channel', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('discord_channel', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('gitlab_user', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('discord_user', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('slack_channel', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('discord_channel', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('gitlab_user', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

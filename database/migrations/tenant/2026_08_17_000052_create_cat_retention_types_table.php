@@ -16,9 +16,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cat_retention_types', function (Blueprint $table) {
-            $table->char('id', 2)->collation('pro9_ci_ai');
-            $table->string('description', 255)->collation('pro9_ci_ai');
-            $table->char('abbreviation', 2)->collation('pro9_ci_ai');
+            $table->char('id', 2)->collation('sab_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
+            $table->char('abbreviation', 2)->collation('sab_ci_ai');
             $table->primary(['id']);
         });
     }

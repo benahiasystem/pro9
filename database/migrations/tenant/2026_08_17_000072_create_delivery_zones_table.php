@@ -22,7 +22,7 @@ return new class extends Migration
     {
         Schema::create('delivery_zones', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 150)->collation('pro9_ci_ai');
+            $table->string('name', 150)->collation('sab_ci_ai');
             $table->decimal('price', 30, 12)->default('0.00');
             $table->boolean('specify_zone')->default(false);
             $table->boolean('active')->default(true);

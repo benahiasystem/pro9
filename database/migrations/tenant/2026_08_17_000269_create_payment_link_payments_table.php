@@ -27,11 +27,11 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('payment_link_id');
             $table->bigInteger('record_id')->nullable();
-            $table->string('record_type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('record_type', 255)->collation('sab_ci_ai')->nullable();
             $table->bigInteger('payment_id')->nullable();
-            $table->string('payment_type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('payment_type', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('total', 30, 12)->nullable();
-            $table->string('status', 20)->collation('pro9_ci_ai')->default('pending');
+            $table->string('status', 20)->collation('sab_ci_ai')->default('pending');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

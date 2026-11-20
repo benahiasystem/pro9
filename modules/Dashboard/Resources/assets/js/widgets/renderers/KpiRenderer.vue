@@ -25,7 +25,7 @@
 import KpiSparkline from '../../views/KpiSparkline.vue'
 import { changeLabelForPeriod, formatKpi, formatValue, themeColors } from '../registry'
 import { readOriginal, readVector, compareOriginal, absoluteOriginal, originalText, chartCoordinate } from '../../../../../../../resources/js/helpers/dashboard-originals'
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 
 /** KPI (valor + delta) con sparkline opcional (kpi_spark). */
 export default {
@@ -80,7 +80,7 @@ export default {
     },
   },
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

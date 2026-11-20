@@ -53,7 +53,7 @@ window.moment=()=>({format:()=>'2026-01-01'});
 <div id="cart-confirm-alert"></div><span id="cart-confirm-alert-text"></span><span id="cart-confirm-title"></span>
 <div id="product_added_image"></div><span id="cart-confirm-price-current"></span><span id="cart-confirm-price-old"></span>
 <button id="cart-confirm-qty-minus" type="button">-</button><input id="cart-confirm-qty-input" type="text" inputmode="decimal" value="1">
-<button id="cart-confirm-qty-plus" type="button">+</button></div></div></div><pre id="pro9-result">pending</pre>
+<button id="cart-confirm-qty-plus" type="button">+</button></div></div></div><pre id="sab-result">pending</pre>
 <script src="/porto-ecommerce/assets/js/jquery.min.js"></script>
 <script src="/porto-ecommerce/assets/js/bootstrap.bundle.min.js"></script>
 <script src="/porto-ecommerce/assets/js/cart.js"></script>
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
  const wait=()=>new Promise(resolve=>setTimeout(resolve,100));
  try {
   await wait();
-  assert(!!window.Pro9StorefrontAmounts,'module ready before catalog initialization');
+  assert(!!window.SabStorefrontAmounts,'module ready before catalog initialization');
   assert(window.bundleErrors.length===0,'classic catalog starts without JavaScript errors');
   const product={id:'9007199254740993',description:'Producto sintético',sale_unit_price:'9007199254740993.01',
    currency_type_id:'VES',quantity:'1',stock:'10000.25'};
@@ -120,8 +120,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   assert(JSON.stringify(order)===before,'compiled confirmation does not mutate its source snapshot');
   await wait();
   assert(window.bundleErrors.length===0,'no delayed browser errors');
-  document.getElementById('pro9-result').textContent=JSON.stringify({ok:true,checks:results,errors:window.bundleErrors});
- } catch(error) {document.getElementById('pro9-result').textContent=JSON.stringify({ok:false,checks:results,error:String(error),errors:window.bundleErrors});}
+  document.getElementById('sab-result').textContent=JSON.stringify({ok:true,checks:results,errors:window.bundleErrors});
+ } catch(error) {document.getElementById('sab-result').textContent=JSON.stringify({ok:false,checks:results,error:String(error),errors:window.bundleErrors});}
 });
 </script></body></html>'''.replace('CHECKOUT_ENTRY', checkout_entry).replace('ENTRY', entry)
 
@@ -154,12 +154,12 @@ document.addEventListener('DOMContentLoaded',async()=>{
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        with tempfile.TemporaryDirectory(prefix='pro9-storefront-browser-') as profile:
+        with tempfile.TemporaryDirectory(prefix='sab-storefront-browser-') as profile:
             process = subprocess.run([browser, '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
                 '--no-first-run', '--no-default-browser-check', '--disable-background-networking',
                 '--user-data-dir='+profile, '--virtual-time-budget=6000', '--dump-dom',
                 'http://127.0.0.1:'+str(server.server_port)+'/'], capture_output=True, text=True, timeout=45)
-        match = re.search(r'<pre id="pro9-result">(.*?)</pre>', process.stdout, re.S)
+        match = re.search(r'<pre id="sab-result">(.*?)</pre>', process.stdout, re.S)
         result = json.loads(html.unescape(match[1])) if match and match[1] != 'pending' else {'ok':False,'error':'El navegador no completó las comprobaciones.'}
         result.update(browser=subprocess.check_output([browser, '--version'], text=True).strip(),
             exit_code=process.returncode, databases='none; synthetic browser fixture only',

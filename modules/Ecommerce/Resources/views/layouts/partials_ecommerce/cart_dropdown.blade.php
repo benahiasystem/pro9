@@ -124,7 +124,7 @@
         $totalRow.show();
         let array = localStorage.getItem('products_cart');
         array = JSON.parse(array || '[]');
-        try {$(".cart-total-price").text(window.Pro9StorefrontAmounts.total(array || []));}
+        try {$(".cart-total-price").text(window.SabStorefrontAmounts.total(array || []));}
         catch (error) {$(".cart-total-price").text('Importe pendiente');}
     }
 
@@ -139,7 +139,7 @@
 
         const defaultImagePath = '{{ $defaultImagePath }}';
 
-        const totalUnits = window.Pro9StorefrontAmounts.sum(array.map(el => window.Pro9StorefrontAmounts.quantity(el.quantity ?? '1'))).decimal();
+        const totalUnits = window.SabStorefrontAmounts.sum(array.map(el => window.SabStorefrontAmounts.quantity(el.quantity ?? '1'))).decimal();
 
         if (count === 0) {
             $(".dropdown-cart-products").append(`
@@ -157,12 +157,12 @@
         } else {
             $('#cart-dd-count-badge').text(totalUnits + (totalUnits === '1' ? ' artículo' : ' artículos')).show();
             array.forEach(element => {
-                const qty = window.Pro9StorefrontAmounts.quantity(element.quantity ?? '1');
+                const qty = window.SabStorefrontAmounts.quantity(element.quantity ?? '1');
                 const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
                     ? `/storage/uploads/items/${element.image_small}`
                     : defaultImagePath;
                 const priceHtml = showPrices
-                    ? `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> × ${element.currency_type_symbol || (element.currency_type_id === 'USD' ? 'USD' : 'Bs.')} ${window.Pro9StorefrontAmounts.line({...element,cantidad:'1'}, {convert:false}).total.final(2)}</span>`
+                    ? `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> × ${element.currency_type_symbol || (element.currency_type_id === 'USD' ? 'USD' : 'Bs.')} ${window.SabStorefrontAmounts.line({...element,cantidad:'1'}, {convert:false}).total.final(2)}</span>`
                     : `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> und.</span>`;
                 $(".dropdown-cart-products").append(`
                     <div class="product cart-product-row">

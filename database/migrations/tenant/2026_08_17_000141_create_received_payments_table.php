@@ -31,16 +31,16 @@ return new class extends Migration
     {
         Schema::create('received_payments', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('provider', 255)->collation('pro9_ci_ai');
+            $table->string('provider', 255)->collation('sab_ci_ai');
             $table->decimal('amount', 30, 12);
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('sender_name', 255)->collation('pro9_ci_ai')->nullable();
-            $table->text('raw_text')->collation('pro9_ci_ai');
-            $table->string('package_name', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
+            $table->string('sender_name', 255)->collation('sab_ci_ai')->nullable();
+            $table->text('raw_text')->collation('sab_ci_ai');
+            $table->string('package_name', 255)->collation('sab_ci_ai');
             $table->timestamp('posted_at');
-            $table->string('device_id', 255)->collation('pro9_ci_ai');
+            $table->string('device_id', 255)->collation('sab_ci_ai');
             $table->string('dedup_hash', 255)->collation('C');
-            $table->string('status', 255)->collation('pro9_ci_ai')->default('pending');
+            $table->string('status', 255)->collation('sab_ci_ai')->default('pending');
             $table->bigInteger('matched_document_id')->nullable();
             $table->bigInteger('matched_document_payment_id')->nullable();
             $table->bigInteger('claimed_by_user_id')->nullable();

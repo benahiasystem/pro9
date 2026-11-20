@@ -23,21 +23,21 @@ final class TenantRestore
         $original = app(PostgresBackupManager::class)->configuration($database);
         $stage = substr($database, 0, 35).'_restore_'.bin2hex(random_bytes(6));
         $config = array_merge($original, ['database' => $stage, 'username' => $stage, 'password' => bin2hex(random_bytes(24))]);
-        $temp = sys_get_temp_dir().'/pro9-restore-'.bin2hex(random_bytes(8)); mkdir($temp, 0700);
+        $temp = sys_get_temp_dir().'/sab-restore-'.bin2hex(random_bytes(8)); mkdir($temp, 0700);
         $service=app(TenantProvisioning::class); $created=false; $activated=false;
-        $files=storage_path('app/pro9-restores/'.$stage);
+        $files=storage_path('app/sab-restores/'.$stage);
         try {
             $backup->extract($package,'databases/',$temp.'/dumps');
             $dump=$temp.'/dumps/'.$source.'.dump';
             $service->create($config, null, function () use ($backup, $config, $dump) {
                 $backup->restore($config, $dump);
-                config(['database.connections.pro9_restore_validation' => $config]); DB::purge('pro9_restore_validation');
+                config(['database.connections.sab_restore_validation' => $config]); DB::purge('sab_restore_validation');
                 try {
-                    $db = DB::connection('pro9_restore_validation');
-                    if (!in_array('companies', SchemaInspector::tables($db), true)) throw new \RuntimeException('El respaldo no contiene una empresa Pro9.');
+                    $db = DB::connection('sab_restore_validation');
+                    if (!in_array('companies', SchemaInspector::tables($db), true)) throw new \RuntimeException('El respaldo no contiene una empresa Sab.');
                     if (!$db->table('companies')->exists()) throw new \RuntimeException('La empresa restaurada no está inicializada.');
                     SequenceSynchronizer::sync($db);
-                } finally { DB::purge('pro9_restore_validation'); }
+                } finally { DB::purge('sab_restore_validation'); }
             }, false); $created=true;
             $backup->extract($package,'files/'.$source.'/',$files);
             $backup->extract($package,'shared/uploads/',$files.'/uploads');
@@ -88,7 +88,7 @@ final class TenantRestore
             if (!$activated) self::remove($files);
             throw $error;
         } finally {
-            DB::purge('pro9_restore_validation'); self::remove($temp);
+            DB::purge('sab_restore_validation'); self::remove($temp);
         }
     }
     private static function move(string $source,string $target): void

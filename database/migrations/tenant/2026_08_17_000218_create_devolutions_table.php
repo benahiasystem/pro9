@@ -29,16 +29,16 @@ return new class extends Migration
         Schema::create('devolutions', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('user_id');
-            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->char('external_id', 36)->collation('sab_ci_ai');
             $table->bigInteger('establishment_id');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
-            $table->char('state_type_id', 2)->collation('pro9_ci_ai');
-            $table->char('prefix', 2)->collation('pro9_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai');
+            $table->char('state_type_id', 2)->collation('sab_ci_ai');
+            $table->char('prefix', 2)->collation('sab_ci_ai');
             $table->date('date_of_issue');
             $table->time('time_of_issue');
             $table->bigInteger('devolution_reason_id');
-            $table->string('observation', 500)->collation('pro9_ci_ai');
-            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('observation', 500)->collation('sab_ci_ai');
+            $table->string('filename', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['user_id'], 'devolutions_user_id_foreign');

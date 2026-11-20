@@ -4,7 +4,7 @@ namespace App\Support\Exact;
 
 use App\Models\Tenant\Document;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Applied documentary payments in VES, preserving the dashboard's existing amount basis. */
 final class DashboardPayments
 {
@@ -57,4 +57,4 @@ final class DashboardPayments
         return 'Otros';
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

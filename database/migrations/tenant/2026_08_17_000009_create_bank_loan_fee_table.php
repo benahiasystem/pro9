@@ -23,9 +23,9 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('bank_loan_id');
             $table->date('date');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('amount', 30, 12);
-            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai')->nullable()->comment('Relacion con el metodo de pago, Nulo es pago a cuotas');
+            $table->char('payment_method_type_id', 2)->collation('sab_ci_ai')->nullable()->comment('Relacion con el metodo de pago, Nulo es pago a cuotas');
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
         });
         DB::statement('ALTER TABLE "bank_loan_fee" ADD CONSTRAINT "bank_loan_fee_bank_loan_id_range" CHECK ("bank_loan_id" >= 0)');

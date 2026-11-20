@@ -31,7 +31,7 @@
 
 <script>
 import Chart from 'chart.js';
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import { graphOriginals, chartCoordinate, sumOriginal, formatUnitOriginal, compareOriginal } from '../../../helpers/dashboard-originals';
 
 export default {
@@ -305,6 +305,6 @@ export default {
     }
   }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 <!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

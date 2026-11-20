@@ -5,7 +5,7 @@ namespace App\Services\Plans;
 use App\Models\Tenant\{Configuration, Document};
 use App\Support\Exact\{DashboardSales, Decimal as D, ReadSnapshot};
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Reporting owns its read; emission validates its own uncommitted header under a tenant lock. */
 final class SalesLimit
 {
@@ -62,4 +62,4 @@ final class SalesLimit
         return D::values($values)+['calculation_snapshot'=>D::snapshot($values)];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -8,7 +8,7 @@ namespace Modules\Dashboard\Helpers;
 use App\Models\Tenant\Document;
 use App\Support\Exact\{DashboardPurchases,DashboardRankings,ReadSnapshot};
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** The three cards share an owned report snapshot and original operands. */
 class DashboardSalePurchase
 {
@@ -35,5 +35,5 @@ class DashboardSalePurchase
         return DashboardPurchases::range($establishment_id,$date_start,$date_end);
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

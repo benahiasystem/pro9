@@ -18,7 +18,7 @@
 </template>
 
 <script>
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import { readVector, chartCoordinate, formatUnitOriginal, formatAxisTick } from "../../../../../../../resources/js/helpers/dashboard-originals";
 export default {
   name: "CashFlowChart",
@@ -116,7 +116,7 @@ export default {
     formatK(val) { return formatAxisTick(val, 'count'); },
   },
 };
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

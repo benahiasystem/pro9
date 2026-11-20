@@ -20,8 +20,8 @@ return new class extends Migration
     {
         Schema::create('product_variables', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 100)->collation('pro9_ci_ai');
-            $table->string('value_type', 10)->collation('pro9_ci_ai')->default('list');
+            $table->string('name', 100)->collation('sab_ci_ai');
+            $table->string('value_type', 10)->collation('sab_ci_ai')->default('list');
             $table->boolean('active')->default(true);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

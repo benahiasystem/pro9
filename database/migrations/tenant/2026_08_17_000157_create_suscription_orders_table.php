@@ -32,17 +32,17 @@ return new class extends Migration
         Schema::create('suscription_orders', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('external_id', 6)->collation('C')->nullable();
-            $table->string('number', 20)->collation('pro9_ci_ai')->nullable();
+            $table->string('number', 20)->collation('sab_ci_ai')->nullable();
             $table->decimal('suscription_id', 20, 0)->nullable();
-            $table->string('type', 255)->collation('pro9_ci_ai')->default('suscription_order');
-            $table->string('person_number', 25)->collation('pro9_ci_ai')->nullable();
+            $table->string('type', 255)->collation('sab_ci_ai')->default('suscription_order');
+            $table->string('person_number', 25)->collation('sab_ci_ai')->nullable();
             $table->integer('count_rejected_payments')->default('0');
             $table->decimal('amount', 30, 12)->default('0.00');
             $table->timestamp('date_of_issue')->nullable();
             $table->timestamp('date_of_due')->nullable();
             $table->timestamp('date_of_payment')->nullable();
-            $table->string('status', 255)->collation('pro9_ci_ai')->default('pending');
-            $table->string('documentable_type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('status', 255)->collation('sab_ci_ai')->default('pending');
+            $table->string('documentable_type', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('documentable_id', 20, 0)->nullable();
             $table->integer('count_notification')->default('0');
             $table->timestamp('date_notification')->nullable();

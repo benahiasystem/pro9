@@ -32,7 +32,7 @@ final class UnpaidTicketPostgresTest extends \PHPUnit\Framework\TestCase
     public function test_outstanding_pdf_formats_keep_fractions_and_nullable_addresses_on_postgresql(): void
     {
         [$db,$app,$base]=(new \ReflectionMethod($this->fixture,'bootHkaFixture'))->invoke($this->fixture);
-        $this->viewDirectory=sys_get_temp_dir().'/pro9-unpaid-views-'.bin2hex(random_bytes(8));
+        $this->viewDirectory=sys_get_temp_dir().'/sab-unpaid-views-'.bin2hex(random_bytes(8));
         mkdir($this->viewDirectory,0700,true);
         config(['view.compiled'=>$this->viewDirectory,'view.paths'=>[base_path('resources/views')],
             'filesystems.disks.public'=>['driver'=>'local','root'=>sys_get_temp_dir()]]);
@@ -105,10 +105,10 @@ final class UnpaidTicketPostgresTest extends \PHPUnit\Framework\TestCase
                 self::assertSame($document->filename,$name);
                 self::assertSame('unpaid',$kind);
                 self::assertStringStartsWith('%PDF-',$bytes);
-                $artifacts=base_path('informes/evidencias/postgresql_17_implementacion/resultados/unpaid-'.getenv('PRO9_POSTGRES_RUN_ID'));
+                $artifacts=base_path('informes/evidencias/postgresql_17_implementacion/resultados/unpaid-'.getenv('SAB_POSTGRES_RUN_ID'));
                 if (!is_dir($artifacts)) mkdir($artifacts,0755,true);
                 file_put_contents($artifacts.'/'.$case.'-'.$theme.'-'.$format.'.pdf',$bytes);
-                $pdf=tempnam(sys_get_temp_dir(),'pro9-unpaid-pdf-');
+                $pdf=tempnam(sys_get_temp_dir(),'sab-unpaid-pdf-');
                 try {
                     file_put_contents($pdf,$bytes);
                     // Stream order keeps wrapped cells together instead of interleaving adjacent columns.
@@ -167,7 +167,7 @@ final class UnpaidTicketPostgresTest extends \PHPUnit\Framework\TestCase
     public function test_invoice_unpaid_rows_do_not_add_received_currency_change_to_document_currency_payment(): void
     {
         [$db,$app,$input]=(new \ReflectionMethod($this->fixture,'bootHkaFixture'))->invoke($this->fixture);
-        $this->viewDirectory=sys_get_temp_dir().'/pro9-unpaid-currency-'.bin2hex(random_bytes(8));mkdir($this->viewDirectory,0700,true);
+        $this->viewDirectory=sys_get_temp_dir().'/sab-unpaid-currency-'.bin2hex(random_bytes(8));mkdir($this->viewDirectory,0700,true);
         config(['view.compiled'=>$this->viewDirectory,'view.paths'=>[base_path('resources/views')],
             'filesystems.disks.public'=>['driver'=>'local','root'=>sys_get_temp_dir()]]);
         $app->register(\Illuminate\View\ViewServiceProvider::class);

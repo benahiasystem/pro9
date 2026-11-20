@@ -327,7 +327,7 @@ import IgtfPaymentFields from "./igtf_fields.vue"
         //     }
         // },
         methods: {
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             hasOutstandingBalance() { return exactValue(this.document, 'total_difference').compare(0) > 0; },
             hasPaymentAdjustment(row) { return exactValue(row, 'payment_adjustment').compare(0) !== 0; },
             paymentAdjustmentText(row) {

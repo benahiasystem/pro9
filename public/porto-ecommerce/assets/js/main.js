@@ -512,7 +512,7 @@ function(e) {
 				const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
 					? `/storage/uploads/items/${element.image_small}`
 					: `/logo/imagen-no-disponible.jpg`;
-				const qty = window.Pro9StorefrontAmounts.quantity(element.quantity ?? '1');
+				const qty = window.SabStorefrontAmounts.quantity(element.quantity ?? '1');
 				jQuery(".dropdown-cart-products").append( `
 						<div class="product">
 							<div class="product-details">
@@ -571,9 +571,9 @@ function(e) {
 			const symbol = (item.currency_type && item.currency_type.symbol)
 				? item.currency_type.symbol
 				: (item.currency_type_symbol || 'S/');
-			const qty = window.Pro9StorefrontAmounts.quantity(item.quantity ?? '1');
-			const price = item.sale_unit_price == null ? null : window.Pro9StorefrontAmounts.line({...item,cantidad:'1'}, {convert:false}).sourceUnitPrice;
-			const compareAt = item.compare_at_price == null ? null : window.Pro9StorefrontAmounts.amount(item.compare_at_price);
+			const qty = window.SabStorefrontAmounts.quantity(item.quantity ?? '1');
+			const price = item.sale_unit_price == null ? null : window.SabStorefrontAmounts.line({...item,cantidad:'1'}, {convert:false}).sourceUnitPrice;
+			const compareAt = item.compare_at_price == null ? null : window.SabStorefrontAmounts.amount(item.compare_at_price);
 			const showPrices = !(window.__storefront_show_prices === false || window.__storefront_show_prices === 0);
 			const thumb = (item.image_medium && item.image_medium !== 'imagen-no-disponible.jpg')
 				? `/storage/uploads/items/${item.image_medium}`
@@ -603,13 +603,13 @@ function(e) {
 			}
 
 			jQuery('#cart_added_qty_input').val(qty);
-			jQuery('#cart_added_qty_minus').prop('disabled', window.Pro9StorefrontAmounts.amount(qty).compare('1') <= 0);
+			jQuery('#cart_added_qty_minus').prop('disabled', window.SabStorefrontAmounts.amount(qty).compare('1') <= 0);
 		},
 		syncCartQuantity: function(productId, quantity)
 		{
 			const contex = this;
 			return Promise.resolve().then(function () {
-				const qty = window.Pro9StorefrontAmounts.quantity(quantity);
+				const qty = window.SabStorefrontAmounts.quantity(quantity);
 				const array = contex.getCartArray();
 				const found = array.find(x => String(x.id) === String(productId));
 				if (!found) {
@@ -621,7 +621,7 @@ function(e) {
 				contex.productsCartDropDown();
 				contex.calculateTotalCart();
 				jQuery('#cart_added_qty_input').val(qty);
-				jQuery('#cart_added_qty_minus').prop('disabled', window.Pro9StorefrontAmounts.amount(qty).compare('1') <= 0);
+				jQuery('#cart_added_qty_minus').prop('disabled', window.SabStorefrontAmounts.amount(qty).compare('1') <= 0);
 				return qty;
 			});
 		},
@@ -634,7 +634,7 @@ function(e) {
 			e(document).on('click', '#cart_added_qty_minus', function (ev) {
 				ev.preventDefault();
 				const id = jQuery('#cart_added_product_row').attr('data-product-id');
-				const current = window.Pro9StorefrontAmounts.amount(window.Pro9StorefrontAmounts.quantity(jQuery('#cart_added_qty_input').val()));
+				const current = window.SabStorefrontAmounts.amount(window.SabStorefrontAmounts.quantity(jQuery('#cart_added_qty_input').val()));
 				if (current.compare('1') <= 0) return;
 				contex.syncCartQuantity(id, current.minus('1').decimal());
 			});
@@ -642,13 +642,13 @@ function(e) {
 			e(document).on('click', '#cart_added_qty_plus', function (ev) {
 				ev.preventDefault();
 				const id = jQuery('#cart_added_product_row').attr('data-product-id');
-				const current = window.Pro9StorefrontAmounts.amount(window.Pro9StorefrontAmounts.quantity(jQuery('#cart_added_qty_input').val()));
+				const current = window.SabStorefrontAmounts.amount(window.SabStorefrontAmounts.quantity(jQuery('#cart_added_qty_input').val()));
 				contex.syncCartQuantity(id, current.plus('1').decimal());
 			});
 
 			e(document).on('change', '#cart_added_qty_input', function () {
 				const id = jQuery('#cart_added_product_row').attr('data-product-id');
-				const current = window.Pro9StorefrontAmounts.quantity(jQuery(this).val());
+				const current = window.SabStorefrontAmounts.quantity(jQuery(this).val());
 				contex.syncCartQuantity(id, current);
 			});
 
@@ -677,7 +677,7 @@ function(e) {
 				// Clone so we don't mutate jQuery cache oddly across clicks
 				item = Object.assign({}, item);
 				const compareRaw = jQuery(this).attr('data-compare-at');
-				if (compareRaw) item.compare_at_price = window.Pro9StorefrontAmounts.input(compareRaw);
+				if (compareRaw) item.compare_at_price = window.SabStorefrontAmounts.input(compareRaw);
 
 				let array = contex.getCartArray();
 				let found = array.find(x => String(x.id) === String(item.id));
@@ -695,7 +695,7 @@ function(e) {
 						array.push(item);
 						found = item;
 					} else {
-						found.quantity = window.Pro9StorefrontAmounts.quantity(window.Pro9StorefrontAmounts.amount(found.quantity ?? '1').plus('1').decimal());
+						found.quantity = window.SabStorefrontAmounts.quantity(window.SabStorefrontAmounts.amount(found.quantity ?? '1').plus('1').decimal());
 						found.cantidad = found.quantity;
 						if (item.compare_at_price && !found.compare_at_price) {
 							found.compare_at_price = item.compare_at_price;
@@ -763,7 +763,7 @@ function(e) {
 		{
 
 			let array = this.getCartArray();
-            try {$(".cart-total-price").text(window.Pro9StorefrontAmounts.total(array));}
+            try {$(".cart-total-price").text(window.SabStorefrontAmounts.total(array));}
             catch (error) {$(".cart-total-price").text('Importe pendiente');}
 		}
 	};

@@ -22,11 +22,11 @@ return new class extends Migration
     {
         Schema::create('buyers', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 200)->collation('pro9_ci_ai');
-            $table->string('number', 255)->collation('pro9_ci_ai');
-            $table->string('address', 250)->collation('pro9_ci_ai')->nullable();
-            $table->string('location_id', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('identity_document_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('name', 200)->collation('sab_ci_ai');
+            $table->string('number', 255)->collation('sab_ci_ai');
+            $table->string('address', 250)->collation('sab_ci_ai')->nullable();
+            $table->string('location_id', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('identity_document_type_id', 255)->collation('sab_ci_ai');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

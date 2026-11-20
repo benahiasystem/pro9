@@ -25,15 +25,15 @@ return new class extends Migration
     {
         Schema::create('item_unit_types', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->bigInteger('item_id');
-            $table->string('unit_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('unit_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('quantity_unit', 30, 12);
             $table->decimal('price1', 30, 12)->nullable();
             $table->decimal('price2', 30, 12)->nullable();
             $table->decimal('price3', 30, 12)->nullable();
             $table->smallInteger('price_default')->default(2);
-            $table->string('barcode', 150)->collation('pro9_ci_ai')->nullable();
+            $table->string('barcode', 150)->collation('sab_ci_ai')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->index(['unit_type_id'], 'item_unit_types_unit_type_id_foreign');
             $table->index(['item_id'], 'item_unit_types_item_id_foreign');

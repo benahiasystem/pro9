@@ -26,15 +26,15 @@ return new class extends Migration
     {
         Schema::create('workers', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('identity_document_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('number', 255)->collation('pro9_ci_ai');
-            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('identity_document_type_id', 255)->collation('sab_ci_ai');
+            $table->string('number', 255)->collation('sab_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
             $table->date('birth_date');
             $table->date('admission_date');
-            $table->string('occupation', 255)->collation('pro9_ci_ai');
-            $table->string('address', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('email', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('telephone', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('occupation', 255)->collation('sab_ci_ai');
+            $table->string('address', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('email', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('telephone', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['identity_document_type_id'], 'workers_identity_document_type_id_foreign');

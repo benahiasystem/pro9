@@ -21,9 +21,9 @@ return new class extends Migration
         Schema::create('dispatch_addresses', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('person_id');
-            $table->string('address', 255)->collation('pro9_ci_ai');
+            $table->string('address', 255)->collation('sab_ci_ai');
             $table->json('location_id');
-            $table->string('establishment_code', 4)->collation('pro9_ci_ai')->default('0000');
+            $table->string('establishment_code', 4)->collation('sab_ci_ai')->default('0000');
             $table->boolean('is_active')->default(true);
             $table->unique(['person_id', 'address'], 'dispatch_address_unique');
         });

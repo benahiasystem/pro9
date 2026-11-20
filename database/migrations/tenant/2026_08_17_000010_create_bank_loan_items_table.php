@@ -22,7 +22,7 @@ return new class extends Migration
         Schema::create('bank_loan_items', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('bank_loan_id');
-            $table->text('description')->collation('pro9_ci_ai');
+            $table->text('description')->collation('sab_ci_ai');
             $table->decimal('total', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_interest', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_ingress', 30, 12)->nullable()->default('0.00');

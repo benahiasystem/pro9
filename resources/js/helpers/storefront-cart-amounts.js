@@ -1,6 +1,6 @@
 import {exactAmount, exactInput, exactSnapshot, normalizeExchangeRate} from './exchange-rate-math'
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 // ########## INICIO CAMBIO AFECTACIÓN IVA
 // Startup fallback only; the storefront injects Localization::exactTaxPercentage().
 export const DEFAULT_CART_TAX_PERCENTAGE = '16'
@@ -105,4 +105,4 @@ export function cartSummaryAmounts(records, options = {}) {
     return {...Object.fromEntries(Object.entries(values).map(([field, value]) => [field, value.final(2)])),
         calculation_snapshot: exactSnapshot(values)}
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

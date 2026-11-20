@@ -20,8 +20,8 @@ return new class extends Migration
     {
         Schema::create('cat_periods', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->char('period', 1)->collation('pro9_ci_ai')->comment('Define si es dia, mes o año - D/M/Y');
-            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre del periodo');
+            $table->char('period', 1)->collation('sab_ci_ai')->comment('Define si es dia, mes o año - D/M/Y');
+            $table->text('name')->collation('sab_ci_ai')->comment('Nombre del periodo');
             $table->smallInteger('active')->default('0')->comment('Si esta activo');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

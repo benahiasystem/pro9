@@ -23,12 +23,12 @@ return new class extends Migration
     {
         Schema::create('company_accounts', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('subtotal_pen', 255)->collation('pro9_ci_ai');
-            $table->string('total_pen', 255)->collation('pro9_ci_ai');
-            $table->string('igv_pen', 255)->collation('pro9_ci_ai');
-            $table->string('subtotal_usd', 255)->collation('pro9_ci_ai');
-            $table->string('total_usd', 255)->collation('pro9_ci_ai');
-            $table->string('igv_usd', 255)->collation('pro9_ci_ai');
+            $table->string('subtotal_pen', 255)->collation('sab_ci_ai');
+            $table->string('total_pen', 255)->collation('sab_ci_ai');
+            $table->string('igv_pen', 255)->collation('sab_ci_ai');
+            $table->string('subtotal_usd', 255)->collation('sab_ci_ai');
+            $table->string('total_usd', 255)->collation('sab_ci_ai');
+            $table->string('igv_usd', 255)->collation('sab_ci_ai');
             $table->integer('exonerated')->nullable();
             $table->integer('unaffected')->nullable();
         });

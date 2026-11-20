@@ -47,7 +47,7 @@ final class PostgresBackup
         // Keep all application comments, excluding only comments on managed extensions.
         $list = $this->process('pg_restore', $config, ['--list', $path]);
         $this->execute($list);
-        $toc = tempnam(sys_get_temp_dir(), 'pro9-pg-toc-');
+        $toc = tempnam(sys_get_temp_dir(), 'sab-pg-toc-');
         try {
             $lines = array_filter(explode("\n", $list->getOutput()), static fn ($line) => !preg_match('/\bCOMMENT\s+-\s+EXTENSION\s+/', $line));
             file_put_contents($toc, implode("\n", $lines)."\n"); chmod($toc, 0600);

@@ -20,7 +20,7 @@ return new class extends Migration
         Schema::create('expense_items', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('expense_id');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->decimal('total', 30, 12);
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->index(['expense_id'], 'expense_items_expense_id_foreign');

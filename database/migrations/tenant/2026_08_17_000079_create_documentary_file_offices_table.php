@@ -32,11 +32,11 @@ return new class extends Migration
             $table->bigInteger('documentary_file_id');
             $table->bigInteger('documentary_office_id');
             $table->bigInteger('documentary_action_id')->default('0');
-            $table->string('status', 255)->collation('pro9_ci_ai')->default('POR DERIVAR');
+            $table->string('status', 255)->collation('sab_ci_ai')->default('POR DERIVAR');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->text('office_name')->collation('pro9_ci_ai')->nullable()->comment('Nombre de la etapa');
-            $table->text('process_name')->collation('pro9_ci_ai')->nullable()->comment('Nombre del tramite');
+            $table->text('office_name')->collation('sab_ci_ai')->nullable()->comment('Nombre de la etapa');
+            $table->text('process_name')->collation('sab_ci_ai')->nullable()->comment('Nombre del tramite');
             $table->bigInteger('documentary_process_id')->default('0')->comment('Tramite relacionado');
             $table->integer('complete')->default('0')->comment('Define si la etapa esta completa');
             $table->timestamp('start_date')->nullable()->comment('Fecha de inicio');

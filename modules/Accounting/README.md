@@ -1,13 +1,12 @@
 # Accounting para SAB
 
 SAB significa Sistema Administrativo Benahia y es la denominación vigente del sistema anfitrión.
-El cambio es de referencias: las rutas internas `/pro9`, las clases `Pro9Controller` y
-`Pro9SourceReader`, los códigos `PRO9_*` y los identificadores de origen `pro9`
-se conservan por compatibilidad. Los registros, huellas, archivos y evidencias
-históricos mantienen su contenido original. No se migra ni recalcula información.
+La integración usa rutas `/sab`, las clases `SabController` y `SabSourceReader`
+y códigos `SAB_*`. Los identificadores de origen y las huellas históricas
+conservan sus valores almacenados.
 
 Este módulo contiene la API y el dominio contable de Contabilidad Benahia. Se
-ejecuta dentro de SAB: Laravel 9, PHP 8.2, MySQL 5.7 y conexión Hyn `tenant`.
+ejecuta dentro de SAB: Laravel 9, PHP 8.2, PostgreSQL 17 y conexión Hyn `tenant`.
 No incorpora otro servidor Laravel, otra tabla de usuarios ni otro login.
 
 La PWA TypeScript se desarrolla y compila en AWS, en
@@ -31,7 +30,7 @@ segundo factor antes de consultar datos; las operaciones críticas exigen una
 verificación reciente. La revisión separada considera a quien preparó la última
 versión, aunque otra persona haya creado el primer borrador.
 
-`Pro9SourceReader` consulta los documentos del mismo tenant. Reutiliza los
+`SabSourceReader` consulta los documentos del mismo tenant. Reutiliza los
 valores exactos de SAB, conserva versiones de origen y detecta recepciones
 repetidas. Recibir un documento no lo contabiliza. Las empresas ficticias no
 se vinculan a datos reales por defecto.

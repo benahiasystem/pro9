@@ -32,19 +32,19 @@ return new class extends Migration
         Schema::create('document_emissions', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('document_id');
-            $table->string('provider', 32)->collation('pro9_ci_ai')->default('HKA');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
-            $table->string('contract_version', 100)->collation('pro9_ci_ai')->nullable();
-            $table->char('operation_key', 36)->collation('pro9_ci_ai');
-            $table->string('status', 255)->collation('pro9_ci_ai')->default('not_requested');
+            $table->string('provider', 32)->collation('sab_ci_ai')->default('HKA');
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai');
+            $table->string('contract_version', 100)->collation('sab_ci_ai')->nullable();
+            $table->char('operation_key', 36)->collation('sab_ci_ai');
+            $table->string('status', 255)->collation('sab_ci_ai')->default('not_requested');
             $table->json('payload')->nullable();
             $table->json('response')->nullable();
-            $table->string('control_number', 32)->collation('pro9_ci_ai')->nullable();
-            $table->string('authorization', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('control_number', 32)->collation('sab_ci_ai')->nullable();
+            $table->string('authorization', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('assigned_at')->nullable();
             $table->timestamp('control_assigned_at')->nullable();
-            $table->string('file_path', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('consulta_url', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('file_path', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('consulta_url', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->unique(['document_id'], 'document_emissions_document_unique');

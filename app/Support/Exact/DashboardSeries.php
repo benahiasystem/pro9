@@ -4,7 +4,7 @@ namespace App\Support\Exact;
 
 use Carbon\Carbon;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Calendar buckets and final chart projections; original fractions remain available. */
 final class DashboardSeries
 {
@@ -53,4 +53,4 @@ final class DashboardSeries
         return ['data'=>$data,'exact'=>$exact,'fractions'=>$fractions,'total'=>$total];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

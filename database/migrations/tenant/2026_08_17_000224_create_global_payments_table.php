@@ -24,11 +24,11 @@ return new class extends Migration
     {
         Schema::create('global_payments', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai');
             $table->bigInteger('destination_id')->nullable();
-            $table->string('destination_type', 255)->collation('pro9_ci_ai');
+            $table->string('destination_type', 255)->collation('sab_ci_ai');
             $table->bigInteger('payment_id');
-            $table->string('payment_type', 255)->collation('pro9_ci_ai');
+            $table->string('payment_type', 255)->collation('sab_ci_ai');
             $table->bigInteger('user_id')->nullable();
             $table->bigInteger('cash_session_id')->nullable();
             $table->json('report_context')->nullable();

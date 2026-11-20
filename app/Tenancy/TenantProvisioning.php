@@ -75,7 +75,7 @@ final class TenantProvisioning
             if ($this->role($name) || $this->database($name)) throw new \LogicException('Ya existe un recurso con ese identificador tenant.');
             $this->control()->transaction(function () use ($q, $config, $id) {
                 $this->secretDdl('CREATE ROLE '.$q.' LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD '.$this->control()->getPdo()->quote($config['password']));
-                $this->control()->statement('COMMENT ON ROLE '.$q.' IS '.$this->control()->getPdo()->quote('pro9:'.$id));
+                $this->control()->statement('COMMENT ON ROLE '.$q.' IS '.$this->control()->getPdo()->quote('sab:'.$id));
                 $current = PostgresBootstrap::identifier($this->control()->selectOne('SELECT current_user AS name')->name);
                 $this->control()->statement('GRANT '.$q.' TO '.$current.' WITH SET TRUE, INHERIT TRUE');
             });
@@ -85,12 +85,12 @@ final class TenantProvisioning
             $resources['database'] = ['name' => $name, 'oid' => $this->database($name)->oid];
             $this->update($id, 'provisioned', $resources);
             $this->control()->statement('REVOKE ALL ON DATABASE '.$q.' FROM PUBLIC');
-            config(['database.connections.pro9_provisioning_target' => $config]);
-            DB::purge('pro9_provisioning_target');
-            $target = DB::connection('pro9_provisioning_target');
+            config(['database.connections.sab_provisioning_target' => $config]);
+            DB::purge('sab_provisioning_target');
+            $target = DB::connection('sab_provisioning_target');
             $target->statement('REVOKE ALL ON SCHEMA public FROM PUBLIC');
             if ($bootstrap) PostgresBootstrap::install($target);
-            DB::purge('pro9_provisioning_target');
+            DB::purge('sab_provisioning_target');
             $install();
             $this->update($id, 'migrated', $resources);
             if (!TenantOnboarding::active()) $this->update($id, 'ready', $resources);
@@ -99,7 +99,7 @@ final class TenantProvisioning
             try { $this->compensate($id); }
             catch (\Throwable $cleanup) { $this->update($id, 'failed', $resources, SqlErrors::state($cleanup)); }
             throw $error;
-        } finally { DB::purge('pro9_provisioning_target'); }
+        } finally { DB::purge('sab_provisioning_target'); }
     }
     public function recover(string $id, bool $dryRun = true): array
     {
@@ -111,9 +111,9 @@ final class TenantProvisioning
         if (!$dryRun) {
             if ($published) {
                 $config = array_merge(config('database.connections.provisioner'), ['database'=>$run->tenant_name]);
-                config(['database.connections.pro9_recovery_validation'=>$config]); DB::purge('pro9_recovery_validation');
-                try { foreach (['companies','configurations','users'] as $table) if (!DB::connection('pro9_recovery_validation')->table($table)->exists()) throw new \LogicException('El alta publicada requiere revisión antes de habilitarla.'); }
-                finally { DB::purge('pro9_recovery_validation'); }
+                config(['database.connections.sab_recovery_validation'=>$config]); DB::purge('sab_recovery_validation');
+                try { foreach (['companies','configurations','users'] as $table) if (!DB::connection('sab_recovery_validation')->table($table)->exists()) throw new \LogicException('El alta publicada requiere revisión antes de habilitarla.'); }
+                finally { DB::purge('sab_recovery_validation'); }
                 $this->complete($id, $resources['website_id']);
             } else $this->compensate($id);
         }
@@ -124,7 +124,7 @@ final class TenantProvisioning
         $run = $this->ledger()->table('tenant_provisioning_runs')->where('id', $id)->first();
         if (!$run || $run->state !== 'migrated') throw new \LogicException('El alta no está lista para publicarse.');
         $role = $this->role($run->tenant_name); $database = $this->database($run->tenant_name);
-        if (!$role || !$database || $role->marker !== 'pro9:'.$id || (string)$database->datdba !== (string)$role->oid) throw new \LogicException('La propiedad del alta no coincide.');
+        if (!$role || !$database || $role->marker !== 'sab:'.$id || (string)$database->datdba !== (string)$role->oid) throw new \LogicException('La propiedad del alta no coincide.');
         $resources = json_decode($run->resources, true, 512, JSON_THROW_ON_ERROR);
         $this->ledger()->transaction(function () use ($id, $resources, $website, $run) {
             if (!$this->ledger()->table('websites')->where('id', $website)->where('uuid', $run->tenant_name)->lockForUpdate()->first()) throw new \LogicException('No existe la metadata central del alta.');
@@ -143,11 +143,11 @@ final class TenantProvisioning
         $role = $this->role($run->tenant_name);
         if (!$role) {
             if ($this->database($run->tenant_name)) throw new \LogicException('Existe una base sin el rol propietario acreditado.');
-        } elseif ($role->marker === 'pro9:'.$id) {
+        } elseif ($role->marker === 'sab:'.$id) {
             $db = $this->database($run->tenant_name);
             if ($db && (string) $db->datdba !== (string) $role->oid) throw new \LogicException('La base no pertenece al recurso creado por el intento.');
             DB::purge('tenant');
-            DB::purge('pro9_provisioning_target');
+            DB::purge('sab_provisioning_target');
             if ($db) $this->dropDatabase($run->tenant_name, (bool) $db->datallowconn);
             $this->control()->statement('DROP ROLE '.PostgresBootstrap::identifier($run->tenant_name));
         } elseif (isset($resources['role']) || isset($resources['database'])) throw new \LogicException('La propiedad del recurso cambió; no se elimina.');
@@ -157,7 +157,7 @@ final class TenantProvisioning
     {
         $q = PostgresBootstrap::identifier($name);
         $role = $this->role($name); $db = $this->database($name);
-        if (!$role || !str_starts_with($role->marker ?? '', 'pro9:') || ($db && (string) $db->datdba !== (string) $role->oid)) throw new \LogicException('No se acredita la propiedad del tenant.');
+        if (!$role || !str_starts_with($role->marker ?? '', 'sab:') || ($db && (string) $db->datdba !== (string) $role->oid)) throw new \LogicException('No se acredita la propiedad del tenant.');
         $id = $this->begin($name, 'delete', null, ['role_oid' => $role->oid, 'database_oid' => $db->oid ?? null]);
         try {
             if ($db) $this->dropDatabase($name, (bool) $db->datallowconn);
@@ -167,14 +167,14 @@ final class TenantProvisioning
     }
     public function password(string $name, string $password): void
     {
-        if (!str_starts_with($this->role($name)->marker ?? '', 'pro9:')) throw new \LogicException('No se acredita la propiedad del rol.');
+        if (!str_starts_with($this->role($name)->marker ?? '', 'sab:')) throw new \LogicException('No se acredita la propiedad del rol.');
         $this->secretDdl('ALTER ROLE '.PostgresBootstrap::identifier($name).' PASSWORD '.$this->control()->getPdo()->quote($password));
     }
     public function rename(string $old, array $config, string $previousPassword, bool $disconnectClients = true): void
     {
         $new = $config['database']; $qo = PostgresBootstrap::identifier($old); $qn = PostgresBootstrap::identifier($new);
         $role = $this->role($old); $db = $this->database($old);
-        if (!$role || !$db || !str_starts_with($role->marker ?? '', 'pro9:') || (string) $role->oid !== (string) $db->datdba) throw new \LogicException('No se acredita la propiedad del tenant.');
+        if (!$role || !$db || !str_starts_with($role->marker ?? '', 'sab:') || (string) $role->oid !== (string) $db->datdba) throw new \LogicException('No se acredita la propiedad del tenant.');
         if ($this->role($new) || $this->database($new)) throw new \LogicException('El destino ya existe.');
         $resources=['old' => $old, 'role_oid' => $role->oid, 'database_oid' => $db->oid];
         $id = $this->begin($new, 'rename', null, $resources);

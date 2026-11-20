@@ -16,12 +16,12 @@ return new class extends Migration {
             $table->unsignedBigInteger('document_id');
             $table->unsignedBigInteger('document_payment_id');
             $table->unsignedSmallInteger('position');
-            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->char('payment_method_type_id', 2)->collation('sab_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('original_amount', 30, 12);
             $table->decimal('exchange_rate', 18, 8);
             $table->date('date_of_payment');
-            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('reference', 255)->collation('sab_ci_ai')->nullable();
             $table->json('calculation_snapshot');
             $table->json('context');
             $table->timestamp('reversed_at')->nullable();

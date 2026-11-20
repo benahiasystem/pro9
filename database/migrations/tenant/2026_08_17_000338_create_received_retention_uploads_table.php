@@ -22,10 +22,10 @@ return new class extends Migration
     {
         Schema::create('received_retention_uploads', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->char('token', 36)->collation('pro9_ci_ai');
+            $table->char('token', 36)->collation('sab_ci_ai');
             $table->bigInteger('user_id');
             $table->bigInteger('document_id')->nullable();
-            $table->string('path', 255)->collation('pro9_ci_ai');
+            $table->string('path', 255)->collation('sab_ci_ai');
             $table->timestamp('expires_at')->useCurrent();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

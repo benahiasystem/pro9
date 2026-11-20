@@ -26,13 +26,13 @@ return new class extends Migration
         Schema::create('notes', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('document_id');
-            $table->string('note_type', 255)->collation('pro9_ci_ai');
-            $table->string('note_credit_type_id', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('note_debit_type_id', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('note_description', 255)->collation('pro9_ci_ai');
+            $table->string('note_type', 255)->collation('sab_ci_ai');
+            $table->string('note_credit_type_id', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('note_debit_type_id', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('note_description', 255)->collation('sab_ci_ai');
             $table->bigInteger('affected_document_id')->nullable();
             $table->json('data_affected_document')->nullable();
-            $table->char('creation_key', 36)->collation('pro9_ci_ai')->nullable();
+            $table->char('creation_key', 36)->collation('sab_ci_ai')->nullable();
             $table->char('request_hash', 64)->collation('C')->nullable();
             $table->json('effect_snapshot')->nullable();
             $table->unique(['creation_key'], 'notes_creation_key_unique');

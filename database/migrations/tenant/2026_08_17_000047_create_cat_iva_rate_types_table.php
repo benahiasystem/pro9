@@ -18,10 +18,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cat_iva_rate_types', function (Blueprint $table) {
-            $table->string('id', 4)->collation('pro9_ci_ai');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('id', 4)->collation('sab_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->decimal('percentage', 30, 12);
-            $table->string('tax_kind', 16)->collation('pro9_ci_ai');
+            $table->string('tax_kind', 16)->collation('sab_ci_ai');
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->primary(['id']);
         });

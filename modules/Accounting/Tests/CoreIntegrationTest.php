@@ -40,7 +40,7 @@ final class CoreIntegrationTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         parent::setUpBeforeClass();
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') {
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') {
             self::markTestSkipped('Utilice el ejecutor PostgreSQL temporal aislado.');
         }
         self::$postgres = new \Tests\Support\AccountingPostgresFixture();

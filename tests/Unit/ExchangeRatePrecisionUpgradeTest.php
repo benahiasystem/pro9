@@ -10,10 +10,10 @@ class ExchangeRatePrecisionUpgradeTest extends \Tests\TestCase
 {
     public function test_new_installation_precision_is_verified_without_converting_data(): void
     {
-        if (getenv('PRO9_POSTGRES_TESTS')!=='1') $this->markTestSkipped('Requiere PostgreSQL temporal.');
+        if (getenv('SAB_POSTGRES_TESTS')!=='1') $this->markTestSkipped('Requiere PostgreSQL temporal.');
         $config=PostgresTestEnvironment::connection();config(['database.connections.precision_control'=>$config]);
         $control=DB::connection('precision_control');PostgresTestEnvironment::assertServer($control);
-        $name='pro9_fiscal_test_'.bin2hex(random_bytes(6));$control->statement('CREATE DATABASE "'.$name.'" TEMPLATE template0');
+        $name='sab_fiscal_test_'.bin2hex(random_bytes(6));$control->statement('CREATE DATABASE "'.$name.'" TEMPLATE template0');
         config(['database.connections.precision_test'=>array_merge($config,['database'=>$name]),'exchange_rate_precision'=>['documents'=>['exchange_rate_sale']]]);
         $db=DB::connection('precision_test');
         try {

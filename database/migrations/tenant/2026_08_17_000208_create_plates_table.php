@@ -17,7 +17,7 @@ return new class extends Migration
     {
         Schema::create('plates', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('value', 255)->collation('pro9_ci_ai');
+            $table->string('value', 255)->collation('sab_ci_ai');
             $table->bigInteger('person_id');
             $table->index(['person_id'], 'plates_person_id_foreign');
         });

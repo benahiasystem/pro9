@@ -15,7 +15,7 @@ final class SpeProfiles
 
     public static function versions($db, int $companyId, int $personId): void
     {
-        if (!preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/D', $db->getDatabaseName())) throw new \RuntimeException('Temporary fiscal database required');
+        if (!preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/D', $db->getDatabaseName())) throw new \RuntimeException('Temporary fiscal database required');
         $company = $db->table('companies')->find($companyId);
         $rif = preg_replace('/[^A-Z0-9]/','',strtoupper($company->number));
         $rif = substr($rif,0,1).'-'.substr($rif,1,8).'-'.substr($rif,-1);

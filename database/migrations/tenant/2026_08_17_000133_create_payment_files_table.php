@@ -17,9 +17,9 @@ return new class extends Migration
     {
         Schema::create('payment_files', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('filename', 255)->collation('pro9_ci_ai');
+            $table->string('filename', 255)->collation('sab_ci_ai');
             $table->bigInteger('payment_id');
-            $table->string('payment_type', 255)->collation('pro9_ci_ai');
+            $table->string('payment_type', 255)->collation('sab_ci_ai');
             $table->index(['payment_id', 'payment_type'], 'payment_files_payment_index');
         });
     }

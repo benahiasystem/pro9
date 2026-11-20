@@ -24,8 +24,8 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('purchase_settlement_id');
             $table->date('date_of_payment');
-            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai');
-            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->char('payment_method_type_id', 2)->collation('sab_ci_ai');
+            $table->string('reference', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('change', 30, 12)->default('0.00');
             $table->decimal('payment', 30, 12);
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

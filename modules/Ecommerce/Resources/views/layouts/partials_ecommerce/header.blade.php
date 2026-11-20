@@ -405,7 +405,7 @@ div.cart-dropdown {
     });
 
     function waitForVue(cb) {
-        if (typeof Vue !== 'undefined' && window.Pro9StorefrontAmounts) return cb();
+        if (typeof Vue !== 'undefined' && window.SabStorefrontAmounts) return cb();
         setTimeout(function(){ waitForVue(cb); }, 100);
     }
 
@@ -494,7 +494,7 @@ div.cart-dropdown {
                         }
 
                         const priceClean = item.amount_sale_unit_price == null ? null
-                            : window.Pro9StorefrontAmounts.input(String(item.amount_sale_unit_price));
+                            : window.SabStorefrontAmounts.input(String(item.amount_sale_unit_price));
 
                         const cartItem = {
                             id: item.id,
@@ -516,7 +516,7 @@ div.cart-dropdown {
                             unit_type_id: item.unit_type_id || 'UND',
                             internal_id: item.internal_id || '',
                             quantity: '1',
-                            stock: item.stock == null ? undefined : window.Pro9StorefrontAmounts.input(String(item.stock)),
+                            stock: item.stock == null ? undefined : window.SabStorefrontAmounts.input(String(item.stock)),
                         };
 
                         let array = localStorage.getItem('products_cart');
@@ -546,7 +546,7 @@ div.cart-dropdown {
                         array = array ? JSON.parse(array) : [];
                         let obj = {};
                         array.forEach(function(item) {
-                            obj[item.id] = window.Pro9StorefrontAmounts.quantity(item.quantity ?? '1');
+                            obj[item.id] = window.SabStorefrontAmounts.quantity(item.quantity ?? '1');
                         });
                         this.cartQuantities = obj;
                     },
@@ -555,7 +555,7 @@ div.cart-dropdown {
                         array = array ? JSON.parse(array) : [];
                         let found = array.find(x => x.id == item.id);
                         if (found) {
-                            found.quantity = cartClampQuantity(window.Pro9StorefrontAmounts.amount(window.Pro9StorefrontAmounts.quantity(found.quantity)).plus('1').decimal(), window.Pro9StorefrontAmounts.stock(found), false);
+                            found.quantity = cartClampQuantity(window.SabStorefrontAmounts.amount(window.SabStorefrontAmounts.quantity(found.quantity)).plus('1').decimal(), window.SabStorefrontAmounts.stock(found), false);
                             found.cantidad = found.quantity;
                             localStorage.setItem('products_cart', JSON.stringify(array));
                             this.cartQuantities[item.id] = found.quantity;
@@ -566,23 +566,23 @@ div.cart-dropdown {
                         let array = localStorage.getItem('products_cart');
                         array = array ? JSON.parse(array) : [];
                         let found = array.find(x => x.id == item.id);
-                        if (found && window.Pro9StorefrontAmounts.amount(found.quantity).compare('1') > 0) {
-                            found.quantity = window.Pro9StorefrontAmounts.amount(found.quantity).minus('1').decimal();
+                        if (found && window.SabStorefrontAmounts.amount(found.quantity).compare('1') > 0) {
+                            found.quantity = window.SabStorefrontAmounts.amount(found.quantity).minus('1').decimal();
                             found.cantidad = found.quantity;
                             localStorage.setItem('products_cart', JSON.stringify(array));
                             this.cartQuantities[item.id] = found.quantity;
                             window.dispatchEvent(new Event('productAddedToCart'));
-                        } else if (found && window.Pro9StorefrontAmounts.amount(found.quantity).compare('1') <= 0) {
+                        } else if (found && window.SabStorefrontAmounts.amount(found.quantity).compare('1') <= 0) {
                             this.removeFromCart(item);
                         }
                     },
                     updateQuantity(item) {
-                        const qty = window.Pro9StorefrontAmounts.quantity(this.cartQuantities[item.id]);
+                        const qty = window.SabStorefrontAmounts.quantity(this.cartQuantities[item.id]);
                         let array = localStorage.getItem('products_cart');
                         array = array ? JSON.parse(array) : [];
                         let found = array.find(x => x.id == item.id);
                         if (found) {
-                            found.quantity = cartClampQuantity(qty, window.Pro9StorefrontAmounts.stock(found), false);
+                            found.quantity = cartClampQuantity(qty, window.SabStorefrontAmounts.stock(found), false);
                             found.cantidad = found.quantity;
                             localStorage.setItem('products_cart', JSON.stringify(array));
                             this.cartQuantities[item.id] = found.quantity;

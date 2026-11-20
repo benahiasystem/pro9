@@ -24,11 +24,11 @@ return new class extends Migration
     {
         Schema::create('dispatchers', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('identity_document_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('number', 255)->collation('pro9_ci_ai');
-            $table->string('name', 255)->collation('pro9_ci_ai');
-            $table->string('address', 255)->collation('pro9_ci_ai');
-            $table->string('number_mtc', 12)->collation('pro9_ci_ai')->nullable();
+            $table->string('identity_document_type_id', 255)->collation('sab_ci_ai');
+            $table->string('number', 255)->collation('sab_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
+            $table->string('address', 255)->collation('sab_ci_ai');
+            $table->string('number_mtc', 12)->collation('sab_ci_ai')->nullable();
             $table->boolean('is_default')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->nullable();

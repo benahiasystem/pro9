@@ -8,11 +8,11 @@ use Symfony\Component\Process\Process;
 
 $root = dirname(__DIR__, 2);
 require $root.'/vendor/autoload.php';
-if (getenv('PRO9_POSTGRES_TESTS') !== '1') {
+if (getenv('SAB_POSTGRES_TESTS') !== '1') {
     throw new RuntimeException('Requiere la instancia temporal de rendimiento.');
 }
 
-$directory = realpath(sys_get_temp_dir()).'/pro9_http_cohort_'.bin2hex(random_bytes(6));
+$directory = realpath(sys_get_temp_dir()).'/sab_http_cohort_'.bin2hex(random_bytes(6));
 if (!mkdir($directory, 0700)) {
     throw new RuntimeException('No se pudo crear la cohorte temporal.');
 }
@@ -27,7 +27,7 @@ try {
         $workers[$member] = new Process(
             [PHP_BINARY, '-d', 'memory_limit=384M', $root.'/tests/Support/benchmark_postgresql_http.php', 'http_documents', 'sales_report'],
             $root,
-            ['PRO9_HTTP_BENCHMARK_COHORT' => $directory, 'PRO9_HTTP_BENCHMARK_MEMBER' => $member]
+            ['SAB_HTTP_BENCHMARK_COHORT' => $directory, 'SAB_HTTP_BENCHMARK_MEMBER' => $member]
         );
         $workers[$member]->setTimeout(900);
         $workers[$member]->start();

@@ -18,7 +18,7 @@ return new class extends Migration
     {
         Schema::create('cat_item_unit_business', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre de unidad de negocio');
+            $table->text('name')->collation('sab_ci_ai')->comment('Nombre de unidad de negocio');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

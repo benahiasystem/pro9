@@ -23,7 +23,7 @@ return new class extends Migration
     {
         Schema::create('guide_files', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('filename')->collation('pro9_ci_ai')->nullable()->comment('Nombre de archivo');
+            $table->text('filename')->collation('sab_ci_ai')->nullable()->comment('Nombre de archivo');
             $table->bigInteger('purchase_id')->nullable()->default('0')->comment('Relacion con purchases');
             $table->bigInteger('document_id')->nullable()->default('0')->comment('Relacion con documents');
             $table->bigInteger('order_note_id')->nullable()->default('0')->comment('Relacion con order_notes');

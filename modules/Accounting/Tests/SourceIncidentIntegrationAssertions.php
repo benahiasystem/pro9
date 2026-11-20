@@ -5,7 +5,7 @@ namespace Modules\Accounting\Tests;
 use Illuminate\Support\Str;
 use Modules\Accounting\Domain\{ApiProblem, CompanyContext};
 use Modules\Accounting\Models\{Incident, SourceVersion, SourceResolution};
-use Modules\Accounting\Services\{DocumentService, EntryService, Pro9SourceReader, SourceIncidentService, AuditIntegrityService};
+use Modules\Accounting\Services\{DocumentService, EntryService, SabSourceReader, SourceIncidentService, AuditIntegrityService};
 use Modules\Accounting\Support\TenantDB as DB;
 
 trait SourceIncidentIntegrationAssertions
@@ -35,12 +35,12 @@ trait SourceIncidentIntegrationAssertions
             $this->assertSame($before, (array) DB::table('accounting_source_documents')->where('id', $document->id)->first());
             $this->assertNotEmpty($case['projection_issues']);
             $this->assertFalse(in_array(true, $case['actions'], true));
-            $again = app(Pro9SourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
+            $again = app(SabSourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
             $this->assertTrue($again['unchanged']);
             $this->assertSame($case['incident']['id'], $again['incident_id']);
             $this->assertSame(2, SourceVersion::where('source_document_id', $document->id)->count());
             $this->assertSame(1, Incident::where('resource_id', $document->id)->where('status', 'open')->count());
-        $this->assertSame(1, app(Pro9SourceReader::class)->status()['pending']);
+        $this->assertSame(1, app(SabSourceReader::class)->status()['pending']);
     }
 
     public function test_disappeared_native_source_is_an_idempotent_observation_without_inferring_annulment(): void
@@ -49,8 +49,8 @@ trait SourceIncidentIntegrationAssertions
         $before = (array) DB::table('accounting_source_documents')->where('id', $document->id)->first();
         $entryBefore = (array) DB::table('accounting_journal_entries')->where('id', $fixture['entry']->id)->first();
         DB::table('documents')->where('id', $fixture['id'])->delete();
-        $received = app(Pro9SourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
-        $again = app(Pro9SourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
+        $received = app(SabSourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
+        $again = app(SabSourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
         $case = app(SourceIncidentService::class)->show($received['incident_id']);
         $this->assertTrue($again['unchanged']); $this->assertSame($received['incident_id'], $again['incident_id']);
         $this->assertFalse(in_array(true, $case['actions'], true));
@@ -86,7 +86,7 @@ trait SourceIncidentIntegrationAssertions
     private function observeNative(array $fixture, array $change): array
     {
         DB::table('documents')->where('id', $fixture['id'])->update([...$change, 'updated_at' => now()->addMinute()]);
-        $received = app(Pro9SourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
+        $received = app(SabSourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
         $case = app(SourceIncidentService::class)->show($received['incident_id']);
         return ['case' => $case, 'input' => ['source_version_id' => $case['observed']['id'], 'document_version' => $case['document']['version'], 'reason' => 'Revisión explícita del cambio de origen ficticio con su evidencia conservada.']];
     }
@@ -115,8 +115,8 @@ trait SourceIncidentIntegrationAssertions
         $this->assertSame('verified', $resolved['resolution']['integrity']);
         $this->assertSame($before, (array) DB::table('accounting_source_documents')->where('id', $fixture['document']->id)->first());
         $this->assertSame($entryBefore, (array) DB::table('accounting_journal_entries')->where('id', $fixture['entry']->id)->first());
-        app(Pro9SourceReader::class)->assertCurrent($fixture['document']->fresh());
-        $this->assertFalse(app(Pro9SourceReader::class)->receive('sales', $fixture['id'], $this->admin->id)['requires_reconciliation']);
+        app(SabSourceReader::class)->assertCurrent($fixture['document']->fresh());
+        $this->assertFalse(app(SabSourceReader::class)->receive('sales', $fixture['id'], $this->admin->id)['requires_reconciliation']);
         $this->assertSame('resolved', $service->show($case['incident']['id'])['incident']['status']);
         $this->assertSame('verified', app(AuditIntegrityService::class)->verify()['state']);
     }

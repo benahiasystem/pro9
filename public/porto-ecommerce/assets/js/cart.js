@@ -49,8 +49,8 @@ function cartParseProductFromButton(btn) {
 function cartEnrichFromProductCard(btn, item) { return item; }
 
 function cartAmounts() {
-    if (!window.Pro9StorefrontAmounts) throw new Error('No se pudo cargar el carrito. Recarga la página.');
-    return window.Pro9StorefrontAmounts;
+    if (!window.SabStorefrontAmounts) throw new Error('No se pudo cargar el carrito. Recarga la página.');
+    return window.SabStorefrontAmounts;
 }
 
 function cartGetProductStock(item) { return cartAmounts().stock(item); }

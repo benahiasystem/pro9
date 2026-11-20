@@ -20,9 +20,9 @@ return new class extends Migration
     {
         Schema::create('print_orders', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name_printer', 255)->collation('pro9_ci_ai')->comment('Nombre de la impresora');
+            $table->string('name_printer', 255)->collation('sab_ci_ai')->comment('Nombre de la impresora');
             $table->smallInteger('status')->default('0')->comment('Estado de la orden de impresión: 0 = pendiente, 1 = procesando, 2 = impresa');
-            $table->text('pdf_b64')->collation('pro9_ci_ai')->comment('Archivo PDF codificado en base64');
+            $table->text('pdf_b64')->collation('sab_ci_ai')->comment('Archivo PDF codificado en base64');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

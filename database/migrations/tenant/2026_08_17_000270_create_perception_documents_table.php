@@ -30,15 +30,15 @@ return new class extends Migration
         Schema::create('perception_documents', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('perception_id');
-            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('number', 255)->collation('pro9_ci_ai');
+            $table->string('document_type_id', 255)->collation('sab_ci_ai');
+            $table->string('number', 255)->collation('sab_ci_ai');
             $table->date('date_of_issue');
             $table->date('date_of_perception');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('total_document', 30, 12);
             $table->decimal('total_perception', 30, 12);
             $table->json('payments');
-            $table->string('series', 255)->collation('pro9_ci_ai');
+            $table->string('series', 255)->collation('sab_ci_ai');
             $table->json('exchange_rate');
             $table->decimal('total_to_pay', 30, 12);
             $table->decimal('total_payment', 30, 12);

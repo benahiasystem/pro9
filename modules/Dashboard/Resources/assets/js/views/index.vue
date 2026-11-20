@@ -791,7 +791,7 @@
 <script>
 // ######## INICIO TASAS OCHO DECIMALES ########
 import moment from "moment"
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import { readOriginal, graphOriginals, chartCoordinate, compareOriginal, originalNumber, originalText, formatUnitOriginal, formatAxisTick } from "../../../../../../resources/js/helpers/dashboard-originals"
 // ######## FIN TASAS OCHO DECIMALES ########
 
@@ -1590,7 +1590,7 @@ export default {
     saleNoteMoney(value) { return originalText(value); },
   },
 };
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

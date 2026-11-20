@@ -119,7 +119,7 @@ final class SourceIncidentService
             $current = $latest === $version->id; $integrity = app(SourceHistoryService::class)->integrity($version); $same = $this->basisUnchanged($document, $version, $ledger);
             $activeOpening = OpenItem::where('source_document_id', $document->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists();
             $clear = !array_filter($ledger, fn($entry) => $entry['active_effect']) && !$activeOpening;
-            $projectionIssues = is_array($version->snapshot) ? app(Pro9SourceReader::class)->projectionIssues($version->snapshot) : ['El antecedente no conserva la estructura de un documento de origen.'];
+            $projectionIssues = is_array($version->snapshot) ? app(SabSourceReader::class)->projectionIssues($version->snapshot) : ['El antecedente no conserva la estructura de un documento de origen.'];
             $open = $incident->status === 'open' && $current && $integrity['state'] !== 'failed' && !$projectionIssues;
             $resolution = SourceResolution::where('incident_id', $incident->id)->first();
             return ['company_id' => app(CompanyContext::class)->id(), 'incident' => $incident->only(['id', 'kind', 'title', 'status', 'version', 'details', 'resolution', 'resolved_by', 'resolved_at']),
@@ -143,14 +143,14 @@ final class SourceIncidentService
                 if (app(SourceHistoryService::class)->integrity($observed)['state'] === 'failed') { throw new ApiProblem('SOURCE_HISTORY_INTEGRITY', 'El antecedente observado no conserva su integridad.', 409); }
                 $reason = trim($input['reason']); $action = $input['action'];
                 if (mb_strlen($reason) < 10 || mb_strlen($reason) > 2000 || !in_array($action, ['acknowledge_metadata', 'apply_after_reversal', 'review_received'], true)) { throw new ApiProblem('SOURCE_RESOLUTION_INPUT', 'Selecciona una resolución y explica su motivo entre 10 y 2000 caracteres.'); }
-                $snapshot = app(Pro9SourceReader::class)->snapshot($document->metadata['source_kind'] ?? '', (int) ($document->metadata['source_record_id'] ?? 0), true);
+                $snapshot = app(SabSourceReader::class)->snapshot($document->metadata['source_kind'] ?? '', (int) ($document->metadata['source_record_id'] ?? 0), true);
                 if (!hash_equals($observed->hash, $snapshot['hash'])) { throw new ApiProblem('SOURCE_REVIEW_STALE', 'SAB volvió a cambiar. Recibe su versión actual antes de confirmar esta revisión.', 409); }
                 $ledger = $this->ledger($document); $clear = !array_filter($ledger, fn($entry) => $entry['active_effect']) && !OpenItem::where('source_document_id', $document->id)->where('is_opening', true)->where('status', '!=', 'reversed')->exists();
                 if ($action === 'acknowledge_metadata' && (!$this->basisUnchanged($document, $observed, $ledger) || (!$ledger && $document->source_revision === $observed->revision))) { throw new ApiProblem('SOURCE_FINANCIAL_CHANGE', 'El cambio requiere validar la revisión recibida o corregir sus efectos anteriores antes de confirmar otra revisión.', 409); }
                 if ($action === 'apply_after_reversal' && !$clear) { throw new ApiProblem('SOURCE_EFFECTS_ACTIVE', 'Contabiliza los reversos aprobados y resuelve los auxiliares vinculados antes de aplicar la nueva revisión.', 409); }
                 if ($action === 'review_received' && (!$clear || $document->source_revision !== $observed->revision || !in_array($document->status, ['validated', 'proposed'], true))) { throw new ApiProblem('SOURCE_REVIEW_INCOMPLETE', 'Valida la revisión recibida y resuelve los efectos anteriores antes de cerrar esta incidencia.', 409); }
                 $before = $document->toArray(); $fiscal = FiscalRecord::where('source_document_id', $document->id)->whereIn('status', ['validated', 'source_changed'])->get()->toArray();
-                if ($action === 'apply_after_reversal') { $document = app(Pro9SourceReader::class)->applyObserved($document, $observed, $user); }
+                if ($action === 'apply_after_reversal') { $document = app(SabSourceReader::class)->applyObserved($document, $observed, $user); }
                 $now = now('America/Caracas')->toDateTimeString(); $context = app(CompanyContext::class);
                 $record = new SourceResolution(['id' => (string) Str::uuid(), 'incident_id' => $incident->id, 'source_document_id' => $document->id, 'source_version_id' => $observed->id, 'action' => $action, 'reason' => $reason,
                     'base_revision' => $before['source_revision'], 'reviewed_by' => $user, 'reviewed_by_name' => $actor->name, 'evidence' => ['before_document' => $before, 'after_document' => $document->toArray(), 'prior_fiscal_records' => $fiscal, 'ledger' => $ledger, 'observed_hash' => $observed->hash, 'observed_integrity' => app(SourceHistoryService::class)->integrity($observed), 'no_automatic_posting' => true], 'created_at' => $now, 'updated_at' => $now]);

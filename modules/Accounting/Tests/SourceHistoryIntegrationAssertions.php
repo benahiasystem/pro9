@@ -5,7 +5,7 @@ namespace Modules\Accounting\Tests;
 use Illuminate\Support\Str;
 use Modules\Accounting\Domain\{ApiProblem, CompanyContext};
 use Modules\Accounting\Models\{SourceVersion, JournalEntry, Incident};
-use Modules\Accounting\Services\{DocumentService, Pro9SourceReader, SourceHistoryService, AuditIntegrityService};
+use Modules\Accounting\Services\{DocumentService, SabSourceReader, SourceHistoryService, AuditIntegrityService};
 use Modules\Accounting\Support\TenantDB as DB;
 
 trait SourceHistoryIntegrationAssertions
@@ -22,7 +22,7 @@ trait SourceHistoryIntegrationAssertions
         }
         $snapshot = \App\Support\Exact\Decimal::snapshot(['total' => '7/3', 'total_value' => '2', 'total_igv' => '1/3', 'total_taxes' => '1/3', 'exchange_rate_sale' => '13/7']);
         DB::table($table)->where('id', $id)->update(['calculation_snapshot' => json_encode($snapshot)]);
-        $reader = app(Pro9SourceReader::class); $first = $reader->snapshot($kind, $id);
+        $reader = app(SabSourceReader::class); $first = $reader->snapshot($kind, $id);
         $this->assertSame('2.333333333333', $first['amounts']['total']);
         $this->assertSame(\App\Support\Exact\Decimal::fraction('7/3'), $first['exact']['total']);
         $this->assertSame(\App\Support\Exact\Decimal::fraction('13/7'), $first['exact']['exchange_rate_sale']);
@@ -66,7 +66,7 @@ trait SourceHistoryIntegrationAssertions
         $input = $config['input']; $party = \Modules\Accounting\Models\ThirdParty::findOrFail($input['third_party_id']);
         $id = DB::table('documents')->insertGetId(['series' => 'ACCT-HISTORY', 'number' => random_int(1, 10000000), 'document_type_id' => '01', 'date_of_issue' => $input['issue_date'], 'state_type_id' => '01', 'currency_type_id' => 'VES',
             'customer' => json_encode(['name' => $party->name, 'number' => $party->tax_id]), 'total' => $input['amounts']['total'], 'total_value' => $input['amounts']['base'], 'total_igv' => $input['amounts']['vat'], 'total_taxes' => $input['amounts']['vat'], 'exchange_rate_sale' => '1', 'created_at' => now(), 'updated_at' => now()]);
-        $received = app(Pro9SourceReader::class)->receive('sales', $id, $this->admin->id);
+        $received = app(SabSourceReader::class)->receive('sales', $id, $this->admin->id);
         $document = $received['data'];
         return compact('id', 'document', 'config');
     }
@@ -121,7 +121,7 @@ trait SourceHistoryIntegrationAssertions
         $before = (array) DB::table('accounting_source_documents')->where('id', $doc->id)->first();
         $entryBefore = (array) DB::table('accounting_journal_entries')->where('id', $entry->id)->first();
         DB::table('documents')->where('id', $fixture['id'])->update(['total' => '2320', 'total_value' => '2000', 'total_igv' => '320', 'total_taxes' => '320', 'updated_at' => now()->addSecond()]);
-        $result = app(Pro9SourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
+        $result = app(SabSourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
         $this->assertTrue($result['requires_reconciliation']); $this->assertSame(2, $result['observed_revision']);
         $this->assertSame($before, (array) DB::table('accounting_source_documents')->where('id', $doc->id)->first());
         $this->assertSame($entryBefore, (array) DB::table('accounting_journal_entries')->where('id', $entry->id)->first());
@@ -130,14 +130,14 @@ trait SourceHistoryIntegrationAssertions
         $this->assertSame('verified', app(SourceHistoryService::class)->integrity($version)['state']);
         $this->assertSame('pending_reconciliation', $version->disposition);
         $this->assertSame(1, $version->document_snapshot['source_revision']);
-        $again = app(Pro9SourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
+        $again = app(SabSourceReader::class)->receive('sales', $fixture['id'], $this->admin->id);
         $this->assertTrue($again['unchanged']); $this->assertSame(2, SourceVersion::where('source_document_id', $doc->id)->count());
         $this->assertSame(1, Incident::where('resource_id', $doc->id)->count());
     }
 
     public function test_new_unposted_native_revision_still_invalidates_pending_approval_without_duplicate_receipts(): void
     {
-        $fixture = $this->nativeSourceFixture(); $doc = $fixture['document']; $reader = app(Pro9SourceReader::class);
+        $fixture = $this->nativeSourceFixture(); $doc = $fixture['document']; $reader = app(SabSourceReader::class);
         $documents = app(DocumentService::class);
         $doc = $documents->validate($doc->id, $doc->version, ['source_confirmed' => true, 'tax_components' => $fixture['config']['input']['tax_components']], $this->admin->id);
         $entry = $documents->propose($doc->id, $doc->version, now('America/Caracas')->format('Y-m-d'), $this->invoiceAccounts(), $this->admin->id);
@@ -154,7 +154,7 @@ trait SourceHistoryIntegrationAssertions
         $this->assertTrue($reader->receive('sales', $fixture['id'], $this->admin->id)['unchanged']);
         $this->assertSame(2, SourceVersion::where('source_document_id', $doc->id)->count());
         try { $reader->assertCurrent($doc->fresh()); $this->fail('No se valida como vigente el origen anulado.'); }
-        catch (ApiProblem $e) { $this->assertSame('PRO9_SOURCE_NOT_ACTIVE', $e->errorCode); }
+        catch (ApiProblem $e) { $this->assertSame('SAB_SOURCE_NOT_ACTIVE', $e->errorCode); }
     }
 
     public function test_source_integrity_failure_in_restored_data_blocks_fiscal_validation(): void

@@ -28,15 +28,15 @@ return new class extends Migration
         Schema::create('person_addresses', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('person_id');
-            $table->char('country_id', 2)->collation('pro9_ci_ai');
-            $table->char('department_id', 2)->collation('pro9_ci_ai')->nullable();
-            $table->char('province_id', 4)->collation('pro9_ci_ai')->nullable();
-            $table->char('district_id', 6)->collation('pro9_ci_ai')->nullable();
-            $table->string('address', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('phone', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('email', 255)->collation('pro9_ci_ai')->nullable();
+            $table->char('country_id', 2)->collation('sab_ci_ai');
+            $table->char('department_id', 2)->collation('sab_ci_ai')->nullable();
+            $table->char('province_id', 4)->collation('sab_ci_ai')->nullable();
+            $table->char('district_id', 6)->collation('sab_ci_ai')->nullable();
+            $table->string('address', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('phone', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('email', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('main')->default(false);
-            $table->string('establishment_code', 4)->collation('pro9_ci_ai')->default('0000');
+            $table->string('establishment_code', 4)->collation('sab_ci_ai')->default('0000');
             $table->boolean('has_consigned')->default(false);
             $table->bigInteger('consigned_id')->nullable();
             $table->index(['person_id'], 'person_addresses_person_id_foreign');

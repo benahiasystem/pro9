@@ -24,12 +24,12 @@ return new class extends Migration
     {
         Schema::create('tips', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai');
             $table->date('date')->comment('Fecha de registro');
             $table->date('origin_date_of_issue')->comment('Fecha del documento origen de la propina');
             $table->bigInteger('origin_id');
-            $table->string('origin_type', 255)->collation('pro9_ci_ai');
-            $table->string('worker_full_name', 255)->collation('pro9_ci_ai');
+            $table->string('origin_type', 255)->collation('sab_ci_ai');
+            $table->string('worker_full_name', 255)->collation('sab_ci_ai');
             $table->decimal('total', 30, 12);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

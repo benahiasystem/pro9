@@ -23,11 +23,11 @@ return new class extends Migration
     {
         Schema::create('hotel_rent_items', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('type', 3)->collation('pro9_ci_ai');
+            $table->string('type', 3)->collation('sab_ci_ai');
             $table->bigInteger('hotel_rent_id');
             $table->bigInteger('item_id');
-            $table->text('item')->collation('pro9_ci_ai')->nullable();
-            $table->string('payment_status', 255)->collation('pro9_ci_ai');
+            $table->text('item')->collation('sab_ci_ai')->nullable();
+            $table->string('payment_status', 255)->collation('sab_ci_ai');
             $table->bigInteger('hotel_rent_order_id')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

@@ -73,13 +73,13 @@ return new class extends Migration
         Schema::create('purchases', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('user_id');
-            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->char('external_id', 36)->collation('sab_ci_ai');
             $table->bigInteger('establishment_id');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
-            $table->char('state_type_id', 2)->collation('pro9_ci_ai');
-            $table->char('group_id', 2)->collation('pro9_ci_ai');
-            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
-            $table->char('series', 4)->collation('pro9_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai');
+            $table->char('state_type_id', 2)->collation('sab_ci_ai');
+            $table->char('group_id', 2)->collation('sab_ci_ai');
+            $table->string('document_type_id', 255)->collation('sab_ci_ai');
+            $table->char('series', 4)->collation('sab_ci_ai');
             $table->integer('number');
             $table->date('date_of_issue');
             $table->date('date_of_due')->nullable();
@@ -87,9 +87,9 @@ return new class extends Migration
             $table->bigInteger('supplier_id');
             $table->json('supplier');
             $table->bigInteger('purchase_order_id')->nullable();
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('payment_condition_id', 255)->collation('pro9_ci_ai')->nullable();
-            $table->text('observation')->collation('pro9_ci_ai')->nullable();
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
+            $table->string('payment_condition_id', 255)->collation('sab_ci_ai')->nullable();
+            $table->text('observation')->collation('sab_ci_ai')->nullable();
             $table->decimal('exchange_rate_sale', 18, 8);
             $table->decimal('total_prepayment', 30, 12)->default('0.00');
             $table->decimal('total_charge', 30, 12)->default('0.00');
@@ -105,7 +105,7 @@ return new class extends Migration
             $table->decimal('total_taxes', 30, 12)->default('0.00');
             $table->decimal('total_value', 30, 12)->default('0.00');
             $table->decimal('total', 30, 12);
-            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('filename', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('total_canceled')->default(false);
             $table->bigInteger('customer_id')->nullable();
             $table->date('perception_date')->nullable();
@@ -121,11 +121,11 @@ return new class extends Migration
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('deleted_at')->nullable();
-            $table->string('period', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('period', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('date_registration')->nullable();
-            $table->string('related_invoice_number', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('related_invoice_serie', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('affectation', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('related_invoice_number', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('related_invoice_serie', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('affectation', 255)->collation('sab_ci_ai')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->decimal('total_payable', 30, 12)->nullable();
             $table->decimal('settlement_adjustment', 30, 12)->default('0');

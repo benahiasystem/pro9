@@ -2,7 +2,7 @@
 
 // Test-only front controller. It is never installed in public/ or production routes.
 // Browser fixtures serve static assets only from the public document root.
-if (getenv('PRO9_BROWSER_FIXTURE') === '1' && realpath($_SERVER['DOCUMENT_ROOT'] ?? '') === realpath(dirname(__DIR__,2).'/public')) {
+if (getenv('SAB_BROWSER_FIXTURE') === '1' && realpath($_SERVER['DOCUMENT_ROOT'] ?? '') === realpath(dirname(__DIR__,2).'/public')) {
     $path=parse_url($_SERVER['REQUEST_URI'] ?? '/',PHP_URL_PATH);
     $file=realpath(dirname(__DIR__,2).'/public/'.$path);
     $root=realpath(dirname(__DIR__,2).'/public').DIRECTORY_SEPARATOR;
@@ -10,14 +10,14 @@ if (getenv('PRO9_BROWSER_FIXTURE') === '1' && realpath($_SERVER['DOCUMENT_ROOT']
         && !preg_match('~(?:^|/)\.~',$path) && $file && str_starts_with($file,$root)
         && is_file($file) && strtolower(pathinfo($file,PATHINFO_EXTENSION)) !== 'php') return false;
 }
-$fixturePath=getenv('PRO9_EXACT_HTTP_FIXTURE');
+$fixturePath=getenv('SAB_EXACT_HTTP_FIXTURE');
 if (!$fixturePath || !is_file($fixturePath)) { http_response_code(503);exit; }
 $fixture=json_decode(file_get_contents($fixturePath),true,512,JSON_THROW_ON_ERROR);
-if (!preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/D',$fixture['connection']['database'] ?? '')
+if (!preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/D',$fixture['connection']['database'] ?? '')
     || !in_array(($fixture['connection']['host'] ?? ''), ['127.0.0.1', 'postgres'], true)) { http_response_code(503);exit; }
 $benchmarkCentral=$fixture['benchmark_central'] ?? null;
-if ($benchmarkCentral !== null && (getenv('PRO9_POSTGRES_TESTS')!=='1'
-    || !preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/D',$benchmarkCentral['database'] ?? '')
+if ($benchmarkCentral !== null && (getenv('SAB_POSTGRES_TESTS')!=='1'
+    || !preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/D',$benchmarkCentral['database'] ?? '')
     || ($benchmarkCentral['database'] ?? null)===$fixture['connection']['database']
     || ($benchmarkCentral['host'] ?? null)!==$fixture['connection']['host']
     || ($benchmarkCentral['driver'] ?? null)!==$fixture['connection']['driver']
@@ -54,12 +54,12 @@ $app->afterBootstrapping(\Illuminate\Foundation\Bootstrap\LoadConfiguration::cla
         'app.env'=>'testing','app.debug'=>true,'app.key'=>'base64:'.base64_encode(str_repeat('k',32)),
         'database.default'=>'system','database.connections.system'=>$fixture['connection'],
         'database.connections.provisioning_ledger'=>$fixture['connection'],'database.connections.tenant'=>$fixture['connection'],
-        'tenancy.db.tenant-division-mode'=>'bypass','tenancy.website.disk'=>'pro9-test',
+        'tenancy.db.tenant-division-mode'=>'bypass','tenancy.website.disk'=>'sab-test',
         'tenancy.website.auto-create-tenant-directory'=>false,'tenancy.hostname.default'=>null,
         'cache.default'=>'array','session.driver'=>'file','session.files'=>$fixture['storage'].'/framework/sessions',
         'session.cookie'=>'sab_exact_http_session','session.secure'=>false,
         'queue.default'=>'sync','mail.driver'=>'array','mail.default'=>'array',
-        'tenant.force_https'=>false,'filesystems.disks.pro9-test'=>['driver'=>'local','root'=>$fixture['storage'].'/tenant'],
+        'tenant.force_https'=>false,'filesystems.disks.sab-test'=>['driver'=>'local','root'=>$fixture['storage'].'/tenant'],
         'view.compiled'=>$fixture['storage'].'/framework/views',
         'logging.default'=>'single','logging.channels.single.path'=>$fixture['storage'].'/logs/laravel.log',
     ]);
@@ -79,7 +79,7 @@ $app->afterBootstrapping(\Illuminate\Foundation\Bootstrap\LoadConfiguration::cla
 });
 $kernel=$app->make(\Illuminate\Contracts\Http\Kernel::class);
 $request=\Illuminate\Http\Request::capture();
-if (getenv('PRO9_POSTGRES_TESTS')==='1'
+if (getenv('SAB_POSTGRES_TESTS')==='1'
     && ((($fixture['strict_import_diagnostics'] ?? false) === true && $request->getPathInfo()==='/api/documents')
         || (($fixture['strict_editor_diagnostics'] ?? false) === true
             && preg_match('~\A/documents/[1-9][0-9]*/update\z~',$request->getPathInfo())))) {
@@ -106,20 +106,20 @@ $queries=0;$sqlMs=0;$queryProfile=[];$profileSql=($fixture['profile_sql'] ?? fal
 $handlerCpuStart=$cpuMilliseconds();
 $handleStart=hrtime(true);$response=$kernel->handle($request);
 $handlerCpuMs=$cpuMilliseconds()-$handlerCpuStart;
-if (getenv('PRO9_BROWSER_FIXTURE') === '1' && $response->getStatusCode() >= 400) {
+if (getenv('SAB_BROWSER_FIXTURE') === '1' && $response->getStatusCode() >= 400) {
     error_log('Browser fixture HTTP '.$response->getStatusCode().' '.$request->method().' '.$request->getPathInfo());
 }
-if (getenv('PRO9_BROWSER_FIXTURE') === '1') {
+if (getenv('SAB_BROWSER_FIXTURE') === '1') {
     // The browser must not send synthetic test data to telemetry or integrations.
     $response->headers->set('Content-Security-Policy', "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: blob:; font-src 'self' data:");
 }
-$response->headers->set('X-Pro9-Test-Handler-Ms',(string)((hrtime(true)-$handleStart)/1000000));
-$response->headers->set('X-Pro9-Test-SQL-Ms',(string)$sqlMs);
-$response->headers->set('X-Pro9-Test-Boot-Ms',(string)$bootMs);
-$response->headers->set('X-Pro9-Test-Boot-Cpu-Ms',(string)$bootCpuMs);
-$response->headers->set('X-Pro9-Test-Handler-Cpu-Ms',(string)$handlerCpuMs);
-$response->headers->set('X-Pro9-Test-Queries',(string)$queries);
-$response->headers->set('X-Pro9-Test-Peak-Memory',(string)memory_get_peak_usage(true));
+$response->headers->set('X-Sab-Test-Handler-Ms',(string)((hrtime(true)-$handleStart)/1000000));
+$response->headers->set('X-Sab-Test-SQL-Ms',(string)$sqlMs);
+$response->headers->set('X-Sab-Test-Boot-Ms',(string)$bootMs);
+$response->headers->set('X-Sab-Test-Boot-Cpu-Ms',(string)$bootCpuMs);
+$response->headers->set('X-Sab-Test-Handler-Cpu-Ms',(string)$handlerCpuMs);
+$response->headers->set('X-Sab-Test-Queries',(string)$queries);
+$response->headers->set('X-Sab-Test-Peak-Memory',(string)memory_get_peak_usage(true));
 if ($profileSql) file_put_contents($fixture['storage'].'/query-profile.json',json_encode(
     ['path'=>$request->getPathInfo(),'queries'=>$queryProfile,'bootstrap_queries'=>$bootstrapQueries,
         'bootstrap_stages_ms'=>$bootstrapStages,

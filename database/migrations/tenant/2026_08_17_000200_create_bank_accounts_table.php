@@ -26,14 +26,14 @@ return new class extends Migration
         Schema::create('bank_accounts', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('bank_id');
-            $table->string('description', 255)->collation('pro9_ci_ai');
-            $table->string('number', 255)->collation('pro9_ci_ai');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
+            $table->string('number', 255)->collation('sab_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
             $table->smallInteger('status')->default('1');
             $table->decimal('initial_balance', 30, 12)->default('0.00');
             $table->boolean('show_in_documents')->default(true);
             $table->bigInteger('establishment_id')->nullable();
-            $table->string('accounting_number', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('accounting_number', 255)->collation('sab_ci_ai')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->index(['bank_id'], 'bank_accounts_bank_id_foreign');
             $table->index(['currency_type_id'], 'bank_accounts_currency_type_id_foreign');

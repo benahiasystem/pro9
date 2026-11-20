@@ -18,7 +18,7 @@ return new class extends Migration
     {
         Schema::create('cat_item_size', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre de unidad de medida');
+            $table->text('name')->collation('sab_ci_ai')->comment('Nombre de unidad de medida');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

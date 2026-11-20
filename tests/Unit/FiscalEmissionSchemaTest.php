@@ -28,7 +28,7 @@ class FiscalEmissionSchemaTest extends TestCase
     use \Tests\Support\PaymentClassificationPersistenceCases;
     private function invoiceTestCurrencies(): array
     {
-        return getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1' ? ['VES'] : ['VES', 'USD'];
+        return getenv('SAB_TEST_INVOICES_VES_ONLY') === '1' ? ['VES'] : ['VES', 'USD'];
     }
 
     private static ?\WeakMap $globalInventoryDispatchers=null;
@@ -42,8 +42,8 @@ class FiscalEmissionSchemaTest extends TestCase
 
     protected function setUp(): void
     {
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') {
-            $this->markTestSkipped('Active PRO9_POSTGRES_TESTS=1 para usar una base PostgreSQL temporal aislada.');
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') {
+            $this->markTestSkipped('Active SAB_POSTGRES_TESTS=1 para usar una base PostgreSQL temporal aislada.');
         }
         $this->previousContainer = Container::getInstance();
         $this->previousFacade = Facade::getFacadeApplication();
@@ -90,7 +90,7 @@ class FiscalEmissionSchemaTest extends TestCase
         $this->capsule = new Manager($app);
         $this->capsule->addConnection($connection, 'control');
         \Tests\Support\PostgresTestEnvironment::assertServer($this->capsule->getConnection('control'));
-        $this->database = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
+        $this->database = 'sab_fiscal_test_' . bin2hex(random_bytes(6));
         $this->capsule->getConnection('control')->statement('CREATE DATABASE "' . $this->database . '" TEMPLATE template0');
         \Tests\Support\FiscalTemporaryDatabases::register($this->database, $this->capsule->getConnection('control')->getPdo());
         $connection['database'] = $this->database;
@@ -116,7 +116,7 @@ class FiscalEmissionSchemaTest extends TestCase
     protected function tearDown(): void
     {
         try {
-            if ($this->database && preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/', $this->database)) {
+            if ($this->database && preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/', $this->database)) {
                 $tenant = $this->capsule->getConnection('tenant');
                 while ($tenant->transactionLevel() > 0) $tenant->rollBack();
                 $this->capsule->getConnection('control')->statement('DROP DATABASE "' . $this->database . '" WITH (FORCE)');
@@ -177,24 +177,24 @@ class FiscalEmissionSchemaTest extends TestCase
     {
         $start = microtime(true);
         $db = $this->capsule->getConnection('tenant');
-        if (getenv('PRO9_FISCAL_SNAPSHOT') !== '0' && \Tests\Support\FiscalFixtureSnapshot::restore($db)) {
-            if (getenv('PRO9_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture restaurado: %.3f s\n", microtime(true) - $start));
+        if (getenv('SAB_FISCAL_SNAPSHOT') !== '0' && \Tests\Support\FiscalFixtureSnapshot::restore($db)) {
+            if (getenv('SAB_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture restaurado: %.3f s\n", microtime(true) - $start));
             return;
         }
         foreach ($this->migrations('migrations/tenant/*.php') as $migration) $migration->up();
         $migrated = microtime(true);
         (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
         $seeded = microtime(true);
-        if (getenv('PRO9_FISCAL_SNAPSHOT') !== '0') \Tests\Support\FiscalFixtureSnapshot::capture($db);
-        if (getenv('PRO9_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture migraciones %.3f s; semillas %.3f s; captura %.3f s\n", $migrated - $start, $seeded - $migrated, microtime(true) - $seeded));
+        if (getenv('SAB_FISCAL_SNAPSHOT') !== '0') \Tests\Support\FiscalFixtureSnapshot::capture($db);
+        if (getenv('SAB_FISCAL_TIMING') === '1') fwrite(STDERR, sprintf("fixture migraciones %.3f s; semillas %.3f s; captura %.3f s\n", $migrated - $start, $seeded - $migrated, microtime(true) - $seeded));
     }
 
     public function test_fiscal_fixture_snapshot_preserves_schema_seed_data_and_database_isolation(): void
     {
-        if (getenv('PRO9_FISCAL_SNAPSHOT') === '0') $this->markTestSkipped('La restauración del fixture está deshabilitada.');
+        if (getenv('SAB_FISCAL_SNAPSHOT') === '0') $this->markTestSkipped('La restauración del fixture está deshabilitada.');
         $this->prepareFiscalFixtureSchema();
         $source = $this->capsule->getConnection('tenant');
-        $other = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
+        $other = 'sab_fiscal_test_' . bin2hex(random_bytes(6));
         $control = $this->capsule->getConnection('control');
         $control->statement('CREATE DATABASE "' . $other . '" TEMPLATE template0');
         \Tests\Support\FiscalTemporaryDatabases::register($other, $control->getPdo());
@@ -333,7 +333,7 @@ class FiscalEmissionSchemaTest extends TestCase
 
     public function test_fiscal_temporary_database_is_removed_after_process_error(): void
     {
-        $name = 'pro9_fiscal_test_' . bin2hex(random_bytes(6));
+        $name = 'sab_fiscal_test_' . bin2hex(random_bytes(6));
         $connection = $this->capsule->getConnection('control')->getConfig();
         $code = <<<'PHP'
 require 'vendor/autoload.php';
@@ -359,7 +359,7 @@ PHP;
         }
     }
 
-    // ######## INICIO CALCULOS EXACTOS PRO9 ########
+    // ######## INICIO CALCULOS EXACTOS SAB ########
     public function test_central_exact_schema_range_snapshot_rollback_and_repeat_in_postgresql(): void
     {
         $migrations=[];
@@ -683,7 +683,7 @@ PHP;
             foreach (['retentions', 'perceptions', 'purchase_settlements'] as $table) {
                 self::assertSame('varchar(20)', \App\Database\SchemaInspector::columns($db, "$table", 'series')[0]->type);
             }
-            if (getenv('PRO9_EXPORT_CONTRACT') === '1') {
+            if (getenv('SAB_EXPORT_CONTRACT') === '1') {
                 file_put_contents('/tmp/sab-fresh-final-schema.json', json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
             $this->assertForeignKeyIntegrity($db);

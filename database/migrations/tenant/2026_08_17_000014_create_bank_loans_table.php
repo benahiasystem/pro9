@@ -40,8 +40,8 @@ return new class extends Migration
             $table->bigInteger('establishment_id');
             $table->bigInteger('bank_id');
             $table->bigInteger('bank_account_id');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
-            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
+            $table->char('external_id', 36)->collation('sab_ci_ai');
             $table->integer('number');
             $table->date('date_of_issue');
             $table->time('time_of_issue');
@@ -50,8 +50,8 @@ return new class extends Migration
             $table->decimal('total', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_interest', 30, 12)->nullable()->default('0.00');
             $table->decimal('total_ingress', 30, 12)->nullable()->default('0.00');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai')->nullable();
-            $table->char('state_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai')->nullable();
+            $table->char('state_type_id', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

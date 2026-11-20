@@ -17,7 +17,7 @@
 </template>
 
 <script>
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import { readOriginal, readVector, rawChange, chartCoordinate, formatUnitOriginal, formatAxisTick, originalText } from "../../../../../../../resources/js/helpers/dashboard-originals";
 export default {
   name: "WeeklySalesChart",
@@ -136,7 +136,7 @@ export default {
     percentText(value) { return originalText(value, 0); },
   },
 };
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

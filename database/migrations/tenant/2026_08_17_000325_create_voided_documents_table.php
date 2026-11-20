@@ -20,7 +20,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('voided_id');
             $table->bigInteger('document_id');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->index(['voided_id'], 'voided_documents_voided_id_foreign');
             $table->index(['document_id'], 'voided_documents_document_id_foreign');
         });

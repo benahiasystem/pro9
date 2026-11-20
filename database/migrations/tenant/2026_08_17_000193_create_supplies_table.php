@@ -24,9 +24,9 @@ return new class extends Migration
     {
         Schema::create('supplies', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
             $table->decimal('cost', 30, 12)->default('0.00');
-            $table->string('unit_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('unit_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('waste_percentage', 30, 12)->default('0.00');
             $table->decimal('stock', 30, 12)->default('0.0000');
             $table->decimal('minimum_stock', 30, 12)->default('0.0000');

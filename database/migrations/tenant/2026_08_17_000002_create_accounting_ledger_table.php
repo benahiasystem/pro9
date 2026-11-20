@@ -31,13 +31,13 @@ return new class extends Migration
             $table->integer('month')->nullable()->default('0')->comment('Numero de mes');
             $table->bigInteger('year')->nullable()->default('0')->comment('Numero de mes');
             $table->date('date_of_report')->nullable();
-            $table->text('code_account')->collation('pro9_ci_ai')->comment('Codigo de plan de cuenta');
-            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre de cuenta');
+            $table->text('code_account')->collation('sab_ci_ai')->comment('Codigo de plan de cuenta');
+            $table->text('name')->collation('sab_ci_ai')->comment('Nombre de cuenta');
             $table->decimal('last_month_total', 30, 12)->default('0.00')->comment('Debe ser el valor del total del mes pasado');
             $table->decimal('credits', 30, 12)->default('0.00')->comment('Créditos en el mes');
             $table->decimal('debs', 30, 12)->default('0.00')->comment('Debitos en el mes');
             $table->decimal('final_total', 30, 12)->default('0.00')->comment('Saldo Final de mes');
-            $table->text('serialize_data')->collation('pro9_ci_ai')->comment('datos serialziados en bruto.');
+            $table->text('serialize_data')->collation('sab_ci_ai')->comment('datos serialziados en bruto.');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

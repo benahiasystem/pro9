@@ -45,7 +45,7 @@ return new class extends Migration
             $table->json('item');
             $table->integer('quantity');
             $table->decimal('unit_value', 30, 12);
-            $table->string('affectation_igv_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('affectation_igv_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('total_base_igv', 30, 12);
             $table->decimal('percentage_igv', 30, 12);
             $table->decimal('total_igv', 30, 12);
@@ -53,7 +53,7 @@ return new class extends Migration
             $table->decimal('percentage_other_taxes', 30, 12)->default('0.00');
             $table->decimal('total_other_taxes', 30, 12)->default('0.00');
             $table->decimal('total_taxes', 30, 12);
-            $table->string('price_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('price_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('unit_price', 30, 12);
             $table->decimal('total_value', 30, 12);
             $table->decimal('total_charge', 30, 12)->default('0.00');
@@ -63,7 +63,7 @@ return new class extends Migration
             $table->json('discounts')->nullable();
             $table->json('charges')->nullable();
             $table->decimal('quantity_factor', 30, 12)->default('1.0000');
-            $table->text('name_product_pdf')->collation('pro9_ci_ai')->nullable();
+            $table->text('name_product_pdf')->collation('sab_ci_ai')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->index(['purchase_order_id'], 'purchase_order_items_purchase_order_id_foreign');
             $table->index(['item_id'], 'purchase_order_items_item_id_foreign');

@@ -249,9 +249,9 @@
                 'origin_type' => $origin_type,
                 'destiny_id' => (int)$destiny_id,
                 'destiny_type' => $destiny_type,
-                // ######## INICIO CALCULOS EXACTOS PRO9 ########
+                // ######## INICIO CALCULOS EXACTOS SAB ########
                 'amount' => \App\Services\Payments\TransferAmounts::decimal($amount),
-                // ######## FIN CALCULOS EXACTOS PRO9 ########
+                // ######## FIN CALCULOS EXACTOS SAB ########
                 'date_of_movement' => Carbon::now(),
                 'user_id' => Auth::user()->id,
             ];

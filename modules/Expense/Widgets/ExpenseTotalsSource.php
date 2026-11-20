@@ -14,7 +14,7 @@ use Modules\Dashboard\Widgets\WidgetSource;
  * un módulo ajeno a Dashboard aporta una métrica al catálogo de widgets
  * registrándose en su propio ServiceProvider.
  */
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 class ExpenseTotalsSource extends WidgetSource
 {
     public function key()
@@ -96,4 +96,4 @@ class ExpenseTotalsSource extends WidgetSource
         return ['labels'=>$labels,'values'=>$values];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

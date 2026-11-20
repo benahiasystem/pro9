@@ -27,11 +27,11 @@ return new class extends Migration
         Schema::create('transfer_account_payments', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('origin_id')->nullable()->default('0')->comment('id Cuenta de origen');
-            $table->text('origin_type')->collation('pro9_ci_ai')->nullable()->comment('Modelo de origen');
+            $table->text('origin_type')->collation('sab_ci_ai')->nullable()->comment('Modelo de origen');
             $table->bigInteger('destiny_id')->nullable()->default('0')->comment('id Cuenta de destino');
-            $table->text('destiny_type')->collation('pro9_ci_ai')->nullable()->comment('Modelo de destino');
+            $table->text('destiny_type')->collation('sab_ci_ai')->nullable()->comment('Modelo de destino');
             $table->decimal('amount', 30, 12)->nullable()->default('0.00')->comment('Monto a transferir');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai')->nullable()->comment('Moneda del destino del traslado');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai')->nullable()->comment('Moneda del destino del traslado');
             $table->timestamp('date_of_movement')->nullable()->comment('Fecha de movimiento');
             $table->bigInteger('user_id')->nullable()->default('0')->comment('Usuario que realiza el movimiento');
             $table->timestamp('created_at')->nullable();

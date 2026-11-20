@@ -23,10 +23,10 @@ return new class extends Migration
         Schema::create('machines', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('machine_type_id');
-            $table->text('name')->collation('pro9_ci_ai')->nullable();
-            $table->text('brand')->collation('pro9_ci_ai')->nullable();
-            $table->text('model')->collation('pro9_ci_ai')->nullable();
-            $table->text('closing_force')->collation('pro9_ci_ai')->nullable();
+            $table->text('name')->collation('sab_ci_ai')->nullable();
+            $table->text('brand')->collation('sab_ci_ai')->nullable();
+            $table->text('model')->collation('sab_ci_ai')->nullable();
+            $table->text('closing_force')->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

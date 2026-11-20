@@ -4645,7 +4645,7 @@
         }
 
         if (!app_cart.gatewayPreviewMatches()) return;
-        const precio = Number(window.Pro9StorefrontAmounts.amount(app_cart.checkoutPreview.total).times('100').final(0));
+        const precio = Number(window.SabStorefrontAmounts.amount(app_cart.checkoutPreview.total).times('100').final(0));
         if (!Number.isSafeInteger(precio) || precio <= 0) {
             window.mostrarMensaje('Monto inválido', 'El monto del pedido debe ser mayor a cero.', 'warning');
             return;

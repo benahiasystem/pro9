@@ -23,9 +23,9 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('sale_note_id');
             $table->date('date');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('amount', 30, 12);
-            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai')->nullable()->comment('Relacion con el metodo de pago, Nulo es pago a cuotas');
+            $table->char('payment_method_type_id', 2)->collation('sab_ci_ai')->nullable()->comment('Relacion con el metodo de pago, Nulo es pago a cuotas');
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->index(['sale_note_id'], 'sale_note_fees_sale_note_id_foreign');
             $table->index(['currency_type_id'], 'sale_note_fees_currency_type_id_foreign');

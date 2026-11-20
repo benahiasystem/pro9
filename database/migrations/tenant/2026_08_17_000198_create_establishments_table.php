@@ -34,23 +34,23 @@ return new class extends Migration
     {
         Schema::create('establishments', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('description', 255)->collation('pro9_ci_ai');
-            $table->char('country_id', 2)->collation('pro9_ci_ai');
-            $table->char('department_id', 2)->collation('pro9_ci_ai');
-            $table->char('province_id', 4)->collation('pro9_ci_ai');
-            $table->char('district_id', 6)->collation('pro9_ci_ai');
-            $table->string('address', 255)->collation('pro9_ci_ai');
-            $table->string('email', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('telephone', 255)->collation('pro9_ci_ai');
-            $table->string('code', 255)->collation('pro9_ci_ai');
-            $table->string('aditional_information', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('web_address', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('trade_address', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('description', 255)->collation('sab_ci_ai');
+            $table->char('country_id', 2)->collation('sab_ci_ai');
+            $table->char('department_id', 2)->collation('sab_ci_ai');
+            $table->char('province_id', 4)->collation('sab_ci_ai');
+            $table->char('district_id', 6)->collation('sab_ci_ai');
+            $table->string('address', 255)->collation('sab_ci_ai');
+            $table->string('email', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('telephone', 255)->collation('sab_ci_ai');
+            $table->string('code', 255)->collation('sab_ci_ai');
+            $table->string('aditional_information', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('web_address', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('trade_address', 255)->collation('sab_ci_ai')->nullable();
             $table->bigInteger('customer_id')->nullable();
-            $table->string('logo', 150)->collation('pro9_ci_ai')->nullable();
-            $table->string('template_pdf', 255)->collation('pro9_ci_ai')->default('default');
+            $table->string('logo', 150)->collation('sab_ci_ai')->nullable();
+            $table->string('template_pdf', 255)->collation('sab_ci_ai')->default('default');
             $table->boolean('has_igv_31556')->default(false);
-            $table->string('template_ticket_pdf', 255)->collation('pro9_ci_ai')->default('default');
+            $table->string('template_ticket_pdf', 255)->collation('sab_ci_ai')->default('default');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['country_id'], 'establishments_country_id_foreign');

@@ -1,6 +1,6 @@
 <?php
 // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 
 namespace Modules\Dashboard\Widgets;
 
@@ -501,5 +501,5 @@ class DefaultWidgetSources
     }
 
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -25,14 +25,14 @@ return new class extends Migration
     {
         Schema::create('item_lots', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('series', 255)->collation('pro9_ci_ai');
+            $table->string('series', 255)->collation('sab_ci_ai');
             $table->date('date');
             $table->bigInteger('item_id');
             $table->bigInteger('warehouse_id')->nullable();
-            $table->string('item_loteable_type', 255)->collation('pro9_ci_ai');
+            $table->string('item_loteable_type', 255)->collation('sab_ci_ai');
             $table->bigInteger('item_loteable_id');
             $table->boolean('has_sale')->default(false);
-            $table->string('state', 20)->collation('pro9_ci_ai')->nullable();
+            $table->string('state', 20)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['item_id'], 'item_lots_item_id_foreign');

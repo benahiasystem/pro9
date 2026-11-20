@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 // ########## INICIO CAMBIO POSTGRESQL 17
 class PostgresRestoreCentral extends \Illuminate\Console\Command
 {
-    protected $signature='pro9:restore-central {package} {--source=}';
+    protected $signature='sab:restore-central {package} {--source=}';
     protected $description='Recupera central en la base nueva vacía configurada para el propietario';
     public function handle(): int
     {
@@ -14,7 +14,7 @@ class PostgresRestoreCentral extends \Illuminate\Console\Command
         \App\Database\PostgresBootstrap::identifier($source);
         $config=config('database.connections.central_migrator');
         if (\App\Database\SchemaInspector::tables(\Illuminate\Support\Facades\DB::connection('central_migrator'))) throw new \LogicException('Configure una base central independiente y vacía antes de restaurar.');
-        $directory=sys_get_temp_dir().'/pro9-central-restore-'.bin2hex(random_bytes(8));
+        $directory=sys_get_temp_dir().'/sab-central-restore-'.bin2hex(random_bytes(8));
         try {
             $backup->extract($this->argument('package'),'databases/',$directory);
             $dump=$directory.'/'.$source.'.dump';$backup->requireTables($config,$dump,['clients','websites','hostnames','migrations','tenant_provisioning_runs']);

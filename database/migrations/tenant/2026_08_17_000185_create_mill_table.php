@@ -32,13 +32,13 @@ return new class extends Migration
             $table->date('date_end')->nullable();
             $table->time('time_end')->nullable();
             $table->bigInteger('user_id')->nullable()->default('0');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai')->nullable();
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->string('name', 255)->collation('pro9_ci_ai')->nullable();
-            $table->text('comment')->collation('pro9_ci_ai')->nullable();
-            $table->string('mill_name', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('lot_code', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('name', 255)->collation('sab_ci_ai')->nullable();
+            $table->text('comment')->collation('sab_ci_ai')->nullable();
+            $table->string('mill_name', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('lot_code', 255)->collation('sab_ci_ai')->nullable();
             $table->index(['fiscal_environment'], 'mill_fiscal_environment_foreign');
         });
         DB::statement('ALTER TABLE "mill" ADD CONSTRAINT "mill_user_id_range" CHECK ("user_id" >= 0)');

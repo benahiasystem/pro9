@@ -18,7 +18,7 @@ class SellnowSalePersistenceTest extends TestCase
 
     protected function setUp(): void
     {
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal descartable.');
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal descartable.');
         $this->fixture = new class extends FiscalEmissionSchemaTest {
             public bool $ready = false;
             public function start(): array { parent::setUp(); $this->ready=true; return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
@@ -431,7 +431,7 @@ class SellnowSalePersistenceTest extends TestCase
         $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);
         if (!$socket) throw new \RuntimeException($error);
         $address=stream_socket_get_name($socket,false);fclose($socket);
-        $environment=getenv();$environment['PRO9_EXACT_HTTP_FIXTURE']=$private;$environment['APP_ENV']='testing';
+        $environment=getenv();$environment['SAB_EXACT_HTTP_FIXTURE']=$private;$environment['APP_ENV']='testing';
         $server=proc_open([PHP_BINARY,'-S',$address,dirname(__DIR__).'/Support/exact_http_router.php'],
             [0=>['pipe','r'],1=>['file',$temp.'/server.log','a'],2=>['file',$temp.'/server.log','a']],$pipes,dirname(__DIR__,2),$environment);
         if (!is_resource($server)) throw new \RuntimeException('No se pudo iniciar HTTP temporal.');
@@ -450,7 +450,7 @@ class SellnowSalePersistenceTest extends TestCase
                 $body=curl_exec($curl);$status=curl_getinfo($curl,CURLINFO_HTTP_CODE);$error=curl_error($curl);curl_close($curl);
                 if ($body === false) throw new \RuntimeException($error);
                 if ($status >= 500) {
-                    $report=base_path('informes/evidencias/postgresql_17_implementacion/resultados/'.getenv('PRO9_POSTGRES_RUN_ID').'-sellnow-http-500');
+                    $report=base_path('informes/evidencias/postgresql_17_implementacion/resultados/'.getenv('SAB_POSTGRES_RUN_ID').'-sellnow-http-500');
                     $details=json_decode($body,true);
                     file_put_contents($report.'.json',json_encode(['status'=>$status,'message'=>$details['message'] ?? null,'exception'=>$details['exception'] ?? null],JSON_THROW_ON_ERROR));
                     foreach (['server.log','logs/laravel.log'] as $log) if (is_file($temp.'/'.$log)) copy($temp.'/'.$log,$report.'-'.basename($log));

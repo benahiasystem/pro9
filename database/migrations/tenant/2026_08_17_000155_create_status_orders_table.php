@@ -34,8 +34,8 @@ return new class extends Migration
     {
         Schema::create('status_orders', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('description', 30)->collation('pro9_ci_ai');
-            $table->string('color', 7)->collation('pro9_ci_ai')->nullable();
+            $table->string('description', 30)->collation('sab_ci_ai');
+            $table->string('color', 7)->collation('sab_ci_ai')->nullable();
             $table->smallInteger('sort_order')->default('0');
             $table->boolean('is_initial')->default(false);
             $table->boolean('is_final')->default(false);

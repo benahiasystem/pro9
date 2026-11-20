@@ -23,7 +23,7 @@ for (const file of ['index.vue', 'fast.vue', 'garage.vue']) {
         const run = vm.runInNewContext(`({${generate(method).code}})[${JSON.stringify(name)}]`, {calculateRowItem, ensurePosRate, _: require('lodash')})
         test(`${file}: ${name} conserva la tasa al cambiar la cantidad en ambas monedas`, () => {
             const comparisons = [['USD', 'VES', '10', '250']]
-            if (process.env.PRO9_TEST_INVOICES_VES_ONLY !== '1') comparisons.push(['VES', 'USD', '125', '20'])
+            if (process.env.SAB_TEST_INVOICES_VES_ONLY !== '1') comparisons.push(['VES', 'USD', '125', '20'])
             for (const [source, target, price, expected] of comparisons) {
                 const initial = {item: {id: 1, currency_type_id: source, unit_price: price, has_igv: true},
                     affectation_igv_type_id: '10', affectation_igv_type: {id:'10',free:false},

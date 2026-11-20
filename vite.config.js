@@ -16,7 +16,7 @@ export default defineConfig({
   },
   plugins: [
     {
-      name: 'pro9-frontend-source-manifest',
+      name: 'sab-frontend-source-manifest',
       apply: 'build',
       generateBundle() {
         const sources = new Set(['vite.config.js', 'package.json', 'package-lock.json']);

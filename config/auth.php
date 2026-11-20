@@ -81,7 +81,7 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'pro9_tenant',
+            'driver' => 'sab_tenant',
             'model' => App\Models\Tenant\User::class,
         ],
 

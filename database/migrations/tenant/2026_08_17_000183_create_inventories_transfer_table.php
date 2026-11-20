@@ -32,13 +32,13 @@ return new class extends Migration
         Schema::create('inventories_transfer', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('establishment_id');
-            $table->char('external_id', 36)->collation('pro9_ci_ai')->nullable();
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai')->nullable();
-            $table->string('document_type_id', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('series', 255)->collation('pro9_ci_ai')->nullable();
+            $table->char('external_id', 36)->collation('sab_ci_ai')->nullable();
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai')->nullable();
+            $table->string('document_type_id', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('series', 255)->collation('sab_ci_ai')->nullable();
             $table->integer('number')->nullable();
-            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('description', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('filename', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('description', 255)->collation('sab_ci_ai')->nullable();
             $table->bigInteger('warehouse_id')->nullable();
             $table->bigInteger('warehouse_destination_id')->nullable();
             $table->bigInteger('transfer_collect_id')->nullable();

@@ -10,7 +10,7 @@
 
 <script>
 import { readVector, chartCoordinate, formatUnitOriginal } from "../../../../../../../../resources/js/helpers/dashboard-originals";
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 export default {
     name: "SalesGrowthChart",
     props: {
@@ -76,7 +76,7 @@ export default {
         },
     },
 };
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

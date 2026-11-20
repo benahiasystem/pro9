@@ -5,7 +5,7 @@ require dirname(__DIR__).'/vendor/autoload.php';
 
 use App\Support\Exact\{Decimal as D, Payables};
 
-if (getenv('PRO9_POSTGRES_TESTS') !== '1') throw new RuntimeException('Requiere PRO9_POSTGRES_TESTS=1; sólo crea bases pro9_fiscal_test_* temporales.');
+if (getenv('SAB_POSTGRES_TESTS') !== '1') throw new RuntimeException('Requiere SAB_POSTGRES_TESTS=1; sólo crea bases sab_fiscal_test_* temporales.');
 $root = dirname(__DIR__);
 $baseline = 'cab49e553230e48d3cf962261e5f6c961f6ffb13';
 $samples = 30;

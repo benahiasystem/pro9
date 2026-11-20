@@ -26,10 +26,10 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('hotel_rent_id');
             $table->integer('order_number');
-            $table->string('order_status', 255)->collation('pro9_ci_ai');
+            $table->string('order_status', 255)->collation('sab_ci_ai');
             $table->bigInteger('sale_note_id')->nullable();
             $table->bigInteger('establishment_id')->nullable();
-            $table->char('operation_key', 36)->collation('pro9_ci_ai')->nullable();
+            $table->char('operation_key', 36)->collation('sab_ci_ai')->nullable();
             $table->char('operation_hash', 64)->collation('C')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

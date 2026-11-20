@@ -76,7 +76,7 @@ final class HkaSettlementExactTest extends \Tests\TestCase
 
     public function test_persisted_postgresql_invoice_and_debit_keep_the_exact_settlement_boundary(): void
     {
-        if (getenv('PRO9_POSTGRES_TESTS')!=='1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
+        if (getenv('SAB_POSTGRES_TESTS')!=='1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
         $fixture=new class extends FiscalEmissionSchemaTest {
             public function start(): array {parent::setUp();return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this,true);}
             public function stop(): void {parent::tearDown();}

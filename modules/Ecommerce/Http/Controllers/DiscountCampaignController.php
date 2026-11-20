@@ -58,7 +58,7 @@ class DiscountCampaignController extends Controller
             'expires_at.after' => 'La fecha de vencimiento debe ser posterior a la fecha y hora actual.',
         ]);
 
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $data['value'] = D::input($data['value'], 'value');
         if (D::of($data['value'])->isGreaterThan(100)) {
             return response()->json([
@@ -66,7 +66,7 @@ class DiscountCampaignController extends Controller
                 'errors' => ['value' => ['El porcentaje no puede ser mayor a 100%.']],
             ], 422);
         }
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
 
         if (empty($data['product_ids']) && empty($data['category_ids'])) {
             return response()->json([
@@ -129,7 +129,7 @@ class DiscountCampaignController extends Controller
         $pricingService = app(CampaignPriceService::class);
 
         $details = [];
-        // ######## INICIO CALCULOS EXACTOS PRO9 ########
+        // ######## INICIO CALCULOS EXACTOS SAB ########
         $totalDiscount = D::of(0);
         $cartSubtotal = D::of(0);
         $rate = null;
@@ -167,7 +167,7 @@ class DiscountCampaignController extends Controller
         return ['success'=>true, 'currency_type_id'=>'VES', 'subtotal'=>D::represent($cartSubtotal,2,true),
             'discount'=>D::represent($totalDiscount,2,true), 'total'=>D::represent($total,2,true),
             'items'=>$details, 'calculation_snapshot'=>D::snapshot(['subtotal'=>$cartSubtotal,'discount'=>$totalDiscount,'total'=>$total])];
-        // ######## FIN CALCULOS EXACTOS PRO9 ########
+        // ######## FIN CALCULOS EXACTOS SAB ########
     }
 
     private function serialize(DiscountCampaign $campaign): array

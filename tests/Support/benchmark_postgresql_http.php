@@ -2,18 +2,18 @@
 // ########## INICIO CAMBIO POSTGRESQL 17
 /** Run against the temporary fixture only; 30 loopback HTTP samples per workload. */
 require dirname(__DIR__,2).'/vendor/autoload.php';
-if (getenv('PRO9_POSTGRES_TESTS')!=='1') throw new RuntimeException('Requiere el ejecutor temporal.');
+if (getenv('SAB_POSTGRES_TESTS')!=='1') throw new RuntimeException('Requiere el ejecutor temporal.');
 $workloads = ['http_documents', 'pos_catalog', 'sales_report'];
 $requested = array_slice($argv, 1) ?: $workloads;
 if (array_diff($requested, $workloads) || count($requested) !== count(array_unique($requested))) {
     throw new InvalidArgumentException('Indique cargas de rendimiento válidas y sin duplicados.');
 }
-$cohort = getenv('PRO9_HTTP_BENCHMARK_COHORT') ?: null;
-$member = getenv('PRO9_HTTP_BENCHMARK_MEMBER') ?: null;
+$cohort = getenv('SAB_HTTP_BENCHMARK_COHORT') ?: null;
+$member = getenv('SAB_HTTP_BENCHMARK_MEMBER') ?: null;
 if (($cohort === null) !== ($member === null)
     || ($cohort !== null && (
         !in_array($member, ['a', 'b'], true)
-        || !preg_match('/^pro9_http_cohort_[a-f0-9]{12}$/D', basename($cohort))
+        || !preg_match('/^sab_http_cohort_[a-f0-9]{12}$/D', basename($cohort))
         || realpath($cohort) !== realpath(sys_get_temp_dir()).DIRECTORY_SEPARATOR.basename($cohort)
         || !is_dir($cohort)
     ))) {
@@ -71,7 +71,7 @@ $barrier = static function (int $documents, string $workload, int $sample) use (
             $token=bin2hex(random_bytes(30));
             $db->table('users')->where('id',$input['user_id'])->update(['api_token'=>$token,'email_verified_at'=>'2026-10-19 12:00:00']);
             $db->table('configurations')->update(['auto_send_hka'=>false]);
-            $temp=sys_get_temp_dir().'/pro9-http-'.bin2hex(random_bytes(6));
+            $temp=sys_get_temp_dir().'/sab-http-'.bin2hex(random_bytes(6));
             mkdir($temp,0700);
             foreach (['framework/views','framework/cache','framework/sessions','logs','tenant'] as $directory) mkdir($temp.'/'.$directory,0700,true);
             $sessionId=bin2hex(random_bytes(20));$csrf=bin2hex(random_bytes(20));
@@ -81,14 +81,14 @@ $barrier = static function (int $documents, string $workload, int $sample) use (
             $encrypter=new \Illuminate\Encryption\Encrypter(str_repeat('k',32),'AES-256-CBC');
             $cookieName = 'sab_exact_http_session';
             $cookie=$encrypter->encrypt(\Illuminate\Cookie\CookieValuePrefix::create($cookieName,str_repeat('k',32)).$sessionId,false);
-            $private=$temp.'/fixture.json';$profileSql=getenv('PRO9_POSTGRES_QUERY_PROFILE')==='1';
+            $private=$temp.'/fixture.json';$profileSql=getenv('SAB_POSTGRES_QUERY_PROFILE')==='1';
             $configuration=['connection'=>$db->getConfig(),'storage'=>$temp,'profile_sql'=>$profileSql];
             if ($central !== null) $configuration += ['benchmark_central'=>$central['connection'],'benchmark_tenancy_key'=>$central['key']];
             file_put_contents($private,json_encode($configuration,JSON_THROW_ON_ERROR));chmod($private,0600);
             $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);
             if (!$socket) throw new \RuntimeException($error);
             $address=stream_socket_get_name($socket,false);fclose($socket);
-            $env=getenv();$env['PRO9_EXACT_HTTP_FIXTURE']=$private;$env['APP_ENV']='testing';
+            $env=getenv();$env['SAB_EXACT_HTTP_FIXTURE']=$private;$env['APP_ENV']='testing';
             $server=proc_open([PHP_BINARY,'-d','display_errors=0','-S',$address,dirname(__DIR__).'/Support/exact_http_router.php'],
                 [0=>['pipe','r'],1=>['file',$temp.'/server.log','a'],2=>['file',$temp.'/server.log','a']],$pipes,dirname(__DIR__,2),$env);
             if (!is_resource($server)) throw new \RuntimeException('No se pudo abrir HTTP temporal.');
@@ -104,7 +104,7 @@ $barrier = static function (int $documents, string $workload, int $sample) use (
                 $privateReference=$temp.'/reference.json';
                 file_put_contents($privateReference,json_encode(['connection'=>$db->getConfig(),'storage'=>$temp,'controller_reference'=>$reference],JSON_THROW_ON_ERROR));chmod($privateReference,0600);
                 $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);$referenceAddress=stream_socket_get_name($socket,false);fclose($socket);
-                $referenceEnv=$env;$referenceEnv['PRO9_EXACT_HTTP_FIXTURE']=$privateReference;
+                $referenceEnv=$env;$referenceEnv['SAB_EXACT_HTTP_FIXTURE']=$privateReference;
                 $referenceServer=proc_open([PHP_BINARY,'-d','display_errors=0','-S',$referenceAddress,dirname(__DIR__).'/Support/exact_http_router.php'],
                     [0=>['pipe','r'],1=>['file',$temp.'/reference.log','a'],2=>['file',$temp.'/reference.log','a']],$referencePipes,dirname(__DIR__,2),$referenceEnv);
                 if (!is_resource($referenceServer)) throw new \RuntimeException('No se pudo abrir HTTP de referencia.');
@@ -154,7 +154,7 @@ $barrier = static function (int $documents, string $workload, int $sample) use (
                 }
                 return $result;
             };
-            $report=['engine'=>$db->getDriverName(),'server_version'=>$db->selectOne('SELECT version() AS version')->version,'php_version'=>PHP_VERSION,'samples'=>30,'warmups'=>3,'temporary_database_pattern'=>'pro9_fiscal_test_*','profile_sql'=>$profileSql,'resources_start'=>$resources(),'cases'=>[]];
+            $report=['engine'=>$db->getDriverName(),'server_version'=>$db->selectOne('SELECT version() AS version')->version,'php_version'=>PHP_VERSION,'samples'=>30,'warmups'=>3,'temporary_database_pattern'=>'sab_fiscal_test_*','profile_sql'=>$profileSql,'resources_start'=>$resources(),'cases'=>[]];
             if ($member !== null) {
                 $report['tenant']=['member'=>$member,'hostname'=>$hostname,'database_sha256'=>hash('sha256',$db->getDatabaseName()),
                     'central_sha256'=>hash('sha256',$central['connection']['database']),'isolation_verified'=>true];
@@ -187,8 +187,8 @@ $barrier = static function (int $documents, string $workload, int $sample) use (
                             || array_unique(array_column($payload['data'],'customer_name')) !== [$documentMarker])) {
                             throw new RuntimeException('El conjunto devuelto no coincide con la carga de '.$hostname.' '.$count.' '.$label.'.');
                         }
-                        if (!isset($headers['x-pro9-test-queries'])) throw new \RuntimeException('Faltan las métricas de la respuesta HTTP.');
-                        if ($i>=0) {$times[]=$elapsed;$queryCounts[]=(int)$headers['x-pro9-test-queries'];$sql[]=(float)$headers['x-pro9-test-sql-ms'];$memory[]=(int)$headers['x-pro9-test-peak-memory'];$boot[]=(float)$headers['x-pro9-test-boot-ms'];$handler[]=(float)$headers['x-pro9-test-handler-ms'];$bootCpu[]=(float)$headers['x-pro9-test-boot-cpu-ms'];$handlerCpu[]=(float)$headers['x-pro9-test-handler-cpu-ms'];}
+                        if (!isset($headers['x-sab-test-queries'])) throw new \RuntimeException('Faltan las métricas de la respuesta HTTP.');
+                        if ($i>=0) {$times[]=$elapsed;$queryCounts[]=(int)$headers['x-sab-test-queries'];$sql[]=(float)$headers['x-sab-test-sql-ms'];$memory[]=(int)$headers['x-sab-test-peak-memory'];$boot[]=(float)$headers['x-sab-test-boot-ms'];$handler[]=(float)$headers['x-sab-test-handler-ms'];$bootCpu[]=(float)$headers['x-sab-test-boot-cpu-ms'];$handlerCpu[]=(float)$headers['x-sab-test-handler-cpu-ms'];}
                         if ($i>=0 && $profileSql && $elapsed>$slowestMs) {
                             $profile=json_decode(file_get_contents($temp.'/query-profile.json'),true,512,JSON_THROW_ON_ERROR);
                             if ($profile['path']!==parse_url($path,PHP_URL_PATH)) throw new \RuntimeException('El perfil SQL no corresponde a la solicitud medida.');

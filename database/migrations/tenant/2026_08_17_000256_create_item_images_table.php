@@ -20,7 +20,7 @@ return new class extends Migration
         Schema::create('item_images', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('item_id');
-            $table->string('image', 255)->collation('pro9_ci_ai');
+            $table->string('image', 255)->collation('sab_ci_ai');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['item_id'], 'item_images_item_id_foreign');

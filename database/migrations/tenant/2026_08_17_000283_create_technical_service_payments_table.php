@@ -30,14 +30,14 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('technical_service_id');
             $table->date('date_of_payment');
-            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai');
-            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->char('payment_method_type_id', 2)->collation('sab_ci_ai');
+            $table->string('reference', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('change', 30, 12)->default('0.00');
             $table->decimal('payment', 30, 12);
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('original_amount', 30, 12)->nullable();
             $table->decimal('exchange_rate', 18, 8)->nullable();
-            $table->string('exchange_rate_source', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('exchange_rate_source', 255)->collation('sab_ci_ai')->nullable();
             $table->date('exchange_rate_date')->nullable();
             $table->json('payment_method_snapshot')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

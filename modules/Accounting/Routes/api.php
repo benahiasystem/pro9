@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Accounting\Http\Controllers\{SessionController, CompanyController, CatalogController, EntryController, ReportController, OfflineController, Pro9Controller, MembershipController};
+use Modules\Accounting\Http\Controllers\{SessionController, CompanyController, CatalogController, EntryController, ReportController, OfflineController, SabController, MembershipController};
 use Modules\Accounting\Http\Middleware\{CompanyAccess, RequirePermission, SessionVerification};
 Route::get('auth/me', [SessionController::class, 'me']);
 Route::post('auth/logout', [SessionController::class, 'logout']);
@@ -87,13 +87,13 @@ Route::prefix('companies/{company}')->whereUuid('company')->middleware([SessionV
     Route::get('documents/{id}/versions', [\Modules\Accounting\Http\Controllers\SourceHistoryController::class, 'index'])->middleware(RequirePermission::class . ':audit');
     Route::get('documents/{id}/revisions/{revision}', [\Modules\Accounting\Http\Controllers\SourceHistoryController::class, 'revision'])->middleware(RequirePermission::class . ':audit')->whereNumber('revision');
     Route::get('documents/{id}/versions/{version}', [\Modules\Accounting\Http\Controllers\SourceHistoryController::class, 'show'])->middleware(RequirePermission::class . ':audit');
-    Route::get('pro9/status', [Pro9Controller::class, 'status'])->middleware(RequirePermission::class . ':integration');
-    Route::get('pro9/incidents', [\Modules\Accounting\Http\Controllers\SourceIncidentController::class, 'index'])->middleware(RequirePermission::class . ':audit');
-    Route::get('pro9/incidents/{id}', [\Modules\Accounting\Http\Controllers\SourceIncidentController::class, 'show'])->middleware(RequirePermission::class . ':audit');
-    Route::post('pro9/incidents/{id}/resolve', [\Modules\Accounting\Http\Controllers\SourceIncidentController::class, 'resolve'])->middleware([RequirePermission::class . ':integration', RequirePermission::class . ':review']);
-    Route::get('pro9/sources/{kind}', [Pro9Controller::class, 'index'])->middleware(RequirePermission::class . ':integration');
-    Route::get('pro9/sources/{kind}/{id}', [Pro9Controller::class, 'show'])->middleware(RequirePermission::class . ':integration')->whereNumber('id');
-    Route::post('pro9/sources/{kind}/{id}/receive', [Pro9Controller::class, 'receive'])->middleware(RequirePermission::class . ':integration')->whereNumber('id');
+    Route::get('sab/status', [SabController::class, 'status'])->middleware(RequirePermission::class . ':integration');
+    Route::get('sab/incidents', [\Modules\Accounting\Http\Controllers\SourceIncidentController::class, 'index'])->middleware(RequirePermission::class . ':audit');
+    Route::get('sab/incidents/{id}', [\Modules\Accounting\Http\Controllers\SourceIncidentController::class, 'show'])->middleware(RequirePermission::class . ':audit');
+    Route::post('sab/incidents/{id}/resolve', [\Modules\Accounting\Http\Controllers\SourceIncidentController::class, 'resolve'])->middleware([RequirePermission::class . ':integration', RequirePermission::class . ':review']);
+    Route::get('sab/sources/{kind}', [SabController::class, 'index'])->middleware(RequirePermission::class . ':integration');
+    Route::get('sab/sources/{kind}/{id}', [SabController::class, 'show'])->middleware(RequirePermission::class . ':integration')->whereNumber('id');
+    Route::post('sab/sources/{kind}/{id}/receive', [SabController::class, 'receive'])->middleware(RequirePermission::class . ':integration')->whereNumber('id');
     Route::get('documents', [\Modules\Accounting\Http\Controllers\DocumentController::class, 'index'])->middleware(RequirePermission::class . ':read');
     Route::post('documents', [\Modules\Accounting\Http\Controllers\DocumentController::class, 'store'])->middleware(RequirePermission::class . ':documents');
     Route::get('documents/{id}', [\Modules\Accounting\Http\Controllers\DocumentController::class, 'show'])->middleware(RequirePermission::class . ':read')->whereUuid('id');

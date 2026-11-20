@@ -23,9 +23,9 @@ return new class extends Migration
         Schema::create('full_suscription_server_data', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('person_id')->nullable()->default('0');
-            $table->string('host', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('ip', 45)->collation('pro9_ci_ai')->nullable();
-            $table->string('user', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('host', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('ip', 45)->collation('sab_ci_ai')->nullable();
+            $table->string('user', 255)->collation('sab_ci_ai')->nullable();
             $table->string('password', 255)->collation('C')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

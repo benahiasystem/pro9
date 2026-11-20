@@ -33,17 +33,17 @@ return new class extends Migration
     {
         Schema::create('inventories', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('type', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('description', 255)->collation('pro9_ci_ai');
-            $table->string('detail', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('type', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('description', 255)->collation('sab_ci_ai');
+            $table->string('detail', 255)->collation('sab_ci_ai')->nullable();
             $table->bigInteger('item_id');
             $table->bigInteger('warehouse_id');
             $table->bigInteger('warehouse_destination_id')->nullable();
-            $table->string('inventory_transaction_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('inventory_transaction_id', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('quantity', 30, 12);
-            $table->string('lot_code', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('lot_code', 255)->collation('sab_ci_ai')->nullable();
             $table->bigInteger('inventories_transfer_id')->nullable();
-            $table->string('comments', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('comments', 255)->collation('sab_ci_ai')->nullable();
             $table->date('date_of_issue')->nullable();
             $table->bigInteger('guide_id')->nullable();
             $table->decimal('system_stock', 30, 12)->nullable();

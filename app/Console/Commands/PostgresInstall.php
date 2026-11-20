@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\DB;
 // ########## INICIO CAMBIO POSTGRESQL 17
 class PostgresInstall extends \Illuminate\Console\Command
 {
-    protected $signature = 'pro9:install-postgres {--resume : Continuar una instalación propia incompleta}';
-    protected $description = 'Instala Pro9 en una base central nueva PostgreSQL 17.11';
+    protected $signature = 'sab:install-postgres {--resume : Continuar una instalación propia incompleta}';
+    protected $description = 'Instala SAB en una base central nueva PostgreSQL 17.11';
     public function handle(): int
     {
         $db = DB::connection('central_migrator');
         $tables = SchemaInspector::tables($db);
-        if ($tables && !$this->option('resume')) { $this->error('La instalación requiere una base nueva; --resume sólo admite un estado de Pro9.'); return 1; }
+        if ($tables && !$this->option('resume')) { $this->error('La instalación requiere una base nueva; --resume sólo admite un estado de SAB.'); return 1; }
         if ($tables) {
             if (!in_array('migrations', $tables, true)) throw new \LogicException('La base no contiene una instalación recuperable.');
             $allowed = array_map(static fn ($p) => pathinfo($p, PATHINFO_FILENAME), array_merge(glob(database_path('migrations/*.php')),glob(base_path('modules/Marketplace/Database/Migrations/*.php'))));

@@ -27,7 +27,7 @@ return new class extends Migration
         Schema::create('kardex', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->date('date_of_issue');
-            $table->string('type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('type', 255)->collation('sab_ci_ai')->nullable();
             $table->bigInteger('item_id');
             $table->bigInteger('document_id')->nullable();
             $table->bigInteger('purchase_id')->nullable();

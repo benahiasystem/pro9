@@ -23,7 +23,7 @@ return new class extends Migration
     {
         Schema::create('item_lots_group', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('code', 255)->collation('pro9_ci_ai');
+            $table->string('code', 255)->collation('sab_ci_ai');
             $table->decimal('quantity', 30, 12);
             $table->decimal('old_quantity', 30, 12)->default('0.0000');
             $table->date('date_of_due');

@@ -33,17 +33,17 @@ return new class extends Migration
         Schema::create('cat_digemid', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('item_id')->comment('Id de la tabla de item');
-            $table->text('cod_digemid')->collation('pro9_ci_ai')->comment('Codigo digmid');
-            $table->text('nom_prod')->collation('pro9_ci_ai')->nullable()->comment('Nombre segun digemid');
-            $table->text('concent')->collation('pro9_ci_ai')->nullable()->comment('Dosificacion segun digemid');
-            $table->text('nom_form_farm')->collation('pro9_ci_ai')->nullable();
-            $table->text('nom_form_farm_simplif')->collation('pro9_ci_ai')->nullable();
-            $table->text('presentac')->collation('pro9_ci_ai')->nullable();
-            $table->text('fracciones')->collation('pro9_ci_ai')->nullable();
-            $table->text('fec_vcto_reg_sanitario')->collation('pro9_ci_ai')->nullable();
-            $table->text('num_reg_san')->collation('pro9_ci_ai')->nullable();
-            $table->text('nom_titular')->collation('pro9_ci_ai')->nullable();
-            $table->text('prices')->collation('pro9_ci_ai')->nullable();
+            $table->text('cod_digemid')->collation('sab_ci_ai')->comment('Codigo digmid');
+            $table->text('nom_prod')->collation('sab_ci_ai')->nullable()->comment('Nombre segun digemid');
+            $table->text('concent')->collation('sab_ci_ai')->nullable()->comment('Dosificacion segun digemid');
+            $table->text('nom_form_farm')->collation('sab_ci_ai')->nullable();
+            $table->text('nom_form_farm_simplif')->collation('sab_ci_ai')->nullable();
+            $table->text('presentac')->collation('sab_ci_ai')->nullable();
+            $table->text('fracciones')->collation('sab_ci_ai')->nullable();
+            $table->text('fec_vcto_reg_sanitario')->collation('sab_ci_ai')->nullable();
+            $table->text('num_reg_san')->collation('sab_ci_ai')->nullable();
+            $table->text('nom_titular')->collation('sab_ci_ai')->nullable();
+            $table->text('prices')->collation('sab_ci_ai')->nullable();
             $table->bigInteger('max_prices')->nullable()->default('0');
             $table->smallInteger('active')->default('0');
             $table->timestamp('last_update')->nullable();

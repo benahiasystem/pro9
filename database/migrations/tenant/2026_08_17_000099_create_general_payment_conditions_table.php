@@ -15,8 +15,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('general_payment_conditions', function (Blueprint $table) {
-            $table->string('id', 255)->collation('pro9_ci_ai');
-            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('id', 255)->collation('sab_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
             $table->primary(['id']);
         });
     }

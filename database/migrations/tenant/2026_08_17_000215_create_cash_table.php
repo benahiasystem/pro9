@@ -38,7 +38,7 @@ return new class extends Migration
             $table->decimal('final_balance', 30, 12)->default('0.0000');
             $table->decimal('income', 30, 12)->default('0.0000');
             $table->boolean('state')->default(false);
-            $table->string('reference_number', 20)->collation('pro9_ci_ai')->nullable();
+            $table->string('reference_number', 20)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->boolean('apply_restaurant')->default(false);

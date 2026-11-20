@@ -21,7 +21,7 @@ return new class extends Migration
         Schema::create('template_columns_config', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('establishment_id');
-            $table->string('template_name', 255)->collation('pro9_ci_ai')->default('Plantilla_personalizable');
+            $table->string('template_name', 255)->collation('sab_ci_ai')->default('Plantilla_personalizable');
             $table->json('columns_config')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

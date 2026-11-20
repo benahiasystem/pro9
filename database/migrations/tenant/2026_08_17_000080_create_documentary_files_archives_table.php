@@ -26,8 +26,8 @@ return new class extends Migration
             $table->bigInteger('user_id')->default('0')->comment('usuario asociado');
             $table->bigInteger('documentary_file_id')->default('0')->comment('Solicitud asociada');
             $table->bigInteger('documentary_office_id')->default('0')->comment('etapa asociada');
-            $table->text('observation')->collation('pro9_ci_ai')->nullable()->comment('observacion');
-            $table->text('attached_file')->collation('pro9_ci_ai')->nullable()->comment('etapa asociada');
+            $table->text('observation')->collation('sab_ci_ai')->nullable()->comment('observacion');
+            $table->text('attached_file')->collation('sab_ci_ai')->nullable()->comment('etapa asociada');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->bigInteger('documentary_guides_number_id')->default('0');

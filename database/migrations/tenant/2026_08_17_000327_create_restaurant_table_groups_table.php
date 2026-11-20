@@ -23,7 +23,7 @@ return new class extends Migration
         Schema::create('restaurant_table_groups', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('main_table_id')->nullable();
-            $table->string('status', 255)->collation('pro9_ci_ai')->default('open');
+            $table->string('status', 255)->collation('sab_ci_ai')->default('open');
             $table->timestamp('opening_date')->nullable();
             $table->decimal('total', 30, 12)->default('0.00');
             $table->timestamp('created_at')->nullable();

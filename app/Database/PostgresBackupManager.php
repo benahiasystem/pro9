@@ -35,7 +35,7 @@ final class PostgresBackupManager
     public function backup(array $databases, string $destination, bool $quiesced = false): array
     {
         if ($quiesced && !app()->isDownForMaintenance()) throw new \LogicException('El corte integral requiere mantenimiento y workers/scheduler detenidos.');
-        $directory = sys_get_temp_dir().'/pro9-pgdump-'.bin2hex(random_bytes(8));
+        $directory = sys_get_temp_dir().'/sab-pgdump-'.bin2hex(random_bytes(8));
         mkdir($directory, 0700);
         $backup = new PostgresBackup(); $dumps = []; $files = [];
         try {

@@ -28,14 +28,14 @@ return new class extends Migration
         Schema::create('webhook_deliveries', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('webhook_subscription_id');
-            $table->string('event', 50)->collation('pro9_ci_ai');
-            $table->char('event_id', 36)->collation('pro9_ci_ai');
+            $table->string('event', 50)->collation('sab_ci_ai');
+            $table->char('event_id', 36)->collation('sab_ci_ai');
             $table->json('payload');
-            $table->string('status', 10)->collation('pro9_ci_ai')->default('pending');
+            $table->string('status', 10)->collation('sab_ci_ai')->default('pending');
             $table->smallInteger('attempts')->default('0');
             $table->smallInteger('response_code')->nullable();
-            $table->text('response_body')->collation('pro9_ci_ai')->nullable();
-            $table->text('error_message')->collation('pro9_ci_ai')->nullable();
+            $table->text('response_body')->collation('sab_ci_ai')->nullable();
+            $table->text('error_message')->collation('sab_ci_ai')->nullable();
             $table->timestamp('sent_at')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

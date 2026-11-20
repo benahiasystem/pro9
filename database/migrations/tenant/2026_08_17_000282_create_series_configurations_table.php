@@ -22,9 +22,9 @@ return new class extends Migration
         Schema::create('series_configurations', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('series_id');
-            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('series', 255)->collation('pro9_ci_ai');
-            $table->string('number', 255)->collation('pro9_ci_ai');
+            $table->string('document_type_id', 255)->collation('sab_ci_ai');
+            $table->string('series', 255)->collation('sab_ci_ai');
+            $table->string('number', 255)->collation('sab_ci_ai');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['series_id'], 'series_configurations_series_id_foreign');

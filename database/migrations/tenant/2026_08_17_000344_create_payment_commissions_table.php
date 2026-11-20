@@ -21,7 +21,7 @@ return new class extends Migration
         Schema::create('payment_commissions', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('source_global_payment_id');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
             $table->date('date_of_payment');
             $table->decimal('amount', 30, 12);
             $table->json('calculation_snapshot')->nullable();

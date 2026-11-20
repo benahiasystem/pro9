@@ -32,7 +32,7 @@ test('invoice advance options follow the current buyer, currency and branch desp
     assert.equal(calls[0].options.params.customer_id, '9007199254740993');
     vm.form.customer_id = '9007199254740994';
     vm.form.establishment_id = 2;
-    const targetCurrency = process.env.PRO9_TEST_INVOICES_VES_ONLY === '1' ? 'VES' : 'USD';
+    const targetCurrency = process.env.SAB_TEST_INVOICES_VES_ONLY === '1' ? 'VES' : 'USD';
     vm.form.currency_type_id = targetCurrency;
     await Vue.nextTick();
     assert.deepEqual(vm.form.prepayments, []);

@@ -21,7 +21,7 @@
 <script>
 import { formatValue } from '../registry'
 import { readOriginal, readVector } from '../../../../../../../resources/js/helpers/dashboard-originals'
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 
 /** Tabla simple etiqueta/valor sobre el breakdown del dataset. */
 export default {
@@ -46,7 +46,7 @@ export default {
     },
   },
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

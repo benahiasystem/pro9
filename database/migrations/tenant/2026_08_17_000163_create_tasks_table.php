@@ -21,10 +21,10 @@ return new class extends Migration
     {
         Schema::create('tasks', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->char('uuid', 36)->collation('pro9_ci_ai')->nullable();
-            $table->string('class', 255)->collation('pro9_ci_ai');
+            $table->char('uuid', 36)->collation('sab_ci_ai')->nullable();
+            $table->string('class', 255)->collation('sab_ci_ai');
             $table->time('execution_time');
-            $table->text('output')->collation('pro9_ci_ai')->nullable();
+            $table->text('output')->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

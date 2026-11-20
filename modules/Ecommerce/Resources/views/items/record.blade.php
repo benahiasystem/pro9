@@ -622,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.href = match.url;
                     }
                 },
-                formatPrice(value, field) {return window.Pro9StorefrontAmounts.money(this.product.campaign_pricing_snapshot?.values?.[field] ?? value);},
+                formatPrice(value, field) {return window.SabStorefrontAmounts.money(this.product.campaign_pricing_snapshot?.values?.[field] ?? value);},
                 addOrUpdateCart(item) {
                     let array = localStorage.getItem('products_cart');
                     array = array ? JSON.parse(array) : [];
@@ -665,22 +665,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     return this.cartQuantities[id] || 0;
                 },
                 onQuantityInput() {
-                    this.quantity = window.Pro9StorefrontAmounts.quantity(this.quantity);
+                    this.quantity = window.SabStorefrontAmounts.quantity(this.quantity);
                 },
                 loadCartQuantities() {
                     let array = localStorage.getItem('products_cart');
                     array = array ? JSON.parse(array) : [];
                     let obj = {};
                     array.forEach(function(item) {
-                        obj[item.id] = window.Pro9StorefrontAmounts.quantity(item.quantity ?? '1');
+                        obj[item.id] = window.SabStorefrontAmounts.quantity(item.quantity ?? '1');
                     });
                     this.cartQuantities = obj;
                 },
                 incrementQuantity(item) {
-                    this.quantity = window.Pro9StorefrontAmounts.quantity(window.Pro9StorefrontAmounts.amount(this.quantity).plus('1').decimal());
+                    this.quantity = window.SabStorefrontAmounts.quantity(window.SabStorefrontAmounts.amount(this.quantity).plus('1').decimal());
                 },
                 decrementQuantity(item) {
-                    const next = window.Pro9StorefrontAmounts.amount(this.quantity).minus('1');
+                    const next = window.SabStorefrontAmounts.amount(this.quantity).minus('1');
                     if (next.compare('0') > 0) this.quantity = next.decimal();
                 },
                 removeFromCart(item) {

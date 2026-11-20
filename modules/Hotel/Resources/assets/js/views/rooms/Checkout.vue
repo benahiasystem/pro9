@@ -792,7 +792,7 @@ export default {
                 });
         },
         readPendingHotelOperation(kind, rentId) {
-            for (const prefix of ['sab', 'pro9']) {
+            for (const prefix of ['sab', 'sab']) {
                 try {
                     const pending = JSON.parse(window.sessionStorage.getItem(`${prefix}-hotel-${kind}:${rentId}`) || 'null')
                     if (pending && ['01', '80'].includes(pending.type) &&
@@ -803,7 +803,7 @@ export default {
         },
         clearAtomicPending() {
             try { window.sessionStorage.removeItem(`sab-hotel-atomic:${this.currentRent.id}`) } catch (error) { /* The completed operation remains on the server. */ }
-            try { window.sessionStorage.removeItem(`pro9-hotel-atomic:${this.currentRent.id}`) } catch (error) { /* Retry cleanup on the next completed operation. */ }
+            try { window.sessionStorage.removeItem(`sab-hotel-atomic:${this.currentRent.id}`) } catch (error) { /* Retry cleanup on the next completed operation. */ }
             this.pendingAtomic = null
             this.atomicDraft = null
         },
@@ -903,7 +903,7 @@ export default {
                 this.currentRent = finalized.data.currentRent
                 this.pendingCheckout = null
                 try { window.sessionStorage.removeItem(`sab-hotel-checkout:${this.currentRent.id}`) } catch (error) { /* The completed server operation is idempotent. */ }
-                try { window.sessionStorage.removeItem(`pro9-hotel-checkout:${this.currentRent.id}`) } catch (error) { /* The completed server operation is idempotent. */ }
+                try { window.sessionStorage.removeItem(`sab-hotel-checkout:${this.currentRent.id}`) } catch (error) { /* The completed server operation is idempotent. */ }
                 this.successGoToInvoice()
                 this.$emit('update:showDialog', false)
                 this.saveCashDocument()

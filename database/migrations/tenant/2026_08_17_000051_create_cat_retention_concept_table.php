@@ -16,9 +16,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cat_retention_concept', function (Blueprint $table) {
-            $table->char('id', 3)->collation('pro9_ci_ai');
-            $table->string('description', 512)->collation('pro9_ci_ai');
-            $table->string('percentage_label', 160)->collation('pro9_ci_ai');
+            $table->char('id', 3)->collation('sab_ci_ai');
+            $table->string('description', 512)->collation('sab_ci_ai');
+            $table->string('percentage_label', 160)->collation('sab_ci_ai');
             $table->primary(['id']);
         });
     }

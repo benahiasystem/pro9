@@ -24,12 +24,12 @@ return new class extends Migration
         Schema::create('fiscal_configuration_audits', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('company_id');
-            $table->string('actor_type', 16)->collation('pro9_ci_ai');
+            $table->string('actor_type', 16)->collation('sab_ci_ai');
             $table->bigInteger('actor_id');
             $table->json('changed_values')->nullable();
-            $table->text('changed_fields')->collation('pro9_ci_ai');
-            $table->string('fiscal_emission_mode', 32)->collation('pro9_ci_ai');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
+            $table->text('changed_fields')->collation('sab_ci_ai');
+            $table->string('fiscal_emission_mode', 32)->collation('sab_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai');
             $table->timestamp('created_at')->useCurrent();
             $table->index(['company_id'], 'fiscal_configuration_audits_company_id_foreign');
         });

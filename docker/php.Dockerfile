@@ -17,9 +17,9 @@ RUN docker-php-ext-configure gd --with-avif --with-freetype --with-jpeg --with-w
     && rm -rf /var/lib/apt/lists/* /tmp/pear
 COPY --from=composer:2.8@sha256:5248900ab8b5f7f880c2d62180e40960cd87f60149ec9a1abfd62ac72a02577c /usr/bin/composer /usr/local/bin/composer
 RUN useradd --create-home --uid 1000 ubuntu
-COPY docker/php-entrypoint.sh /usr/local/bin/pro9-entrypoint
-ENTRYPOINT ["pro9-entrypoint"]
-WORKDIR /var/www/pro9
+COPY docker/php-entrypoint.sh /usr/local/bin/sab-entrypoint
+ENTRYPOINT ["sab-entrypoint"]
+WORKDIR /var/www/sab
 RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
 CMD ["php-fpm"]
 

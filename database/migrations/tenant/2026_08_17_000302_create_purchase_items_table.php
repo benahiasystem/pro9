@@ -48,11 +48,11 @@ return new class extends Migration
             $table->bigInteger('item_id');
             $table->json('item');
             $table->bigInteger('item_lot_group_id')->nullable();
-            $table->string('lot_code', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('lot_code', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('quantity', 30, 12);
             $table->decimal('unit_value', 30, 12);
             $table->date('date_of_due')->nullable();
-            $table->string('affectation_igv_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('affectation_igv_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('total_base_igv', 30, 12);
             $table->decimal('percentage_igv', 30, 12);
             $table->decimal('total_igv', 30, 12);
@@ -60,7 +60,7 @@ return new class extends Migration
             $table->decimal('percentage_other_taxes', 30, 12)->default('0.00');
             $table->decimal('total_other_taxes', 30, 12)->default('0.00');
             $table->decimal('total_taxes', 30, 12);
-            $table->string('price_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('price_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('unit_price', 30, 12);
             $table->decimal('total_value', 30, 12);
             $table->decimal('total_charge', 30, 12)->default('0.00');
@@ -70,7 +70,7 @@ return new class extends Migration
             $table->json('discounts')->nullable();
             $table->json('charges')->nullable();
             $table->bigInteger('warehouse_id')->nullable();
-            $table->text('name_product_pdf')->collation('pro9_ci_ai')->nullable();
+            $table->text('name_product_pdf')->collation('sab_ci_ai')->nullable();
             $table->boolean('update_purchase_price')->default(false);
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->index(['purchase_id'], 'purchase_items_purchase_id_foreign');

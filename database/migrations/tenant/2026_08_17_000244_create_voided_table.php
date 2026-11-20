@@ -27,14 +27,14 @@ return new class extends Migration
         Schema::create('voided', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('user_id');
-            $table->char('external_id', 36)->collation('pro9_ci_ai');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
-            $table->char('state_type_id', 2)->collation('pro9_ci_ai');
-            $table->string('ubl_version', 255)->collation('pro9_ci_ai');
+            $table->char('external_id', 36)->collation('sab_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai');
+            $table->char('state_type_id', 2)->collation('sab_ci_ai');
+            $table->string('ubl_version', 255)->collation('sab_ci_ai');
             $table->date('date_of_issue');
             $table->date('date_of_reference');
-            $table->string('identifier', 255)->collation('pro9_ci_ai');
-            $table->string('filename', 255)->collation('pro9_ci_ai');
+            $table->string('identifier', 255)->collation('sab_ci_ai');
+            $table->string('filename', 255)->collation('sab_ci_ai');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['user_id'], 'voided_user_id_foreign');

@@ -29,7 +29,7 @@ return new class extends Migration
             $table->bigInteger('series_document_ft_id')->nullable()->default('0');
             $table->bigInteger('user_id')->nullable()->default('0');
             $table->bigInteger('payment_destination_id')->nullable()->default('0');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->smallInteger('autogenerate')->nullable()->default('0');

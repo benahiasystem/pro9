@@ -16,9 +16,9 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - run: docker build -t pro9-postgres-php:17.11 -f docker/php.Dockerfile .
-      - run: docker run --rm -v "$PWD:/var/www/pro9" -w /var/www/pro9 pro9-postgres-php:17.11 composer install --no-interaction --prefer-dist --no-scripts
-      - run: docker build --target testing -t pro9-postgres-php-test:17.11 -f docker/php.Dockerfile .
+      - run: docker build -t sab-postgres-php:17.11 -f docker/php.Dockerfile .
+      - run: docker run --rm -v "$PWD:/var/www/sab" -w /var/www/sab sab-postgres-php:17.11 composer install --no-interaction --prefer-dist --no-scripts
+      - run: docker build --target testing -t sab-postgres-php-test:17.11 -f docker/php.Dockerfile .
       - run: npm ci --ignore-scripts
       - run: command -v google-chrome || command -v chromium || command -v chromium-browser
       - run: php tests/Infrastructure/postgres_compose_probe.php

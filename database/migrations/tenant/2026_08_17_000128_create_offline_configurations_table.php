@@ -22,7 +22,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->boolean('is_client')->default(false);
             $table->string('token_server', 255)->collation('C')->nullable();
-            $table->string('url_server', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('url_server', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

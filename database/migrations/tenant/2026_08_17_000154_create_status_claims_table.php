@@ -24,8 +24,8 @@ return new class extends Migration
     {
         Schema::create('status_claims', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('description', 60)->collation('pro9_ci_ai');
-            $table->string('color', 7)->collation('pro9_ci_ai')->default('#909399');
+            $table->string('description', 60)->collation('sab_ci_ai');
+            $table->string('color', 7)->collation('sab_ci_ai')->default('#909399');
             $table->integer('sort_order')->default('0');
             $table->boolean('is_initial')->default(false);
             $table->boolean('is_final')->default(false);

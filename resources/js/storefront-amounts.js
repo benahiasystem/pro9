@@ -3,7 +3,7 @@ import {cartQuantity, cartLineAmount} from './helpers/storefront-cart-amounts'
 
 // The classic catalog scripts and Vue checkout use the same rational engine.
 // Persist decimal strings/fractions, never ExactAmount instances containing BigInt.
-window.Pro9StorefrontAmounts = Object.freeze({
+window.SabStorefrontAmounts = Object.freeze({
     amount: exactAmount, input: exactInput, sum: exactSum, quantity: cartQuantity, line: cartLineAmount,
     money: value => exactAmount(value).final(2),
     stock(item) {

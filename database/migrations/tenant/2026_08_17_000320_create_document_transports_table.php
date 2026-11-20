@@ -30,15 +30,15 @@ return new class extends Migration
         Schema::create('document_transports', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('document_id');
-            $table->string('seat_number', 255)->collation('pro9_ci_ai');
-            $table->string('passenger_manifest', 255)->collation('pro9_ci_ai');
-            $table->string('identity_document_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('number_identity_document', 255)->collation('pro9_ci_ai');
-            $table->string('passenger_fullname', 255)->collation('pro9_ci_ai');
+            $table->string('seat_number', 255)->collation('sab_ci_ai');
+            $table->string('passenger_manifest', 255)->collation('sab_ci_ai');
+            $table->string('identity_document_type_id', 255)->collation('sab_ci_ai');
+            $table->string('number_identity_document', 255)->collation('sab_ci_ai');
+            $table->string('passenger_fullname', 255)->collation('sab_ci_ai');
             $table->json('origin_district_id');
-            $table->string('origin_address', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('origin_address', 255)->collation('sab_ci_ai')->nullable();
             $table->json('destinatation_district_id');
-            $table->string('destinatation_address', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('destinatation_address', 255)->collation('sab_ci_ai')->nullable();
             $table->date('start_date')->nullable();
             $table->time('start_time')->nullable();
             $table->timestamp('created_at')->nullable();

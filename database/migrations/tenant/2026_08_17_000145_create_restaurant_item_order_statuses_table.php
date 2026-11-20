@@ -28,9 +28,9 @@ return new class extends Migration
             $table->bigInteger('item_id');
             $table->json('item')->nullable();
             $table->integer('quantity');
-            $table->string('note', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('note', 255)->collation('sab_ci_ai')->nullable();
             $table->integer('status');
-            $table->string('status_description', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('status_description', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

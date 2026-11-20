@@ -30,11 +30,11 @@ return new class extends Migration
         Schema::create('retention_documents', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('retention_id');
-            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
-            $table->string('series', 255)->collation('pro9_ci_ai');
-            $table->string('number', 255)->collation('pro9_ci_ai');
+            $table->string('document_type_id', 255)->collation('sab_ci_ai');
+            $table->string('series', 255)->collation('sab_ci_ai');
+            $table->string('number', 255)->collation('sab_ci_ai');
             $table->date('date_of_issue');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('total_document', 30, 12);
             $table->json('payments');
             $table->json('exchange_rate');

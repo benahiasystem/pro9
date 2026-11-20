@@ -1,5 +1,5 @@
 # ########## INICIO CAMBIO POSTGRESQL 17
-name: pro9-postgresql
+name: sab-postgresql
 services:
   centrifugo:
     image: centrifugo/centrifugo:v6.10.3
@@ -21,7 +21,7 @@ services:
   api-bcv:
     build:
       context: ${API_BCV_PATH:-../api-bcv}
-    image: pro9-api-bcv
+    image: sab-api-bcv
     env_file:
       - ${API_BCV_PATH:-../api-bcv}/.env
     environment:
@@ -35,7 +35,7 @@ services:
       - "127.0.0.1:${APP_HTTP_PORT:-8089}:80"
     volumes:
       - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./:/var/www/pro9:ro
+      - ./:/var/www/sab:ro
     depends_on:
       centrifugo:
         condition: service_healthy
@@ -46,18 +46,21 @@ services:
     build:
       context: .
       dockerfile: docker/php.Dockerfile
-    image: pro9-postgres-php:17.11
+    image: sab-postgres-php:17.11
     platform: linux/amd64
-    working_dir: /var/www/pro9
+    working_dir: /var/www/sab
     networks: [default, bcv]
-    env_file: ["${PRO9_APP_ENV_FILE:-.env}"]
+    env_file: ["${SAB_APP_ENV_FILE:-.env}"]
     environment:
       DB_CONNECTION: system
       DB_HOST: postgres
       DB_PORT: 5432
     volumes:
-      - ./:/var/www/pro9
+      - ./:/var/www/sab
       - ./docker/custom-php.ini:/usr/local/etc/php/conf.d/custom-php.ini:ro
+    # mPDF usa esta carpeta para caché y temporales en todas sus instancias.
+    tmpfs:
+      - /var/www/sab/vendor/mpdf/mpdf/tmp:uid=33,gid=33,mode=0700
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,19 +78,19 @@ services:
       POSTGRES_USER: supabase_admin
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: ${SUPABASE_POSTGRES_PASSWORD:?Defina la clave de inicialización PostgreSQL}
-      DB_DATABASE: ${DB_DATABASE:-pro9}
-      DB_USERNAME: ${DB_USERNAME:-pro9_runtime}
+      DB_DATABASE: ${DB_DATABASE:-sab}
+      DB_USERNAME: ${DB_USERNAME:-sab_runtime}
       DB_PASSWORD: ${DB_PASSWORD:?Defina la clave de operación central}
-      DB_MIGRATOR_USERNAME: ${DB_MIGRATOR_USERNAME:-pro9_owner}
+      DB_MIGRATOR_USERNAME: ${DB_MIGRATOR_USERNAME:-sab_owner}
       DB_MIGRATOR_PASSWORD: ${DB_MIGRATOR_PASSWORD:?Defina la clave del propietario central}
-      DB_PROVISIONER_USERNAME: ${DB_PROVISIONER_USERNAME:-pro9_provisioner}
+      DB_PROVISIONER_USERNAME: ${DB_PROVISIONER_USERNAME:-sab_provisioner}
       DB_PROVISIONER_PASSWORD: ${DB_PROVISIONER_PASSWORD:?Defina la clave del aprovisionador}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - postgres_config:/etc/postgresql-custom
-      - ./docker/postgres-init.sh:/docker-entrypoint-initdb.d/99-pro9.sh:ro
+      - ./docker/postgres-init.sh:/docker-entrypoint-initdb.d/99-sab.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "test -f /var/lib/postgresql/data/pro9-bootstrap-complete && pg_isready -h 127.0.0.1 -U supabase_admin -d postgres && PGPASSWORD=\"$$DB_PASSWORD\" psql -h 127.0.0.1 -U \"$$DB_USERNAME\" -d \"$$DB_DATABASE\" -Atqc 'SELECT 1' | grep -qx 1"]
+      test: ["CMD-SHELL", "test -f /var/lib/postgresql/data/sab-bootstrap-complete && pg_isready -h 127.0.0.1 -U supabase_admin -d postgres && PGPASSWORD=\"$$DB_PASSWORD\" psql -h 127.0.0.1 -U \"$$DB_USERNAME\" -d \"$$DB_DATABASE\" -Atqc 'SELECT 1' | grep -qx 1"]
       interval: 5s
       timeout: 5s
       retries: 30

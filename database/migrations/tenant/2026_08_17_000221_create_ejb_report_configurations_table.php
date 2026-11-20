@@ -20,7 +20,7 @@ return new class extends Migration
     {
         Schema::create('ejb_report_configurations', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('document_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('document_type_id', 255)->collation('sab_ci_ai');
             $table->bigInteger('bank_account_pen_id')->nullable();
             $table->bigInteger('bank_account_usd_id')->nullable();
             $table->timestamp('created_at')->nullable();

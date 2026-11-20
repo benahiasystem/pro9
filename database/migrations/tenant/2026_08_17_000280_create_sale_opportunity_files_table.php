@@ -18,7 +18,7 @@ return new class extends Migration
         Schema::create('sale_opportunity_files', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('sale_opportunity_id');
-            $table->string('filename', 255)->collation('pro9_ci_ai');
+            $table->string('filename', 255)->collation('sab_ci_ai');
             $table->index(['sale_opportunity_id'], 'sale_opportunity_files_sale_opportunity_id_foreign');
         });
     }

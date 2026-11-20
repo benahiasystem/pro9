@@ -23,14 +23,14 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 255)->collation('pro9_ci_ai');
-            $table->string('image', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('name', 255)->collation('sab_ci_ai');
+            $table->string('image', 255)->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
-            $table->string('cuenta_compra', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('cuenta_venta', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('cuenta_compra_devolucion', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('cuenta_venta_devolucion', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('cuenta_compra', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('cuenta_venta', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('cuenta_compra_devolucion', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('cuenta_venta_devolucion', 255)->collation('sab_ci_ai')->nullable();
             $table->index(['name'], 'categories_name_index');
         });
     }

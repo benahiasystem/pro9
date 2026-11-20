@@ -25,10 +25,10 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('relation_id')->nullable()->default('0')->comment('Id de modelo');
             $table->bigInteger('type')->nullable()->default('0')->comment('Tipo de relacion');
-            $table->text('relation_model')->collation('pro9_ci_ai')->nullable()->comment('Modelo a relacion');
-            $table->text('file_line')->collation('pro9_ci_ai')->nullable()->comment('Archivo qu elo llama');
+            $table->text('relation_model')->collation('sab_ci_ai')->nullable()->comment('Modelo a relacion');
+            $table->text('file_line')->collation('sab_ci_ai')->nullable()->comment('Archivo qu elo llama');
             $table->smallInteger('sendit')->nullable()->default('1')->comment('Booleano para envio de correo');
-            $table->text('email')->collation('pro9_ci_ai')->nullable()->comment('Correo de destino');
+            $table->text('email')->collation('sab_ci_ai')->nullable()->comment('Correo de destino');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

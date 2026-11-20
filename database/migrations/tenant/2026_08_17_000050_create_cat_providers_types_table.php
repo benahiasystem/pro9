@@ -18,8 +18,8 @@ return new class extends Migration
     {
         Schema::create('cat_providers_types', function (Blueprint $table) {
             $table->smallInteger('id');
-            $table->string('code', 2)->collation('pro9_ci_ai')->nullable();
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('code', 2)->collation('sab_ci_ai')->nullable();
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->boolean('active');
             $table->primary(['id']);
             $table->unique(['code'], 'cat_providers_types_code_unique');

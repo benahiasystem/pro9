@@ -40,7 +40,7 @@ class ExactReportTicketRenderingTest extends TestCase
         self::assertStringNotContainsString('499.99', $html);
         $pdf = Pdf::loadHTML($html)->setPaper([0,0,$width/25.4*72,1440])->output();
         self::assertStringStartsWith('%PDF-', $pdf);
-        if ($directory = getenv('PRO9_EXACT_PDF_OUTPUT_DIR')) {
+        if ($directory = getenv('SAB_EXACT_PDF_OUTPUT_DIR')) {
             if (!is_dir($directory)) mkdir($directory,0775,true);
             file_put_contents($directory.'/calculos-exactos-ticket-'.$width.'mm.pdf', $pdf);
         }

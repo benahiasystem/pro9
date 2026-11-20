@@ -221,7 +221,7 @@
                 })
         },
         methods: {
-            // ######## INICIO CALCULOS EXACTOS PRO9 ########
+            // ######## INICIO CALCULOS EXACTOS SAB ########
             hasOutstandingBalance() { return exactValue(this.document, 'total_difference').compare(0) > 0; },
             hasCashAdjustment(row) { return exactValue(row, 'cash_adjustment').compare(0) !== 0; },
             hasChange(row) { return exactValue(row, 'change').compare(0) !== 0; },

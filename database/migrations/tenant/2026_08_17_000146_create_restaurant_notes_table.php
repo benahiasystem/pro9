@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('restaurant_notes', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
         });
     }
 

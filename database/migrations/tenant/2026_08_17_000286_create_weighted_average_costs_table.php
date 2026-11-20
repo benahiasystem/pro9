@@ -28,7 +28,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->date('date_of_issue');
             $table->bigInteger('origin_id');
-            $table->string('origin_type', 255)->collation('pro9_ci_ai');
+            $table->string('origin_type', 255)->collation('sab_ci_ai');
             $table->bigInteger('item_id');
             $table->decimal('quantity', 30, 12);
             $table->decimal('cost', 30, 12);

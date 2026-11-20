@@ -21,7 +21,7 @@ return new class extends Migration
         Schema::create('columns_to_reports', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('user_id');
-            $table->string('report', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('report', 255)->collation('sab_ci_ai')->nullable();
             $table->json('columns');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

@@ -32,5 +32,5 @@ SELECT format('GRANT USAGE ON SCHEMA public TO %I', :'runtime') \gexec
 SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I', :'owner', :'runtime') \gexec
 SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO %I', :'owner', :'runtime') \gexec
 SQL
-touch "${PGDATA}/pro9-bootstrap-complete"
+touch "${PGDATA}/sab-bootstrap-complete"
 # ######### FIN CAMBIO POSTGRESQL 17

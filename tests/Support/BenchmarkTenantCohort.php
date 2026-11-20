@@ -17,7 +17,7 @@ final class BenchmarkTenantCohort
     public static function createCentral(): array
     {
         $control = self::control();
-        $database = 'pro9_fiscal_test_'.bin2hex(random_bytes(6));
+        $database = 'sab_fiscal_test_'.bin2hex(random_bytes(6));
         $identifier = self::identifier($control, $database);
         $options = $control->getDriverName() === 'pgsql'
             ? ' TEMPLATE template0'
@@ -143,7 +143,7 @@ final class BenchmarkTenantCohort
 
     private static function identifier(Connection $connection, string $name): string
     {
-        if (!preg_match('/^pro9_fiscal_test_[a-f0-9]{12}$/D', $name)) {
+        if (!preg_match('/^sab_fiscal_test_[a-f0-9]{12}$/D', $name)) {
             throw new RuntimeException('Identificador fuera de la instancia temporal.');
         }
         $quote = $connection->getDriverName() === 'pgsql' ? '"' : '`';
@@ -152,10 +152,10 @@ final class BenchmarkTenantCohort
 
     private static function control(): Connection
     {
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') {
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') {
             throw new RuntimeException('Se requiere la ejecución temporal.');
         }
-        if (getenv('PRO9_FISCAL_MYSQL_TESTS') === '1') {
+        if (getenv('SAB_FISCAL_MYSQL_TESTS') === '1') {
             if (getenv('DB_HOST') !== 'mysql') throw new RuntimeException('Requiere el host de referencia temporal.');
             return self::connect([
                 'driver' => 'mysql', 'host' => 'mysql', 'port' => 3306, 'username' => 'root', 'password' => '',

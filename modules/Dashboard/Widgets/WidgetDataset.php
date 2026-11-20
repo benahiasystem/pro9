@@ -4,7 +4,7 @@ namespace Modules\Dashboard\Widgets;
 
 use App\Support\Exact\Decimal as D;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Numeric coordinates are final projections; text and original fractions travel with them. */
 class WidgetDataset
 {
@@ -104,4 +104,4 @@ class WidgetDataset
             'breakdown'=>$this->breakdown,'totals'=>$this->totals,'meta'=>$this->meta];
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -22,7 +22,7 @@ return new class extends Migration
         Schema::create('price_labels', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->smallInteger('position')->comment('Orden de visualización del precio');
-            $table->string('label', 50)->collation('pro9_ci_ai')->comment('Etiqueta personalizada del precio (ej: Precio Mayorista)');
+            $table->string('label', 50)->collation('sab_ci_ai')->comment('Etiqueta personalizada del precio (ej: Precio Mayorista)');
             $table->boolean('is_active')->default(true)->comment('Si está activo para usar en ventas');
             $table->boolean('is_default')->default(false);
             $table->timestamp('created_at')->nullable();

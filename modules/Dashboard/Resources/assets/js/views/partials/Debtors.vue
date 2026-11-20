@@ -89,7 +89,7 @@
 </template>
 
 <script>
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import { readOriginal, originalToken, sumOriginal, originalText } from "../../../../../../../resources/js/helpers/dashboard-originals";
 
 export default {
@@ -200,7 +200,7 @@ export default {
     dbMoney(value) { return originalText(value, 12, 'es-VE', true); },
   },
 };
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

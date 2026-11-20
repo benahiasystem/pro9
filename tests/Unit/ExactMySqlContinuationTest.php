@@ -7,13 +7,13 @@ use App\Support\Exact\{Decimal as D, SaleNoteBalance};
 use Illuminate\Http\{JsonResponse, Request};
 use PHPUnit\Framework\TestCase;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** @group postgres-integration */
 class ExactMySqlContinuationTest extends TestCase
 {
     public function test_tender_credit_check_and_reversal_use_the_same_mysql_fractions(): void
     {
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
         $fixture=new class extends FiscalEmissionSchemaTest {
             public bool $ready=false;
             public function start(): array { parent::setUp();$this->ready=true;return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
@@ -63,7 +63,7 @@ class ExactMySqlContinuationTest extends TestCase
             // Closing a fraction whose twelve-place representation is 1 must not
             // compare that representation against the smaller authoritative debt.
             $db->table('configurations')->update(['auto_send_hka'=>false]);
-            $vesOnly = getenv('PRO9_TEST_INVOICES_VES_ONLY') === '1';
+            $vesOnly = getenv('SAB_TEST_INVOICES_VES_ONLY') === '1';
             $rate = $vesOnly ? '2.00000000' : '3.00000000';
             $closingInput=array_replace($input,['external_id'=>(string)\Illuminate\Support\Str::uuid(),
                 'currency_type_id'=>$vesOnly ? 'VES' : 'USD','exchange_rate_sale'=>$rate,'payment_condition_id'=>'02','payments'=>[]]);

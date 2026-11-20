@@ -142,7 +142,7 @@ class SystemConfigurationImageUploadTest extends TestCase
     /** @dataProvider formats */
     public function test_reencoding_removes_trailing_non_image_content(string $format): void
     {
-        $marker = 'PRO9_TRAILING_UPLOAD_TEST_CONTENT';
+        $marker = 'SAB_TRAILING_UPLOAD_TEST_CONTENT';
         $this->postJson('/test-system-image/bg', [
             'type' => 'bg',
             'image' => $this->upload('image.' . $format, $this->fixture($format) . $marker),

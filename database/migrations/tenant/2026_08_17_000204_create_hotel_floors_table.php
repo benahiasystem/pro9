@@ -20,7 +20,7 @@ return new class extends Migration
     {
         Schema::create('hotel_floors', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('description', 25)->collation('pro9_ci_ai');
+            $table->string('description', 25)->collation('sab_ci_ai');
             $table->boolean('active')->default(true);
             $table->bigInteger('establishment_id')->nullable();
             $table->timestamp('created_at')->nullable();

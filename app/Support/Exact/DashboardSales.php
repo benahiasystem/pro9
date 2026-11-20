@@ -4,7 +4,7 @@ namespace App\Support\Exact;
 
 use App\Models\Tenant\{Document, SaleNote};
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Documentary sales in VES. Fractions stay intact until an API/chart projection. */
 final class DashboardSales
 {
@@ -164,4 +164,4 @@ final class DashboardSales
         return $result;
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -9,8 +9,8 @@ class ExactHttpAcceptanceTest extends TestCase
 {
     public function test_production_kernel_routes_and_api_authentication_run_against_disposable_postgresql(): void
     {
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
-        $vesInvoicesOnly = getenv('PRO9_HTTP_ACCEPTANCE_VES_ONLY') === '1';
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
+        $vesInvoicesOnly = getenv('SAB_HTTP_ACCEPTANCE_VES_ONLY') === '1';
         $fixture=new class extends FiscalEmissionSchemaTest {
             public bool $ready=false;
             public function start(): array { parent::setUp();$this->ready=true;return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
@@ -61,7 +61,7 @@ class ExactHttpAcceptanceTest extends TestCase
             $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);
             if (!$socket) throw new \RuntimeException($error);
             $address=stream_socket_get_name($socket,false);fclose($socket);
-            $env=getenv();$env['PRO9_EXACT_HTTP_FIXTURE']=$private;$env['APP_ENV']='testing';
+            $env=getenv();$env['SAB_EXACT_HTTP_FIXTURE']=$private;$env['APP_ENV']='testing';
             $server=proc_open([PHP_BINARY,'-S',$address,dirname(__DIR__).'/Support/exact_http_router.php'],
                 [0=>['pipe','r'],1=>['file',$temp.'/server.log','a'],2=>['file',$temp.'/server.log','a']],$pipes,dirname(__DIR__,2),$env);
             if (!is_resource($server)) throw new \RuntimeException('No se pudo abrir HTTP temporal.');
@@ -71,13 +71,13 @@ class ExactHttpAcceptanceTest extends TestCase
                 if ($probe) { fclose($probe);break; }
                 usleep(50000);
             }
-            $reference=getenv('PRO9_EXACT_HTTP_REFERENCE_CONTROLLER');
+            $reference=getenv('SAB_EXACT_HTTP_REFERENCE_CONTROLLER');
             if ($reference) {
                 if (!is_file($reference)) throw new \RuntimeException('Falta la fuente congelada del controlador.');
                 $privateReference=$temp.'/reference.json';
                 file_put_contents($privateReference,json_encode(['connection'=>$db->getConfig(),'storage'=>$temp,'controller_reference'=>$reference],JSON_THROW_ON_ERROR));chmod($privateReference,0600);
                 $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);$referenceAddress=stream_socket_get_name($socket,false);fclose($socket);
-                $referenceEnv=$env;$referenceEnv['PRO9_EXACT_HTTP_FIXTURE']=$privateReference;
+                $referenceEnv=$env;$referenceEnv['SAB_EXACT_HTTP_FIXTURE']=$privateReference;
                 $referenceServer=proc_open([PHP_BINARY,'-S',$referenceAddress,dirname(__DIR__).'/Support/exact_http_router.php'],
                     [0=>['pipe','r'],1=>['file',$temp.'/reference.log','a'],2=>['file',$temp.'/reference.log','a']],$referencePipes,dirname(__DIR__,2),$referenceEnv);
                 if (!is_resource($referenceServer)) throw new \RuntimeException('No se pudo abrir HTTP de referencia.');
@@ -106,7 +106,7 @@ class ExactHttpAcceptanceTest extends TestCase
             [$code,$body,$headers]=$get('/api/company');
             self::assertSame(200,$code,substr($body,0,3500));
             self::assertStringContainsString('Test fiscal',$body);
-            self::assertGreaterThan(0,(int)$headers['x-pro9-test-queries']);
+            self::assertGreaterThan(0,(int)$headers['x-sab-test-queries']);
             [$code,$body]=$get('/api/company',false);
             self::assertSame(401,$code,$body);
             $this->assertInstalledModuleRoutes($db, $get, $input);
@@ -583,7 +583,7 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertSame(200,$code,substr($body,0,2500));
             self::assertSame('500',\App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::readRequired(json_decode($body,true)['data'][0],'unit_price')));
             self::assertSame((string)$line->id,(string)json_decode($body,true)['grouped_items'][0]['source_sale_note_items'][0]['sale_note_item_id']);
-            if (getenv('PRO9_EXACT_HTTP_PROFILE')==='1') {
+            if (getenv('SAB_EXACT_HTTP_PROFILE')==='1') {
                 $profileRow=$line->getAttributes();unset($profileRow['id']);
                 $db->table('sale_note_items')->where('sale_note_id',$note->id)->delete();
                 foreach ([500,500] as $count) $db->table('sale_note_items')->insert(array_fill(0,$count,$profileRow));
@@ -591,7 +591,7 @@ class ExactHttpAcceptanceTest extends TestCase
                 fwrite(STDERR,json_encode(['profile_headers'=>array_filter($headers,fn($key)=>str_starts_with($key,'x-sab'),ARRAY_FILTER_USE_KEY),'total_ms'=>(hrtime(true)-$start)/1000000,'body_bytes'=>strlen($body)]).PHP_EOL);
                 self::assertSame(200,$code,substr($body,0,1500));
             }
-            $output=getenv('PRO9_EXACT_HTTP_BENCH_OUTPUT');
+            $output=getenv('SAB_EXACT_HTTP_BENCH_OUTPUT');
             if ($output) {
                 $hashes=[];
                 foreach (['app/Http/Controllers/Tenant/SaleNoteController.php','app/Http/Kernel.php','routes/web.php','composer.lock','tests/Support/exact_http_router.php'] as $file) $hashes[$file]=hash_file('sha256',dirname(__DIR__,2).'/'.$file);
@@ -617,7 +617,7 @@ class ExactHttpAcceptanceTest extends TestCase
                         $start=hrtime(true);[$code,$body,$headers]=$get('/sale-notes/items',true,['notes_id'=>[$note->id]],$variant==='reference');$elapsed=(hrtime(true)-$start)/1000000;
                         self::assertSame(200,$code,substr($body,0,1500));
                         self::assertCount($size,json_decode($body,true)['data']);
-                        if ($sample>=0) {$times[$variant][]=$elapsed;$queries[$variant][]=(int)$headers['x-pro9-test-queries'];$memory[$variant][]=(int)$headers['x-pro9-test-peak-memory'];}
+                        if ($sample>=0) {$times[$variant][]=$elapsed;$queries[$variant][]=(int)$headers['x-sab-test-queries'];$memory[$variant][]=(int)$headers['x-sab-test-peak-memory'];}
                     }
                     foreach ($variants as $variant) {
                         $sorted=$times[$variant];sort($sorted);
@@ -629,7 +629,7 @@ class ExactHttpAcceptanceTest extends TestCase
                         $result['cases'][(string)$size]['allowed_p95_ms']=$limit;
                         $result['cases'][(string)$size]['passed']=$result['cases'][(string)$size]['current']['p95_ms']<=$limit;
                     }
-                    if ($initialPath=getenv('PRO9_EXACT_HTTP_INITIAL_BASELINE')) {
+                    if ($initialPath=getenv('SAB_EXACT_HTTP_INITIAL_BASELINE')) {
                         $initial=json_decode(file_get_contents($initialPath),true,512,JSON_THROW_ON_ERROR);
                         $base=$initial['cases'][(string)$size]['p95_ms'];$limit=$base+max($base*.2,100);
                         $result['cases'][(string)$size]['initial_allowed_p95_ms']=$limit;
@@ -639,7 +639,7 @@ class ExactHttpAcceptanceTest extends TestCase
                 foreach ($hashes as $file=>$hash) self::assertSame($hash,hash_file('sha256',dirname(__DIR__,2).'/'.$file),'Cambió una fuente durante la medición.');
                 file_put_contents($output,json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR).PHP_EOL);
                 if ($reference) foreach ($result['cases'] as $case) self::assertTrue($case['passed'],'El p95 excede el presupuesto HTTP.');
-                if (getenv('PRO9_EXACT_HTTP_INITIAL_BASELINE')) foreach ($result['cases'] as $case) self::assertTrue($case['initial_passed'],'El p95 excede la referencia inicial de la continuación.');
+                if (getenv('SAB_EXACT_HTTP_INITIAL_BASELINE')) foreach ($result['cases'] as $case) self::assertTrue($case['initial_passed'],'El p95 excede la referencia inicial de la continuación.');
             }
             // Re-resolve the sources on each request; a stale selection is not authority.
             [$code,$body]=$get('/sale-notes/items',true,['notes_id'=>[$note->id]]);
@@ -930,7 +930,7 @@ class ExactHttpAcceptanceTest extends TestCase
                 [$pdfStatus,$templatePdf]=$get('/downloads/purchaseSettlement/pdf/'.$advanceExternal.'/a4');
                 self::assertSame(200,$pdfStatus,$settlementTemplate.': '.substr($templatePdf,0,1000));
                 self::assertStringStartsWith('%PDF-',$templatePdf);
-                if ($evidenceDir=getenv('PRO9_SETTLEMENT_PDF_EVIDENCE_DIR')) file_put_contents($evidenceDir.'/'.$settlementTemplate.'.pdf',$templatePdf);
+                if ($evidenceDir=getenv('SAB_SETTLEMENT_PDF_EVIDENCE_DIR')) file_put_contents($evidenceDir.'/'.$settlementTemplate.'.pdf',$templatePdf);
                 $templatePdfPath=$temp.'/settlement-'.$settlementTemplate.'.pdf';
                 $templateTextPath=$temp.'/settlement-'.$settlementTemplate.'.txt';
                 file_put_contents($templatePdfPath,$templatePdf);
@@ -2605,7 +2605,7 @@ class ExactHttpAcceptanceTest extends TestCase
 
                 [$status, $body, $headers] = $get($path, true, $payload);
                 self::assertSame(200, $status, $module.' '.substr($body, 0, 2000));
-                self::assertGreaterThan(0, (int) $headers['x-pro9-test-queries'], $module);
+                self::assertGreaterThan(0, (int) $headers['x-sab-test-queries'], $module);
                 if ($module === 'Digemid') {
                     self::assertStringContainsString('<tenant-digemid-index', $body);
                     continue;
@@ -2686,7 +2686,7 @@ class ExactHttpAcceptanceTest extends TestCase
         $request = static function (string $path, bool $authenticated = true, ?array $payload = null) use ($get): array {
             [$status, $body, $headers] = $get($path, $authenticated, $payload);
             self::assertSame(200, $status, $path.' '.substr($body, 0, 1500));
-            self::assertGreaterThan(0, (int) $headers['x-pro9-test-queries'], $path);
+            self::assertGreaterThan(0, (int) $headers['x-sab-test-queries'], $path);
             return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
         };
         try {
@@ -2770,7 +2770,7 @@ class ExactHttpAcceptanceTest extends TestCase
         $request = static function (string $path, ?array $payload = null) use ($get): array {
             [$status, $body, $headers] = $get($path, true, $payload);
             self::assertSame(200, $status, $path.' '.substr($body, 0, 1500));
-            self::assertGreaterThan(0, (int) $headers['x-pro9-test-queries'], $path);
+            self::assertGreaterThan(0, (int) $headers['x-sab-test-queries'], $path);
             return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
         };
 

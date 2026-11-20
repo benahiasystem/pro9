@@ -6,7 +6,7 @@ use App\Models\Tenant\{Document, Purchase};
 use Modules\Expense\Models\Expense;
 use Modules\Order\Models\OrderNote;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Cash/documentary totals are accumulated separately, in the parent's currency. */
 final class DashboardTotals
 {
@@ -59,4 +59,4 @@ final class DashboardTotals
         });
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

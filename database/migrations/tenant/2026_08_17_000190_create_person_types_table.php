@@ -21,12 +21,12 @@ return new class extends Migration
     {
         Schema::create('person_types', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('description')->collation('pro9_ci_ai');
+            $table->text('description')->collation('sab_ci_ai');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->bigInteger('price_label_id')->nullable();
             $table->boolean('enabled_description_person_type')->default(false);
-            $table->text('description_person_type')->collation('pro9_ci_ai')->nullable();
+            $table->text('description_person_type')->collation('sab_ci_ai')->nullable();
             $table->index(['price_label_id'], 'person_types_price_label_id_foreign');
         });
     }

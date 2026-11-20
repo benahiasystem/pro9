@@ -21,7 +21,7 @@ return new class extends Migration
     {
         Schema::create('cash_currency_balances', function (Blueprint $table) {
             $table->bigInteger('cash_id');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('beginning_balance', 30, 12)->default('0');
             $table->decimal('income', 30, 12)->default('0');
             $table->decimal('egress', 30, 12)->default('0');

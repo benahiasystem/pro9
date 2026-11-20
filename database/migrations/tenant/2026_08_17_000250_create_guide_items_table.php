@@ -24,7 +24,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('guide_id');
             $table->bigInteger('item_id');
-            $table->string('item_name', 255)->collation('pro9_ci_ai');
+            $table->string('item_name', 255)->collation('sab_ci_ai');
             $table->decimal('quantity', 30, 12);
             $table->decimal('unit_cost', 30, 12);
             $table->decimal('total', 30, 12);

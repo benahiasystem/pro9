@@ -5,7 +5,7 @@ namespace App\Support\Exact;
 use App\Models\Tenant\Purchase;
 use Carbon\Carbon;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Purchase headers and their own optional perceptions, at each historical rate. */
 final class DashboardPurchases
 {
@@ -79,4 +79,4 @@ final class DashboardPurchases
         });
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -20,8 +20,8 @@ return new class extends Migration
     {
         Schema::create('documentary_documents', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 50)->collation('pro9_ci_ai');
-            $table->string('description', 250)->collation('pro9_ci_ai')->nullable();
+            $table->string('name', 50)->collation('sab_ci_ai');
+            $table->string('description', 250)->collation('sab_ci_ai')->nullable();
             $table->boolean('active')->default(true);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

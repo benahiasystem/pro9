@@ -27,10 +27,10 @@ return new class extends Migration
             $table->bigInteger('sale_notes_id');
             $table->bigInteger('user_id');
             $table->smallInteger('success')->default('0');
-            $table->string('url', 255)->collation('pro9_ci_ai');
+            $table->string('url', 255)->collation('sab_ci_ai');
             $table->bigInteger('remote_id')->default('0');
-            $table->string('number', 255)->collation('pro9_ci_ai')->nullable();
-            $table->text('data')->collation('pro9_ci_ai')->nullable();
+            $table->string('number', 255)->collation('sab_ci_ai')->nullable();
+            $table->text('data')->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

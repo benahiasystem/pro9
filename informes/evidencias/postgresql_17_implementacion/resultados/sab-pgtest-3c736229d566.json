@@ -1,0 +1,21 @@
+{
+    "run_id": "sab-pgtest-3c736229d566",
+    "suite": "accounting",
+    "server_version": "17.11",
+    "platform": "linux\/amd64",
+    "exit_code": 1,
+    "databases": "temporary only",
+    "source_sha256": "2ab5b5a588a7b770f7be2df9802bb899f8ea32604f2d6fd59ae30283590aa791",
+    "source_unchanged": true,
+    "private_scanner": false,
+    "excluded_groups": [
+        "browser-fixture",
+        "accounting-attachments"
+    ],
+    "cleanup_ok": true,
+    "phases": [],
+    "checks": [],
+    "reference_update": null,
+    "error": "PostgreSQL temporal no lleg\u00f3 a estar disponible.",
+    "finished_at": "2026-11-20T02:29:44+00:00"
+}

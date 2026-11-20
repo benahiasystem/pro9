@@ -12,7 +12,7 @@ function browser() {
  vm.runInContext(fs.readFileSync('public/porto-ecommerce/assets/js/cart.js','utf8'),ctx)
  ctx.cartRefreshHeader=()=>{}
  ctx.showCartConfirmModal=()=>{}
- return {ctx,window,stored,nodes,math:window.Pro9StorefrontAmounts}
+ return {ctx,window,stored,nodes,math:window.SabStorefrontAmounts}
 }
 const item=(data={})=>({id:'7',sale_unit_price:'0.333333333333',currency_type_id:'VES',stock:'20',
  campaign_pricing_snapshot:{values:{final_price:{n:'1',d:'3'}}},...data})

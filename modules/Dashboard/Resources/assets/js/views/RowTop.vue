@@ -92,7 +92,7 @@
 import moment from "moment";
 import KpiSparkline from "./KpiSparkline.vue";
 import { readOriginal, rawChange, originalNumber, formatUnitOriginal } from "../../../../../../resources/js/helpers/dashboard-originals";
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 const emptyTrend = () => ({labels: [], monthly_sales: [], average_ticket: [], accounts_receivable: [], net_utility: [], calculation_snapshots: []});
 
 export default {
@@ -191,7 +191,7 @@ export default {
     },
   },
 };
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 <style>
 .card-green {

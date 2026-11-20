@@ -18,8 +18,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payment_conditions', function (Blueprint $table) {
-            $table->string('id', 255)->collation('pro9_ci_ai');
-            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('id', 255)->collation('sab_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
             $table->integer('days')->default('0');
             $table->boolean('is_locked')->default(false);
             $table->boolean('is_active')->default(true);

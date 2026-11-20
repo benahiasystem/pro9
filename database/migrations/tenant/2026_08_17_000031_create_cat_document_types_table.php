@@ -18,10 +18,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('cat_document_types', function (Blueprint $table) {
-            $table->string('id', 255)->collation('pro9_ci_ai');
+            $table->string('id', 255)->collation('sab_ci_ai');
             $table->boolean('active');
-            $table->string('short', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->string('short', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->boolean('is_sunat')->default(true);
             $table->index(['id'], 'cat_document_types_id_index');
             $table->unique(['id'], 'cat_document_types_id_pg_unique');

@@ -27,7 +27,7 @@ return new class extends Migration
             $table->date('date_of_issue');
             $table->bigInteger('item_id');
             $table->bigInteger('inventory_kardexable_id');
-            $table->string('inventory_kardexable_type', 255)->collation('pro9_ci_ai');
+            $table->string('inventory_kardexable_type', 255)->collation('sab_ci_ai');
             $table->bigInteger('warehouse_id');
             $table->decimal('quantity', 30, 12);
             $table->timestamp('created_at')->nullable();

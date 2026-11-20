@@ -339,7 +339,7 @@ test('quotation conversion keeps retention and suggested installments exact for 
     const implementations = names.map(name => generate(methods.properties.find(node => node.key?.name === name)).code)
     const context = vm.runInNewContext('({' + implementations.join(',') + '})', helpers)
 
-    for (const currency of (process.env.PRO9_TEST_INVOICES_VES_ONLY === '1' ? ['VES'] : ['VES', 'USD'])) {
+    for (const currency of (process.env.SAB_TEST_INVOICES_VES_ONLY === '1' ? ['VES'] : ['VES', 'USD'])) {
         const document = {
             currency_type_id: currency,
             payment_condition_id: '02',

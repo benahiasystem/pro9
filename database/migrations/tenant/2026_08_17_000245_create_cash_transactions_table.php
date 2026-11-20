@@ -23,10 +23,10 @@ return new class extends Migration
         Schema::create('cash_transactions', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('cash_id');
-            $table->char('payment_method_type_id', 2)->collation('pro9_ci_ai');
-            $table->char('currency_type_id', 3)->collation('pro9_ci_ai')->nullable();
+            $table->char('payment_method_type_id', 2)->collation('sab_ci_ai');
+            $table->char('currency_type_id', 3)->collation('sab_ci_ai')->nullable();
             $table->date('date');
-            $table->string('description', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('description', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('payment', 30, 12);
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->index(['cash_id'], 'cash_transactions_cash_id_foreign');

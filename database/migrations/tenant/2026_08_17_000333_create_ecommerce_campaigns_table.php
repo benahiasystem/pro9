@@ -36,8 +36,8 @@ return new class extends Migration
     {
         Schema::create('ecommerce_campaigns', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('title', 255)->collation('pro9_ci_ai');
-            $table->string('discount_type', 255)->collation('pro9_ci_ai')->default('percentage');
+            $table->string('title', 255)->collation('sab_ci_ai');
+            $table->string('discount_type', 255)->collation('sab_ci_ai')->default('percentage');
             $table->decimal('discount_value', 30, 12)->default('0.0000');
             $table->timestamp('start_date')->nullable();
             $table->timestamp('end_date')->nullable();

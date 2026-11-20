@@ -32,8 +32,8 @@ return new class extends Migration
     {
         Schema::create('discount_coupons', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('code', 20)->collation('pro9_ci_ai');
-            $table->string('type', 255)->collation('pro9_ci_ai')->default('percentage');
+            $table->string('code', 20)->collation('sab_ci_ai');
+            $table->string('type', 255)->collation('sab_ci_ai')->default('percentage');
             $table->decimal('amount', 30, 12)->default('0.00');
             $table->boolean('has_purchase_limits')->default(false);
             $table->decimal('min_amount', 30, 12)->nullable();

@@ -2,7 +2,7 @@
 /** Read-only verification of synthetic notes already emitted and annulled by an acceptance matrix. */
 require dirname(__DIR__).'/vendor/autoload.php';
 $root=dirname(__DIR__);$host=$argv[1] ?? '';$source=realpath($root.'/'.($argv[2] ?? ''));
-if (getenv('PRO9_POSTGRES_TESTS') !== '1' || !$source || !str_starts_with($source,$root.'/informes/evidencias/')) exit("Specify a synthetic evidence report.\n");
+if (getenv('SAB_POSTGRES_TESTS') !== '1' || !$source || !str_starts_with($source,$root.'/informes/evidencias/')) exit("Specify a synthetic evidence report.\n");
 $matrix=json_decode(file_get_contents($source),true,512,JSON_THROW_ON_ERROR);
 if (empty($matrix['synthetic_commercial_data'])) exit("Only synthetic acceptance evidence may be used.\n");
 $app=require $root.'/bootstrap/app.php';$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();

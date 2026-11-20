@@ -20,13 +20,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('transaction_states', function (Blueprint $table) {
-            $table->string('id', 255)->collation('pro9_ci_ai');
-            $table->string('name', 255)->collation('pro9_ci_ai');
+            $table->string('id', 255)->collation('sab_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
             $table->boolean('success');
-            $table->string('status', 255)->collation('pro9_ci_ai');
-            $table->string('status_detail', 255)->collation('pro9_ci_ai');
-            $table->string('original_message', 255)->collation('pro9_ci_ai');
-            $table->string('user_message', 255)->collation('pro9_ci_ai');
+            $table->string('status', 255)->collation('sab_ci_ai');
+            $table->string('status_detail', 255)->collation('sab_ci_ai');
+            $table->string('original_message', 255)->collation('sab_ci_ai');
+            $table->string('user_message', 255)->collation('sab_ci_ai');
             $table->primary(['id']);
             $table->index(['name'], 'transaction_states_name_index');
             $table->index(['success'], 'transaction_states_success_index');

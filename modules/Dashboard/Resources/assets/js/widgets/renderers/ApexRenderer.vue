@@ -13,7 +13,7 @@
 <script>
 import { formatCompact, formatValue, themeColors, themePalette } from '../registry'
 import { readOriginal, readVector, sumOriginal, ratioOriginal, relativeWidth, chartCoordinate, formatAxisTick } from '../../../../../../../resources/js/helpers/dashboard-originals'
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 
 /**
  * Renderer genérico ApexCharts: line, area, bar, barh, pie, donut, radial.
@@ -231,7 +231,7 @@ export default {
     },
   },
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

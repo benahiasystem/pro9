@@ -2,7 +2,7 @@
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 \Illuminate\Database\Connection::resolverFor('pgsql', static fn ($pdo,$database,$prefix,$config) => new \App\Database\PostgresConnection($pdo,$database,$prefix,$config));
 $input = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
-if (!preg_match('/\Apro9_series_test_[a-f0-9]{12}\z/', $input['connection']['database'] ?? '')) throw new RuntimeException('Temporary series database required.');
+if (!preg_match('/\Asab_series_test_[a-f0-9]{12}\z/', $input['connection']['database'] ?? '')) throw new RuntimeException('Temporary series database required.');
 $app = new Illuminate\Foundation\Application(dirname(__DIR__, 2));
 Illuminate\Container\Container::setInstance($app);
 Illuminate\Support\Facades\Facade::setFacadeApplication($app);

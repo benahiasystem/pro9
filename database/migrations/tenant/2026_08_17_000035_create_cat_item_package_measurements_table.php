@@ -18,7 +18,7 @@ return new class extends Migration
     {
         Schema::create('cat_item_package_measurements', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre de medidas del paquete');
+            $table->text('name')->collation('sab_ci_ai')->comment('Nombre de medidas del paquete');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

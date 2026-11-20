@@ -124,7 +124,7 @@ actualizaciones masivas ni cambios en snapshots de documentos.
 
 ### Instalación PostgreSQL 17.11
 
-Pro9 usa PostgreSQL 17.11 de Supabase (`17.11.0.019`, digest fijado en Compose),
+SAB usa PostgreSQL 17.11 de Supabase (`17.11.0.019`, digest fijado en Compose),
 con una base central y una base por empresa. El despliegue local utiliza
 `linux/amd64`, correspondiente al Intel i7. La cadena ARM64 de Supabase es una
 referencia del servicio remoto; no requiere emulación ARM en este equipo.
@@ -137,10 +137,10 @@ indicada arriba. Preparar una instalación nueva:
 ```bash
 docker compose config --quiet
 docker compose build php
-docker compose up -d --wait postgres
+docker compose up -d --wait postgres redis
 docker compose run --rm --no-deps php composer install --no-interaction
-docker compose run --rm --no-deps php php artisan key:generate
-docker compose run --rm --no-deps php php artisan pro9:install-postgres
+docker compose run --rm --no-deps php php artisan storage:link --relative
+docker compose run --rm --no-deps php php artisan sab:install-postgres
 docker compose up -d php nginx redis api-bcv
 ```
 

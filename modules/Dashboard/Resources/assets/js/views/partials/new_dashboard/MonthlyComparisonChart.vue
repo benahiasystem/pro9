@@ -36,7 +36,7 @@
 
 <script>
 import { readVector, chartCoordinate, compareOriginal, formatUnitOriginal, escapeDashboardText } from "../../../../../../../../resources/js/helpers/dashboard-originals";
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 export default {
     name: "MonthlyComparisonChart",
     props: {
@@ -202,7 +202,7 @@ export default {
         },
     },
 };
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>
 
 <style scoped>

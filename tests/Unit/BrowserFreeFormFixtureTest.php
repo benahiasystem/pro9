@@ -12,7 +12,7 @@ final class BrowserFreeFormFixtureTest extends TestCase
 {
     public function test_serve_temporary_free_form_tenant_until_released(): void
     {
-        if (getenv('PRO9_BROWSER_FIXTURE') !== '1' || getenv('PRO9_POSTGRES_TESTS') !== '1') {
+        if (getenv('SAB_BROWSER_FIXTURE') !== '1' || getenv('SAB_POSTGRES_TESTS') !== '1') {
             self::markTestSkipped('La sesión de navegador temporal se inicia sólo explícitamente.');
         }
         $fixture=new class extends FiscalEmissionSchemaTest {
@@ -34,7 +34,7 @@ final class BrowserFreeFormFixtureTest extends TestCase
             $schema->create('hostnames',function ($t) { $t->bigIncrements('id');$t->string('fqdn');$t->string('redirect_to')->nullable();$t->boolean('force_https')->default(false);$t->timestamp('under_maintenance_since')->nullable();$t->unsignedBigInteger('website_id');$t->timestamps();$t->softDeletes(); });
             $schema->create('plans',function ($t) { $t->increments('id');$t->string('name');$t->integer('limit_documents');$t->boolean('include_sale_notes_limit_documents')->default(false); });
             $schema->create('clients',function ($t) { $t->increments('id');$t->unsignedBigInteger('hostname_id');$t->string('name');$t->unsignedInteger('plan_id');$t->integer('whatsapp_messages_limit_override')->nullable(); });
-            if (getenv('PRO9_BROWSER_STOREFRONT_PRICES') === '1') {
+            if (getenv('SAB_BROWSER_STOREFRONT_PRICES') === '1') {
                 $schema->table('clients',function ($t) { $t->string('number')->nullable(); });
                 $schema->create('column_visibility_configs',function ($t) { $t->bigIncrements('id');$t->string('module')->unique();$t->json('columns');$t->timestamps(); });
             }
@@ -48,14 +48,14 @@ final class BrowserFreeFormFixtureTest extends TestCase
             $db->table('configurations')->update(['auto_send_hka'=>false,
                 'login'=>json_encode(['type'=>'image','image'=>'/images/login-v2.svg','position_form'=>'right','show_logo_in_form'=>false,
                     'position_logo'=>'top-left','show_socials'=>false],JSON_THROW_ON_ERROR)]);
-            if (getenv('PRO9_BROWSER_LIST_TOTALS') === '1') {
+            if (getenv('SAB_BROWSER_LIST_TOTALS') === '1') {
                 $db->table('configurations')->update(['show_totals_on_cpe_list'=>true]);
             }
             $today=(new \DateTimeImmutable('now',new \DateTimeZone('America/Caracas')))->format('Y-m-d');
             $db->table('exchange_rates')->updateOrInsert(['date'=>$today],['date_original'=>$today,
                 'sale_original'=>'40','purchase_original'=>'40','sale'=>'40','purchase'=>'40']);
-            if (getenv('PRO9_BROWSER_LIST_TOTALS') === '1') {
-                $pendingCommissions=getenv('PRO9_BROWSER_PENDING_COMMISSIONS') === '1';
+            if (getenv('SAB_BROWSER_LIST_TOTALS') === '1') {
+                $pendingCommissions=getenv('SAB_BROWSER_PENDING_COMMISSIONS') === '1';
                 $yesterday=(new \DateTimeImmutable($today))->modify('-1 day')->format('Y-m-d');
                 if ($pendingCommissions) {
                     $db->table('configurations')->update(['finances'=>json_encode(['restriction_expired_debt'=>true,'max_expired_days'=>3])]);
@@ -63,7 +63,7 @@ final class BrowserFreeFormFixtureTest extends TestCase
                         'cash_currency_type_id'=>'USD','is_cash'=>1,'is_active'=>1]);
                     \Modules\Sale\Models\PendingAccountCommission::create(['seller_id'=>$input['user_id'],'commission_type'=>'porcentaje','amount'=>'10']);
                 }
-                if (getenv('PRO9_BROWSER_COMMISSIONS') === '1') {
+                if (getenv('SAB_BROWSER_COMMISSIONS') === '1') {
                     $db->table('items')->where('id',$input['items'][0]['item_id'])->update(['commission_type'=>'percentage','commission_amount'=>'10']);
                 }
                 foreach (['VES', 'USD'] as $currency) {
@@ -72,7 +72,7 @@ final class BrowserFreeFormFixtureTest extends TestCase
                         'date_of_issue'=>$today, 'currency_type_id'=>$currency,
                         'exchange_rate_sale'=>'40', 'payments'=>[], 'payment_condition_id'=>'02',
                     ]);
-                    if (getenv('PRO9_BROWSER_COMMISSIONS') === '1' || $pendingCommissions) $case['seller_id']=$input['user_id'];
+                    if (getenv('SAB_BROWSER_COMMISSIONS') === '1' || $pendingCommissions) $case['seller_id']=$input['user_id'];
                     if ($pendingCommissions) {
                         $case['date_of_issue']=$yesterday;
                         $case['invoice']['date_of_due']=$yesterday;
@@ -80,7 +80,7 @@ final class BrowserFreeFormFixtureTest extends TestCase
                     $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($case)->getDocument()->fresh();
                     self::assertSame($currency, $document->currency_type_id);
                     self::assertSame('232', \App\Support\Exact\Decimal::represent($document->exactValue('total')));
-                    if (getenv('PRO9_BROWSER_CASH_REPORT') === '1') {
+                    if (getenv('SAB_BROWSER_CASH_REPORT') === '1') {
                         $cashId=$db->table('cash')->where('user_id',$input['user_id'])->where('state',true)->value('id');
                         self::assertNotNull($cashId);
                         $db->table('cash_documents')->updateOrInsert(['cash_id'=>$cashId,'document_id'=>$document->id]);
@@ -106,7 +106,7 @@ final class BrowserFreeFormFixtureTest extends TestCase
                 $db->table('module_user')->updateOrInsert(['user_id'=>$input['user_id'],'module_id'=>$level->module_id]);
                 $db->table('module_level_user')->updateOrInsert(['user_id'=>$input['user_id'],'module_level_id'=>$level->id]);
             }
-            if (getenv('PRO9_BROWSER_STOREFRONT_PRICES') === '1') {
+            if (getenv('SAB_BROWSER_STOREFRONT_PRICES') === '1') {
                 $quotationId=$db->table('quotations')->insertGetId([
                     'user_id'=>$input['user_id'],'external_id'=>(string)\Illuminate\Support\Str::uuid(),
                     'establishment_id'=>$input['establishment_id'],'establishment'=>json_encode(\App\CoreFacturalo\Requests\Inputs\Common\EstablishmentInput::set($input['establishment_id'])),
@@ -118,19 +118,19 @@ final class BrowserFreeFormFixtureTest extends TestCase
                 \App\Models\Tenant\QuotationItem::create(array_replace($input['items'][0],[
                     'quotation_id'=>$quotationId,'quantity'=>'0.333333333333','unit_price'=>'3','affectation_igv_type_id'=>'20']));
             }
-            if (getenv('PRO9_BROWSER_REPORTS') === '1') {
+            if (getenv('SAB_BROWSER_REPORTS') === '1') {
                 $module=$db->table('modules')->where('value','reports')->first();
                 self::assertNotNull($module);
                 $db->table('module_user')->updateOrInsert(['user_id'=>$input['user_id'],'module_id'=>$module->id]);
             }
-            if (getenv('PRO9_BROWSER_HOTEL') === '1') {
+            if (getenv('SAB_BROWSER_HOTEL') === '1') {
                 $level=$db->table('module_levels')->where('value','hotels_reception')->first();
                 self::assertNotNull($level);
                 $db->table('module_user')->updateOrInsert(['user_id'=>$input['user_id'],'module_id'=>$level->module_id]);
                 $db->table('module_level_user')->updateOrInsert(['user_id'=>$input['user_id'],'module_level_id'=>$level->id]);
                 $category=$db->table('hotel_categories')->insertGetId(['description'=>'Categoría temporal','establishment_id'=>$input['establishment_id']]);
                 $floor=$db->table('hotel_floors')->insertGetId(['description'=>'Piso temporal','establishment_id'=>$input['establishment_id']]);
-                $paidRoom=getenv('PRO9_BROWSER_HOTEL_PAID') === '1';
+                $paidRoom=getenv('SAB_BROWSER_HOTEL_PAID') === '1';
                 $roomProduct=$paidRoom ? \App\Models\Tenant\Item::where('internal_id','MOCK-SERV-VES-001')->firstOrFail() : null;
                 $roomItemId=$paidRoom ? $roomProduct->id : $input['items'][0]['item_id'];
                 $room=$db->table('hotel_rooms')->insertGetId(['name'=>'Prueba 101','hotel_category_id'=>$category,'hotel_floor_id'=>$floor,
@@ -153,7 +153,7 @@ final class BrowserFreeFormFixtureTest extends TestCase
             $socket=stream_socket_server('tcp://127.0.0.1:0',$errno,$error);
             if (!$socket) throw new \RuntimeException($error);
             $address=stream_socket_get_name($socket,false); fclose($socket);
-            $env=getenv(); $env['PRO9_EXACT_HTTP_FIXTURE']=$private; $env['APP_ENV']='testing';
+            $env=getenv(); $env['SAB_EXACT_HTTP_FIXTURE']=$private; $env['APP_ENV']='testing';
             $server=proc_open([PHP_BINARY,'-S',$address,'-t',base_path('public'),dirname(__DIR__).'/Support/exact_http_router.php'],
                 [0=>['pipe','r'],1=>['file',$temp.'/server.log','a'],2=>['file',$temp.'/server.log','a']],$pipes,base_path(),$env);
             if (!is_resource($server)) throw new \RuntimeException('No se pudo iniciar el servidor temporal.');

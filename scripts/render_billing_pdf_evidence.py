@@ -20,7 +20,7 @@ def main():
     parser.add_argument("--run", required=True)
     parser.add_argument("--matrix", type=int, choices=[1, 2], default=2)
     args = parser.parse_args()
-    if not re.fullmatch(r"pro9-pgtest-[a-f0-9]{12}", args.run):
+    if not re.fullmatch(r"sab-pgtest-[a-f0-9]{12}", args.run):
         parser.error("La ejecución no es una instancia privada reconocida.")
     root = Path(__file__).resolve().parents[1]
     evidence = root / "informes/evidencias/postgresql_17_implementacion/resultados"

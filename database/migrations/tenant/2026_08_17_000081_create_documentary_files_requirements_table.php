@@ -19,7 +19,7 @@ return new class extends Migration
     {
         Schema::create('documentary_files_requirements', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('name')->collation('pro9_ci_ai')->nullable()->comment('Nombre a mostrar');
+            $table->text('name')->collation('sab_ci_ai')->nullable()->comment('Nombre a mostrar');
             $table->smallInteger('file')->default('0')->comment('Define si tiene archivo');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

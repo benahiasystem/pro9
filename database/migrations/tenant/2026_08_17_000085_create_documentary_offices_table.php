@@ -23,14 +23,14 @@ return new class extends Migration
     {
         Schema::create('documentary_offices', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 50)->collation('pro9_ci_ai');
-            $table->string('description', 250)->collation('pro9_ci_ai')->nullable();
+            $table->string('name', 50)->collation('sab_ci_ai');
+            $table->string('description', 250)->collation('sab_ci_ai')->nullable();
             $table->boolean('active')->default(true);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->bigInteger('days')->default('0');
             $table->smallInteger('default')->default('0');
-            $table->string('color', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('color', 255)->collation('sab_ci_ai')->nullable();
         });
         DB::statement('ALTER TABLE "documentary_offices" ADD CONSTRAINT "documentary_offices_days_range" CHECK ("days" BETWEEN 0 AND 16777215)');
         DB::statement('ALTER TABLE "documentary_offices" ADD CONSTRAINT "documentary_offices_default_range" CHECK ("default" BETWEEN 0 AND 255)');

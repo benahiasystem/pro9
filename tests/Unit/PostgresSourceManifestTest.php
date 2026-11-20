@@ -9,7 +9,7 @@ class PostgresSourceManifestTest extends TestCase
     public function test_fixed_reference_inputs_are_hashed_without_including_generated_results(): void
     {
         require_once dirname(__DIR__,2).'/scripts/postgresql_source_manifest.php';
-        $root=sys_get_temp_dir().'/pro9-manifest-'.bin2hex(random_bytes(8));
+        $root=sys_get_temp_dir().'/sab-manifest-'.bin2hex(random_bytes(8));
         $directory='informes/evidencias/postgresql_17_implementacion/';
         $inputs=['app/source.php'=>'<?php return true;'];
         foreach (['esquema.json','referencia_mysql_temporal.json','referencia_rendimiento_mysql.json','casts_exactos_efectivos.json'] as $name) $inputs[$directory.$name]='{"fixed":"'.$name.'"}';
@@ -46,7 +46,7 @@ class PostgresSourceManifestTest extends TestCase
     public function test_browser_source_build_configuration_and_actual_assets_are_immutable_test_inputs(): void
     {
         require_once dirname(__DIR__,2).'/scripts/postgresql_source_manifest.php';
-        $root=sys_get_temp_dir().'/pro9-manifest-'.bin2hex(random_bytes(8));
+        $root=sys_get_temp_dir().'/sab-manifest-'.bin2hex(random_bytes(8));
         $paths=['.gitattributes','vite.config.js','scripts/verify_dashboard_bundle.py','public/porto-ecommerce/assets/js/cart.js','public/porto-ecommerce/assets/js/main.js',
             'public/build/manifest.json','public/build/assets/storefront-amounts-example.js'];
         try {
@@ -68,13 +68,13 @@ class PostgresSourceManifestTest extends TestCase
 
     public function test_container_provenance_rejects_empty_missing_tampered_and_escaping_source_manifests(): void
     {
-        $root=sys_get_temp_dir().'/pro9-source-provenance-'.bin2hex(random_bytes(8));
-        $previous=['PRO9_POSTGRES_TESTS'=>getenv('PRO9_POSTGRES_TESTS'),'PRO9_POSTGRES_RUN_ID'=>getenv('PRO9_POSTGRES_RUN_ID')];
-        $runId='pro9-pgtest-1234567890ab';
+        $root=sys_get_temp_dir().'/sab-source-provenance-'.bin2hex(random_bytes(8));
+        $previous=['SAB_POSTGRES_TESTS'=>getenv('SAB_POSTGRES_TESTS'),'SAB_POSTGRES_RUN_ID'=>getenv('SAB_POSTGRES_RUN_ID')];
+        $runId='sab-pgtest-1234567890ab';
         $path=$root.'/informes/evidencias/postgresql_17_implementacion/resultados/'.$runId.'-fuentes.json';
         try {
             mkdir(dirname($path),0700,true);
-            putenv('PRO9_POSTGRES_TESTS=1');putenv('PRO9_POSTGRES_RUN_ID='.$runId);
+            putenv('SAB_POSTGRES_TESTS=1');putenv('SAB_POSTGRES_RUN_ID='.$runId);
             $files=['app/example.php'=>hash('sha256','synthetic source')];
             $valid=['revision'=>str_repeat('a',40),'files'=>$files,'sha256'=>hash('sha256',json_encode($files,JSON_THROW_ON_ERROR))];
             file_put_contents($path,json_encode($valid,JSON_THROW_ON_ERROR));
@@ -99,7 +99,7 @@ class PostgresSourceManifestTest extends TestCase
             try {\Tests\Support\PostgresTestEnvironment::source($root);}
             catch (\RuntimeException $error) {$caught=$error;}
             self::assertNotNull($caught,'missing file');
-            putenv('PRO9_POSTGRES_RUN_ID=../another-run');$caught=null;
+            putenv('SAB_POSTGRES_RUN_ID=../another-run');$caught=null;
             try {\Tests\Support\PostgresTestEnvironment::source($root);}
             catch (\LogicException $error) {$caught=$error;}
             self::assertNotNull($caught,'invalid run identifier');

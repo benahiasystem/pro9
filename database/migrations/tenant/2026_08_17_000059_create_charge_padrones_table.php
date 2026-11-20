@@ -20,8 +20,8 @@ return new class extends Migration
     {
         Schema::create('charge_padrones', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('name', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('reference', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('state')->default(false);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

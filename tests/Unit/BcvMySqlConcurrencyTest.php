@@ -11,12 +11,12 @@ class BcvMySqlConcurrencyTest extends TestCase
 {
     public function test_parallel_queries_keep_the_first_daily_rate(): void
     {
-        if (getenv('PRO9_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
+        if (getenv('SAB_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
         $connection = \Tests\Support\PostgresTestEnvironment::connection();
         config()->set('database.connections.bcv_control', $connection);
         $control = DB::connection('bcv_control');
         \Tests\Support\PostgresTestEnvironment::assertServer($control);
-        $database = 'pro9_bcv_test_'.bin2hex(random_bytes(6));
+        $database = 'sab_bcv_test_'.bin2hex(random_bytes(6));
         $control->statement('CREATE DATABASE "'.$database.'" TEMPLATE template0');
         $connection['database'] = $database;
         config()->set('database.connections.bcv_test', $connection);

@@ -19,7 +19,7 @@ return new class extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('document_id');
-            $table->string('operation_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('operation_type_id', 255)->collation('sab_ci_ai');
             $table->date('date_of_due');
             $table->index(['document_id'], 'invoices_document_id_foreign');
             $table->index(['operation_type_id'], 'invoices_operation_type_id_foreign');

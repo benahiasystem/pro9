@@ -27,16 +27,16 @@ return new class extends Migration
     {
         Schema::create('tag_template_fields', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('type', 100)->collation('pro9_ci_ai');
-            $table->string('column', 255)->collation('pro9_ci_ai');
-            $table->string('x', 255)->collation('pro9_ci_ai');
-            $table->string('y', 255)->collation('pro9_ci_ai');
-            $table->string('width', 255)->collation('pro9_ci_ai');
-            $table->string('height', 255)->collation('pro9_ci_ai');
+            $table->string('type', 100)->collation('sab_ci_ai');
+            $table->string('column', 255)->collation('sab_ci_ai');
+            $table->string('x', 255)->collation('sab_ci_ai');
+            $table->string('y', 255)->collation('sab_ci_ai');
+            $table->string('width', 255)->collation('sab_ci_ai');
+            $table->string('height', 255)->collation('sab_ci_ai');
             $table->json('style')->nullable();
             $table->json('barcode')->nullable();
-            $table->string('image', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('html_id', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('image', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('html_id', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('has_image')->default(false);
             $table->bigInteger('tag_template_id');
             $table->index(['tag_template_id'], 'tag_template_fields_tag_template_id_foreign');

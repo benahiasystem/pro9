@@ -26,7 +26,7 @@ return new class extends Migration
             $table->bigInteger('item_id');
             $table->json('item');
             $table->decimal('quantity', 30, 12);
-            $table->text('name_product_pdf')->collation('pro9_ci_ai')->nullable();
+            $table->text('name_product_pdf')->collation('sab_ci_ai')->nullable();
             $table->json('additional_data')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->index(['dispatch_id'], 'dispatch_items_dispatch_id_foreign');

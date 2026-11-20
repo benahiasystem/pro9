@@ -27,7 +27,7 @@ return new class extends Migration
             $table->bigInteger('supply_id');
             $table->decimal('quantity', 30, 12);
             $table->decimal('cost', 30, 12);
-            $table->char('affectation_igv_type_id', 2)->collation('pro9_ci_ai')->default('10');
+            $table->char('affectation_igv_type_id', 2)->collation('sab_ci_ai')->default('10');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

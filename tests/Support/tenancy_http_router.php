@@ -1,10 +1,10 @@
 <?php
 // ########## INICIO CAMBIO POSTGRESQL 17
 /** Real Hyn hostname resolution against a private central and separate tenant databases. */
-$path=getenv('PRO9_TENANCY_HTTP_FIXTURE');
-if (!$path || !is_file($path) || getenv('PRO9_POSTGRES_TESTS')!=='1') {http_response_code(503);exit;}
+$path=getenv('SAB_TENANCY_HTTP_FIXTURE');
+if (!$path || !is_file($path) || getenv('SAB_POSTGRES_TESTS')!=='1') {http_response_code(503);exit;}
 $fixture=json_decode(file_get_contents($path),true,512,JSON_THROW_ON_ERROR);
-if (!preg_match('/^pro9_native_[a-f0-9]{10}_central$/D',$fixture['central']['database'] ?? '') || ($fixture['central']['host'] ?? '')!=='postgres') {http_response_code(503);exit;}
+if (!preg_match('/^sab_native_[a-f0-9]{10}_central$/D',$fixture['central']['database'] ?? '') || ($fixture['central']['host'] ?? '')!=='postgres') {http_response_code(503);exit;}
 require dirname(__DIR__,2).'/vendor/autoload.php';
 $app=require dirname(__DIR__,2).'/bootstrap/app.php';$app->useStoragePath($fixture['storage']);
 $app->afterBootstrapping(\Illuminate\Foundation\Bootstrap\LoadConfiguration::class,static function ($app) use ($fixture) {

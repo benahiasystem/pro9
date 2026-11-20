@@ -27,14 +27,14 @@ return new class extends Migration
     {
         Schema::create('promotions', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('name', 255)->collation('pro9_ci_ai');
-            $table->string('description', 255)->collation('pro9_ci_ai');
-            $table->string('type', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('image', 255)->collation('pro9_ci_ai');
+            $table->string('name', 255)->collation('sab_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
+            $table->string('type', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('image', 255)->collation('sab_ci_ai');
             $table->bigInteger('item_id')->nullable();
             $table->bigInteger('category_id')->nullable();
-            $table->string('custom_link', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('spot_url', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('custom_link', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('spot_url', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('status')->default(true);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

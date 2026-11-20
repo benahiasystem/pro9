@@ -26,7 +26,7 @@ return new class extends Migration
             $table->bigInteger('cash_id_processed')->nullable();
             $table->bigInteger('document_id')->nullable();
             $table->bigInteger('sale_note_id')->nullable();
-            $table->string('status', 15)->collation('pro9_ci_ai')->default('PENDING');
+            $table->string('status', 15)->collation('sab_ci_ai')->default('PENDING');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['document_id'], 'cash_document_credits_document_id_foreign');

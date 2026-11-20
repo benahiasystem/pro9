@@ -23,8 +23,8 @@ return new class extends Migration
         Schema::create('product_variable_values', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('product_variable_id');
-            $table->string('value', 100)->collation('pro9_ci_ai');
-            $table->string('color', 7)->collation('pro9_ci_ai')->nullable();
+            $table->string('value', 100)->collation('sab_ci_ai');
+            $table->string('color', 7)->collation('sab_ci_ai')->nullable();
             $table->integer('position')->default('0');
             $table->boolean('active')->default(true);
             $table->timestamp('created_at')->nullable();

@@ -15,8 +15,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('contract_state_types', function (Blueprint $table) {
-            $table->char('id', 2)->collation('pro9_ci_ai');
-            $table->string('description', 255)->collation('pro9_ci_ai');
+            $table->char('id', 2)->collation('sab_ci_ai');
+            $table->string('description', 255)->collation('sab_ci_ai');
             $table->index(['id'], 'contract_state_types_id_index');
             $table->unique(['id'], 'contract_state_types_id_pg_unique');
         });

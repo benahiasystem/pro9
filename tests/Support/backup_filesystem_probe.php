@@ -8,12 +8,12 @@ use App\Database\PostgresBackup;
 use App\Database\PostgresBootstrap;
 
 try {
-    if (getenv('PRO9_POSTGRES_TESTS') !== '1' || count($argv) !== 3) {
+    if (getenv('SAB_POSTGRES_TESTS') !== '1' || count($argv) !== 3) {
         throw new RuntimeException('This probe requires the isolated PostgreSQL test runner.');
     }
     [$script, $source, $destination] = $argv;
     $root = realpath(dirname($source));
-    if (!$root || !str_starts_with($root, sys_get_temp_dir().'/pro9-backup-failure-')
+    if (!$root || !str_starts_with($root, sys_get_temp_dir().'/sab-backup-failure-')
         || dirname(dirname($destination)) !== $root) {
         throw new RuntimeException('Only this probe\'s temporary files are allowed.');
     }
@@ -44,7 +44,7 @@ try {
         }
         $permissionDenied = str_contains(implode("\n", $warnings), 'Permission denied');
         if (!$permissionDenied) throw new RuntimeException('The operating system did not report EACCES.');
-        (new PostgresBackup())->pack(['pro9_temporary_backup_probe' => $source], [], $destination);
+        (new PostgresBackup())->pack(['sab_temporary_backup_probe' => $source], [], $destination);
         throw new RuntimeException('The unprivileged child unexpectedly published a package.');
     } catch (RuntimeException $error) {
         $stage = match ($error->getMessage()) {

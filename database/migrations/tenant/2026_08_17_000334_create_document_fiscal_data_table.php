@@ -29,7 +29,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('document_id');
             $table->smallInteger('provider_type_id')->nullable();
-            $table->string('transaction_type_id', 2)->collation('pro9_ci_ai')->default('01');
+            $table->string('transaction_type_id', 2)->collation('sab_ci_ai')->default('01');
             $table->smallInteger('special_tax_regime_id')->nullable();
             $table->json('catalog_snapshot');
             $table->json('third_party')->nullable();

@@ -90,7 +90,7 @@ final class PdfGeneratorControllersPostgresTest extends \PHPUnit\Framework\TestC
         try {$controller->createPdf($document,$format,'TEMP-CONTROLLER-PDF');$bytes=$controller->captured;}
         finally {restore_error_handler();}
         self::assertStringStartsWith('%PDF',$bytes);
-        $path=tempnam(sys_get_temp_dir(),'pro9-controller-pdf-');
+        $path=tempnam(sys_get_temp_dir(),'sab-controller-pdf-');
         try {
             file_put_contents($path,$bytes);
             $process=new \Symfony\Component\Process\Process(['pdftotext','-raw',$path,'-']);$process->mustRun();$text=$process->getOutput();

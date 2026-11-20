@@ -20,9 +20,9 @@ return new class extends Migration
     {
         Schema::create('whatsapp_message_logs', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('phone', 30)->collation('pro9_ci_ai');
-            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('status', 255)->collation('pro9_ci_ai')->default('sent');
+            $table->string('phone', 30)->collation('sab_ci_ai');
+            $table->string('filename', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('status', 255)->collation('sab_ci_ai')->default('sent');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

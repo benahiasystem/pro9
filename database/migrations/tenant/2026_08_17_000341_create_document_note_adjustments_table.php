@@ -33,20 +33,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('document_note_adjustments', function (Blueprint $table) {
-            $table->string('kind', 255)->collation('pro9_ci_ai');
+            $table->string('kind', 255)->collation('sab_ci_ai');
             $table->bigInteger('retention_id')->nullable();
             $table->bigInteger('tax_id')->nullable();
             $table->bigInteger('guarantee_fund_id')->nullable();
             $table->decimal('amount', 30, 12);
-            $table->string('status', 32)->collation('pro9_ci_ai');
-            $table->string('diagnostic', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('reason', 255)->collation('pro9_ci_ai');
+            $table->string('status', 32)->collation('sab_ci_ai');
+            $table->string('diagnostic', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('reason', 255)->collation('sab_ci_ai');
             $table->json('request');
             $table->timestamp('reversed_at')->nullable();
             $table->bigIncrements('id');
             $table->bigInteger('document_id');
             $table->bigInteger('affected_document_id');
-            $table->char('operation_key', 36)->collation('pro9_ci_ai');
+            $table->char('operation_key', 36)->collation('sab_ci_ai');
             $table->char('request_hash', 64)->collation('C');
             $table->bigInteger('actor_id');
             $table->json('context');

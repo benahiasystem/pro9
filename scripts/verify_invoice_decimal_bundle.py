@@ -88,7 +88,7 @@ def main():
     css = ''.join('<link rel="stylesheet" href="/build/' + name + '">' for name in stylesheets)
     page = r'''<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="csrf-token" content="temporary-billing-control-fixture">
-CSS<style>body{padding:24px;background:#f4f6fa}section{max-width:720px;margin:16px 0}#pro9-invoice-result{white-space:pre-wrap;font-size:11px}</style>
+CSS<style>body{padding:24px;background:#f4f6fa}section{max-width:720px;margin:16px 0}#sab-invoice-result{white-space:pre-wrap;font-size:11px}</style>
 <script>
 window.invoiceErrors=[];
 window.addEventListener('error',e=>{if(e.message)window.invoiceErrors.push(e.message)});
@@ -97,7 +97,7 @@ const originalError=console.error;console.error=function(...args){window.invoice
 localStorage.clear();localStorage.setItem('config',JSON.stringify({user:{type:'admin'},company:{name:'Prueba temporal'},establishment:{id:1}}));
 localStorage.setItem('userType','admin');localStorage.setItem('customers','[]');
 </script></head><body><div id="main-wrapper"></div><h2>Comprobación temporal de entradas decimales</h2>
-<div id="invoice-control-root"></div><div id="invoice-rows-root"></div><pre id="pro9-invoice-result">pending</pre>
+<div id="invoice-control-root"></div><div id="invoice-rows-root"></div><pre id="sab-invoice-result">pending</pre>
 <script src="/porto-light/vendor/jquery/jquery.js"></script><script type="module" src="/build/ENTRY"></script>
 <script>
 document.addEventListener('DOMContentLoaded',async()=>{
@@ -1013,8 +1013,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
    'the native debit form submits the positive service fraction despite its zero projection');
   tinyService.vm.$destroy();
   assert(!window.invoiceErrors.length,'no browser or Vue rendering errors');
-  document.getElementById('pro9-invoice-result').textContent=JSON.stringify({ok:true,checks,errors:window.invoiceErrors});
- }catch(error){document.getElementById('pro9-invoice-result').textContent=JSON.stringify({ok:false,checks,error:String(error),errors:window.invoiceErrors});}
+  document.getElementById('sab-invoice-result').textContent=JSON.stringify({ok:true,checks,errors:window.invoiceErrors});
+ }catch(error){document.getElementById('sab-invoice-result').textContent=JSON.stringify({ok:false,checks,error:String(error),errors:window.invoiceErrors});}
 });
 </script></body></html>'''.replace('CSS', css).replace('ENTRY', entry['file']).replace('__VES_INVOICES_ONLY__', json.dumps(args.ves_invoices_only))
     unexpected = []
@@ -1063,13 +1063,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        with tempfile.TemporaryDirectory(prefix='pro9-invoice-browser-') as profile:
+        with tempfile.TemporaryDirectory(prefix='sab-invoice-browser-') as profile:
             process = subprocess.run([browser, '--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
                 '--no-first-run', '--no-default-browser-check', '--disable-background-networking',
                 '--user-data-dir=' + profile, '--virtual-time-budget=24000', '--window-size=1200,1600',
                 '--screenshot=' + str(screenshot), '--dump-dom', 'http://127.0.0.1:' + str(server.server_port) + '/'],
                 capture_output=True, text=True, timeout=55)
-        match = re.search(r'<pre id="pro9-invoice-result">(.*?)</pre>', process.stdout, re.S)
+        match = re.search(r'<pre id="sab-invoice-result">(.*?)</pre>', process.stdout, re.S)
         result = json.loads(html.unescape(match[1])) if match and match[1] != 'pending' else {
             'ok': False, 'error': 'El navegador no terminó las comprobaciones.'}
         result.update(exit_code=process.returncode, unexpected_requests=unexpected, source_sha256=before['sha256'],

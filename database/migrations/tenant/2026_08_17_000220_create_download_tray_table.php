@@ -28,15 +28,15 @@ return new class extends Migration
         Schema::create('download_tray', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('user_id')->nullable();
-            $table->string('module', 255)->collation('pro9_ci_ai');
-            $table->string('format', 255)->collation('pro9_ci_ai');
-            $table->string('path', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('file_name', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('type', 255)->collation('pro9_ci_ai')->nullable();
-            $table->string('status', 255)->collation('pro9_ci_ai')->default('IN_PROCESS');
+            $table->string('module', 255)->collation('sab_ci_ai');
+            $table->string('format', 255)->collation('sab_ci_ai');
+            $table->string('path', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('file_name', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('type', 255)->collation('sab_ci_ai')->nullable();
+            $table->string('status', 255)->collation('sab_ci_ai')->default('IN_PROCESS');
             $table->timestamp('date_init')->nullable();
             $table->timestamp('date_end')->nullable();
-            $table->text('payload_request')->collation('pro9_ci_ai')->nullable();
+            $table->text('payload_request')->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->index(['user_id'], 'download_tray_user_id_foreign');

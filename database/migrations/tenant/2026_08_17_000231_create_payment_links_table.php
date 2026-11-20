@@ -29,17 +29,17 @@ return new class extends Migration
     {
         Schema::create('payment_links', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
-            $table->char('uuid', 36)->collation('pro9_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai');
+            $table->char('uuid', 36)->collation('sab_ci_ai');
             $table->bigInteger('user_id');
             $table->bigInteger('person_id')->nullable();
-            $table->char('payment_link_type_id', 2)->collation('pro9_ci_ai');
+            $table->char('payment_link_type_id', 2)->collation('sab_ci_ai');
             $table->bigInteger('payment_id')->nullable();
-            $table->string('payment_type', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('payment_type', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('total', 30, 12);
-            $table->string('status', 20)->collation('pro9_ci_ai')->default('pending');
+            $table->string('status', 20)->collation('sab_ci_ai')->default('pending');
             $table->timestamp('paid_at')->nullable();
-            $table->string('uploaded_filename', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('uploaded_filename', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('query_transaction')->default(false);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

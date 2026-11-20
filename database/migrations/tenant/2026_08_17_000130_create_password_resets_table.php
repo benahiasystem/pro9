@@ -16,7 +16,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('password_resets', function (Blueprint $table) {
-            $table->string('email', 255)->collation('pro9_ci_ai');
+            $table->string('email', 255)->collation('sab_ci_ai');
             $table->string('token', 255)->collation('C');
             $table->timestamp('created_at')->nullable();
             $table->index(['email'], 'password_resets_email_index');

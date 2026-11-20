@@ -20,7 +20,7 @@ return new class extends Migration
         Schema::create('documentary_observation', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('doc_file_id')->nullable()->default('0')->comment('Expediente relacionado');
-            $table->text('observation')->collation('pro9_ci_ai')->nullable()->comment('Conjunto de etapas.');
+            $table->text('observation')->collation('sab_ci_ai')->nullable()->comment('Conjunto de etapas.');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });

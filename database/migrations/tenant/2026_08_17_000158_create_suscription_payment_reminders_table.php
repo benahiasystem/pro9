@@ -20,9 +20,9 @@ return new class extends Migration
         Schema::create('suscription_payment_reminders', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->integer('reminder_days')->default('0');
-            $table->string('reminder_type', 255)->collation('pro9_ci_ai')->default('before');
+            $table->string('reminder_type', 255)->collation('sab_ci_ai')->default('before');
             $table->time('reminder_time');
-            $table->string('shipping_medium', 255)->collation('pro9_ci_ai')->default('email');
+            $table->string('shipping_medium', 255)->collation('sab_ci_ai')->default('email');
         });
         DB::statement('ALTER TABLE "suscription_payment_reminders" ADD CONSTRAINT "suscription_payment_reminders_reminder_days_range" CHECK ("reminder_days" BETWEEN -2147483648 AND 2147483647)');
         DB::statement('ALTER TABLE "suscription_payment_reminders" ADD CONSTRAINT "suscription_payment_reminders_reminder_type_check" CHECK ("reminder_type" IN (\'before\',\'same_day\',\'after\'))');

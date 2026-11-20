@@ -19,7 +19,7 @@ return new class extends Migration
     {
         Schema::create('migration_configuration', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('url', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('url', 255)->collation('sab_ci_ai')->nullable();
             $table->string('api_key', 255)->collation('C')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

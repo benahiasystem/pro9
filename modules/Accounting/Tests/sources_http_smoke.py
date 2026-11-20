@@ -27,31 +27,31 @@ assert original['posted_entries'][0]['id'] == case['entry_id'] and not observed[
 assert request('/documents/' + case['document_id'] + '/versions')['meta']['total'] == 2
 checks.append('Versiones originales y observadas íntegras, importes exactos y vínculo al asiento de su revisión')
 
-review = request('/pro9/incidents/' + case['incident_id'])['data']
+review = request('/sab/incidents/' + case['incident_id'])['data']
 assert review['document']['source_revision'] == 1 and review['observed']['revision'] == 2
 assert json.loads(review['registered_snapshot_json'])['amounts']['total'] == '1160.000000000000'
 assert not review['actions']['apply_after_reversal'] and review['ledger'][0]['active_effect']
 payload = {'source_version_id': review['observed']['id'], 'document_version': review['document']['version'], 'reason': 'Revisión ficticia del cambio con sus antecedentes conservados.', 'action': 'apply_after_reversal'}
 headers = {'If-Match': str(review['incident']['version']), 'Idempotency-Key': str(uuid.uuid4())}
-assert request('/pro9/incidents/' + case['incident_id'] + '/resolve', payload, headers=headers, expected=409)['code'] == 'SOURCE_EFFECTS_ACTIVE'
+assert request('/sab/incidents/' + case['incident_id'] + '/resolve', payload, headers=headers, expected=409)['code'] == 'SOURCE_EFFECTS_ACTIVE'
 checks.append('Una corrección monetaria conserva los valores anteriores y exige reversos contabilizados')
 
 request('/documents/' + case['document_id'] + '/revisions/1', actor=author, expected=403)
-request('/pro9/incidents/' + case['incident_id'], actor=author, expected=403)
-client.request(foreign + '/pro9/incidents/' + case['incident_id'], actor=reviewer, expected=404)
+request('/sab/incidents/' + case['incident_id'], actor=author, expected=403)
+client.request(foreign + '/sab/incidents/' + case['incident_id'], actor=reviewer, expected=404)
 client.request(foreign + '/documents/' + case['document_id'] + '/revisions/1', actor=reviewer, expected=404)
 checks.append('Permiso de auditoría y propiedad de empresa comprobados en el servidor')
 
-case = fixture['cases']['metadata']; review = request('/pro9/incidents/' + case['incident_id'])['data']
+case = fixture['cases']['metadata']; review = request('/sab/incidents/' + case['incident_id'])['data']
 before = request('/documents/' + case['document_id'])['data']; before_entry = request('/entries/' + case['entry_id'])['data']
 payload = {'source_version_id': review['observed']['id'], 'document_version': review['document']['version'], 'reason': 'Reconocer una actualización ficticia sin cambiar el documento registrado.', 'action': 'acknowledge_metadata'}
 key = str(uuid.uuid4()); headers = {'If-Match': str(review['incident']['version']), 'Idempotency-Key': key}
 unverified = {k: v for k, v in reviewer.items() if k != 'verification'}
-assert request('/pro9/incidents/' + case['incident_id'] + '/resolve', payload, actor=unverified, headers=headers, expected=403)['code'] == 'MFA_REQUIRED'
+assert request('/sab/incidents/' + case['incident_id'] + '/resolve', payload, actor=unverified, headers=headers, expected=403)['code'] == 'MFA_REQUIRED'
 checks.append('Confirmación crítica exige MFA vigente además del login de SAB')
 
-first = request('/pro9/incidents/' + case['incident_id'] + '/resolve', payload, headers=headers)['data']
-again = request('/pro9/incidents/' + case['incident_id'] + '/resolve', payload, headers=headers)['data']
+first = request('/sab/incidents/' + case['incident_id'] + '/resolve', payload, headers=headers)['data']
+again = request('/sab/incidents/' + case['incident_id'] + '/resolve', payload, headers=headers)['data']
 assert first['resolution']['id'] == again['resolution']['id']
 assert first['resolution']['integrity'] == 'verified' and first['resolution']['company_id'] == fixture['company_id']
 receipt = request('/operations/source.resolve/' + key)['data']
@@ -67,16 +67,16 @@ assert client.request(foreign + '/operations/source.resolve/' + key, actor=revie
 checks.append('Recibos históricos protegidos por cuenta y empresa actuales')
 
 case = fixture['cases']['missing']; before = request('/documents/' + case['document_id'])['data']
-missing = request('/pro9/sources/sales/' + str(case['native_id']) + '/receive', {})
-again = request('/pro9/sources/sales/' + str(case['native_id']) + '/receive', {})
+missing = request('/sab/sources/sales/' + str(case['native_id']) + '/receive', {})
+again = request('/sab/sources/sales/' + str(case['native_id']) + '/receive', {})
 assert missing['requires_reconciliation'] and again['unchanged'] and missing['incident_id'] == again['incident_id']
-review = request('/pro9/incidents/' + missing['incident_id'])['data']
+review = request('/sab/incidents/' + missing['incident_id'])['data']
 assert json.loads(review['observed_snapshot_json'])['availability'] == 'missing'
 assert not any(review['actions'].values()) and review['projection_issues']
 after = request('/documents/' + case['document_id'])['data']
 assert all(before[field] == after[field] for field in ['version', 'source_revision', 'amounts', 'status'])
 checks.append('Origen ausente observado una sola vez sin inferir anulación ni cambiar el asiento')
-assert request('/pro9/status')['data']['pending'] == 2
+assert request('/sab/status')['data']['pending'] == 2
 checks.append('Pendientes incluyen documentos contabilizados con incidencias sin duplicar el conteo')
 
 result = {'checks': len(checks), 'passed': checks, 'isolated': True, 'privatePro9Clone': True}

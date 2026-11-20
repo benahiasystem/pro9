@@ -20,8 +20,8 @@ return new class extends Migration
     {
         Schema::create('machine_types', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->text('name')->collation('pro9_ci_ai');
-            $table->text('description')->collation('pro9_ci_ai')->nullable();
+            $table->text('name')->collation('sab_ci_ai');
+            $table->text('description')->collation('sab_ci_ai')->nullable();
             $table->boolean('active')->default(false);
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

@@ -14,7 +14,7 @@
 
 <script>
 import Chart from 'chart.js';
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 import { graphOriginals, chartCoordinate, formatUnitOriginal } from '../../../helpers/dashboard-originals';
 
 export default {
@@ -226,5 +226,5 @@ export default {
         }
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########
 </script>

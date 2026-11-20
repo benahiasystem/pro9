@@ -8,7 +8,7 @@ final class TextSearch
     /** SQL expressions must be produced by a grammar, never supplied by a request. */
     public static function expression(string $wrappedExpression): string
     {
-        return 'public.unaccent(normalize(('.$wrappedExpression.')::text, NFC)) COLLATE "pro9_search"';
+        return 'public.unaccent(normalize(('.$wrappedExpression.')::text, NFC)) COLLATE "sab_search"';
     }
 
     public static function predicate(string $column, string $parameter, bool $negated = false): string
@@ -23,7 +23,7 @@ final class TextSearch
         $builder = $query instanceof \Illuminate\Database\Eloquent\Builder ? $query->getQuery() : $query;
         $field = $builder->getGrammar()->wrap($column);
         $array = "CASE json_typeof($field) WHEN 'array' THEN $field WHEN 'object' THEN json_build_array($field) ELSE '[]'::json END";
-        return $query->whereRaw('EXISTS (SELECT 1 FROM json_array_elements('.$array.') AS pro9_guide(value) WHERE '.self::predicate("pro9_guide.value->>'number'", '?').')', [$pattern]);
+        return $query->whereRaw('EXISTS (SELECT 1 FROM json_array_elements('.$array.') AS sab_guide(value) WHERE '.self::predicate("sab_guide.value->>'number'", '?').')', [$pattern]);
     }
 }
 // ######### FIN CAMBIO POSTGRESQL 17

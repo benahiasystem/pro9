@@ -3,11 +3,11 @@
 namespace Modules\Accounting\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Modules\Accounting\Services\Pro9SourceReader;
+use Modules\Accounting\Services\SabSourceReader;
 use Modules\Accounting\Models\SourceDocument;
-final class Pro9Controller extends \App\Http\Controllers\Controller
+final class SabController extends \App\Http\Controllers\Controller
 {
-    public function __construct(private Pro9SourceReader $reader)
+    public function __construct(private SabSourceReader $reader)
     {
     }
     public function status(): array

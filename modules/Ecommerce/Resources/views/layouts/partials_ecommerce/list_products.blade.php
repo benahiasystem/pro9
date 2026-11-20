@@ -448,11 +448,11 @@
     var lastFocused = null;
 
     function money(symbol, value) {
-        return (symbol || 'Bs.') + ' ' + window.Pro9StorefrontAmounts.money(value);
+        return (symbol || 'Bs.') + ' ' + window.SabStorefrontAmounts.money(value);
     }
 
     function inStock(combination) {
-        return window.Pro9StorefrontAmounts.amount(combination.stock).compare('0') > 0;
+        return window.SabStorefrontAmounts.amount(combination.stock).compare('0') > 0;
     }
 
     // No todas las variantes usan todas las variables: puede existir una "Talla L"
@@ -558,8 +558,8 @@
     }
 
     function stockBadge(stock) {
-        if (window.Pro9StorefrontAmounts.amount(stock).compare('0') <= 0) return '<span class="vmodal__badge vmodal__badge--out">Sin stock</span>';
-        if (window.Pro9StorefrontAmounts.amount(stock).compare('5') <= 0) return '<span class="vmodal__badge vmodal__badge--low">Últimas unidades</span>';
+        if (window.SabStorefrontAmounts.amount(stock).compare('0') <= 0) return '<span class="vmodal__badge vmodal__badge--out">Sin stock</span>';
+        if (window.SabStorefrontAmounts.amount(stock).compare('5') <= 0) return '<span class="vmodal__badge vmodal__badge--low">Últimas unidades</span>';
         return '<span class="vmodal__badge vmodal__badge--ok">En stock</span>';
     }
 
@@ -634,8 +634,8 @@
 
         var symbol = combination.currency_type_symbol;
         var html = '<span class="now">' + money(symbol, combination.price) + '</span>';
-        if (combination.compare_at_price && window.Pro9StorefrontAmounts.amount(combination.compare_at_price).compare(combination.price) > 0) {
-            var off = window.Pro9StorefrontAmounts.amount(combination.compare_at_price).minus(combination.price).dividedBy(combination.compare_at_price).times('100').final(0);
+        if (combination.compare_at_price && window.SabStorefrontAmounts.amount(combination.compare_at_price).compare(combination.price) > 0) {
+            var off = window.SabStorefrontAmounts.amount(combination.compare_at_price).minus(combination.price).dividedBy(combination.compare_at_price).times('100').final(0);
             html += '<span class="was">' + money(symbol, combination.compare_at_price) + '</span>';
             if (off > 0) html += '<span class="off">-' + off + '%</span>';
         }
@@ -643,13 +643,13 @@
 
         if (combination.image_url) imageEl.src = combination.image_url;
 
-        var stock = window.Pro9StorefrontAmounts.input(String(combination.stock));
+        var stock = window.SabStorefrontAmounts.input(String(combination.stock));
         stockEl.innerHTML = '<span>Disponible: ' + stock + '</span>' + stockBadge(stock);
 
         var codes = [combination.internal_id, combination.barcode].filter(function (code) { return !!code; });
         codesEl.textContent = codes.join(' · ');
 
-        submitEl.disabled = window.Pro9StorefrontAmounts.amount(stock).compare('0') <= 0;
+        submitEl.disabled = window.SabStorefrontAmounts.amount(stock).compare('0') <= 0;
     }
 
     function renderList() {
@@ -657,8 +657,8 @@
         var current = matchedCombination();
 
         selector.combinations.forEach(function (combination) {
-            var stock = window.Pro9StorefrontAmounts.input(String(combination.stock));
-            var available = window.Pro9StorefrontAmounts.amount(stock).compare('0') > 0;
+            var stock = window.SabStorefrontAmounts.input(String(combination.stock));
+            var available = window.SabStorefrontAmounts.amount(stock).compare('0') > 0;
             var codes = [combination.internal_id, combination.barcode].filter(function (code) { return !!code; });
 
             var row = document.createElement('div');

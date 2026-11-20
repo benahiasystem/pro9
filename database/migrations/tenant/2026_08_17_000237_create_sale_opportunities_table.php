@@ -44,17 +44,17 @@ return new class extends Migration
         Schema::create('sale_opportunities', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->bigInteger('user_id');
-            $table->char('external_id', 36)->collation('pro9_ci_ai');
+            $table->char('external_id', 36)->collation('sab_ci_ai');
             $table->bigInteger('establishment_id');
             $table->json('establishment');
-            $table->string('fiscal_environment', 16)->collation('pro9_ci_ai');
-            $table->char('state_type_id', 2)->collation('pro9_ci_ai');
-            $table->string('prefix', 255)->collation('pro9_ci_ai');
+            $table->string('fiscal_environment', 16)->collation('sab_ci_ai');
+            $table->char('state_type_id', 2)->collation('sab_ci_ai');
+            $table->string('prefix', 255)->collation('sab_ci_ai');
             $table->date('date_of_issue');
             $table->time('time_of_issue');
             $table->bigInteger('customer_id');
             $table->json('customer');
-            $table->string('currency_type_id', 255)->collation('pro9_ci_ai');
+            $table->string('currency_type_id', 255)->collation('sab_ci_ai');
             $table->decimal('exchange_rate_sale', 18, 8);
             $table->decimal('total_exportation', 30, 12)->default('0.00');
             $table->decimal('total_free', 30, 12)->default('0.00');
@@ -65,9 +65,9 @@ return new class extends Migration
             $table->decimal('total_taxes', 30, 12)->default('0.00');
             $table->decimal('total_value', 30, 12)->default('0.00');
             $table->decimal('total', 30, 12);
-            $table->string('filename', 255)->collation('pro9_ci_ai')->nullable();
-            $table->text('detail')->collation('pro9_ci_ai')->nullable();
-            $table->text('observation')->collation('pro9_ci_ai')->nullable();
+            $table->string('filename', 255)->collation('sab_ci_ai')->nullable();
+            $table->text('detail')->collation('sab_ci_ai')->nullable();
+            $table->text('observation')->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');

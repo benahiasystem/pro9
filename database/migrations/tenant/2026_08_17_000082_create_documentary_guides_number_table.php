@@ -31,13 +31,13 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->bigInteger('doc_file_id')->nullable()->default('0')->comment('Expediente relacionado');
             $table->bigInteger('doc_office_id')->nullable()->default('0')->comment('Etapa observada');
-            $table->text('guide')->collation('pro9_ci_ai')->nullable()->comment('Especifica la guia');
-            $table->text('origin')->collation('pro9_ci_ai')->nullable()->comment('Especifica la instucion');
+            $table->text('guide')->collation('sab_ci_ai')->nullable()->comment('Especifica la guia');
+            $table->text('origin')->collation('sab_ci_ai')->nullable()->comment('Especifica la instucion');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
             $table->timestamp('date_of_due')->nullable();
-            $table->text('observation')->collation('pro9_ci_ai')->nullable();
-            $table->text('description')->collation('pro9_ci_ai')->nullable();
+            $table->text('observation')->collation('sab_ci_ai')->nullable();
+            $table->text('description')->collation('sab_ci_ai')->nullable();
             $table->timestamp('date_take')->nullable()->comment('Fecha estimada de finalización');
             $table->timestamp('date_end')->nullable()->comment('Fecha de finalización');
             $table->bigInteger('documentary_guides_number_status_id')->nullable()->default('0')->comment('relacionado con documentary_guides_number_status');

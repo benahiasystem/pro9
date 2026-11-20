@@ -24,7 +24,7 @@ return new class extends Migration
             $table->bigInteger('expense_id');
             $table->date('date_of_payment');
             $table->bigInteger('expense_method_type_id');
-            $table->string('reference', 255)->collation('pro9_ci_ai')->nullable();
+            $table->string('reference', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('payment', 30, 12);
             $table->json('calculation_snapshot')->nullable()->comment('Exact decimal fractions v1');
             $table->index(['expense_id'], 'expense_payments_expense_id_foreign');

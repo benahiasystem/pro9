@@ -20,8 +20,8 @@ return new class extends Migration
     {
         Schema::create('cat_accounting_ledger_code_account', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('code_account', 255)->collation('pro9_ci_ai')->comment('Codigo de plan de cuenta');
-            $table->text('name')->collation('pro9_ci_ai')->comment('Nombre de cuenta');
+            $table->string('code_account', 255)->collation('sab_ci_ai')->comment('Codigo de plan de cuenta');
+            $table->text('name')->collation('sab_ci_ai')->comment('Nombre de cuenta');
             $table->smallInteger('disabled')->nullable()->default('0')->comment('Permite realizar modificaciones');
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

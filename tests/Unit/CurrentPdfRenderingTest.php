@@ -118,7 +118,7 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertStringStartsWith('%PDF-', $pdf);
         self::assertGreaterThan(10000, strlen($pdf));
 
-        $path = getenv('PRO9_PDF_FIXTURE_PATH') ?: sys_get_temp_dir().'/sab-current-invoice.pdf';
+        $path = getenv('SAB_PDF_FIXTURE_PATH') ?: sys_get_temp_dir().'/sab-current-invoice.pdf';
         $directory = dirname($path);
         if (!is_dir($directory)) {
             mkdir($directory, 0775, true);
@@ -627,7 +627,7 @@ class CurrentPdfRenderingTest extends TestCase
         $pdf=new Mpdf(['tempDir'=>sys_get_temp_dir(),'default_font'=>'arial']);
         $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')),HTMLParserMode::HEADER_CSS);
         $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);
-        $path=getenv('PRO9_FISCAL_PDF_FIXTURE_PATH') ?: sys_get_temp_dir().'/sab-fiscal-snapshot.pdf';
+        $path=getenv('SAB_FISCAL_PDF_FIXTURE_PATH') ?: sys_get_temp_dir().'/sab-fiscal-snapshot.pdf';
         file_put_contents($path,$pdf->Output('','S'));self::assertFileExists($path);
     }
 
@@ -698,8 +698,8 @@ class CurrentPdfRenderingTest extends TestCase
         $row->quantity='0';$row->calculation_snapshot=\App\Support\Exact\Decimal::snapshot([
             'quantity'=>\App\Support\Exact\Decimal::of(1)->dividedBy('3000000000000')]);
         $company=new Fluent(['name'=>'Empresa de prueba','number'=>'J-12345678-9','trade_name'=>'Prueba','logo'=>null]);
-        $manifest=[];$run=getenv('PRO9_POSTGRES_RUN_ID');
-        $directory=preg_match('/\Apro9-pgtest-[a-f0-9]{12}\z/',(string)$run)
+        $manifest=[];$run=getenv('SAB_POSTGRES_RUN_ID');
+        $directory=preg_match('/\Asab-pgtest-[a-f0-9]{12}\z/',(string)$run)
             ? base_path('informes/evidencias/postgresql_17_implementacion/resultados/invoice-subprecision-pdf-'.$run) : null;
         if ($directory && !is_dir($directory)) mkdir($directory,0755,true);
         foreach (['default'=>['a4','a5','ticket','ticket_58'], 'modern-2027'=>['a4','a5','ticket','ticket_58'],
@@ -722,7 +722,7 @@ class CurrentPdfRenderingTest extends TestCase
                     'margin_left'=>2,'margin_right'=>2,'margin_top'=>2,'margin_bottom'=>2]);
                 $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/'.$template.'/style.css')),HTMLParserMode::HEADER_CSS);
                 $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);$bytes=$pdf->Output('','S');
-                $path=tempnam(sys_get_temp_dir(),'pro9-quantity-');file_put_contents($path,$bytes);
+                $path=tempnam(sys_get_temp_dir(),'sab-quantity-');file_put_contents($path,$bytes);
                 try {
                     $process=proc_open(['pdftotext','-layout',$path,'-'],[0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$pipes);
                     fclose($pipes[0]);$text=stream_get_contents($pipes[1]);$errors=stream_get_contents($pipes[2]);fclose($pipes[1]);fclose($pipes[2]);
@@ -857,7 +857,7 @@ class CurrentPdfRenderingTest extends TestCase
                 self::assertEqualsWithDelta($expectedWidth, $size['width'], .01);
                 self::assertEqualsWithDelta($originalSize['height'] + 42, $size['height'], .01);
             }
-            if ($directory = getenv('PRO9_HKA_TICKET_FIXTURE_DIR')) {
+            if ($directory = getenv('SAB_HKA_TICKET_FIXTURE_DIR')) {
                 if (!is_dir($directory)) mkdir($directory, 0775, true);
                 file_put_contents($directory.'/ticket-'.$expectedWidth.'mm-'.$rows.'rows.pdf', $download);
             }

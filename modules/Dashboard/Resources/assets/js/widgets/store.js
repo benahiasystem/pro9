@@ -52,7 +52,7 @@ function sanitizeLayout(rawLayout) {
   }))
 }
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 let initVersion = 0
 let filterVersion = 0
 let requestVersion = 0
@@ -261,4 +261,4 @@ export const widgetStore = {
   },
 }
 
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

@@ -859,7 +859,7 @@ trait SpePersistenceCases
         $pdf->WriteHTML($html);
         $reportPdf=$pdf->Output('','S');
         self::assertStringStartsWith('%PDF-',$reportPdf);
-        if ($dir=getenv('PRO9_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/igtf-document-report.pdf',$reportPdf);
+        if ($dir=getenv('SAB_TICKET_EVIDENCE_DIR')) file_put_contents($dir.'/igtf-document-report.pdf',$reportPdf);
         foreach (['report_pdf_standard','report_pdf_simple'] as $viewName) {
             $rejectedRecords=new \Illuminate\Database\Eloquent\Collection([$rejectedNote]);
             $rejectedHtml=view('report::documents.'.$viewName,['records'=>$rejectedRecords,'company'=>$company,

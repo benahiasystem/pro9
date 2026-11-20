@@ -86,8 +86,8 @@ final class PaymentLinkValidationPostgresTest extends \PHPUnit\Framework\TestCas
         $safe=PaymentLink::findOrFail($controller->store($request)['data']['id']);
         self::assertTrue(D::of($large->getFormPublicData()['total'])->isEqualTo('9007199254740993.02'));
         self::assertTrue(D::of($safe->getFormPublicData()['total'])->isEqualTo('90071992547409.87'));
-        $source=\Tests\Support\PostgresTestEnvironment::source();$run=getenv('PRO9_POSTGRES_RUN_ID');
-        if(!preg_match('/^pro9-pgtest-[a-f0-9]{12}$/D',(string)$run))throw new \RuntimeException('Se requiere el ejecutor temporal.');
+        $source=\Tests\Support\PostgresTestEnvironment::source();$run=getenv('SAB_POSTGRES_RUN_ID');
+        if(!preg_match('/^sab-pgtest-[a-f0-9]{12}$/D',(string)$run))throw new \RuntimeException('Se requiere el ejecutor temporal.');
         $fixture=['version'=>1,'run_id'=>$run,'source_sha256'=>$source['sha256'],
             'large'=>$large->getFormPublicData(),'safe'=>$safe->getFormPublicData(),
             'form'=>$large->getRowResourceWithoutPayment(),'company'=>['name'=>'Empresa temporal','number'=>'J000000000'],

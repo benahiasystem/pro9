@@ -5,7 +5,7 @@ namespace App\Support\Exact;
 use App\Models\Tenant\{Document,DocumentItem,SaleNoteItem,Person};
 use Illuminate\Database\Eloquent\Collection;
 
-// ######## INICIO CALCULOS EXACTOS PRO9 ########
+// ######## INICIO CALCULOS EXACTOS SAB ########
 /** Exact, bounded rankings. Calendar/identity ties never depend on rounded money. */
 final class DashboardRankings
 {
@@ -113,4 +113,4 @@ final class DashboardRankings
         return $value;
     }
 }
-// ######## FIN CALCULOS EXACTOS PRO9 ########
+// ######## FIN CALCULOS EXACTOS SAB ########

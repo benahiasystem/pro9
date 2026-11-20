@@ -132,7 +132,7 @@ final class DocumentService
                 throw new ApiProblem('DOCUMENT_STATE', 'El documento no está pendiente de validación.');
             }
             app(SourceHistoryService::class)->requireCurrent($document);
-            app(Pro9SourceReader::class)->assertCurrent($document);
+            app(SabSourceReader::class)->assertCurrent($document);
             if (JournalEntry::where('source_document_id', $id)->whereNotNull('posted_at')->whereDoesntHave('reversal', fn($q) => $q->whereNotNull('posted_at'))->exists()) {
                 throw new ApiProblem('POSTED_SOURCE_CHANGE', 'Resuelve primero la corrección del comprobante contabilizado y sus auxiliares.', 409);
             }
