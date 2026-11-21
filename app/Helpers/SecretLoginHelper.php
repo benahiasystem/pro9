@@ -3,10 +3,10 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Facades\Log;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use App\Models\System\Client;
 use App\Models\Tenant\User;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Support\Facades\Auth;
 use Exception;
 

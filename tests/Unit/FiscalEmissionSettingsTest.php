@@ -48,9 +48,9 @@ class FiscalEmissionSettingsTest extends TestCase
         Container::setInstance($app);
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication($app);
-        $tenancy = $this->getMockBuilder(\Hyn\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
+        $tenancy = $this->getMockBuilder(\App\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
         $tenancy->method('tenantName')->willReturn('tenant');
-        $app->instance(\Hyn\Tenancy\Database\Connection::class, $tenancy);
+        $app->instance(\App\Tenancy\Database\Connection::class, $tenancy);
         $app->instance('config', new Repository([
             'tenancy.db.tenant-connection-name' => 'tenant',
             'fiscal_emission' => ['operation_tables' => ['documents', 'purchases', 'inventory_kardex']],

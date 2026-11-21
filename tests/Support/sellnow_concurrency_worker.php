@@ -18,7 +18,7 @@ $app->instance('config',new Illuminate\Config\Repository([
 $app->instance('request',Illuminate\Http\Request::create('http://sellnow-worker.example.test'));
 $app->instance('files',new Illuminate\Filesystem\Filesystem());
 $app->instance('cache',new Illuminate\Cache\Repository(new Illuminate\Cache\ArrayStore()));
-$app->instance(Hyn\Tenancy\Database\Connection::class,new class extends Hyn\Tenancy\Database\Connection {
+$app->instance(App\Tenancy\Database\Connection::class,new class extends App\Tenancy\Database\Connection {
     public function __construct() {}
     public function tenantName(): string { return 'tenant'; }
     public function systemName(): string { return 'tenant'; }

@@ -6,7 +6,7 @@ use Closure;
 use App\Models\Tenant\Configuration;
 use App\Models\System\Client;
 use App\Models\System\PaymentOrder;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Support\Facades\Log;
 
 class CheckEmailIsVerified

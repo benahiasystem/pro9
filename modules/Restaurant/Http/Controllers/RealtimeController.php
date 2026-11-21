@@ -4,7 +4,7 @@ namespace Modules\Restaurant\Http\Controllers;
 
 use App\Models\Tenant\User;
 use App\Services\CentrifugoTokenService;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 

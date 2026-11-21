@@ -6,7 +6,7 @@ namespace Modules\Inventory\Models;
 use App\Models\Tenant\Catalogs\DocumentType;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\User;
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Inventory\Traits\InventoryTrait;
 

@@ -7,7 +7,7 @@ if (!preg_match('/\Asab_fiscal_test_[a-f0-9]{12}\z/',$input['connection']['datab
 $app=new \Illuminate\Foundation\Application(dirname(__DIR__,2));
 \Illuminate\Container\Container::setInstance($app); \Illuminate\Support\Facades\Facade::setFacadeApplication($app);
 $app->instance('config',new \Illuminate\Config\Repository());
-$app->instance(\Hyn\Tenancy\Database\Connection::class,new class extends \Hyn\Tenancy\Database\Connection {
+$app->instance(\App\Tenancy\Database\Connection::class,new class extends \App\Tenancy\Database\Connection {
     public function __construct() {}
     public function tenantName(): string {return 'tenant';}
     public function systemName(): string {return 'tenant';}

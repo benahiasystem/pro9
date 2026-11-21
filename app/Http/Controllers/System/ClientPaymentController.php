@@ -11,7 +11,7 @@ use App\Models\System\ClientPayment;
 use App\Models\System\PaymentMethodType;
 use App\Models\System\CardBrand;
 use App\Models\System\PaymentOrder;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Support\Facades\DB;
 
 

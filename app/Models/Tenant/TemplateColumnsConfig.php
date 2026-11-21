@@ -3,7 +3,7 @@
 namespace App\Models\Tenant;
 
 use Illuminate\Database\Eloquent\Model;
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 
 class TemplateColumnsConfig extends ModelTenant
 {

@@ -10,63 +10,63 @@
     "file": "app/Models/Tenant/ExchangeRate.php",
     "class": "App\\Models\\Tenant\\ExchangeRate",
     "column": "purchase",
-    "source_sha256": "5d23393db3b248b7de8dea0b8f7223a6ecfd249af5f318a1038d49a92987930b",
+    "source_sha256": "7d9046e86f4c1014aeeed8fae148fcbdae93ca04d39c9b2eb22fbaa783ece0db",
     "table": "exchange_rates"
   },
   {
     "file": "app/Models/Tenant/ExchangeRate.php",
     "class": "App\\Models\\Tenant\\ExchangeRate",
     "column": "purchase_original",
-    "source_sha256": "5d23393db3b248b7de8dea0b8f7223a6ecfd249af5f318a1038d49a92987930b",
+    "source_sha256": "7d9046e86f4c1014aeeed8fae148fcbdae93ca04d39c9b2eb22fbaa783ece0db",
     "table": "exchange_rates"
   },
   {
     "file": "app/Models/Tenant/ExchangeRate.php",
     "class": "App\\Models\\Tenant\\ExchangeRate",
     "column": "sale",
-    "source_sha256": "5d23393db3b248b7de8dea0b8f7223a6ecfd249af5f318a1038d49a92987930b",
+    "source_sha256": "7d9046e86f4c1014aeeed8fae148fcbdae93ca04d39c9b2eb22fbaa783ece0db",
     "table": "exchange_rates"
   },
   {
     "file": "app/Models/Tenant/ExchangeRate.php",
     "class": "App\\Models\\Tenant\\ExchangeRate",
     "column": "sale_original",
-    "source_sha256": "5d23393db3b248b7de8dea0b8f7223a6ecfd249af5f318a1038d49a92987930b",
+    "source_sha256": "7d9046e86f4c1014aeeed8fae148fcbdae93ca04d39c9b2eb22fbaa783ece0db",
     "table": "exchange_rates"
   },
   {
     "file": "app/Models/Tenant/SaleNote.php",
     "class": "App\\Models\\Tenant\\SaleNote",
     "column": "exchange_rate_sale",
-    "source_sha256": "978639315062dbf5ce38e362f2d3d46aede1405e9908fc8a518438899c97f0b6",
+    "source_sha256": "452a0cc2d01553cc2e1d23100f7166704662e7a0342016813b3afa7474757198",
     "table": "sale_notes"
   },
   {
     "file": "modules/Expense/Models/BankLoan.php",
     "class": "Modules\\Expense\\Models\\BankLoan",
     "column": "exchange_rate_sale",
-    "source_sha256": "cd7a0af06eb3543287bb9526d9ae360c2f69bd7be6da0f62787d6ed6a1707a9b",
+    "source_sha256": "1a4318ed7e8dcd35c9ab932155b4226f75742f515a02955109d9b0ce613e4126",
     "table": "bank_loans"
   },
   {
     "file": "modules/Expense/Models/Expense.php",
     "class": "Modules\\Expense\\Models\\Expense",
     "column": "exchange_rate_sale",
-    "source_sha256": "072b2d08384deac7fc21b5d6069403f0c98e3d19917a0187da4cc4f19fc5e581",
+    "source_sha256": "0fb92142ce64fe3ac5806d6d7efea07dfed3e59f589994a7acc1ee4222561316",
     "table": "expenses"
   },
   {
     "file": "modules/FullSuscription/Models/Tenant/SuscriptionPlan.php",
     "class": "Modules\\FullSuscription\\Models\\Tenant\\SuscriptionPlan",
     "column": "exchange_rate_sale",
-    "source_sha256": "16ef97ee5f364dc2fd35359d1eab1a027ec909a99a96eda4d253e091c12c6029",
+    "source_sha256": "e5f67c6d51ce08cf4012e8e85cea72d1690a4128e7af3140d6cb530e07ba02ec",
     "table": "suscription_plans"
   },
   {
     "file": "modules/FullSuscription/Models/Tenant/UserRelSuscriptionPlan.php",
     "class": "Modules\\FullSuscription\\Models\\Tenant\\UserRelSuscriptionPlan",
     "column": "exchange_rate_sale",
-    "source_sha256": "a21af44cef08da401f0a70bcfb82bf7b71f11e3c34e5bc0080193ce2233f7dac",
+    "source_sha256": "087104003df3247b1863ff3eaee66a51397083df16e0c2397e3f6c9e1343a944",
     "table": "user_rel_suscription_plans"
   },
   {
@@ -80,21 +80,21 @@
     "file": "modules/Sale/Models/TechnicalService.php",
     "class": "Modules\\Sale\\Models\\TechnicalService",
     "column": "exchange_rate_sale",
-    "source_sha256": "464b5e0ab5b6161af4d91359cb2a0910828edabe57a438d320477d23950be8ba",
+    "source_sha256": "3a93f14361468ea86f21474dcc35e5e22351c1739ca48f7bf0434cf699f4861f",
     "table": "technical_services"
   },
   {
     "file": "modules/Suscription/Models/Tenant/SuscriptionPlan.php",
     "class": "Modules\\Suscription\\Models\\Tenant\\SuscriptionPlan",
     "column": "exchange_rate_sale",
-    "source_sha256": "c593e6005ebaf3a6f35b5f01ba89e73cd828d6e8c28c29f1537be3a950738e02",
+    "source_sha256": "9e8152a6da2e335a9941c63b6e7ef60418e19415e7540fde598eee5d54a49c1d",
     "table": "suscription_plans"
   },
   {
     "file": "modules/Suscription/Models/Tenant/UserRelSuscriptionPlan.php",
     "class": "Modules\\Suscription\\Models\\Tenant\\UserRelSuscriptionPlan",
     "column": "exchange_rate_sale",
-    "source_sha256": "ada308962537ff57b6feaa7db42d98d858f0619106608434856bbe2ce7b6d0f7",
+    "source_sha256": "d33e681a35e1a9d95dc814a9e003933580d59cff4df93bb462259958ee96c7f0",
     "table": "user_rel_suscription_plans"
   }
 ]

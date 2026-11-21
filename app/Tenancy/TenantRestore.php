@@ -80,7 +80,7 @@ final class TenantRestore
                 if ($dbMoved) $service->rename($previous,$original,$oldConfig['password'],false);
                 throw $error;
             }
-            foreach (\Hyn\Tenancy\Models\Hostname::whereHas('website', static fn ($q) => $q->where('uuid',$database))->pluck('fqdn') as $fqdn) app('cache')->forget('tenancy.hostname.'.$fqdn);
+            foreach (\App\Tenancy\Models\Hostname::whereHas('website', static fn ($q) => $q->where('uuid',$database))->pluck('fqdn') as $fqdn) app('cache')->forget('tenancy.hostname.'.$fqdn);
             app('cache')->forget('tenancy.website.'.$database);
             return ['database'=>$database,'activated'=>true,'previous_database'=>$hadOriginal ? $previous : null,'previous_files'=>$preserved,'shared_files_recovery'=>$files.'/previous-uploads'];
         } catch (\Throwable $error) {

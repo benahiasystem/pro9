@@ -16,7 +16,7 @@ $app->instance('auth', new class($input['operation'] ?? 'save') {
     public function check() {return $this->operation === 'delete';}
     public function user() {return $this->operation === 'delete' ? (object) ['type' => 'admin', 'establishment_id' => 1] : null;}
 });
-$app->instance(Hyn\Tenancy\Database\Connection::class, new class extends Hyn\Tenancy\Database\Connection {
+$app->instance(App\Tenancy\Database\Connection::class, new class extends App\Tenancy\Database\Connection {
     public function __construct() {}
     public function tenantName(): string {return 'tenant';}
 });

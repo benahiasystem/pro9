@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 // WebhookController toque `Configuration::first()` (conexion `tenant`), y la
 // request truena con "Database connection [tenant] not configured" para
 // cualquier hostname (ver mismo patron en Modules/QrApi/Routes/api.php).
-$hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
+$hostname = app(App\Tenancy\Contracts\CurrentHostname::class);
 
 if ($hostname) {
     Route::domain($hostname->fqdn)->group(function () {

@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 $root=dirname(__DIR__);
 if (getenv('SAB_POSTGRES_TESTS')!=='1' || ($argv[1] ?? '')!=='bbc.localhost') exit("Enable isolated tests and specify bbc.localhost.\n");
 $app=require $root.'/bootstrap/app.php';$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
-$host=Hyn\Tenancy\Models\Hostname::where('fqdn',$argv[1])->firstOrFail();app(Hyn\Tenancy\Environment::class)->tenant($host->website);
+$host=App\Tenancy\Models\Hostname::where('fqdn',$argv[1])->firstOrFail();app(App\Tenancy\Environment::class)->tenant($host->website);
 $source=Company::firstOrFail();
 if ($source->fiscal_environment!=='demo' || $source->fiscal_emission_mode!=='digital') exit("DEMO digital required.\n");
 $credentials=HkaAuthentication::credentials($source);$issuer=$source->only(['number','name','trade_name']);unset($source);

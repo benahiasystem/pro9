@@ -2,7 +2,7 @@
 
 namespace Modules\Webhook\Services;
 
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Webhook\Jobs\SendWebhookJob;

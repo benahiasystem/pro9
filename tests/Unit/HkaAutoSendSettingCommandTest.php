@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use Hyn\Tenancy\Environment;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Environment;
+use App\Tenancy\Models\Website;
 use Illuminate\Support\Facades\{DB, Schema};
 use Tests\TestCase;
 
@@ -16,10 +16,10 @@ class HkaAutoSendSettingCommandTest extends TestCase
             config(['database.connections.'.$name => ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']]);
             DB::purge($name);
         }
-        $tenancy = $this->getMockBuilder(\Hyn\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName', 'systemName'])->getMock();
+        $tenancy = $this->getMockBuilder(\App\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName', 'systemName'])->getMock();
         $tenancy->method('tenantName')->willReturn('tenant');
         $tenancy->method('systemName')->willReturn('system');
-        $this->app->instance(\Hyn\Tenancy\Database\Connection::class, $tenancy);
+        $this->app->instance(\App\Tenancy\Database\Connection::class, $tenancy);
         Schema::connection('system')->create('websites', function ($table) {
             $table->increments('id'); $table->string('uuid'); $table->softDeletes();
         });
@@ -81,7 +81,7 @@ class HkaAutoSendSettingCommandTest extends TestCase
 
     public function test_a_previously_empty_tenant_context_is_cleared_after_the_command(): void
     {
-        $tenantContract = \Hyn\Tenancy\Contracts\Tenant::class;
+        $tenantContract = \App\Tenancy\Contracts\Tenant::class;
         $this->app->instance($tenantContract, null);
         $connection = config('database.connections.tenant');
         $environment = $this->getMockBuilder(Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();

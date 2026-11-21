@@ -4,7 +4,7 @@ namespace Modules\MultiUser\Console\Commands;
 
 use App\Models\System\Client;
 use App\Models\Tenant\User;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Console\Command;
 use Modules\MultiUser\Services\MultiUserPermissionSync;
 

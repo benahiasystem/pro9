@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use App\Models\Tenant\StatusOrder;
 
 class StatusOrdersController extends Controller

@@ -21,7 +21,7 @@ function postgresqlSourceFiles(string $root,array $paths): array
 {
     $files=[];
     $fixedInputs=array_map(static fn($name)=>'informes/evidencias/postgresql_17_implementacion/'.$name,
-        ['esquema.json','referencia_mysql_temporal.json','referencia_rendimiento_mysql.json','referencia_rendimiento_multitenant_mysql.json','casts_exactos_efectivos.json']);
+        ['esquema.json','referencia_rendimiento_postgresql.json','casts_exactos_efectivos.json']);
     foreach (array_unique($paths) as $path) {
         if (!preg_match('~^(?:app/|modules/|database/|config/|routes/|resources/|tests/|scripts/|docker/|\.github/|\.gitattributes$|public/build/|public/porto-ecommerce/assets/js/(?:cart|main)\.js$|vite\.config\.js$|modules_statuses\.json$|composer\.(?:json|lock)$|package(?:-lock)?\.json$|phpunit\.xml$|docker-compose[^/]*\.yml$)~',$path)
             && !in_array($path,$fixedInputs,true)) continue;
@@ -31,13 +31,4 @@ function postgresqlSourceFiles(string $root,array $paths): array
     return $files;
 }
 
-/** Only the explicitly generated benchmark reference may change before tests start. */
-function postgresqlSourceAfterReference(array $before,array $after,string $reference): array
-{
-    $expected=$before['files'];$actual=$after['files'];unset($expected[$reference],$actual[$reference]);
-    if ($before['revision']!==$after['revision'] || $before['branch']!==$after['branch'] || $expected!==$actual) {
-        throw new RuntimeException('Cambió el código u otra entrada durante la captura de referencia.');
-    }
-    return $after;
-}
 // ######### FIN CAMBIO POSTGRESQL 17

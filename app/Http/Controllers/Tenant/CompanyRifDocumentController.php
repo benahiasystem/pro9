@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\{Company, User};
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Http\Request;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Validation\ValidationException;

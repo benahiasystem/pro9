@@ -1093,7 +1093,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
             // en cada venta ajena al módulo.
             $item = Item::find($item_id);
             if ($item && $item->apply_restaurant) {
-                $fqdn = app(\Hyn\Tenancy\Contracts\CurrentHostname::class)?->fqdn ?? 'local';
+                $fqdn = app(\App\Tenancy\Contracts\CurrentHostname::class)?->fqdn ?? 'local';
                 $data = app(\Modules\Restaurant\Http\Controllers\RestaurantController::class)
                     ->getStockStatus()['data'] ?? [];
                 app(\App\Services\CentrifugoService::class)->publish("restaurant:{$fqdn}", [

@@ -4,7 +4,7 @@ namespace Modules\Report\Traits;
 
 use App\Models\Tenant\Company;
 use App\Traits\JobReportTrait;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Hostname;
 use Illuminate\Http\Request;
 use Modules\Report\Jobs\ProcessReportSalesConsolidated;
 

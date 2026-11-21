@@ -62,7 +62,7 @@ final class AccountingPostgresFixture
             PostgresTestEnvironment::assertServer($db);
             \App\Database\PostgresBootstrap::install($db);
             $db->setTransactionManager(new \Illuminate\Database\DatabaseTransactionsManager());
-            $app->instance(\Hyn\Tenancy\Database\Connection::class, new class extends \Hyn\Tenancy\Database\Connection {
+            $app->instance(\App\Tenancy\Database\Connection::class, new class extends \App\Tenancy\Database\Connection {
                 public function __construct() {}
                 public function tenantName(): string { return 'tenant'; }
                 public function systemName(): string { return 'tenant'; }

@@ -3,7 +3,7 @@
 namespace App\Models\Tenant\Catalogs;
 
 use App\Models\Tenant\TechnicalServiceItem;
-use Hyn\Tenancy\Traits\UsesTenantConnection;
+use App\Tenancy\Traits\UsesTenantConnection;
 
 class AffectationIgvType extends ModelCatalog
 {

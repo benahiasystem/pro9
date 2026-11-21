@@ -3,9 +3,9 @@
 namespace Database\Seeders\Libs\Migration;
 
 use App\Models\System\Client;
-use Hyn\Tenancy\Environment;
-use Hyn\Tenancy\Models\Hostname;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Environment;
+use App\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Website;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;

@@ -77,7 +77,7 @@ final class BillingPdfDiscountPostgresTest extends TestCase
             self::assertSame([], $missing, 'El descuento positivo debe activar su fila en todos los formatos probados.');
 
             $run = getenv('SAB_POSTGRES_RUN_ID');
-            self::assertMatchesRegularExpression('/^pro9-pgtest-[a-f0-9]{12}$/D', $run);
+            self::assertMatchesRegularExpression(\Tests\Support\PostgresTestEnvironment::RUN_ID_PATTERN, $run);
             $directory = base_path('informes/evidencias/postgresql_17_implementacion/resultados/billing-discount-'.$run);
             self::assertTrue(mkdir($directory, 0755, true));
             foreach (['a4', 'a5'] as $format) {

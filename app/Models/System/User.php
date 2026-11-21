@@ -2,7 +2,7 @@
 
 namespace App\Models\System;
 
-use Hyn\Tenancy\Traits\UsesSystemConnection;
+use App\Tenancy\Traits\UsesSystemConnection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;

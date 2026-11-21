@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Services\ExchangeRates\ExchangeRatePrecisionUpgrade;
-use Hyn\Tenancy\Environment;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Environment;
+use App\Tenancy\Models\Website;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 

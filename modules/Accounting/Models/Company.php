@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 final class Company extends Model
 {
     use HasUuids;
-    use \Hyn\Tenancy\Traits\UsesTenantConnection;
+    use \App\Tenancy\Traits\UsesTenantConnection;
     protected $table = 'accounting_companies';
     protected $guarded = [];
     protected $casts = ['settings' => 'array', 'active' => 'boolean', 'offline_hours' => 'integer', 'workspace_days' => 'integer'];

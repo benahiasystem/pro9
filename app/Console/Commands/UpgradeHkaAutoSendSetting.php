@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Services\Fiscal\HkaAutoSendSettingUpgrade;
-use Hyn\Tenancy\Environment;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Environment;
+use App\Tenancy\Models\Website;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -29,7 +29,7 @@ class UpgradeHkaAutoSendSetting extends Command
         }
         $environment = app(Environment::class);
         $previous = $environment->tenant();
-        $connectionName = app(\Hyn\Tenancy\Database\Connection::class)->tenantName();
+        $connectionName = app(\App\Tenancy\Database\Connection::class)->tenantName();
         $previousConnection = config('database.connections.'.$connectionName);
         $exitCode = 0;
         try {
@@ -49,7 +49,7 @@ class UpgradeHkaAutoSendSetting extends Command
                 $environment->tenant($previous);
             } else {
                 // Hyn's tenant(null) is a getter, so explicitly clear a previously empty context.
-                app()->instance(\Hyn\Tenancy\Contracts\Tenant::class, null);
+                app()->instance(\App\Tenancy\Contracts\Tenant::class, null);
                 DB::purge($connectionName);
                 config(['database.connections.'.$connectionName => $previousConnection]);
             }

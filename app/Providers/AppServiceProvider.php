@@ -34,10 +34,10 @@ class AppServiceProvider extends ServiceProvider
 			// nunca se crea database.connections.tenant. Al terminar el arranque se
 			// activa expresamente el website y luego se consulta su tiempo de sesión.
 			$this->app->booted(function (): void {
-				$hostname = app(\Hyn\Tenancy\Contracts\CurrentHostname::class);
+				$hostname = app(\App\Tenancy\Contracts\CurrentHostname::class);
 
 				if ($hostname && $hostname->website && ! config('database.connections.tenant')) {
-					app(\Hyn\Tenancy\Environment::class)->tenant($hostname->website);
+					app(\App\Tenancy\Environment::class)->tenant($hostname->website);
 				}
 
 				SessionLifetimeHelper::setTenantSessionLifetime();

@@ -3,7 +3,7 @@
 namespace Modules\MultiUser\Traits\Tenant;
 
 use App\Models\System\Client;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Support\Facades\DB;
 use Modules\MultiUser\Models\System\MultiUser;
 use App\Models\Tenant\User;

@@ -14,7 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Exception;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use App\Models\System\Client;
 
 class DemoBackupDatabase extends Command

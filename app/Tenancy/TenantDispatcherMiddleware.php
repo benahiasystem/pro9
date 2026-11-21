@@ -1,19 +1,23 @@
 <?php
+
 namespace App\Tenancy;
 
-// ########## INICIO CAMBIO POSTGRESQL 17
 final class TenantDispatcherMiddleware
 {
-    public function handle($command,$next)
+    public function handle($command, $next)
     {
-        $environment=app(\Hyn\Tenancy\Environment::class);$previous=$environment->tenant();
+        $environment = app(Environment::class);
+        $previous = $environment->tenant();
+        $id = $command->website_id ?? null;
+        if ($id === null || (string) $previous?->getKey() === (string) $id) {
+            return $next($command);
+        }
+
         try {
-            if (!empty($command->website_id)) TenantJobContext::select($command->website_id);
+            TenantJobContext::select($id);
             return $next($command);
         } finally {
-            TenantJobContext::clear();
-            if ($previous) $environment->tenant($previous);
+            $environment->switchTenant($previous);
         }
     }
 }
-// ######### FIN CAMBIO POSTGRESQL 17

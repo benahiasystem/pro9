@@ -7,8 +7,8 @@ namespace Modules\ClaimsBook\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\Establishment;
-use Hyn\Tenancy\Models\Hostname;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Models\Hostname;
+use App\Tenancy\Environment;
 use Modules\ClaimsBook\Models\Tenant\ClaimChannel;
 use Modules\ClaimsBook\Http\Resources\ClaimChannelCollection;
 

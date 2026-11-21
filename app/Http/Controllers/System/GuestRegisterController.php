@@ -5,7 +5,7 @@ namespace App\Http\Controllers\System;
 use App\Http\Controllers\Controller;
 use App\Models\System\Client;
 use App\Models\System\Configuration;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Hostname;
 use App\Http\Requests\System\{
     GuestRegisterClientRequest,
     SendEmailGuestRegisterRequest,

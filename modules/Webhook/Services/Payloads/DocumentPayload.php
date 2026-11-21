@@ -5,7 +5,7 @@ namespace Modules\Webhook\Services\Payloads;
 
 use App\Models\Tenant\Document;
 use App\Models\Tenant\StateType;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 
 /**
  * Payload de los eventos document.* para documentos registrados localmente.

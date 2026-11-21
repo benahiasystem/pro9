@@ -1,6 +1,6 @@
 <?php
 
-$current_hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
+$current_hostname = app(App\Tenancy\Contracts\CurrentHostname::class);
 
 if($current_hostname)
 {

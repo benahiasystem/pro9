@@ -13,7 +13,7 @@ use App\Http\Requests\System\ClientRequest;
 use Illuminate\Support\Facades\Log;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\User;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Exception;

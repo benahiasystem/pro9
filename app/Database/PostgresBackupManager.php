@@ -2,7 +2,7 @@
 
 namespace App\Database;
 
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Models\Website;
 use Illuminate\Support\Facades\DB;
 
 // ########## INICIO CAMBIO POSTGRESQL 17
@@ -13,7 +13,7 @@ final class PostgresBackupManager
         PostgresBootstrap::identifier($database);
         if ($database === config('database.connections.system.database')) return config('database.connections.central_migrator');
         $website = Website::where('uuid', $database)->firstOrFail();
-        return app(\Hyn\Tenancy\Database\Connection::class)->generateConfigurationArray($website);
+        return app(\App\Tenancy\Database\Connection::class)->generateConfigurationArray($website);
     }
     public function files(string $database): array
     {

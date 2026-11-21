@@ -7,7 +7,7 @@ use Illuminate\Routing\Controller;
 use Modules\Restaurant\Models\RestaurantTable;
 use Modules\Restaurant\Models\RestaurantTableGroup;
 use App\Services\CentrifugoService;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 
 class TableGroupController extends Controller
 {

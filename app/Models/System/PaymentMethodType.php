@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models\System;
-use Hyn\Tenancy\Traits\UsesSystemConnection;
+use App\Tenancy\Traits\UsesSystemConnection;
 use Illuminate\Database\Eloquent\Model;
 
 class PaymentMethodType extends Model

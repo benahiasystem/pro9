@@ -73,7 +73,7 @@ class PrintPublisherService
     private function resolveFqdn(): string
     {
         try {
-            $hostname = app(\Hyn\Tenancy\Contracts\CurrentHostname::class);
+            $hostname = app(\App\Tenancy\Contracts\CurrentHostname::class);
             return $hostname?->fqdn ?? 'local';
         } catch (\Throwable) {
             return 'local';

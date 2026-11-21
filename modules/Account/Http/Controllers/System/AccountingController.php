@@ -5,7 +5,7 @@ namespace Modules\Account\Http\Controllers\System;
 use App\Http\Controllers\Controller;
 use Exception;
 use App\Http\Resources\System\ClientCollection;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use App\Models\System\Client;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;

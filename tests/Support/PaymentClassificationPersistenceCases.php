@@ -1572,10 +1572,10 @@ trait PaymentClassificationPersistenceCases
         $db->statement('CREATE TABLE clients (id INT PRIMARY KEY, hostname_id INT, name VARCHAR(100), plan_id INT, whatsapp_messages_limit_override INT NULL)');
         $db->table('plans')->insert(['id'=>1,'name'=>'Prueba','limit_documents'=>0,'include_sale_notes_limit_documents'=>0]);
         $db->table('clients')->insert(['id'=>1,'hostname_id'=>1,'name'=>'Prueba','plan_id'=>1]);
-        $hostname=new \Hyn\Tenancy\Models\Hostname(); $hostname->id=1;
-        $tenancy=$this->getMockBuilder(\Hyn\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['hostname'])->getMock();
+        $hostname=new \App\Tenancy\Models\Hostname(); $hostname->id=1;
+        $tenancy=$this->getMockBuilder(\App\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['hostname'])->getMock();
         $tenancy->method('hostname')->willReturn($hostname);
-        $app->instance(\Hyn\Tenancy\Environment::class,$tenancy);
+        $app->instance(\App\Tenancy\Environment::class,$tenancy);
         $app->instance(\App\Http\Controllers\Tenant\DocumentController::class,new \App\Http\Controllers\Tenant\DocumentController());
         $failingController=new class extends \App\Http\Controllers\Tenant\DocumentController {
             public function __construct() {}
@@ -4458,8 +4458,8 @@ trait PaymentClassificationPersistenceCases
             $this->createMock(\Maatwebsite\Excel\QueuedWriter::class),$this->createMock(\Maatwebsite\Excel\Reader::class),
             new \Maatwebsite\Excel\Files\Filesystem($app['filesystem']));
         $app->instance(\Maatwebsite\Excel\Exporter::class,$excel);$app->instance('excel',$excel);$app->instance('log',new \Psr\Log\NullLogger());
-        $tenancy=$this->getMockBuilder(\Hyn\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
-        $tenancy->method('tenant')->willReturnArgument(0);$app->instance(\Hyn\Tenancy\Environment::class,$tenancy);
+        $tenancy=$this->getMockBuilder(\App\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
+        $tenancy->method('tenant')->willReturnArgument(0);$app->instance(\App\Tenancy\Environment::class,$tenancy);
         $source=file_get_contents(base_path('modules/Report/Resources/views/documents/report_excel.blade.php')).
             file_get_contents(base_path('modules/Report/Resources/views/documents/report_pdf.blade.php'));
         preg_match_all('/\$columns->([a-zA-Z_]+)/',$source,$matches);$columns=new \stdClass();
@@ -4474,7 +4474,7 @@ trait PaymentClassificationPersistenceCases
             'establishment_id_for_format'=>$input['establishment_id'],'include_categories'=>'1','seller_id'=>null,'person_id'=>null,'user_type'=>'admin'];
         $tray=\App\Models\Tenant\DownloadTray::create(['user_id'=>$input['user_id'],'module'=>'REPORT','format'=>'xlsx','type'=>'Ventas']);
         $job=new class($tray->id,1,$filters,$columns) extends \Modules\Report\Jobs\ProcessDocumentReport {
-            public function findWebsite($id) { return new \Hyn\Tenancy\Models\Website(); }
+            public function findWebsite($id) { return new \App\Tenancy\Models\Website(); }
         };
         $job->handle();$tray->refresh();self::assertSame('FINISHED',$tray->status);
         $path=sys_get_temp_dir().'/'.$this->database.'/'.$tray->path.'/'.$tray->file_name.'.xlsx';self::assertFileExists($path);
@@ -4484,7 +4484,7 @@ trait PaymentClassificationPersistenceCases
         $book->disconnectWorksheets();
         $pdfTray=\App\Models\Tenant\DownloadTray::create(['user_id'=>$input['user_id'],'module'=>'REPORT','format'=>'pdf','type'=>'Ventas']);
         $pdfJob=new class($pdfTray->id,1,$filters,$columns) extends \Modules\Report\Jobs\ProcessDocumentReport {
-            public function findWebsite($id) { return new \Hyn\Tenancy\Models\Website(); }
+            public function findWebsite($id) { return new \App\Tenancy\Models\Website(); }
         };
         $pdfJob->handle();$pdfTray->refresh();self::assertSame('FINISHED',$pdfTray->status);
         $pdfPath=sys_get_temp_dir().'/'.$this->database.'/'.$pdfTray->path.'/'.$pdfTray->file_name.'.pdf';
@@ -4494,7 +4494,7 @@ trait PaymentClassificationPersistenceCases
         $smallColumns=clone $columns;foreach ($smallColumns as $name=>$column) $smallColumns->$name=(object)['visible'=>false,'title'=>$name];
         $smallTray=\App\Models\Tenant\DownloadTray::create(['user_id'=>$input['user_id'],'module'=>'REPORT','format'=>'pdf','type'=>'Ventas']);
         $smallJob=new class($smallTray->id,1,$filters,$smallColumns) extends \Modules\Report\Jobs\ProcessDocumentReport {
-            public function findWebsite($id) { return new \Hyn\Tenancy\Models\Website(); }
+            public function findWebsite($id) { return new \App\Tenancy\Models\Website(); }
         };
         $smallJob->handle();$smallTray->refresh();self::assertSame('FINISHED',$smallTray->status);
         self::assertNotSame($pdfTray->file_name,$smallTray->file_name);
@@ -4502,7 +4502,7 @@ trait PaymentClassificationPersistenceCases
         self::assertMatchesRegularExpression('/\/MediaBox\s*\[\s*0\s+0\s+841\.8[0-9]+\s+595\.2[0-9]+\s*\]/',file_get_contents($smallPath));
         $badTray=\App\Models\Tenant\DownloadTray::create(['user_id'=>$input['user_id'],'module'=>'REPORT','format'=>'xlsx','type'=>'Ventas']);
         $bad=new class($badTray->id,1,array_replace($filters,['establishment_id_for_format'=>999999]),$columns) extends \Modules\Report\Jobs\ProcessDocumentReport {
-            public function findWebsite($id) { return new \Hyn\Tenancy\Models\Website(); }
+            public function findWebsite($id) { return new \App\Tenancy\Models\Website(); }
         };
         try {$bad->handle();self::fail('El trabajo debe propagar el error para permitir reintentos.');}
         catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {self::assertSame('FAILED',$badTray->fresh()->status);}
@@ -9521,10 +9521,10 @@ trait PaymentClassificationPersistenceCases
         $db->statement('CREATE TABLE clients (id INT PRIMARY KEY, hostname_id INT, name VARCHAR(100), plan_id INT, whatsapp_messages_limit_override INT NULL)');
         $db->table('plans')->insert(['id'=>1,'name'=>'Prueba','limit_documents'=>0,'include_sale_notes_limit_documents'=>0]);
         $db->table('clients')->insert(['id'=>1,'hostname_id'=>1,'name'=>'Prueba','plan_id'=>1]);
-        $hostname=new \Hyn\Tenancy\Models\Hostname(); $hostname->id=1;
-        $tenancy=$this->getMockBuilder(\Hyn\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['hostname'])->getMock();
+        $hostname=new \App\Tenancy\Models\Hostname(); $hostname->id=1;
+        $tenancy=$this->getMockBuilder(\App\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['hostname'])->getMock();
         $tenancy->method('hostname')->willReturn($hostname);
-        $app->instance(\Hyn\Tenancy\Environment::class,$tenancy);
+        $app->instance(\App\Tenancy\Environment::class,$tenancy);
         $order=$this->getMockBuilder(\Modules\Order\Http\Controllers\OrderNoteController::class)->onlyMethods(['createPdf'])->getMock();
         $document=$this->getMockBuilder(\App\Http\Controllers\Tenant\DocumentController::class)->onlyMethods(['storeWithData'])->getMock();
         $document->method('storeWithData')->willReturnCallback(function ($data) {
@@ -10302,15 +10302,15 @@ trait PaymentClassificationPersistenceCases
         mkdir(config('view.compiled'),0777,true);
         $app->register(\Illuminate\View\ViewServiceProvider::class);
         $app['view']->addNamespace('report',base_path('modules/Report/Resources/views'));
-        $tenancy=$this->getMockBuilder(\Hyn\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
+        $tenancy=$this->getMockBuilder(\App\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
         $tenancy->method('tenant')->willReturnArgument(0);
-        $app->instance(\Hyn\Tenancy\Environment::class,$tenancy);
+        $app->instance(\App\Tenancy\Environment::class,$tenancy);
         $tray=\App\Models\Tenant\DownloadTray::create(['user_id'=>$input['user_id'],'module'=>'REPORT','format'=>'xlsx','type'=>'Prueba']);
         $params=['type'=>'purchase','document_type_id'=>'01','date_start'=>'2026-01-01','date_end'=>'2027-01-01',
             'apply_conversion_to_pen'=>'false','format'=>'xlsx'];
         $job=new class($tray->id,1,$params,$input['user_id'],0,100,false) extends \Modules\Report\Jobs\ProcessReportGeneralItems {
             public bool $hasWebsite=true;
-            public function findWebsite($id) { return $this->hasWebsite ? new \Hyn\Tenancy\Models\Website() : null; }
+            public function findWebsite($id) { return $this->hasWebsite ? new \App\Tenancy\Models\Website() : null; }
             public function login($id) {}
         };
         $job->hasWebsite=false;
@@ -10414,9 +10414,9 @@ trait PaymentClassificationPersistenceCases
         $tray=\App\Models\Tenant\DownloadTray::create([
             'user_id'=>$input['user_id'],'module'=>'FINANCE','format'=>'xlsx','type'=>'Prueba',
         ]);
-        $tenancy=$this->getMockBuilder(\Hyn\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
+        $tenancy=$this->getMockBuilder(\App\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
         $tenancy->expects(self::exactly(6))->method('tenant')->willReturnArgument(0);
-        $app->instance(\Hyn\Tenancy\Environment::class,$tenancy);
+        $app->instance(\App\Tenancy\Environment::class,$tenancy);
         \Illuminate\Support\Facades\Log::shouldReceive('info')->zeroOrMoreTimes();
         $params=['period'=>'month','date_start'=>null,'date_end'=>null,'month_start'=>'fecha-imposible',
             'month_end'=>'2026-10','payment_type'=>null,'destination_type'=>'','user_id'=>$input['user_id'],
@@ -10527,9 +10527,9 @@ trait PaymentClassificationPersistenceCases
         $tray=\App\Models\Tenant\DownloadTray::create([
             'user_id'=>$input['user_id'],'module'=>'FINANCE','format'=>'xlsx','type'=>'Prueba',
         ]);
-        $tenancy=$this->getMockBuilder(\Hyn\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
+        $tenancy=$this->getMockBuilder(\App\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
         $tenancy->expects(self::exactly(4))->method('tenant')->willReturnArgument(0);
-        $app->instance(\Hyn\Tenancy\Environment::class,$tenancy);
+        $app->instance(\App\Tenancy\Environment::class,$tenancy);
         \Illuminate\Support\Facades\Log::shouldReceive('debug')->zeroOrMoreTimes();
         $params=(object)['period'=>'month','date_start'=>null,'date_end'=>null,
             'month_start'=>'fecha-imposible','month_end'=>'2026-10','last_cash_opening'=>'false','user_id'=>$input['user_id']];
@@ -11995,14 +11995,14 @@ trait PaymentClassificationPersistenceCases
             $this->createMock(\Maatwebsite\Excel\QueuedWriter::class),$this->createMock(\Maatwebsite\Excel\Reader::class),
             new \Maatwebsite\Excel\Files\Filesystem($app['filesystem']));
         $app->instance(\Maatwebsite\Excel\Exporter::class,$excel);
-        $tenancy=$this->getMockBuilder(\Hyn\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
+        $tenancy=$this->getMockBuilder(\App\Tenancy\Environment::class)->disableOriginalConstructor()->onlyMethods(['tenant'])->getMock();
         $tenancy->method('tenant')->willReturnArgument(0);
-        $app->instance(\Hyn\Tenancy\Environment::class,$tenancy);
+        $app->instance(\App\Tenancy\Environment::class,$tenancy);
         foreach (['01','80'] as $docType) {
             $tray=\App\Models\Tenant\DownloadTray::create(['user_id'=>$input['user_id'],'module'=>'REPORT','format'=>'xlsx','type'=>'Artículos']);
             $parameters=array_replace($itemFilters,['document_type_id'=>$docType,'format'=>'xlsx','apply_conversion_to_pen'=>'false']);
             $job=new class($tray->id,1,$parameters,$input['user_id'],0,100,false) extends \Modules\Report\Jobs\ProcessReportGeneralItems {
-                public function findWebsite($id) { return new \Hyn\Tenancy\Models\Website(); }
+                public function findWebsite($id) { return new \App\Tenancy\Models\Website(); }
                 public function login($id) {}
             };
             $job->handle(); $tray->refresh();
@@ -12032,7 +12032,7 @@ trait PaymentClassificationPersistenceCases
             $tray=\App\Models\Tenant\DownloadTray::create(['user_id'=>$input['user_id'],'module'=>'REPORT','format'=>'pdf','type'=>'Artículos']);
             $parameters=array_replace($itemFilters,['document_type_id'=>$docType,'format'=>'pdf','apply_conversion_to_pen'=>'false']);
             $job=new class($tray->id,1,$parameters,$input['user_id'],0,100,false) extends \Modules\Report\Jobs\ProcessReportGeneralItems {
-                public function findWebsite($id) { return new \Hyn\Tenancy\Models\Website(); }
+                public function findWebsite($id) { return new \App\Tenancy\Models\Website(); }
                 public function login($id) {}
             };
             $job->handle(); $tray->refresh();

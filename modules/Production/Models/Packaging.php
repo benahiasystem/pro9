@@ -11,7 +11,7 @@
     use App\Models\Tenant\User;
     use Carbon\Carbon;
     use Eloquent;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use App\Models\Tenant\FiscalEnvironment;
 

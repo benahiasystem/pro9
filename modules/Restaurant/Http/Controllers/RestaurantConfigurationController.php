@@ -20,7 +20,7 @@ use Illuminate\Support\Str;
 use App\Helpers\MozoAccessHelper;
 use Modules\Restaurant\Services\RestaurantStockService;
 use App\Services\CentrifugoService;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 
 
 class RestaurantConfigurationController extends Controller

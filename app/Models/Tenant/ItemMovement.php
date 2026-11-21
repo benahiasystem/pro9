@@ -7,7 +7,7 @@
     use Carbon\Carbon;
     use DB;
     use ErrorException;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\HasOne;

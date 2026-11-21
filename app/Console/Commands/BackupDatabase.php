@@ -2,7 +2,7 @@
 namespace App\Console\Commands;
 
 use App\Database\PostgresBackupManager;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Models\Website;
 use Illuminate\Support\Facades\DB;
 
 // ########## INICIO CAMBIO POSTGRESQL 17

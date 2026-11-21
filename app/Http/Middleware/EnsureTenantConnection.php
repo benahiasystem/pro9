@@ -3,8 +3,8 @@
 namespace App\Http\Middleware;
 
 use Closure;
-use Hyn\Tenancy\Environment;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Environment;
+use App\Tenancy\Models\Hostname;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -19,6 +19,9 @@ class EnsureTenantConnection
     public function handle(Request $request, Closure $next)
     {
         if (! config('database.connections.tenant')) {
+            if (!config('tenancy.hostname.auto-identification')) {
+                return $next($request);
+            }
             $hostname = Hostname::query()
                 ->with('website')
                 ->where('fqdn', $request->getHost())

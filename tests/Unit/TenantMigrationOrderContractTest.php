@@ -12,6 +12,7 @@ class TenantMigrationOrderContractTest extends TestCase
         $root = dirname(__DIR__, 2) . '/database/migrations/tenant/';
         $files = glob($root . '*.php');
         sort($files, SORT_STRING);
+        self::assertSame('2026_11_19_120000_remove_legacy_nrus.php', basename(array_pop($files)));
         self::assertSame('2026_08_17_000999_add_tenant_foreign_keys.php', basename(array_pop($files)));
         foreach ($files as $file) {
             self::assertMatchesRegularExpression('/_create_.+_table\.php$/', $file);

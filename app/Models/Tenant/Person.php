@@ -9,7 +9,7 @@
     use App\Models\Tenant\Catalogs\IdentityDocumentType;
     use App\Models\Tenant\Catalogs\Province;
     use App\Support\Venezuela\IdentityDocument;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Collection;
     use Modules\DocumentaryProcedure\Models\DocumentaryFile;

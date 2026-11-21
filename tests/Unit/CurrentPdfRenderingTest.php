@@ -300,7 +300,7 @@ class CurrentPdfRenderingTest extends TestCase
         $logoDirectory=sys_get_temp_dir().'/sab-a4-logo-'.bin2hex(random_bytes(6));
         mkdir($logoDirectory.'/storage/uploads/logos',0775,true);
         copy($public.'/logo/tulogo.png',$logoDirectory.'/storage/uploads/logos/a4-test.png');
-        $this->app->instance('path.public',$logoDirectory);
+        $this->app->usePublicPath($logoDirectory);
         config()->set('filesystems.disks.public',['driver'=>'local','root'=>$logoDirectory.'/storage']);
         \Illuminate\Support\Facades\Storage::forgetDisk('public');
         try {
@@ -327,7 +327,7 @@ class CurrentPdfRenderingTest extends TestCase
             }
             }
         } finally {
-            $this->app->instance('path.public',$public);
+            $this->app->usePublicPath($public);
             config()->set('filesystems.disks.public',$disk);
             \Illuminate\Support\Facades\Storage::forgetDisk('public');
             (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($logoDirectory);
@@ -696,7 +696,7 @@ class CurrentPdfRenderingTest extends TestCase
             'quantity'=>\App\Support\Exact\Decimal::of(1)->dividedBy('3000000000000')]);
         $company=new Fluent(['name'=>'Empresa de prueba','number'=>'J-12345678-9','trade_name'=>'Prueba','logo'=>null]);
         $manifest=[];$run=getenv('SAB_POSTGRES_RUN_ID');
-        $directory=preg_match('/\Apro9-pgtest-[a-f0-9]{12}\z/',(string)$run)
+        $directory=preg_match(\Tests\Support\PostgresTestEnvironment::RUN_ID_PATTERN,(string)$run)
             ? base_path('informes/evidencias/postgresql_17_implementacion/resultados/invoice-subprecision-pdf-'.$run) : null;
         if ($directory && !is_dir($directory)) mkdir($directory,0755,true);
         foreach (['default'=>['a4','a5','ticket','ticket_58'], 'modern-2027'=>['a4','a5','ticket','ticket_58'],

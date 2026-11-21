@@ -7,7 +7,7 @@
 
     use Illuminate\Support\Facades\Auth;
     use Carbon\Carbon;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Modules\Finance\Models\GlobalPayment;
     use Illuminate\Database\Eloquent\Relations\MorphTo;
 
@@ -36,10 +36,8 @@
             'origin_id' => 'int',
             'destiny_id' => 'int',
             'amount' => 'string',
-            'user_id' => 'int'
-        ];
-        protected $dates = [
-            'date_of_movement'
+            'user_id' => 'int',
+            'date_of_movement' => 'datetime',
         ];
         protected $fillable = [
             'origin_id',

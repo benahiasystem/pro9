@@ -24,7 +24,8 @@ final class InvoiceChargeLabelsTest extends TestCase
  {
   $base=dirname(__DIR__,2).'/app/CoreFacturalo/Templates/pdf/';$rows=[];
   foreach(glob($base.'*/invoice*.blade.php') as $path){$source=file_get_contents($path);if(preg_match('/@php\s+\$total_factor\s*=/s',$source)){foreach(['[{"factor":0.02},{"factor":0.03}]'=>'5','[{"percentage":"1.000000000001","factor":0.9},{"factor":0.02}]'=>'3.000000000001','[{"factor":0.000000000000015}]'=>'0.000000000002'] as $input=>$expected)$rows[substr($path,strlen($base)).' '.$expected]=[substr($path,strlen($base)),$input,$expected];}}
-  if(count($rows)!==54)throw new \RuntimeException('Expected 54 invoice-template cases; found '.count($rows));
+  // The two NRUS invoice templates were retired.
+  if(count($rows)!==48)throw new \RuntimeException('Expected 48 invoice-template cases; found '.count($rows));
   return $rows;
  }
 }

@@ -10,7 +10,8 @@ class ExactHttpAcceptanceTest extends TestCase
     public function test_production_kernel_routes_and_api_authentication_run_against_disposable_postgresql(): void
     {
         if (getenv('SAB_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
-        $vesInvoicesOnly = getenv('SAB_HTTP_ACCEPTANCE_VES_ONLY') === '1';
+        $vesDocumentsOnly = getenv('SAB_TEST_DOCUMENTS_VES_ONLY') === '1';
+        $vesInvoicesOnly = $vesDocumentsOnly || getenv('SAB_HTTP_ACCEPTANCE_VES_ONLY') === '1';
         $fixture=new class extends FiscalEmissionSchemaTest {
             public bool $ready=false;
             public function start(): array { parent::setUp();$this->ready=true;return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
@@ -526,32 +527,34 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertSame('USD',$notePayment->currency_type_id);
             self::assertSame(1,$db->table('sale_note_payments')->where('sale_note_id',$note->id)->count());
             $db->table('payment_method_types')->where('id','11')->update(['collection_kind'=>'account','currency_type_id'=>'VES','bank_account_id'=>$ves->id,'cash_currency_type_id'=>null,'is_active'=>1]);
-            $serviceUsd=$db->table('technical_services')->insertGetId(['user_id'=>$input['user_id'],'customer_id'=>$input['customer_id'],
-                'customer'=>json_encode($input['customer']),'establishment_id'=>$input['establishment_id'],'fiscal_environment'=>'demo',
-                'currency_type_id'=>'USD','exchange_rate_sale'=>'100','date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00',
-                'total'=>'1','cellphone'=>'','description'=>'Prueba inversa','state'=>'','reason'=>'','serial_number'=>'HTTP-INVERSE','cost'=>'0']);
-            $inverse=['technical_service_id'=>$serviceUsd,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'11',
-                'payment_destination_id'=>$ves->id,'payment'=>'1','currency_type_id'=>'VES','original_amount'=>'100','exchange_rate'=>'100'];
-            $serviceModel=\Modules\Sale\Models\TechnicalService::withoutEagerLoads()->findOrFail($serviceUsd);
-            self::assertSame('USD',$serviceModel->currency_type_id);
-            $prepared=\App\Services\Payments\ReceiptAmounts::prepare(\App\Models\Tenant\PaymentMethodType::findOrFail('11'),'USD','100',$inverse);
-            self::assertSame('1',$prepared['payment']);
-            self::assertSame('1',\App\Support\Exact\Decimal::represent(\App\Services\Payments\AppliedReceiptBalance::values($serviceModel,true)['total_difference']));
-            [$code,$body]=$get('/technical-service-payments/document/'.$serviceUsd);
-            self::assertSame(200,$code,substr($body,0,1500));
-            self::assertSame('USD',json_decode($body,true)['currency_type_id'],$body);
-            self::assertSame('1',json_decode($body,true)['total_difference'],$body);
-            [$code,$body]=$get('/technical-service-payments',true,array_replace($inverse,['payment_destination_id'=>$usd->id]));
-            self::assertSame(422,$code,substr($body,0,1500));
-            self::assertArrayHasKey('payment_destination_id',json_decode($body,true)['message'],$body);
-            self::assertSame(0,$db->table('technical_service_payments')->where('technical_service_id',$serviceUsd)->count());
-            [$code,$body]=$get('/technical-service-payments',true,$inverse);
-            self::assertSame(200,$code,substr($body,0,1500));
-            $inversePayment=$db->table('technical_service_payments')->where('technical_service_id',$serviceUsd)->first();
-            self::assertSame('VES',$inversePayment->currency_type_id);
-            self::assertTrue(\App\Support\Exact\Decimal::of($inversePayment->original_amount)->isEqualTo(\App\Support\Exact\Decimal::of('100')));
-            self::assertTrue(\App\Support\Exact\Decimal::of($inversePayment->payment)->isEqualTo(\App\Support\Exact\Decimal::of('1')));
-            self::assertSame(1,$db->table('technical_service_payments')->where('technical_service_id',$serviceUsd)->count());
+            if (!$vesDocumentsOnly) {
+                $serviceUsd=$db->table('technical_services')->insertGetId(['user_id'=>$input['user_id'],'customer_id'=>$input['customer_id'],
+                    'customer'=>json_encode($input['customer']),'establishment_id'=>$input['establishment_id'],'fiscal_environment'=>'demo',
+                    'currency_type_id'=>'USD','exchange_rate_sale'=>'100','date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00',
+                    'total'=>'1','cellphone'=>'','description'=>'Prueba inversa','state'=>'','reason'=>'','serial_number'=>'HTTP-INVERSE','cost'=>'0']);
+                $inverse=['technical_service_id'=>$serviceUsd,'date_of_payment'=>'2026-10-26','payment_method_type_id'=>'11',
+                    'payment_destination_id'=>$ves->id,'payment'=>'1','currency_type_id'=>'VES','original_amount'=>'100','exchange_rate'=>'100'];
+                $serviceModel=\Modules\Sale\Models\TechnicalService::withoutEagerLoads()->findOrFail($serviceUsd);
+                self::assertSame('USD',$serviceModel->currency_type_id);
+                $prepared=\App\Services\Payments\ReceiptAmounts::prepare(\App\Models\Tenant\PaymentMethodType::findOrFail('11'),'USD','100',$inverse);
+                self::assertSame('1',$prepared['payment']);
+                self::assertSame('1',\App\Support\Exact\Decimal::represent(\App\Services\Payments\AppliedReceiptBalance::values($serviceModel,true)['total_difference']));
+                [$code,$body]=$get('/technical-service-payments/document/'.$serviceUsd);
+                self::assertSame(200,$code,substr($body,0,1500));
+                self::assertSame('USD',json_decode($body,true)['currency_type_id'],$body);
+                self::assertSame('1',json_decode($body,true)['total_difference'],$body);
+                [$code,$body]=$get('/technical-service-payments',true,array_replace($inverse,['payment_destination_id'=>$usd->id]));
+                self::assertSame(422,$code,substr($body,0,1500));
+                self::assertArrayHasKey('payment_destination_id',json_decode($body,true)['message'],$body);
+                self::assertSame(0,$db->table('technical_service_payments')->where('technical_service_id',$serviceUsd)->count());
+                [$code,$body]=$get('/technical-service-payments',true,$inverse);
+                self::assertSame(200,$code,substr($body,0,1500));
+                $inversePayment=$db->table('technical_service_payments')->where('technical_service_id',$serviceUsd)->first();
+                self::assertSame('VES',$inversePayment->currency_type_id);
+                self::assertTrue(\App\Support\Exact\Decimal::of($inversePayment->original_amount)->isEqualTo(\App\Support\Exact\Decimal::of('100')));
+                self::assertTrue(\App\Support\Exact\Decimal::of($inversePayment->payment)->isEqualTo(\App\Support\Exact\Decimal::of('1')));
+                self::assertSame(1,$db->table('technical_service_payments')->where('technical_service_id',$serviceUsd)->count());
+            }
             $contractInput=['id'=>null,'prefix'=>'CON','customer_id'=>$input['customer_id'],'establishment_id'=>$input['establishment_id'],
                 'date_of_issue'=>'2026-10-26','time_of_issue'=>'09:00:00','currency_type_id'=>'VES','exchange_rate_sale'=>'100',
                 'total'=>'100','items'=>[],'payments'=>[['payment_method_type_id'=>'01','payment_destination_id'=>$usd->id,
@@ -673,11 +676,13 @@ class ExactHttpAcceptanceTest extends TestCase
             $db->table('sale_notes')->where('id',$note->id)->update(['state_type_id'=>'01']);
             [$code]=$get('/sale-notes/items',true,['notes_id'=>[$note->id,$note->id]]);self::assertSame(422,$code);
             [$code]=$get('/sale-notes/items',true,['notes_id'=>[99999999]]);self::assertSame(404,$code);
-            $foreignContext=$note->replicate();
-            $foreignContext->forceFill(['number'=>'#','external_id'=>(string)\Illuminate\Support\Str::uuid(),
-                'currency_type_id'=>'USD','exchange_rate_sale'=>'2.00000000'])->save();
-            [$code]=$get('/sale-notes/items',true,['notes_id'=>[$note->id,$foreignContext->id]]);
-            self::assertSame(422,$code,'Una selección mixta no puede heredar silenciosamente la primera tasa o moneda.');
+            if (!$vesDocumentsOnly) {
+                $foreignContext=$note->replicate();
+                $foreignContext->forceFill(['number'=>'#','external_id'=>(string)\Illuminate\Support\Str::uuid(),
+                    'currency_type_id'=>'USD','exchange_rate_sale'=>'2.00000000'])->save();
+                [$code]=$get('/sale-notes/items',true,['notes_id'=>[$note->id,$foreignContext->id]]);
+                self::assertSame(422,$code,'Una selección mixta no puede heredar silenciosamente la primera tasa o moneda.');
+            }
             $legacy=$note->replicate();
             $legacy->forceFill(['number'=>'#','external_id'=>(string)\Illuminate\Support\Str::uuid()])->save();
             foreach ([1,2] as $position) $legacy->items()->create(array_replace($input['items'][0],[
@@ -2540,7 +2545,11 @@ class ExactHttpAcceptanceTest extends TestCase
             $this->assertSpreadsheetInvoicesReachTheRealApi($get,$db,$app,$input,$token,$temp);
             $this->assertPosCatalogPreservesOriginalFractions($get,$db,$input);
             $this->assertApiInvoiceDetailProjectsExactAmounts($get,$input,$newService->id,$temp,$vesInvoicesOnly);
-            if ($vesInvoicesOnly) {
+            if ($vesDocumentsOnly) {
+                foreach (['documents', 'sale_notes', 'quotations', 'purchases', 'purchase_settlements', 'technical_services', 'contracts'] as $table) {
+                    self::assertSame(0, $db->table($table)->where('currency_type_id', 'USD')->count(), $table);
+                }
+            } elseif ($vesInvoicesOnly) {
                 self::assertSame(0, $db->table('documents')->where('document_type_id','01')->where('currency_type_id','USD')->count());
             }
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########

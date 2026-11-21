@@ -5,8 +5,8 @@ namespace App\Traits;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\Models\System\JobBatchingTray;
 use Illuminate\Database\Eloquent\Builder;
-use Hyn\Tenancy\Models\Website;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Models\Website;
+use App\Tenancy\Environment;
 use App\Models\Tenant\{
     User,
     DownloadTray,

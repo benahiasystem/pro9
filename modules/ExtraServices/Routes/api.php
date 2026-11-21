@@ -6,7 +6,7 @@ $prefix = env('PREFIX_URL',null);
 $prefix = !empty($prefix)?$prefix.".":'';
 $app_url = $prefix. env('APP_URL_BASE');
 
-$hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
+$hostname = app(App\Tenancy\Contracts\CurrentHostname::class);
 
 // Rutas para el system
 Route::domain($app_url)->group(function () {

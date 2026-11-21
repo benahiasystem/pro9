@@ -5,7 +5,7 @@ use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\Request;
 use App\Models\System\Client;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Modules\LevelAccess\Http\Controllers\SystemActivityLogGeneralController;
 use App\Models\Tenant\{
     User,

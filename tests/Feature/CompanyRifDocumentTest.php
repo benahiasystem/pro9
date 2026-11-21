@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\Tenant\CompanyRifDocumentController;
 use App\Models\Tenant\User;
-use Hyn\Tenancy\Contracts\Tenant;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Contracts\Tenant;
+use App\Tenancy\Models\Website;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\{DB, Route, Schema, Storage};

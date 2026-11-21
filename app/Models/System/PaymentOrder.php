@@ -3,7 +3,7 @@
 namespace App\Models\System;
 
 use Carbon\Carbon;
-use Hyn\Tenancy\Traits\UsesSystemConnection;
+use App\Tenancy\Traits\UsesSystemConnection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;

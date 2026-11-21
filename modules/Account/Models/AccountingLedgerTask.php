@@ -6,7 +6,7 @@
 
     use App\Models\Tenant\ModelTenant;
     use Carbon\Carbon;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
 
     /**
      * Class AccountingLedgerTask
@@ -27,10 +27,8 @@
         protected $perPage = 25;
         protected $casts = [
             'month' => 'int',
-            'year' => 'int'
-        ];
-        protected $dates = [
-            'last_rum'
+            'year' => 'int',
+            'last_rum' => 'datetime',
         ];
         protected $fillable = [
             'month',

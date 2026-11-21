@@ -19,11 +19,11 @@
     use App\Models\System\Skin as SystemSkin;
     use Carbon\Carbon;
     use Exception;
-    use Hyn\Tenancy\Contracts\Repositories\HostnameRepository;
-    use Hyn\Tenancy\Contracts\Repositories\WebsiteRepository;
-    use Hyn\Tenancy\Environment;
-    use Hyn\Tenancy\Models\Hostname;
-    use Hyn\Tenancy\Models\Website;
+    use App\Tenancy\Repositories\HostnameRepository;
+    use App\Tenancy\Repositories\WebsiteRepository;
+    use App\Tenancy\Environment;
+    use App\Tenancy\Models\Hostname;
+    use App\Tenancy\Models\Website;
     use Illuminate\Http\Request;
     use Illuminate\Support\Collection;
     use Illuminate\Support\Facades\DB;

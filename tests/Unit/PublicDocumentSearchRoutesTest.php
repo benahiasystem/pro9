@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use Hyn\Tenancy\Contracts\CurrentHostname;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Models\Hostname;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;

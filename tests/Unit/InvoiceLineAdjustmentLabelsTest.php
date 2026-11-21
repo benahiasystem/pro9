@@ -15,7 +15,8 @@ final class InvoiceLineAdjustmentLabelsTest extends TestCase
                 if(preg_match('/@foreach\([^\n]* as \$'.$name.'\).*?@endforeach/s',$s))$cases[substr($file,strlen($base)).' '.$kind]=[substr($file,strlen($base)),$kind,$name];
             }
         }
-        if(count($cases)!==36)throw new \RuntimeException('Expected 36 invoice adjustment cases; got '.count($cases));return $cases;
+        // The two NRUS invoice templates were retired.
+        if(count($cases)!==32)throw new \RuntimeException('Expected 32 invoice adjustment cases; got '.count($cases));return $cases;
     }
     /** @dataProvider cases */
     public function test_real_invoice_line_labels_use_original_values(string $template,string $kind,string $name):void

@@ -2,7 +2,7 @@
 
 namespace Modules\Marketplace\Models;
 
-use Hyn\Tenancy\Traits\UsesSystemConnection;
+use App\Tenancy\Traits\UsesSystemConnection;
 use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model

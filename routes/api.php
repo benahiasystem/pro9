@@ -18,7 +18,7 @@ Route::prefix('whatsapp-notify')->middleware('throttle:30,1')->group(function ()
     Route::post('pdf', 'System\Api\WhatsAppNotifyApiController@pdf')->name('api.whatsapp_notify.pdf');
 });
 
-$hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
+$hostname = app(App\Tenancy\Contracts\CurrentHostname::class);
 if ($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
         Route::post('configurations/default-image', [ConfigurationImageController::class, 'upload']);

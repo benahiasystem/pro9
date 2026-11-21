@@ -27,7 +27,8 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\RemoveClientCalculationSnapshots::class,
         \App\Http\Middleware\TrustProxies::class,
         \App\Http\Middleware\ForceHttps::class,
-        \Fruitcake\Cors\HandleCors::class,
+        \Illuminate\Http\Middleware\HandleCors::class,
+        \App\Tenancy\Middleware\HostnameActions::class,
     ];
 
     /**

@@ -34,6 +34,15 @@ class PostgresConnection extends \Illuminate\Database\PostgresConnection
         return $this->withTablePrefix(new PostgresSchemaGrammar());
     }
 
+    public function getSchemaBuilder()
+    {
+        if (is_null($this->schemaGrammar)) {
+            $this->useDefaultSchemaGrammar();
+        }
+
+        return new PostgresSchemaBuilder($this);
+    }
+
     public function select($query, $bindings = [], $useReadPdo = true)
     {
         return array_map([self::class, 'transport'], parent::select($query, $bindings, $useReadPdo));

@@ -10,7 +10,7 @@ use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\DateFactory;
 use Illuminate\Support\Str;
-use Hyn\Tenancy\Database\Connection as TenancyConnection;
+use App\Tenancy\Database\Connection as TenancyConnection;
 use Modules\Accounting\Domain\{CompanyContext, ApiProblem, Exact};
 use Modules\Accounting\Models\{Company, Account, JournalEntry, JournalLine, Period, SourceDocument, SourceVersion, ThirdParty, OpenItem, FiscalRecord};
 use Modules\Accounting\Services\{CompanyService, EntryService, ReportService, DocumentService, TaxConfigurationService};

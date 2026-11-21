@@ -3,7 +3,7 @@
 
 namespace App\Models\System;
 
-use Hyn\Tenancy\Traits\UsesSystemConnection;
+use App\Tenancy\Traits\UsesSystemConnection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Config;
 

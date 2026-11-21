@@ -19,7 +19,7 @@ $establishments = App\Models\Tenant\Establishment::select('id', 'description')->
 $multiUserCount = 0;
 if(config('configuration.multi_user_enabled')) {
     try {
-        $website = app(\Hyn\Tenancy\Environment::class)->tenant();
+        $website = app(\App\Tenancy\Environment::class)->tenant();
         $currentClient = \App\Models\System\Client::currentClientByWebsite($website)->first();
         if($currentClient && auth()->check()) {
             $currentUser = auth()->user();
@@ -64,7 +64,7 @@ $current = auth()->user()->establishment_id;
 $canShowBranchSelector = auth()->user()->type == 'admin' && count($establishments) > 0;
 
 try {
-    $website = app(\Hyn\Tenancy\Environment::class)->tenant();
+    $website = app(\App\Tenancy\Environment::class)->tenant();
     $currentClient = \App\Models\System\Client::currentClientByWebsite($website)->first();
     $current_client_fqdn = $currentClient->hostname->fqdn ?? '';
 } catch (\Exception $e) {

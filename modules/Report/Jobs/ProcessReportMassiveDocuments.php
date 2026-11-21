@@ -5,7 +5,7 @@ namespace Modules\Report\Jobs;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\Models\System\JobBatchingTray;
 use App\Traits\JobReportTrait;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;

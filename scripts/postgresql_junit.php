@@ -57,8 +57,8 @@ function postgresqlDeferPosPerformance(array $all, array $functional): array
         }
     }
     $class='Tests\\Unit\\PostgresPerformanceTest';
-    $pos='test_pos_catalog_p95_matches_the_temporary_mysql_reference';
-    $remaining='test_http_and_sales_report_p95_matches_the_temporary_mysql_reference';
+    $pos='test_pos_catalog_p95_matches_the_postgresql_tenancy2_reference';
+    $remaining='test_http_and_sales_report_p95_matches_the_postgresql_tenancy2_reference';
     $performance=array_diff_key($all,$functional);
     $deferredKey=$class.'::'.$pos;
     $mandatoryKey=$class.'::'.$remaining;
@@ -91,12 +91,48 @@ function postgresqlVesTestSelection(array $inventory, array $selectors): array
     return ['included'=>array_diff_key($inventory,$excluded), 'excluded'=>$excluded];
 }
 
+/** Cases owned by Account/Accounting, including exporters tested from the shared suite. */
+function postgresqlAccountingCases(array $inventory): array
+{
+    $shared = [
+        'Tests\\Unit\\ContasisPostgresTest::test_contasis_formats_persisted_exact_values_and_real_other_taxes',
+        'Tests\\Unit\\RetiredBagTaxExportTest::test_ejb_workbook_keeps_columns_and_identifiers_aligned_without_the_tax',
+        'Tests\\Unit\\RetiredBagTaxExportTest::test_ejb_blade_has_the_same_column_alignment_as_the_workbook',
+    ];
+    return array_filter($inventory, static function (array $case, string $key) use ($shared): bool {
+        return str_starts_with($case['class'], 'Modules\\Account\\Tests\\')
+            || str_starts_with($case['class'], 'Modules\\Accounting\\Tests\\')
+            || in_array($key, $shared, true);
+    }, ARRAY_FILTER_USE_BOTH);
+}
+
 /** Keep the phase prefix and exclude only the exact discovered case identities. */
 function postgresqlExcludeCases(string $phaseFilter, array $excluded): string
 {
-    if (!$excluded) return $phaseFilter;
-    $names=array_map(static fn (string $name): string => preg_quote($name,'~'),array_keys($excluded));
-    return '~^(?!(?:'.implode('|',$names).')$)'.substr($phaseFilter,2);
+    $byClass = [];
+    foreach ($excluded as $identity => $case) {
+        if (preg_match($phaseFilter, $identity) === 1) {
+            $parts = explode(' with data set ', $case['name'], 2);
+            $suffix = isset($parts[1]) ? ' with data set '.$parts[1] : '';
+            $byClass[$case['class']][$parts[0]][] = preg_quote($suffix, '~');
+        }
+    }
+    if (!$byClass) return $phaseFilter;
+
+    $names = [];
+    foreach ($byClass as $class => $methods) {
+        $classMethods = [];
+        foreach ($methods as $method => $suffixes) {
+            $suffix = count($suffixes) === 1 ? $suffixes[0] : '(?:'.implode('|', $suffixes).')';
+            $classMethods[] = preg_quote($method, '~').$suffix;
+        }
+        $names[] = preg_quote($class, '~').'::(?:'.implode('|', $classMethods).')';
+    }
+    $pattern = '~^(?!(?:'.implode('|', $names).')\z)'.substr($phaseFilter, 2);
+    if (@preg_match($pattern, '') === false) {
+        throw new RuntimeException('No se pudo compilar el filtro de PHPUnit: '.preg_last_error_msg());
+    }
+    return $pattern;
 }
 
 /** Merge isolated PHPUnit phases without omitting failed, skipped or duplicate cases. */

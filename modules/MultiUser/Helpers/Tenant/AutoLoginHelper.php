@@ -3,7 +3,7 @@
 namespace Modules\MultiUser\Helpers\Tenant;
 
 use Illuminate\Support\Facades\Auth;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Support\Facades\Cache;
 use Modules\MultiUser\Models\System\MultiUser;
 use App\Models\Tenant\User;

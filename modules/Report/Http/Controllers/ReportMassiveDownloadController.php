@@ -19,7 +19,7 @@ use App\Models\Tenant\{
     DownloadTray
 };
 use Carbon\Carbon;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Hostname;
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;

@@ -12,7 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Batchable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Support\Facades\Log;
 use Modules\Report\Exports\GeneralItemExport;
 
@@ -57,7 +57,7 @@ class ProcessReportGeneralItems implements ShouldQueue
         try {
         $batchId = $this->batchId;
         $website = $this->findWebsite($this->website_id);
-        if (!$website) throw (new \Illuminate\Database\Eloquent\ModelNotFoundException())->setModel(\Hyn\Tenancy\Models\Website::class, [$this->website_id]);
+        if (!$website) throw (new \Illuminate\Database\Eloquent\ModelNotFoundException())->setModel(\App\Tenancy\Models\Website::class, [$this->website_id]);
         $tenancy = app(Environment::class);
         $tenancy->tenant($website);
         $tenantSelected = true;

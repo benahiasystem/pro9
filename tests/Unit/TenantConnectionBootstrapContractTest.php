@@ -47,6 +47,20 @@ class TenantConnectionBootstrapContractTest extends TestCase
     }
 
     /** @test */
+    public function a_bootstrapped_hostname_cannot_dispatch_a_request_for_another_domain(): void
+    {
+        $hostname = (new \App\Tenancy\Models\Hostname())->forceFill(['fqdn' => 'alpha.example.test']);
+        $this->app->instance(\App\Tenancy\Environment::REQUEST_HOSTNAME, $hostname);
+        $request = \Illuminate\Http\Request::create('https://beta.example.test/api/company');
+
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class);
+        (new \App\Tenancy\Middleware\HostnameActions())->handle(
+            $request,
+            static fn () => throw new \LogicException('The request must not reach the route')
+        );
+    }
+
+    /** @test */
     public function adaptation_skill_records_the_first_access_invariant(): void
     {
         $skill = $this->source('.codex/skills/adaptar-sistema-venezuela/SKILL.md');

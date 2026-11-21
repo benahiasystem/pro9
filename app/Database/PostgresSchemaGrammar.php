@@ -2,6 +2,7 @@
 
 namespace App\Database;
 
+use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Fluent;
 
 // ########## INICIO CAMBIO POSTGRESQL 17
@@ -106,8 +107,14 @@ SQL;
     {
         $type=parent::typeTimestamp($column);
         // MySQL CURRENT_TIMESTAMP is evaluated at the statement, including inside a transaction.
-        $now=($column->precision ?? 0)===0 ? "date_trunc('second', statement_timestamp())" : 'statement_timestamp()';
-        return str_replace(' default CURRENT_TIMESTAMP',' default '.$now,$type);
+        if ($column->useCurrent) {
+            $now = ($column->precision ?? 0) === 0
+                ? "date_trunc('second', statement_timestamp())"
+                : 'statement_timestamp()';
+            $column->default(new Expression($now));
+        }
+
+        return $type;
     }
     protected function modifyCollate(\Illuminate\Database\Schema\Blueprint $blueprint, Fluent $column)
     {

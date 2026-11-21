@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use App\Models\System\Client;
 use App\Models\System\Plan;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Modules\Finance\Helpers\UploadFileHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;

@@ -7,7 +7,7 @@ use App\Models\System\Client;
 use App\Models\System\Configuration;
 use App\Models\System\PaymentOrder;
 use Carbon\Carbon;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 

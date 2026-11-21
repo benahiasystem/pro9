@@ -1,6 +1,6 @@
 <?php
 use Illuminate\Support\Facades\Route;
-$current_hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
+$current_hostname = app(App\Tenancy\Contracts\CurrentHostname::class);
 
 if($current_hostname) {
     Route::domain($current_hostname->fqdn)->group(function () {

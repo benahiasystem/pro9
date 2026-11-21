@@ -6,35 +6,60 @@ $root=dirname(__DIR__);chdir($root);
 require __DIR__.'/postgresql_source_manifest.php';
 require __DIR__.'/postgresql_junit.php';
 $source=postgresqlSourceManifest($root);
-$arguments=array_slice($argv,1);$suite='all';$phpunit=[];$skipBuild=false;$reuseReference=false;$deferPosPerformance=false;$vesInvoicesOnly=false;
+$arguments=array_slice($argv,1);$suite='all';$phpunit=[];$skipBuild=false;$deferPosPerformance=false;$vesInvoicesOnly=false;$vesDocumentsOnly=false;$withoutAccounting=false;
 while ($arguments) {
     $argument=array_shift($arguments);
     if ($argument==='--') {$phpunit=$arguments;break;}
     if ($argument==='--without-pos-performance' || $argument==='--without-performance') {$deferPosPerformance=true;continue;}
-    if ($argument==='--reuse-reference') {$reuseReference=true;continue;}
+    if ($argument==='--reuse-reference') {continue;} // Compatibility: the PostgreSQL reference is always reused.
     if ($argument==='--ves-invoices-only') {$vesInvoicesOnly=true;$deferPosPerformance=true;continue;}
+    if ($argument==='--ves-documents-only') {$vesDocumentsOnly=$vesInvoicesOnly=true;continue;}
+    if ($argument==='--without-accounting') {$withoutAccounting=true;continue;}
     if ($argument==='--skip-build') {$skipBuild=true;continue;}
     if (str_starts_with($argument,'--suite=')) {$suite=substr($argument,8);continue;}
     fwrite(STDERR,'Argumento no válido: '.$argument.PHP_EOL);exit(2);
 }
-if (!in_array($suite,['install','concurrency','http','backup','performance','accounting','all'],true)) exit(2);
+if (!in_array($suite,['install','concurrency','http','backup','performance','accounting','reference','all'],true)) exit(2);
 if ($deferPosPerformance && (!in_array($suite, ['all','performance'], true) || $phpunit)) {
     fwrite(STDERR, "El aplazamiento POS se admite en la batería completa o de rendimiento.\n");
     exit(2);
 }
-if ($vesInvoicesOnly && ($suite!=='all' || $phpunit)) {
-    fwrite(STDERR, "El alcance de facturas VES se aplica al inventario de la batería completa.\n");
+if (($vesInvoicesOnly || $withoutAccounting) && ($suite!=='all' || $phpunit)) {
+    fwrite(STDERR, "La selección fiscal se aplica al inventario de la batería completa.\n");
     exit(2);
 }
 $currencyPolicy=$vesInvoicesOnly
     ? json_decode(file_get_contents($root.'/tests/Infrastructure/postgresql_ves_invoice_scope.json'),true,512,JSON_THROW_ON_ERROR)
     : null;
+if ($vesDocumentsOnly) {
+    $additionalPolicy = json_decode(file_get_contents($root.'/tests/Infrastructure/postgresql_ves_document_scope.json'), true, 512, JSON_THROW_ON_ERROR);
+    $currencyPolicy['php_excluded'] = array_unique(array_merge($currencyPolicy['php_excluded'], $additionalPolicy['php_excluded']));
+}
+$referenceName = 'referencia_rendimiento_postgresql.json';
+if (!$phpunit && in_array($suite, ['all', 'performance'], true)) {
+    $evidence = $root.'/informes/evidencias/postgresql_17_implementacion/';
+    $inputs = [$referenceName];
+    if ($suite === 'all') {
+        $inputs = array_merge($inputs, ['casts_exactos_efectivos.json', 'esquema.json']);
+    }
+    $missing = array_values(array_filter($inputs, static fn ($name) => !is_file($evidence.$name)));
+    if ($missing) {
+        fwrite(STDERR, 'Insumos obligatorios ausentes: '.implode(', ', $missing).PHP_EOL);
+        exit(2);
+    }
+}
+if ($suite === 'reference' && ($phpunit || $source['revision'] !== '9d7d61dea246d8bb2905c46a636cbd63c7336d8b')) {
+    fwrite(STDERR, "Capture la referencia en el commit de Tenancy 2 9d7d61de.\n");
+    exit(2);
+}
 $runId='sab-pgtest-'.bin2hex(random_bytes(6));
 $cache=(getenv('XDG_CACHE_HOME') ?: (getenv('HOME').'/.cache')).'/sab-postgres-tests/'.$runId;
 foreach (['data','storage/framework/cache/data','storage/framework/views','storage/framework/sessions','storage/logs','storage/app','bootstrap-cache'] as $directory) if (!mkdir($cache.'/'.$directory,0700,true) && !is_dir($cache.'/'.$directory)) throw new RuntimeException('No se pudo preparar la ejecución temporal.');
 $environment=getenv();$environment['SAB_POSTGRES_RUN_ID']=$runId;$environment['SAB_POSTGRES_PASSWORD']=bin2hex(random_bytes(24));
 $environment['SAB_POSTGRES_DATA']=$cache.'/data';$environment['SAB_TEST_STORAGE']=$cache.'/storage';$environment['SAB_TEST_BOOTSTRAP_CACHE']=$cache.'/bootstrap-cache';
 $environment['SAB_POSTGRES_AV_DEFINITIONS']=$cache.'/scanner-signatures';
+if ($withoutAccounting) $environment['SAB_FISCAL_EXCLUDE_ACCOUNTING']='1';
+if ($vesDocumentsOnly) $environment['SAB_TEST_DOCUMENTS_VES_ONLY']='1';
 if ($vesInvoicesOnly) {
     $environment['SAB_HTTP_ACCEPTANCE_VES_ONLY']='1';
     $environment['SAB_TEST_INVOICES_VES_ONLY']='1';
@@ -71,35 +96,44 @@ $cleanup=static function () use (&$cleaned,&$started,&$cleanupOk,$compose,$envir
 };
 register_shutdown_function($cleanup);
 if (function_exists('pcntl_async_signals')) {pcntl_async_signals(true);foreach ([SIGINT,SIGTERM] as $signal) pcntl_signal($signal,static function () use ($cleanup): void {$cleanup();exit(130);});}
-$code=1;$checks=[];$failure=null;$referenceUpdate=null;$phases=[];
+$code=1;$checks=[];$failure=null;$phases=[];
 try {
     if (!$skipBuild && command(array_merge($compose,['build','php']),$environment)!==0) throw new RuntimeException('Falló la construcción PHP.');
-    if (!$phpunit && in_array($suite,['all','performance'],true)) {
-        $capture = static function (string $reference, array $arguments = []) use ($root,$environment,$report,$runId,&$source): array {
-            if (command([PHP_BINARY,'tests/Infrastructure/capture_mysql_reference.php',$root.'/'.$reference,...$arguments],$environment)!==0) {
-                throw new RuntimeException('Falló la referencia temporal MySQL para '.$reference.'.');
-            }
-            $after=postgresqlSourceAfterReference($source,postgresqlSourceManifest($root),$reference);
-            $update=['path'=>$reference,'before'=>$source['files'][$reference] ?? null,'after'=>$after['files'][$reference] ?? null];
-            $source=$after;
-            file_put_contents($report.'/'.$runId.'-fuentes.json',json_encode($source,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR).PHP_EOL);
-            return $update;
-        };
-        $reference='informes/evidencias/postgresql_17_implementacion/referencia_rendimiento_mysql.json';
-        $multiple='informes/evidencias/postgresql_17_implementacion/referencia_rendimiento_multitenant_mysql.json';
-        if (!$deferPosPerformance && !$reuseReference) $referenceUpdate=$capture($reference);
-        if ((!$deferPosPerformance && !$reuseReference) || !is_file($root.'/'.$multiple)) {
-            $referenceUpdate ??= [];
-            $referenceUpdate['multitenant']=$capture($multiple,['--http-multitenant']);
-        }
-    }
     $started=true;
     if (command(array_merge($compose,['up','--detach','--wait','--wait-timeout','180','postgres']),$environment)!==0) throw new RuntimeException('PostgreSQL temporal no llegó a estar disponible.');
     $runtime=array_merge($compose,['run','--rm','--no-deps','php','php','-d','memory_limit=768M']);
     $filters=['install'=>'PostgresImplementationTest|FiscalEmissionSchemaTest::test_fresh|FiscalEmissionSchemaTest::test_central','concurrency'=>'Concurrency|concurrent|parallel','http'=>'ExactHttpAcceptanceTest','backup'=>'PostgresImplementationTest|fixture_snapshot','performance'=>'PostgresPerformanceTest','accounting'=>postgresqlFunctionalFilters()['accounting']];
     $tests=['vendor/bin/phpunit','--exclude-group',implode(',', $excludedGroups),'--printer','Tests\Support\FiscalProgressPrinter'];
     $junitDirectory='/var/www/sab/informes/evidencias/postgresql_17_implementacion/resultados/';
-    if (in_array($suite, ['all','performance'], true) && !$phpunit) {
+    if ($suite === 'reference') {
+        $measurements = [
+            'single' => ['benchmark_postgresql_http.php', 'http_documents', 'sales_report'],
+            'pos' => ['benchmark_postgresql_http.php', 'pos_catalog'],
+            'tenants' => ['benchmark_postgresql_tenants.php'],
+        ];
+        $baseline = [];
+        foreach ($measurements as $label => $arguments) {
+            $arguments[0] = 'tests/Support/'.$arguments[0];
+            $file = $report.'/'.$runId.'-referencia-'.$label.'.json';
+            echo 'Capturando PostgreSQL con Tenancy 2: '.$label.PHP_EOL;
+            if (command(array_merge($runtime, $arguments), $environment, $file) !== 0) {
+                throw new RuntimeException('Falló la referencia PostgreSQL: '.$label);
+            }
+            $baseline[$label] = json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR);
+        }
+        foreach ([$baseline['single'], $baseline['pos'], ...array_values($baseline['tenants'])] as $sample) {
+            if (($sample['engine'] ?? null) !== 'pgsql' || array_keys($sample['cases'] ?? []) !== [1000, 10000]) {
+                throw new RuntimeException('La referencia PostgreSQL está incompleta.');
+            }
+        }
+        $baseline += ['baseline_revision'=>$source['revision'], 'source_sha256'=>$source['sha256'],
+            'php_version'=>$baseline['single']['php_version'], 'temporary_only'=>true, 'cpu_limit'=>2,
+            'server_memory_bytes'=>805306368, 'php_memory_bytes'=>1610612736, 'captured_at'=>date(DATE_ATOM)];
+        $destination = $report.'/'.$runId.'-'.$referenceName;
+        file_put_contents($destination, json_encode($baseline, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR).PHP_EOL);
+        echo 'Referencia PostgreSQL: '.$destination.PHP_EOL;
+        $code=0;
+    } elseif (in_array($suite, ['all','performance'], true) && !$phpunit) {
         $discovery=$runId.'-discovery.xml';
         if (command(array_merge($runtime,['vendor/bin/phpunit','--list-tests-xml',$junitDirectory.$discovery]),$environment)!==0) {
             throw new RuntimeException('No se pudo descubrir la suite completa de PHPUnit.');
@@ -107,9 +141,9 @@ try {
         // PHPUnit's listing ignores group filters; apply exactly the original exclusions here.
         $expectedAll=postgresqlTestInventory($report.'/'.$discovery,$excludedGroups);
         $functionalExcludedGroups = [...$excludedGroups, 'postgres-performance'];
-        $expectedFunctional=postgresqlTestInventory($report.'/'.$discovery,$functionalExcludedGroups);
-        // The MySQL reference starts in a fresh process and cluster. Measure PostgreSQL
-        // under the same conditions before the functional suite creates and restores tenants.
+        $discoveredFunctional=postgresqlTestInventory($report.'/'.$discovery,$functionalExcludedGroups);
+        $expectedFunctional=$discoveredFunctional;
+        // Measure against a fresh PostgreSQL before the functional suite creates tenants.
         $deferred=[];
         if ($deferPosPerformance) {
             $policy=postgresqlDeferPosPerformance($expectedAll,$expectedFunctional);
@@ -126,9 +160,34 @@ try {
             $expectedAll=array_diff_key($expectedAll,$currencyExcluded);
             $adapted=array_keys($currencyPolicy['php_adapted']);
             if (array_diff($adapted,array_keys($expectedFunctional))) throw new RuntimeException('Falta una prueba adaptada a facturas en VES.');
-            $phases['invoice_currency_scope']=['currency'=>'VES','php_excluded'=>array_keys($currencyExcluded),
+            $phases[$vesDocumentsOnly ? 'document_currency_scope' : 'invoice_currency_scope']=['currency'=>'VES','php_excluded'=>array_keys($currencyExcluded),
                 'php_adapted'=>$currencyPolicy['php_adapted'],'javascript_excluded'=>$currencyPolicy['javascript_excluded'],
                 'javascript_adapted'=>$currencyPolicy['javascript_adapted']];
+        }
+        $accountingExcluded = [];
+        if ($withoutAccounting) {
+            $accountingExcluded = postgresqlAccountingCases($expectedFunctional + $currencyExcluded);
+            if (!$accountingExcluded) throw new RuntimeException('No se encontraron casos de Contabilidad para excluir.');
+            $expectedFunctional = array_diff_key($expectedFunctional, $accountingExcluded);
+            $expectedAll = array_diff_key($expectedAll, $accountingExcluded);
+            $phases['accounting_scope'] = ['modules_loaded'=>true, 'php_excluded'=>array_keys($accountingExcluded)];
+        }
+        $functionalFilters = [];
+        if ($suite === 'all') {
+            $selected = [];
+            foreach (postgresqlFunctionalFilters() as $label => $filter) {
+                if ($withoutAccounting && $label === 'accounting') continue;
+                $pattern = postgresqlExcludeCases($filter, $currencyExcluded + $accountingExcluded);
+                $matches = array_filter($discoveredFunctional, static fn (string $id): bool => preg_match($pattern, $id) === 1, ARRAY_FILTER_USE_KEY);
+                if (!$matches || array_intersect_key($selected, $matches)) {
+                    throw new RuntimeException('La selección de PHPUnit está vacía o contiene duplicados en la fase '.$label.'.');
+                }
+                $selected += $matches;
+                $functionalFilters[$label] = $pattern;
+            }
+            if (array_diff_key($expectedFunctional, $selected) || array_diff_key($selected, $expectedFunctional)) {
+                throw new RuntimeException('Los filtros de PHPUnit no reproducen el inventario funcional.');
+            }
         }
         $expectedPerformance=array_diff_key($expectedAll, $expectedFunctional);
         $performanceFile=$runId.'-performance.xml';
@@ -138,17 +197,17 @@ try {
         $performanceCode=command(array_merge($runtime,$performance),$environment);
         $phases['performance']=['exit_code'=>$performanceCode,'junit'=>$performanceFile,'executed'=>true,
             'required_cases'=>array_keys($expectedPerformance),'deferred_cases'=>$deferred,
-            'reference_mode'=>$deferPosPerformance || $reuseReference ? 'archived' : 'captured'];
+            'reference_mode'=>'postgresql_tenancy2_baseline'];
         $acceptanceReports=['performance'=>$report.'/'.$performanceFile];
         $functionalCode=0;
         if ($suite==='all') {
             $functionalReports=[];$functionalPhases=[];
             $phases['functional']=['exit_code'=>1,'junit'=>$runId.'-functional.xml','state'=>'incomplete',
                 'subphases'=>[],'discovered_tests'=>count($expectedFunctional)];
-            foreach (postgresqlFunctionalFilters() as $label=>$filter) {
+            foreach ($functionalFilters as $label=>$filter) {
                 $filename=$runId.'-functional-'.$label.'.xml';
                 $functional=['vendor/bin/phpunit','--exclude-group',implode(',', $functionalExcludedGroups),'--printer','Tests\Support\FiscalProgressPrinter',
-                    '--filter',postgresqlExcludeCases($filter,$currencyExcluded),'--log-junit',$junitDirectory.$filename];
+                    '--filter',$filter,'--log-junit',$junitDirectory.$filename];
                 $phaseCode=command(array_merge($runtime,$functional),$environment);
                 $functionalPhases[$label]=['exit_code'=>$phaseCode,'junit'=>$filename];
                 $phases['functional']['subphases']=$functionalPhases;
@@ -169,7 +228,7 @@ try {
         if (!$phpunit) array_push($tests,'--log-junit',$junitDirectory.$runId.'.xml');
         $code=command(array_merge($runtime,$tests,$phpunit),$environment);
     }
-    if (!$phpunit) {
+    if (!$phpunit && $suite !== 'reference') {
         $junit=$report.'/'.$runId.'.xml';
         if (!is_file($junit)) {$code=1;fwrite(STDERR,"Falta el informe de las pruebas obligatorias.\n");}
         else {
@@ -226,7 +285,7 @@ finally {
     file_put_contents($report.'/'.$runId.'.json',json_encode(['run_id'=>$runId,'suite'=>$suite,'server_version'=>'17.11','platform'=>'linux/amd64',
         'exit_code'=>$code,'databases'=>'temporary only','source_sha256'=>$source['sha256'],'source_unchanged'=>$unchanged,
         'private_scanner'=>false,'excluded_groups'=>$excludedGroups,
-        'cleanup_ok'=>$cleanupOk,'phases'=>$phases,'checks'=>$checks,'reference_update'=>$referenceUpdate,'error'=>$failure,'finished_at'=>date(DATE_ATOM)],JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR).PHP_EOL);
+        'cleanup_ok'=>$cleanupOk,'phases'=>$phases,'checks'=>$checks,'error'=>$failure,'finished_at'=>date(DATE_ATOM)],JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR).PHP_EOL);
 }
 exit($code);
 // ######### FIN CAMBIO POSTGRESQL 17

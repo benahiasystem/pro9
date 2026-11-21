@@ -7,8 +7,8 @@ use App\Models\Tenant\Task;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Hyn\Tenancy\Environment;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Environment;
+use App\Tenancy\Models\Website;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 class TenantCommand extends Command

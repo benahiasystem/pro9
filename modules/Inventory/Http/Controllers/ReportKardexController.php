@@ -34,7 +34,7 @@ use App\Models\Tenant\PurchaseSettlement;
 use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\TemporaryKardexRecord;
 use App\Traits\JobReportTrait;
-use Hyn\Tenancy\Models\Hostname;
+use App\Tenancy\Models\Hostname;
 use Illuminate\Bus\Batch;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;

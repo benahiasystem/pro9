@@ -4,7 +4,7 @@ namespace App\Observers;
 
 use App\Models\System\PaymentOrder;
 use App\Models\Tenant\Configuration as TenantConfiguration;
-use Hyn\Tenancy\Environment;
+use App\Tenancy\Environment;
 use Illuminate\Support\Carbon;
 
 class PaymentOrderObserver

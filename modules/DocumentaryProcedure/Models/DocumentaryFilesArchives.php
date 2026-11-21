@@ -4,7 +4,7 @@
 
     use App\Models\Tenant\ModelTenant;
     use App\Models\Tenant\User;
-    use Hyn\Tenancy\Traits\UsesTenantConnection;
+    use App\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Http\UploadedFile;
     use Illuminate\Support\Facades\Storage;

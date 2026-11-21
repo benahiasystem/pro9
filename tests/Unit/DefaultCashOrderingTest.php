@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\Payments\Classification;
-use Hyn\Tenancy\Database\Connection as TenancyConnection;
+use App\Tenancy\Database\Connection as TenancyConnection;
 use Illuminate\Container\Container;
 use Illuminate\Database\Capsule\Manager;
 use Illuminate\Database\Eloquent\Model;

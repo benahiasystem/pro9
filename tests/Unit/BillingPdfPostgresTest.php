@@ -118,7 +118,7 @@ final class BillingPdfPostgresTest extends \PHPUnit\Framework\TestCase
         self::assertFileExists(asset('logo/logo.jpg'));
         \Tests\Support\PostgresTestEnvironment::assertServer($db);
         $run = getenv('SAB_POSTGRES_RUN_ID');
-        self::assertMatchesRegularExpression('/^pro9-pgtest-[a-f0-9]{12}$/D',$run);
+        self::assertMatchesRegularExpression(\Tests\Support\PostgresTestEnvironment::RUN_ID_PATTERN,$run);
         $directory = base_path('informes/evidencias/postgresql_17_implementacion/resultados/billing-pdf-'.$run.'/'.$currency);
         self::assertDirectoryDoesNotExist($directory);
         self::assertTrue(mkdir($directory,0755,true));

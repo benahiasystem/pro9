@@ -54,7 +54,7 @@ class MultiUserController extends Controller
 
             return $this->getDataDestinationClient($user);
         } finally {
-            app(\Hyn\Tenancy\Environment::class)->tenant($source_website);
+            app(\App\Tenancy\Environment::class)->tenant($source_website);
         }
     }
     

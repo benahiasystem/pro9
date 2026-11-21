@@ -6,7 +6,7 @@ use App\Models\Tenant\Item;
 use App\Models\Tenant\ItemUnitType;
 use App\Models\Tenant\ItemUnitTypePrice;
 use App\Models\Tenant\PriceLabel;
-use Hyn\Tenancy\Models\Website;
+use App\Tenancy\Models\Website;
 use Illuminate\Console\Command;
 use App\Support\Exact\Decimal;
 use Brick\Math\BigRational;
@@ -41,7 +41,7 @@ class FillItemPriceLabelsCommand extends Command
         }
 
         foreach ($websites as $website) {
-            $tenancy = app(\Hyn\Tenancy\Environment::class);
+            $tenancy = app(\App\Tenancy\Environment::class);
             $tenancy->tenant($website);
 
             $this->line("== Tenant #{$website->id} ({$website->uuid}) ==");

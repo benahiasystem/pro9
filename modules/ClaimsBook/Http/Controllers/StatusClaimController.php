@@ -7,7 +7,7 @@ namespace Modules\ClaimsBook\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\Controller;
-use Hyn\Tenancy\Contracts\CurrentHostname;
+use App\Tenancy\Contracts\CurrentHostname;
 use Modules\ClaimsBook\Models\Tenant\StatusClaim;
 
 /**

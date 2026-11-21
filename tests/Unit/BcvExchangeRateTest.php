@@ -23,9 +23,9 @@ class BcvExchangeRateTest extends TestCase
         Carbon::setTestNow(Carbon::parse('2026-10-07 10:00:00', 'America/Caracas'));
         config()->set('services.bcv', ['url' => 'http://api-bcv:3000', 'token' => str_repeat('ab', 32), 'timeout' => 15, 'connect_timeout' => 5]);
         $this->tenant('tenant');
-        $tenancy = $this->getMockBuilder(\Hyn\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
+        $tenancy = $this->getMockBuilder(\App\Tenancy\Database\Connection::class)->disableOriginalConstructor()->onlyMethods(['tenantName'])->getMock();
         $tenancy->method('tenantName')->willReturnCallback(fn () => config('tenancy.db.tenant-connection-name', 'tenant'));
-        app()->instance(\Hyn\Tenancy\Database\Connection::class, $tenancy);
+        app()->instance(\App\Tenancy\Database\Connection::class, $tenancy);
     }
 
     protected function tearDown(): void
