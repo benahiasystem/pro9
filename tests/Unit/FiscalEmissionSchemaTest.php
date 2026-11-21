@@ -28,7 +28,8 @@ class FiscalEmissionSchemaTest extends TestCase
     use \Tests\Support\PaymentClassificationPersistenceCases;
     private function invoiceTestCurrencies(): array
     {
-        return getenv('SAB_TEST_INVOICES_VES_ONLY') === '1' ? ['VES'] : ['VES', 'USD'];
+        return getenv('SAB_TEST_INVOICES_VES_ONLY') === '1' || \App\Services\SalesDocumentCurrency::usesBolivars()
+            ? ['VES'] : ['VES', 'USD'];
     }
 
     private static ?\WeakMap $globalInventoryDispatchers=null;
@@ -235,6 +236,7 @@ class FiscalEmissionSchemaTest extends TestCase
         // The original 4,380-column MySQL capture is immutable. These are the
         // explicitly reviewed additions from develop, not a renewed baseline.
         $additions=[
+            'configurations'=>['sales_documents_ves'=>['boolean',false,false,'true']],
             'payment_method_types'=>['available_for_change'=>['boolean',false,false,'false']],
             'document_change_disbursements'=>[
                 'id'=>['bigint',false,true], 'document_id'=>['bigint',false,false],
@@ -406,6 +408,74 @@ PHP;
             self::assertFalse($db->getSchemaBuilder()->hasTable('document_change_disbursements'));
         }
     }
+
+    // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+    public function test_new_sales_documents_validate_currency_and_reprice_frozen_usd(): void
+    {
+        [$db, , $input] = $this->bootHkaFixture(false);
+        config(['app.key' => 'test-quote-confirmation-key']);
+        self::assertTrue(\App\Services\SalesDocumentCurrency::usesBolivars());
+        try {
+            (new \App\CoreFacturalo\Facturalo())->save(array_replace($input, ['currency_type_id' => 'USD']));
+            self::fail('Una factura USD debe rechazarse antes de guardar.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('currency_type_id', $error->errors());
+        }
+        self::assertSame(0, $db->table('documents')->count());
+        $quotationId = $db->table('quotations')->insertGetId([
+            'user_id' => $input['user_id'], 'external_id' => (string) \Illuminate\Support\Str::uuid(),
+            'establishment_id' => $input['establishment_id'], 'establishment' => json_encode($input['establishment']),
+            'fiscal_environment' => 'demo', 'state_type_id' => '05', 'prefix' => 'COT',
+            'date_of_issue' => '2026-09-01', 'time_of_issue' => '09:00:00',
+            'customer_id' => $input['customer_id'], 'customer' => json_encode($input['customer']),
+            'currency_type_id' => 'VES', 'exchange_rate_sale' => '40', 'total' => '400',
+        ]);
+        $quotation = \App\Models\Tenant\Quotation::findOrFail($quotationId);
+        $item = array_replace($input['items'][0], [
+            'quantity' => '1', 'unit_price' => '400', 'affectation_igv_type_id' => '20',
+            'price_input' => ['amount' => '10', 'currency_type_id' => 'USD', 'includes_iva' => true],
+        ]);
+        $quotation->items()->create($item);
+        $db->table('exchange_rates')->insert([
+            'date' => $input['date_of_issue'], 'date_original' => $input['date_of_issue'],
+            'sale' => '45', 'purchase' => '45', 'sale_original' => '45', 'purchase_original' => '45',
+        ]);
+        unset($item['price_input']);
+        $input['items'] = [$item];
+        $input['payments'] = [];
+        $input['payment_condition_id'] = '02';
+        $input['quotation_id'] = $quotationId;
+        $preview = \App\Services\Fiscal\InvoiceSourcePrices::preview($input);
+        self::assertSame('400.00', $preview['source_total']);
+        self::assertSame('450', $preview['total']);
+        $manual = $input;
+        $manual['items'][0]['price_input'] = ['amount' => '410', 'currency_type_id' => 'VES', 'includes_iva' => true];
+        self::assertNull(\App\Services\Fiscal\InvoiceSourcePrices::preview($manual));
+
+        try {
+            (new \App\CoreFacturalo\Facturalo())->save($input);
+            self::fail('La factura requiere confirmar el recálculo.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('source_price_confirmation', $error->errors());
+        }
+        self::assertSame(0, $db->table('documents')->count());
+        $input['source_price_confirmation'] = $preview['confirmation'];
+        $invoice = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument();
+        self::assertSame('VES', $invoice->currency_type_id);
+        self::assertSame('450', \App\Support\Exact\Decimal::represent($invoice->exactValue('total')));
+        self::assertSame('400', \App\Support\Exact\Decimal::represent($quotation->fresh()->exactValue('total')));
+
+        $db->statement('ALTER TABLE documents DROP CONSTRAINT documents_currency_ves_check');
+        $db->statement('ALTER TABLE configurations DROP COLUMN sales_documents_ves');
+        self::assertFalse(\App\Services\SalesDocumentCurrency::usesBolivars());
+        \App\Services\SalesDocumentCurrency::validate('USD');
+        unset($input['quotation_id'], $input['source_price_confirmation']);
+        $input['external_id'] = (string) \Illuminate\Support\Str::uuid();
+        $input['currency_type_id'] = 'USD';
+        $legacyInvoice = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument();
+        self::assertSame('USD', $legacyInvoice->fresh()->currency_type_id);
+    }
+    // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
 
     public function test_fresh_tenant_migrations_seed_rollback_and_repeat(): void
     {

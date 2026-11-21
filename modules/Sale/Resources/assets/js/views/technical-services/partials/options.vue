@@ -284,6 +284,7 @@
 </template>
 
 <script>
+import { confirmInvoiceSourcePrice } from '@helpers/confirm-invoice-source-price';
 import { hasNamedSeries } from '@helpers/document-series';
 import {withoutDraftRetentions, suggestRemainingPayment, suggestInstallments, paymentConditionPayload} from "@helpers/document-creation"
 import {calculateRowItem} from "@helpers/functions"
@@ -444,7 +445,7 @@ export default {
                     await this.getPercentageIgv();
                     let item_description = `Descripción: ${this.record.description}, Estado: ${this.record.state}, Razón: ${this.record.reason + "\n"}`;
                     if (this.record.items !== undefined) {
-                        this.form.items = this.record.items.map(row => ({...row}))
+                        this.form.items = this.record.items.map(row => ({...row, source_item_id: row.record_id ?? row.id}))
                     }
 
                     this.form.technical_service_id = this.recordId
@@ -678,6 +679,7 @@ export default {
 
         },
         async submit() {
+            if (this.loading_submit) return;
             // await this.assignDocument();
             //
             let validate_payment_destination = await this.validatePaymentDestination()
@@ -711,7 +713,12 @@ export default {
             // this.form.items[0].item_id = item_id;
 
             // await this.$http.post(`/${this.resource_documents}`, withoutDraftRetentions(this.form))
-                await this.$http.post(`/generate-document`, paymentConditionPayload(withoutDraftRetentions(this.form)))
+            const payload = await confirmInvoiceSourcePrice(this, paymentConditionPayload(withoutDraftRetentions(this.form)));
+            if (!payload) {
+                this.loading_submit = false;
+                return;
+            }
+            await this.$http.post(`/generate-document`, payload)
                 .then((response) => {
                     if (response.data.success) {
                         // console.log(response.data.data);

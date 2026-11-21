@@ -345,6 +345,9 @@ class Document extends ModelTenant
 
     protected static function booted()
     {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        static::saving(fn ($document) => \App\Services\SalesDocumentCurrency::validateModel($document));
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         static::updating(function ($document) {
             if ($document->isDirty('state_type_id') && in_array((string)$document->state_type_id, ['09','11'], true)
                 && \App\Services\Fiscal\FiscalNote::hasRelatedNotes($document)) \App\Services\Fiscal\FiscalAmounts::error('document','La factura tiene notas registradas y conserva sus efectos comerciales originales.');

@@ -262,7 +262,7 @@
                                         @change="changeCurrencyType"
                                     >
                                         <el-option
-                                            v-for="option in currency_types"
+                                            v-for="option in documentCurrencies"
                                             :key="option.id"
                                             :value="option.id"
                                             :label="option.description"
@@ -2210,6 +2210,11 @@ export default {
     },
     mixins: [functions, exchangeRate, editableRowItems, fnItemSearchQuickSale],
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        documentCurrencies() {
+            return this.currency_types.filter(currency => !window.salesDocumentsVes || currency.id === 'VES');
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         showSeriesSelector() {
             return hasNamedSeries(this.series);
         },
@@ -2414,7 +2419,7 @@ export default {
             this.payment_method_types = response.data.payment_method_types;
             this.company = response.data.company;
             const configCurrencyAvailable = this.currency_types.some(c => c.id === this.config.currency_type_id);
-            this.form.currency_type_id = (this.config.currency_type_id && configCurrencyAvailable)
+            this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.config.currency_type_id && configCurrencyAvailable)
                 ? this.config.currency_type_id
                 : (this.currency_types.length > 0 ? this.currency_types[0].id : null);
             this.form.establishment_id =
@@ -2932,7 +2937,7 @@ export default {
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 time_of_issue: moment().format("HH:mm:ss"),
                 customer_id: null,
-                currency_type_id: this.config.currency_type_id,
+                currency_type_id: window.salesDocumentsVes ? 'VES' : this.config.currency_type_id,
                 purchase_order: null,
                 payment_condition_id: '01',
                 exchange_rate_sale: 0,
@@ -3000,7 +3005,7 @@ export default {
             this.activePanel = 0;
             this.initForm();
             const configCurrencyAvailable = this.currency_types.some(c => c.id === this.config.currency_type_id);
-            this.form.currency_type_id = (this.config.currency_type_id && configCurrencyAvailable)
+            this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.config.currency_type_id && configCurrencyAvailable)
                 ? this.config.currency_type_id
                 : (this.currency_types.length > 0 ? this.currency_types[0].id : null);
             this.form.establishment_id =

@@ -95,12 +95,12 @@
                     </el-tooltip>
                 </h2>
             </div>
-            <div class="col-md-4" v-if="currency_types.length && (currency_types.length > 1 || posRateUnavailable)">
+            <div class="col-md-4" v-if="currency_types.length && (canChangeDocumentCurrency || posRateUnavailable)">
                 <div class="pull-right h-100 d-flex align-items-center">
                     <p class="pr-3 m-0 exchange-currency">
                         T.C.
-                        <span>Bs. {{ posRateUnavailable ? 'No disponible' : form.exchange_rate_sale }}</span> <button v-if="currency_types.length && posRateUnavailable" type="button" class="btn btn-sm btn-default" @click="changeExchangeRate">Actualizar tasa</button> <span v-if="currency_types.length > 1">Cambiar Moneda</span>
-                        <a v-if="currency_types.length > 1"
+                        <span>Bs. {{ posRateUnavailable ? 'No disponible' : form.exchange_rate_sale }}</span> <button v-if="currency_types.length && posRateUnavailable" type="button" class="btn btn-sm btn-default" @click="changeExchangeRate">Actualizar tasa</button> <span v-if="canChangeDocumentCurrency">Cambiar Moneda</span>
+                        <a v-if="canChangeDocumentCurrency"
                             class="btn btn-sm btn-default"
                             @click="selectCurrencyType"
                         >
@@ -1012,6 +1012,8 @@ import {withoutDraftRetentions} from "@helpers/document-creation"
 import {documentTotals} from "../../../helpers/exact-document"
 import {isValidPosRate, restorePosDraftRate, refreshPosRate, ensurePosRate} from "../../../helpers/pos-exchange-rate"
 import {exactAmount, exactInput, exactValue} from "../../../helpers/exchange-rate-math"
+import {convertExact} from "../../../helpers/local-payment-quote"
+import {isRecordedReceipt} from "../../../helpers/payment-classification"
 
 import Keypress from "vue-keypress";
 import posLocalQuantity from "../../../mixins/pos-local-quantity"
@@ -1140,6 +1142,11 @@ export default {
         },
     },
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        canChangeDocumentCurrency() {
+            return (typeof window === 'undefined' || !window.salesDocumentsVes) && this.currency_types.length > 1;
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         posRateUnavailable() {
             return !isValidPosRate(this.form.exchange_rate_sale);
         },
@@ -1467,15 +1474,19 @@ export default {
             return this.colors[i % this.colors.length];
         },
         initCurrencyType() {
-            const exists = _.find(this.currency_types, {
-                id: this.form.currency_type_id
-            });
-            if (!exists && this.currency_types.length > 0) {
-                this.form.currency_type_id = this.currency_types[0].id;
-                this.changeCurrencyType();
+            // ######## INICIO MONEDA DOCUMENTAL GARAGE ########
+            const currency = typeof window !== 'undefined' && window.salesDocumentsVes
+                ? 'VES' : this.form.currency_type_id;
+            const target = this.currency_types.find(option => option.id === currency) || this.currency_types[0];
+            this.currency_type = this.currency_types.find(option => option.id === this.form.currency_type_id);
+            if (!target) return;
+            const hasMismatchedLines = this.form.items.some(row => row.currency_type_id && row.currency_type_id !== target.id);
+            if (target.id !== this.form.currency_type_id || hasMismatchedLines) {
+                if (isValidPosRate(this.form.exchange_rate_sale)) this.changeCurrencyType(target.id);
                 return;
             }
-            this.currency_type = exists;
+            this.currency_type = target;
+            // ######## FIN MONEDA DOCUMENTAL GARAGE ########
         },
         getFormPosLocalStorage() {
             let form_pos = localStorage.getItem("form_pos_garage");
@@ -1489,7 +1500,6 @@ export default {
                 } else {
                     this.changeExchangeRate();
                 }
-                // this.calculateTotal()
             }
             let amount = localStorage.setItem(
                 "amount_garage",
@@ -2022,8 +2032,11 @@ export default {
             //     this.form.exchange_rate_sale = response
             // })
         },
-        changeExchangeRate() {
-            return refreshPosRate(this);
+        async changeExchangeRate() {
+            const draft = this.form;
+            const rate = await refreshPosRate(this);
+            if (rate && this.form === draft) this.initCurrencyType();
+            return rate;
         },
         async getTables() {
             await this.$http.get(`/${this.resource}/tables`).then(response => {
@@ -2036,7 +2049,7 @@ export default {
                 this.user = response.data.user;
                 this.form.establishment_id = this.establishment.id;
                 this.form.currency_type_id =
-                    this.currency_types.length > 0
+                    typeof window !== 'undefined' && window.salesDocumentsVes ? 'VES' : this.currency_types.length > 0
                         ? this.currency_types[0].id
                         : null;
                 this.renderCategories(response.data.categories);
@@ -2208,38 +2221,48 @@ export default {
                 this.filterItems();
             });
         },
+        // ######## INICIO MONEDA DOCUMENTAL GARAGE ########
         selectCurrencyType() {
+            if (typeof window !== 'undefined' && window.salesDocumentsVes) return;
             if (!ensurePosRate(this)) return;
-            this.form.currency_type_id =
-                this.form.currency_type_id === "VES" ? "USD" : "VES";
-            this.changeCurrencyType();
+            const target = this.form.currency_type_id === 'VES' ? 'USD' : 'VES';
+            return this.changeCurrencyType(target);
         },
-        async changeCurrencyType() {
-            if (!ensurePosRate(this)) return;
-            // console.log(this.form.currency_type_id)
-            this.currency_type = await _.find(this.currency_types, {
-                id: this.form.currency_type_id
-            });
-            let items = [];
-            this.form.items.forEach(row => {
-                items.push(
-                    calculateRowItem(
-                        row,
-                        this.form.currency_type_id,
-                        this.form.exchange_rate_sale,
-                        this.percentage_igv
-                    )
-                );
-                return {
-                    ...newRow,
+        changeCurrencyType(target = this.form.currency_type_id) {
+            if (!ensurePosRate(this)) return false;
+            const currency = this.currency_types.find(option => option.id === target);
+            if (!currency) return false;
+            const previous = this.form.currency_type_id;
+            const rate = this.form.exchange_rate_sale;
+            let items;
+            let payments = this.form.payments;
+            try {
+                items = this.form.items.map(row => ({
+                    ...calculateRowItem(row, target, rate, this.percentage_igv),
                     unit_type_id: row.unit_type_id,
-                };
-            });
-            this.form.items = items;
+                }));
+                if (target !== previous) {
+                    payments = (payments || []).map(row => {
+                        if (isRecordedReceipt(row)) throw new Error('El cobro registrado conserva la moneda del comprobante.');
+                        const receivedCurrency = row.currency_type_id || previous;
+                        const receiptRate = row.exchange_rate ?? rate;
+                        const original = row.original_amount ?? row.tendered_amount ?? row.payment ?? '0';
+                        return {...row, currency_type_id: receivedCurrency, exchange_rate: receiptRate,
+                            original_amount: original, payment: convertExact(original, receivedCurrency, target, receiptRate).final(2)};
+                    });
+                }
+            } catch (error) {
+                this.$message.error(error.message);
+                return false;
+            }
+            // Commit the rows and their currency together, then refresh the payment panel.
+            Object.assign(this.form, {currency_type_id: target, items, payments});
+            this.currency_type = currency;
             this.calculateTotal();
-
-            await this.setFormPosLocalStorage();
+            this.setFormPosLocalStorage();
+            return true;
         },
+        // ######## FIN MONEDA DOCUMENTAL GARAGE ########
         openFullWindow() {
             location.href = `/${this.resource}/pos_full`;
         },

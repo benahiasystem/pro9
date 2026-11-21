@@ -359,6 +359,9 @@ return new class extends Migration
             $table->json('top_menu_extra_two')->nullable();
             $table->bigInteger('skin_id')->default('1');
             $table->boolean('change_currency_item')->default(false);
+            // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+            $table->boolean('sales_documents_ves')->default(true);
+            // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
             $table->boolean('enabled_advanced_records_search')->default(false);
             $table->boolean('change_decimal_quantity_unit_price_pdf')->default(false);
             $table->integer('decimal_quantity_unit_price_pdf')->default('2');

@@ -33,6 +33,9 @@
         {
             // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
             static::saving(function ($model) {
+                // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+                \App\Services\SalesDocumentCurrency::validateModel($model);
+                // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
                 if ($model instanceof PaymentMethodType) {
                     // ######## INICIO MONEDA E IMPUESTO DE MEDIOS ########
                     $kind = $model->collection_kind ?? 'unclassified';

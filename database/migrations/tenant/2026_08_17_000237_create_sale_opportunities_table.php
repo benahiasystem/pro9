@@ -78,6 +78,9 @@ return new class extends Migration
             $table->index(['state_type_id'], 'sale_opportunities_state_type_id_foreign');
             $table->index(['currency_type_id'], 'sale_opportunities_currency_type_id_foreign');
         });
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        DB::statement("ALTER TABLE sale_opportunities ADD CONSTRAINT sale_opportunities_currency_ves_check CHECK (currency_type_id IS NOT NULL AND currency_type_id = 'VES')");
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
     }
 
     public function down(): void

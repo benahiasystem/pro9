@@ -229,7 +229,7 @@
                                         @change="changeCurrencyType"
                                     >
                                         <el-option
-                                            v-for="option in currency_types"
+                                            v-for="option in documentCurrencies"
                                             :key="option.id"
                                             :value="option.id"
                                             :label="option.description"
@@ -1250,7 +1250,7 @@ export default {
                 // this.$store.commit('setCompany', company);
 
                 this.form.currency_type_id =
-                    this.currency_types.length > 0
+                    window.salesDocumentsVes ? 'VES' : this.currency_types.length > 0
                         ? this.currency_types[0].id
                         : null;
                 this.form.establishment_id =
@@ -1293,7 +1293,7 @@ export default {
                                 this.form.payment_method_type_id =
                                     data.payment_method_type_id;
                                 this.form.currency_type_id =
-                                    data.currency_type_id;
+                                    window.salesDocumentsVes ? 'VES' : data.currency_type_id;
                                 this.form.quotation_id = data.id;
                             }
                         })
@@ -1505,7 +1505,7 @@ export default {
             this.activePanel = 0;
             this.initForm();
             this.form.currency_type_id =
-                this.currency_types.length > 0
+                window.salesDocumentsVes ? 'VES' : this.currency_types.length > 0
                     ? this.currency_types[0].id
                     : null;
             this.form.establishment_id =
@@ -1800,6 +1800,11 @@ export default {
         }
     },
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        documentCurrencies() {
+            return this.currency_types.filter(currency => !window.salesDocumentsVes || currency.id === 'VES');
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         ...mapState(["config", "company", "establishment"]),
         computedStablishment: function() {
             return this.config.establishment;

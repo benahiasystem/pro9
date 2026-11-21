@@ -1553,8 +1553,31 @@ class DocumentController extends Controller
         ];
     }
 
+    // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+    public function previewSourcePrices(\Illuminate\Http\Request $request): array
+    {
+        $input = $request->validate([
+            'currency_type_id' => 'required|in:VES,USD',
+            'date_of_issue' => 'required|date_format:Y-m-d',
+            'customer_id' => ['required', new \App\Rules\PositiveBigint()],
+            'establishment_id' => ['required', new \App\Rules\PositiveBigint()],
+            'items' => 'required|array|min:1|max:1000',
+            'items.*' => 'array',
+            'payments' => 'nullable|array|max:100',
+            'payments.*' => 'array',
+        ]);
+        $input += $request->only(['quotation_id', 'sale_note_id', 'sale_notes_relateds',
+            'order_note_id', 'technical_service_id', 'operation_type_id', 'discounts',
+            'charges', 'total_prepayment', 'prepayments', 'invoice', 'taxes']);
+        $user = $request->user();
+        abort_unless($user && ($user->type === 'admin' || (string) $user->establishment_id === (string) $input['establishment_id']), 403);
+        return ['data' => \App\Services\Fiscal\InvoiceSourcePrices::preview($input)];
+    }
+    // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
+
     public function preview(DocumentRequest $request)
     {
+        \App\Services\SalesDocumentCurrency::validate($request->input('currency_type_id'));
         $validate = $this->validateDocument($request);
         if (!$validate['success']) return $validate;
 

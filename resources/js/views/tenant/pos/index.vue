@@ -152,12 +152,12 @@
                 </div>
             </div>
         </div>
-        <div class="pos-toolbar__currency" v-if="currency_types.length && (currency_types.length > 1 || posRateUnavailable)">
+        <div class="pos-toolbar__currency" v-if="currency_types.length && (canChangeDocumentCurrency || posRateUnavailable)">
             <div class="h-100 d-flex align-items-center">
                 <p class="exchange-currency m-0">
                     T.C.
-                    <span>Bs. {{ posRateUnavailable ? 'No disponible' : form.exchange_rate_sale }}</span> <button v-if="currency_types.length && posRateUnavailable" type="button" class="btn btn-sm btn-default" @click="changeExchangeRate">Actualizar tasa</button> <span v-if="currency_types.length > 1">Cambiar Moneda</span>
-                    <a v-if="currency_types.length > 1"
+                    <span>Bs. {{ posRateUnavailable ? 'No disponible' : form.exchange_rate_sale }}</span> <button v-if="currency_types.length && posRateUnavailable" type="button" class="btn btn-sm btn-default" @click="changeExchangeRate">Actualizar tasa</button> <span v-if="canChangeDocumentCurrency">Cambiar Moneda</span>
+                    <a v-if="canChangeDocumentCurrency"
                         class="btn btn-sm btn-default"
                         @click="selectCurrencyType"
                     >
@@ -1629,6 +1629,11 @@ export default {
         },
     },
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        canChangeDocumentCurrency() {
+            return !window.salesDocumentsVes && this.currency_types.length > 1;
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         posRateUnavailable() {
             return !isValidPosRate(this.form.exchange_rate_sale);
         },
@@ -2915,7 +2920,7 @@ export default {
                 this.user = response.data.user;
                 this.form.establishment_id = this.establishment.id;
                 this.form.currency_type_id =
-                    this.currency_types.length > 0
+                    typeof window !== 'undefined' && window.salesDocumentsVes ? 'VES' : this.currency_types.length > 0
                         ? this.currency_types[0].id
                         : null;
                 this.renderCategories(response.data.categories);
@@ -3265,6 +3270,7 @@ export default {
             });
         },
         selectCurrencyType() {
+            if (typeof window !== 'undefined' && window.salesDocumentsVes) return;
             if (!ensurePosRate(this)) return;
             this.form.currency_type_id =
                 this.form.currency_type_id === "VES" ? "USD" : "VES";

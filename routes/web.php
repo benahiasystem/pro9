@@ -111,6 +111,9 @@ if ($hostname) {
             Route::post('fiscal-profiles/{kind}/{id}', 'Tenant\FiscalProfileController@store')->where('kind', 'company|customer')->where('id', '[0-9]+');
             Route::post('fiscal-profiles/evaluate', 'Tenant\FiscalProfileController@evaluate');
             Route::post('documents/payment-quote', 'Tenant\DocumentPaymentQuoteController@__invoke');
+            // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+            Route::post('documents/source-price-preview', 'Tenant\DocumentController@previewSourcePrices');
+            // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
             Route::post('documents/calculation-context', 'Tenant\CalculationContextController@__invoke');
             Route::post('companies/igtf', 'Tenant\DocumentFiscalController@settingsStore');
             Route::post('documents/{document}/prepare-hka', 'Tenant\DocumentFiscalController@prepare');

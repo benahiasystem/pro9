@@ -73,7 +73,7 @@
                                 <div class="form-group" :class="{'has-danger': errors.currency_type_id}">
                                     <label class="control-label">Moneda</label>
                                     <el-select v-model="form.currency_type_id" @change="changeCurrencyType">
-                                        <el-option v-for="option in currency_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                        <el-option v-for="option in documentCurrencies" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                     </el-select>
                                     <small class="form-control-feedback" v-if="errors.currency_type_id" v-text="errors.currency_type_id[0]"></small>
                                 </div>
@@ -360,7 +360,7 @@ import { hasNamedSeries } from '@helpers/document-series';
                     this.company = response.data.company;
                     this.user = response.data.user;
                     this.document_type_03_filter = response.data.document_type_03_filter
-                    this.form.currency_type_id = (this.currency_types.length > 0)?this.currency_types[0].id:null
+                    this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.currency_types.length > 0)?this.currency_types[0].id:null
                     this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
                     this.form.document_type_id = (this.document_types.length > 0)?this.document_types[0].id:null
                     this.form.operation_type_id = (this.operation_types.length > 0)?this.operation_types[0].id:null
@@ -376,6 +376,11 @@ import { hasNamedSeries } from '@helpers/document-series';
             })
         },
         computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        documentCurrencies() {
+            return this.currency_types.filter(currency => !window.salesDocumentsVes || currency.id === 'VES');
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
             showSeriesSelector() {
                 return hasNamedSeries(this.series);
             },
@@ -607,7 +612,7 @@ import { hasNamedSeries } from '@helpers/document-series';
             resetForm() {
                 this.activePanel = 0
                 this.initForm()
-                this.form.currency_type_id = (this.currency_types.length > 0)?this.currency_types[0].id:null
+                this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.currency_types.length > 0)?this.currency_types[0].id:null
                 this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
                 this.form.document_type_id = (this.document_types.length > 0)?this.document_types[0].id:null
                 this.form.operation_type_id = (this.operation_types.length > 0)?this.operation_types[0].id:null

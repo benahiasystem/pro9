@@ -24,7 +24,9 @@
 @include('report::sales_consolidated.header_components', ['excel'=>false])
 <p>Moneda original:<br>
     Bs. {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($reportSummary, 'total_ves'), 2) }}<br>
+@unless(\App\Services\SalesDocumentCurrency::usesBolivars())
     USD {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($reportSummary, 'total_usd'), 2) }}
+@endunless
 </p>
 @else
 <p>No se encontraron registros.</p>

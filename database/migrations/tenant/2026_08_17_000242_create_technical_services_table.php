@@ -122,6 +122,9 @@ return new class extends Migration
         DB::statement('ALTER TABLE "technical_services" ADD CONSTRAINT "technical_services_establishment_id_range" CHECK ("establishment_id" >= 0)');
         DB::statement('ALTER TABLE "technical_services" ADD CONSTRAINT "technical_services_seller_id_range" CHECK ("seller_id" >= 0)');
         DB::statement('ALTER TABLE "technical_services" ADD CONSTRAINT "technical_services_is_editable_range" CHECK ("is_editable" BETWEEN 0 AND 255)');
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        DB::statement("ALTER TABLE technical_services ADD CONSTRAINT technical_services_currency_ves_check CHECK (currency_type_id IS NOT NULL AND currency_type_id = 'VES')");
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
     }
 
     public function down(): void

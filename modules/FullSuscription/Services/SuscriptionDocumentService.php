@@ -93,6 +93,29 @@ trait SuscriptionDocumentService
         $issuedAt = now();
         $issueDate = $issuedAt->toDateString();
         $service = app(TenantExchangeRateService::class)->exchange($issueDate);
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        $documentCurrency = \App\Services\SalesDocumentCurrency::usesBolivars() ? 'VES' : $currency;
+        if ($documentCurrency !== $currency) {
+            foreach ($items as &$line) {
+                $line['price_input'] = [
+                    'amount' => (string) $line['unit_price'],
+                    'currency_type_id' => $currency,
+                    'includes_iva' => true,
+                ];
+            }
+            unset($line);
+            $rate = \App\Support\Exact\Decimal::of($service['sale']);
+            foreach (['discounts', 'charges'] as $adjustments) {
+                foreach ($values[$adjustments] ?? [] as $index => $adjustment) {
+                    $amount = \App\Support\Exact\Decimal::of($adjustment['amount_exact'] ?? $adjustment['amount'])->multipliedBy($rate);
+                    $values[$adjustments][$index]['amount_exact'] = \App\Support\Exact\Decimal::fraction($amount);
+                    $values[$adjustments][$index]['amount'] = \App\Support\Exact\Decimal::represent($amount);
+                }
+            }
+            $values['total_prepayment'] = \App\Support\Exact\Decimal::represent(
+                \App\Support\Exact\Decimal::of($values['total_prepayment'] ?? '0')->multipliedBy($rate));
+        }
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         // ######## FIN API BCV ########
 
         return [
@@ -124,7 +147,7 @@ trait SuscriptionDocumentService
                 'date_of_due'       => $issueDate,
             ],
             'exchange_rate_sale'      => $service['sale'],
-            'currency_type_id'        => $currency,
+            'currency_type_id'        => $documentCurrency,
             'source_module'           => 'FULL_SUSCRIPTION',
             'items'                   => $items,
             'charges'                 => $values['charges'] ?? [],

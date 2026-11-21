@@ -261,7 +261,7 @@
                                         @change="changeCurrencyType"
                                     >
                                         <el-option
-                                            v-for="option in currency_types"
+                                            v-for="option in documentCurrencies"
                                             :key="option.id"
                                             :value="option.id"
                                             :label="option.description"
@@ -963,6 +963,11 @@ export default {
         TermsCondition
     },
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        documentCurrencies() {
+            return this.currency_types.filter(currency => !window.salesDocumentsVes || currency.id === 'VES');
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
         receiptPaymentMethods() {
             return this.payment_method_types.filter(method => [true, 1, '1'].includes(method.is_active)
@@ -1056,7 +1061,7 @@ export default {
             this.charges_types = data.charges_types;
             this.company = data.company;
             this.form.currency_type_id =
-                this.currency_types.length > 0
+                window.salesDocumentsVes ? 'VES' : this.currency_types.length > 0
                     ? this.currency_types[0].id
                     : null;
             this.form.establishment_id =
@@ -1138,7 +1143,7 @@ export default {
                 this.reloadDataCustomers(this.quotation.customer_id);
                 this.form.establishment_id = this.quotation.establishment_id;
                 this.form.customer_id = this.quotation.customer_id;
-                this.form.currency_type_id = this.quotation.currency_type_id;
+                this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : this.quotation.currency_type_id;
                 this.form.items = this.quotation.items;
                 // this.form.payments = this.quotation.payments
                 this.form.total_exportation = this.quotation.total_exportation;
@@ -1295,7 +1300,7 @@ export default {
             this.activePanel = 0;
             this.initForm();
             this.form.currency_type_id =
-                this.currency_types.length > 0
+                window.salesDocumentsVes ? 'VES' : this.currency_types.length > 0
                     ? this.currency_types[0].id
                     : null;
             this.form.payment_method_type_id = defaultCashForCurrency(this.payment_method_types, this.form.currency_type_id)?.id || null;

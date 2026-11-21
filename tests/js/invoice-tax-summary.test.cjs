@@ -88,11 +88,36 @@ test('IGTF uses only net subject dollars at each receipt rate and the tax actual
     view.$destroy()
 })
 
+test('web invoice shows why USD cash has zero IGTF and applies 3% for an eligible issuer', () => {
+    const {localPaymentQuote} = load(path.resolve('resources/js/helpers/local-payment-quote.js'))
+    const date = '2026-11-20', rate = '918.76620000'
+    const request = {
+        currency_type_id:'VES', exchange_rate_sale:rate, principal_due:'45938.31',
+        payments:[{date_of_payment:date, payment_method_type_id:'10', currency_type_id:'USD',
+            payment:'45938.31', original_amount:'50', tendered_amount:'50', exchange_rate:rate}],
+    }
+    const methods = [{id:'10', is_active:true, collection_kind:'cash', currency_type_id:'USD'}]
+    const evaluate = issuer_spe => localPaymentQuote(request, {enabled:true, rate:'3', dates:{[date]:{issuer_spe}}}, methods)
+
+    const withoutProfile = makeSummary({quote:evaluate(false)})
+    assert.equal(cell(withoutProfile, 'igtf-tax-amount'), 'Bs. 0,00')
+    assert.match(cell(withoutProfile, 'igtf-non-applicable'), /El emisor no tiene un perfil de sujeto pasivo especial vigente/)
+    withoutProfile.$destroy()
+
+    const eligible = evaluate(true)
+    assert.equal(eligible.payments[0].original_amount, '48.54')
+    assert.equal(eligible.payments[0].tax_amount, '1.46')
+    const withProfile = makeSummary({quote:eligible})
+    assert.equal(cell(withProfile, 'igtf-tax-amount'), 'Bs. 1.341,40')
+    assert.doesNotMatch(text(withProfile._render()), /IGTF no aplicado/)
+    withProfile.$destroy()
+})
+
 function formMethods() {
     const declaration = parser.parse(formSource.script.content, {sourceType:'module'}).program.body.find(node => node.type === 'ExportDefaultDeclaration').declaration
     const methods = declaration.properties.find(node => node.key?.name === 'methods').value.properties
     return vm.runInNewContext(`({${['initForm', 'calculateTotal'].map(name => generate(methods.find(node => node.key?.name === name)).code).join(',')}})`, {
-        documentTotals, moment:require('moment'),
+        documentTotals, moment:require('moment'), window:{salesDocumentsVes:false},
     })
 }
 

@@ -514,7 +514,14 @@ class Quotation extends ModelTenant
         $items = new Collection();
 
         if($with_items === true) {
-            $items = $row->items;
+            // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+            $items = $row->items->map(function ($item) {
+                return $item->toArray() + [
+                    'price_input' => $item->calculation_snapshot['inputs']['price_input'] ?? null,
+                    'quantity_input' => $item->calculation_snapshot['inputs']['quantity_input'] ?? null,
+                ];
+            });
+            // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         }
         $orderNote = OrderNote::where('quotation_id',$this->id)->first();
         if($orderNote != null){

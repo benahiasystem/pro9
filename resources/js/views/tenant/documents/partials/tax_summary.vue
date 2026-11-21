@@ -25,6 +25,9 @@
         </table>
         <small v-if="igtfSummary.pending" class="tax-quote-status text-muted" role="status">Evaluando el cobro…</small>
         <small v-if="igtfSummary.error" class="d-block text-danger" role="alert">{{ igtfSummary.error }}</small>
+        <small v-if="igtfNonApplicableReason" class="d-block mt-2 text-muted" data-testid="igtf-non-applicable">
+            IGTF no aplicado. {{ igtfNonApplicableReason }}
+        </small>
         <small v-if="document.currency_type_id && ivaSummary.error" class="d-block text-danger" role="alert">{{ ivaSummary.error }}</small>
     </div>
     <!-- ######## FIN RESUMEN REACTIVO IVA E IGTF ######## -->
@@ -50,6 +53,14 @@ export default {
         igtfLabel() {
             const rate = this.quote?.igtf_rate ?? this.settings.rate
             return rate == null ? 'IGTF (IGTF)' : `IGTF - ${exactAmount(rate).decimal().replace('.', ',')}% (IGTF)`
+        },
+        igtfNonApplicableReason() {
+            if (this.igtfSummary.pending || this.igtfSummary.error || !this.quote) return ''
+            const receipts = this.quote.payments.filter(row => !row.reused)
+            if (receipts.some(row => row.igtf_status === 'subject')) return ''
+            const reasons = receipts.filter(row => row.currency_type_id === 'USD' && row.igtf_status === 'not_applicable')
+                .map(row => row.reason).filter(Boolean)
+            return [...new Set(reasons)].join(' ')
         },
         ivaSummary() {
             try {

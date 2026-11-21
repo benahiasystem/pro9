@@ -5,6 +5,9 @@
         <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="fixed sidebar-light no-mobile-device custom-scroll">
     @endif
 <head>
+    {{-- ######## INICIO MONEDA DOCUMENTAL DE VENTAS ######## --}}
+    <script>window.salesDocumentsVes = @json(\App\Services\SalesDocumentCurrency::usesBolivars());</script>
+    {{-- ######## FIN MONEDA DOCUMENTAL DE VENTAS ######## --}}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 

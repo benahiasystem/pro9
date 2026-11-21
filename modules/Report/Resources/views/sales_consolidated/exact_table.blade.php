@@ -29,7 +29,7 @@
             <td class="celda" colspan="{{ $detail ? 6 : 5 }}">Total</td>
             <td class="celda" data-type="s">{{ $reportSummary['quantity'] }}</td>
             <td class="celda" data-type="s">{{ $excel ? $reportSummary['total_sale'] : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($reportSummary, 'total_sale'), 2) }}</td>
-            <td class="celda" data-type="s">Bs. {{ $excel ? $reportSummary['currency_totals']['VES'] : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($reportSummary, 'total_ves'), 2) }}<br>USD {{ $excel ? $reportSummary['currency_totals']['USD'] : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($reportSummary, 'total_usd'), 2) }}</td>
+            <td class="celda" data-type="s">Bs. {{ $excel ? $reportSummary['currency_totals']['VES'] : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($reportSummary, 'total_ves'), 2) }}@unless(\App\Services\SalesDocumentCurrency::usesBolivars())<br>USD {{ $excel ? $reportSummary['currency_totals']['USD'] : \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::readRequired($reportSummary, 'total_usd'), 2) }}@endunless</td>
         </tr>
     </tbody>
 </table>

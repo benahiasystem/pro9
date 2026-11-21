@@ -586,6 +586,7 @@
 </template>
 
 <script>
+import { confirmInvoiceSourcePrice } from '@helpers/confirm-invoice-source-price';
 import { hasNamedSeries } from '@helpers/document-series';
 import {suggestRemainingPayment, suggestInstallments} from '@helpers/document-creation'
 import {exactAmount} from '@helpers/exchange-rate-math'
@@ -963,6 +964,7 @@ export default {
 
         },
         async submit() {
+            if (this.loading_submit) return;
 
             let validate_items = await this.validateQuantityandSeriesLots();
             if (!validate_items.success)
@@ -993,8 +995,13 @@ export default {
                 fee: condition === '01' ? [] : this.document.fee,
             };
             // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+            const confirmedPayload = await confirmInvoiceSourcePrice(this, payload);
+            if (!confirmedPayload) {
+                this.loading_submit = false;
+                return;
+            }
             this.$http
-                .post(`/${this.resource_documents}`, payload)
+                .post(`/${this.resource_documents}`, confirmedPayload)
                 .then((response) => {
                     if (response.data.success) {
                         this.documentNewId = response.data.data.id;
@@ -1073,7 +1080,7 @@ export default {
             this.document.total = q.total;
             this.document.operation_type_id = "0101";
             // this.document.date_of_due = q.date_of_issue
-            this.document.items = q.items;
+            this.document.items = q.items.map(row => ({...row, source_item_id: row.record_id ?? row.id}));
             this.document.charges = q.charges;
             this.document.discounts = q.discounts;
             this.document.attributes = [];

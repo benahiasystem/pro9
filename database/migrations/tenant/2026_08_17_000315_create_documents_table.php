@@ -234,6 +234,9 @@ return new class extends Migration
         DB::statement('ALTER TABLE "documents" ADD CONSTRAINT "documents_apply_concurrency_range" CHECK ("apply_concurrency" BETWEEN 0 AND 255)');
         DB::statement('ALTER TABLE "documents" ADD CONSTRAINT "documents_consigned_id_range" CHECK ("consigned_id" >= 0)');
         DB::statement('ALTER TABLE "documents" ADD CONSTRAINT "documents_collect_api_state_id_range" CHECK ("collect_api_state_id" >= 0)');
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        DB::statement("ALTER TABLE documents ADD CONSTRAINT documents_currency_ves_check CHECK (currency_type_id IS NOT NULL AND currency_type_id = 'VES')");
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
     }
 
     public function down(): void

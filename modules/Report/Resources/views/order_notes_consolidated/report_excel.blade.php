@@ -59,6 +59,8 @@
                         $acum_total_taxed=0;
                         $acum_total_igv=0;
                         $acum_total=0;
+                        $salesInBolivars = \App\Services\SalesDocumentCurrency::usesBolivars();
+                        $bolivarTotal = \App\Support\Exact\Decimal::of(0);
 
                         $serie_affec = '';
                         $acum_total_exonerado=0;
@@ -117,6 +119,10 @@
 
                             </tr>
                             @php
+                            if ($salesInBolivars && !in_array((string) $state, ['09','11'], true)) {
+                                $bolivarTotal = $bolivarTotal->plus(\App\Support\Exact\Decimal::readRequired($value, 'total')
+                                    ->multipliedBy($signal === '07' ? -1 : 1));
+                            }
                             if($value->currency_type_id == 'VES'){
 
 
@@ -186,13 +192,15 @@
                             <tr>
                                 <td colspan="4"></td>
                                 <td >TOTAL VES</td>
-                                <td>{{$acum_total}}</td>
+                                <td>{{ $salesInBolivars ? \App\Support\Exact\Decimal::format($bolivarTotal) : $acum_total }}</td>
                             </tr>
+                            @unless($salesInBolivars)
                             <tr>
                                 <td colspan="4"></td>
                                 <td >TOTAL USD</td>
                                 <td>{{$acum_total_usd}}</td>
                             </tr>
+                            @endunless
                         </tbody>
                     </table>
                 </div>

@@ -352,6 +352,9 @@ class SaleNoteController extends Controller
 
     public function storeWithData($inputs, bool $deferPdfUntilCommit = false)
     {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        \App\Services\SalesDocumentCurrency::validate($inputs['currency_type_id'] ?? null);
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         \App\Services\ThirdPartyInvoicePolicy::assertInput($inputs);
         // ######## INICIO POLITICA IDENTIDAD ACTIVA EN VENTAS ########
         SalesCustomerIdentityPolicy::assertCustomerAllowed($inputs['customer_id'] ?? null);

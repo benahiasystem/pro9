@@ -252,7 +252,7 @@ import fiscalPaymentSettings from "@mixins/fiscal-payment-settings"
 import paymentSettlementSummary from "@mixins/payment-settlement-summary"
 // ######## FIN MONEDA DEL MEDIO DE COBRO ########
 import {withoutDraftRetentions} from "@helpers/document-creation"
-import {exactAmount,exactSum} from '../../../../helpers/exchange-rate-math'
+import {appliedReceiptAmount,exactAmount,exactSum} from '../../../../helpers/exchange-rate-math'
 import {sameInvoiceRecordId} from '../../../../helpers/invoice-lots'
 import {posInvoiceQuantityError, samePosId} from '../../../../helpers/pos-invoice-line'
 
@@ -597,7 +597,7 @@ export default {
         async setInitialAmount() {
             const rows = this.form.payments || []
             this.enter_amount = rows.length ? this.enteredReceiptAmount(rows) : (this.collectionTarget ?? this.form.total)
-            if (rows.length) { this.amount = this.enter_amount; this.userTouchedAmount = true }
+            if (rows.length) { this.amount = this.appliedReceiptTotal(rows); this.userTouchedAmount = true }
             await this.$nextTick();
             const amountField = this.$refs.enter_amount;
             const input = amountField && amountField.$el.querySelector('input');
@@ -739,7 +739,9 @@ export default {
         },
         setAmount(amount) {
             this.amount=exactAmount(amount || '0').decimal();
-            this.enter_amount=this.amount;
+            const rows = this.form.payments || [];
+            const receipt = rows.length === 1 ? rows[0] : null;
+            this.enter_amount = receipt?.tendered_amount ?? receipt?.original_amount ?? this.amount;
             this.inputAmount();
         },
         setAmountCash(amount) {
@@ -769,13 +771,29 @@ export default {
             const text = String(this.enter_amount ?? '').trim()
             if (text && !/^\d+(?:\.\d*)?$/.test(text)) return
             const entered = exactAmount(!text ? '0' : (text.endsWith('.') ? text.slice(0, -1) : text)).decimal()
-            if (this.useLocalCalculations && this.form.document_type_id === '01') {
-                this.$set(rows[0], 'tendered_amount', entered)
-                this.$set(rows[0], '_tendered_edited', true)
+            const row = rows[0]
+            const currency = row.currency_type_id || this.form.currency_type_id
+            const rate = row.exchange_rate ?? this.form.exchange_rate_sale
+            const received = exactAmount(entered).final(2)
+            let applied = exactAmount(received).decimal()
+            if (currency !== this.form.currency_type_id && applied !== '0') {
+                try {
+                    applied = appliedReceiptAmount({currency_type_id: currency, original_amount: received, exchange_rate: rate},
+                        this.form.currency_type_id).decimal()
+                } catch (error) {
+                    this.$message.warning(error.message)
+                    return
+                }
             }
-            rows[0].payment = entered
+            if (this.useLocalCalculations && this.form.document_type_id === '01') {
+                this.$set(row, 'tendered_amount', entered)
+                this.$set(row, '_tendered_edited', true)
+            }
+            this.$set(row, 'original_amount', received)
+            this.$set(row, 'exchange_rate', rate)
+            row.payment = applied
             this.payments = rows
-            this.amount = entered
+            this.amount = applied
             this.inputAmount()
         },
         // ######## FIN MONEDA DEL MEDIO DE COBRO ########
@@ -1206,10 +1224,7 @@ export default {
                 this.currency_types = response.data.currency_types;
                 this.user = response.data.user;
                 this.form.establishment_id = this.establishment.id;
-                this.form.currency_type_id =
-                    this.currency_types.length > 0
-                        ? this.currency_types[0].id
-                        : null;
+                // The parent owns the cart currency, including restored drafts.
                 // this.renderCategories(response.data.categories);
                 // this.currency_type = _.find(this.currency_types, {'id': this.form.currency_type_id})
                 // this.changeCurrencyType();

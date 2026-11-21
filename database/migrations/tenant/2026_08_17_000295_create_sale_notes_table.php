@@ -219,6 +219,9 @@ return new class extends Migration
         DB::statement('ALTER TABLE "sale_notes" ADD CONSTRAINT "sale_notes_seller_id_range" CHECK ("seller_id" >= 0)');
         DB::statement('ALTER TABLE "sale_notes" ADD CONSTRAINT "sale_notes_consigned_id_range" CHECK ("consigned_id" >= 0)');
         DB::statement('ALTER TABLE "sale_notes" ADD CONSTRAINT "sale_notes_user_rel_subscription_plan_id_range" CHECK ("user_rel_subscription_plan_id" >= 0)');
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        DB::statement("ALTER TABLE sale_notes ADD CONSTRAINT sale_notes_currency_ves_check CHECK (currency_type_id IS NOT NULL AND currency_type_id = 'VES')");
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
     }
 
     public function down(): void

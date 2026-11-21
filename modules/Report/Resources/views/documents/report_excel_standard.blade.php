@@ -313,6 +313,7 @@
                     <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_igv'])}}</td>
                     <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total'])}}</td>
                 </tr>
+                @unless(\App\Services\SalesDocumentCurrency::usesBolivars())
                 <tr>
                     <td colspan="23"></td>
                     <td></td>
@@ -324,6 +325,7 @@
                     <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_igv'])}}</td>
                     <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total'])}}</td>
                 </tr>
+                @endunless
 
                 </tbody>
             </table>

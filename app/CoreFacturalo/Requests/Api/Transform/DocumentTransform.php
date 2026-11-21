@@ -99,6 +99,9 @@ class DocumentTransform
             'fee' => self::fee($inputs),
             'payment_condition_id' => Functions::valueKeyInArray($inputs, 'codigo_condicion_de_pago', '01'),
             'sale_note_id' => Functions::valueKeyInArray($inputs, 'codigo_nota_venta'),
+            // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+            'source_price_confirmation' => Functions::valueKeyInArray($inputs, 'source_price_confirmation'),
+            // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
             'seller_id' => Functions::valueKeyInArray($inputs, 'codigo_vendedor'),
             'terms_condition' => Functions::valueKeyInArray($inputs, 'terminos_condiciones'),
             'source_module' => Functions::valueKeyInArray($inputs, 'source_module'),

@@ -25,6 +25,9 @@ class DocumentInput
         $inputs = \App\Support\Venezuela\RetiredDetractionFields::discard($inputs);
         $document_type_id = $inputs['document_type_id'];
         SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($document_type_id);
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        \App\Services\SalesDocumentCurrency::validate($inputs['currency_type_id'] ?? null);
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         if (in_array($document_type_id, ['01', '07', '08'], true)) {
             EstablishmentInput::validatedId($inputs['establishment_id'] ?? null);
         }
@@ -111,6 +114,9 @@ class DocumentInput
             'technical_service_id' => Functions::valueKeyInArray($inputs, 'technical_service_id'),
             'dispatch_id' => Functions::valueKeyInArray($inputs, 'dispatch_id'),
             'exchange_rate_sale' => $inputs['exchange_rate_sale'],
+            // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+            'source_price_confirmation' => $inputs['source_price_confirmation'] ?? null,
+            // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
             // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
             'exchange_rate_source' => $inputs['exchange_rate_source'] ?? 'manual',
             'exchange_rate_date' => $inputs['exchange_rate_date'] ?? $inputs['date_of_issue'],
@@ -255,6 +261,7 @@ class DocumentInput
                     'quantity' => $row['quantity'],
                     'quantity_input' => $row['quantity_input'] ?? null,
                     'price_input' => $row['price_input'] ?? null,
+                    'source_item_id' => $row['source_item_id'] ?? null,
                     'unit_value' => $row['unit_value'],
                     'price_type_id' => $row['price_type_id'],
                     'unit_price' => $row['unit_price'],

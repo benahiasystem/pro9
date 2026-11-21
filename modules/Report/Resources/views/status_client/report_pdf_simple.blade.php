@@ -302,6 +302,7 @@
                                 <td class="celda">{{$acum_total_igv}}</td>
                                 <td class="celda">{{$acum_total}}</td>
                             </tr>
+                            @unless(\App\Services\SalesDocumentCurrency::usesBolivars())
                             <tr>
                                 <td class="celda" colspan="15"></td>
                                 <td class="celda" >Totales USD</td>
@@ -309,6 +310,7 @@
                                 <td class="celda">{{$acum_total_igv_usd}}</td>
                                 <td class="celda">{{$acum_total_usd}}</td>
                             </tr>
+                            @endunless
                         </tbody>
                     </table>
                 </div>

@@ -77,6 +77,9 @@ if ($hostname) {
             Route::get('report', 'Tenant\Api\MobileController@report');
 
             Route::post('documents', 'Tenant\Api\DocumentController@store');
+            // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+            Route::post('documents/source-price-preview', 'Tenant\DocumentController@previewSourcePrices');
+            // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
             Route::get('documents/lists', 'Tenant\Api\DocumentController@lists');
             Route::get('documents/lists/{startDate}/{endDate}', 'Tenant\Api\DocumentController@lists');
             // "documents/record/{id}" ya lo registra el modulo MobileApp, que gana por

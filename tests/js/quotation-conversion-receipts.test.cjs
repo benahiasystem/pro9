@@ -76,7 +76,11 @@ const tree = parser.parse(source.script.content, {sourceType: 'module'})
 const component = tree.program.body.find(node => node.type === 'ExportDefaultDeclaration').declaration
 const methods = component.properties.find(node => node.key.name === 'methods').value
 const submit = methods.properties.find(node => node.key?.name === 'submit')
-const run = vm.runInNewContext(`({${generate(submit).code}}).submit`)
+const {confirmInvoiceSourcePrice} = require('./helpers/load-module.cjs')(
+    require('node:path').resolve('resources/js/helpers/confirm-invoice-source-price.js'),
+    {window: {salesDocumentsVes: false}}
+)
+const run = vm.runInNewContext(`({${generate(submit).code}}).submit`, {confirmInvoiceSourcePrice})
 const change = methods.properties.find(node => node.key?.name === 'changePaymentCondition')
 const runChange = vm.runInNewContext(`({${generate(change).code}}).changePaymentCondition`, {_: {isEmpty: value => !value || !Object.keys(value).length}})
 

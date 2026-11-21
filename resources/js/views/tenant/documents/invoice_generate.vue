@@ -405,7 +405,7 @@
                                 @input="changeInvoiceCurrencyType"
                             >
                                 <el-option
-                                    v-for="option in currency_types"
+                                    v-for="option in documentCurrencies"
                                     :key="option.id"
                                     :label="option.description"
                                     :value="option.id"
@@ -2235,7 +2235,7 @@
                                                             <td>
                                                                 <el-popover placement="top" trigger="hover" :disabled="!fiscalPaymentsApplicable || isRecordedReceipt(row)">
                                                                     <div class="text-start" data-testid="fiscal-receipt-popover">
-                                                                        <small class="d-block">{{ row.currency_type_id || form.currency_type_id }} · IGTF incluido</small>
+                                                                        <small class="d-block">{{ row.currency_type_id || form.currency_type_id }}</small>
                                                                         <template v-for="detail in [fiscalReceiptBreakdown(row)]">
                                                                         <div v-if="detail" :key="'receipt-' + index" data-testid="fiscal-receipt-breakdown">
                                                                         <small class="d-block">Principal recibido: {{ detail.principal }} {{ detail.currency }}</small>
@@ -2737,6 +2737,7 @@
 </style>
     <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+import { confirmInvoiceSourcePrice } from '@helpers/confirm-invoice-source-price';
 import {selectPrepayment, updatePrepaymentInput, applyPrepaymentDiscount} from '../../../helpers/exact-prepayments'
 import invoicePrepayments from '../../../mixins/invoice-prepayments'
 
@@ -3077,6 +3078,11 @@ export default {
         };
     },
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        documentCurrencies() {
+            return this.currency_types.filter(currency => !window.salesDocumentsVes || currency.id === 'VES');
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         hasNamedSeries() {
             return this.series.some(option => (option.number || '').trim() !== '');
         },
@@ -4003,7 +4009,7 @@ export default {
                     response.data.document_type_03_filter;
                 this.select_first_document_type_03 =
                     response.data.select_first_document_type_03;
-                // this.form.currency_type_id = (this.currency_types.length > 0)?this.currency_types[0].id:null;
+                // this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.currency_types.length > 0)?this.currency_types[0].id:null;
                 this.form.establishment_id =
                     this.establishments.length > 0
                         ? this.establishments[0].id
@@ -4221,7 +4227,7 @@ export default {
                 customer_id: null,
                 third_party_id: null,
                 fiscal_data: {special_tax_regime_id: null},
-                currency_type_id: this.config.currency_type_id,
+                currency_type_id: window.salesDocumentsVes ? 'VES' : this.config.currency_type_id,
                 purchase_order: null,
                 exchange_rate_sale: 0,
                 total_prepayment: 0,
@@ -4566,7 +4572,7 @@ export default {
                 this.preloadedCustomer = data.customer || null;
             }
 
-            this.form.currency_type_id = data.currency_type_id;
+            this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : data.currency_type_id;
             this.form.exchange_rate_sale = data.exchange_rate_sale;
             this.form.external_id = data.external_id;
             this.form.filename = data.filename;
@@ -5262,7 +5268,7 @@ export default {
         resetForm() {
             this.activePanel = 0;
             this.initForm();
-            // this.form.currency_type_id = (this.currency_types.length > 0)?this.currency_types[0].id:null
+            // this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.currency_types.length > 0)?this.currency_types[0].id:null
             this.form.establishment_id =
                 this.establishments.length > 0
                     ? this.establishments[0].id
@@ -6219,6 +6225,7 @@ export default {
             return this.isUpdateDocument ? {...form, payments: [], received_retentions: [], guarantee_fund: null} : {...form, payments: this.activeInvoicePayments};
         },
         async submit() {
+            if (this.loading_submit) return;
             if (this.editBlocked) return this.$message.error(this.form.edit_block_reason);
             if (this.form.fiscal_data?.special_tax_regime_id && (!this.specialTaxRegimeAvailable || this.form.payment_condition_id !== '01')) {
                 return this.$message.error('El régimen especial requiere una Factura de venta interna al contado.');
@@ -6339,9 +6346,14 @@ export default {
             if (!this.validateChangeSelections()) return
 
             const submission = this.documentSubmission();
-            const payload = this.useLocalCalculations ? this.prepareCalculationSubmission(submission) : submission;
-
+            const approved = this.useLocalCalculations ? this.prepareCalculationSubmission(submission) : submission;
             this.loading_submit = true;
+            const payload = this.isUpdate ? approved : await confirmInvoiceSourcePrice(this, approved);
+            if (!payload) {
+                this.loading_submit = false;
+                return;
+            }
+
             this.is_consumption_charge = false;
             let saleCreated = false;
             let path = `/${this.resource}`;

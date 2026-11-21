@@ -401,7 +401,7 @@
 
                             <template v-if="resource == 'reports/sales'">
                                 <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                <tr v-for="currency in ['VES', 'USD']" :key="currency">
+                                <tr v-for="currency in salesDocumentCurrencies" :key="currency">
                                     <td
                                         v-for="columnKey in salesColumnKeys"
                                         :key="`${currency}-${columnKey}`"
@@ -555,6 +555,11 @@ export default {
         }
     },
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        salesDocumentCurrencies() {
+            return window.salesDocumentsVes ? ['VES'] : ['VES', 'USD'];
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         hasUnappliedFilters() {
             return !!this.appliedForm && JSON.stringify(this.form) !== JSON.stringify(this.appliedForm)
         },

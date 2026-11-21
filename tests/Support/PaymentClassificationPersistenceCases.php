@@ -330,6 +330,57 @@ trait PaymentClassificationPersistenceCases
         if ($directory=getenv('SAB_CONVERSION_PDF_EVIDENCE_DIR')) file_put_contents($directory.'/'.$label.'.pdf',$pdf);
     }
 
+    // ######## INICIO MONEDA DOCUMENTAL GARAGE ########
+    public function test_legacy_garage_usd_sale_persists_mixed_prices_and_cash_by_currency(): void
+    {
+        [$db, , $input] = $this->bootHkaFixture();
+        // Recreate the pre-VES-only schema in the disposable tenant.
+        $db->statement('ALTER TABLE documents DROP CONSTRAINT documents_currency_ves_check');
+        $db->statement('ALTER TABLE configurations DROP COLUMN sales_documents_ves');
+        $db->table('companies')->update(['fiscal_emission_mode' => 'free_form', 'igtf_enabled' => false]);
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+
+        $rate = '915.74760000';
+        $input['source_module'] = 'GARAGE';
+        $input['currency_type_id'] = 'USD';
+        $input['exchange_rate_sale'] = $rate;
+        $input['payment_condition_id'] = '01';
+        $item = $input['items'][0];
+        $db->table('item_warehouse')->where('item_id', $item['item_id'])->update(['stock' => 20]);
+        $input['items'] = [
+            array_replace($item, ['quantity' => '6', 'unit_price' => '50',
+                'price_input' => ['amount' => '50', 'currency_type_id' => 'USD', 'includes_iva' => true]]),
+            array_replace($item, ['quantity' => '10', 'unit_price' => '0.163800593963',
+                'price_input' => ['amount' => '150', 'currency_type_id' => 'VES', 'includes_iva' => true]]),
+        ];
+        $receipt = ['date_of_payment' => $input['date_of_issue'], 'payment_destination_id' => 'cash', 'exchange_rate' => $rate];
+        $input['payments'] = [
+            $receipt + ['operation_key' => (string) \Illuminate\Support\Str::uuid(), 'payment_method_type_id' => '01',
+                'currency_type_id' => 'VES', 'original_amount' => '150', 'tendered_amount' => '150', 'payment' => '0.16'],
+            $receipt + ['operation_key' => (string) \Illuminate\Support\Str::uuid(), 'payment_method_type_id' => '10',
+                'currency_type_id' => 'USD', 'original_amount' => '301.48', 'tendered_amount' => '301.48', 'payment' => '301.48'],
+        ];
+
+        $invoice = (new \App\CoreFacturalo\Facturalo())->save($input)->getDocument()->fresh();
+        self::assertSame('GARAGE', $invoice->source_module);
+        self::assertSame('USD', $invoice->currency_type_id);
+        self::assertSame($rate, $invoice->exchange_rate_sale);
+        $lines = $invoice->items()->orderBy('id')->get();
+        self::assertTrue($lines[0]->exactValue('total')->isEqualTo('300'));
+        self::assertTrue($lines[1]->exactValue('total')->isEqualTo(\App\Support\Exact\Decimal::of('1500')->dividedBy($rate)));
+        self::assertTrue($invoice->exactValue('total_payable')->isEqualTo('301.64'));
+        self::assertTrue($invoice->exactBalance()->isZero());
+        self::assertFalse($invoice->taxes()->where('tax_kind', 'IGTF')->exists());
+
+        $payments = $invoice->payments()->get()->keyBy('currency_type_id');
+        self::assertCount(2, $payments);
+        self::assertTrue($payments['VES']->exactValue('original_amount')->isEqualTo('150'));
+        self::assertTrue($payments['VES']->exactValue('payment')->isEqualTo('0.16'));
+        self::assertTrue($payments['USD']->exactValue('original_amount')->isEqualTo('301.48'));
+        self::assertSame(2, $db->table('global_payments')->count());
+    }
+    // ######## FIN MONEDA DOCUMENTAL GARAGE ########
+
     public function test_pos_manual_line_total_accepts_bounded_exact_price_and_persists_its_fraction(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);

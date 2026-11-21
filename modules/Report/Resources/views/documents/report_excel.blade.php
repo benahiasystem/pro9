@@ -499,6 +499,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         <td data-type="s" style="mso-number-format:'\@'">{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total'])}}</td>
                         @endif
                     </tr>
+                    @unless(\App\Services\SalesDocumentCurrency::usesBolivars())
                     <tr>
                         <td colspan="{{$col_num}}">Totales USD</td>
                         @if ($columns->total_charge->visible)
@@ -526,6 +527,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         @endif
 
                     </tr>
+                    @endunless
 
                     </tbody>
                 </table>

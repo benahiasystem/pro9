@@ -411,6 +411,7 @@
 </template>
 
 <script>
+import { confirmInvoiceSourcePrice } from '@helpers/confirm-invoice-source-price';
 import { hasNamedSeries } from '@helpers/document-series';
 import {withoutDraftRetentions, paymentConditionPayload, suggestInstallments, suggestRemainingPayment, markPaymentEdited} from "@helpers/document-creation"
 import {exactAmount} from "@helpers/exchange-rate-math"
@@ -763,6 +764,7 @@ export default {
 
         },
         async submit() {
+            if (this.loading_submit) return;
             // await this.assignDocument();
             if(this.document.items.length === 0) return this.$message.error('No tiene productos agregados.')
             if (this.document.payments.some(row => row.id || row.document_id)) {
@@ -795,8 +797,13 @@ export default {
                 this.resource_documents = "documents";
             }
 
+            const payload = await confirmInvoiceSourcePrice(this, paymentConditionPayload(withoutDraftRetentions(this.document)));
+            if (!payload) {
+                this.loading_submit = false;
+                return;
+            }
             this.$http
-                .post(`/${this.resource_documents}`, paymentConditionPayload(withoutDraftRetentions(this.document)))
+                .post(`/${this.resource_documents}`, payload)
                 .then(response => {
                     if (response.data.success) {
                         this.documentNewId = response.data.data.id;
@@ -879,7 +886,7 @@ export default {
             this.document.total = q.total;
             this.document.operation_type_id = "0101";
             // this.document.date_of_due = q.date_of_issue
-            this.document.items = this.getDataItems(q.items);
+            this.document.items = this.getDataItems(q.items).map(row => ({...row, source_item_id: row.record_id ?? row.id}));
             // this.document.items = q.items;
             this.document.charges = q.charges;
             this.document.discounts = q.discounts;

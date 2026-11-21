@@ -569,6 +569,7 @@
                                 </a>
                                 <a
                                     class="btn btn-sm btn-default w-100"
+                                    v-if="canChangeDocumentCurrency"
                                     @click="selectCurrencyType"
                                 >
                                     <template
@@ -929,6 +930,11 @@ export default {
         },
     },
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        canChangeDocumentCurrency() {
+            return !window.salesDocumentsVes && this.currency_types.length > 1;
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         posRateUnavailable() {
             return !isValidPosRate(this.form.exchange_rate_sale);
         },
@@ -1703,7 +1709,7 @@ export default {
                 this.currency_types = response.data.currency_types;
                 this.user = response.data.user;
                 this.form.currency_type_id =
-                    this.currency_types.length > 0
+                    typeof window !== 'undefined' && window.salesDocumentsVes ? 'VES' : this.currency_types.length > 0
                         ? this.currency_types[0].id
                         : null;
                 this.renderCategories(response.data.categories);
@@ -1868,6 +1874,7 @@ export default {
             });
         },
         selectCurrencyType() {
+            if (typeof window !== 'undefined' && window.salesDocumentsVes) return;
             if (!ensurePosRate(this)) return;
             this.form.currency_type_id =
                 this.form.currency_type_id === "VES" ? "USD" : "VES";

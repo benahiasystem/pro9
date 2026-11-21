@@ -121,6 +121,9 @@ return new class extends Migration
             $table->index(['state_type_id'], 'contracts_state_type_id_foreign');
         });
         DB::statement('ALTER TABLE "contracts" ADD CONSTRAINT "contracts_seller_id_range" CHECK ("seller_id" >= 0)');
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        DB::statement("ALTER TABLE contracts ADD CONSTRAINT contracts_currency_ves_check CHECK (currency_type_id IS NOT NULL AND currency_type_id = 'VES')");
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
     }
 
     public function down(): void

@@ -143,6 +143,9 @@ return new class extends Migration
         });
         DB::statement('ALTER TABLE "quotations" ADD CONSTRAINT "quotations_seller_id_range" CHECK ("seller_id" >= 0)');
         DB::statement('ALTER TABLE "quotations" ADD CONSTRAINT "quotations_number_range" CHECK ("number" BETWEEN -2147483648 AND 2147483647)');
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        DB::statement("ALTER TABLE quotations ADD CONSTRAINT quotations_currency_ves_check CHECK (currency_type_id IS NOT NULL AND currency_type_id = 'VES')");
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
     }
 
     public function down(): void

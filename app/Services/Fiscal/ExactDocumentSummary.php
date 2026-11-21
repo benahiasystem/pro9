@@ -23,46 +23,10 @@ final class ExactDocumentSummary
         }
         $export = \App\Services\ExportInvoicePolicy::isExport($document->invoice->operation_type_id ?? '');
         $items = $document->items()->withoutEagerLoads()->get();
-        $discounts = collect((array) $document->discounts)->map(fn ($v) => (array) $v);
-        $charges = collect((array) $document->charges)->map(fn ($v) => (array) $v);
-        $amount = fn ($row) => D::inputRational($row['amount_exact'] ?? $row['amount'] ?? 0,'adjustments.amount');
-        foreach ($discounts->merge($charges) as $row) if ($amount($row)->isNegative()) FiscalAmounts::error('discounts', 'Importe inválido.');
-        $sum = fn ($rows, $field) => D::sum($rows->map(fn ($v) => D::readRequired($v, $field)));
-        $allocationStats = \App\Support\Exact\HeaderAllocation::stats();
-        foreach ($items as $line) \App\Support\Exact\HeaderAllocation::add($allocationStats, $line);
-        $remainingDiscounts = \App\Support\Exact\HeaderAllocation::discounts($document->discounts, $allocationStats);
-        $taxedDiscount = $remainingDiscounts['taxed'];
-        $exemptDiscount = $remainingDiscounts['exempt'];
-        $globalDiscount = $remainingDiscounts['global'];
-        $globalCharge = D::sum($charges->map($amount));
-        $taxedOriginal = $sum($items->where('affectation_igv_type_id', '10'), 'total_base_igv');
-        $exemptOriginal = $sum($items->where('affectation_igv_type_id', '20'), 'total_base_igv');
-        if ((!$export && ($taxedDiscount->isGreaterThan($taxedOriginal) || $exemptDiscount->isGreaterThan($exemptOriginal)))
-            || ($export && $globalDiscount->isGreaterThan($sum($items, 'total_value')))) FiscalAmounts::error('discounts', 'El descuento supera su base.');
         $document->taxes()->whereNull('document_payment_id')->where('tax_kind', 'IVA')->delete();
-        $taxed = $exempt = $iva = D::of(0);
-        foreach ($items->groupBy(fn ($line) => ($line->iva_rate['code'] ?? '').':'.(string)D::readRequired($line,'percentage_igv')) as $group) {
-            if ($export) continue;
-            $first = $group->first();
-            $base = $sum($group, 'total_base_igv');
-            $original = $first->affectation_igv_type_id === '10' ? $taxedOriginal : $exemptOriginal;
-            $discount = $first->affectation_igv_type_id === '10' ? $taxedDiscount : $exemptDiscount;
-            $deduction = $original->isZero() ? D::of(0) : $discount->multipliedBy($base)->dividedBy($original);
-            $base = $base->minus($deduction);
-            $tax = $deduction->isZero() ? $sum($group, 'total_igv') : $base->multipliedBy(D::readRequired($first, 'percentage_igv'))->dividedBy(100);
-            self::tax($document, $first->iva_rate['code'] ?? 'IVA', D::readRequired($first,'percentage_igv'), $base, $tax);
-            if ($first->affectation_igv_type_id === '10') $taxed = $taxed->plus($base); else $exempt = $exempt->plus($base);
-            $iva = $iva->plus($tax);
-        }
-        $values = [];
-        if ($items->isNotEmpty()) {
-            $value = $sum($items, 'total_value')->minus($globalDiscount)->plus($globalCharge);
-            $values = ['total_taxed' => $taxed, 'total_exonerated' => $exempt, 'total_igv' => $iva,
-                'total_value' => $value, 'total_exportation' => $export ? $value : D::of(0),
-                'total_discount' => $sum($items, 'total_discount')->plus($globalDiscount),
-                'total_charge' => $sum($items, 'total_charge')->plus($globalCharge)];
-            if ($export) self::tax($document, 'E', 0, $value, D::of(0));
-        }
+        $values = self::commercial($document, $items, $export,
+            fn ($code, $rate, $base, $tax) => self::tax($document, $code, $rate, $base, $tax));
+        $sum = fn ($rows, $field) => D::sum($rows->map(fn ($v) => D::readRequired($v, $field)));
         $taxes = $document->taxes()->get();
         $igtf = $sum($taxes->where('tax_kind', 'IGTF'), 'amount');
         $other = $taxes->whereNotIn('tax_kind', ['IVA', 'IGTF']);
@@ -95,6 +59,52 @@ final class ExactDocumentSummary
             'currency_type_id' => 'VES', 'calculation_snapshot' => D::snapshot($equivalents),
             'tax_breakdown' => $document->taxes()->get(['tax_kind','code','percentage','base_ves','amount_ves'])->toArray()]);
     }
+
+    // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+    public static function commercial(Document $document, \Illuminate\Support\Collection $items, bool $export, callable $recordTax): array
+    {
+        $discounts = collect((array) $document->discounts)->map(fn ($v) => (array) $v);
+        $charges = collect((array) $document->charges)->map(fn ($v) => (array) $v);
+        $amount = fn ($row) => D::inputRational($row['amount_exact'] ?? $row['amount'] ?? 0,'adjustments.amount');
+        foreach ($discounts->merge($charges) as $row) if ($amount($row)->isNegative()) FiscalAmounts::error('discounts', 'Importe inválido.');
+        $sum = fn ($rows, $field) => D::sum($rows->map(fn ($v) => D::readRequired($v, $field)));
+        $allocationStats = \App\Support\Exact\HeaderAllocation::stats();
+        foreach ($items as $line) \App\Support\Exact\HeaderAllocation::add($allocationStats, $line);
+        $remainingDiscounts = \App\Support\Exact\HeaderAllocation::discounts($document->discounts, $allocationStats);
+        $taxedDiscount = $remainingDiscounts['taxed'];
+        $exemptDiscount = $remainingDiscounts['exempt'];
+        $globalDiscount = $remainingDiscounts['global'];
+        $globalCharge = D::sum($charges->map($amount));
+        $taxedOriginal = $sum($items->where('affectation_igv_type_id', '10'), 'total_base_igv');
+        $exemptOriginal = $sum($items->where('affectation_igv_type_id', '20'), 'total_base_igv');
+        if ((!$export && ($taxedDiscount->isGreaterThan($taxedOriginal) || $exemptDiscount->isGreaterThan($exemptOriginal)))
+            || ($export && $globalDiscount->isGreaterThan($sum($items, 'total_value')))) FiscalAmounts::error('discounts', 'El descuento supera su base.');
+        $taxed = $exempt = $iva = D::of(0);
+        foreach ($items->groupBy(fn ($line) => (data_get($line, 'iva_rate.code') ?? '').':'.(string)D::readRequired($line,'percentage_igv')) as $group) {
+            if ($export) continue;
+            $first = $group->first();
+            $base = $sum($group, 'total_base_igv');
+            $original = data_get($first, 'affectation_igv_type_id') === '10' ? $taxedOriginal : $exemptOriginal;
+            $discount = data_get($first, 'affectation_igv_type_id') === '10' ? $taxedDiscount : $exemptDiscount;
+            $deduction = $original->isZero() ? D::of(0) : $discount->multipliedBy($base)->dividedBy($original);
+            $base = $base->minus($deduction);
+            $tax = $deduction->isZero() ? $sum($group, 'total_igv') : $base->multipliedBy(D::readRequired($first, 'percentage_igv'))->dividedBy(100);
+            $recordTax(data_get($first, 'iva_rate.code', 'IVA'), D::readRequired($first,'percentage_igv'), $base, $tax);
+            if (data_get($first, 'affectation_igv_type_id') === '10') $taxed = $taxed->plus($base); else $exempt = $exempt->plus($base);
+            $iva = $iva->plus($tax);
+        }
+        $values = [];
+        if ($items->isNotEmpty()) {
+            $value = $sum($items, 'total_value')->minus($globalDiscount)->plus($globalCharge);
+            $values = ['total_taxed' => $taxed, 'total_exonerated' => $exempt, 'total_igv' => $iva,
+                'total_value' => $value, 'total_exportation' => $export ? $value : D::of(0),
+                'total_discount' => $sum($items, 'total_discount')->plus($globalDiscount),
+                'total_charge' => $sum($items, 'total_charge')->plus($globalCharge)];
+            if ($export) $recordTax('E', 0, $value, D::of(0));
+        }
+        return $values;
+    }
+    // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
 
     private static function tax(Document $document, $code, $rate, $base, $amount): void
     {

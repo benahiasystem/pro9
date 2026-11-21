@@ -131,6 +131,9 @@ return new class extends Migration
         });
         DB::statement('ALTER TABLE "order_notes" ADD CONSTRAINT "order_notes_quotation_id_range" CHECK ("quotation_id" >= 0)');
         DB::statement('ALTER TABLE "order_notes" ADD CONSTRAINT "order_notes_number_range" CHECK ("number" BETWEEN -2147483648 AND 2147483647)');
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        DB::statement("ALTER TABLE order_notes ADD CONSTRAINT order_notes_currency_ves_check CHECK (currency_type_id IS NOT NULL AND currency_type_id = 'VES')");
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
     }
 
     public function down(): void

@@ -245,6 +245,7 @@
                                 <td class="celda">{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total_igv'])}}</td>
                                 <td class="celda">{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total'])}}</td>
                             </tr>
+                            @unless(\App\Services\SalesDocumentCurrency::usesBolivars())
                             <tr>
                                 <td class="celda" colspan="17"></td>
                                 <td class="celda" >Totales USD</td>
@@ -252,6 +253,7 @@
                                 <td class="celda">{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total_igv'])}}</td>
                                 <td class="celda">{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total'])}}</td>
                             </tr>
+                            @endunless
                         </tbody>
                     </table>
                 </div>

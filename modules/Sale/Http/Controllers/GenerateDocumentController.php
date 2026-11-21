@@ -91,6 +91,9 @@
             );
             // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
 
+            // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+            \App\Services\SalesDocumentCurrency::validate($request->input('currency_type_id'));
+            // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
             DB::connection('tenant')->beginTransaction();
             try {
                 $inputs = $request->all();
@@ -131,6 +134,7 @@
                     $a = new DocumentItem();
                     $a->fill($tempItem);
                     $inputs['items'][$index] = $a->toArray();
+                    $inputs['items'][$index]['source_item_id'] = $tempItem['source_item_id'] ?? null;
                     $inputs['items'][$index]['item'] = (array)$a->getArrayItem();
                     $inputs['items'][$index]['item']['unit_type_id']  = !empty($unit_type)?$unit_type:'SERV';
                     if (isset($inputs['items'][$index]['additional_information'])) {

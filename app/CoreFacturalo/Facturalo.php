@@ -123,6 +123,11 @@ class Facturalo
         // ######## FIN VERIFICACION FINAL DE CALCULOS ########
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = $inputs['type'];
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        if (in_array($this->type, ['invoice', 'credit', 'debit'], true)) {
+            \App\Services\SalesDocumentCurrency::validate($inputs['currency_type_id'] ?? null);
+        }
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         if ($this->type === 'invoice') {
             $inputs['establishment_id'] = EstablishmentInput::validatedId($inputs['establishment_id'] ?? null);
             $inputs = \App\Services\Fiscal\PrepaymentReference::prepare($inputs);
@@ -201,6 +206,12 @@ class Facturalo
                 \App\Services\Payments\QuotationReceiptsRequired::assertPresent($inputs['quotation_id'] ?? null, $inputs['payments'] ?? []);
                 \App\Services\Payments\SaleNoteReceiptsRequired::assertPresent($sourceNotes, $inputs['payments'] ?? []);
                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+                // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+                [$inputs, $sourcePrices] = \App\Services\Fiscal\InvoiceSourcePrices::prepare($inputs, $sourceNotes);
+                if ($sourcePrices && !hash_equals($sourcePrices['confirmation'], (string) ($inputs['source_price_confirmation'] ?? ''))) {
+                    \App\Services\Fiscal\FiscalAmounts::error('source_price_confirmation', 'Consulte y confirme el nuevo total en bolívares antes de facturar.');
+                }
+                // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
                 $inputs=\App\Services\Fiscal\OrderInvoiceInventory::prepare($inputs,false,null,count($sourceNotes)===1 ? (int)$sourceNotes[0] : null);
                 $inputs=\App\Services\Fiscal\DeliveryOrderInvoiceInventory::prepare($inputs);
                 $inputs=\App\Services\Fiscal\SaleNoteInvoiceInventory::prepare($inputs,$sourceNotes);
@@ -231,6 +242,11 @@ class Facturalo
                 }
                 \App\Services\Fiscal\FiscalDocumentPersistence::otherTaxes($document, $inputs['taxes'] ?? []);
                 \App\Services\Fiscal\FiscalDocumentPersistence::summarize($document);
+                // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+                if ($sourcePrices && !$document->exactValue('total')->isEqualTo(\App\Support\Exact\Decimal::of($sourcePrices['exact_total']))) {
+                    \App\Services\Fiscal\FiscalAmounts::error('total', 'El total calculado difiere de la vista previa. Actualice la factura.');
+                }
+                // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
                 $this->savePayments($document, $inputs['payments']);
                 $this->updatePrepaymentDocuments($inputs, $document);
                 if($inputs['hotel']) $document->hotel()->create($inputs['hotel']);
@@ -1130,6 +1146,11 @@ class Facturalo
 
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = @$inputs['type'];
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        if ($this->type === 'invoice' && array_key_exists('currency_type_id', $inputs)) {
+            \App\Services\SalesDocumentCurrency::validate($inputs['currency_type_id']);
+        }
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         if ($this->type === 'invoice') $inputs=\App\Services\Fiscal\PrepaymentReference::prepare($inputs);
         // dd($inputs);
         switch ($this->type) {

@@ -227,3 +227,47 @@ test('remounting the POS invoice checkout preserves its original discount mode a
         assert.equal(mount({...form}).enabled_discount, false)
     }
 })
+
+test('Garage cambia una venta mixta a USD con la tasa de la captura y conserva lo recibido en Bs.', async () => {
+    const component = compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/pos/garage.vue', 'utf8'))
+    const ast = parser.parse(component.script.content, {sourceType: 'module'})
+    const methods = ast.program.body.find(node => node.type === 'ExportDefaultDeclaration').declaration.properties.find(node => node.key.name === 'methods').value
+    const {convertExact} = load(path.resolve('resources/js/helpers/local-payment-quote.js'))
+    const {exactAmount} = load(path.resolve('resources/js/helpers/exchange-rate-math.js'))
+    const {documentTotals} = load(path.resolve('resources/js/helpers/exact-document.js'))
+    const {isRecordedReceipt} = load(path.resolve('resources/js/helpers/payment-classification.js'))
+    const extracted = ['selectCurrencyType', 'changeCurrencyType'].map(name => generate(methods.properties.find(method => method.key?.name === name)).code)
+    const actions = vm.runInNewContext(`({${extracted.join(',')}})`, {
+        calculateRowItem, ensurePosRate, convertExact, exactAmount, isRecordedReceipt, _: require('lodash'),
+    });
+    const rate = '915.74760000'
+    const row = (id, currency, price, quantity) => ({
+        ...calculateRowItem({item: {id, currency_type_id: currency, unit_price: price},
+            affectation_igv_type_id: '10', quantity}, 'VES', rate),
+        unit_type_id: 'UND',
+    })
+    const ctx = {...actions, currency_types: [{id: 'VES', symbol: 'Bs.'}, {id: 'USD', symbol: '$'}],
+        form: {currency_type_id: 'VES', exchange_rate_sale: rate,
+            items: [row(1, 'USD', '50', '6'), row(2, 'VES', '150', '10')],
+            payments: [{currency_type_id: 'VES', payment: '150', original_amount: '150', exchange_rate: rate}]},
+        percentage_igv: '0.16', calculateTotal() { Object.assign(this.form, documentTotals(this.form.items)) },
+        setFormPosLocalStorage() { this.saved = JSON.parse(JSON.stringify(this.form)) },
+        $message: {error(message) { throw Error(message) }},
+    }
+    ctx.calculateTotal()
+    assert.equal(ctx.form.total_payable, '276224.28')
+    await ctx.selectCurrencyType()
+    assert.equal(ctx.form.currency_type_id, 'USD')
+    assert.equal(ctx.currency_type.symbol, '$')
+    assert.equal(ctx.form.items[0].total, '300')
+    assert.equal(exactAmount(ctx.form.items[1].total).final(2), '1.64')
+    assert.equal(ctx.form.items[1].unit_type_id, 'UND')
+    assert.equal(ctx.form.total_payable, '301.64')
+    assert.equal(ctx.form.payments[0].currency_type_id, 'VES')
+    assert.equal(ctx.form.payments[0].original_amount, '150')
+    assert.equal(ctx.form.payments[0].payment, '0.16')
+    assert.equal(ctx.saved.total_payable, '301.64')
+    await ctx.selectCurrencyType()
+    assert.equal(ctx.form.total_payable, '276224.28')
+    assert.equal(ctx.form.payments[0].payment, '150.00')
+});

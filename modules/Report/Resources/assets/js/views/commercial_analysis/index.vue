@@ -26,7 +26,7 @@
                                 <th class="">Ultima compra</th> 
                                 <th class="">Tiempo promedio</th> 
                                 <th class="">Facturas</th>
-                                <th class="">Total VES</th><th class="">Total USD</th><th class="">Otras monedas</th>
+                                <th class="">Total VES</th><th v-if="!salesDocumentsInBolivars">Total USD</th><th v-if="!salesDocumentsInBolivars">Otras monedas</th>
     
                                 <th v-for="c in columns">{{c.toUpperCase()}}</th>
     
@@ -49,7 +49,7 @@
                                 <td>{{row.last_document_date}}</td> 
                                 <td>{{row.prom_difference_days}}</td> 
                                 <td>{{row.quantity_visit}}</td> 
-                                <td>{{row.total_ves}}</td><td>{{row.total_usd}}</td><td>{{ formatOtherCurrencies(row.other_currencies) }}</td>
+                                <td>{{row.total_ves}}</td><td v-if="!salesDocumentsInBolivars">{{row.total_usd}}</td><td v-if="!salesDocumentsInBolivars">{{ formatOtherCurrencies(row.other_currencies) }}</td>
     
                                 <td v-for="c in columns">{{row[c.toUpperCase()]}}</td>
     
@@ -78,7 +78,14 @@
  
     import DataTable from '../../components/DataTableCommercialAnalysis.vue'
 
-    export default { 
+    export default {
+    // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+    computed: {
+        salesDocumentsInBolivars() {
+            return typeof window !== 'undefined' && window.salesDocumentsVes;
+        },
+    },
+    // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         components: {DataTable},
         data() {
             return {

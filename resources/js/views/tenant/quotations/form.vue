@@ -236,7 +236,7 @@
                                         @change="changeCurrencyType"
                                     >
                                         <el-option
-                                            v-for="option in currency_types"
+                                            v-for="option in documentCurrencies"
                                             :key="option.id"
                                             :value="option.id"
                                             :label="option.description"
@@ -1686,7 +1686,7 @@ export default {
             this.company = data.company;
 
             const configCurrencyAvailable = this.currency_types.some(c => c.id === this.config.currency_type_id);
-            this.form.currency_type_id = (this.config.currency_type_id && configCurrencyAvailable)
+            this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.config.currency_type_id && configCurrencyAvailable)
                 ? this.config.currency_type_id
                 : (this.currency_types.length > 0 ? this.currency_types[0].id : null);
 
@@ -1724,6 +1724,11 @@ export default {
         await this.initRecord();
     },
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        documentCurrencies() {
+            return this.currency_types.filter(currency => !window.salesDocumentsVes || currency.id === 'VES');
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         getCustomer(){
             const customer = this.customers.find(
                 c => String(c.id) === String(this.form.customer_id)
@@ -2159,7 +2164,7 @@ export default {
             this.form.establishment_id = sale_opportunity.establishment_id;
             this.form.time_of_issue = moment().format("HH:mm:ss");
             this.form.customer_id = sale_opportunity.customer_id;
-            this.form.currency_type_id = sale_opportunity.currency_type_id;
+            this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : sale_opportunity.currency_type_id;
             this.form.total_exportation = sale_opportunity.total_exportation;
             this.form.total_free = sale_opportunity.total_free;
             this.form.total_taxed = sale_opportunity.total_taxed;
@@ -2271,7 +2276,7 @@ export default {
             this.initForm();
 
             const configCurrencyAvailable = this.currency_types.some(c => c.id === this.config.currency_type_id);
-            this.form.currency_type_id = (this.config.currency_type_id && configCurrencyAvailable)
+            this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.config.currency_type_id && configCurrencyAvailable)
                 ? this.config.currency_type_id
                 : (this.currency_types.length > 0 ? this.currency_types[0].id : null);
 

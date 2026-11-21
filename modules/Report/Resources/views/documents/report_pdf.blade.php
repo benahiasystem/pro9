@@ -438,6 +438,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             <td>{{\App\Support\Exact\Decimal::format($currencyTotals['VES']['total'])}}</td>
                             @endif
                         </tr>
+                        @unless(\App\Services\SalesDocumentCurrency::usesBolivars())
                         <tr>
                             <td colspan="{{$col_num}}">Totales USD</td>
                             @if ($columns->total_charge->visible)
@@ -464,6 +465,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             <td>{{\App\Support\Exact\Decimal::format($currencyTotals['USD']['total'])}}</td>
                             @endif
                         </tr>
+                        @endunless
 
                         </tbody>
                     </table>
@@ -483,13 +485,16 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                     @endfor{{-- LOS DOCUMENTOS --}}
                 @endfor{{-- TIPOS DE DOCUMENTO --}}
                 <h3>TOTAL POR SERIE Y DOCUMENTO</h3>
+                @php
+    $salesInBolivars = \App\Services\SalesDocumentCurrency::usesBolivars();
+@endphp
                 <table>
                     <thead>
                         <tr style="background-color: #ebebeb;">
                             <th style="padding: 5px; text-align: center;">DOC</th>
                             <th style="padding: 5px; text-align: center;">SERIE</th>
                             <th style="padding: 5px; text-align: center;">TOTAL VES</th>
-                            <th style="padding: 5px; text-align: center;">TOTAL USD</th>
+                            @unless($salesInBolivars)<th style="padding: 5px; text-align: center;">TOTAL USD</th>@endunless
                         </tr>
                     </thead>
                     <tbody>
@@ -506,7 +511,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                         <td style="padding: 5px; text-align: center;">{{$document['description']}}</td>
                                         <td style="padding: 5px; text-align: center;">{{$serie['number']}}</td>
                                         <td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($serie['total_ves'])}}</td>
-                                        <td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($serie['total_usd'])}}</td>
+                                        @unless($salesInBolivars)<td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($serie['total_usd'])}}</td>@endunless
                                     </tr>
                                     @php
                                         $total_general_ves=$total_general_ves->plus($serie['total_ves']);
@@ -525,13 +530,13 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         <tr>
                             <td style="padding: 5px; text-align: center;" colspan="2">Ajuste por redondeo de subtotales</td>
                             <td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($adjust_general_ves)}}</td>
-                            <td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($adjust_general_usd)}}</td>
+                            @unless($salesInBolivars)<td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($adjust_general_usd)}}</td>@endunless
                         </tr>
                         @endif
                         <tr >
                             <td style="padding: 5px; text-align: center;" colspan="2">TOTAL GENERAL</td>
                             <td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($total_general_ves)}}</td>
-                            <td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($total_general_usd)}}</td>
+                            @unless($salesInBolivars)<td style="padding: 5px; text-align: center;">{{\App\Support\Exact\Decimal::format($total_general_usd)}}</td>@endunless
                         </tr>
                     </tbody>
                 </table>

@@ -355,6 +355,7 @@
                     <td></td>
                     <td>{{$acum_total}}</td>
                 </tr>
+                @unless(\App\Services\SalesDocumentCurrency::usesBolivars())
                 <tr>
                     <td colspan="23"></td>
                     <td colspan="2">Totales USD</td>
@@ -368,6 +369,7 @@
                     <td></td>
                     <td>{{$acum_total_usd}}</td>
                 </tr>
+                @endunless
 
                 </tbody>
             </table>

@@ -101,7 +101,7 @@
                                 <div class="form-group" :class="{'has-danger': errors.currency_type_id}">
                                     <label class="control-label">Moneda</label>
                                     <el-select v-model="form.currency_type_id" @change="changeCurrencyType">
-                                        <el-option v-for="option in currency_types" :key="option.id" :value="option.id"
+                                        <el-option v-for="option in documentCurrencies" :key="option.id" :value="option.id"
                                                    :label="option.description"></el-option>
                                     </el-select>
                                     <small class="form-control-feedback" v-if="errors.currency_type_id"
@@ -309,6 +309,11 @@ import Logo from '@views/companies/logo.vue'
 export default {
     props: ['typeUser', 'id', 'authUser'],
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        documentCurrencies() {
+            return this.currency_types.filter(currency => !window.salesDocumentsVes || currency.id === 'VES');
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         getCurrentLogo() {
             const isDarkMode = document.documentElement.classList.contains('dark');
         
@@ -383,7 +388,7 @@ export default {
                 this.establishments = response.data.establishments
                 this.all_customers = response.data.customers
                 this.company = response.data.company
-                this.form.currency_type_id = (this.currency_types.length > 0) ? this.currency_types[0].id : null
+                this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.currency_types.length > 0) ? this.currency_types[0].id : null
                 this.form.establishment_id = (this.establishments.length > 0) ? this.establishments[0].id : null
 
                 this.changeEstablishment()
@@ -500,7 +505,7 @@ export default {
         resetForm() {
             this.activePanel = 0
             this.initForm()
-            this.form.currency_type_id = (this.currency_types.length > 0) ? this.currency_types[0].id : null
+            this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.currency_types.length > 0) ? this.currency_types[0].id : null
             this.form.establishment_id = (this.establishments.length > 0) ? this.establishments[0].id : null
             this.changeEstablishment()
             this.changeDateOfIssue()

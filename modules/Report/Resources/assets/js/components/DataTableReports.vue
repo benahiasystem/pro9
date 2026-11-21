@@ -334,7 +334,7 @@
 
                                 <td>{{ totals.acum_total }}</td>
                             </tr>
-                            <tr>
+                            <tr v-if="!salesDocumentsInBolivars">
                                 <td :colspan="13"></td>
                                 <td v-if="visibleColumns.guides.visible"></td>
                                 <td v-if="visibleColumns.options.visible"></td>
@@ -469,6 +469,11 @@ export default {
         }
     },
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        salesDocumentsInBolivars() {
+            return typeof window !== 'undefined' && window.salesDocumentsVes;
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         cantChoiseUserWithUserType(){
             if(this.form.user_type && this.form.user_type.length > 1) return false;
             return true;

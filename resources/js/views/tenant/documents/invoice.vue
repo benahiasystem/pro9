@@ -151,7 +151,7 @@
                                 <label class="control-label">Moneda</label>
                                 <el-select v-model="form.currency_type_id"
                                            @change="changeCurrencyType">
-                                    <el-option v-for="option in currency_types"
+                                    <el-option v-for="option in documentCurrencies"
                                                :key="option.id"
                                                :label="option.description"
                                                :value="option.id"></el-option>
@@ -1133,6 +1133,11 @@ export default {
         },
     },
     computed: {
+        // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
+        documentCurrencies() {
+            return this.currency_types.filter(currency => !window.salesDocumentsVes || currency.id === 'VES');
+        },
+        // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         receiptAppliedAmounts() {
             return JSON.stringify((this.form?.payments || []).map(row => row.payment));
         },
@@ -1199,7 +1204,7 @@ export default {
                 this.user = response.data.user;
                 this.document_type_03_filter = response.data.document_type_03_filter;
                 this.select_first_document_type_03 = response.data.select_first_document_type_03
-                // this.form.currency_type_id = (this.currency_types.length > 0)?this.currency_types[0].id:null;
+                // this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.currency_types.length > 0)?this.currency_types[0].id:null;
                 this.form.establishment_id = (this.establishments.length > 0) ? this.establishments[0].id : null;
                 this.form.document_type_id = (this.document_types.length > 0) ? this.document_types[0].id : null;
                 this.form.operation_type_id = (this.operation_types.length > 0) ? this.operation_types[0].id : null;
@@ -1501,7 +1506,7 @@ export default {
             this.form.date_of_issue = moment(data.date_of_issue).format('YYYY-MM-DD');
             this.form.time_of_issue = data.time_of_issue;
             this.form.customer_id = data.customer_id;
-            this.form.currency_type_id = data.currency_type_id;
+            this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : data.currency_type_id;
             this.form.exchange_rate_sale = data.exchange_rate_sale;
             this.form.additional_information = this.onPrepareAdditionalInformation(data.additional_information);
             this.form.external_id = data.external_id;
@@ -1994,7 +1999,7 @@ export default {
                 date_of_issue: moment().format('YYYY-MM-DD'),
                 time_of_issue: moment().format('HH:mm:ss'),
                 customer_id: null,
-                currency_type_id: this.config.currency_type_id,
+                currency_type_id: window.salesDocumentsVes ? 'VES' : this.config.currency_type_id,
                 purchase_order: null,
                 exchange_rate_sale: 0,
                 total_prepayment: 0,
@@ -2085,7 +2090,7 @@ export default {
         resetForm() {
             this.activePanel = 0
             this.initForm()
-            // this.form.currency_type_id = (this.currency_types.length > 0)?this.currency_types[0].id:null
+            // this.form.currency_type_id = window.salesDocumentsVes ? 'VES' : (this.currency_types.length > 0)?this.currency_types[0].id:null
             this.form.establishment_id = (this.establishments.length > 0) ? this.establishments[0].id : null
             this.form.document_type_id = (this.document_types.length > 0) ? this.document_types[0].id : null
             this.form.operation_type_id = (this.operation_types.length > 0) ? this.operation_types[0].id : null
