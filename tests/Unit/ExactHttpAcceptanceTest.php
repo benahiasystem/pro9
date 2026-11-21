@@ -11,7 +11,6 @@ class ExactHttpAcceptanceTest extends TestCase
     {
         if (getenv('SAB_POSTGRES_TESTS') !== '1') $this->markTestSkipped('Requiere PostgreSQL temporal aislado.');
         $vesDocumentsOnly = getenv('SAB_TEST_DOCUMENTS_VES_ONLY') === '1';
-        $vesInvoicesOnly = $vesDocumentsOnly || getenv('SAB_HTTP_ACCEPTANCE_VES_ONLY') === '1';
         $fixture=new class extends FiscalEmissionSchemaTest {
             public bool $ready=false;
             public function start(): array { parent::setUp();$this->ready=true;return (new \ReflectionMethod(parent::class,'bootHkaFixture'))->invoke($this); }
@@ -21,6 +20,9 @@ class ExactHttpAcceptanceTest extends TestCase
         try {
             [$db,$app,$input]=$fixture->start();
             $schema=$db->getSchemaBuilder();
+            // The fresh tenant schema also enforces VES when no test profile was selected.
+            $vesDocumentsOnly = $vesDocumentsOnly || $schema->hasColumn('configurations', 'sales_documents_ves');
+            $vesInvoicesOnly = $vesDocumentsOnly || getenv('SAB_HTTP_ACCEPTANCE_VES_ONLY') === '1';
             $schema->create('websites',function ($t) { $t->bigIncrements('id');$t->string('uuid');$t->timestamps();$t->softDeletes(); });
             $schema->create('hostnames',function ($t) { $t->bigIncrements('id');$t->string('fqdn');$t->string('redirect_to')->nullable();$t->boolean('force_https')->default(false);$t->timestamp('under_maintenance_since')->nullable();$t->unsignedBigInteger('website_id');$t->timestamps();$t->softDeletes(); });
             $db->table('websites')->insert(['id'=>1,'uuid'=>$db->getDatabaseName()]);

@@ -117,6 +117,11 @@ final class BillingPdfPostgresTest extends \PHPUnit\Framework\TestCase
         self::assertSame(public_path('logo/logo.jpg'),asset('logo/logo.jpg'));
         self::assertFileExists(asset('logo/logo.jpg'));
         \Tests\Support\PostgresTestEnvironment::assertServer($db);
+        if ($currency === 'USD' && $db->getSchemaBuilder()->hasColumn('configurations', 'sales_documents_ves')) {
+            // Render historical USD documents using the legacy tenant schema.
+            $db->statement('ALTER TABLE documents DROP CONSTRAINT documents_currency_ves_check');
+            $db->statement('ALTER TABLE configurations DROP COLUMN sales_documents_ves');
+        }
         $run = getenv('SAB_POSTGRES_RUN_ID');
         self::assertMatchesRegularExpression(\Tests\Support\PostgresTestEnvironment::RUN_ID_PATTERN,$run);
         $directory = base_path('informes/evidencias/postgresql_17_implementacion/resultados/billing-pdf-'.$run.'/'.$currency);
