@@ -16,6 +16,8 @@ class PurchaseSeriesValidationTest extends TestCase
         $factory = new Factory(new Translator(new ArrayLoader(), 'es'));
         self::assertTrue($factory->make(['series'=>'P001'], ['series'=>$rules])->passes());
         self::assertFalse($factory->make(['series'=>'PRUEBA'], ['series'=>$rules])->passes());
-        self::assertFalse($factory->make(['series'=>''], ['series'=>$rules])->passes());
+        self::assertTrue($factory->make(['series'=>''], ['series'=>$rules])->passes());
+        self::assertTrue($factory->make(['series'=>null], ['series'=>$rules])->passes());
+        self::assertTrue($factory->make([], ['series'=>$rules])->passes());
     }
 }

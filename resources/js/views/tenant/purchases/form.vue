@@ -39,7 +39,7 @@
                         <div class="col-3 col-lg-2">
                             <div :class="{'has-danger': errors.series}"
                                  class="form-group">
-                                <label class="control-label">Serie <span class="text-danger">*</span></label>
+                                <label class="control-label">Serie</label>
                                 <el-input v-model="form.series"
                                           :maxlength="4"
                                           @input="inputSeries"></el-input>

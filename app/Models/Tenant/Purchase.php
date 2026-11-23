@@ -361,7 +361,13 @@ class Purchase extends ModelTenant
      */
     public function getNumberFullAttribute()
     {
-        return $this->series.'-'.$this->number;
+        return $this->series !== null && $this->series !== ''
+            ? $this->series.'-'.$this->number : (string) $this->number;
+    }
+
+    public function setSeriesAttribute($value)
+    {
+        $this->attributes['series'] = $value ?? '';
     }
 
     /**

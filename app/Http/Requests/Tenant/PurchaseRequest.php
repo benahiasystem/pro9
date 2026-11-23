@@ -23,7 +23,7 @@ class PurchaseRequest extends FormRequest
 				'numeric'
 			],
 			'series' => [
-				'required',
+				'nullable',
 				'string',
 				'max:4',
 			],

@@ -454,7 +454,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                     'success' => true,
                     'data' => [
                         'id' => $purchase->id,
-                        'number_full' => "{$purchase->series}-{$purchase->number}",
+                        'number_full' => $purchase->number_full,
                     ],
                 ];
             } catch (\Illuminate\Validation\ValidationException $th) {
@@ -528,6 +528,8 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 'group_id' => ($inputs->document_type_id === '01') ? '01' : '02',
                 'state_type_id' => '01'
             ];
+
+            $values['series'] = $inputs->input('series') ?? '';
 
             $inputs->merge($values);
 
