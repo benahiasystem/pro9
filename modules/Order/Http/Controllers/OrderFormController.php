@@ -32,7 +32,7 @@ use Modules\Order\Helpers\OrderFormHelper;
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
 use App\CoreFacturalo\Template;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Mpdf\HTMLParserMode;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;

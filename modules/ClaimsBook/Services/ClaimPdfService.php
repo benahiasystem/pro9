@@ -4,7 +4,7 @@
 
 namespace Modules\ClaimsBook\Services;
 
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Illuminate\Support\Facades\Storage;
 use Modules\ClaimsBook\Models\Tenant\Claim;
 use App\Models\Tenant\Company;
@@ -52,7 +52,6 @@ class ClaimPdfService
             'margin_bottom'     => 15,
             'margin_left'       => 15,
             'margin_right'      => 15,
-            'tempDir'           => sys_get_temp_dir(),
             'autoScriptToLang'  => true,
         ]);
 

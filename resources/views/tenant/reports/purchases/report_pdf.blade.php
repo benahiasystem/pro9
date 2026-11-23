@@ -89,10 +89,10 @@
                                 <th>Cliente</th>
                                 <th>RIF</th>
                                 <th class="">F. Pago</th>
-                                <th class="" >T.Exonerado</th>
-                                <th class="" >T.Inafecta</th>
+                                <th class="" >Total exento</th>
+                                <th class="" >Total no sujeto</th>
                                 <th class="" >T.Gratuito</th>
-                                <th>Total Gravado</th>
+                                <th>Base imponible</th>
                                 {{-- ########## INICIO CAMBIO IGV A IVA --}}
                                 <th>Total IVA</th>
                                 {{-- ######### FIN CAMBIO IGV A IVA --}}

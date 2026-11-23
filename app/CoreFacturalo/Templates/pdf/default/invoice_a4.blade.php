@@ -804,7 +804,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
 
             @if($document->total_exonerated > 0)
             <tr>
-                <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">Total exento: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
             </tr>
             @endif
@@ -812,13 +812,13 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             @if ($document->document_type_id === '07')
             @if($document->total_taxed >= 0)
             <tr>
-                <td colspan="{{ $colspan_total }}" class="text-right pr-2">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_total }}" class="text-right pr-2">Base imponible: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             </tr>
             @endif
             @elseif($document->total_taxed > 0)
             <tr>
-                <td colspan="{{ $colspan_total }}" class="text-right pr-2">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_total }}" class="text-right pr-2">Base imponible: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             </tr>
             @endif

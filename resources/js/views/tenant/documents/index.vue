@@ -190,9 +190,9 @@
                         <th v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">T.Exportación</th>
 
 
-                        <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
+                        <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">Total exento</th>
                         <th v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ columns.total_charge.title }}</th>
-                        <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
+                        <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">Base imponible</th>
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
                         <!-- <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th> -->
                         <!-- ######### FIN CAMBIO IGV A IVA -->
@@ -817,9 +817,9 @@ export default {
                 total_exportation:  { title: "T.Exportación",                  visible: false, order: 19 },
 
 
-                total_exonerated:   { title: "T.Exonerado",                    visible: false, order: 22 },
+                total_exonerated:   { title: "Total exento",                    visible: false, order: 22 },
                 total_charge:       { title: "T.Cargos",                       visible: false, order: 23 },
-                total_taxed:        { title: "T.Gravado",                      visible: true,  order: 24 },
+                total_taxed:        { title: "Base imponible",                      visible: true,  order: 24 },
                 // ########## INICIO CAMBIO IGV A IVA
                 total_igv:          { title: "T.IVA",                          visible: true,  order: 25 },
                 // ######### FIN CAMBIO IGV A IVA

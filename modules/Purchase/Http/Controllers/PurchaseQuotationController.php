@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\CoreFacturalo\Requests\Inputs\Common\EstablishmentInput;
 use App\CoreFacturalo\Template;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Mpdf\HTMLParserMode;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;

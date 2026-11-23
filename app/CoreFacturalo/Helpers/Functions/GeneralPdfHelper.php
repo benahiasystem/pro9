@@ -6,7 +6,7 @@ use App\CoreFacturalo\Template;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use Mpdf\HTMLParserMode;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Company;
 use App\Models\Tenant\PaymentMethodType;

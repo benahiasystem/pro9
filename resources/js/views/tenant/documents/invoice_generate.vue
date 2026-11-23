@@ -651,7 +651,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-12 switch-container">
+                                    <div v-if="isUpdateDocument" class="col-12 switch-container">
                                         <div class="row no-gutters">
                                             <div class="col-10">
                                                 ¿Es comprobante de
@@ -668,7 +668,7 @@
                                         </div>
                                     </div>
                                     <template v-if="!is_client">
-                                        <div v-if="!prepayment_deduction" class="col-12 py-2 switch-container">
+                                        <div v-if="isUpdateDocument && !prepayment_deduction" class="col-12 py-2 switch-container">
                                             <div class="row no-gutters">
                                                 <div class="col-10">
                                                     ¿Es un pago anticipado?
@@ -714,7 +714,7 @@
                                                 </el-select>
                                             </div>
                                         </div>
-                                        <div v-if="!form.has_prepayment" class="col-12 py-2 switch-container">
+                                        <div v-if="isUpdateDocument && !form.has_prepayment" class="col-12 py-2 switch-container">
                                             <div class="row no-gutters">
                                                 <div class="col-10">
                                                     Deducción de los pagos
@@ -1596,14 +1596,14 @@
 
 
                                 <tr v-if="hasPositiveInvoiceAmount('total_exonerated')">
-                                    <td>OP.EXONERADAS:</td>
+                                    <td>Total exento:</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
                                         {{ form.total_exonerated }}
                                     </td>
                                 </tr>
                                 <tr v-if="hasPositiveInvoiceAmount('total_taxed')">
-                                    <td>Op. gravada:</td>
+                                    <td>Base imponible:</td>
                                     <td>
                                         {{ documentCurrencySymbol }}
                                         {{ form.total_taxed }}

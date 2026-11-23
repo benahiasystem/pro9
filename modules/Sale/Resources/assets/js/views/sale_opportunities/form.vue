@@ -238,11 +238,11 @@
                                 <p class="text-end" v-if="form.total_free > 0">OP.GRATUITAS: {{
                                         currency_type.symbol
                                     }} {{ form.total_free }}</p>
-                                <p class="text-end" v-if="form.total_unaffected > 0">OP.INAFECTAS:
+                                <p class="text-end" v-if="form.total_unaffected > 0">Total no sujeto:
                                     {{ currency_type.symbol }} {{ form.total_unaffected }}</p>
-                                <p class="text-end" v-if="form.total_exonerated > 0">OP.EXONERADAS:
+                                <p class="text-end" v-if="form.total_exonerated > 0">Total exento:
                                     {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
-                                <p class="text-end" v-if="form.total_taxed > 0">OP.GRAVADA: {{ currency_type.symbol }}
+                                <p class="text-end" v-if="form.total_taxed > 0">Base imponible: {{ currency_type.symbol }}
                                     {{ form.total_taxed }}</p>
                                 <!-- ########## INICIO CAMBIO IGV A IVA -->
                                 <p class="text-end" v-if="form.total_igv > 0">IVA: {{ currency_type.symbol }}

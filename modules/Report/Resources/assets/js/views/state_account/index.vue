@@ -91,10 +91,10 @@
                             <th v-if="columns.total_charge.visible">
                                 Total Cargos
                             </th>
-                            <th>Total Exonerado</th>
-                            <th>Total Inafecto</th>
+                            <th>Total exento</th>
+                            <th>Total no sujeto</th>
                             <th>Total Gratuito</th>
-                            <th>Total Gravado</th>
+                            <th>Base imponible</th>
 
                             <!-- ########## INICIO CAMBIO IGV A IVA -->
                             <th class="">Total IVA</th>

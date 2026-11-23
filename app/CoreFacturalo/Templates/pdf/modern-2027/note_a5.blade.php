@@ -298,13 +298,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
         @if($document->total_exonerated > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="5" class="text-right font-bold">Total exento: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
             </tr>
         @endif
         @if($document->total_taxed > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="5" class="text-right font-bold">Base imponible: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             </tr>
         @endif

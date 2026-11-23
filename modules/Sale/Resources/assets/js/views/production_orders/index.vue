@@ -37,9 +37,9 @@
                         <th class="text-center">Moneda</th>
                         <th class="text-right" v-if="columns.total_exportation.visible">T.Exportación</th>
                         <th class="text-right" v-if="columns.total_free.visible">T.Gratuito</th>
-                        <th class="text-right" v-if="columns.total_unaffected.visible">T.Inafecta</th>
-                        <th class="text-right" v-if="columns.total_exonerated.visible">T.Exonerado</th>
-                        <th class="text-right" v-if="columns.total_taxed.visible">T.Gravado</th>
+                        <th class="text-right" v-if="columns.total_unaffected.visible">Total no sujeto</th>
+                        <th class="text-right" v-if="columns.total_exonerated.visible">Total exento</th>
+                        <th class="text-right" v-if="columns.total_taxed.visible">Base imponible</th>
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
                         <th class="text-right" v-if="columns.total_igv.visible">T.IVA</th>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
@@ -98,11 +98,11 @@
                         visible: false
                     },
                     total_unaffected: {
-                        title: 'T.Inafecto',
+                        title: 'Total no sujeto',
                         visible: false
                     },
                     total_exonerated: {
-                        title: 'T.Exonerado',
+                        title: 'Total exento',
                         visible: false
                     },
                     total_free: {
@@ -110,7 +110,7 @@
                         visible: false
                     } ,
                     total_taxed: {
-                        title: 'T.Gravado',
+                        title: 'Base imponible',
                         visible: false
                     } ,
                     total_igv: {

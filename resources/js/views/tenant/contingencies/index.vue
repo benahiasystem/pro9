@@ -80,9 +80,9 @@
                             class="text-end"
                             v-if="columns.total_exonerated.visible"
                         >
-                            T.Exonerado
+                            Total exento
                         </th>
-                        <th class="text-end">T.Gravado</th>
+                        <th class="text-end">Base imponible</th>
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
                         <th class="text-end">T.IVA</th>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
@@ -240,7 +240,7 @@ export default {
                     visible: false
                 },
                 total_exonerated: {
-                    title: "T.Exonerado",
+                    title: "Total exento",
                     visible: false
                 }
             }

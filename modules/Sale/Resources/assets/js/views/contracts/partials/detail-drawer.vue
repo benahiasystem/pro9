@@ -174,7 +174,7 @@
                                 <div class="detail-drawer__totals-card">
                                     <div class="detail-drawer__totals-row">
                                         <span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-receipt"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2z"/><path d="M9 7l6 0"/><path d="M9 11l6 0"/><path d="M13 15l2 0"/></svg></span>
-                                        <span class="detail-drawer__totals-row-label">Op. gravada</span>
+                                        <span class="detail-drawer__totals-row-label">Base imponible</span>
                                         <strong>{{ formatMoney(record.total_taxed) }}</strong>
                                     </div>
                                     <div class="detail-drawer__totals-row">

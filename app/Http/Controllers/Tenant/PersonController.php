@@ -23,7 +23,7 @@ use App\Exports\ClientExport;
 use App\Models\System\Configuration;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Mpdf\HTMLParserMode;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 
 class PersonController extends Controller

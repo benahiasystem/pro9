@@ -308,15 +308,15 @@ export default {
                     visible: false
                 },
                 total_unaffected: {
-                    title: 'T.Inafecto',
+                    title: 'Total no sujeto',
                     visible: false
                 },
                 total_exonerated: {
-                    title: 'T.Exonerado',
+                    title: 'Total exento',
                     visible: false
                 },
                 total_taxed: {
-                    title: 'T.Gravado',
+                    title: 'Base imponible',
                     visible: false
                 },
                 total_igv: {
@@ -385,7 +385,19 @@ export default {
                 "columnVisibilityPaymentreceipt"
             );
             if (savedColumns) {
-                this.columns = JSON.parse(savedColumns);
+                // ######## INICIO PREFERENCIAS DE COLUMNAS VENEZUELA ########
+                try {
+                    const saved = JSON.parse(savedColumns);
+                    Object.keys(this.columns).forEach(key => {
+                        const preference = saved && saved[key];
+                        if (!preference || typeof preference !== 'object') return;
+                        if (typeof preference.visible === 'boolean') this.columns[key].visible = preference.visible;
+                        if (Number.isFinite(preference.order)) this.columns[key].order = preference.order;
+                    });
+                } catch (_) {
+                    // Conservar las columnas predeterminadas si las preferencias no son válidas.
+                }
+                // ######## FIN PREFERENCIAS DE COLUMNAS VENEZUELA ########
             }
         },
         ...mapActions(["loadConfiguration"]),

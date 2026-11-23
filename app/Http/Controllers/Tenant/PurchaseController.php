@@ -43,7 +43,7 @@
     use Mpdf\Config\ConfigVariables;
     use Mpdf\Config\FontVariables;
     use Mpdf\HTMLParserMode;
-    use Mpdf\Mpdf;
+    use App\Support\Pdf\Mpdf;
     use stdClass;
     use Symfony\Component\HttpFoundation\StreamedResponse;
     use Throwable;

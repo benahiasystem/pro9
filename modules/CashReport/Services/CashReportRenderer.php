@@ -5,7 +5,7 @@ namespace Modules\CashReport\Services;
 use App\Exports\GeneralFormatExport;
 use Illuminate\Support\Str;
 use App\Models\Tenant\Cash;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 
 /**
  * Único punto de salida de los reportes de caja: PDF (mPDF) y Excel.
@@ -112,7 +112,7 @@ class CashReportRenderer
             : $report['views']['pdf'];
     }
 
-    protected function makeMpdf(string $paper): Mpdf
+    protected function makeMpdf(string $paper): \Mpdf\Mpdf
     {
         if ($this->isTicket($paper)) {
             $width = $paper === CashReportRegistry::PAPER_TICKET_58 ? 56 : 78;

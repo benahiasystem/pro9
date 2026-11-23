@@ -49,11 +49,11 @@
                             <th class="text-center">Moneda</th>
                             <th class="">T/C</th>
                             <th>Percepcion</th>
-                            <th class="">T. Exonerado</th>
+                            <th class="">Total exento</th>
 
-                            <th class="">T. Inafecta</th>
+                            <th class="">Total no sujeto</th>
                             <th class="">T. Gratuito</th>
-                            <th class="">T. Gravado</th>
+                            <th class="">Base imponible</th>
                             <!-- ########## INICIO CAMBIO IGV A IVA -->
                             <th class="">T. IVA</th>
                             <!-- ######### FIN CAMBIO IGV A IVA -->

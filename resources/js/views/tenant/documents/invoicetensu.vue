@@ -247,8 +247,8 @@
                                 <p class="text-right" v-if="hasPositiveInvoiceAmount('total_exportation')">OP.EXPORTACIÓN: {{ currency_type.symbol }} {{ form.total_exportation }}</p>
 
 
-                                <p class="text-right" v-if="hasPositiveInvoiceAmount('total_exonerated')">OP.EXONERADAS: {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
-                                <p class="text-right" v-if="hasPositiveInvoiceAmount('total_taxed')">OP.GRAVADA: {{ currency_type.symbol }} {{ form.total_taxed }}</p>
+                                <p class="text-right" v-if="hasPositiveInvoiceAmount('total_exonerated')">Total exento: {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
+                                <p class="text-right" v-if="hasPositiveInvoiceAmount('total_taxed')">Base imponible: {{ currency_type.symbol }} {{ form.total_taxed }}</p>
                                 <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
                                 <p class="text-right" v-if="hasPositiveInvoiceAmount('total_igv')">IVA: {{ currency_type.symbol }} {{ form.total_igv }}</p>
                                 <!-- ########### FIN CAMBIO IVA VENEZUELA -->

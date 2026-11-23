@@ -458,7 +458,7 @@ class CurrentPdfRenderingTest extends TestCase
         $company=new Fluent(['name'=>'Emisor', 'number'=>'J087897598', 'logo'=>null]);
         foreach (['default','modern-2027','marca_de_agua','Plantilla_personalizable'] as $design) {
             $html=(new Template())->pdf($design,'invoice',$company,$document,'a5');
-            self::assertMatchesRegularExpression('/OP\. INAFECTAS:.*?10\.00/s',$html);
+            self::assertMatchesRegularExpression('/Total no sujeto:.*?10\.00/s',$html);
             self::assertMatchesRegularExpression('/OP\. GRATUITAS:.*?5\.00/s',$html);
             self::assertMatchesRegularExpression('/TOTAL A PAGAR:.*?126\.00/s',$html);
         }

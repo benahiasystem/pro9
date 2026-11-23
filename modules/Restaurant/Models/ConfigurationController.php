@@ -16,7 +16,7 @@ use App\Models\Tenant\Catalogs\{
     ChargeDiscountType
 };
 use Mpdf\HTMLParserMode;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use App\CoreFacturalo\Template;

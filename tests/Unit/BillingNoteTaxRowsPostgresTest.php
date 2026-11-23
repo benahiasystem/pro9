@@ -129,7 +129,7 @@ final class BillingNoteTaxRowsPostgresTest extends TestCase
         $extract->setInput($pdf)->mustRun();
         self::assertSame(1, substr_count($extract->getOutput(), "\f"), $context);
         $text = mb_strtoupper(preg_replace('/\s+/u', ' ', $extract->getOutput()), 'UTF-8');
-        foreach (['OP. GRAVADAS' => $taxedAmount, 'OP. EXONERADAS' => $exemptAmount] as $label => $amount) {
+        foreach (['BASE IMPONIBLE' => $taxedAmount, 'TOTAL EXENTO' => $exemptAmount] as $label => $amount) {
             $row = preg_quote($label, '/').'\s*:';
             if ($amount === null) {
                 self::assertDoesNotMatchRegularExpression("/$row/u", $text, $context);

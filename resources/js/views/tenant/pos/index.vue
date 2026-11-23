@@ -999,13 +999,13 @@
 
                 <div class="pos-cart__totals">
                     <div v-if="cartSummaryValue('total_exonerated').compare(0) > 0" class="pos-cart__total-row">
-                        <span>Op. exoneradas</span>
+                        <span>Total exento</span>
                         <span>{{ currency_type.symbol }} {{ cartSummaryMoney('total_exonerated') }}</span>
                     </div>
 
 
                     <div v-if="cartSummaryValue('total_taxed').compare(0) > 0" class="pos-cart__total-row">
-                        <span>Op. gravada</span>
+                        <span>Base imponible</span>
                         <span>{{ currency_type.symbol }} {{ cartSummaryMoney('total_taxed') }}</span>
                     </div>
                     <div v-if="cartSummaryValue('total_igv').compare(0) > 0" class="pos-cart__total-row">

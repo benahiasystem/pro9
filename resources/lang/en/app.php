@@ -79,7 +79,7 @@ return [
     'fields.purchase_order' => 'Orden Compra/Servicio',
     'fields.quantity' => 'Cantidad',
     'fields.item_id' => 'Item',
-    'fields.total_taxed' => 'Total Gravado',
+    'fields.total_taxed' => 'Base imponible',
     // ########## INICIO CAMBIO IGV A IVA
     'fields.total_igv' => 'Total IVA',
     // ######### FIN CAMBIO IGV A IVA
@@ -162,7 +162,7 @@ return [
     'labels.unauthenticated' => 'No autenticado',
     'labels.customer_name' => 'Cliente',
     'labels.currency_type_description' => 'Moneda',
-    'labels.total_taxed' => 'Total Gravado',
+    'labels.total_taxed' => 'Base imponible',
     // ########## INICIO CAMBIO IGV A IVA
     'labels.total_igv' => 'Total IVA',
     // ######### FIN CAMBIO IGV A IVA

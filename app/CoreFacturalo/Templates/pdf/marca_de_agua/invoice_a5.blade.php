@@ -648,11 +648,11 @@ foreach ($document->items as $row) {
         </td>
         @if ($document->document_type_id === '07')
             @if($document->total_taxed >= 0)
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">Base imponible: {{ $document->currency_type->symbol }}</td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             @endif
         @elseif($document->total_taxed > 0)
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">Base imponible: {{ $document->currency_type->symbol }}</td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
         @endif
     </tr>
@@ -669,11 +669,11 @@ foreach ($document->items as $row) {
                 @endif
             <td class="p-1 text-center align-top desc cell-solid " rowspan="6">
             </td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">Total no sujeto: {{ $document->currency_type->symbol }}</td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_unaffected'), 2) }}</td>
     </tr>
     <tr>
-        <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
+        <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">Total exento: {{ $document->currency_type->symbol }}</td>
         <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
     </tr>
     <tr>

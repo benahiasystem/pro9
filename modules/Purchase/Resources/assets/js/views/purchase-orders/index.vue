@@ -33,9 +33,9 @@
             <!-- <th>F. Pago</th> -->
             <th class="text-center">Moneda</th>
             <!-- <th class="text-end">T.Gratuita</th>
-            <th class="text-end">T.Inafecta</th>
-            <th class="text-end">T.Exonerado</th> -->
-            <th class="text-end">T.Gravado</th>
+            <th class="text-end">Total no sujeto</th>
+            <th class="text-end">Total exento</th> -->
+            <th class="text-end">Base imponible</th>
             <th class="text-end">T.IVA</th>
             <!-- <th>Percepcion</th> -->
             <th class="text-end">Total</th>

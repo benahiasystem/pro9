@@ -324,19 +324,19 @@
         @endif
         @if($document->total_unaffected > 0)
             <tr>
-                <td colspan="4" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="4" class="text-right font-bold desc">Total no sujeto: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_unaffected'), 2) }}</td>
             </tr>
         @endif
         @if($document->total_exonerated > 0)
             <tr>
-                <td colspan="4" class="text-right font-bold desc">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="4" class="text-right font-bold desc">Total exento: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
             </tr>
         @endif
         @if($document->total_taxed > 0)
             <tr>
-                <td colspan="4" class="text-right font-bold desc">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="4" class="text-right font-bold desc">Base imponible: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             </tr>
         @endif

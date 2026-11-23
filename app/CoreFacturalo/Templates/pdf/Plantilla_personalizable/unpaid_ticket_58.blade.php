@@ -202,14 +202,14 @@
 
         @if($document->total_exonerated > 0)
             <tr>
-                <td colspan="3" class="desc-ticket text-uppercase">OP. EXONERADAS:
+                <td colspan="3" class="desc-ticket text-uppercase">Total exento:
                     {{ $document->currency_type->symbol }}</td>
                 <td colspan="2" class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
             </tr>
         @endif
         @if($document->total_taxed > 0)
             <tr>
-                <td colspan="3" class="desc-ticket text-uppercase">OP. GRAVADAS:
+                <td colspan="3" class="desc-ticket text-uppercase">Base imponible:
                     {{ $document->currency_type->symbol }}</td>
                 <td colspan="2" class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             </tr>

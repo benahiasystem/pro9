@@ -107,7 +107,7 @@ test('the VES invoice summary displays the exact sign of a settlement adjustment
 
 test('the invoice summary keeps rows for positive tax bases and discounts projected as zero', () => {
     const template = compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/documents/invoice_generate.vue', 'utf8')).template.content
-    const labels = ['Op. gravada:', 'OP.EXONERADAS:', 'EXPORTACIÓN (IVA 0 %):', 'IVA:', 'SUBTOTAL:', 'DESCUENTOS TOTALES:']
+    const labels = ['Base imponible:', 'Total exento:', 'EXPORTACIÓN (IVA 0 %):', 'IVA:', 'SUBTOTAL:', 'DESCUENTOS TOTALES:']
     const rows = Array.from(template.matchAll(/<tr\b[^>]*>[\s\S]*?<\/tr>/g), match => match[0])
         .filter(row => labels.some(label => row.includes(`<td>${label}</td>`)))
     assert.equal(rows.length, labels.length)
@@ -128,7 +128,7 @@ test('the invoice summary keeps rows for positive tax bases and discounts projec
     const tiny = math.exactAmount({n: '1', d: '3000000000000'})
     try {
         for (const [affectation, expected] of [
-            ['10', ['Op. gravada:', 'IVA:']], ['20', ['OP.EXONERADAS:']], ['EXP', ['EXPORTACIÓN (IVA 0 %):']],
+            ['10', ['Base imponible:', 'IVA:']], ['20', ['Total exento:']], ['EXP', ['EXPORTACIÓN (IVA 0 %):']],
         ]) {
             const line = {affectation_igv_type_id: affectation, calculation_snapshot: math.exactSnapshot({
                 total_base_igv: tiny, total_value: tiny, total_igv: affectation === '10' ? tiny.times('0.16') : '0',
@@ -165,8 +165,8 @@ test('the invoice summary keeps rows for positive tax bases and discounts projec
         assert.doesNotMatch(text(view._render()), /SUBTOTAL:|DESCUENTOS TOTALES:/)
 
         view.form = {items: [], discounts: [], total_taxed: '10', total_exonerated: '-1', subtotal: '10'}
-        assert.match(text(view._render()), /Op\. gravada:/)
-        assert.doesNotMatch(text(view._render()), /OP\.EXONERADAS:/)
+        assert.match(text(view._render()), /Base imponible:/)
+        assert.doesNotMatch(text(view._render()), /Total exento:/)
     } finally {
         view.$destroy()
     }

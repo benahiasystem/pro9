@@ -591,8 +591,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
     @if($document->total_exonerated > 0)
         <tr>
-            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP.
-                EXONERADAS: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">Total exento: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
         </tr>
     @endif
@@ -600,14 +599,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     @if ($document->document_type_id === '07')
         @if($document->total_taxed >= 0)
             <tr>
-                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP.
-                    GRAVADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">Base imponible: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             </tr>
         @endif
     @elseif($document->total_taxed > 0)
         <tr>
-            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">Base imponible: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
         </tr>
     @endif

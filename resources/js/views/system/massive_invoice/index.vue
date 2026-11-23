@@ -37,7 +37,7 @@
                                 <th>Cliente</th>
                                 <th>Número</th>
                                 <th>Estado</th>
-                                <th>T.Gravado</th>
+                                <th>Base imponible</th>
                                 <!-- ########## INICIO CAMBIO IGV A IVA -->
                                 <th>T.IVA</th>
                                 <!-- ######### FIN CAMBIO IGV A IVA -->

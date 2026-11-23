@@ -151,8 +151,8 @@ test('Tensu renders positive exact totals when the decimal projections are zero'
     })
     const fields = {
         total_exportation: 'OP.EXPORTACIÓN',
-        total_exonerated: 'OP.EXONERADAS',
-        total_taxed: 'OP.GRAVADA',
+        total_exonerated: 'Total exento',
+        total_taxed: 'Base imponible',
         total_igv: 'IVA',
         total: 'TOTAL A PAGAR',
     }

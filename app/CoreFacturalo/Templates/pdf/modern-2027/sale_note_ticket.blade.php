@@ -353,13 +353,13 @@
     @endif
     @if($document->total_unaffected > 0)
         <tr>
-            <td colspan="2" class="m27-total-label">Op. inafectas:</td>
+            <td colspan="2" class="m27-total-label">Total no sujeto:</td>
             <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_unaffected'), 2) }}</td>
         </tr>
     @endif
     @if($document->total_exonerated > 0)
         <tr>
-            <td colspan="2" class="m27-total-label">Op. exoneradas:</td>
+            <td colspan="2" class="m27-total-label">Total exento:</td>
             <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
         </tr>
     @endif

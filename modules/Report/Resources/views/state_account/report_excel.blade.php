@@ -18,7 +18,7 @@
     <th>#</th><th>Usuario/Vendedor</th><th>Tipo Doc</th><th>Número</th><th>Fecha emisión</th><th>Fecha vencimiento</th>
     <th>Doc. afectado</th><th>Órdenes de entrega</th><th>Cliente</th><th>RIF</th><th>Estado</th><th>Moneda</th>
     <th>Forma de pago</th><th>Método de pago</th><th>Referencia de pago</th>
-    <th>Total cargos</th><th>Total exonerado</th><th>Total gravado</th><th>Descuento total</th><th>Total IVA</th><th>Total</th><th>Total por pagar</th>
+    <th>Total cargos</th><th>Total exento</th><th>Base imponible</th><th>Descuento total</th><th>Total IVA</th><th>Total</th><th>Total por pagar</th>
     <th>Cantidades por unidad</th><th>Productos</th>
     @foreach($categories as $category)<th>Partidas: {{ $category->name }}</th>@endforeach
     @foreach($categories_services as $category)<th>Servicios: {{ $category->name }}</th>@endforeach

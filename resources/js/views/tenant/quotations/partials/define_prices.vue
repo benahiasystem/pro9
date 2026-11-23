@@ -68,7 +68,7 @@
                 <div v-if="isPositive(summary.total_discount)">
                     <strong>Descuentos:</strong> {{ currencySymbol }} {{ formatMoney(summary.total_discount) }}
                 </div>
-                <div><strong>Gravado:</strong> {{ currencySymbol }} {{ formatMoney(summary.total_taxed) }}</div>
+                <div><strong>Base imponible:</strong> {{ currencySymbol }} {{ formatMoney(summary.total_taxed) }}</div>
                 <div><strong>IVA:</strong> {{ currencySymbol }} {{ formatMoney(summary.total_igv) }}</div>
                 <div class="h5 mb-0 mt-1"><strong>Total:</strong> {{ currencySymbol }} {{ formatMoney(summary.total) }}</div>
             </div>

@@ -37,9 +37,9 @@
                         <th>Productos</th>
                         <th class="text-center">Moneda</th>
                         <th v-if="columns.total_free.visible"  class="text-end">T.Gratuita</th>
-                        <th v-if="columns.total_unaffected.visible" class="text-end">T.Inafecta</th>
-                        <th v-if="columns.total_exonerated.visible" class="text-end">T.Exonerado</th>
-                        <th v-if="columns.total_taxed.visible" class="text-end">T.Gravado</th>
+                        <th v-if="columns.total_unaffected.visible" class="text-end">Total no sujeto</th>
+                        <th v-if="columns.total_exonerated.visible" class="text-end">Total exento</th>
+                        <th v-if="columns.total_taxed.visible" class="text-end">Base imponible</th>
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
                         <th v-if="columns.total_igv.visible" class="text-end">T.IVA</th>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
@@ -132,15 +132,15 @@
                         visible: false
                     },
                     total_unaffected: {
-                        title: 'T.Inafecta',
+                        title: 'Total no sujeto',
                         visible: false
                     },
                     total_exonerated: {
-                        title: 'T.Exonerado',
+                        title: 'Total exento',
                         visible: false
                     },
                     total_taxed: {
-                        title: 'T.Gravado',
+                        title: 'Base imponible',
                         visible: false
                     },
                     total_igv: {
@@ -182,7 +182,19 @@
             loadColumnVisibility() {
                 const savedColumns = localStorage.getItem('columnVisibilityFixedpurchases');
                 if (savedColumns) {
-                    this.columns = JSON.parse(savedColumns);
+                    // ######## INICIO PREFERENCIAS DE COLUMNAS VENEZUELA ########
+                    try {
+                        const saved = JSON.parse(savedColumns);
+                        Object.keys(this.columns).forEach(key => {
+                            const preference = saved && saved[key];
+                            if (!preference || typeof preference !== 'object') return;
+                            if (typeof preference.visible === 'boolean') this.columns[key].visible = preference.visible;
+                            if (Number.isFinite(preference.order)) this.columns[key].order = preference.order;
+                        });
+                    } catch (_) {
+                        // Conservar las columnas predeterminadas si las preferencias no son válidas.
+                    }
+                    // ######## FIN PREFERENCIAS DE COLUMNAS VENEZUELA ########
                 }
             },
             clickDownload(download) {

@@ -1246,21 +1246,21 @@
                                     class="text-end"
                                     v-if="form.total_unaffected > 0"
                                 >
-                                    OP.INAFECTAS: {{ currency_type.symbol }}
+                                    Total no sujeto: {{ currency_type.symbol }}
                                     {{ form.total_unaffected }}
                                 </p>
                                 <p
                                     class="text-end"
                                     v-if="form.total_exonerated > 0"
                                 >
-                                    OP.EXONERADAS: {{ currency_type.symbol }}
+                                    Total exento: {{ currency_type.symbol }}
                                     {{ form.total_exonerated }}
                                 </p>
                                 <p
                                     class="text-end"
                                     v-if="form.total_taxed > 0"
                                 >
-                                    OP.GRAVADA: {{ currency_type.symbol }}
+                                    Base imponible: {{ currency_type.symbol }}
                                     {{ form.total_taxed }}
                                 </p>
                                 <p class="text-end" v-if="form.total_igv > 0">

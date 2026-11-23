@@ -27,10 +27,8 @@ class SaleOpportunityFileController extends Controller
                 $temp_path = $file['temp_path'];
 
                 $file_name_old = $file['filename'];
-                $file_name_old_array = explode('.', $file_name_old);
-                $file_content = file_get_contents($temp_path);
-                $extension = $file_name_old_array[1];
-                $file_name = Str::slug($file_name_old_array[0]).'-'.$sale_opportunity->id.'.'.$extension;
+                $extension = strtolower(pathinfo($file_name_old, PATHINFO_EXTENSION));
+                $file_name = Str::slug(pathinfo($file_name_old, PATHINFO_FILENAME)).'-'.$sale_opportunity->id.'.'.$extension;
 
                 // validaciones archivos
                 $allowed_file_types_images = ['image/jpg', 'image/jpeg', 'image/png', 'image/gif', 'image/svg', 'image/webp'];
@@ -40,6 +38,7 @@ class SaleOpportunityFileController extends Controller
                 UploadFileHelper::checkIfValidFile($file_name, $temp_path, $is_image, 'jpg,jpeg,png,gif,svg,webp,pdf', $allowed_file_types);
                 // validaciones archivos
                 
+                $file_content = file_get_contents($temp_path);
                 Storage::disk('tenant')->put('sale_opportunity_files'.DIRECTORY_SEPARATOR.$file_name, $file_content);
 
             }else{

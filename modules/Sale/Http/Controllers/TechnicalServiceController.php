@@ -36,7 +36,7 @@
     use Mpdf\Config\ConfigVariables;
     use Mpdf\Config\FontVariables;
     use Mpdf\HTMLParserMode;
-    use Mpdf\Mpdf;
+    use App\Support\Pdf\Mpdf;
 
 
     /**

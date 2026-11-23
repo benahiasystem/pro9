@@ -14,7 +14,7 @@
     <p>Importes documentales; no representan necesariamente dinero cobrado.</p>
     @if(count($report['rows']))
     <table>
-        <thead><tr><th>Tipo</th><th>Documento</th><th>Fecha</th><th>Doc. afectado</th><th>Cliente</th><th>Identificación</th><th>Estado</th><th>Moneda</th><th>Gravado</th><th>IVA</th><th>Total</th></tr></thead>
+        <thead><tr><th>Tipo</th><th>Documento</th><th>Fecha</th><th>Doc. afectado</th><th>Cliente</th><th>Identificación</th><th>Estado</th><th>Moneda</th><th>Base imponible</th><th>IVA</th><th>Total</th></tr></thead>
         <tbody>
         @foreach($report['rows'] as $row)
             <tr>

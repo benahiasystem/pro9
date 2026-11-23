@@ -41,7 +41,7 @@ use Modules\Finance\Traits\FinanceTrait;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use Mpdf\HTMLParserMode;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Modules\Inventory\Models\Warehouse as ModuleWarehouse;
 
 
@@ -661,7 +661,6 @@ class QuotationController extends Controller
     {
         ini_set("pcre.backtrack_limit", "5000000");
         $template = new Template();
-        $pdf = new Mpdf();
 
         $document = $quotation;
         $company = ($this->company != null) ? $this->company : Company::active();

@@ -15,22 +15,19 @@
     @endif
     @if($document->total_unaffected > 0)
         <tr>
-            <td colspan="8" class="text-right font-bold">OP.
-                INAFECTAS: {{ $document->currency_type->symbol }}</td>
+            <td colspan="8" class="text-right font-bold">Total no sujeto: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ number_format($document->total_unaffected, 2) }}</td>
         </tr>
     @endif
     @if($document->total_exonerated > 0)
         <tr>
-            <td colspan="8" class="text-right font-bold">OP.
-                EXONERADAS: {{ $document->currency_type->symbol }}</td>
+            <td colspan="8" class="text-right font-bold">Total exento: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ number_format($document->total_exonerated, 2) }}</td>
         </tr>
     @endif
     @if($document->total_taxed > 0)
         <tr>
-            <td colspan="8" class="text-right font-bold">OP.
-                GRAVADAS: {{ $document->currency_type->symbol }}</td>
+            <td colspan="8" class="text-right font-bold">Base imponible: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ number_format($document->total_taxed, 2) }}</td>
         </tr>
     @endif

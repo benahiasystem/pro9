@@ -643,7 +643,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 @endforeach
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
-                OP. GRAVADA {{$document->currency_type->symbol}}
+                Base imponible {{$document->currency_type->symbol}}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
         </tr>
@@ -676,13 +676,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="p-1 text-center align-top desc cell-solid " rowspan="{{ 6 + count($invoicePdf['igtf'] ?? []) }}">
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
-                OP. INAFECTAS {{$document->currency_type->symbol}}
+                Total no sujeto {{$document->currency_type->symbol}}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_unaffected'), 2) }}</td>
         </tr>
         <tr>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
-                OP. EXONERADAS {{$document->currency_type->symbol}}
+                Total exento {{$document->currency_type->symbol}}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
         </tr>

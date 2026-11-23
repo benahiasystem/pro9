@@ -66,7 +66,7 @@ use Modules\Item\Models\ItemLot;
 use Modules\Item\Models\ItemLotsGroup;
 use Modules\Item\Models\ProductVariable;
 use Mpdf\HTMLParserMode;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use setasign\Fpdi\Fpdi;
 use Modules\Inventory\Models\InventoryConfiguration;
 use Symfony\Component\HttpFoundation\StreamedResponse;

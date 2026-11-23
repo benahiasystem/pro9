@@ -307,11 +307,11 @@
 
 
                                 <tr v-if="form.total_exonerated > 0">
-                                    <td>OP.EXONERADAS:</td>
+                                    <td>Total exento:</td>
                                     <td>{{ currency_type.symbol }} {{ form.total_exonerated }}</td>
                                 </tr>
                                 <tr v-if="form.total_taxed > 0">
-                                    <td>OP.GRAVADA:</td>
+                                    <td>Base imponible:</td>
                                     <td>{{ currency_type.symbol }} {{ form.total_taxed }}</td>
                                 </tr>
                                 <tr v-if="form.total_prepayment > 0">

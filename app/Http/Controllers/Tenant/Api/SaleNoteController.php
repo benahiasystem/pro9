@@ -11,7 +11,7 @@ use App\Models\Tenant\Person as PersonModel;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Carbon\Carbon;
 use Mpdf\HTMLParserMode;
 use App\Models\Tenant\Item;

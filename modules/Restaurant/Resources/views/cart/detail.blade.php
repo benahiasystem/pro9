@@ -157,11 +157,11 @@
                 <tbody>
 
                     <tr v-if="summary.total_exonerated > 0">
-                        <td>OP.EXONERADAS</td>
+                        <td>Total exento</td>
                         <td>Bs. @{{ summary.total_exonerated }}</td>
                     </tr>
                     <tr v-if="summary.total_taxed > 0">
-                        <td>OP.GRAVADA</td>
+                        <td>Base imponible</td>
                         <td>Bs. @{{ summary.total_taxed }}</td>
                     </tr>
                     <tr v-if="summary.total_igv > 0">

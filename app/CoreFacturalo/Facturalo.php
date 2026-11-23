@@ -10,7 +10,7 @@ use App\Services\SalesDocumentTypePolicy;
 use App\Services\SalesCustomerIdentityPolicy;
 use App\Services\LocalFiscalDocumentPolicy;
 use Exception;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Mpdf\HTMLParserMode;
 use App\Traits\KardexTrait;
 use App\Models\Tenant\Voided;

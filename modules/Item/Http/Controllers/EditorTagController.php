@@ -13,7 +13,7 @@ use Modules\Item\Http\Requests\CreateTagsTemplateRequest;
 use Modules\Item\Models\TagTemplate;
 use Modules\Item\Models\TagTemplateField;
 use Mpdf\HTMLParserMode;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 
 class EditorTagController extends Controller
 {

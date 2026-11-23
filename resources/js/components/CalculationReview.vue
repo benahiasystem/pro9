@@ -30,7 +30,9 @@
 import {exactAmount} from '../helpers/exchange-rate-math'
 export default {
     props:{summary:{type:Object,default:null},context:{type:Object,default:null},loading:Boolean,error:{type:String,default:''},retryable:Boolean},
-    data:()=>({labels:{total_taxed:'Operación gravada',total_exonerated:'Operación exonerada',total_igv:'IVA',total_discount:'Descuentos',total_charge:'Cargos',total:'Total de la venta'}}),
+    // ######## INICIO TOTALES VENEZUELA ########
+    data:()=>({labels:{total_taxed:'Base imponible',total_exonerated:'Total exento',total_igv:'IVA',total_discount:'Descuentos',total_charge:'Cargos',total:'Total de la venta'}}),
+    // ######## FIN TOTALES VENEZUELA ########
     methods:{
         decimal(value) { return exactAmount(value).decimal() },
         money(value) { return `${this.summary.currency_type_id === 'VES' ? 'Bs.' : '$'} ${exactAmount(value).final(2)}` },

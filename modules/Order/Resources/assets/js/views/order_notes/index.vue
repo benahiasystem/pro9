@@ -70,7 +70,7 @@
                         href="#"
                         @click.prevent="clickImport()"
                     >
-                        MiTienda.Pe
+                        MiTienda
                     </a>
                 </div>
             </div>
@@ -134,12 +134,12 @@
                             <th v-if="col.visible && col.key === 'sale_notes'" :key="col.key">Notas de venta</th>
                             <th v-if="col.visible && col.key === 'quotation'" :key="col.key">Cotizacion</th>
                             <th v-if="col.visible && col.key === 'dispatches'" :key="col.key">Órdenes de entrega</th>
-                            <th v-if="col.visible && col.key === 'mi_tienda_pe'" :key="col.key">#Pedido MiTienda.Pe</th>
+                            <th v-if="col.visible && col.key === 'mi_tienda_pe'" :key="col.key">#Pedido MiTienda</th>
                             <th v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">Moneda</th>
                             <th v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">T.Exportación</th>
-                            <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
-                            <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
-                            <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
+                            <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">Total no sujeto</th>
+                            <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">Total exento</th>
+                            <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">Base imponible</th>
                             <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th>
                             <th v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end">Saldo</th>
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
@@ -390,12 +390,12 @@ export default {
                 sale_notes:        { title: "Notas de venta",      visible: true,  order: 8  },
                 quotation:         { title: "Cotizacion",          visible: false, order: 9  },
                 dispatches:        { title: "Órdenes de entrega",   visible: false, order: 10 },
-                mi_tienda_pe:      { title: "Pedido MiTienda.Pe",  visible: false, order: 11 },
+                mi_tienda_pe:      { title: "Pedido MiTienda",  visible: false, order: 11 },
                 currency_type:     { title: "Moneda",              visible: true,  order: 12 },
                 total_exportation: { title: "T.Exportación",       visible: false, order: 13 },
-                total_unaffected:  { title: "T.Inafecto",          visible: false, order: 14 },
-                total_exonerated:  { title: "T.Exonerado",         visible: false, order: 15 },
-                total_taxed:       { title: "T.Gravado",           visible: true,  order: 16 },
+                total_unaffected:  { title: "Total no sujeto",          visible: false, order: 14 },
+                total_exonerated:  { title: "Total exento",         visible: false, order: 15 },
+                total_taxed:       { title: "Base imponible",           visible: true,  order: 16 },
                 total_igv:         { title: "T.IVA",               visible: true,  order: 17 },
                 balance:           { title: "Saldo",               visible: true,  order: 18 },
                 total:             { title: "Total",               visible: true,  order: 19 },

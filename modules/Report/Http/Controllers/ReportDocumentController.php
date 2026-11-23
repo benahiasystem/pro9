@@ -18,7 +18,7 @@ use Modules\Report\Http\Resources\SaleNoteCollection;
 use Modules\Report\Traits\ReportTrait;
 use App\Http\Controllers\Tenant\EmailController;
 use Modules\Report\Mail\DocumentEmail;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Modules\Report\Jobs\ProcessDocumentReport;
 use App\Models\Tenant\DownloadTray;
 use App\Tenancy\Models\Hostname;

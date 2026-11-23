@@ -33,7 +33,7 @@ use Exception;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use Mpdf\HTMLParserMode;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use App\CoreFacturalo\Template;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\CoreFacturalo\Helpers\Functions\GeneralPdfHelper;

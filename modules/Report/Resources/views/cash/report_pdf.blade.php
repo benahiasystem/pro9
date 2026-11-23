@@ -106,10 +106,10 @@
                                 <th>RIF</th>
                                 <th>Estado</th>
                                 <th class="">Moneda</th>
-                                <!-- <th>Total Exonerado</th>
+                                <!-- <th>Total exento</th>
 
                                  <th>Total Gratutio</th> -->
-                                <th>Total Gravado</th>
+                                <th>Base imponible</th>
 
                                 {{-- ########## INICIO CAMBIO IGV A IVA --}}
                                 <th>Total IVA</th>

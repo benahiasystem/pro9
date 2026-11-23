@@ -12,7 +12,7 @@ use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\SaleNotePayment;
 use FontLib\Table\Type\loca;
 use Illuminate\Support\Facades\Log;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Mpdf\HTMLParserMode;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;

@@ -87,8 +87,8 @@
                                 <th class="text-center">Moneda</th>
                                 <th class="text-right" >T.Exportación</th>
 
-                                <th class="text-right" >T.Exonerado</th>
-                                <th class="text-right">T.Gravado</th>
+                                <th class="text-right" >Total exento</th>
+                                <th class="text-right">Base imponible</th>
                                 {{-- ########## INICIO CAMBIO IGV A IVA --}}
                                 <th class="text-right">T.IVA</th>
                                 {{-- ######### FIN CAMBIO IGV A IVA --}}

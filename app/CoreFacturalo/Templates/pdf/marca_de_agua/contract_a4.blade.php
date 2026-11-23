@@ -385,15 +385,15 @@
                 <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_free'), 2) }}</td>
             @endif
             @if($document->total_unaffected > 0)
-                <td colspan="2" class="p-1 text-right align-top desc cell-solid font-bold">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="p-1 text-right align-top desc cell-solid font-bold">Total no sujeto: {{ $document->currency_type->symbol }}</td>
                 <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_unaffected'), 2) }}</td>
             @endif
             @if($document->total_exonerated > 0)
-                <td colspan="2" class="p-1 text-right align-top desc cell-solid font-bold">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="p-1 text-right align-top desc cell-solid font-bold">Total exento: {{ $document->currency_type->symbol }}</td>
                 <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
             @endif
             @if($document->total_taxed > 0)
-                <td colspan="2" class="p-1 text-right align-top desc cell-solid font-bold">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="p-1 text-right align-top desc cell-solid font-bold">Base imponible: {{ $document->currency_type->symbol }}</td>
                 <td class="p-1 text-right align-top desc cell-solid font-bold">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
             @endif
             @if($document->total_discount_with_igv > 0)

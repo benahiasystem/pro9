@@ -58,7 +58,7 @@ use Modules\Sale\Helpers\SaleNoteHelper;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
 use Mpdf\HTMLParserMode;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use App\Models\Tenant\DispatchSaleNote;
 use App\Http\Resources\Tenant\DispatchSaleNoteCollection;
 use Modules\Finance\Traits\FilePaymentTrait;

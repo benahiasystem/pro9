@@ -49,9 +49,9 @@
                         <th>Número</th>
                         <th>Estado</th>
                         <th>Moneda</th>
-                        <th class="text-end">T.Inafecto</th>
-                        <th class="text-end">T.Exonerado</th>
-                        <th class="text-end">T.Gravado</th>
+                        <th class="text-end">Total no sujeto</th>
+                        <th class="text-end">Total exento</th>
+                        <th class="text-end">Base imponible</th>
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
                         <th class="text-end">T.IVA</th>
                         <!-- ######### FIN CAMBIO IGV A IVA -->

@@ -161,7 +161,7 @@ export default {
             this.form = {}
         },
         create() {
-            this.titleDialog = 'Importar pedidos desde mi MiTienda.Pe'
+            this.titleDialog = 'Importar pedidos desde mi MiTienda'
         },
         async submit() {
             this.loading_submit = true

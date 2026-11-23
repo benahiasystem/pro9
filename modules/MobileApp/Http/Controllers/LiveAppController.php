@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Modules\MobileApp\Http\Controllers\Api\ReportController;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 
 class LiveAppController extends Controller
 {

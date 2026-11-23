@@ -19,7 +19,7 @@
     use Barryvdh\DomPDF\Facade\Pdf as PDF;
     use Modules\Inventory\Models\ItemWarehouse;
     use Mpdf\HTMLParserMode;
-    use Mpdf\Mpdf;
+    use App\Support\Pdf\Mpdf;
     use Mpdf\Config\ConfigVariables;
     use Mpdf\Config\FontVariables;
     use App\Models\Tenant\ExchangeRate;

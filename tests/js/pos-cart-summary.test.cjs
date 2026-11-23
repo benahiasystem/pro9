@@ -37,7 +37,7 @@ test('POS invoice cart shows exact positive bases and IVA projected to zero', ()
     assert.equal(view.form.total_taxed, '0')
     assert.equal(view.form.total_igv, '0')
     assert.ok(math.exactValue(view.form, 'total_taxed').compare(0) > 0)
-    assert.deepEqual(amounts(view).rows, ['Op. gravada Bs. 0.00', 'IVA Bs. 0.00', 'TOTAL Bs. 0.00'])
+    assert.deepEqual(amounts(view).rows, ['Base imponible Bs. 0.00', 'IVA Bs. 0.00', 'TOTAL Bs. 0.00'])
     view.$destroy()
 })
 
@@ -49,10 +49,10 @@ test('POS invoice cart rounds the payable amount directly from the exact fractio
     const view = cart(row)
     assert.equal(view.form.total, '0.005')
     assert.equal(math.exactValue(view.form, 'total').final(2), '0.00')
-    assert.deepEqual(amounts(view), {rows: ['Op. exoneradas Bs. 0.00', 'TOTAL Bs. 0.00'], pay: 'Bs. 0.00'})
+    assert.deepEqual(amounts(view), {rows: ['Total exento Bs. 0.00', 'TOTAL Bs. 0.00'], pay: 'Bs. 0.00'})
     view.form.document_type_id = '80'
-    assert.deepEqual(amounts(view), {rows: ['Op. exoneradas Bs. 0.01', 'TOTAL Bs. 0.01'], pay: 'Bs. 0.01'})
+    assert.deepEqual(amounts(view), {rows: ['Total exento Bs. 0.01', 'TOTAL Bs. 0.01'], pay: 'Bs. 0.01'})
     view.form.total = '1.005'
-    assert.deepEqual(amounts(view), {rows: ['Op. exoneradas Bs. 0.01', 'TOTAL Bs. 1.00'], pay: 'Bs. 1.00'})
+    assert.deepEqual(amounts(view), {rows: ['Total exento Bs. 0.01', 'TOTAL Bs. 1.00'], pay: 'Bs. 1.00'})
     view.$destroy()
 })

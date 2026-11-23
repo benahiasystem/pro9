@@ -172,15 +172,15 @@
                                         <table class="table table-sm table-borderless mb-0">
                                             <tbody>
                                                 <tr v-if="form.total_taxed > 0">
-                                                    <td class="text-muted py-1">OP. GRAVADA</td>
+                                                    <td class="text-muted py-1">Base imponible</td>
                                                     <td class="text-end py-1">{{ getSymbol(currency_type) }} {{ form.total_taxed }}</td>
                                                 </tr>
                                                 <tr v-if="form.total_exonerated > 0">
-                                                    <td class="text-muted py-1">OP. EXONERADA</td>
+                                                    <td class="text-muted py-1">Total exento</td>
                                                     <td class="text-end py-1">{{ getSymbol(currency_type) }} {{ form.total_exonerated }}</td>
                                                 </tr>
                                                 <tr v-if="form.total_unaffected > 0">
-                                                    <td class="text-muted py-1">OP. INAFECTA</td>
+                                                    <td class="text-muted py-1">Total no sujeto</td>
                                                     <td class="text-end py-1">{{ getSymbol(currency_type) }} {{ form.total_unaffected }}</td>
                                                 </tr>
                                                 <tr v-if="form.total_igv > 0">

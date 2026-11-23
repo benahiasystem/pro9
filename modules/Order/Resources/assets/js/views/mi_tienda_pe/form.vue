@@ -5,7 +5,7 @@
             <ol class="breadcrumbs">
                 <li class="active"><span>Configuración</span></li>
                 <li><span class="text-muted">Avanzado</span></li>
-                <li><span class="text-muted">MiTienda.Pe</span></li>
+                <li><span class="text-muted">MiTienda</span></li>
             </ol>
         </div>
         <template>
@@ -196,7 +196,7 @@
                         <div class="row">
                             <div class="col-md-6 mt-4">
                                 <label class="control-label">
-                                    Habilitar importación de MiTienda.Pe
+                                    Habilitar importación de MiTienda
 
                                     <el-tooltip
                                         class="item"

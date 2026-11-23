@@ -190,12 +190,12 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         <th style="padding: 5px; text-align: center;">Total Cargos</th>
                         @endif
                         @if ($columns->total_exonerated->visible)
-                            <th style="padding: 5px; text-align: center;">Total Exonerado</th>
+                            <th style="padding: 5px; text-align: center;">Total exento</th>
                         @endif
 
 
                         @if ($columns->total_taxed->visible)
-                            <th style="padding: 5px; text-align: center;">Total Gravado</th>
+                            <th style="padding: 5px; text-align: center;">Base imponible</th>
                         @endif
 
                         <th style="padding: 5px; text-align: center;">Descuento total</th>

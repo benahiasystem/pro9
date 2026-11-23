@@ -211,7 +211,7 @@
                     @if($configuration->isMiTiendaPe()== true)
                     <li>
                         <a href="{{route('tenant.mi_tienda_pe.configuration.index')}}">
-                            <i class="ti ti-shopping-bag"></i>MiTienda.PE
+                            <i class="ti ti-shopping-bag"></i>MiTienda
                         </a>
                     </li>
                     @endif

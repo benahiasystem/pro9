@@ -119,10 +119,10 @@
                     <th> MÉTODO DE PAGO </th>
                     <th>TC</th>
                     <th>Total Cargos</th>
-                    <th>Total Exonerado</th>
+                    <th>Total exento</th>
 
 
-                    <th>Total Gravado</th>
+                    <th>Base imponible</th>
                     <th>Descuento total</th>
                     {{-- ########## INICIO CAMBIO IGV A IVA --}}
                     <th>Total IVA</th>

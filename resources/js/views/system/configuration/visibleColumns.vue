@@ -242,12 +242,12 @@ const MODULES = {
             sale_notes:       { title: 'Notas de venta',      visible: true,  type: 'document' },
             quotation:        { title: 'Cotización',          visible: false, type: 'document' },
             dispatches:       { title: 'Órdenes de entrega',   visible: false, type: 'document' },
-            mi_tienda_pe:     { title: 'Pedido MiTienda.Pe',  visible: false, type: 'text'     },
+            mi_tienda_pe:     { title: 'Pedido MiTienda',  visible: false, type: 'text'     },
             currency_type:    { title: 'Moneda',              visible: true,  type: 'currency' },
             total_exportation:{ title: 'T.Exportación',       visible: false, type: 'price'    },
-            total_unaffected: { title: 'T.Inafecto',          visible: false, type: 'price'    },
-            total_exonerated: { title: 'T.Exonerado',         visible: false, type: 'price'    },
-            total_taxed:      { title: 'T.Gravado',           visible: true,  type: 'price'    },
+            total_unaffected: { title: 'Total no sujeto',          visible: false, type: 'price'    },
+            total_exonerated: { title: 'Total exento',         visible: false, type: 'price'    },
+            total_taxed:      { title: 'Base imponible',           visible: true,  type: 'price'    },
             // ########## INICIO CAMBIO IGV A IVA
             total_igv:        { title: 'T.IVA',               visible: true,  type: 'price'    },
             // ######### FIN CAMBIO IGV A IVA
@@ -270,9 +270,9 @@ const MODULES = {
             currency_type:   { title: 'Moneda',        visible: true,  type: 'currency' },
             total_exportation:{ title: 'T.Exportación',visible: false, type: 'price'    },
             total_free:      { title: 'T.Gratuito',    visible: false, type: 'price'    },
-            total_unaffected:{ title: 'T.Inafecto',    visible: false, type: 'price'    },
-            total_exonerated:{ title: 'T.Exonerado',   visible: false, type: 'price'    },
-            total_taxed:     { title: 'T.Gravado',     visible: true,  type: 'price'    },
+            total_unaffected:{ title: 'Total no sujeto',    visible: false, type: 'price'    },
+            total_exonerated:{ title: 'Total exento',   visible: false, type: 'price'    },
+            total_taxed:     { title: 'Base imponible',     visible: true,  type: 'price'    },
             // ########## INICIO CAMBIO IGV A IVA
             total_igv:       { title: 'T.IVA',         visible: true,  type: 'price'    },
             // ######### FIN CAMBIO IGV A IVA
@@ -302,9 +302,9 @@ const MODULES = {
             payments:                { title: 'Pagos',              visible: true,  type: 'price'    },
             total_exportation:       { title: 'T.Exportación',      visible: false, type: 'price'    },
             total_free:              { title: 'T.Gratuito',         visible: false, type: 'price'    },
-            total_unaffected:        { title: 'T.Inafecto',         visible: false, type: 'price'    },
-            total_exonerated:        { title: 'T.Exonerado',        visible: false, type: 'price'    },
-            total_taxed:             { title: 'T.Gravado',          visible: true,  type: 'price'    },
+            total_unaffected:        { title: 'Total no sujeto',         visible: false, type: 'price'    },
+            total_exonerated:        { title: 'Total exento',        visible: false, type: 'price'    },
+            total_taxed:             { title: 'Base imponible',          visible: true,  type: 'price'    },
             // ########## INICIO CAMBIO IGV A IVA
             total_igv:               { title: 'T.IVA',              visible: true,  type: 'price'    },
             // ######### FIN CAMBIO IGV A IVA
@@ -329,9 +329,9 @@ const MODULES = {
             guides:           { title: 'Órdenes de entrega',            visible: false, type: 'document' },
             purchase_order:   { title: 'Orden de Compra',  visible: false, type: 'document' },
             total_free:       { title: 'T.Gratuita',       visible: false, type: 'price'    },
-            total_unaffected: { title: 'T.Inafecta',       visible: false, type: 'price'    },
-            total_exonerated: { title: 'T.Exonerado',      visible: false, type: 'price'    },
-            total_taxed:      { title: 'T.Gravado',        visible: false, type: 'price'    },
+            total_unaffected: { title: 'Total no sujeto',       visible: false, type: 'price'    },
+            total_exonerated: { title: 'Total exento',      visible: false, type: 'price'    },
+            total_taxed:      { title: 'Base imponible',        visible: false, type: 'price'    },
             // ########## INICIO CAMBIO IGV A IVA
             total_igv:        { title: 'T.IVA',            visible: false, type: 'price'    },
             // ######### FIN CAMBIO IGV A IVA
@@ -354,9 +354,9 @@ const MODULES = {
             due_date:           { title: 'Fecha de Vencimiento', visible: false, type: 'date'     },
             total_exportation:  { title: 'T.Exportación',        visible: false, type: 'price'    },
             total_free:         { title: 'T.Gratuito',           visible: false, type: 'price'    },
-            total_unaffected:   { title: 'T.Inafecto',           visible: false, type: 'price'    },
-            total_exonerated:   { title: 'T.Exonerado',          visible: false, type: 'price'    },
-            total_taxed:        { title: 'T.Gravado',            visible: false, type: 'price'    },
+            total_unaffected:   { title: 'Total no sujeto',           visible: false, type: 'price'    },
+            total_exonerated:   { title: 'Total exento',          visible: false, type: 'price'    },
+            total_taxed:        { title: 'Base imponible',            visible: false, type: 'price'    },
             // ########## INICIO CAMBIO IGV A IVA
             total_igv:          { title: 'T.IVA',                visible: false, type: 'price'    },
             // ######### FIN CAMBIO IGV A IVA
@@ -405,10 +405,10 @@ const MODULES = {
             plate_numbers:     { title: 'Placa',                      visible: false, type: 'text'     },
             total_exportation: { title: 'T.Exportación',              visible: false, type: 'price'    },
             total_free:        { title: 'T.Gratuito',                 visible: false, type: 'price'    },
-            total_unaffected:  { title: 'T.Inafecto',                 visible: false, type: 'price'    },
-            total_exonerated:  { title: 'T.Exonerado',                visible: false, type: 'price'    },
+            total_unaffected:  { title: 'Total no sujeto',                 visible: false, type: 'price'    },
+            total_exonerated:  { title: 'Total exento',                visible: false, type: 'price'    },
             total_charge:      { title: 'T.Cargos',                   visible: false, type: 'price'    },
-            total_taxed:       { title: 'T.Gravado',                  visible: true,  type: 'price'    },
+            total_taxed:       { title: 'Base imponible',                  visible: true,  type: 'price'    },
             // ########## INICIO CAMBIO IGV A IVA
             total_igv:         { title: 'T.IVA',                      visible: true,  type: 'price'    },
             // ######### FIN CAMBIO IGV A IVA
@@ -431,9 +431,9 @@ const MODULES = {
             currency_type:    { title: 'Moneda',        visible: true,  type: 'currency' },
             files:            { title: 'Archivos',      visible: true,  type: 'action'   },
             total_exportation:{ title: 'T.Exportación', visible: false, type: 'price'    },
-            total_unaffected: { title: 'T.Inafecto',    visible: false, type: 'price'    },
-            total_exonerated: { title: 'T.Exonerado',   visible: false, type: 'price'    },
-            total_taxed:      { title: 'T.Gravado',     visible: false, type: 'price'    },
+            total_unaffected: { title: 'Total no sujeto',    visible: false, type: 'price'    },
+            total_exonerated: { title: 'Total exento',   visible: false, type: 'price'    },
+            total_taxed:      { title: 'Base imponible',     visible: false, type: 'price'    },
             // ########## INICIO CAMBIO IGV A IVA
             total_igv:        { title: 'T.IVA',         visible: false, type: 'price'    },
             // ######### FIN CAMBIO IGV A IVA

@@ -217,12 +217,12 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         <th>Total Cargos</th>
                         @endif
                         @if ($columns->total_exonerated->visible)
-                            <th>Total Exonerado</th>
+                            <th>Total exento</th>
                         @endif
 
 
                         @if ($columns->total_taxed->visible)
-                            <th>Total Gravado</th>
+                            <th>Base imponible</th>
                         @endif
 
                         <th>Descuento total</th>

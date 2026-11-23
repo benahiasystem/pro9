@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
     use Mpdf\Config\ConfigVariables;
     use Mpdf\Config\FontVariables;
     use Mpdf\HTMLParserMode;
-    use Mpdf\Mpdf;
+    use App\Support\Pdf\Mpdf;
     use Mpdf\MpdfException;
     use PhpParser\Node\Expr\Cast\Object_;
     use Response;
@@ -827,7 +827,7 @@ use Illuminate\Support\Str;
             $type = '',
             $stylesheet = '',
             $format = []
-        ): Mpdf
+        ): \Mpdf\Mpdf
         {
             $width = 100;
             if ($format_pdf == 'ticket' || $format_pdf == 80) $width = 78;
@@ -997,7 +997,7 @@ use Illuminate\Support\Str;
          *
          * @throws MpdfException
          */
-        public function SaveTempPdf(Mpdf $pdf, &$list_files, $document)
+        public function SaveTempPdf(\Mpdf\Mpdf $pdf, &$list_files, $document)
         {
             /** @var Document $document */
             $name = strtoupper(STR::slug("ticket " . $document->series . " " . $document->number, '-'));

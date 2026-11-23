@@ -379,13 +379,13 @@
                             </div>
                             <div class="col-md-12">
                                 <p v-if="form.total_unaffected > 0"
-                                   class="text-end">OP.INAFECTAS: {{ currency_type.symbol }}
+                                   class="text-end">Total no sujeto: {{ currency_type.symbol }}
                                                                     {{ form.total_unaffected }}</p>
                                 <p v-if="form.total_exonerated > 0"
-                                   class="text-end">OP.EXONERADAS: {{ currency_type.symbol }}
+                                   class="text-end">Total exento: {{ currency_type.symbol }}
                                                                     {{ form.total_exonerated }}</p>
                                 <p v-if="form.total_taxed > 0"
-                                   class="text-end">OP.GRAVADA: {{ currency_type.symbol }} {{
+                                   class="text-end">Base imponible: {{ currency_type.symbol }} {{
                                         form.total_taxed
                                                                }}</p>
                                 <p v-if="form.total_igv > 0" class="text-end">

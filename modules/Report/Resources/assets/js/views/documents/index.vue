@@ -164,12 +164,12 @@
                                 Total Cargos
                             </th>
                             <th v-if="columns.total_exonerated.visible">
-                                Total Exonerado
+                                Total exento
                             </th>
 
 
                             <th v-if="columns.total_taxed.visible">
-                                Total Gravado
+                                Base imponible
                             </th>
 
                             <th v-if="columns.total_igv.visible" class="">
@@ -477,13 +477,13 @@ export default {
                     visible: true
                 },
                 total_exonerated: {
-                    title: "Total Exonerado",
+                    title: "Total exento",
                     visible: true
                 },
 
 
                 total_taxed: {
-                    title: "Total Gravado",
+                    title: "Base imponible",
                     visible: true
                 },
                 total_igv: {
@@ -639,7 +639,7 @@ export default {
                             // Fusionar preferencias históricas sin reintroducir ISC ni perder columnas actuales.
                             this.columns = Object.keys(this.columns).reduce((columns, key) => {
                                 columns[key] = currentCols[key]
-                                    ? { ...this.columns[key], ...currentCols[key] }
+                                    ? { ...this.columns[key], ...currentCols[key], title: this.columns[key].title }
                                     : this.columns[key];
                                 return columns;
                             }, {});

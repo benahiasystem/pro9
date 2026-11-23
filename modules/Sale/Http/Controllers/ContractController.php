@@ -7,7 +7,7 @@ use App\Http\Controllers\Tenant\EmailController;
 use App\Models\Tenant\Catalogs\OperationType;
 use App\Traits\OfflineTrait;
 use Exception;
-use Mpdf\Mpdf;
+use App\Support\Pdf\Mpdf;
 use Mpdf\HTMLParserMode;
 use App\Models\Tenant\Item;
 use App\Models\Tenant\User;

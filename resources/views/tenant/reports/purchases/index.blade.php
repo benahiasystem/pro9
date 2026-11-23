@@ -53,11 +53,11 @@
                                         <th class="">RIF</th>
                                         <th class="">F. Pago</th>
                                         <th class="">Estado</th>
-                                        <th class="" >T.Exonerado</th>
+                                        <th class="" >Total exento</th>
 
-                                        <th class="" >T.Inafecta</th>
+                                        <th class="" >Total no sujeto</th>
                                         <th class="" >T.Gratuito</th>
-                                        <th class="">Total Gravado</th>
+                                        <th class="">Base imponible</th>
                                         {{-- ########## INICIO CAMBIO IGV A IVA --}}
                                         <th class="">Total IVA</th>
                                         {{-- ######### FIN CAMBIO IGV A IVA --}}

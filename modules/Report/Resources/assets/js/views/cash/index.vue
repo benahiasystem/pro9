@@ -16,7 +16,7 @@
                             <th class="">Cliente</th>
                             <th class="">Estado</th>
                             <th class="">Moneda</th> 
-                            <th class="">Total Gravado</th>
+                            <th class="">Base imponible</th>
                             
                             <!-- ########## INICIO CAMBIO IGV A IVA -->
                             <th class="">Total IVA</th>

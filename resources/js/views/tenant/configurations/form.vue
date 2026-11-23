@@ -2656,7 +2656,7 @@
                     <div class="row switch-configuration-container">
                         <div class="col-md-6 mt-4">
                             <label class="control-label">
-                                Habilitar importación de MiTienda.Pe
+                                Habilitar importación de MiTienda
                                 <el-tooltip class="item"
                                     content="Requiere modificaciones en configuracion -> avanzado -> pedidos"
                                     effect="dark" placement="top-start">

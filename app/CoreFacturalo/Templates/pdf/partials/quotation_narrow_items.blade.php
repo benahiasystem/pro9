@@ -52,7 +52,7 @@
 </table>
 <table class="full-width ticket">
     <tbody>
-    @foreach(['total_exportation'=>'OP. EXPORTACIÓN', 'total_free'=>'OP. GRATUITAS', 'total_unaffected'=>'OP. INAFECTAS', 'total_exonerated'=>'OP. EXONERADAS', 'total_taxed'=>'OP. GRAVADAS'] as $field => $label)
+    @foreach(['total_exportation'=>'OP. EXPORTACIÓN', 'total_free'=>'OP. GRATUITAS', 'total_unaffected'=>'Total no sujeto', 'total_exonerated'=>'Total exento', 'total_taxed'=>'Base imponible'] as $field => $label)
         @if($document->$field > 0)
             <tr><td class="desc text-right font-bold">{{ $label }}: {{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, $field), 2) }}</td></tr>
         @endif

@@ -97,9 +97,9 @@
                             <th v-if="col.visible && col.key === 'payments'" :key="col.key" class="text-end">Pagos</th>
                             <th v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">T.Exportación</th>
                             <th v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">T.Gratuito</th>
-                            <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
-                            <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
-                            <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
+                            <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">Total no sujeto</th>
+                            <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">Total exento</th>
+                            <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">Base imponible</th>
                             <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th>
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                             <th v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-center">PDF</th>
@@ -508,9 +508,9 @@ export default {
                 payments:                { title: "Pagos",            visible: true,  order: 15 },
                 total_exportation:       { title: "T.Exportación",    visible: false, order: 16 },
                 total_free:              { title: "T.Gratuito",       visible: false, order: 17 },
-                total_unaffected:        { title: "T.Inafecto",       visible: false, order: 18 },
-                total_exonerated:        { title: "T.Exonerado",      visible: false, order: 19 },
-                total_taxed:             { title: "T.Gravado",        visible: true,  order: 20 },
+                total_unaffected:        { title: "Total no sujeto",       visible: false, order: 18 },
+                total_exonerated:        { title: "Total exento",      visible: false, order: 19 },
+                total_taxed:             { title: "Base imponible",        visible: true,  order: 20 },
                 // ########## INICIO CAMBIO IGV A IVA
                 total_igv:               { title: "T.IVA",            visible: true,  order: 21 },
                 // ######### FIN CAMBIO IGV A IVA

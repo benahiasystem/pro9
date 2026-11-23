@@ -131,10 +131,10 @@
                                 <th class="">Moneda</th>
                                 <th>Plataforma</th>
                                 <th>Orden de compra</th>
-                                <!-- <th>Total Exonerado</th>
+                                <!-- <th>Total exento</th>
 
                                  <th>Total Gratutio</th> -->
-                                <th>Total Gravado</th>
+                                <th>Base imponible</th>
 
                                 {{-- ########## INICIO CAMBIO IGV A IVA --}}
                                 <th>Total IVA</th>

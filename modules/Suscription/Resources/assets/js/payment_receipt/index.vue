@@ -94,15 +94,15 @@
                             class="text-right">T.Gratuito
                         </th>
                         <th v-if="columns.total_unaffected.visible"
-                            class="text-right">T.Inafecta
+                            class="text-right">Total no sujeto
                         </th>
                         - ->
                         <th v-if="columns.total_exonerated.visible"
-                            class="text-right">T.Exonerado
+                            class="text-right">Total exento
                         </th>
                         <!--
                         <th v-if="columns.total_taxed.visible"
-                            class="text-right">T.Gravado
+                            class="text-right">Base imponible
                         </th>
                         <th v-if="columns.total_igv.visible"
                             <!-- ########## INICIO CAMBIO IGV A IVA -->
@@ -198,7 +198,7 @@
                         <td v-if="columns.total_unaffected.visible"
                             class="text-right">{{ row.total_unaffected }}
                         </td>
-                        <! -- T.Exonerado - ->
+                        <! -- Total exento - ->
                         <td v-if="columns.total_exonerated.visible"
                             class="text-right">{{ row.total_exonerated }}
                         </td>
@@ -499,15 +499,15 @@ export default {
                     visible: false
                 },
                 total_unaffected: {
-                    title: 'T.Inafecto',
+                    title: 'Total no sujeto',
                     visible: false
                 },
                 total_exonerated: {
-                    title: 'T.Exonerado',
+                    title: 'Total exento',
                     visible: false
                 },
                 total_taxed: {
-                    title: 'T.Gravado',
+                    title: 'Base imponible',
                     visible: false
                 },
                 total_igv: {
@@ -573,7 +573,19 @@ export default {
                 "columnVisibilitySchoolreceipt"
             );
             if (savedColumns) {
-                this.columns = JSON.parse(savedColumns);
+                // ######## INICIO PREFERENCIAS DE COLUMNAS VENEZUELA ########
+                try {
+                    const saved = JSON.parse(savedColumns);
+                    Object.keys(this.columns).forEach(key => {
+                        const preference = saved && saved[key];
+                        if (!preference || typeof preference !== 'object') return;
+                        if (typeof preference.visible === 'boolean') this.columns[key].visible = preference.visible;
+                        if (Number.isFinite(preference.order)) this.columns[key].order = preference.order;
+                    });
+                } catch (_) {
+                    // Conservar las columnas predeterminadas si las preferencias no son válidas.
+                }
+                // ######## FIN PREFERENCIAS DE COLUMNAS VENEZUELA ########
             }
         },
         ...mapActions(["loadConfiguration"]),

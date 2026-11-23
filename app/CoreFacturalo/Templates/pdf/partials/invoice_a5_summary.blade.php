@@ -20,7 +20,7 @@
         </td>
         <td width="38%" style="vertical-align: top;">
             <table class="full-width invoice-a5-totals">
-                @foreach(['total_exportation'=>'OP. EXPORTACIÓN', 'total_unaffected'=>'OP. INAFECTAS', 'total_exonerated'=>'OP. EXONERADAS', 'total_free'=>'OP. GRATUITAS', 'total_taxed'=>'OP. GRAVADAS'] as $field=>$label)
+                @foreach(['total_exportation'=>'OP. EXPORTACIÓN', 'total_unaffected'=>'Total no sujeto', 'total_exonerated'=>'Total exento', 'total_free'=>'OP. GRATUITAS', 'total_taxed'=>'Base imponible'] as $field=>$label)
                     @if(\App\Support\Exact\PdfAmounts::read($document, $field)->isPositive())
                     <tr><td class="text-right" style="white-space: nowrap; padding: 0 6px 0 0;"><strong>{{ $label }}: {{ $document->currency_type->symbol }}</strong></td><td class="text-right">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, $field), 2) }}</td></tr>
                     @endif

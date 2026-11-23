@@ -69,10 +69,10 @@
                                         <th class="">RIF</th>
                                         <th class="">Estado</th>
                                         <th class="">Moneda</th>
-                                        <th class="">Total Exonerado</th>
-                                        <th class="">Total Inafecto</th>
+                                        <th class="">Total exento</th>
+                                        <th class="">Total no sujeto</th>
                                         <th class="">Total Gratuito</th>
-                                        <th class="">Total Gravado</th>
+                                        <th class="">Base imponible</th>
 
                                         {{-- ########## INICIO CAMBIO IGV A IVA --}}
                                         <th class="">Total IVA</th>

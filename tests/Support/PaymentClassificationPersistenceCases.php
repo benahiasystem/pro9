@@ -4584,7 +4584,7 @@ trait PaymentClassificationPersistenceCases
                     $positions[$index]=trim($cell->textContent);$index+=max(1,(int)$cell->getAttribute('colspan'));
                 }
                 self::assertSame('1.00',$positions[$headerPositions['Total']],$selection.' '.$view);
-                self::assertArrayHasKey($headerPositions['Total Gravado'],$positions,$selection.' '.$view);
+                self::assertArrayHasKey($headerPositions['Base imponible'],$positions,$selection.' '.$view);
                 if ($columns->total_igv->visible) self::assertArrayHasKey($headerPositions['Total IVA'],$positions,$selection.' '.$view);
                 if ($columns->total_charge->visible) self::assertArrayHasKey($headerPositions['Total Cargos'],$positions,$selection.' '.$view);
             }
@@ -4674,7 +4674,7 @@ trait PaymentClassificationPersistenceCases
                     $totalRow=null;
                     foreach ($rows as $row) if (in_array('Totales VES',$row,true)) {$totalRow=$row;break;}
                     self::assertNotNull($totalRow);
-                    foreach (['Total Cargos','Total Exonerado','Total Gravado','Total IVA','Total'] as $field) {
+                    foreach (['Total Cargos','Total exento','Base imponible','Total IVA','Total'] as $field) {
                         $column=array_search($field,$header[1],true);self::assertNotFalse($column);
                         self::assertNotNull($totalRow[$column] ?? null,$field);
                     }

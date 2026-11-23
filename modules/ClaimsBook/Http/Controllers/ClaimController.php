@@ -308,14 +308,13 @@ JS;
 
         $html = view('claimsbook::pdf.complaints-book-notice', compact('widgetUrl', 'companyName', 'bookImageSrc'))->render();
 
-        $mpdf = new \Mpdf\Mpdf([
+        $mpdf = new \App\Support\Pdf\Mpdf([
             'mode'         => 'utf-8',
             'format'       => 'A4',
             'margin_top'   => 20,
             'margin_bottom'=> 20,
             'margin_left'  => 20,
             'margin_right' => 20,
-            'tempDir'      => sys_get_temp_dir(),
         ]);
 
         $mpdf->SetTitle('Aviso — Libro de Reclamaciones');
