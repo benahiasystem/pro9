@@ -47,16 +47,12 @@ class FixedAssetPurchase extends ModelTenant
         'total_taxes',
         'total_value',
         'total',
-        'total_perception',
-        'perception_number',
-        'perception_date',
 
         'charges',
         'discounts',
         'prepayments',
         'guides',
         'related',
-        'perception',
         'legends',
         'date_of_due',
         'customer_id',
@@ -139,15 +135,7 @@ class FixedAssetPurchase extends ModelTenant
         $this->attributes['related'] = (is_null($value))?null:json_encode($value);
     }
 
-    public function getPerceptionAttribute($value)
-    {
-        return (is_null($value))?null:(object) json_decode($value);
-    }
 
-    public function setPerceptionAttribute($value)
-    {
-        $this->attributes['perception'] = (is_null($value))?null:json_encode($value);
-    }
 
 
 

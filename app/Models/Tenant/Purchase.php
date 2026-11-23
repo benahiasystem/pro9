@@ -31,7 +31,6 @@ use Illuminate\Database\Eloquent\Collection;
  * @property mixed $legends
  * @property mixed $number_full
  * @property mixed $number_to_letter
- * @property mixed $perception
  * @property mixed $prepayments
  * @property mixed $related
  * @property string|null $observation
@@ -101,16 +100,12 @@ class Purchase extends ModelTenant
         'total_taxes',
         'total_value',
         'total',
-        'total_perception',
-        'perception_number',
-        'perception_date',
 
         'charges',
         'discounts',
         'prepayments',
         'guides',
         'related',
-        'perception',
         'legends',
         'additional_information',
         'date_of_due',
@@ -206,15 +201,7 @@ class Purchase extends ModelTenant
         $this->attributes['related'] = (is_null($value))?null:json_encode($value);
     }
 
-    public function getPerceptionAttribute($value)
-    {
-        return (is_null($value))?null:(object) json_decode($value);
-    }
 
-    public function setPerceptionAttribute($value)
-    {
-        $this->attributes['perception'] = (is_null($value))?null:json_encode($value);
-    }
 
 
 
@@ -337,7 +324,6 @@ class Purchase extends ModelTenant
             // Descuento global (con IGV), reconstruido desde los items.
             'total_discount_global'  => D::represent($global_discount),
             'total'                  => D::represent($this->exactValue('total')),
-            'total_perception'       => D::represent($this->exactValue('total_perception')),
 
             'items'                  => $items,
             // clave unificada con dispatch/find y sale-note/find; en purchases la
@@ -506,9 +492,8 @@ class Purchase extends ModelTenant
         }
         $query->select(
             'id', 'state_type_id', 'establishment_id', 'currency_type_id', 'total', 'exchange_rate_sale',
-            'total_perception', 'date_of_issue',
-            \DB::raw( "(CASE WHEN currency_type_id = 'VES' THEN total ELSE (exchange_rate_sale * total) END) as total_purchase"),
-            \DB::raw( "(CASE WHEN currency_type_id = 'VES' THEN total_perception ELSE (exchange_rate_sale * total_perception) END) as total_perception_purchase")
+            'date_of_issue',
+            \DB::raw( "(CASE WHEN currency_type_id = 'VES' THEN total ELSE (exchange_rate_sale * total) END) as total_purchase")
         );
 
         return $query;
@@ -546,9 +531,6 @@ class Purchase extends ModelTenant
      */
     public function  getCollectionData() {
         $total = $this->exactValue('total');
-        if ($this->total_perception) {
-            $total = D::of($total)->plus($this->exactValue('total_perception'));
-        }
         $customer_number = '';
         $customer_name = '';
         $customer = $this->customer;
@@ -605,7 +587,6 @@ class Purchase extends ModelTenant
             'total_exonerated'               => self::NumberFormat($this->total_exonerated),
             'total_taxed'                    => self::NumberFormat($this->total_taxed),
             'total_igv'                      => self::NumberFormat($this->total_igv),
-            'total_perception'               => self::NumberFormat($this->total_perception),
             'total'                          => self::NumberFormat($total),
             'state_type_id'                  => $this->state_type_id,
             'state_type_description'         => $this->state_type->description,

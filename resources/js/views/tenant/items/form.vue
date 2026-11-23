@@ -1604,27 +1604,6 @@
                         </div>
                     </div>
 
-                    <div class="advanced-section">
-                        <h6 class="advanced-section__title">Tributos y retenciones</h6>
-
-                        <div class="advanced-toggle">
-                            <div class="advanced-toggle__check">
-                                <el-checkbox v-model="form.has_perception"
-                                             @change="changeHasPerception">Incluye percepción
-                                </el-checkbox>
-                            </div>
-                            <div class="advanced-toggle__fields">
-                                <el-input v-if="form.has_perception"
-                                          v-model="form.percentage_perception"
-                                          class="input-select-all"
-                                          size="small"
-                                          placeholder="% de percepción"></el-input>
-                            </div>
-                        </div>
-
-                        <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                        <!-- ######### FIN SIN DETRACCIONES E ISC -->
-                    </div>
                 </el-tab-pane>
             </el-tabs>
             <div class="form-actions text-end pt-2 mt-2" v-if="!editingLayout">
@@ -1848,9 +1827,6 @@ export default {
             filteredCategories: [],
             brandSearchQuery: '',
             filteredBrands: [],
-            showPercentagePerception: false,
-            has_percentage_perception: false,
-            percentage_perception: null,
             enabled_percentage_of_profit: false,
             titleDialog: null,
             resource: 'items',
@@ -1959,13 +1935,7 @@ export default {
                 this.filteredCategories = this.categories;
                 this.filteredBrands = this.brands;
             })
-
-        this.$eventHub.$on('submitPercentagePerception', (data) => {
-            this.form.percentage_perception = data
-            if (!this.form.percentage_perception) this.has_percentage_perception = false
-        })
-
-        this.$eventHub.$on('reloadTables', () => {
+this.$eventHub.$on('reloadTables', () => {
             this.reloadTables()
         })
 
@@ -2286,11 +2256,7 @@ export default {
                 })
 
         },
-        changeHasPerception() {
-            if (!this.form.has_perception) {
-                this.form.percentage_perception = null
-            }
-        },
+
         clickAddRow() {
             let unitTypeId = 'UND';
             let description = null;
@@ -2350,10 +2316,8 @@ export default {
                 stock: 0,
                 stock_min: 1,
                 has_igv: true,
-                has_perception: false,
                 item_unit_types: [],
                 percentage_of_profit: 0,
-                percentage_perception: null,
                 image: null,
                 image_url: null,
                 temp_path: null,
@@ -2514,7 +2478,6 @@ this.activeName = null
                         this.form.brand_id = this.form.brand_id
                             ? Number(this.form.brand_id)
                             : null;
-                        this.has_percentage_perception = (this.form.percentage_perception) ? true : false;
 
                         this.enabled_percentage_of_profit = exactAmount(this.form.percentage_of_profit || '0').compare(0) > 0;
 
@@ -2739,9 +2702,6 @@ this.activeName = null
                 if (!payload.sanitary)
                     return this.$message.error('Debe haber un Registro Sanitario');
             }
-
-            if (payload.has_perception && !payload.percentage_perception)
-                return this.$message.error('Ingrese un porcentaje');
 
             if (payload.lots_enabled && stock > 0) {
                 if (!payload.lot_code)

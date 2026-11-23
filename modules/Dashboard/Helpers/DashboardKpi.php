@@ -304,7 +304,7 @@ class DashboardKpi
     }
 
     /**
-     * Compras = total + percepción, con USD convertido a VES.
+     * Compras convertidas a VES.
      * Pasa $hour (0-23) para limitar a una sola hora del día indicado.
      */
     private function purchasesAmount($establishment_id, $start, $end, $hour = null)
@@ -318,7 +318,7 @@ class DashboardKpi
             foreach ($purchases->lazyById(500) as $purchase) {
                 $currency=$purchase->currency_type_id;
                 $rate=$currency === 'USD' ? \App\Support\Exact\DashboardSales::historicalRate($purchase) : '1';
-                $amount=$D::readRequired($purchase,'total')->plus($D::read($purchase,'total_perception'));
+                $amount=$D::readRequired($purchase,'total');
                 $sum=$sum->plus($D::convert($amount,$currency,'VES',$rate))->simplified();
             }
             return $sum;

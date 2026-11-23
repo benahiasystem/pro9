@@ -371,7 +371,6 @@ class QuotationStorefrontController extends Controller
                     'prepayments' => [],
                     'guides' => [],
                     'related' => [],
-                    'perception' => null,
                     'legends' => [],
                     'shipping_address' => null,
                     'description' => implode("\n", $descriptionParts),

@@ -25,16 +25,15 @@ function methods(path) {
 }
 const form=methods('modules/Purchase/Resources/assets/js/views/fixed_asset_purchases/form.vue')
 const item=methods('modules/Purchase/Resources/assets/js/views/fixed_asset_purchases/partials/item.vue')
-test('fixed asset form sums exact line fractions and preserves total perception',()=>{
+test('fixed asset form sums exact line fractions without additional charges',()=>{
     const fraction={n:'1',d:'3'}
     const values={total_value:fraction,total_base_igv:fraction,total:fraction}
     const line={affectation_igv_type_id:'20',calculation_snapshot:{values}}
     const context={form:{items:[line,line,line],discounts:[],charges:[],total_prepayment:'0',total_perception:'0.1'}}
-    context.inputTotalPerception=form('inputTotalPerception').bind(context)
     form('calculateTotal').call(context)
     assert.equal(context.form.total,'1')
     assert.equal(context.form.total_exonerated,'1')
-    assert.equal(context.total_amount,'1.1')
+    assert.equal(context.total_amount,'1')
 })
 test('loading an existing purchase keeps fractional quantity and selecting an asset keeps its original price',async()=>{
     const context={id:1,resource:'fixed-asset/purchases',calculateTotal(){},$http:{get:async()=>({data:{data:{fa_purchase:{items:[{quantity:'0.333333333333'}],exchange_rate_sale:'1'}}}})}}
@@ -54,7 +53,6 @@ test('fixed asset form preserves tax and discounts when switching currencies',()
     const ctx={form:{items:inputs.map(row=>calculateRowItem(row,'VES','10','0.16')),currency_type_id:'VES',
         exchange_rate_sale:'10',discounts:[{discount_type_id:'02',amount:'5'}],charges:[],total_prepayment:'0',total_perception:'0'},
         currency_type:{id:'VES'},currency_types:[{id:'VES'},{id:'USD'}],percentage_igv:'0.16'}
-    ctx.inputTotalPerception=form('inputTotalPerception').bind(ctx)
     ctx.calculateTotal=form('calculateTotal').bind(ctx)
     ctx.calculateTotal()
     assert.equal(ctx.form.total,'148.6')

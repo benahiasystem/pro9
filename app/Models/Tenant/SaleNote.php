@@ -42,7 +42,6 @@ use Modules\Sale\Models\Agent;
      * @property mixed                                          $legends
      * @property string                                         $number_full
      * @property mixed                                          $number_to_letter
-     * @property mixed                                          $perception
      * @property mixed                                          $prepayments
      * @property mixed                                          $related
      * @property Collection|InventoryKardex[]                   $inventory_kardex
@@ -189,7 +188,6 @@ use Modules\Sale\Models\Agent;
             'prepayments',
             'guides',
             'related',
-            'perception',
             'legends',
             'filename',
             'total_canceled',
@@ -561,15 +559,7 @@ use Modules\Sale\Models\Agent;
             $this->attributes['related'] = (is_null($value)) ? null : json_encode($value);
         }
 
-        public function getPerceptionAttribute($value)
-        {
-            return (is_null($value)) ? null : (object)json_decode($value);
-        }
 
-        public function setPerceptionAttribute($value)
-        {
-            $this->attributes['perception'] = (is_null($value)) ? null : json_encode($value);
-        }
 
 
 

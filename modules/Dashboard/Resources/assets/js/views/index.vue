@@ -494,10 +494,6 @@
                                     <div class="mt-3" v-show="!loaders.purchase">
                                         <table class="table-dashboard mb-0 table-sm">
                                             <tbody class="card-default">
-                                                <tr class="text-info text-bold">
-                                                    <td>Total percepciones</td>
-                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ purchase.totals.purchases_total_perception }}</td>
-                                                </tr>
                                                 <tr class="text-danger text-bold">
                                                     <td>Total compras</td>
                                                     <td class="text-end right font-weight-bold">Bs.&nbsp;{{ purchase.totals.purchases_total }}</td>

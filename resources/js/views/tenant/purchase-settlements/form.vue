@@ -495,7 +495,6 @@ export default {
             showDialogOptions: false,
             loading_submit: false,
             hide_button: false,
-            is_perception_agent: false,
             errors: {},
             form: {
                 items:[]
@@ -871,15 +870,6 @@ export default {
 
             }
 
-        },
-        inputTotalPerception() {
-            this.total_amount = parseFloat(this.form.total) + parseFloat(this.form.total_perception)
-            if (isNaN(this.total_amount)) {
-                this.hide_button = true
-            } else {
-                this.hide_button = false
-
-            }
         },
         filterSuppliers() {
 

@@ -39,15 +39,11 @@ use Illuminate\Support\Facades\DB;
  * - total_value: numeric(30,12)
  * - total: numeric(30,12)
  * - customer_id: bigint
- * - perception_date: date
- * - perception_number: integer
- * - total_perception: numeric(30,12)
  * - charges: json
  * - discounts: json
  * - prepayments: json
  * - guides: json
  * - related: json
- * - perception: json
  * - legends: json
  * - created_at: timestamp
  * - updated_at: timestamp
@@ -90,15 +86,11 @@ return new class extends Migration
             $table->decimal('total_value', 30, 12)->default('0.00');
             $table->decimal('total', 30, 12);
             $table->bigInteger('customer_id')->nullable();
-            $table->date('perception_date')->nullable();
-            $table->integer('perception_number')->nullable();
-            $table->decimal('total_perception', 30, 12)->nullable();
             $table->json('charges')->nullable();
             $table->json('discounts')->nullable();
             $table->json('prepayments')->nullable();
             $table->json('guides')->nullable();
             $table->json('related')->nullable();
-            $table->json('perception')->nullable();
             $table->json('legends')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -114,7 +106,6 @@ return new class extends Migration
             $table->index(['currency_type_id'], 'fixed_asset_purchases_currency_type_id_foreign');
         });
         DB::statement('ALTER TABLE "fixed_asset_purchases" ADD CONSTRAINT "fixed_asset_purchases_number_range" CHECK ("number" BETWEEN -2147483648 AND 2147483647)');
-        DB::statement('ALTER TABLE "fixed_asset_purchases" ADD CONSTRAINT "fixed_asset_purchases_perception_number_range" CHECK ("perception_number" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void

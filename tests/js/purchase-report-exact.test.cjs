@@ -30,10 +30,9 @@ test('purchase page totals sum the projected rows by currency and ignore voids',
     assert.equal(context.totals.acum_total_usd,'1.00')
     assert.equal(context.totals.acum_total_taxed_usd,'1.00')
     assert.equal(context.totals.acum_total,'0.10')
-    assert.equal(context.totals.acum_total_perception_usd,'0.00')
 })
 
-test('fixed asset purchase totals include perception and separate both currencies',()=>{
+test('fixed asset purchase totals separate both currencies',()=>{
     const fixed=compiler.parseComponent(fs.readFileSync('modules/Report/Resources/assets/js/views/fixed-asset-purchases/index.vue','utf8'))
     assert.deepEqual(compiler.compile(fixed.template.content).errors, [])
     assert.match(fixed.template.content, /:colspan-foot-purchase="7"/)
@@ -45,7 +44,5 @@ test('fixed asset purchase totals include perception and separate both currencie
         {currency_type_id:'USD',state_type_id:'09',total:'90.00',total_perception:'1.00'},
     ])
     assert.equal(context.totals.acum_total_usd,'0.87')
-    assert.equal(context.totals.acum_total_perception_usd,'0.20')
     assert.equal(context.totals.acum_total,'4.25')
-    assert.equal(context.totals.acum_total_perception,'0.25')
 })

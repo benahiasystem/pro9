@@ -897,7 +897,7 @@
                                     <!-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## -->
                                     <div class="inputs-column">
                                         <div class="d-flex flex-column w-100">
-                                            <label class="control-label fw-semibold">Percepción IGTF</label>
+                                            <label class="control-label fw-semibold">Cobro IGTF</label>
                                             <p v-if="igtfLoading" class="text-muted" role="status">Cargando configuración IGTF…</p>
                                             <div v-if="igtfLoadError" class="text-danger" role="alert">
                                                 {{ igtfLoadError }}

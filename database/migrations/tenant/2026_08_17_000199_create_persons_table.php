@@ -35,12 +35,10 @@ use Illuminate\Support\Facades\DB;
  * - remember_token: varchar(255)
  * - telephone: varchar(255)
  * - accumulated_points: numeric(30,12)
- * - perception_agent: boolean
  * - is_agent_retention: boolean
  * - person_type_id: bigint
  * - contact: json
  * - comment: varchar(255)
- * - percentage_perception: numeric(30,12)
  * - enabled: boolean
  * - website: text
  * - zone: text
@@ -92,12 +90,10 @@ return new class extends Migration
             $table->string('remember_token', 255)->collation('C')->nullable();
             $table->string('telephone', 255)->collation('sab_ci_ai')->nullable();
             $table->decimal('accumulated_points', 30, 12)->default('0.00')->comment('sistema por puntos');
-            $table->boolean('perception_agent')->default(false);
             $table->boolean('is_agent_retention')->default(false);
             $table->bigInteger('person_type_id')->nullable();
             $table->json('contact')->nullable();
             $table->string('comment', 255)->collation('sab_ci_ai')->nullable();
-            $table->decimal('percentage_perception', 30, 12)->nullable();
             $table->boolean('enabled')->default(true);
             $table->text('website')->collation('sab_ci_ai')->nullable()->comment('Sitio Web');
             $table->text('zone')->collation('sab_ci_ai')->nullable()->comment('Zona');

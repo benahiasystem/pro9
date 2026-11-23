@@ -357,7 +357,6 @@
                             <tr>
                                 <td :colspan="colspanFootPurchase"></td>
                                 <td><strong>Suma página VES</strong></td>
-                                <td v-if="['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource)">{{ totals.acum_total_perception }}</td>
                                 <td>{{ totals.acum_total_exonerated }}</td>
                                 <td>{{ totals.acum_total_unaffected }}</td>
                                 <td>{{ totals.acum_total_free }}</td>
@@ -369,7 +368,6 @@
                             <tr v-if="!applyConversionToPen">
                                 <td :colspan="colspanFootPurchase"></td>
                                 <td><strong>Suma página USD</strong></td>
-                                <td v-if="['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource)">{{ totals.acum_total_perception_usd }}</td>
                                 <td>{{ ['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource) ? totals.acum_total_exonerated_usd : '' }}</td>
                                 <td>{{ ['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource) ? totals.acum_total_unaffected_usd : '' }}</td>
                                 <td>{{ ['reports/purchases', 'reports/fixed-asset-purchases'].includes(resource) ? totals.acum_total_free_usd : '' }}</td>
@@ -577,7 +575,7 @@ export default {
 
             this.initTotals()
             if (['reports/purchases', 'reports/fixed-asset-purchases'].includes(this.resource)) {
-                const fields = ['total', 'total_taxed', 'total_igv', 'total_perception', 'total_exonerated', 'total_unaffected', 'total_free'];
+                const fields = ['total', 'total_taxed', 'total_igv', 'total_exonerated', 'total_unaffected', 'total_free'];
                 for (const currency of ['VES', 'USD']) {
                     const rows = records.filter(row => row.currency_type_id === currency && !['09', '11'].includes(String(row.state_type_id)));
                     for (const field of fields) {

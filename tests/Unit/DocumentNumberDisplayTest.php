@@ -26,7 +26,7 @@ class DocumentNumberDisplayTest extends TestCase
     {
         foreach ([\App\Models\Tenant\Document::class, \App\Models\Tenant\Dispatch::class,
             \App\Models\Tenant\SaleNote::class, \App\Models\Tenant\Retention::class,
-            \App\Models\Tenant\Perception::class, \App\Models\Tenant\PurchaseSettlement::class,
+            \App\Models\Tenant\PurchaseSettlement::class,
             \Modules\Inventory\Models\Guide::class, \Modules\Inventory\Models\InventoryTransfer::class] as $class) {
             $document = new $class();
             $document->setRawAttributes(['series' => 'FF-01', 'number' => 25, 'control_number' => '00-00000033']);

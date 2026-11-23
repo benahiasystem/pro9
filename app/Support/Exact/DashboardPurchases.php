@@ -6,7 +6,7 @@ use App\Models\Tenant\Purchase;
 use Carbon\Carbon;
 
 // ######## INICIO CALCULOS EXACTOS SAB ########
-/** Purchase headers and their own optional perceptions, at each historical rate. */
+/** Purchase headers converted at their own exchange rate. */
 final class DashboardPurchases
 {
     private static function dataset($establishment, $start, $end): ReportDataset
@@ -14,14 +14,11 @@ final class DashboardPurchases
         $query=Purchase::withoutEagerLoads()->whereStateTypeAccepted()
             ->when($establishment,fn($q)=>$q->where('establishment_id',$establishment))
             ->when($start && $end,fn($q)=>$q->whereBetween('date_of_issue',[$start,$end]))
-            ->select('id','date_of_issue','currency_type_id','exchange_rate_sale','total','total_perception','calculation_snapshot');
+            ->select('id','date_of_issue','currency_type_id','exchange_rate_sale','total','calculation_snapshot');
         return new ReportDataset((function () use ($query) {
             foreach ($query->lazyById(500) as $purchase) {
                 $purchaseAmount=DashboardSales::inVes($purchase);
-                // A null perception means that this purchase has no perception.
-                $perception=DashboardSales::inVesAmount($purchase,Decimal::read($purchase,'total_perception'));
-                $values=['purchases_total'=>$purchaseAmount,'purchases_total_perception'=>$perception,
-                    'total'=>$purchaseAmount->plus($perception)->simplified()];
+                $values=['purchases_total'=>$purchaseAmount, 'total'=>$purchaseAmount];
                 yield ['date_of_issue'=>(string)$purchase->getRawOriginal('date_of_issue')]
                     + Decimal::values($values)+['calculation_snapshot'=>Decimal::snapshot($values)];
             }
@@ -31,7 +28,7 @@ final class DashboardPurchases
     private static function totals(ReportDataset $rows): array
     {
         return ['purchases_total'=>$rows->sum('purchases_total'),
-            'purchases_total_perception'=>$rows->sum('purchases_total_perception'),'total'=>$rows->sum('total')];
+            'total'=>$rows->sum('total')];
     }
 
     public static function range($establishment, $start, $end): array
@@ -57,7 +54,7 @@ final class DashboardPurchases
             $months=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
             while ($first->lessThanOrEqualTo($last)) {
                 $key=$first->format('Y-m');$labels[]=$months[$first->month].($sameYear ? '' : ' '.$first->format('Y'));
-                $buckets[$key]=['purchases_total'=>Decimal::of(0),'purchases_total_perception'=>Decimal::of(0),'total'=>Decimal::of(0)];
+                $buckets[$key]=['purchases_total'=>Decimal::of(0),'total'=>Decimal::of(0)];
                 $first->addMonthNoOverflow();
             }
             foreach ($rows as $row) {
@@ -65,8 +62,7 @@ final class DashboardPurchases
                 foreach ($buckets[$key] as $field=>$value) $buckets[$key][$field]=$value->plus(Decimal::readRequired($row,$field))->simplified();
             }
             $datasets=[];
-            foreach (['purchases_total_perception'=>['Total percepciones','254, 0, 108'],
-                'purchases_total'=>['Total compras','36, 71, 232'],'total'=>['Total','177, 184, 194']] as $field=>[$label,$rgb]) {
+            foreach (['purchases_total'=>['Total compras','36, 71, 232'],'total'=>['Total','177, 184, 194']] as $field=>[$label,$rgb]) {
                 $projection=DashboardSeries::project(array_column($buckets,$field));
                 $datasets[]=['label'=>$label,'data'=>$projection['data'],'data_exact'=>$projection['exact'],
                     'data_fractions'=>$projection['fractions'],'backgroundColor'=>'rgba('.$rgb.', .1)',

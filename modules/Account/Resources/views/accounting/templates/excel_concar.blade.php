@@ -37,9 +37,9 @@
             <td>Número Serie Caja Registradora</td>
             <td>Fecha de Operación</td>
             <td>Tipo de Tasa</td>
-            <td>Tasa Percepción</td>
-            <td>Importe Base Percepción Dólares</td>
-            <td>Importe Base Percepción Bolívares</td>
+            <td></td>
+            <td></td>
+            <td></td>
             <td>Tipo Cambio para 'F'</td>
             <td>Importe de IGV sin derecho crédito fiscal</td>
         </tr>
@@ -134,7 +134,7 @@
         @foreach($records as $row)
         <tr>
             @foreach ($row as $item)
-                <td>{{ $item }}</td>
+                @if(in_array($loop->iteration, [35, 36, 37], true))<td></td>@else<td>{{ $item }}</td>@endif
             @endforeach
         </tr>
         @endforeach

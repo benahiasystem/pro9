@@ -112,8 +112,6 @@
                 'calculate_quantity' => (bool)$this->calculate_quantity,
                 'has_igv' => (bool)$this->has_igv,
                 'purchase_has_igv' => (bool)$this->purchase_has_igv,
-                'has_perception' => (bool)$this->has_perception,
-                'percentage_perception' => $this->percentage_perception,
                 'item_unit_types' => $this->item_unit_types->transform(function ($row) {
                     // Eager load prices con priceLabel y formatear
                     $row->load('prices.priceLabel');

@@ -37,7 +37,6 @@
             <th class="text-end">Total exento</th> -->
             <th class="text-end">Base imponible</th>
             <th class="text-end">T.IVA</th>
-            <!-- <th>Percepcion</th> -->
             <th class="text-end">Total</th>
             <th class="text-center">Descarga</th>
             <th class="text-end">Acciones</th>
@@ -87,7 +86,6 @@
             <td class="text-end">{{ row.total_exonerated }}</td> -->
             <td class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_taxed) }}</td>
             <td class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_igv) }}</td>
-            <!-- <td class="text-right">{{ row.total_perception ? row.total_perception : 0 }}</td> -->
             <td class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total) }}</td>
 
                         <td class="text-center" @click.stop>

@@ -153,8 +153,8 @@ class FixedAssetPurchaseController extends Controller
             $previousCurrency = $doc->exists ? $doc->currency_type_id : null;
             $header = collect($data)->only(['establishment_id','document_type_id','series','number',
                 'date_of_issue','date_of_due','time_of_issue','supplier_id','supplier','currency_type_id','exchange_rate_sale',
-                'total_prepayment','total_perception','perception_number','perception_date','charges','discounts','prepayments',
-                'guides','related','perception','legends','customer_id','group_id'])->all();
+                'total_prepayment','charges','discounts','prepayments',
+                'guides','related','legends','customer_id','group_id'])->all();
             if (!$doc->exists) $header += ['user_id'=>$data['user_id'],'external_id'=>$data['external_id'],
                 'fiscal_environment'=>$data['fiscal_environment'],'state_type_id'=>'01','group_id'=>$data['group_id'],'total'=>'0'];
             $doc->fill($header);
@@ -248,7 +248,6 @@ class FixedAssetPurchaseController extends Controller
                         'description' => $row->number.' - '.$row->name,
                         'name' => $row->name,
                         'number' => $row->number,
-                        'perception_agent' => (bool) $row->perception_agent,
                         'identity_document_type_id' => $row->identity_document_type_id,
                         'identity_document_type_code' => $row->identity_document_type->code
                     ];

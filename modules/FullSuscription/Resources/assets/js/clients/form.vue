@@ -1349,8 +1349,6 @@ export default {
                 credit_days: 0,
                 condition: null,
                 state: null,
-                perception_agent: false,
-                percentage_perception: 0,
                 person_type_id: null,
                 comment: null,
                 addresses: [],

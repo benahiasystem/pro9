@@ -17,7 +17,6 @@ trait ElectronicDocumentTrait
      * Usado para:
      * Document
      * Dispatch
-     * Perception
      * PurchaseSettlement
      * Retention
      *
@@ -131,7 +130,6 @@ trait ElectronicDocumentTrait
      * Usado para:
      * Document
      * Dispatch
-     * Perception
      * PurchaseSettlement
      * Retention
      *

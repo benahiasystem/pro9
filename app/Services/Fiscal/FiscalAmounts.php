@@ -58,7 +58,7 @@ final class FiscalAmounts
         if ($status === 'subject' && (!$igtfEnabled || !is_numeric($igtfRate) || $igtfRate <= 0)) {
             self::error('igtf_status', 'Configure y habilite el IGTF antes de registrar pagos sujetos.');
         }
-        if ($status === 'subject' && $currency !== 'USD') self::error('igtf_status', 'La percepción IGTF de ventas requiere un pago en divisas.');
+        if ($status === 'subject' && $currency !== 'USD') self::error('igtf_status', 'El cobro IGTF de ventas requiere un pago en divisas.');
         // ######## INICIO CALCULOS EXACTOS SAB ########
         $taxExact = $status === 'subject' ? \App\Support\Exact\Decimal::of($original)->multipliedBy(\App\Support\Exact\Decimal::of($igtfRate))->dividedBy(100) : \App\Support\Exact\Decimal::of(0);
         $converted = \App\Support\Exact\Decimal::convert($original, $currency, $documentCurrency, $rate);

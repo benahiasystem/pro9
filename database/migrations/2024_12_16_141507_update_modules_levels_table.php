@@ -66,7 +66,6 @@ class UpdateModulesLevelsTable extends Migration
         DB::table('module_levels')->where('value', 'users')->update(['module_id' => 14]);
         DB::table('module_levels')->where('value', 'users_establishments')->update(['module_id' => 14]);
         DB::table('module_levels')->where('value', 'advanced_retentions')->update(['module_id' => 3]);
-        DB::table('module_levels')->where('value', 'advanced_perceptions')->update(['module_id' => 3]);
         DB::table('module_levels')->where('value', 'advanced_order_forms')->update(['module_id' => 3]);
         DB::table('module_levels')->where('value', 'account_report')->update(['module_id' => 9]);
         DB::table('module_levels')->where('value', 'account_formats')->update(['module_id' => 9]);
@@ -175,7 +174,6 @@ class UpdateModulesLevelsTable extends Migration
         DB::table('module_levels')->where('value', 'users')->update(['module_id' => 14]);
         DB::table('module_levels')->where('value', 'users_establishments')->update(['module_id' => 14]);
         DB::table('module_levels')->where('value', 'advanced_retentions')->update(['module_id' => 3]);
-        DB::table('module_levels')->where('value', 'advanced_perceptions')->update(['module_id' => 3]);
         DB::table('module_levels')->where('value', 'advanced_order_forms')->update(['module_id' => 3]);
         DB::table('module_levels')->where('value', 'account_report')->update(['module_id' => 9]);
         DB::table('module_levels')->where('value', 'account_formats')->update(['module_id' => 9]);

@@ -909,9 +909,7 @@
                     'unit_type_id' => $row->unit_type_id,
                     'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
                     'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
-                    'has_perception' => (bool)$row->has_perception,
                     'purchase_has_igv' => (bool)$row->purchase_has_igv,
-                    'percentage_perception' => $row->percentage_perception,
                     'item_unit_types' => collect($row->item_unit_types)->transform(function ($row) {
                         return [
                             'id' => $row->id,
@@ -996,9 +994,7 @@
                     'purchase_unit_price' => $row->purchase_unit_price,
                     'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
                     'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
-                    'has_perception' => (bool)$row->has_perception,
                     'purchase_has_igv' => (bool)$row->purchase_has_igv,
-                    'percentage_perception' => $row->percentage_perception,
                     'item_unit_types' => collect($row->item_unit_types)->transform(function ($row) {
                         return [
                             'id' => $row->id,
@@ -1082,9 +1078,7 @@
                     'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
                     'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
                     'purchase_has_igv' => (bool)$row->purchase_has_igv,
-                    'has_perception' => (bool)$row->has_perception,
                     'lots_enabled' => (bool)$row->lots_enabled,
-                    'percentage_perception' => $row->percentage_perception,
                     // 'warehouses' => collect($row->warehouses)->transform(function($row) {
                     //     return [
                     //         'warehouse_id' => $row->warehouse->id,

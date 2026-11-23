@@ -133,12 +133,11 @@ final class DashboardSalesPostgresTest extends \PHPUnit\Framework\TestCase
             'series'=>'FP01','number'=>$number,'date_of_issue'=>'2026-09-10','time_of_issue'=>'12:00:00',
             'supplier_id'=>$input['customer_id'],'supplier'=>json_encode($input['customer'],JSON_THROW_ON_ERROR),
             'currency_type_id'=>$currency,'exchange_rate_sale'=>$rate,'total'=>D::represent($total),
-            'total_perception'=>$perception===null ? null : D::represent($perception),
             'calculation_snapshot'=>json_encode(D::snapshot(array_filter(['total'=>$total,
-                'exchange_rate_sale'=>$rate,'total_perception'=>$perception],fn($v)=>$v!==null)),JSON_THROW_ON_ERROR)]);
+                'exchange_rate_sale'=>$rate],fn($v)=>$v!==null)),JSON_THROW_ON_ERROR)]);
     }
 
-    public function test_purchases_convert_each_own_perception_and_payment_fraction_once(): void
+    public function test_purchases_convert_each_total_and_payment_fraction_once(): void
     {
         [$db,,$input]=$this->invoice();
         $a=$this->purchase($db,$input,'10','0.1','VES','1',1);
@@ -151,7 +150,7 @@ final class DashboardSalesPostgresTest extends \PHPUnit\Framework\TestCase
                 'calculation_snapshot'=>json_encode(D::snapshot(['payment'=>$amount]),JSON_THROW_ON_ERROR)]);
         }
         $totals=(new DashboardData())->get_purchase_totals(null,'2026-09-10','2026-09-10')['totals'];
-        $expected=D::of('10.104')->plus(D::of('1/3')->plus('1/7')->multipliedBy(3))->plus(5);
+        $expected=D::of('10.004')->plus(D::of('1/3')->multipliedBy(3))->plus(4);
         self::assertEquals(D::format($expected,2,'.',''),$totals['total']);
         self::assertTrue(D::readRequired($totals,'total')->isEqualTo($expected));
         self::assertTrue(D::readRequired($totals,'total_payment')->isEqualTo('16/3'));

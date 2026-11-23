@@ -473,28 +473,7 @@
 
                             </div>
                         </div>
-                        <div v-if="type === 'suppliers'"
-                             class="row mt-2">
-                            <div class="col-md-6 center-el-checkbox">
-                                <div :class="{'has-danger': errors.perception_agent}"
-                                     class="form-group">
-                                    <el-checkbox v-model="form.perception_agent">¿Es agente de percepción?</el-checkbox>
-                                    <br>
-                                    <small v-if="errors.perception_agent"
-                                           class="form-control-feedback"
-                                           v-text="errors.perception_agent[0]"></small>
-                                </div>
-                            </div>
-                            <div v-if="type === 'suppliers'"
-                                 v-show="form.perception_agent"
-                                 class="col-md-6">
-                                <div class="form-group">
-                                    <label class="control-label">Porcentaje de percepción</label>
 
-                                    <el-input v-model="form.percentage_perception"></el-input>
-                                </div>
-                            </div>
-                        </div>
                         <div class="row mt-2">
                             <div class="col-lg-4 col-md-4">
                                 <div :class="{'has-danger': errors.seller_id}"
@@ -751,8 +730,6 @@ export default {
                 condition: null,
                 state: null,
                 email: null,
-                perception_agent: false,
-                percentage_perception: 0,
                 person_type_id: null,
                 seller_id: null,
                 zone_id: null,

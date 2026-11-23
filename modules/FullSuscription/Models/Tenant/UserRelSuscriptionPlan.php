@@ -82,7 +82,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
      * @property string|null          $discounts
      * @property string|null          $prepayments
      * @property string|null          $related
-     * @property string|null          $perception
      * @property string|null          $legends
      * @property string|null          $terms_condition
      * @property int|null             $children_customer_id
@@ -183,7 +182,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
             'discounts',
             'prepayments',
             'related',
-            'perception',
             'legends',
             'terms_condition'
         ];

@@ -178,7 +178,6 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                             'description' => $row->number . ' - ' . $row->name,
                             'name' => $row->name,
                             'number' => $row->number,
-                            'perception_agent' => (bool)$row->perception_agent,
                             'identity_document_type_id' => $row->identity_document_type_id,
                             'identity_document_type_code' => $row->identity_document_type->code
                         ];
@@ -209,9 +208,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                             'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
                             'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
                             'purchase_has_igv' => (bool)$row->purchase_has_igv,
-                            'has_perception' => (bool)$row->has_perception,
                             'lots_enabled' => (bool)$row->lots_enabled,
-                            'percentage_perception' => $row->percentage_perception,
                             'item_unit_types' => $row->item_unit_types->transform(function ($iut) {
                                 return $iut->getCollectionData();
                             }),
@@ -1126,9 +1123,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                         'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
                         'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
                         'purchase_has_igv' => (bool)$row->purchase_has_igv,
-                        'has_perception' => (bool)$row->has_perception,
                         'lots_enabled' => (bool)$row->lots_enabled,
-                        'percentage_perception' => $row->percentage_perception,
                         'item_unit_types' => collect($row->item_unit_types)->transform(function ($row) {
                             return [
                                 'id' => $row->id,
@@ -1172,9 +1167,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                         'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
                         'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
                         'purchase_has_igv' => (bool)$row->purchase_has_igv,
-                        'has_perception' => (bool)$row->has_perception,
                         'lots_enabled' => (bool)$row->lots_enabled,
-                        'percentage_perception' => $row->percentage_perception,
                         'item_unit_types' => $row->item_unit_types->transform(function ($row) {
                             if (is_array($row)) return $row;
                             if (is_object($row)) {

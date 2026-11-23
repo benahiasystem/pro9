@@ -105,7 +105,6 @@ class JiraInProgressMigrationContractTest extends TestCase
     public function document_lists_keep_pdf_without_xml_or_cdr_actions(): void
     {
         foreach ([
-            'resources/js/views/tenant/perceptions/index.vue',
             'resources/js/views/tenant/retentions/index.vue',
             'resources/js/views/tenant/purchase-settlements/index.vue',
             'resources/js/views/tenant/contingencies/index.vue',

@@ -68,8 +68,8 @@ final class DashboardRankingsPostgresTest extends \PHPUnit\Framework\TestCase
             'fiscal_environment'=>'demo','state_type_id'=>'01','group_id'=>'01','document_type_id'=>'01',
             'series'=>'FP01','number'=>$this->db->table('purchases')->count()+1,'date_of_issue'=>$date,'time_of_issue'=>'12:00:00',
             'supplier_id'=>$this->input['customer_id'],'supplier'=>json_encode($this->input['customer'],JSON_THROW_ON_ERROR),
-            'currency_type_id'=>$currency,'exchange_rate_sale'=>$rate,'total'=>D::represent($total),'total_perception'=>D::represent($perception),
-            'calculation_snapshot'=>json_encode(D::snapshot(['total'=>$total,'total_perception'=>$perception,'exchange_rate_sale'=>$rate]),JSON_THROW_ON_ERROR)]);
+            'currency_type_id'=>$currency,'exchange_rate_sale'=>$rate,'total'=>D::represent($total),
+            'calculation_snapshot'=>json_encode(D::snapshot(['total'=>$total,'exchange_rate_sale'=>$rate]),JSON_THROW_ON_ERROR)]);
     }
 
     private function newItem(int $index): Item
@@ -79,12 +79,12 @@ final class DashboardRankingsPostgresTest extends \PHPUnit\Framework\TestCase
         $item->saveQuietly();return $item;
     }
 
-    public function test_purchase_range_converts_raw_total_and_perception_before_combining_them(): void
+    public function test_purchase_range_converts_raw_total(): void
     {
         $this->purchase('1/3','1/7','2026-11-10','USD','0.01500000');
         $result=(new DashboardSalePurchase())->purchasesTotalByRange(null,'2026-11-10','2026-11-10');
         self::assertSame(0.01,$result['total']);
-        self::assertTrue(D::readRequired($result,'total')->isEqualTo('1/140'));
+        self::assertTrue(D::readRequired($result,'total')->isEqualTo('1/200'));
         self::assertTrue(D::readRequired($result,'purchases_total')->isEqualTo('1/200'));
     }
 
@@ -95,7 +95,7 @@ final class DashboardRankingsPostgresTest extends \PHPUnit\Framework\TestCase
         $result=(new DashboardSalePurchase())->data($this->filters(['period'=>'between_dates','date_start'=>'2025-12-01','date_end'=>'2026-01-31']));
         self::assertSame('3.00',$result['purchase']['totals']['total']);
         self::assertSame(['Dic 2025','Ene 2026'],$result['purchase']['graph']['labels']);
-        self::assertSame([1.0,2.0],$result['purchase']['graph']['datasets'][2]['data']);
+        self::assertSame([1.0,2.0],$result['purchase']['graph']['datasets'][1]['data']);
         self::assertTrue(D::readRequired($result['purchase']['totals'],'total')->isEqualTo('3'));
     }
 

@@ -53,7 +53,6 @@
 
                             <th class="">F. Pago</th>
                             <th class="text-center">Moneda</th>
-                            <th>Percepcion</th>
 
                             <!-- ########## INICIO SIN DETRACCIONES E ISC -->
                             <!-- La columna T. ISC no se presenta. -->
@@ -112,14 +111,7 @@
                                     </el-tooltip>
                                 </template>
                             </td>
-                            <td class="text-end">
-                                {{
-                                    row.total_perception &&
-                                    row.state_type_id != "11"
-                                        ? row.total_perception
-                                        : "0.00"
-                                }}
-                            </td>
+
                             <!-- ########## INICIO SIN DETRACCIONES E ISC -->
                             <!-- El dato ISC se conserva en la respuesta, pero no se renderiza. -->
                             <!-- ######### FIN SIN DETRACCIONES E ISC -->

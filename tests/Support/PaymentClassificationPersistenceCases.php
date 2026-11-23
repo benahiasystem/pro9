@@ -4275,8 +4275,8 @@ trait PaymentClassificationPersistenceCases
         $base=['user_id'=>$input['user_id'],'establishment_id'=>$input['establishment_id'],'fiscal_environment'=>'demo',
             'state_type_id'=>'01','group_id'=>'01','document_type_id'=>'01','series'=>'AF01','date_of_issue'=>'2026-10-26',
             'date_of_due'=>null,'time_of_issue'=>'09:00:00','supplier_id'=>$input['customer_id'],'supplier'=>json_encode($input['customer']),
-            'currency_type_id'=>'USD','exchange_rate_sale'=>'400','total'=>'0.333333333333','total_perception'=>'0.1',
-            'calculation_snapshot'=>json_encode($D::snapshot(['total'=>'1/3','total_perception'=>'0.1'])),
+            'currency_type_id'=>'USD','exchange_rate_sale'=>'400','total'=>'0.333333333333',
+            'calculation_snapshot'=>json_encode($D::snapshot(['total'=>'1/3'])),
             'created_at'=>'2026-10-26 09:00:00','updated_at'=>'2026-10-26 09:00:00'];
         $ids=[];
         foreach ([1,2] as $number) $ids[]=$db->table('fixed_asset_purchases')->insertGetId($base+[
@@ -4305,19 +4305,19 @@ trait PaymentClassificationPersistenceCases
             $row=$controller->records($request)->getData(true)['data'][0]; $page[$row['id']]=$row;
         }
         self::assertSame('0.00',$page[$voidId]['total']);
-        self::assertSame('0.44',$page[$ids[1]]['total']); self::assertSame('0.43',$page[$ids[0]]['total']);
-        self::assertSame(['n'=>'13','d'=>'30'],$page[$ids[0]]['calculation_snapshot']['values']['total']);
+        self::assertSame('0.34',$page[$ids[1]]['total']); self::assertSame('0.33',$page[$ids[0]]['total']);
+        self::assertSame(['n'=>'1','d'=>'3'],$page[$ids[0]]['calculation_snapshot']['values']['total']);
         self::assertNull($page[$ids[0]]['date_of_due']);
         self::assertSame('0.333333333333',$page[$ids[0]]['items'][0]['quantity']);
         self::assertSame(['n'=>'1','d'=>'3'],$page[$ids[0]]['items'][0]['quantity_fraction']);
         $records=\Modules\Purchase\Models\FixedAssetPurchase::orderByDesc('created_at')->orderByDesc('id')->get();
         $prepared=\Modules\Report\Services\PurchaseReportAmounts::presentation($records,false);
-        self::assertSame('0.87',$D::format($prepared['totals']['USD']['total'],2,'.',''));
+        self::assertSame('0.67',$D::format($prepared['totals']['USD']['total'],2,'.',''));
         self::assertSame('0.00',$D::format($prepared['totals']['VES']['total'],2,'.',''));
         $company=\App\Models\Tenant\Company::firstOrFail(); $establishment=\App\Models\Tenant\Establishment::findOrFail($input['establishment_id']);
         $filters=['seller_id'=>null,'person_id'=>null];
         $html=view('report::fixed-asset-purchases.report_pdf',compact('records','company','establishment','filters'))->render();
-        self::assertStringContainsString('0.87',$html); self::assertStringContainsString('Proveedor',$html);
+        self::assertStringContainsString('0.67',$html); self::assertStringContainsString('Proveedor',$html);
         $pdf=new \Dompdf\Dompdf(); $pdf->setPaper('A4','landscape'); $pdf->loadHtml($html); $pdf->render();
         $pdfBytes=$pdf->output(); self::assertStringStartsWith('%PDF-',$pdfBytes);
         if ($path=getenv('SAB_FIXED_ASSET_REPORT_PDF_PATH')) file_put_contents($path,$pdfBytes);
@@ -4327,11 +4327,11 @@ trait PaymentClassificationPersistenceCases
         try {
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
             $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
-            self::assertContains(['fixed_asset_purchase:'.$ids[0],'total','0.433333333333','13','30'],$fractions);
-            self::assertContains(['total:USD','total','0.866666666667','13','15'],$fractions);
+            self::assertContains(['fixed_asset_purchase:'.$ids[0],'total','0.333333333333','1','3'],$fractions);
+            self::assertContains(['total:USD','total','0.666666666667','2','3'],$fractions);
             $found=false;
             foreach ($book->getSheet(0)->getRowIterator() as $sheetRow) foreach ($sheetRow->getCellIterator() as $cell)
-                if ($cell->getValue()==='0.44') { self::assertSame('s',$cell->getDataType()); $found=true; }
+                if ($cell->getValue()==='0.34') { self::assertSame('s',$cell->getDataType()); $found=true; }
             self::assertTrue($found); $book->disconnectWorksheets();
         } finally { $file->delete(); }
     }
@@ -10002,9 +10002,9 @@ trait PaymentClassificationPersistenceCases
             'group_id'=>'01','document_type_id'=>'01','series'=>'CP01','number'=>2,'date_of_issue'=>'2026-10-26',
             'time_of_issue'=>'09:00:00','supplier_id'=>$input['customer_id'],'supplier'=>json_encode($input['customer']),
             'customer_id'=>$customer->id,'currency_type_id'=>'USD','exchange_rate_sale'=>'400',
-            'total'=>'0.333333333333','total_perception'=>'0.1','filename'=>'purchase-header-qa','payment_condition_id'=>'02',
+            'total'=>'0.333333333333','filename'=>'purchase-header-qa','payment_condition_id'=>'02',
             'created_at'=>'2026-10-26 09:00:00','updated_at'=>'2026-10-26 09:00:00',
-            'calculation_snapshot'=>json_encode($D::snapshot(['total'=>['n'=>'1','d'=>'3'],'total_perception'=>'0.1']))]);
+            'calculation_snapshot'=>json_encode($D::snapshot(['total'=>['n'=>'1','d'=>'3']]))]);
         $purchase=\App\Models\Tenant\Purchase::findOrFail($id);
         self::assertSame('Cliente de compra',$purchase->getCollectionData()['customer_name']);
         self::assertSame('87654321',$purchase->getCollectionData()['customer_number']);
@@ -10014,9 +10014,9 @@ trait PaymentClassificationPersistenceCases
         self::assertSame(-0.1,$variation->invoke($dashboard,'1999.00','2000.00'));
         self::assertSame(100.0,$variation->invoke($dashboard,'0.01','0.00'));
         $dashboardFilters=['establishment_id'=>$input['establishment_id'],'date_start'=>'2026-10-26','date_end'=>'2026-10-26','compare'=>'none'];
-        self::assertSame('173.33',$dashboard->data($dashboardFilters)['month_purchases']);
+        self::assertSame('133.33',$dashboard->data($dashboardFilters)['month_purchases']);
         $purchasesMethod=new \ReflectionMethod(\Modules\Dashboard\Helpers\DashboardKpi::class,'purchasesTotal');$purchasesMethod->setAccessible(true);
-        self::assertSame('173.33',$purchasesMethod->invoke($dashboard,$input['establishment_id'],'2026-10-26','2026-10-26',9));
+        self::assertSame('133.33',$purchasesMethod->invoke($dashboard,$input['establishment_id'],'2026-10-26','2026-10-26',9));
         self::assertSame('0.00',$purchasesMethod->invoke($dashboard,$input['establishment_id'],'2026-10-26','2026-10-26',10));
         config(['tenant.items_per_page'=>10]);
         $app->register(\Illuminate\Translation\TranslationServiceProvider::class);
@@ -10029,14 +10029,14 @@ trait PaymentClassificationPersistenceCases
             'establishment_id'=>null,'person_id'=>null,'type_person'=>null,'apply_conversion_to_pen'=>'true']);
         $page=(new \Modules\Report\Http\Controllers\ReportPurchaseController())->records($purchaseRequest)->getData(true);
         self::assertCount(1,$page['data']); self::assertSame('VES',$page['data'][0]['currency_type_id']);
-        self::assertSame(['n'=>'520','d'=>'3'],$page['data'][0]['calculation_snapshot']['values']['total']);
+        self::assertSame(['n'=>'400','d'=>'3'],$page['data'][0]['calculation_snapshot']['values']['total']);
         $copy=(array)$db->table('purchases')->where('id',$id)->first(); unset($copy['id']);
         $copy['external_id']=(string)\Illuminate\Support\Str::uuid(); $copy['number']=3; $copy['filename']='purchase-header-qa-2';
         $secondId=$db->table('purchases')->insertGetId($copy); config(['tenant.items_per_page'=>1]);
         $controller=new \Modules\Report\Http\Controllers\ReportPurchaseController();
         $first=$controller->records($purchaseRequest->duplicate(['page'=>1]+$purchaseRequest->query->all()))->getData(true)['data'][0];
         $secondPage=$controller->records($purchaseRequest->duplicate(['page'=>2]+$purchaseRequest->query->all()))->getData(true)['data'][0];
-        self::assertSame('173.34',$first['total']); self::assertSame('173.33',$secondPage['total']);
+        self::assertSame('133.34',$first['total']); self::assertSame('133.33',$secondPage['total']);
         $all=\App\Models\Tenant\Purchase::whereIn('id',[$id,$secondId])->orderByDesc('created_at')->orderByDesc('id')->get();
         $printed=\Modules\Report\Services\PurchaseReportAmounts::presentation($all,true)['rows']->keyBy('report_key');
         self::assertSame($first['total'],$printed['purchase:'.$first['id']]['display']['total']);
@@ -10047,17 +10047,16 @@ trait PaymentClassificationPersistenceCases
         self::assertEqualsCanonicalizing(['USD','VES'],array_keys($mixed['totals']));
         $mixedConverted=\Modules\Report\Services\PurchaseReportAmounts::presentation(collect([$purchase,$ves]),true);
         self::assertSame(['VES'],array_keys($mixedConverted['totals']));
-        self::assertTrue($mixedConverted['totals']['VES']['total']->isEqualTo($D::of('13')->dividedBy('30')->multipliedBy('401')));
+        self::assertTrue($mixedConverted['totals']['VES']['total']->isEqualTo($D::of('1')->dividedBy('3')->multipliedBy('401')));
         $second=clone $purchase; $second->id=$purchase->id+101;
         $projected=\Modules\Report\Services\PurchaseReportAmounts::presentation(collect([$purchase,$second]),false);
-        self::assertSame(['0.44','0.43'],$projected['rows']->pluck('display.total')->all());
-        self::assertSame('0.87',$D::format($projected['totals']['USD']['total'],2,'.',''));
-        foreach ([['false','USD',['n'=>'13','d'=>'30'],'0.43'],['true','VES',['n'=>'520','d'=>'3'],'173.33']] as [$convert,$currency,$fraction,$display]) {
+        self::assertSame(['0.34','0.33'],$projected['rows']->pluck('display.total')->all());
+        self::assertSame('0.67',$D::format($projected['totals']['USD']['total'],2,'.',''));
+        foreach ([['false','USD',['n'=>'1','d'=>'3'],'0.33'],['true','VES',['n'=>'400','d'=>'3'],'133.33']] as [$convert,$currency,$fraction,$display]) {
             $request=\Illuminate\Http\Request::create('/','GET',['apply_conversion_to_pen'=>$convert]);
             $row=(new \Modules\Report\Http\Resources\PurchaseCollection(collect([$purchase->fresh()])))->toArray($request)->first();
             self::assertSame($currency,$row['currency_type_id']);
             self::assertSame($fraction,$row['calculation_snapshot']['values']['total']);
-            self::assertSame($convert==='true' ? ['n'=>'40','d'=>'1'] : ['n'=>'1','d'=>'10'], $row['calculation_snapshot']['values']['total_perception']);
             $records=collect([$purchase->fresh()]);
             $prepared=\Modules\Report\Services\PurchaseReportAmounts::presentation($records,$convert==='true');
             self::assertSame($display,$prepared['rows']->first()['display']['total']);
@@ -10081,25 +10080,25 @@ trait PaymentClassificationPersistenceCases
                 if ($dir=getenv('SAB_PURCHASE_REPORT_EVIDENCE')) copy($file->getLocalPath(),$dir.'/compras-'.$currency.'.xlsx');
                 $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($file->getLocalPath());
                 $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
-                self::assertContains($display === '0.43' ? '0.43' : '173.33',$values);
+                self::assertContains($display === '0.33' ? '0.33' : '133.33',$values);
                 $matching=[]; foreach ($book->getSheet(0)->getRowIterator() as $sheetRow) foreach ($sheetRow->getCellIterator() as $cell) if ($cell->getValue()===$display) $matching[]=$cell;
                 self::assertNotEmpty($matching); foreach ($matching as $cell) self::assertSame(\PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING,$cell->getDataType());
                 $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
-                self::assertContains(['purchase:'.$id,'total',$convert==='true'?'173.333333333333':'0.433333333333',$fraction['n'],$fraction['d']],$fractions);
+                self::assertContains(['purchase:'.$id,'total',$convert==='true'?'133.333333333333':'0.333333333333',$fraction['n'],$fraction['d']],$fractions);
                 $book->disconnectWorksheets();
             } finally { $file->delete(); }
         }
-        $stored=$db->table('purchases')->where('id',$id)->first(['exchange_rate_sale','total_perception','calculation_snapshot']);
-        $halfCent=json_decode($stored->calculation_snapshot,true);$halfCent['values']['total_perception']=['n'=>'0','d'=>'1'];
-        $db->table('purchases')->where('id',$id)->update(['exchange_rate_sale'=>'0.01500000','total_perception'=>'0',
+        $stored=$db->table('purchases')->where('id',$id)->first(['exchange_rate_sale','calculation_snapshot']);
+        $halfCent=json_decode($stored->calculation_snapshot,true);
+        $db->table('purchases')->where('id',$id)->update(['exchange_rate_sale'=>'0.01500000',
             'calculation_snapshot'=>json_encode($halfCent)]);
         self::assertSame('0.01',$dashboard->data($dashboardFilters)['month_purchases']);
         $db->table('purchases')->where('id',$id)->update(['exchange_rate_sale'=>$stored->exchange_rate_sale,
-            'total_perception'=>$stored->total_perception,'calculation_snapshot'=>$stored->calculation_snapshot]);
+            'calculation_snapshot'=>$stored->calculation_snapshot]);
         $db->table('purchases')->where('id',$id)->update(['state_type_id'=>'11']);
         self::assertSame('0.00',$dashboard->data($dashboardFilters)['month_purchases']);
         $void=\Modules\Report\Services\PurchaseReportAmounts::row($purchase->fresh(),true);
-        self::assertSame('0',$void['total']); self::assertSame('0',$void['total_perception']);
+        self::assertSame('0',$void['total']);
     }
 
     public function test_purchase_items_api_reports_document_currency_and_exact_fractions(): void

@@ -175,7 +175,6 @@ export default {
         description: "Habitación " + this.form.name,
         has_igv: true,
 
-        has_perception: false,
 
         id: null,
         image: null,
@@ -193,7 +192,6 @@ export default {
         name: "Habitación " + this.form.name,
 
         percentage_of_profit: 0,
-        percentage_perception: 0,
         purchase_affectation_igv_type_id: "10",
         purchase_has_igv: false,
         purchase_unit_price: 0,

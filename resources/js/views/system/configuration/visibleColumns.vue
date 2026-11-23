@@ -335,7 +335,6 @@ const MODULES = {
             // ########## INICIO CAMBIO IGV A IVA
             total_igv:        { title: 'T.IVA',            visible: false, type: 'price'    },
             // ######### FIN CAMBIO IGV A IVA
-            total_perception: { title: 'Percepción',       visible: false, type: 'price'    },
             total:            { title: 'Total',            visible: true,  type: 'price'    },
             actions:          { title: 'Acciones',         visible: true,  type: 'action'   },
         },

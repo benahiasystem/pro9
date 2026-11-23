@@ -278,7 +278,7 @@ export default {
             showDialogOptions: false,
             loading_submit: false,
             hide_button: false,
-            is_perception_agent: false,
+
             errors: {},
             form: {},
             aux_supplier_id: null,
@@ -394,17 +394,8 @@ export default {
                 }
             }
         },
-        inputTotalPerception() {
-            this.total_amount =
-                parseFloat(this.form.total) + parseFloat(this.form.total_perception);
-            if (isNaN(this.total_amount)) {
-                this.hide_button = true;
-            } else {
-                this.hide_button = false;
-            }
-        },
         changeSupplier() {
-            this.calculatePerception();
+
         },
         filterSuppliers() {
             if (this.form.document_type_id == "01") {
@@ -454,9 +445,9 @@ export default {
                 total_taxes: 0,
                 total_value: 0,
                 total: 0,
-                perception_date: null,
-                perception_number: null,
-                total_perception: 0,
+
+
+
                 date_of_due: moment().format("YYYY-MM-DD"),
                 items: [],
                 charges: [],
@@ -561,42 +552,7 @@ export default {
             this.form.total_taxes = _.round(total_igv, 2);
             this.form.total = _.round(total, 2);
 
-            this.calculatePerception();
-        },
-        calculatePerception() {
-            let supplier = _.find(this.all_suppliers, {id: this.form.supplier_id});
 
-            if (supplier) {
-                if (supplier.perception_agent) {
-                    let total_perception = 0;
-                    let quantity_item_perception = 0;
-                    let total_amount = 0;
-                    this.form.total_perception = 0;
-
-                    this.form.perception_date = moment().format("YYYY-MM-DD");
-
-                    this.form.items.forEach(row => {
-                        quantity_item_perception += row.item.has_perception ? 1 : 0;
-                        total_perception += row.item.has_perception
-                            ? parseFloat(row.unit_price) *
-                            parseFloat(row.quantity) *
-                            (parseFloat(row.item.percentage_perception) / 100)
-                            : 0;
-                    });
-
-                    this.is_perception_agent =
-                        quantity_item_perception > 0 ? true : false;
-                    this.form.total_perception = _.round(total_perception, 2);
-                    total_amount =
-                        this.form.total + parseFloat(this.form.total_perception);
-                    this.total_amount = _.round(total_amount, 2);
-                } else {
-                    this.is_perception_agent = false;
-                    this.form.perception_date = null;
-                    this.form.perception_number = null;
-                    this.form.total_perception = null;
-                }
-            }
         },
 
         clickCancel(index) {

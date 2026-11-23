@@ -54,8 +54,6 @@ use Illuminate\Support\Facades\DB;
  * - lots_enabled: boolean
  * - series_enabled: boolean
  * - percentage_of_profit: numeric(30,12)
- * - has_perception: boolean
- * - percentage_perception: numeric(30,12)
  * - attributes: json
  * - active: boolean
  * - hidden_search: boolean
@@ -125,8 +123,6 @@ return new class extends Migration
             $table->boolean('lots_enabled')->default(false);
             $table->boolean('series_enabled')->default(false);
             $table->decimal('percentage_of_profit', 30, 12)->default('0.00');
-            $table->boolean('has_perception')->default(false);
-            $table->decimal('percentage_perception', 30, 12)->nullable();
             $table->json('attributes')->nullable();
             $table->boolean('active')->default(true);
             $table->boolean('hidden_search')->default(false);

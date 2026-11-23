@@ -54,8 +54,7 @@ final class DashboardKpiPostgresTest extends \PHPUnit\Framework\TestCase
             'series'=>'FP01','number'=>$this->db->table('purchases')->count()+1,'date_of_issue'=>$date,'time_of_issue'=>'12:00:00',
             'supplier_id'=>$this->input['customer_id'],'supplier'=>json_encode($this->input['customer'],JSON_THROW_ON_ERROR),
             'currency_type_id'=>$currency,'exchange_rate_sale'=>$rate,'total'=>D::represent($total),
-            'total_perception'=>D::represent($perception),
-            'calculation_snapshot'=>json_encode(D::snapshot(['total'=>$total,'total_perception'=>$perception,'exchange_rate_sale'=>$rate]),JSON_THROW_ON_ERROR)]);
+            'calculation_snapshot'=>json_encode(D::snapshot(['total'=>$total,'exchange_rate_sale'=>$rate]),JSON_THROW_ON_ERROR)]);
     }
 
     public function test_variation_uses_original_values_even_when_both_display_as_zero(): void
@@ -96,14 +95,14 @@ final class DashboardKpiPostgresTest extends \PHPUnit\Framework\TestCase
         self::assertSame([1.0,2.0],$result['sales']);
     }
 
-    public function test_each_purchase_converts_its_own_perception_from_the_original_fraction(): void
+    public function test_each_purchase_converts_its_original_fraction(): void
     {
         $this->purchase('1/3','1/7','2026-11-10','USD','3');
         $this->purchase('0.004','0','2026-11-11');
         $result=(new DashboardKpi())->monthlyComparison(['period'=>'week','date_start'=>'2026-11-10','date_end'=>'2026-11-11']);
-        self::assertSame([1.43,0.0],$result['purchases']);
-        self::assertSame([['n'=>'10','d'=>'7'],['n'=>'1','d'=>'250']],$result['purchases_fractions']);
-        self::assertTrue(D::readRequired($result,'purchases_total')->isEqualTo(D::of('10/7')->plus('0.004')));
+        self::assertSame([1.0,0.0],$result['purchases']);
+        self::assertSame([['n'=>'1','d'=>'1'],['n'=>'1','d'=>'250']],$result['purchases_fractions']);
+        self::assertTrue(D::readRequired($result,'purchases_total')->isEqualTo(D::of('1')->plus('0.004')));
     }
 
     public function test_widget_context_preserves_the_daily_period_instead_of_defaulting_to_month_buckets(): void

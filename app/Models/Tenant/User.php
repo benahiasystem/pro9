@@ -92,7 +92,6 @@ use Modules\LevelAccess\Models\AuthorizedDiscountUser;
  * @property Collection|ItemsRating[] $items_ratings
  * @property Collection|OrderForm[] $order_forms
  * @property Collection|OrderNote[] $order_notes
- * @property Collection|Perception[] $perceptions
  * @property Collection|PurchaseOrder[] $purchase_orders
  * @property Collection|PurchaseQuotation[] $purchase_quotations
  * @property Collection|PurchaseSettlement[] $purchase_settlements
@@ -134,7 +133,6 @@ use Modules\LevelAccess\Models\AuthorizedDiscountUser;
  * @property int|null $items_ratings_count
  * @property int|null $order_forms_count
  * @property int|null $order_notes_count
- * @property int|null $perceptions_count
  * @property int|null $purchase_orders_count
  * @property int|null $purchase_quotations_count
  * @property int|null $purchase_settlements_count
@@ -807,10 +805,7 @@ $modules_levels = []){
     /**
      * @return HasMany
      */
-    public function perceptions()
-    {
-        return $this->hasMany(Perception::class);
-    }
+
 
     /**
      * @return HasMany

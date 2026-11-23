@@ -938,7 +938,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                         <li
                             class="nav-parent
                                                                                                                                             {{ ($firstLevel === 'retentions') ? 'nav-active nav-expanded' : '' }}
-                                                                                                                                            {{ ($firstLevel === 'perceptions') ? 'nav-active nav-expanded' : '' }}
                                                                                                                                             {{ ($firstLevel === 'order-forms') ? 'nav-active nav-expanded' : '' }}
                                                                                                                                             {{ ($firstLevel === 'contingencies') ? 'nav-active nav-expanded' : '' }}
                                                                                                                                             {{ ($firstLevel === 'purchase-settlements') ? 'nav-active nav-expanded' : '' }}">
@@ -964,7 +963,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                     </li>
                                 @endif
                                 {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
-                                {{-- Percepciones se retiró de la operación venezolana. --}}
                                 {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
                                 @if(in_array('advanced_purchase_settlements', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'purchase-settlements') ? 'nav-active' : '' }}">

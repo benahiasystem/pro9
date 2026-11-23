@@ -48,7 +48,6 @@
      * @property string|null                         $discounts
      * @property string|null                         $prepayments
      * @property string|null                         $related
-     * @property string|null                         $perception
      * @property string|null                         $legends
      * @property string|null                         $terms_condition
      * @property string                              $description
@@ -123,7 +122,6 @@
             'discounts',
             'prepayments',
             'related',
-            'perception',
             'legends',
             'terms_condition',
             'description',
@@ -229,18 +227,12 @@
          *
          * @return object|null
          */
-        public function getPerceptionAttribute($value)
-        {
-            return ($value === null) ? null : (object)json_decode($value);
-        }
+
 
         /**
          * @param $value
          */
-        public function setPerceptionAttribute($value)
-        {
-            $this->attributes['perception'] = ($value === null) ? null : json_encode($value);
-        }
+
 
         /**
          * @param $value
@@ -850,21 +842,13 @@
         /**
          * @return string|null
          */
-        public function getPerception(): ?string
-        {
-            return $this->perception;
-        }
+
 
         /**
-         * @param string|null $perception
          *
          * @return SuscriptionPlan
          */
-        public function setPerception(?string $perception): SuscriptionPlan
-        {
-            $this->perception = $perception;
-            return $this;
-        }
+
 
         /**
          * @return string|null

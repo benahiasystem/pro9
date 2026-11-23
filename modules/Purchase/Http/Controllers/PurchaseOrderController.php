@@ -278,7 +278,6 @@ class PurchaseOrderController extends Controller
                         'name' => $row->name,
                         'number' => $row->number,
                         'email' => $row->email,
-                        'perception_agent' => (bool) $row->perception_agent,
                         'credit_days' => (int) $row->credit_days,
                         'identity_document_type_id' => $row->identity_document_type_id,
                         'identity_document_type_code' => $row->identity_document_type->code
@@ -307,9 +306,7 @@ class PurchaseOrderController extends Controller
                         'unit_type_id' => $row->unit_type_id,
                         'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
                         'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
-                        'has_perception' => (bool) $row->has_perception,
                         'purchase_has_igv' => (bool) $row->purchase_has_igv,
-                        'percentage_perception' => $row->percentage_perception,
                         'item_unit_types' => collect($row->item_unit_types)->transform(function($row) {
                             return [
                                 'id' => $row->id,
@@ -585,9 +582,7 @@ class PurchaseOrderController extends Controller
                 'unit_type_id' => $row->unit_type_id,
                 'sale_affectation_igv_type_id' => $row->sale_affectation_igv_type_id,
                 'purchase_affectation_igv_type_id' => $row->purchase_affectation_igv_type_id,
-                'has_perception' => (bool) $row->has_perception,
                 'purchase_has_igv' => (bool) $row->purchase_has_igv,
-                'percentage_perception' => $row->percentage_perception,
                 'item_unit_types' => collect($row->item_unit_types)->transform(function($row) {
                     return [
                         'id' => $row->id,

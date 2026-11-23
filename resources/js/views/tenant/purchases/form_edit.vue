@@ -439,55 +439,6 @@
                                 <b>TOTAL COMPRAS: </b>{{ currency_type.symbol }} {{ formatDecimal(form.total) }}
                             </h3>
 
-                            <template v-if="is_perception_agent">
-                                <hr>
-                                <div class="row mt-1">
-                                    <div class="col-lg-10 float-end">
-                                        <label class="float-end control-label">NÚMERO PERCEPCIÓN: </label>
-                                    </div>
-                                    <div class="col-lg-2 float-end">
-                                        <div class="form-group" :class="{'has-danger': errors.perception_number}">
-                                            <el-input v-model="form.perception_number"></el-input>
-                                            <small class="form-control-feedback" v-if="errors.perception_number"
-                                                   v-text="errors.perception_number[0]"></small>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row mt-1">
-                                    <div class="col-lg-10 float-end">
-                                        <label class="float-end control-label">FEC EMISIÓN PERCEPCIÓN: </label>
-                                    </div>
-                                    <div class="col-lg-2 float-end">
-                                        <div class="form-group" :class="{'has-danger': errors.perception_date}">
-                                            <el-date-picker v-model="form.perception_date" type="date"
-                                                            value-format="yyyy-MM-dd" :clearable="false"
-                                                            @change="changeDateOfIssue"></el-date-picker>
-                                            <small class="form-control-feedback" v-if="errors.perception_date"
-                                                   v-text="errors.perception_date[0]"></small>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row mt-1">
-                                    <div class="col-lg-10 float-end">
-                                        <label class="float-end control-label">IMPORTE PERCEPCIÓN: </label>
-                                    </div>
-                                    <div class="col-lg-2 float-end">
-                                        <div class="form-group" :class="{'has-danger': errors.total_perception}">
-                                            <el-input v-model="form.total_perception"
-                                                      @input="inputTotalPerception"
-                                                      :readonly="true"></el-input>
-                                            <small class="form-control-feedback" v-if="errors.total_perception"
-                                                   v-text="errors.total_perception[0]"></small>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <h3 v-if="form.total > 0 && !hide_button" class="text-end">
-                                    <b>MONTO TOTAL : </b>{{ currency_type.symbol }} {{ formatDecimal(total_amount) }}
-                                </h3>
-                            </template>
                         </div>
                     </div>
 
@@ -569,7 +520,7 @@ export default {
             showDialogOptions: false,
             loading_submit: false,
             hide_button: false,
-            is_perception_agent: false,
+
             errors: {},
             form: {},
             aux_supplier_id: null,
@@ -1007,17 +958,8 @@ export default {
             }
 
         },
-        inputTotalPerception() {
-            this.total_amount = parseFloat(this.form.total) + parseFloat(this.form.total_perception)
-            if (isNaN(this.total_amount)) {
-                this.hide_button = true
-            } else {
-                this.hide_button = false
-
-            }
-        },
         changeSupplier() {
-            this.calculatePerception()
+
         },
         filterSuppliers() {
             if (this.form.document_type_id === '01') {
@@ -1070,9 +1012,9 @@ export default {
                 total_taxes: 0,
                 total_value: 0,
                 total: 0,
-                perception_date: null,
-                perception_number: null,
-                total_perception: 0,
+
+
+
                 date_of_due: moment().format('YYYY-MM-DD'),
                 items: [],
                 charges: [],
@@ -1166,44 +1108,6 @@ export default {
         calculateTotal() {
             applyCommercialTotals(this);
             this.calculatePayments(); this.calculateFee();
-        },
-        calculatePerception() {
-
-            let supplier = _.find(this.all_suppliers, {'id': this.form.supplier_id})
-
-            if (supplier) {
-
-                if (supplier.perception_agent) {
-
-                    let total_perception = 0
-                    let quantity_item_perception = 0
-                    let total_amount = 0
-                    this.form.total_perception = 0
-
-                    this.form.perception_date = moment().format('YYYY-MM-DD')
-
-                    this.form.items.forEach((row) => {
-                        quantity_item_perception += (row.item.has_perception) ? 1 : 0
-                        total_perception += (row.item.has_perception) ? (parseFloat(row.unit_price) * parseFloat(row.quantity) * (parseFloat(row.item.percentage_perception) / 100)) : 0
-                    });
-
-                    this.is_perception_agent = (quantity_item_perception > 0) ? true : false
-                    this.form.total_perception = _.round(total_perception, 2)
-                    total_amount = exactAmount(this.form.total).plus(this.form.total_perception).decimal()
-                    this.total_amount = _.round(total_amount, 2)
-
-                } else {
-
-                    this.is_perception_agent = false
-                    this.form.perception_date = null
-                    this.form.perception_number = null
-                    this.form.total_perception = null
-
-                }
-
-            }
-
-
         },
         validatePaymentDestination() {
 

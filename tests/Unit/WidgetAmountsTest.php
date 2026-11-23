@@ -171,7 +171,7 @@ final class WidgetAmountsTest extends \PHPUnit\Framework\TestCase
         $goal=DashboardSales::numericProjection(['percent'=>'100/3'])+['enabled'=>true];
         $utility=['utilities'=>['totals'=>self::row(['total_income'=>'0.009','total_egress'=>'0.004','utility'=>'0.005'])]];
         $purchase=['totals'=>self::row(['total'=>'0.012']), 'graph'=>['labels'=>['A','B'],'datasets'=>[]]];
-        foreach ([['Total percepciones',['0.001','0.002']],['Total compras',['0.004','0.005']],['Total',['0.005','0.007']]] as [$label,$values]) {
+        foreach ([['Total compras',['0.004','0.005']],['Total',['0.005','0.007']]] as [$label,$values]) {
             $purchase['graph']['datasets'][]=['label'=>$label,'data'=>[0.0,0.01],'data_fractions'=>array_map([D::class,'fraction'],$values)];
         }
         $products=$customers=[];

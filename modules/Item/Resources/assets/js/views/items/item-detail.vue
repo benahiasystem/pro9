@@ -354,11 +354,6 @@
                                             <thead>
                                             <tr>
                                                 <th width="25%">
-                                                    <el-checkbox v-model="form.has_perception"
-                                                                @change="changeHasPerception">Incluye percepción
-                                                    </el-checkbox>
-                                                </th>
-                                                <th width="25%">
                                                     <div v-show="form.unit_type_id !='SERV'">
                                                         <el-checkbox v-model="form.lots_enabled"
                                                                     @change="changeLotsEnabled">¿Maneja lotes?
@@ -383,14 +378,6 @@
                                                                                 </thead>
                                             <tbody>
                                             <tr>
-                                                <td>
-                                                    <div v-show="form.has_perception">
-                                                        <div class="form-group">
-                                                            <el-input v-model="form.percentage_perception"
-                                                                    placeholder="% de percepción"></el-input>
-                                                        </div>
-                                                    </div>
-                                                </td>
                                                 <td>
                                                     <div v-show="form.unit_type_id !='SERV' && form.lots_enabled">
                                                         <div :class="{'has-danger': errors.lot_code}"
@@ -1133,9 +1120,6 @@ export default {
             warehouses: [],
             items: [],
             loading_submit: false,
-            showPercentagePerception: false,
-            has_percentage_perception: false,
-            percentage_perception: null,
             enabled_percentage_of_profit: false,
             titleDialog: null,
             resource: 'items',
@@ -1212,13 +1196,7 @@ export default {
                 this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
                 this.inventory_configuration = data.inventory_configuration;
             })
-
-        this.$eventHub.$on('submitPercentagePerception', (data) => {
-            this.form.percentage_perception = data
-            if (!this.form.percentage_perception) this.has_percentage_perception = false
-        })
-
-        this.$eventHub.$on('reloadTables', () => {
+this.$eventHub.$on('reloadTables', () => {
             this.reloadTables()
         })
 
@@ -1314,11 +1292,7 @@ export default {
                 })
 
         },
-        changeHasPerception() {
-            if (!this.form.has_perception) {
-                this.form.percentage_perception = null
-            }
-        },
+
         clickAddRow() {
             this.form.item_unit_types.push({
                 id: null,
@@ -1363,10 +1337,8 @@ export default {
                 stock: 0,
                 stock_min: 1,
                 has_igv: true,
-                has_perception: false,
                 item_unit_types: [],
                 percentage_of_profit: 0,
-                percentage_perception: null,
                 image: null,
                 image_url: null,
                 temp_path: null,
@@ -1474,7 +1446,6 @@ this.activeName =  'first'
                 await this.$http.get(`/${this.resource}/record/${this.recordId}`)
                     .then(response => {
                         this.form = response.data.data
-                        this.has_percentage_perception = (this.form.percentage_perception) ? true : false
                         this.changeAffectationIgvType()
                         this.changePurchaseAffectationIgvType()
                         // let warehousePrices = response.data.data.warehouse_prices;
@@ -1597,7 +1568,6 @@ this.activeName =  'first'
                     return this.$message.error('Debe haber un Registro Sanitario');
                 }
             }
-            if (this.form.has_perception && !this.form.percentage_perception) return this.$message.error('Ingrese un porcentaje');
 
             if (this.form.lots_enabled && stock > 0) {
 

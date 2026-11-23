@@ -19,7 +19,7 @@ class FixedAssetPurchaseCollection extends ResourceCollection
 
             $D = \App\Support\Exact\Decimal::class;
             $format = fn($field) => $D::format($D::read($row, $field), 2, '.', '');
-            $total = $D::read($row, 'total')->plus($D::read($row, 'total_perception'));
+            $total = $D::read($row, 'total');
 
             return [
                 'id' => $row->id,
@@ -38,7 +38,6 @@ class FixedAssetPurchaseCollection extends ResourceCollection
                 'total_exonerated' => $format('total_exonerated'),
                 'total_taxed' => $format('total_taxed'),
                 'total_igv' => $format('total_igv'),
-                'total_perception' => $format('total_perception'),
                 'total' => $D::format($total, 2, '.', ''),
                 'state_type_id' => $row->state_type_id,
                 'state_type_description' => $row->state_type->description,

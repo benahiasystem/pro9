@@ -22,7 +22,6 @@ use App\Models\Tenant\Document;
 use App\Models\Tenant\PaymentMethodType;
 use App\Models\Tenant\Retention;
 use Mpdf\Config\ConfigVariables;
-use App\Models\Tenant\Perception;
 use App\Mail\Tenant\DocumentEmail;
 use App\Models\Tenant\Configuration;
 use Modules\Finance\Traits\FinanceTrait;
@@ -261,13 +260,6 @@ class Facturalo
                     $document->documents()->create($row);
                 }
                 $this->document = Retention::find($document->id);
-                break;
-            case 'perception':
-                $document = Perception::create($inputs);
-                foreach ($inputs['documents'] as $row) {
-                    $document->documents()->create($row);
-                }
-                $this->document = Perception::find($document->id);
                 break;
             case 'purchase_settlement':
                 \App\Services\Fiscal\PurchaseSettlementPolicy::assertAvailable($inputs['document_type_id'] ?? null);
@@ -1286,9 +1278,6 @@ class Facturalo
                 break;
             case 'retention':
                 $this->document = Retention::find($id);
-                break;
-            case 'perception':
-                $this->document = Perception::find($id);
                 break;
             default:
                 $this->document = Dispatch::find($id);

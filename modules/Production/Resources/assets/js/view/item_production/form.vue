@@ -161,20 +161,6 @@
                             <small class="form-control-feedback" v-if="errors.stock_min" v-text="errors.stock_min[0]"></small>
                         </div>
                     </div> -->
-
-
-                    <!-- <div class="col-md-3 center-el-checkbox" >
-                        <div class="form-group"  >
-                            <el-checkbox v-model="form.has_perception" @change="changeHasPerception">Incluye percepción</el-checkbox><br>
-                        </div>
-                    </div>
-                    <div class="col-md-3 center-el-checkbox" v-show="form.has_perception">
-                        <div class="form-group"  >
-                            <label class="control-label">Porcentaje de percepción</label>
-
-                            <el-input v-model="form.percentage_perception"></el-input>
-                        </div>
-                    </div> -->
                     <!-- <div class="col-md-3" v-show="recordId==null">
                         <div class="form-group" :class="{'has-danger': errors.warehouse_id}">
                             <label class="control-label">
@@ -459,9 +445,6 @@ import ItemSetFormItem from './partials/item.vue'
                 showDialogAddItem: false,
                 warehouses: [],
                 loading_submit: false,
-                showPercentagePerception: false,
-                has_percentage_perception: false,
-                percentage_perception:null,
                 enabled_percentage_of_profit:false,
                 titleDialog: null,
                 resource: ' item-production',
@@ -508,13 +491,7 @@ import ItemSetFormItem from './partials/item.vue'
                     this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0)?this.affectation_igv_types[0].id:null
                     this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0)?this.affectation_igv_types[0].id:null
                 })
-
-            this.$eventHub.$on('submitPercentagePerception', (data)=>{
-                this.form.percentage_perception = data
-                if(!this.form.percentage_perception) this.has_percentage_perception = false
-            })
-
-        },
+},
         methods: {
             calculateTotal(){
                 this.total = 0;
@@ -579,10 +556,8 @@ import ItemSetFormItem from './partials/item.vue'
                     stock: 0,
                     stock_min: 1,
                     has_igv: true,
-                    has_perception: false,
                     item_unit_types:[],
                     percentage_of_profit: 0,
-                    percentage_perception: 0,
                     image: null,
                     image_url: null,
                     temp_path: null,
@@ -670,12 +645,7 @@ import ItemSetFormItem from './partials/item.vue'
                         })
 
             },
-            changeHasPerception(){
-                if(!this.form.has_perception){
-                    this.form.percentage_perception = null
-                }
 
-            },
             clickAddRow() {
                 this.form.item_unit_types.push({
                     id: null,

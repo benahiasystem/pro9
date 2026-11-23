@@ -66,8 +66,6 @@ use Illuminate\Support\Facades\DB;
      * @property-read int|null                        $order_forms_where_customer_count
      * @property-read Collection|OrderNote[]          $order_notes_where_customer
      * @property-read int|null                        $order_notes_where_customer_count
-     * @property-read Collection|Perception[]         $perceptions_where_customer
-     * @property-read int|null                        $perceptions_where_customer_count
      * @property-read Collection|PersonAddress[]      $person_addresses
      * @property int|null                             $parent_id
      * @property-read \App\Models\Tenant\Person       $parent_person
@@ -157,11 +155,9 @@ use Illuminate\Support\Facades\DB;
             'email',
             'password',
             'telephone',
-            'perception_agent',
             'person_type_id',
             'contact',
             'comment',
-            'percentage_perception',
             'enabled',
             'website',
             'barcode',
@@ -184,9 +180,7 @@ use Illuminate\Support\Facades\DB;
         protected $casts = [
             'fiscal_profile' => 'array',
             'is_third_party' => 'bool',
-            'perception_agent' => 'bool',
             'person_type_id' => 'int',
-            'percentage_perception' => 'float',
             'enabled' => 'bool',
             'status' => 'int',
             'credit_days' => 'int',
@@ -466,10 +460,7 @@ use Illuminate\Support\Facades\DB;
         /**
          * @return \Illuminate\Database\Eloquent\Relations\HasMany
          */
-        public function perceptions_where_customer()
-        {
-            return $this->hasMany(Perception::class, 'customer_id');
-        }
+
 
 
         /**
@@ -669,8 +660,6 @@ use Illuminate\Support\Facades\DB;
 
                 'telephone' => $this->telephone,
                 'email' => $this->email,
-                'perception_agent' => (bool)$this->perception_agent,
-                'percentage_perception' => $this->percentage_perception,
                 'state' => $this->state,
                 'condition' => $this->condition,
                 'person_type_id' => $this->person_type_id,

@@ -673,13 +673,6 @@
                                     <small v-if="errors.is_agent_retention" class="invalid-feedback" v-text="errors.is_agent_retention[0]"></small>
                                 </div>
                             </div>
-                            <div class="col-md-4 center-el-checkbox" v-if="type === 'suppliers'">
-                                <div :class="{'has-danger': errors.perception_agent}" class="form-group">
-                                    <el-checkbox v-model="form.perception_agent">Es agente de percepción</el-checkbox>
-                                    <br>
-                                    <small v-if="errors.perception_agent" class="form-control-feedback" v-text="errors.perception_agent[0]"></small>
-                                </div>
-                            </div>
                         </div>
                         <div class="row" v-if="type === 'customers'">
                             <div class="col-md-4 center-el-checkbox">
@@ -703,15 +696,6 @@
                             </div>
                             <div class="col-12"><small class="text-muted">El tercero requiere domicilio venezolano, dirección y razón social de hasta 100 caracteres.</small></div>
                         </div>
-                        <div class="row" v-if="form.perception_agent && type === 'suppliers'">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="control-label">Porcentaje de percepción</label>
-                                    <el-input v-model="form.percentage_perception"></el-input>
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="row mt-3 section-header">
                             <div class="col-12">
                                 <h5 class="section-title">Identificadores</h5>
@@ -1057,8 +1041,6 @@ export default {
                 condition: null,
                 state: null,
                 email: null,
-                perception_agent: false,
-                percentage_perception: 0,
                 person_type_id: null,
                 comment: null,
                 addresses: [],

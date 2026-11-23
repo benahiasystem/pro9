@@ -416,7 +416,7 @@ class DefaultWidgetSources
             new CallbackWidgetSource(array_merge($module, [
                 'key' => 'compras.totales',
                 'label' => 'Compras',
-                'description' => 'Compras y percepciones del año',
+                'description' => 'Compras del año',
                 'unit' => WidgetDataset::UNIT_MONEY,
                 'focus' => 'serie',
                 'default_type' => 'line',
@@ -424,13 +424,11 @@ class DefaultWidgetSources
                 $data = $ctx->dataAditional()['purchase'];
                 $graph = $data['graph'];
 
-                $perception=static::graphValues($graph['datasets'][0]);
-                $purchases=static::graphValues($graph['datasets'][1]);
-                $total=static::graphValues($graph['datasets'][2]);
+                $purchases=static::graphValues($graph['datasets'][0]);
+                $total=static::graphValues($graph['datasets'][1]);
 
                 return WidgetDataset::make(WidgetDataset::UNIT_MONEY)
                     ->serie($graph['labels'], [
-                        ['name' => 'Total percepciones', 'data' => $perception],
                         ['name' => 'Total compras', 'data' => $purchases],
                         ['name' => 'Total', 'data' => $total],
                     ])

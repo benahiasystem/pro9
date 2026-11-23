@@ -46,7 +46,6 @@ use Illuminate\Support\Facades\DB;
  * - prepayments: json
  * - guides: json
  * - related: json
- * - perception: json
  * - legends: json
  * - additional_data: json
  * - filename: varchar(255)
@@ -106,7 +105,6 @@ return new class extends Migration
             $table->json('prepayments')->nullable();
             $table->json('guides')->nullable();
             $table->json('related')->nullable();
-            $table->json('perception')->nullable();
             $table->json('legends')->nullable();
             $table->json('additional_data')->nullable();
             $table->string('filename', 255)->collation('sab_ci_ai')->nullable();

@@ -4,8 +4,6 @@
 
     use App\Models\Tenant\Dispatch;
     use App\Models\Tenant\Document;
-    use App\Models\Tenant\Perception;
-    use App\Models\Tenant\PerceptionDocument;
     use App\Models\Tenant\Purchase;
     use App\Models\Tenant\PurchaseSettlement;
     use App\Models\Tenant\Retention;
@@ -30,8 +28,6 @@
      * @property Collection|Dispatch[]            $dispatches_where_document_type
      * @property Collection|Document[]            $documents_where_document_type
      * @property Collection|FixedAssetPurchase[]  $fixed_asset_purchases_where_document_type
-     * @property Collection|PerceptionDocument[]  $perception_documents_where_document_type
-     * @property Collection|Perception[]          $perceptions_where_document_type
      * @property Collection|PurchaseSettlement[]  $purchase_settlements_where_document_type
      * @property Collection|Purchase[]            $purchases_where_document_type
      * @property Collection|RetentionDocument[]   $retention_documents_where_document_type
@@ -43,8 +39,6 @@
      * @property-read int|null                    $dispatches_where_document_type_count
      * @property-read int|null                    $documents_where_document_type_count
      * @property-read int|null                    $fixed_asset_purchases_where_document_type_count
-     * @property-read int|null                    $perception_documents_where_document_type_count
-     * @property-read int|null                    $perceptions_where_document_type_count
      * @property-read int|null                    $purchase_settlements_where_document_type_count
      * @property-read int|null                    $purchases_where_document_type_count
      * @property-read int|null                    $retention_documents_where_document_type_count
@@ -202,18 +196,12 @@
         /**
          * @return HasMany
          */
-        public function perception_documents_where_document_type()
-        {
-            return $this->hasMany(PerceptionDocument::class, 'document_type_id', 'id');
-        }
+
 
         /**
          * @return HasMany
          */
-        public function perceptions_where_document_type()
-        {
-            return $this->hasMany(Perception::class, 'document_type_id', 'id');
-        }
+
 
         /**
          * @return HasMany

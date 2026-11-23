@@ -29,10 +29,6 @@ final class DashboardTotals
             $total=$paid=Decimal::of(0);
             foreach ($query->lazyById(500) as $record) {
                 $amount=$source === 'document' ? DashboardSales::documentAmount($record) : DashboardSales::inVes($record);
-                // Nullable purchase perception means no perception, rather than a missing price operand.
-                if ($source === 'purchase' && $record->total_perception !== null) {
-                    $amount=$amount->plus(DashboardSales::inVes($record,'total_perception'));
-                }
                 $total=$total->plus($amount)->simplified();
                 foreach ($record->payments as $payment) {
                     $paid=$paid->plus(DashboardSales::inVesAmount($record,Decimal::readRequired($payment,'payment')))->simplified();

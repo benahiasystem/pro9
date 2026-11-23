@@ -43,7 +43,6 @@
                         <!-- ########## INICIO CAMBIO IGV A IVA -->
                         <th v-if="columns.total_igv.visible" class="text-end">T.IVA</th>
                         <!-- ######### FIN CAMBIO IGV A IVA -->
-                        <!-- <th v-if="columns.total_perception.visible" >Percepcion</th> -->
                         <th class="text-end">Total</th>
                         <th class="text-end">Acciones</th>
                     <tr>
@@ -78,7 +77,6 @@
                         <td v-if="columns.total_exonerated.visible" class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_exonerated) }}</td>
                         <td v-if="columns.total_taxed.visible" class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_taxed) }}</td>
                         <td v-if="columns.total_igv.visible" class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_igv) }}</td>
-                        <!-- <td v-if="columns.total_perception.visible" class="text-end">{{ row.total_perception ? row.total_perception : 0 }}</td> -->
                         <td class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total) }}</td>
                         <td class="text-end">
 
@@ -149,10 +147,6 @@
                         // ######### FIN CAMBIO IGV A IVA
                         visible: false
                     },
-                    // total_perception:{
-                    //     title: 'Percepcion',
-                    //     visible: false
-                    // }
 
                 }
             }

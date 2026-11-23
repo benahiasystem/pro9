@@ -13,7 +13,6 @@ use App\Traits\ElectronicDocumentTrait;
 use App\Models\Tenant\{
     Document,
     Dispatch,
-    Perception,
     PurchaseSettlement,
     Retention,
     Voided,
@@ -69,7 +68,6 @@ class SystemActivityLogTransactionController extends Controller
     {
         $documents = $this->getQuerySystemActivityLogTransaction('documents', $request);
         $dispatches = $this->getQuerySystemActivityLogTransaction('dispatches', $request);
-        $perceptions = $this->getQuerySystemActivityLogTransaction('perceptions', $request);
         $purchase_settlements = $this->getQuerySystemActivityLogTransaction('purchase_settlements', $request);
         $retentions = $this->getQuerySystemActivityLogTransaction('retentions', $request);
 
@@ -77,7 +75,7 @@ class SystemActivityLogTransactionController extends Controller
 
 
         $records = $documents->union($dispatches)
-                            ->union($perceptions)->union($purchase_settlements)
+                            ->union($purchase_settlements)
                             ->union($retentions)->union($voided);
 
         // Orden por registro real (created_at), no por date_of_issue + time nulo de RA/RC

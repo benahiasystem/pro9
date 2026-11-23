@@ -79,7 +79,6 @@
                             <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">Total exento</th>
                             <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">Base imponible</th>
                             <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th>
-                            <th v-if="col.visible && col.key === 'total_perception'" :key="col.key">Percepcion</th>
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                             <th v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">Acciones</th>
                         </template>
@@ -142,7 +141,6 @@
                             <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_exonerated) }}</td>
                             <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
                             <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
-                            <td v-if="col.visible && col.key === 'total_perception'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ row.total_perception ? formatDecimal(row.total_perception) : formatDecimal(0) }}</td>
                             <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total) }}</td>
                             <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end" @click.stop>
                                 <el-dropdown trigger="click" @command="handleCommand($event, row)">
@@ -307,7 +305,6 @@ export default {
                 // ########## INICIO CAMBIO IGV A IVA
                 total_igv:        { title: "T.IVA",          visible: false, order: 16 },
                 // ######### FIN CAMBIO IGV A IVA
-                total_perception: { title: "Percepcion",     visible: false, order: 17 },
                 total:            { title: "Total",          visible: true,  order: 18 },
                 actions:          { title: "Acciones",       visible: true,  order: 19 },
             },

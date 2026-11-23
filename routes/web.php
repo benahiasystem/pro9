@@ -622,7 +622,6 @@ if ($hostname) {
             Route::delete('currency_types/{currency_type}', 'Tenant\CurrencyTypeController@destroy');
 
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            // Se retiró la emisión peruana de percepciones junto con su catálogo.
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
             //Tribute Concept Type

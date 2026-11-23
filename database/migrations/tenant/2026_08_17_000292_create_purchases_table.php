@@ -44,15 +44,11 @@ use Illuminate\Support\Facades\DB;
  * - filename: varchar(255)
  * - total_canceled: boolean
  * - customer_id: bigint
- * - perception_date: date
- * - perception_number: integer
- * - total_perception: numeric(30,12)
  * - charges: json
  * - discounts: json
  * - prepayments: json
  * - guides: json
  * - related: json
- * - perception: json
  * - legends: json
  * - created_at: timestamp
  * - updated_at: timestamp
@@ -108,15 +104,11 @@ return new class extends Migration
             $table->string('filename', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('total_canceled')->default(false);
             $table->bigInteger('customer_id')->nullable();
-            $table->date('perception_date')->nullable();
-            $table->integer('perception_number')->nullable();
-            $table->decimal('total_perception', 30, 12)->nullable();
             $table->json('charges')->nullable();
             $table->json('discounts')->nullable();
             $table->json('prepayments')->nullable();
             $table->json('guides')->nullable();
             $table->json('related')->nullable();
-            $table->json('perception')->nullable();
             $table->json('legends')->nullable();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
@@ -142,7 +134,6 @@ return new class extends Migration
             $table->index(['payment_condition_id'], 'purchases_payment_condition_id_foreign');
         });
         DB::statement('ALTER TABLE "purchases" ADD CONSTRAINT "purchases_number_range" CHECK ("number" BETWEEN -2147483648 AND 2147483647)');
-        DB::statement('ALTER TABLE "purchases" ADD CONSTRAINT "purchases_perception_number_range" CHECK ("perception_number" BETWEEN -2147483648 AND 2147483647)');
     }
 
     public function down(): void

@@ -1,8 +1,8 @@
 @php
     use App\Support\Exact\Decimal as D;
     $prepared = \Modules\Report\Services\PurchaseReportAmounts::presentation($records, false);
-    $fields = ['total_perception','total_exonerated','total_unaffected','total_free','total_taxed','total_igv','total'];
-    $labels = ['total_perception'=>'Percepción','total_exonerated'=>'Total exento','total_unaffected'=>'Total no sujeto','total_free'=>'Gratuito','total_taxed'=>'Base imponible','total_igv'=>'IVA','total'=>'Total'];
+    $fields = ['total_exonerated','total_unaffected','total_free','total_taxed','total_igv','total'];
+    $labels = ['total_exonerated'=>'Total exento','total_unaffected'=>'Total no sujeto','total_free'=>'Gratuito','total_taxed'=>'Base imponible','total_igv'=>'IVA','total'=>'Total'];
 @endphp
 <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Compras de activos fijos</title>
 @if(!$excel)<style>body{font-family:sans-serif;font-size:9px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:3px}th{background:#e8edf3}.num{text-align:right}</style>@endif

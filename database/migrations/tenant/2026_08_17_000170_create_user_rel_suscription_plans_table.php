@@ -56,7 +56,6 @@ use Illuminate\Support\Facades\DB;
  * - discounts: json
  * - prepayments: json
  * - related: json
- * - perception: json
  * - legends: json
  * - terms_condition: text
  * - created_at: timestamp
@@ -120,7 +119,6 @@ return new class extends Migration
             $table->json('discounts')->nullable();
             $table->json('prepayments')->nullable();
             $table->json('related')->nullable();
-            $table->json('perception')->nullable();
             $table->json('legends')->nullable();
             $table->text('terms_condition')->collation('sab_ci_ai')->nullable();
             $table->timestamp('created_at')->nullable();

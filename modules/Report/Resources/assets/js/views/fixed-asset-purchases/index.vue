@@ -48,7 +48,6 @@
 
                             <th class="text-center">Moneda</th>
                             <th class="">T/C</th>
-                            <th>Percepcion</th>
                             <th class="">Total exento</th>
 
                             <th class="">Total no sujeto</th>
@@ -83,14 +82,7 @@
                                 {{ row.currency_type_id }}
                             </td>
                             <td>{{ row.exchange_rate_sale }}</td>
-                            <td class="text-end">
-                                {{
-                                    row.total_perception &&
-                                    row.state_type_id != "11"
-                                        ? row.total_perception
-                                        : "0.00"
-                                }}
-                            </td>
+
 
                             <td>
                                 {{

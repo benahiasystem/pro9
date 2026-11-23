@@ -97,7 +97,6 @@ if ($hostname) {
             Route::post('dispatches', 'Tenant\Api\DispatchController@store');
             Route::get('services/ruc/{number}', 'Tenant\Api\ServiceController@ruc');
             Route::get('services/dni/{number}', 'Tenant\Api\ServiceController@dni');
-            Route::post('perceptions', 'Tenant\Api\PerceptionController@store');
 
             Route::get('dispatches/tables', 'Tenant\Api\DispatchController@tables');
             Route::get('dispatches/records', 'Tenant\Api\DispatchController@records');

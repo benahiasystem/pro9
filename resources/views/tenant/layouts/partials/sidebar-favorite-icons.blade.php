@@ -165,7 +165,6 @@
         ['kind' => 'route', 'target' => 'tenant.voided.index', 'icon' => 'file-x'], // Anulaciones
         ['kind' => 'route', 'target' => 'tenant.retentions.index', 'icon' => 'percentage'], // Retenciones
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        // Percepciones no se ofrece en la operación venezolana.
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ['kind' => 'route', 'target' => 'tenant.purchase-settlements.index', 'icon' => 'file-check'], // Liquidaciones de compra
         ['kind' => 'route', 'target' => 'tenant.order_forms.index', 'icon' => 'clipboard-text'], // Ordenes de pedido

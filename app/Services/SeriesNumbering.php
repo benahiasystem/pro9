@@ -69,7 +69,7 @@ final class SeriesNumbering
     {
         if ($series->in_use) return true;
         $db = $series->getConnection();
-        foreach (['documents', 'dispatches', 'sale_notes', 'retentions', 'perceptions', 'purchase_settlements', 'guides', 'inventories_transfer'] as $table) {
+        foreach (['documents', 'dispatches', 'sale_notes', 'retentions', 'purchase_settlements', 'guides', 'inventories_transfer'] as $table) {
             if (!$db->getSchemaBuilder()->hasTable($table)) continue;
             $query = $db->table($table)->where('series', $series->number)
                 ->where('establishment_id', $series->establishment_id);

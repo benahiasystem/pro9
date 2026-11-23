@@ -41,7 +41,6 @@ class DatabaseSeeder extends Seeder
             // ######### FIN CAMBIO QUITAR BOLETA
             ['id' => 2, 'description' => 'Órdenes de entrega' ],
             ['id' => 3, 'description' => 'Retenciones'],
-            ['id' => 4, 'description' => 'Percepciones']
         ];
         foreach ($documents as $document) DB::table('plan_documents')->updateOrInsert(['id'=>$document['id']],$document);
 

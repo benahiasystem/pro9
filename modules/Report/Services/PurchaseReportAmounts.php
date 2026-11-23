@@ -9,7 +9,7 @@ use App\Support\Exact\ReportProjection;
 /** Purchase totals retain their documentary fractions and are grouped by displayed currency. */
 final class PurchaseReportAmounts
 {
-    public const FIELDS = ['total_exportation','total_free','total_unaffected','total_exonerated','total_taxed','total_igv','total_perception','total'];
+    public const FIELDS = ['total_exportation','total_free','total_unaffected','total_exonerated','total_taxed','total_igv','total'];
 
     public static function converted($flag): bool
     {
@@ -24,7 +24,7 @@ final class PurchaseReportAmounts
         $values = [];
         foreach (self::FIELDS as $field) {
             $value = $void ? D::of(0) : D::read($purchase, $field);
-            if (!$void && $field === 'total') $value = $value->plus(D::read($purchase, 'total_perception'));
+
             $values[$field] = $void || $target === $currency ? $value : D::convert($value, $currency, $target, $purchase->exchange_rate_sale);
         }
         $prefix = $purchase instanceof \Modules\Purchase\Models\FixedAssetPurchase ? 'fixed_asset_purchase' : 'purchase';

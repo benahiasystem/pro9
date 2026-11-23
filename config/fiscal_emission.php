@@ -26,7 +26,6 @@ return [
         'order_notes',
         'packaging',
         'payment_links',
-        'perceptions',
         'production',
         'purchase_orders',
         'purchase_quotations',

@@ -59,30 +59,12 @@
             <td class="text-right font-bold">{{ number_format($document->total_charge, 2) }}</td>
         </tr>
     @endif
-
-    @if($document->perception)
-        <tr>
-            <td colspan="8" class="text-right font-bold"> IMPORTE
-                TOTAL: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
-        </tr>
-        <tr>
-            <td colspan="8" class="text-right font-bold">
-                PERCEPCIÓN: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold">{{ number_format($document->perception->amount, 2) }}</td>
-        </tr>
-        <tr>
-            <td colspan="8" class="text-right font-bold">TOTAL A
-                PAGAR: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold">{{ number_format(($document->total + $document->perception->amount), 2) }}</td>
-        </tr>
-    @else
-        <tr>
+<tr>
             <td colspan="8" class="text-right font-bold border-top">TOTAL A
                 PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold border-top">{{ number_format($document->total, 2) }}</td>
         </tr>
-    @endif
+
 
     @if($balance < 0)
         <tr>

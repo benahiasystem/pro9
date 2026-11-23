@@ -84,7 +84,6 @@
      * @property mixed                                                      $legends
      * @property mixed                                                      $number_full
      * @property mixed                                                      $number_to_letter
-     * @property mixed                                                      $perception
      * @property mixed                                                      $prepayments
      * @property mixed                                                      $related
      * @property \Illuminate\Database\Eloquent\Collection|GuideFile[]       $guide_files
@@ -157,7 +156,6 @@
             'prepayments',
             'guides',
             'related',
-            'perception',
             'legends',
             'filename',
             'shipping_address',
@@ -267,15 +265,7 @@
             $this->attributes['related'] = (is_null($value)) ? null : json_encode($value);
         }
 
-        public function getPerceptionAttribute($value)
-        {
-            return (is_null($value)) ? null : (object)json_decode($value);
-        }
 
-        public function setPerceptionAttribute($value)
-        {
-            $this->attributes['perception'] = (is_null($value)) ? null : json_encode($value);
-        }
 
 
 

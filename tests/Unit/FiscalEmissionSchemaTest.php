@@ -502,9 +502,12 @@ PHP;
             }
             (new \Database\Seeders\TenancyDatabaseSeeder())->setContainer(Container::getInstance())->run();
             $this->assertFiscalSchema($db);
+            foreach (['persons' => ['perception_agent','percentage_perception'], 'items' => ['has_perception','percentage_perception'], 'purchases' => ['perception','perception_date','perception_number','total_perception'], 'fixed_asset_purchases' => ['perception','perception_date','perception_number','total_perception']] as $table => $retiredColumns) {
+                foreach ($retiredColumns as $column) self::assertFalse($db->getSchemaBuilder()->hasColumn($table, $column), $table.'.'.$column);
+            }
             self::assertTrue($db->getSchemaBuilder()->hasColumn('hotel_rents', 'calculation_snapshot'));
             self::assertSame('numeric(30,12)', \App\Database\SchemaInspector::column($db, "hotel_rents", 'arrears')->type);
-            foreach (['fiscal_sequences', 'fiscal_profiles', 'fiscal_control_lots', 'fiscal_number_reservations', 'fiscal_emission_attempts', 'fiscal_numbering_audits', 'fiscal_demo_receipts', 'fiscal_hka_assignments'] as $retired) {
+            foreach (['perceptions', 'perception_documents', 'fiscal_sequences', 'fiscal_profiles', 'fiscal_control_lots', 'fiscal_number_reservations', 'fiscal_emission_attempts', 'fiscal_numbering_audits', 'fiscal_demo_receipts', 'fiscal_hka_assignments'] as $retired) {
                 self::assertFalse($db->getSchemaBuilder()->hasTable($retired), $retired);
             }
             foreach (['documents', 'dispatches'] as $table) {
@@ -763,7 +766,7 @@ PHP;
             // ######### FIN CAMBIO CATÁLOGO MOTIVOS DE TRASLADO VENEZUELA
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             $current = $this->schemaSnapshot($db);
-            foreach (['retentions', 'perceptions', 'purchase_settlements'] as $table) {
+            foreach (['retentions', 'purchase_settlements'] as $table) {
                 self::assertSame('varchar(20)', \App\Database\SchemaInspector::columns($db, "$table", 'series')[0]->type);
             }
             if (getenv('SAB_EXPORT_CONTRACT') === '1') {
@@ -2995,7 +2998,6 @@ PHP;
         foreach ([
             'documents' => ['hash', 'qr', 'has_xml', 'has_cdr', 'send_server', 'shipping_status', 'sunat_shipping_status', 'query_status', 'success_shipping_status', 'success_sunat_shipping_status', 'success_query_status', 'regularize_shipping', 'response_regularize_shipping'],
             'dispatches' => ['sunat_error_response', 'has_xml', 'has_cdr', 'ticket', 'reception_date'],
-            'perceptions' => ['hash', 'has_xml', 'has_cdr'],
             'retentions' => ['hash', 'has_xml', 'has_cdr'],
             'purchase_settlements' => ['hash', 'has_xml', 'has_cdr'],
             'voided' => ['ticket', 'has_ticket', 'has_cdr'],

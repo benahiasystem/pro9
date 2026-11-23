@@ -146,7 +146,6 @@
                                 <div class="detail-drawer__totals-card">
                                     <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-receipt"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2z"/><path d="M9 7l6 0"/><path d="M9 11l6 0"/></svg></span><span class="detail-drawer__totals-row-label">Base imponible</span><strong>{{ formatMoney(record.total_taxed) }}</strong></div>
                                     <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg></span><span class="detail-drawer__totals-row-label">IGV</span><strong>{{ formatMoney(record.total_igv) }}</strong></div>
-                                    <div v-if="perceptionAmount > 0" class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14"/><path d="M5 12l14 0"/></svg></span><span class="detail-drawer__totals-row-label">Percepción</span><strong>{{ formatMoney(perceptionAmount) }}</strong></div>
                                     <div class="detail-drawer__totals-row detail-drawer__totals-row--balance"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-wallet"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/><path d="M20 12v4h-4a2 2 0 0 1 0 -4z"/></svg></span><span class="detail-drawer__totals-row-label">Saldo pendiente</span><span class="detail-drawer__totals-status" :class="balanceIsPaid ? 'detail-drawer__totals-status--paid' : 'detail-drawer__totals-status--pending'"><svg v-if="balanceIsPaid" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10"/></svg>{{ balanceStatusLabel }}</span></div>
                                     <div class="detail-drawer__totals-total"><span>Total</span><strong><small>{{ currencySymbol }}</small> {{ formatMoney(totalAmount, false) }}</strong></div>
                                 </div>
@@ -498,17 +497,7 @@ export default {
             return this.record?.currency_type_id === 'USD' ? '$' : 'Bs.';
         },
         totalAmount() {
-            let total = this.parseAmount(this.record?.total);
-            const perception = this.parseAmount(this.record?.total_perception);
-
-            if (perception > 0) {
-                total += perception;
-            }
-
-            return total;
-        },
-        perceptionAmount() {
-            return this.parseAmount(this.record?.total_perception);
+            return this.parseAmount(this.record?.total);
         },
         totalPaid() {
             return this.paymentRows.reduce((sum, payment) => sum + this.parseAmount(payment.payment), 0);
@@ -659,7 +648,6 @@ export default {
                         currency_type_id: purchase.currency_type_id || snapshot.currency_type_id,
                         total_taxed: purchase.total_taxed ?? snapshot.total_taxed,
                         total_igv: purchase.total_igv ?? snapshot.total_igv,
-                        total_perception: purchase.total_perception ?? snapshot.total_perception,
                         total: purchase.total ?? snapshot.total,
                         total_canceled: purchase.total_canceled ?? snapshot.total_canceled,
                         state_type_payment_description: purchase.total_canceled

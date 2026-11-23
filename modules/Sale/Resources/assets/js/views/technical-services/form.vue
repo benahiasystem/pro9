@@ -1617,7 +1617,6 @@ export default {
             this.form.external_id = data.external_id;
             this.form.filename = data.filename;
             this.form.group_id = data.group_id;
-            this.form.perception = data.perception;
             this.form.note = data.note;
             this.form.plate_number = data.plate_number;
             this.form.payments = data.payments;

@@ -58,8 +58,6 @@ import TenantExchangeRatesIndex from './views/tenant/exchange_rates/index.vue'
 import TenantCurrencyTypesIndex from './views/tenant/currency_types/index.vue'
 import TenantRetentionsIndex from './views/tenant/retentions/index.vue'
 import TenantRetentionsForm from './views/tenant/retentions/form.vue'
-import TenantPerceptionsIndex from './views/tenant/perceptions/index.vue'
-import TenantPerceptionsForm from './views/tenant/perceptions/form.vue'
 import TenantDispatchesIndex from './views/tenant/dispatches/index.vue'
 
 import TenantDispatchesForm from './views/tenant/dispatches/form.vue'
@@ -461,8 +459,6 @@ Vue.component('tenant-exchange_rates-index', TenantExchangeRatesIndex)
 Vue.component('tenant-currency-types-index', TenantCurrencyTypesIndex)
 Vue.component('tenant-retentions-index', TenantRetentionsIndex)
 Vue.component('tenant-retentions-form', TenantRetentionsForm)
-Vue.component('tenant-perceptions-index', TenantPerceptionsIndex)
-Vue.component('tenant-perceptions-form', TenantPerceptionsForm)
 Vue.component('tenant-dispatches-index', TenantDispatchesIndex)
 
 Vue.component('tenant-dispatches-form', TenantDispatchesForm)

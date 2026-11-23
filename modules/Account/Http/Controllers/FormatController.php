@@ -237,7 +237,6 @@ use App\Models\Tenant\{
             //'09',//    ORDEN DE ENTREGA
             //'20',//    COMPROBANTE DE RETENCIÓN ELECTRÓNICA
             //'31',//    Orden de entrega transportista
-            //'40',//    COMPROBANTE DE PERCEPCIÓN ELECTRÓNICA
             //'71',//    Orden de entrega complementaria
             //'GU75',//	GUÍA
             //'NE76',//	NOTA DE ENTRADA

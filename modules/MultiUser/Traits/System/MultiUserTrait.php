@@ -361,7 +361,6 @@ trait MultiUserTrait
             'items_ratings',
             'order_forms',
             'order_notes',
-            'perceptions',
             'purchase_orders',
             'purchase_quotations',
             'purchase_settlements',

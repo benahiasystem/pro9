@@ -9,7 +9,6 @@ use App\Models\Tenant\Quotation;
 use App\Models\Tenant\Kardex;
 use App\Models\Tenant\Purchase;
 use App\Models\Tenant\Retention;
-use App\Models\Tenant\Perception;
 use App\Models\Tenant\Voided;
 use Illuminate\Http\Request;
 use App\Models\Tenant\Configuration;
@@ -104,7 +103,6 @@ class OptionController extends Controller
         $this->update_quantity_documents($quantity);
 
         Retention::where('fiscal_environment', 'demo')->delete();
-        Perception::where('fiscal_environment', 'demo')->delete();
 
         //SaleNote
         $sale_notes = SaleNote::where('fiscal_environment', 'demo')->get();

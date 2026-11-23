@@ -151,8 +151,6 @@ class Item extends ModelTenant
         'percentage_of_profit',
 
         'attributes',
-        'has_perception',
-        'percentage_perception',
         'image',
         'image_medium',
         'image_small',
@@ -1983,8 +1981,6 @@ class Item extends ModelTenant
         'calculate_quantity',
         'percentage_of_profit',
         'attributes',
-        'has_perception',
-        'percentage_perception',
         'account_id',
         'apply_store',
         'apply_restaurant',
@@ -2543,9 +2539,7 @@ class Item extends ModelTenant
             'sale_affectation_igv_type_id' => $this->sale_affectation_igv_type_id,
             'purchase_affectation_igv_type_id' => $this->purchase_affectation_igv_type_id,
             'purchase_has_igv' => (bool) $this->purchase_has_igv,
-            'has_perception' => (bool) $this->has_perception,
             'lots_enabled' => (bool) $this->lots_enabled,
-            'percentage_perception' => $this->percentage_perception,
             'item_unit_types' => collect($this->item_unit_types)->transform(function($row) {
                 // validar este
                 /*

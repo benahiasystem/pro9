@@ -59,7 +59,6 @@ class Contract extends ModelTenant
         'prepayments',
         'guides',
         'related',
-        'perception',
         'legends',
         'filename',
         'shipping_address',
@@ -155,15 +154,7 @@ class Contract extends ModelTenant
         $this->attributes['related'] = (is_null($value))?null:json_encode($value);
     }
 
-    public function getPerceptionAttribute($value)
-    {
-        return (is_null($value))?null:(object) json_decode($value);
-    }
 
-    public function setPerceptionAttribute($value)
-    {
-        $this->attributes['perception'] = (is_null($value))?null:json_encode($value);
-    }
 
 
 

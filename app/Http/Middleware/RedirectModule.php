@@ -94,8 +94,7 @@
                 $group = "purchases";
             } ///* Module advanced */
             elseif (
-                $firstLevel == "retentions" ||
-                $firstLevel == "perceptions") {
+                $firstLevel == "retentions") {
                 $group = "advanced";
             } ///* Module reports */
             elseif (

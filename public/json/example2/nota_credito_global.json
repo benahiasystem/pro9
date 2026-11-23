@@ -124,12 +124,6 @@
     "codigo_metodo_pago": "",
     "cuenta_bancaria": "21216547578"
   },
-  "percepcion": {
-    "codigo": "",
-    "porcentaje": 0.00,
-    "monto": 0.00,
-    "base": 0.00
-  },
   "anticipos":[
     {
       "numero": "12",
