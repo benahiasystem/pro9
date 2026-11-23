@@ -655,8 +655,6 @@ export default {
         },
         async clickNewSale() {
             await this.initForm();
-            await this.$eventHub.$emit("cancelSale");
-            await this.$eventHub.$emit("cancelSaleGarage");
             this.$emit("update:showDialog", false);
         },
         initForm() {

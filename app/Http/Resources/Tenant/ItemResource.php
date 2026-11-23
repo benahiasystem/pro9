@@ -95,6 +95,11 @@
                 'item_code_gsl' => $this->item_code_gsl,
                 'currency_type_id' => $this->currency_type_id,
                 'sale_unit_price' => $this->getFormatSaleUnitPrice(),
+                'exact_profit_base' => array_combine(
+                    ['sale_unit_price', 'purchase_unit_price', 'percentage_of_profit'],
+                    array_map(fn ($field) => \App\Support\Exact\Decimal::fraction(\App\Support\Exact\Decimal::read($this->resource, $field)),
+                        ['sale_unit_price', 'purchase_unit_price', 'percentage_of_profit'])
+                ),
                 // 'sale_unit_price' => $this->sale_unit_price,
                 'purchase_unit_price' => $this->purchase_unit_price,
                 'unit_type_id' => $this->unit_type_id,

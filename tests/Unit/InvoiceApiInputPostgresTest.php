@@ -84,6 +84,159 @@ final class InvoiceApiInputPostgresTest extends TestCase
         self::assertSame(0, $db->table('documents')->count());
     }
 
+    public function test_vendeya_note_transform_preserves_large_and_fractional_totals(): void
+    {
+        [$db, $payload] = $this->invoicePayload();
+        $payload['source_module'] = 'VENDEYA';
+        $payload['codigo_tipo_moneda'] = 'VES';
+        $payload['codigo_tipo_nota'] = '01';
+        $payload['motivo_o_sustento_de_nota'] = 'Ajuste de prueba';
+        $payload['documento_afectado'] = ['external_id' => (string) \Illuminate\Support\Str::uuid()];
+        $large = $payload['items'][0];
+        $large['cantidad'] = '1'; $large['precio_unitario'] = '9007199254740993.000000000001';
+        $large['codigo_tipo_afectacion_igv'] = '20'; unset($large['total_item']);
+        $fraction = $payload['items'][0];
+        $fraction['cantidad'] = '0.1'; $fraction['precio_unitario'] = '0.2';
+        $fraction['codigo_tipo_afectacion_igv'] = '10'; unset($fraction['total_item']);
+        $payload['items'] = [$large, $fraction];
+        foreach (['07', '08'] as $type) {
+            $payload['codigo_tipo_documento'] = $type;
+            $result = DocumentTransform::transform($payload);
+            self::assertSame('9007199254740993.000000000001', (string) $result['items'][0]['total']);
+            self::assertSame('0.02', (string) $result['items'][1]['total']);
+            self::assertSame('9007199254740993.020000000001', (string) $result['total']);
+        }
+        self::assertSame(0, $db->table('documents')->count());
+    }
+
+    public function test_api_notes_reference_original_lines_without_creating_products(): void
+    {
+        [$db, $payload] = $this->invoicePayload();
+        $send = static function (array $data) {
+            $request = Request::create('/api/documents', 'POST', $data);
+            $request->attributes->set('sab.strict_input_exceptions', true);
+            return (new InputRequest())->handle($request,
+                fn (Request $input) => (new ApiSaleCreation())->persistDocument($input->all()), 'document', 'api');
+        };
+        $invoice = $send($payload)->getDocument()->fresh();
+        $line = $invoice->items()->firstOrFail();
+        self::assertSame((string) $line->id, $invoice->getApiResourceFind()['items'][0]['id']);
+        $originalItems = $db->table('items')->count();
+        foreach (['07'=>'FC01', '08'=>'FD01'] as $type=>$series) {
+            $note = $payload;
+            $note['source_module']='VENDEYA'; $note['codigo_tipo_documento']=$type; $note['serie_documento']=$series;
+            $note['codigo_tipo_nota']=$type === '07' ? '04' : '02';
+            $note['motivo_o_sustento_de_nota']='Ajuste API';
+            $note['note_creation_key']=(string) \Illuminate\Support\Str::uuid();
+            $note['documento_afectado']=['external_id'=>$invoice->external_id];
+            $note['items'][0]['affected_document_item_id']=(string) $line->id;
+            $note['items'][0]['adjustment_amount']='1';
+            $note['items'][0]['codigo_interno']='NO-CREAR-PRODUCTO';
+            if ($type === '07') {
+                foreach (['missing_uuid','missing_line','duplicate_line'] as $case) {
+                    $invalid=$note;
+                    if ($case === 'missing_uuid') unset($invalid['note_creation_key']);
+                    if ($case === 'missing_line') unset($invalid['items'][0]['affected_document_item_id']);
+                    if ($case === 'duplicate_line') $invalid['items'][]=$invalid['items'][0];
+                    $before=$db->table('documents')->count();
+                    try { $send($invalid); self::fail('Debe rechazar '.$case); }
+                    catch (ValidationException $error) { self::assertNotEmpty($error->errors()); }
+                    self::assertSame($before,$db->table('documents')->count());
+                    self::assertSame($originalItems,$db->table('items')->count());
+                }
+            }
+            $created=$send($note)->getDocument()->fresh();
+            self::assertSame($type,$created->document_type_id);
+            self::assertSame((string) $line->id, (string) $created->items()->firstOrFail()->affected_document_item_id);
+            self::assertSame((string) $created->id,(string) $send($note)->getDocument()->id);
+            $altered=$note; $altered['items'][0]['adjustment_amount']='2';
+            try { $send($altered); self::fail('Una clave repetida no admite contenido distinto.'); }
+            catch (\Symfony\Component\HttpKernel\Exception\HttpException $error) { self::assertSame(409, $error->getStatusCode()); }
+            self::assertSame($originalItems,$db->table('items')->count());
+        }
+        $invalid=$note; $invalid['note_creation_key']=(string) \Illuminate\Support\Str::uuid();
+        $invalid['items'][0]['affected_document_item_id']='999999999';
+        $before=$db->table('documents')->count();
+        try { $send($invalid); self::fail('Debe rechazar una partida ajena.'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('items.0',$error->errors()); }
+        self::assertSame($before,$db->table('documents')->count());
+        self::assertSame($originalItems,$db->table('items')->count());
+
+        $charge=$note; $charge['note_creation_key']=(string) \Illuminate\Support\Str::uuid();
+        $charge['codigo_tipo_nota']='01'; unset($charge['items'][0]['affected_document_item_id']);
+        $charge['items'][0]['codigo_interno']='SERVICIO-INEXISTENTE';
+        try { $send($charge); self::fail('El cargo requiere un servicio existente.'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('items',$error->errors()); }
+        self::assertSame($originalItems,$db->table('items')->count());
+        $service=\App\Models\Tenant\Item::findOrFail($line->item_id)->replicate();
+        $service->forceFill(['internal_id'=>'SERVICIO-API-EXISTENTE','unit_type_id'=>'SERV'])->save();
+        $charge['items'][0]['codigo_interno']='SERVICIO-API-EXISTENTE';
+        $charge['items'][0]['unidad_de_medida']='SERV';
+        $count=$db->table('items')->count();
+        $created=$send($charge)->getDocument()->fresh();
+        self::assertSame((string) $service->id,(string) $created->items()->firstOrFail()->item_id);
+        self::assertSame($count,$db->table('items')->count());
+        $duplicate=$service->replicate(); $duplicate->save();
+        $charge['note_creation_key']=(string) \Illuminate\Support\Str::uuid();
+        try { $send($charge); self::fail('Un código de servicio duplicado debe rechazarse.'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('items',$error->errors()); }
+        self::assertSame($count+1,$db->table('items')->count());
+        $charge['codigo_tipo_nota']='02';
+        try { $send($charge); self::fail('El motivo requiere identificar la partida original.'); }
+        catch (ValidationException $error) { self::assertArrayHasKey('items.affected_document_item_id',$error->errors()); }
+    }
+
+    public function test_api_annulment_derives_original_lines_without_creating_submitted_products(): void
+    {
+        [$db, $payload] = $this->invoicePayload();
+        $send = static function (array $data) {
+            $request = Request::create('/api/documents', 'POST', $data);
+            $request->attributes->set('sab.strict_input_exceptions', true);
+            return (new InputRequest())->handle($request,
+                fn (Request $input) => (new ApiSaleCreation())->persistDocument($input->all()), 'document', 'api');
+        };
+        $invoice=$send($payload)->getDocument()->fresh();
+        $line=$invoice->items()->firstOrFail(); $count=$db->table('items')->count();
+        $note=$payload; $note['source_module']='VENDEYA'; $note['codigo_tipo_documento']='07';
+        $note['serie_documento']='FC01'; $note['codigo_tipo_nota']='01';
+        $note['motivo_o_sustento_de_nota']='Anulación API';
+        $note['note_creation_key']=(string) \Illuminate\Support\Str::uuid();
+        $note['documento_afectado']=['external_id'=>$invoice->external_id];
+        $note['items'][0]['codigo_interno']='PRODUCTO-IGNORADO';
+        $created=$send($note)->getDocument()->fresh();
+        self::assertSame((string) $line->id,(string) $created->items()->firstOrFail()->affected_document_item_id);
+        self::assertSame($count,$db->table('items')->count());
+    }
+
+    public function test_api_note_cannot_reference_another_sellers_invoice(): void
+    {
+        [$db, $payload] = $this->invoicePayload();
+        $send = static function (array $data) {
+            $request = Request::create('/api/documents', 'POST', $data);
+            $request->attributes->set('sab.strict_input_exceptions', true);
+            return (new InputRequest())->handle($request,
+                fn (Request $input) => (new ApiSaleCreation())->persistDocument($input->all()), 'document', 'api');
+        };
+        $invoice=$send($payload)->getDocument()->fresh();
+        $actor=auth()->user();
+        $other=$db->table('users')->insertGetId(['name'=>'Otro vendedor','email'=>'api-note-other@example.test',
+            'password'=>'not-a-login-hash','type'=>'seller','establishment_id'=>$invoice->establishment_id]);
+        $note=$payload; $note['source_module']='VENDEYA'; $note['codigo_tipo_documento']='07';
+        $note['serie_documento']='FC01'; $note['codigo_tipo_nota']='04'; $note['motivo_o_sustento_de_nota']='Prueba';
+        $note['note_creation_key']=(string) \Illuminate\Support\Str::uuid();
+        $note['documento_afectado']=['external_id'=>$invoice->external_id];
+        $note['items'][0]['affected_document_item_id']=(string) $invoice->items()->firstOrFail()->id;
+        $note['items'][0]['adjustment_amount']='1';
+        $before=$db->table('documents')->count(); $products=$db->table('items')->count();
+        try {
+            auth()->setUser(\App\Models\Tenant\User::findOrFail($other));
+            try { $send($note); self::fail('No debe acceder a una factura de otro vendedor.'); }
+            catch (\Illuminate\Database\Eloquent\ModelNotFoundException $error) { self::assertNotEmpty($error->getModel()); }
+            self::assertSame($before,$db->table('documents')->count());
+            self::assertSame($products,$db->table('items')->count());
+        } finally { auth()->setUser($actor); }
+    }
+
     public function test_api_invoice_lookup_handles_invalid_bigint_keys_and_keeps_the_response_contract(): void
     {
         [$db, $payload] = $this->invoicePayload();

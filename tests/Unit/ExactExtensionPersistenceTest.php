@@ -204,6 +204,35 @@ class ExactExtensionPersistenceTest extends TestCase
         self::assertSame('30',$item->getRestaurantStock());
         self::assertSame('1',$supply->stock);
     }
+
+    public function test_restaurant_set_capacity_preserves_fractional_component_and_recipe_quantities(): void
+    {
+        $supply=new \Modules\Restaurant\Models\Supply(['stock'=>'1']);
+        $supply->setRelation('pivot',new \Illuminate\Database\Eloquent\Relations\Pivot([
+            'quantity'=>'0.033333333333','calculation_snapshot'=>json_encode(Decimal::snapshot(['quantity'=>Decimal::of('1/30')])),
+        ]));
+        $recipe=new \App\Models\Tenant\Item();
+        $recipe->setRelation('restaurantSupplies',collect([$supply]));
+        $recipe->setRelation('pivot',new \Illuminate\Database\Eloquent\Relations\Pivot([
+            'quantity'=>'0.333333333333','calculation_snapshot'=>json_encode(Decimal::snapshot(['quantity'=>Decimal::of('1/3')])),
+        ]));
+        $plain=new \App\Models\Tenant\Item();
+        $plain->setExactValues(['stock'=>Decimal::of('7/3')]);
+        $plain->setRelation('restaurantSupplies',collect([]));
+        $plain->setRelation('pivot',new \Illuminate\Database\Eloquent\Relations\Pivot([
+            'quantity'=>'0.5','calculation_snapshot'=>json_encode(Decimal::snapshot(['quantity'=>Decimal::of('1/2')])),
+        ]));
+        $set=new \App\Models\Tenant\Item();$set->setRelation('items_sets',collect([$recipe,$plain]));
+        self::assertSame('4',$set->getRestaurantStockSet());
+        $set->setRelation('items_sets',collect([$recipe]));
+        self::assertSame('90',$set->getRestaurantStockSet());
+        $set->setRelation('items_sets',collect([]));
+        self::assertSame('0',$set->getRestaurantStockSet());
+        $plain->pivot->quantity='0';$plain->pivot->calculation_snapshot=null;
+        $set->setRelation('items_sets',collect([$plain]));
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $set->getRestaurantStockSet();
+    }
 }
 
 class ExactLoyaltyDocument extends \App\Models\Tenant\Document

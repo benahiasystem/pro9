@@ -48,6 +48,7 @@ class DocumentValidation
         $inputs['series'] = Functions::validateSeries($inputs)->number;
 
         if (in_array($inputs['document_type_id'], ['07', '08'])) {
+            validator($inputs, ['note_creation_key' => 'required|uuid'])->validate();
 
             if($inputs['affected_document_external_id']){
                 $document = Functions::findAffectedDocumentByExternalId($inputs['affected_document_external_id']);
@@ -68,7 +69,12 @@ class DocumentValidation
         $inputs['customer_id'] = Functions::person($inputs['customer'], 'customers');
         unset($inputs['customer']);
 
-        $inputs['items'] = self::items($inputs['items'], $inputs['exchange_rate_sale'] ?? null);
+        // Full annulments derive their lines from the locked invoice, never from request products.
+        if ($inputs['document_type_id'] === '07' && ($inputs['note_credit_or_debit_type_id'] ?? null) === '01') {
+            $inputs['items'] = [];
+        } else {
+            $inputs['items'] = self::items($inputs['items'], $inputs['exchange_rate_sale'] ?? null, $inputs['document_type_id'], $inputs['note_credit_or_debit_type_id'] ?? null);
+        }
 
         Functions::DNI($inputs);
         Functions::identityDocumentTypeInvoice($inputs);
@@ -79,9 +85,26 @@ class DocumentValidation
         return $inputs;
     }
 
-    private static function items($inputs, $exchangeRate) {
+    private static function items($inputs, $exchangeRate, $documentType, $noteReason) {
         foreach ($inputs as &$row) {
-            $row['item_id'] = Functions::item($row, $exchangeRate);
+            if ($documentType === '07' && empty($row['affected_document_item_id'])) {
+                \App\Services\Fiscal\FiscalAmounts::error('items.affected_document_item_id', 'Identifique la partida de la factura original.');
+            }
+            if (in_array($documentType, ['07', '08'], true) && array_key_exists('affected_document_item_id', $row) && $row['affected_document_item_id'] !== null) {
+                $id = \App\Database\IntegerTransport::positiveKey($row['affected_document_item_id']);
+                if ($id === null) \App\Services\Fiscal\FiscalAmounts::error('items.affected_document_item_id', 'Identifique una partida válida de la factura original.');
+                $row['affected_document_item_id'] = $id;
+            } elseif ($documentType === '08') {
+                if ($noteReason === '02') \App\Services\Fiscal\FiscalAmounts::error('items.affected_document_item_id', 'Identifique la partida de la factura original.');
+                $code = $row['internal_id'] ?? null;
+                $items = is_string($code) && $code !== '' ? \App\Models\Tenant\Item::where('internal_id', $code)->limit(2)->get() : collect();
+                if ($items->count() !== 1 || $items->first()->unit_type_id !== 'SERV') {
+                    \App\Services\Fiscal\FiscalAmounts::error('items', 'Seleccione un servicio existente y sin código duplicado para el cargo de la nota de débito.');
+                }
+                $row['item_id'] = $items->first()->id;
+            } else {
+                $row['item_id'] = Functions::item($row, $exchangeRate);
+            }
             unset($row['internal_id'], $row['description']);
             unset($row['item_type_id'], $row['item_code']);
             unset($row['item_code_gs1'], $row['unit_type_id']);

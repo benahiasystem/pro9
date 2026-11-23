@@ -233,12 +233,12 @@ test('Garage cambia una venta mixta a USD con la tasa de la captura y conserva l
     const ast = parser.parse(component.script.content, {sourceType: 'module'})
     const methods = ast.program.body.find(node => node.type === 'ExportDefaultDeclaration').declaration.properties.find(node => node.key.name === 'methods').value
     const {convertExact} = load(path.resolve('resources/js/helpers/local-payment-quote.js'))
-    const {exactAmount} = load(path.resolve('resources/js/helpers/exchange-rate-math.js'))
+    const {exactAmount, exactValue} = load(path.resolve('resources/js/helpers/exchange-rate-math.js'))
     const {documentTotals} = load(path.resolve('resources/js/helpers/exact-document.js'))
     const {isRecordedReceipt} = load(path.resolve('resources/js/helpers/payment-classification.js'))
     const extracted = ['selectCurrencyType', 'changeCurrencyType'].map(name => generate(methods.properties.find(method => method.key?.name === name)).code)
     const actions = vm.runInNewContext(`({${extracted.join(',')}})`, {
-        calculateRowItem, ensurePosRate, convertExact, exactAmount, isRecordedReceipt, _: require('lodash'),
+        calculateRowItem, ensurePosRate, convertExact, exactAmount, exactValue, isRecordedReceipt, documentTotals, _: require('lodash'),
     });
     const rate = '915.74760000'
     const row = (id, currency, price, quantity) => ({
@@ -251,7 +251,7 @@ test('Garage cambia una venta mixta a USD con la tasa de la captura y conserva l
             items: [row(1, 'USD', '50', '6'), row(2, 'VES', '150', '10')],
             payments: [{currency_type_id: 'VES', payment: '150', original_amount: '150', exchange_rate: rate}]},
         percentage_igv: '0.16', calculateTotal() { Object.assign(this.form, documentTotals(this.form.items)) },
-        setFormPosLocalStorage() { this.saved = JSON.parse(JSON.stringify(this.form)) },
+        setFormPosLocalStorage(form = this.form) { this.saved = JSON.parse(JSON.stringify(form)) },
         $message: {error(message) { throw Error(message) }},
     }
     ctx.calculateTotal()
@@ -270,4 +270,21 @@ test('Garage cambia una venta mixta a USD con la tasa de la captura y conserva l
     await ctx.selectCurrencyType()
     assert.equal(ctx.form.total_payable, '276224.28')
     assert.equal(ctx.form.payments[0].payment, '150.00')
+    const errors = []
+    ctx.$message.error = message => errors.push(message)
+    for (const adjust of [
+        form => { form.discounts = [{amount:'10'}] },
+        form => { form.charges = [{amount:'10'}] },
+        form => { form.total_prepayment = '0.001' },
+        form => { form.items[0].discounts = [{is_amount:true, amount:'10'}] },
+        form => { form.items[0].charges = [{from_global_distribution:true, amount:'10'}] },
+    ]) {
+        const original = JSON.parse(JSON.stringify(ctx.form))
+        adjust(ctx.form)
+        const before = JSON.stringify(ctx.form)
+        assert.equal(ctx.changeCurrencyType('USD'), false)
+        assert.equal(JSON.stringify(ctx.form), before)
+        ctx.form = original
+    }
+    assert.equal(errors.length, 5)
 });

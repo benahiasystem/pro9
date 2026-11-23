@@ -10,6 +10,7 @@ use App\Models\Tenant\Configuration;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\Item;
+use App\Models\Tenant\Company;
 use App\Http\Resources\Tenant\ItemCollection;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Tenant\User;
@@ -65,21 +66,16 @@ class EcommerceController extends Controller
             ?: 'Tu tienda online';
         return "Compra online en {$trade_name}. Encuentra una amplia variedad de productos de calidad, ofertas exclusivas y precios competitivos, con envíos rápidos y una experiencia de compra segura y confiable.";
     }
-    /**
-     * Display a listing of the resource.
-     * @return Response
-     */
-    public function __construct(){
-        // Compartir variable records (los padres de variaciones no se listan en tienda)
-        view()->share('records', Item::where('apply_store', 1)->whereDoesntHave('variations')->orderBy('id', 'DESC')->take(2)->get());
+    public function __construct()
+    {
+        $this->middleware(function (Request $request, \Closure $next) {
+            // Los padres de variaciones no se listan en tienda.
+            view()->share('records', Item::where('apply_store', 1)->whereDoesntHave('variations')->orderBy('id', 'DESC')->take(2)->get());
+            view()->share('ecommerceDescription', self::getEcommerceDescription(Company::first()));
+            view()->share('storefront_show_prices', ConfigurationEcommerce::storefrontShowsPrices());
 
-        // Compartir descripción ecommerce globalmente usando el modelo Company
-        $companyModel = \App\Models\Tenant\Company::first();
-        $ecommerceDescription = self::getEcommerceDescription($companyModel);
-        view()->share('ecommerceDescription', $ecommerceDescription);
-
-        // Visibilidad de precios en listados / ficha / header (ambos modos de cotización)
-        view()->share('storefront_show_prices', ConfigurationEcommerce::storefrontShowsPrices());
+            return $next($request);
+        });
     }
 
     // public function index()

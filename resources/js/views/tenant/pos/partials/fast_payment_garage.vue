@@ -128,7 +128,7 @@
         <!-- Botón Pagar -->
         <div class="px-1 pt-1 pb-1">
             <el-button
-                :disabled="stockBlocked || singleAmountInvalid || (settlementPaymentBlocked && form.payment_condition_id !== '02')"
+                :disabled="stockBlocked || currencyBlocked || singleAmountInvalid || (settlementPaymentBlocked && form.payment_condition_id !== '02')"
                 :loading="loading_submit"
                 class="fp-pay-btn w-100"
                 @click="clickPayment"
@@ -139,7 +139,7 @@
 
         <!-- Cancelar -->
         <div class="px-1 pb-2">
-            <button class="fp-cancel-btn btn btn-link w-100" @click="clickCancel">
+            <button class="fp-cancel-btn btn btn-link w-100" :disabled="locked_submit" @click="clickCancel">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash-x"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7h16" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /><path d="M10 12l4 4m0 -4l-4 4" /></svg>
                 Cancelar Venta
             </button>
@@ -277,6 +277,9 @@ export default {
 
     props: [
         'stockBlocked',
+        'currencyBlocked',
+        'currencyBlockedCheck',
+        'paymentState',
         'form',
         'customer',
         'currencyTypeActive',
@@ -370,21 +373,21 @@ export default {
     async created() {
 
         await this.initLStoPayment()
+        if (this._paymentDisposed) return
         await this.getTables()
+        if (this._paymentDisposed) return
         this.initFormPayment()
         this.inputAmount()
         if (!Array.isArray(this.form.payments)) this.$set(this.form,'payments',[])
 
 
-        this.$eventHub.$on('localSPaymentsGarage', (payments) => {
-            this.payments = payments
-        })
-
         this.events();
 
         await this.setInitialAmount()
+        if (this._paymentDisposed) return
 
         await this.getFormPosLocalStorage()
+        if (this._paymentDisposed) return
         this.checkPaymentGarage()
         // console.log(this.form.payments, this.payments)
         // La conexión directa con BuhoPrinter ya no es necesaria desde el frontend.
@@ -415,6 +418,11 @@ export default {
         {
             return !!(this.configuration && this.configuration.enable_global_discount);
         }
+    },
+    beforeDestroy() {
+        this._paymentDisposed = true;
+        for (const [event, handler] of this._garageListeners || []) this.$eventHub.$off(event, handler);
+        this._garageListeners = [];
     },
     methods: {
         customerById(id) {
@@ -514,6 +522,7 @@ export default {
             this.$http
                 .get(`/${this.resource}/table/customers`)
                 .then(response => {
+                    if (this._paymentDisposed) return;
                     this.all_customers = response.data;
                     this.form.customer_id = customer_id;
                     this.changeCustomer();
@@ -599,6 +608,7 @@ export default {
             this.enter_amount = rows.length ? this.enteredReceiptAmount(rows) : (this.collectionTarget ?? this.form.total)
             if (rows.length) { this.amount = this.appliedReceiptTotal(rows); this.userTouchedAmount = true }
             await this.$nextTick();
+            if (this._paymentDisposed) return;
             const amountField = this.$refs.enter_amount;
             const input = amountField && amountField.$el.querySelector('input');
             if (input) {
@@ -884,6 +894,8 @@ export default {
             }
         },
         async clickCancel() {
+            const cancelledDraft = this.form
+            if (this._paymentDisposed || this.locked_submit || (typeof this.paymentState === 'function' && this.paymentState() !== cancelledDraft)) return
 
             try {
                 await this.$confirm(
@@ -899,9 +911,12 @@ export default {
                 return
             }
 
+            if (this._paymentDisposed || this.locked_submit || this.form !== cancelledDraft || (typeof this.paymentState === 'function' && this.paymentState() !== cancelledDraft)) return
+
             this.loading_submit_cancel = true
             await this.sleep(400);
             this.loading_submit_cancel = false
+            if (this._paymentDisposed || this.locked_submit || this.form !== cancelledDraft || (typeof this.paymentState === 'function' && this.paymentState() !== cancelledDraft)) return
 
             this.enabled_discount = false
             this.discount_amount = 0
@@ -914,23 +929,19 @@ export default {
             this.payments = []
             this.cleanLocalStoragePayment()
 
-            this.$eventHub.$emit('cancelSaleGarage')
+            this.$eventHub.$emit('cancelSaleGarage', cancelledDraft)
             this.$message.success('Venta cancelada')
 
         },
-        async events() {
-            await this.$eventHub.$on("initInputPerson", () => {
-                this.initInputPerson();
-            });
-
-            await this.$eventHub.$on("reloadDataPersons", customer_id => {
-                this.reloadDataCustomers(customer_id);
-                this.setFormPosLocalStorage();
-            });
-
-            await this.$eventHub.$on("eventCheckPaymentGarage", () => {
-                this.checkPaymentGarage()
-            })
+        events() {
+            if (this._paymentDisposed) return;
+            this._garageListeners = [
+                ['localSPaymentsGarage', payments => { this.payments = payments; }],
+                ['initInputPerson', () => this.initInputPerson()],
+                ['reloadDataPersons', customerId => { this.reloadDataCustomers(customerId); this.setFormPosLocalStorage(); }],
+                ['eventCheckPaymentGarage', () => this.checkPaymentGarage()],
+            ];
+            for (const [event, handler] of this._garageListeners) this.$eventHub.$on(event, handler);
         },
         cleanLocalStoragePayment() {
 
@@ -992,6 +1003,11 @@ export default {
             });
         },
         async clickPayment() {
+            if (this._paymentDisposed || this.locked_submit) return
+            const submissionForm = this.form
+            this.locked_submit = true
+            try {
+            if (this._paymentDisposed || this.currencyBlocked || (typeof this.currencyBlockedCheck === 'function' && this.currencyBlockedCheck())) return this.$message.warning('Verifique la moneda y la tasa de cambio antes de cobrar.');
             if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
             if (this.form.document_type_id === '01' && this.enabled_discount && !applyInvoiceCheckoutDiscount(this)) return
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
@@ -1072,39 +1088,40 @@ export default {
                 this.resource_payments = "document_payments";
                 this.resource_options = this.resource_documents;
                 await this.asignPlateNumberToItems()
+                if (this._paymentDisposed || this.form !== submissionForm || (typeof this.paymentState === 'function' && this.paymentState() !== submissionForm)) return
             }
+
+            if (this._paymentDisposed || this.currencyBlocked || (typeof this.currencyBlockedCheck === 'function' && this.currencyBlockedCheck())) return this.$message.warning('Verifique la moneda y la tasa de cambio antes de cobrar.');
 
             if (this.configuration.show_terms_condition_pos) {
                 this.form.terms_condition = this.configuration.terms_condition_sale;
             }
 
             if (!await this.ensureFiscalPaymentsReady(this.form.payments)) return
+            if (this._paymentDisposed || this.form !== submissionForm || (typeof this.paymentState === 'function' && this.paymentState() !== submissionForm)) return
+            if (this._paymentDisposed || this.currencyBlocked || (typeof this.currencyBlockedCheck === 'function' && this.currencyBlockedCheck())) return this.$message.warning('Verifique la moneda y la tasa de cambio antes de cobrar.');
             if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
 
             this.loading_submit = true
-            this.locked_submit = true
 
-            await this.$http.post(`/${this.resource_documents}`, this.prepareCalculationSubmission(withoutDraftRetentions(this.form))).then(async (response) => {
+            const payload = withoutDraftRetentions(this.form)
+            const submittedType = payload.document_type_id
+            const submittedSnapshot = JSON.stringify(payload)
+            const isCurrentSubmission = () => !this._paymentDisposed && this.form === submissionForm &&
+                (typeof this.paymentState !== 'function' || this.paymentState() === submissionForm) &&
+                JSON.stringify(withoutDraftRetentions(this.form)) === submittedSnapshot
+            await this.$http.post(`/${this.resource_documents}`, this.prepareCalculationSubmission(payload)).then(async (response) => {
                 let response_sent = null
                 if (response.data.success) {
-
-
-                    if (this.form.document_type_id === "80") {
-
-                        // this.form_payment.sale_note_id = response.data.data.id;
-                        this.form_cash_document.sale_note_id = response.data.data.id;
-                        this.documentNewId  = response.data.data.id;
-                    } else {
-                        this.documentNewId = response.data.data.id;
-
-                        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                        // El alta ya termina registrada localmente; no se ejecuta un segundo envío fiscal.
-                        // ######### FIN CAMBIO SIN XML CDR SUNAT
-
-                        // this.form_payment.document_id = response.data.data.id;
-                        this.form_cash_document.document_id = response.data.data.id;
-
+                    const cashDocument = submittedType === '80'
+                        ? {document_id: null, sale_note_id: response.data.data.id, require_existing_cash_link: true}
+                        : {document_id: response.data.data.id, sale_note_id: null, require_existing_cash_link: true}
+                    if (!isCurrentSubmission()) {
+                        this.$message.warning(`Venta registrada: ${response.data.data.number_full || response.data.data.id}. Consulte el comprobante y verifique su caja antes de continuar.`)
+                        return
                     }
+                    this.form_cash_document = cashDocument
+                    this.documentNewId = response.data.data.id;
 
                     // Almacena la URL del PDF de ticket para impresión con BuhoPrinter
                     this.printTicketUrl = response.data?.links?.print_ticket ?? null;
@@ -1119,7 +1136,7 @@ export default {
                     if (this.isPrint) {
                         this.gethtml();
                     }
-                    this.$eventHub.$emit('saleSuccess');
+                    this.$eventHub.$emit('saleSuccess', submissionForm);
 
                     this.initDataComponent()
 
@@ -1127,6 +1144,7 @@ export default {
                     this.$message.error(response.data.message);
                 }
             }).catch(error => {
+                if (!isCurrentSubmission()) return this.$message.warning('No se pudo confirmar el resultado de la venta anterior. Consulte el listado antes de crearla nuevamente.')
                 if (this.handleCalculationChanged(error, withoutDraftRetentions(this.form))) return;
                 if (error.response && error.response.status === 422) {
                     this.errors = error.response.data?.errors || error.response.data || {};
@@ -1135,10 +1153,11 @@ export default {
                 } else {
                     this.$message.error(error.response && error.response.data && error.response.data.message || 'No se pudo confirmar el guardado. Consulte el listado antes de crear nuevamente la factura.');
                 }
-            }).then(() => {
+            });
+            } finally {
                 this.loading_submit = false;
                 this.locked_submit = false
-            });
+            }
         },
         gethtml() {
             this.form.datahtml = "";
@@ -1173,8 +1192,8 @@ export default {
                 console.warn('[BuhoPrinter] print_ticket URL no disponible.');
             }
         },
-        saveCashDocument() {
-            this.$http.post(`/cash/cash_document`, this.form_cash_document)
+        saveCashDocument(payload = this.form_cash_document, expectedForm = this.form) {
+            this.$http.post(`/cash/cash_document`, payload)
                 .then(response => {
                     if (response.data.success) {
                         // console.log(response)
@@ -1184,9 +1203,10 @@ export default {
                 })
                 .catch(error => {
                     console.log(error);
+                    this.$message.warning('No se pudo confirmar la asociación del comprobante a caja. Revise la caja antes de continuar.');
                 })
                 .finally(() => {
-                    this.initFormCashDocument()
+                    if (expectedForm && !this._paymentDisposed && this.form === expectedForm && (typeof this.paymentState !== 'function' || this.paymentState() === expectedForm)) this.initFormCashDocument()
                 })
         },
         savePaymentMethod() {
@@ -1209,12 +1229,15 @@ export default {
         async getTables() {
             await this.$http.get(`/${this.resource}/payment_tables`)
                 .then(response => {
+                    if (this._paymentDisposed) return;
                     this.all_series = response.data.series
                     this.payment_method_types = response.data.payment_method_types
                     this.filterSeries()
                 });
 
+            if (this._paymentDisposed) return;
             await this.$http.get(`/${this.resource}/tables`).then(response => {
+                if (this._paymentDisposed) return;
                 //this.all_items = response.data.items;
                 this.config_tap = response.data.config_tap || {};
                 this.affectation_igv_types =

@@ -101,7 +101,7 @@ class VendeyaDocumentPayloadNormalizerTest extends TestCase
         self::assertSame('USD', $payload['codigo_tipo_moneda']);
         self::assertSame(8.0, $payload['items'][0]['porcentaje_igv']);
         self::assertEqualsWithDelta(50, $payload['items'][0]['valor_unitario'], 0.000001);
-        self::assertSame(0, $payload['items'][1]['total_igv']);
+        self::assertSame('0', $payload['items'][1]['total_igv']);
         self::assertEqualsWithDelta(60, $payload['items'][1]['total_item'], 0.000001);
         self::assertEqualsWithDelta(100, $payload['totales']['total_operaciones_gravadas'], 0.000001);
         self::assertEqualsWithDelta(60, $payload['totales']['total_operaciones_exoneradas'], 0.000001);
@@ -140,5 +140,53 @@ class VendeyaDocumentPayloadNormalizerTest extends TestCase
         self::assertSame(Decimal::represent($base), (string) $payload['totales']['total_operaciones_gravadas']);
         self::assertSame(Decimal::represent(Decimal::of('0.02')->minus($base)), (string) $payload['totales']['total_igv']);
         self::assertSame('9007199254740993.020000000001', (string) $payload['totales']['total_venta']);
+    }
+
+    public function test_vendeya_credit_and_debit_notes_preserve_large_and_fractional_amounts(): void
+    {
+        config()->set('venezuela.tax.rate', '0.08');
+        foreach (['07', '08'] as $type) {
+            $payload = VendeyaDocumentPayloadNormalizer::normalize([
+                'source_module'=>'VENDEYA', 'codigo_tipo_documento'=>$type, 'codigo_tipo_moneda'=>'VES',
+                'items'=>[
+                    ['cantidad'=>'1', 'precio_unitario'=>'9007199254740993.000000000001', 'codigo_tipo_afectacion_igv'=>'20'],
+                    ['cantidad'=>'0.1', 'precio_unitario'=>'0.2', 'codigo_tipo_afectacion_igv'=>'10'],
+                ],
+            ]);
+            self::assertSame('9007199254740993.000000000001', (string) $payload['items'][0]['total_item']);
+            self::assertSame('0.02', (string) $payload['items'][1]['total_item']);
+            self::assertSame('9007199254740993.020000000001', (string) $payload['totales']['total_venta']);
+        }
+    }
+
+    public function test_vendeya_notes_keep_an_explicit_line_total_and_reject_excess_precision(): void
+    {
+        config()->set('venezuela.tax.rate', '0.08');
+        foreach (['07', '08'] as $type) {
+            $input = ['source_module'=>'VENDEYA', 'codigo_tipo_documento'=>$type, 'codigo_tipo_moneda'=>'VES',
+                'items'=>[['cantidad'=>'3', 'precio_unitario'=>'0.4', 'total_item'=>'1.000000000001', 'codigo_tipo_afectacion_igv'=>'10']]];
+            $result = VendeyaDocumentPayloadNormalizer::normalize($input);
+            self::assertSame('1.000000000001', (string) $result['items'][0]['total_item']);
+            self::assertSame('1.000000000001', (string) $result['totales']['total_venta']);
+            $input['items'][0]['total_item']='0.0000000000001';
+            try {
+                VendeyaDocumentPayloadNormalizer::normalize($input);
+                self::fail('La precisión mayor a doce decimales debe rechazarse.');
+            } catch (ValidationException $error) {
+                self::assertArrayHasKey('items.0.total_item', $error->errors());
+            }
+        }
+    }
+
+    public function test_vendeya_invalid_or_missing_types_are_normalized_without_floats(): void
+    {
+        foreach ([null, '99'] as $type) {
+            $payload=['source_module'=>'VENDEYA', 'codigo_tipo_moneda'=>'VES',
+                'items'=>[['cantidad'=>'0.1','precio_unitario'=>'0.2','codigo_tipo_afectacion_igv'=>'20']]];
+            if ($type !== null) $payload['codigo_tipo_documento']=$type;
+            $result=VendeyaDocumentPayloadNormalizer::normalize($payload);
+            self::assertSame('0.02',$result['items'][0]['total_item']);
+            self::assertSame('0.02',$result['totales']['total_venta']);
+        }
     }
 }

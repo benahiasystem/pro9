@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\CoreFacturalo\Facturalo;
 use App\Models\Tenant\Company;
+use App\Models\Tenant\Person;
 use App\Services\Fiscal\FiscalDocumentPersistence;
 use App\Services\Fiscal\FiscalProfileService;
 use App\Services\Fiscal\IvaRetentionService;
@@ -68,8 +69,18 @@ final class InvoiceRetentionPrecisionPostgresTest extends TestCase
             self::assertSame('applied', $retention->application_status);
             $balance = Decimal::fraction($invoice->fresh()->exactBalance());
             $count = $invoice->received_retentions()->count();
+            $unchangedRetention = $retention->fresh()->getAttributes();
+            $otherAgent = Person::create(['type'=>'customers', 'identity_document_type_id'=>'1',
+                'number'=>'24000099', 'name'=>'DEMO agente distinto', 'country_id'=>'VE',
+                'address'=>'DEMO Caracas', 'email'=>'qa@example.test']);
 
             $invalid = [
+                'different agent' => [['agent_id' => $otherAgent->id], 'agent_id'],
+                'different agent rif' => [['agent_rif' => 'J-00000000-0'], 'agent_rif'],
+                'different invoice control' => [['invoice_control' => 'CONTROL-AJENO'], 'invoice_control'],
+                'different invoice number' => [['invoice_number' => 'FACTURA-AJENA'], 'invoice_control'],
+                'voucher invalid format' => [['voucher_number' => '2026090000000X'], 'voucher_number'],
+                'voucher different period' => [['voucher_number' => '20260800000001'], 'voucher_number'],
                 'before issue' => [['voucher_date' => $invoice->date_of_issue->copy()->subDay()->toDateString()], 'voucher_date'],
                 'after today' => [['voucher_date' => now()->addDay()->toDateString()], 'voucher_date'],
                 'amount zero' => [['amount' => '0'], 'amount'],
@@ -91,8 +102,23 @@ final class InvoiceRetentionPrecisionPostgresTest extends TestCase
                 }
                 self::assertSame($balance, Decimal::fraction($invoice->fresh()->exactBalance()), $name);
                 self::assertSame($count, $invoice->received_retentions()->count(), $name);
+                self::assertSame($unchangedRetention, $retention->fresh()->getAttributes(), $name);
                 self::assertSame(0, $db->transactionLevel(), $name);
             }
+
+            $db->table('documents')->where('id', $invoice->id)->update(['document_type_id' => '07']);
+            try {
+                FiscalDocumentPersistence::retentionValidated($invoice, $voucher, $retention);
+                self::fail('Una nota no debe aceptar retención de factura.');
+            } catch (ValidationException $error) {
+                self::assertArrayHasKey('document', $error->errors());
+            } finally {
+                $db->table('documents')->where('id', $invoice->id)->update(['document_type_id' => '01']);
+            }
+            self::assertSame($balance, Decimal::fraction($invoice->fresh()->exactBalance()));
+            self::assertSame($count, $invoice->received_retentions()->count());
+            self::assertSame($unchangedRetention, $retention->fresh()->getAttributes());
+            self::assertSame(0, $db->transactionLevel());
 
             $updated = FiscalDocumentPersistence::retentionValidated($invoice, array_replace($voucher, [
                 'base' => '0.006666666667', 'amount' => '0.005', 'exchange_rate' => '1.00000001',

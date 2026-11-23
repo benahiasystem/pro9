@@ -9,7 +9,7 @@ const exactRuntime = require('./support/exact-runtime.cjs');
 const parsed = compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/documents/invoice_generate.vue','utf8'));
 const output = {};
 vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,
-    {exports:output, _, require:name=>exactRuntime(name)|| (name==='moment'?require('moment'):name.includes('vuex')?{mapState:()=>({}),mapActions:()=>({})}:{})});
+    {exports:output, _, window:{salesDocumentsVes:false}, require:name=>exactRuntime(name)|| (name==='moment'?require('moment'):name.includes('vuex')?{mapState:()=>({}),mapActions:()=>({})}:{})});
 const c=output.default;
 test('reopening an export percentage discount keeps its decimal factor exactly',()=>{
     const ctx={is_amount:false,total_global_discount:'0',form:{currency_type_id:'VES'},

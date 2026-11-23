@@ -5,6 +5,18 @@ description: Mantener VES/USD, símbolos y conversiones de SAB, distinguiendo mo
 
 # Migrar moneda venezolana
 
+En los POS normal, rápido y Garage, preparar partidas, cobros y totales antes de confirmar un cambio de moneda. El recibo conserva moneda y tasa de captura; rechazar cambios que no preservan snapshots o ajustes. Bloquear el cobro mientras llega una tasa o falta recalcular; mantener la marca en el borrador hasta guardar el recálculo y exigir precio de origen verificable. Verificar las pruebas `pos-currency-*.test.cjs` y el frontend compilado.
+
+Al convertir un cobro, distinguir importe aplicado e importe recibido: no usar uno como el otro si difieren. Para cobros cruzados exigir importe original y tasa de recepción y comprobar exactamente el monto aplicado; si faltan o no cuadran, conservar el borrador y rechazar el cambio.
+
+Al restaurar un borrador POS de otra fecha, no reutilizar su tasa como si fuese vigente: solicitar la tasa de la nueva fecha, bloquear el cobro y recalcular desde los precios de origen. Si la tasa falla o el origen no es recuperable, conservar el borrador bloqueado. Verificar `pos-currency-restored-rate.test.cjs`.
+
+Garage conserva el borrador y rechaza un cambio de moneda cuando hay ajustes monetarios o anticipos cuya conversión no está establecida. No recalcular esos importes como si pertenecieran a la moneda nueva. Verificar `pos-quantity-currency.test.cjs`.
+
+Una línea histórica sin moneda documental también requiere conversión explícita antes de cobrar. Calcular líneas, cobros y totales antes de asignarlos, de modo que un error conserve el borrador íntegro. Verificar `garage-currency-adjustments.test.cjs`.
+
+En Garage, cuando la venta exige VES, no sustituirlo por otra moneda si falta en el catálogo ni cobrar mientras la cabecera o sus líneas conserven otra moneda. Una tasa inválida o una conversión rechazada mantiene el borrador y bloquea el pago; comprobar de nuevo el estado antes y después de esperas asíncronas y al destruir el panel. Verificar `garage-required-currency.test.cjs` y los controles de tasa del POS; la interfaz necesita compilación.
+
 ## Precisión exacta — contrato del 16/10/2026
 
 Aplicar [cálculos exactos](../mantener-calculos-exactos-sab/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.

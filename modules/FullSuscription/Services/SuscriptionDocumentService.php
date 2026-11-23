@@ -24,7 +24,7 @@ trait SuscriptionDocumentService
     {
         // ######## INICIO PARTIDAS DE SUSCRIPCION ########
         // Las altas actuales conservan importes y cantidades; algunos registros antiguos no los tienen.
-        $items = (array) $suscription->items;
+        $items = $this->storedSubscriptionItems($suscription);
         $rows = count($items)
             ? collect($items)->map(function ($item) {
                 $row = (object) $item;
@@ -32,7 +32,10 @@ trait SuscriptionDocumentService
                 return $row;
             })
             : $suscription->suscription_plan->items;
-        $_data = $this->transform($suscription->toArray(), $rows);
+        $values = $suscription->toArray();
+        $raw = $suscription->getAttributes();
+        if (array_key_exists('total_prepayment', $raw)) $values['total_prepayment'] = $raw['total_prepayment'];
+        $_data = $this->transform($values, $rows);
         // ######## FIN PARTIDAS DE SUSCRIPCION ########
         $request = new DocumentRequest($_data);
         $response = app(DocumentController::class)->storeFromSubscription($request);
@@ -57,6 +60,16 @@ trait SuscriptionDocumentService
             'document_id' => $response['data']['id'],
         ];
         // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
+    }
+
+    /** Preserve decimal tokens already stored in JSON without inventing missing precision. */
+    private function storedSubscriptionItems(UserRelSuscriptionPlan $suscription): array
+    {
+        $raw = $suscription->getAttributes()['items'] ?? null;
+        if (is_string($raw) && trim($raw) === 'null') return [];
+        return is_string($raw)
+            ? \App\Support\Exact\JsonDecimals::decode($raw)
+            : (array) $suscription->items;
     }
 
     public function transform(array $values, $get_ids): array
@@ -95,6 +108,12 @@ trait SuscriptionDocumentService
         $service = app(TenantExchangeRateService::class)->exchange($issueDate);
         // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
         $documentCurrency = \App\Services\SalesDocumentCurrency::usesBolivars() ? 'VES' : $currency;
+        $rate = \App\Support\Exact\Decimal::of($service['sale']);
+        foreach ($items as &$line) {
+            $line['discounts'] = $this->subscriptionAdjustments($line['discounts'], 'discount', $documentCurrency !== $currency ? $rate : null);
+            $line['charges'] = $this->subscriptionAdjustments($line['charges'], 'charge', null);
+        }
+        unset($line);
         if ($documentCurrency !== $currency) {
             foreach ($items as &$line) {
                 $line['price_input'] = [
@@ -104,7 +123,6 @@ trait SuscriptionDocumentService
                 ];
             }
             unset($line);
-            $rate = \App\Support\Exact\Decimal::of($service['sale']);
             foreach (['discounts', 'charges'] as $adjustments) {
                 foreach ($values[$adjustments] ?? [] as $index => $adjustment) {
                     $amount = \App\Support\Exact\Decimal::of($adjustment['amount_exact'] ?? $adjustment['amount'])->multipliedBy($rate);
@@ -112,8 +130,8 @@ trait SuscriptionDocumentService
                     $values[$adjustments][$index]['amount'] = \App\Support\Exact\Decimal::represent($amount);
                 }
             }
-            $values['total_prepayment'] = \App\Support\Exact\Decimal::represent(
-                \App\Support\Exact\Decimal::of($values['total_prepayment'] ?? '0')->multipliedBy($rate));
+            // La fracción se entrega internamente al modelo; solo la columna se representa a escala.
+            $values['total_prepayment'] = \App\Support\Exact\Decimal::of($values['total_prepayment'] ?? '0')->multipliedBy($rate);
         }
         // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         // ######## FIN API BCV ########
@@ -184,6 +202,11 @@ trait SuscriptionDocumentService
                 FiscalAmounts::error('items', 'El producto de suscripción requiere seleccionar lotes o seriales antes de facturarlo.');
             }
             $rowItem = $row->item ?? null;
+            // Los modelos de planes históricos exponen estos operandos como float.
+            $raw = $row instanceof \Illuminate\Database\Eloquent\Model ? $row->getAttributes() : (array) $row;
+            $quantity = $raw['quantity'] ?? $row->quantity;
+            $unitPrice = $raw['unit_price'] ?? $row->unit_price;
+            $unitValue = $raw['unit_value'] ?? $row->unit_value;
 
             $_items[] = [
                 'item_id'                  => $item->id,
@@ -202,15 +225,15 @@ trait SuscriptionDocumentService
                     'sanitary'                 => $item->sanitary,
                     'date_of_due'              => !empty($item->date_of_due) ? $item->date_of_due->format('Y-m-d') : null,
                     'has_igv'                  => optional($rowItem)->has_igv ?? true,
-                    'unit_price'               => $row->unit_price ?? 0,
+                    'unit_price'               => $unitPrice ?? 0,
                     'purchase_unit_price'      => $item->purchase_unit_price ?? 0,
                     'exchanged_for_points'     => optional($rowItem)->exchanged_for_points ?? false,
                     'used_points_for_exchange' => optional($rowItem)->used_points_for_exchange ?? null,
                 ],
-                'quantity'                 => $row->quantity,
-                'unit_value'               => $row->unit_value,
+                'quantity'                 => $quantity,
+                'unit_value'               => $unitValue,
                 'price_type_id'            => $row->price_type_id,
-                'unit_price'               => $row->unit_price,
+                'unit_price'               => $unitPrice,
                 'affectation_igv_type_id'  => $row->affectation_igv_type_id,
                 'total_base_igv'           => $row->total_base_igv,
                 // ########## INICIO CAMBIO AFECTACIÓN IVA
@@ -225,8 +248,8 @@ trait SuscriptionDocumentService
                 'total_charge'             => $row->total_charge ?? null,
                 'total_discount'           => $row->total_discount ?? null,
                 'total'                    => $row->total,
-                'discounts'                => null,
-                'charges'                  => null,
+                'discounts'                => $this->storedLineAdjustments($raw['discounts'] ?? null),
+                'charges'                  => $this->storedLineAdjustments($raw['charges'] ?? null),
                 'warehouse_id'             => $row->warehouse_id,
                 'additional_information'   => null,
                 'name_product_pdf'         => null,
@@ -236,6 +259,51 @@ trait SuscriptionDocumentService
         }
 
         return $_items;
+    }
+
+    private function storedLineAdjustments($value): array
+    {
+        if ($value === null || $value === '' || $value === 'null') return [];
+        if (is_string($value)) $value = \App\Support\Exact\JsonDecimals::decode($value);
+        if (is_object($value)) $value = (array) $value;
+        if (!is_array($value) || !array_is_list($value)) FiscalAmounts::error('items', 'Los ajustes de la suscripción deben ser una lista.');
+        return $value;
+    }
+
+    private function subscriptionAdjustments(array $rows, string $type, $conversion): array
+    {
+        $result = [];
+        foreach ($rows as $row) {
+            if (!is_array($row) && !is_object($row)) FiscalAmounts::error('items', 'El ajuste de la suscripción no es válido.');
+            $row = (array) $row;
+            if (!empty($row['from_global_distribution'])) FiscalAmounts::error('items', 'El reparto global de la suscripción requiere revisión antes de facturar.');
+            $field = $type === 'discount' ? 'discount_type_id' : 'charge_type_id';
+            $id = (string) ($row[$field] ?? '');
+            $valid = ($type !== 'discount' || in_array($id, ['00', '01'], true)) && (new UserRelSuscriptionPlan())->getConnection()
+                ->table('cat_charge_discount_types')->where('id', $id)->where('level', 'item')->where('type', $type)->exists();
+            if (!$valid) FiscalAmounts::error('items', 'Seleccione un tipo de ajuste de partida válido.');
+            if ($type === 'discount' && isset($row['is_amount']) && !in_array($row['is_amount'], [true, false, 0, 1, '0', '1'], true)) {
+                FiscalAmounts::error('items', 'Indique si el descuento es un monto fijo.');
+            }
+            $fixed = $type === 'discount' && !empty($row['is_amount']);
+            $input = $row['percentage'] ?? ($fixed ? ($row['amount'] ?? null) : null);
+            if ($input === null && !$fixed && isset($row['factor'])) {
+                $input = \App\Support\Exact\Decimal::represent(\App\Support\Exact\Decimal::inputRational($row['factor'], 'items.adjustments.factor')->multipliedBy(100));
+            }
+            $value = \App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($input, 'items.adjustments.value'));
+            if ($value->isNegative()) FiscalAmounts::error('items', 'El ajuste de la suscripción no puede ser negativo.');
+            $record = [$field => $id, 'description' => $row['description'] ?? '', 'base' => '0', 'amount' => '0', 'factor' => '0'];
+            if ($fixed) {
+                $amount = $conversion ? $value->multipliedBy($conversion) : $value;
+                $record += ['is_amount' => true, 'amount_exact' => \App\Support\Exact\Decimal::fraction($amount)];
+                $record['amount'] = \App\Support\Exact\Decimal::represent($amount);
+            } else {
+                $record['factor'] = \App\Support\Exact\Decimal::represent($value->dividedBy(100));
+                $record['percentage'] = $type === 'charge' ? $value : \App\Support\Exact\Decimal::represent($value);
+            }
+            $result[] = $record;
+        }
+        return $result;
     }
 
     public function getDocumentType(string $identity_document_type): string

@@ -152,7 +152,7 @@ test('a rejected sale note keeps its draft currency, received amount and rate', 
 })
 
 test('resetting a sale note after success selects the configured active currency', () => {
-    const reset=method('resources/js/views/tenant/sale_notes/form.vue', 'resetForm')
+    const reset=method('resources/js/views/tenant/sale_notes/form.vue', 'resetForm', {window:{salesDocumentsVes:false}})
     const ctx={config:{currency_type_id:'VES'},currency_types:[{id:'VES'},{id:'USD'}],establishments:[],
         form:{currency_type_id:'USD'},initForm(){this.form={}},changeEstablishment(){},changeDateOfIssue(){},
         changeCurrencyType(){},allCustomers(){},setDefaultSerieByDocument(){}}

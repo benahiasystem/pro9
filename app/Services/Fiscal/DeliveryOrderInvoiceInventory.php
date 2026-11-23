@@ -12,6 +12,8 @@ final class DeliveryOrderInvoiceInventory
 {
     public static function prepare(array $input): array
     {
+        // This metadata is produced only from orders validated below, never from the request.
+        $input['_validated_dispatch_ids'] = [];
         foreach ($input['items'] as &$line) unset($line['item']['dispatch_inventory_quantity'], $line['item']['dispatch_global_inventory_quantity']);unset($line);
         $refs=$input['dispatches_relateds'] ?? [];
         if (is_string($refs)) $refs=json_decode($refs,true) ?: [];
@@ -154,6 +156,7 @@ final class DeliveryOrderInvoiceInventory
         }
         unset($line);
         foreach ($tracked as $source) if (empty($source['assigned'])) FiscalAmounts::error('items','La factura debe conservar los productos con lotes y seriales de las órdenes.');
+        $input['_validated_dispatch_ids'] = collect($orders)->pluck('id')->map(fn ($id) => (string) $id)->unique()->sort()->values()->all();
         return $input;
     }
 

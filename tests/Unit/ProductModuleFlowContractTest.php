@@ -18,11 +18,12 @@ class ProductModuleFlowContractTest extends TestCase
         self::assertStringContainsString("public const DEFAULT_UNIT_TYPE = 'UND'", $unitType);
         self::assertStringContainsString("public const SERVICE_UNIT_TYPE = 'SERV'", $unitType);
         self::assertStringContainsString('public const SERVICE_UNIT_TYPE = UnitType::SERVICE_UNIT_TYPE', $item);
-        self::assertStringContainsString('DB::beginTransaction()', $store);
+        self::assertStringContainsString('$connection = (new Item())->getConnection()', $store);
+        self::assertStringContainsString('$connection->beginTransaction()', $store);
         self::assertStringContainsString('$item->fill($request->all())', $store);
         self::assertStringContainsString('$item->save()', $store);
-        self::assertStringContainsString('DB::commit()', $store);
-        self::assertStringContainsString('DB::rollBack()', $store);
+        self::assertStringContainsString('$connection->commit()', $store);
+        self::assertStringContainsString('$connection->rollBack()', $store);
     }
 
     /** @test */

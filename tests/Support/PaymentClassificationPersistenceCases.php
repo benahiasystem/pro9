@@ -1846,6 +1846,8 @@ trait PaymentClassificationPersistenceCases
             'note_type'=>'credit','note_description'=>'Ajuste de prueba']);
         self::assertSame('80',$document->fresh()->balance);
         self::assertSame('Bs. 80.00',$controller->kpis($request)['receivable']['total']);
+        // Include a historical USD invoice in this disposable tenant; new invoices remain VES-only.
+        $db->statement('ALTER TABLE documents DROP CONSTRAINT documents_currency_ves_check');
         $sellerId=$db->table('users')->insertGetId(['name'=>'KPI vendedor','email'=>'kpi-seller@example.test',
             'password'=>'not-a-login-hash','type'=>'seller','establishment_id'=>$input['establishment_id']]);
         $other=(array)$db->table('documents')->where('id',$id)->first();
@@ -5868,6 +5870,12 @@ trait PaymentClassificationPersistenceCases
         self::assertSame(0,$db->table('documents')->count());
         self::assertSame(3,$db->table('global_payments')->count());
         $input['payments']=\App\Support\Exact\SaleNoteConversionLines::preview($noteIds)['payments'];
+        // Simulate a historical tenant so the service can reject a persisted USD note.
+        if ($db->getDriverName() === 'pgsql' && $db->selectOne(
+            "SELECT 1 FROM pg_constraint WHERE conrelid = 'sale_notes'::regclass AND conname = 'sale_notes_currency_ves_check'"
+        )) {
+            $db->statement('ALTER TABLE sale_notes DROP CONSTRAINT sale_notes_currency_ves_check');
+        }
         foreach ([['currency_type_id','USD','VES'],['exchange_rate_sale','11','10'],['state_type_id','11','01'],['state_type_id','13','01']] as [$field,$changed,$original]) {
             $db->table('sale_notes')->where('id',$noteIds[1])->update([$field=>$changed]);
             try { (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input); self::fail('La conversión debe revalidar la nota actual.'); }

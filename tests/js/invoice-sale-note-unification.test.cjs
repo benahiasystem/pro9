@@ -125,4 +125,41 @@ for (const [file, invoice] of [['resources/js/views/tenant/sale_notes/form.vue',
             assert.equal(ctx.form.items[2].quantity,'1')
         }
     })
+
+    if (invoice) test('invoice grouping preserves origin and price agreement', async()=>{
+        for (const barcode of [false,true]) {
+            for (const [firstExtra, secondExtra] of [
+                [{source_item_id:'42'}, {}], [{_from_delivery_order:true}, {}],
+                [{source_price_mode:'manual'}, {}],
+                [{source_price_mode:'manual',price_input:{amount:'10',currency_type_id:'USD',includes_iva:true}},
+                 {source_price_mode:'manual',price_input:{amount:'125',currency_type_id:'VES',includes_iva:true}}],
+                [{source_price_mode:'manual',price_input:{amount:'10',currency_type_id:'USD',includes_iva:true}},
+                 {source_price_mode:'manual',price_input:{amount:'10',currency_type_id:'USD',includes_iva:false}}],
+                [{source_price_mode:'manual',price_input:{amount:{n:'1',d:'3'},currency_type_id:'USD',includes_iva:true}},
+                 {source_price_mode:'manual',price_input:{amount:'0.333333333333',currency_type_id:'USD',includes_iva:true}}],
+            ]) {
+                const ctx=context();ctx.config.show_unify_amount_items=!barcode
+                if (barcode) ctx.$refs.item_search_quick_sale={search_item_by_barcode:true}
+                ctx.shouldUnifyAmountItems=should.bind(ctx);ctx.getUnifiedItemIndex=index.bind(ctx)
+                ctx.form.items=[{...build('1'),...firstExtra}]
+                await run.call(ctx,{...build('1'),...secondExtra})
+                assert.equal(ctx.form.items.length,2,JSON.stringify([firstExtra,secondExtra]))
+            }
+            for (const [field,value] of [['quotation_id','7'],['order_note_id','8'],['technical_service_id','9'],['sale_note_id','12'],['dispatch_id','13'],
+                ['sale_notes_relateds',[{id:'10'}]],['dispatches_relateds',[{id:'11'}]]]) {
+                const ctx=context();ctx.config.show_unify_amount_items=!barcode;ctx.form[field]=value
+                if (barcode) ctx.$refs.item_search_quick_sale={search_item_by_barcode:true}
+                ctx.shouldUnifyAmountItems=should.bind(ctx);ctx.getUnifiedItemIndex=index.bind(ctx)
+                await run.call(ctx,build('1'))
+                assert.equal(ctx.form.items.length,2,field)
+            }
+            const ctx=context();ctx.config.show_unify_amount_items=!barcode
+            if (barcode) ctx.$refs.item_search_quick_sale={search_item_by_barcode:true}
+            ctx.shouldUnifyAmountItems=should.bind(ctx);ctx.getUnifiedItemIndex=index.bind(ctx)
+            ctx.form.items=[{...build('1'),source_price_mode:'manual'}]
+            await run.call(ctx,{...build('1'),source_price_mode:'manual'})
+            assert.equal(ctx.form.items.length,1)
+            assert.equal(ctx.form.items[0].quantity,'2')
+        }
+    })
 }

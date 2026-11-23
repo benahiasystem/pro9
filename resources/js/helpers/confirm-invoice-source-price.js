@@ -2,7 +2,7 @@
 export async function confirmInvoiceSourcePrice(vm, draft) {
     if (typeof window === 'undefined' || !window.salesDocumentsVes || draft.document_type_id !== '01' ||
         !(draft.quotation_id || draft.order_note_id || draft.technical_service_id ||
-          draft.sale_note_id || draft.sale_notes_relateds?.length)) {
+          draft.sale_note_id || draft.sale_notes_relateds?.length || draft.dispatch_id || draft.dispatches_relateds?.length)) {
         return draft;
     }
     let quote;
@@ -17,7 +17,7 @@ export async function confirmInvoiceSourcePrice(vm, draft) {
     if (!quote) return draft;
     try {
         await vm.$confirm(
-            `Origen: Bs. ${quote.source_total}. Tasa: Bs. ${quote.rate} por USD. Nuevo total antes de IGTF: Bs. ${quote.total}. Abonos: Bs. ${quote.applied}. Saldo: Bs. ${quote.balance}.`,
+            `${quote.source_total == null ? '' : `Origen: Bs. ${quote.source_total}. `}Tasa: Bs. ${quote.rate} por USD. Nuevo total antes de IGTF: Bs. ${quote.total}. Abonos: Bs. ${quote.applied}. Saldo: Bs. ${quote.balance}.`,
             'Confirmar el nuevo total',
             {confirmButtonText: 'Confirmar', cancelButtonText: 'Volver'}
         );

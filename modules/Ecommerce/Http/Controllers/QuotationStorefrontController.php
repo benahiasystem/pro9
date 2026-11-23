@@ -29,14 +29,13 @@ class QuotationStorefrontController extends Controller
 {
     public function __construct()
     {
-        // Misma data compartida que EcommerceController para layouts Porto
-        view()->share('records', Item::where('apply_store', 1)->orderBy('id', 'DESC')->take(2)->get());
-        $companyModel = Company::first();
-        view()->share(
-            'ecommerceDescription',
-            EcommerceController::getEcommerceDescription($companyModel)
-        );
-        view()->share('storefront_show_prices', ConfigurationEcommerce::storefrontShowsPrices());
+        $this->middleware(function (Request $request, \Closure $next) {
+            view()->share('records', Item::where('apply_store', 1)->orderBy('id', 'DESC')->take(2)->get());
+            view()->share('ecommerceDescription', EcommerceController::getEcommerceDescription(Company::first()));
+            view()->share('storefront_show_prices', ConfigurationEcommerce::storefrontShowsPrices());
+
+            return $next($request);
+        });
     }
 
     /**

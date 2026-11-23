@@ -112,6 +112,7 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertGreaterThan(0,(int)$headers['x-sab-test-queries']);
             [$code,$body]=$get('/api/company',false);
             self::assertSame(401,$code,$body);
+            $this->assertPosItemExactPriceHttp($db, $get, $input);
             $this->assertInstalledModuleRoutes($db, $get, $input);
             $this->assertSupplementalModuleRoutes($db, $get, $input['user_id']);
             $this->assertLocalProviderModuleRoutes($db, $get);
@@ -1214,6 +1215,35 @@ class ExactHttpAcceptanceTest extends TestCase
             self::assertSame(200,$status,substr($body,0,2500));
             self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
             $creditDocument=\App\Models\Tenant\Document::findOrFail(json_decode($body,true)['data']['id']);
+            foreach ([[$fractionId,'ticket',null],[$creditDocument->id,'a5','NOTA DE CRÉDITO'],[$debitDocument->id,'a5','NOTA DE DÉBITO']] as [$ticketId,$format,$label]) {
+                [$ticketStatus,$ticketBody,$ticketHeaders]=$get('/printticket/document/'.$ticketId.'/'.$format);
+                self::assertSame(200,$ticketStatus,substr($ticketBody,0,2000));
+                self::assertStringContainsString('no-store',$ticketHeaders['cache-control'] ?? '');
+                if ($label !== null) self::assertStringContainsString($label,mb_strtoupper($ticketBody,'UTF-8'));
+            }
+            [$ticketStatus]=$get('/printticket/document/'.$fractionId.'/ticket',false);
+            self::assertSame(401,$ticketStatus);
+            [$ticketStatus]=$get('/printticket/user/'.$fractionId.'/ticket');
+            self::assertSame(404,$ticketStatus);
+            [$ticketStatus]=$get('/printticket/document/'.$fractionId.'/invalid');
+            self::assertSame(404,$ticketStatus);
+            foreach (['07','08'] as $documentType) {
+                $badPreview=array_replace($fractionInvoice,['document_type_id'=>$documentType,
+                    'type'=>'invoice', 'affected_document_id'=>$fractionId,
+                    'note_credit_or_debit_type_id'=>$documentType === '07' ? '01' : '02',
+                    'note_description'=>'Prueba',
+                    'note_creation_key'=>(string)\Illuminate\Support\Str::uuid(),
+                    'note'=>['note_credit_type_id'=>'01','note_debit_type_id'=>'01','note_description'=>'Prueba']]);
+                [$previewStatus,$previewBody]=$get('/documents/preview',true,$badPreview);
+                self::assertSame(422,$previewStatus,substr($previewBody,0,2000));
+                $previewError=json_decode($previewBody,true);
+                self::assertArrayHasKey('type',$previewError['errors'] ?? $previewError['message'] ?? [],$previewBody);
+            }
+            $validPreview=$fractionInvoice; unset($validPreview['type']);
+            $validPreview['actions']=['format_pdf'=>'a5'];
+            [$previewStatus,$previewBody]=$get('/documents/preview',true,$validPreview);
+            self::assertSame(200,$previewStatus,substr($previewBody,0,2000));
+            self::assertStringStartsWith('%PDF-',$previewBody);
             self::assertSame(\App\Support\Exact\Decimal::fraction($tinyDocument->exactValue('total')),\App\Support\Exact\Decimal::fraction($creditDocument->exactValue('total')));
             $lotItemId=$fractionInvoice['items'][0]['item_id']; $lotWarehouse=$fractionInvoice['items'][0]['warehouse_id'];
             $lotStockBefore=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$lotItemId)->where('warehouse_id',$lotWarehouse)->firstOrFail()->exactValue('stock');
@@ -2567,6 +2597,68 @@ class ExactHttpAcceptanceTest extends TestCase
         }
     }
 
+    private function assertPosItemExactPriceHttp($db, callable $get, array $input): void
+    {
+        $item=\App\Models\Tenant\Item::findOrFail($input['items'][0]['item_id'])->replicate();
+        $item->forceFill(['internal_id'=>'POS-EXACT-HTTP', 'barcode'=>'POS-EXACT-HTTP', 'unit_type_id'=>'SERV']);
+        $third=\App\Support\Exact\Decimal::of('1/3');
+        $item->setExactValues(['sale_unit_price'=>$third,'purchase_unit_price'=>$third,'percentage_of_profit'=>$third])->save();
+        [$status]=$get('/items/record/'.$item->id,false);
+        self::assertSame(401,$status);
+        [$status,$body]=$get('/items/record/'.$item->id.'?fresh=1');
+        self::assertSame(200,$status,$body);
+        $payload=json_decode($body,true,512,JSON_THROW_ON_ERROR)['data'];
+        self::assertSame('0.333333333333',$payload['sale_unit_price']);
+        $payload['item_code']='01010101';
+        [$status,$body]=$get('/items',true,$payload);
+        self::assertSame(200,$status,$body); self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
+        foreach (['sale_unit_price','purchase_unit_price','percentage_of_profit'] as $field) {
+            self::assertTrue($item->fresh()->exactValue($field)->isEqualTo('1/3'));
+        }
+        $payload['exact_edited_fields']=['sale_unit_price','purchase_unit_price','percentage_of_profit'];
+        [$status,$body]=$get('/items',true,$payload);
+        self::assertSame(200,$status,$body); self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
+        foreach ($payload['exact_edited_fields'] as $field) {
+            self::assertTrue($item->fresh()->exactValue($field)->isEqualTo('333333333333/1000000000000'));
+        }
+        [$status,$body]=$get('/items/record/'.$item->id.'?fresh=1');
+        self::assertSame(200,$status,$body);
+        self::assertSame('0.333333333333',json_decode($body,true)['data']['sale_unit_price']);
+        foreach ([['exact_edited_fields'=>['calculation_snapshot']],
+            ['sale_unit_price'=>'0.0000000000001','exact_edited_fields'=>['sale_unit_price']]] as $invalid) {
+            [$status,$body]=$get('/items',true,array_replace($payload,$invalid));
+            self::assertSame(422,$status,$body);
+            self::assertTrue($item->fresh()->exactValue('sale_unit_price')->isEqualTo('333333333333/1000000000000'));
+        }
+        $item=$item->fresh();
+        $item->setExactValues(['sale_unit_price'=>\App\Support\Exact\Decimal::of(1),
+            'purchase_unit_price'=>\App\Support\Exact\Decimal::of(1),'percentage_of_profit'=>\App\Support\Exact\Decimal::of('1/3')])->save();
+        [$status,$body]=$get('/items/record/'.$item->id.'?fresh=1');
+        self::assertSame(200,$status,$body);
+        $sequencePayload=json_decode($body,true,512,JSON_THROW_ON_ERROR)['data'];
+        $sequencePayload['item_code']='01010101';
+        $sequencePayload['purchase_unit_price']='1000000000000';
+        $sequencePayload['sale_unit_price']='1003333333333.333333333333';
+        $sequencePayload['exact_profit_sequence']=[['field'=>'purchase_unit_price','value'=>'1000000000000']];
+        $sequencePayload['exact_edited_fields']=['purchase_unit_price','sale_unit_price'];
+        [$status,$body]=$get('/items',true,$sequencePayload);
+        self::assertSame(200,$status,$body); self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
+        self::assertTrue($item->fresh()->exactValue('sale_unit_price')->isEqualTo('3010000000000/3'));
+        [$status,$body]=$get('/items',true,$sequencePayload);
+        self::assertSame(422,$status,$body);
+        self::assertTrue($item->fresh()->exactValue('sale_unit_price')->isEqualTo('3010000000000/3'));
+        [$status,$body]=$get('/items/record/'.$item->id.'?fresh=1');
+        self::assertSame(200,$status,$body);
+        $independent=json_decode($body,true,512,JSON_THROW_ON_ERROR)['data'];
+        $independent['item_code']='01010101';
+        $independent['purchase_unit_price']='9007199254740993';
+        $independent['exact_profit_sequence']=[['field'=>'purchase_unit_price','value'=>'9007199254740993','recalculate'=>false]];
+        [$status,$body]=$get('/items',true,$independent);
+        self::assertSame(200,$status,$body); self::assertTrue(json_decode($body,true)['success'] ?? false,$body);
+        self::assertTrue($item->fresh()->exactValue('sale_unit_price')->isEqualTo('3010000000000/3'));
+        self::assertTrue($item->fresh()->exactValue('purchase_unit_price')->isEqualTo('9007199254740993'));
+    }
+
     private function assertInstalledModuleRoutes($db, callable $get, array $input): void
     {
         $modules = json_decode(file_get_contents(dirname(__DIR__, 2).'/modules_statuses.json'), true, 512, JSON_THROW_ON_ERROR);
@@ -2986,7 +3078,10 @@ class ExactHttpAcceptanceTest extends TestCase
             }
             $amountLegends = array_values(array_filter($data['legends'],static fn ($legend) => ($legend['code'] ?? null) == '1000'));
             self::assertCount(1,$amountLegends,$currency.' Debe existir una sola leyenda de total en letras.');
-            self::assertSame(['code'=>'1000','value'=>\App\CoreFacturalo\Helpers\Number\NumberLetter::convertToLetter($payable)],$amountLegends[0]);
+            $expectedLegend = $currency === 'VES'
+                ? 'Cero con 90/100 '
+                : 'Diez mil cuatrocientos cuarenta y ocho billones trescientos cincuenta y un mil ciento treinta y cinco millones cuatrocientos noventa y nueve mil quinientos cincuenta y un  con 76/100 ';
+            self::assertSame(['code'=>'1000','value'=>$expectedLegend],$amountLegends[0]);
             self::assertContains(['code'=>'2000','value'=>'LEYENDA-DE-PRUEBA-CONSERVADA'],$data['legends']);
 
             if ($currency==='VES') {

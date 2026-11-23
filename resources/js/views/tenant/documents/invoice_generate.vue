@@ -1418,6 +1418,8 @@
                                                 style="min-width: 98px !important"
                                                 @change="changeRowUnitPrice(row)"
                                                 @focus="beginEditableInvoiceRow(row, 'unit_price', $event)"
+                                                @input="markEditableInvoicePrice(row, 'unit_price')"
+                                                @blur="finishEditableInvoicePrice(row, 'unit_price')"
                                              inputmode="decimal"></el-input>
                                         </div>
                                         <template v-else>
@@ -1456,6 +1458,8 @@
                                                 style="min-width: 98px !important"
                                                 @change="changeRowTotal(row)"
                                                 @focus="beginEditableInvoiceRow(row, 'total', $event)"
+                                                @input="markEditableInvoicePrice(row, 'total')"
+                                                @blur="finishEditableInvoicePrice(row, 'total')"
                                              inputmode="decimal"></el-input>
                                         </div>
                                         <template v-else>
@@ -3647,6 +3651,14 @@ export default {
             this._invoiceRowBeforeEdit.set(row,values);
             this.valueInputSelect(event);
         },
+        markEditableInvoicePrice(row, field) {
+            const values = this._invoiceRowBeforeEdit?.get(row);
+            if (values && field in values) values[field + '_edited'] = true;
+        },
+        finishEditableInvoicePrice(row, field) {
+            if (this._invoiceRowBeforeEdit?.get(row)?.[field + '_edited']) return this.commitEditableInvoiceRow(row, field);
+            this._invoiceRowBeforeEdit?.delete(row);
+        },
         commitEditableInvoiceRow(row, field) {
             const index = this.form.items.indexOf(row);
             if (index < 0) return false;
@@ -3660,6 +3672,7 @@ export default {
                 const next = recalculateInvoiceRow(row, field, {
                     currency_type_id:this.form.currency_type_id, exchange_rate_sale:this.form.exchange_rate_sale,
                     percentage_igv:this.percentage_igv, exportation:this.isExportInvoice,
+                    explicit_price_edit:!!previous?.[field + '_edited'],
                 });
                 this.$set(this.form.items,index,next);
                 this.calculateTotal();
@@ -5628,7 +5641,19 @@ export default {
         },
         getUnifiedItemIndex(row) {
             // Conversion rows already carry the grouping and provenance from the server.
-            if (row.source_sale_note_items?.length) return -1;
+            const derived = this.form.quotation_id || this.form.order_note_id || this.form.technical_service_id || this.form.sale_note_id || this.form.dispatch_id ||
+                this.form.sale_notes_relateds?.length || this.form.dispatches_relateds?.length;
+            const hasOrigin = item => item.source_sale_note_items?.length || item.source_item_id || item._from_delivery_order;
+            if (derived || hasOrigin(row)) return -1;
+            const priceInput = item => item.price_input ?? item.calculation_snapshot?.inputs?.price_input ?? null;
+            const samePriceAgreement = item => {
+                if ((item.source_price_mode ?? null) !== (row.source_price_mode ?? null)) return false;
+                const left = priceInput(item), right = priceInput(row);
+                if (!left || !right) return left === right;
+                if (left.currency_type_id !== right.currency_type_id || (left.includes_iva !== false) !== (right.includes_iva !== false)) return false;
+                try { return exactAmount(left.amount).compare(right.amount) === 0; }
+                catch (_) { return false; }
+            };
             const presentation = row.item?.presentation;
             const factor = source => source?.quantity_unit_exact ??
                 source?.calculation_snapshot?.values?.quantity_unit ?? source?.quantity_unit ?? '1';
@@ -5643,7 +5668,8 @@ export default {
             };
 
             return this.form.items.findIndex(item =>
-                !item.source_sale_note_items?.length &&
+                !hasOrigin(item) &&
+                samePriceAgreement(item) &&
                 canMergeRowQuantity(item) &&
                 canMergeRowPrice(item, row) &&
                 String(item.item_id) === String(row.item_id) &&

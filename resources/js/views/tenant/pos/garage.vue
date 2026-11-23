@@ -805,10 +805,15 @@
 
                 <!-- ── BOTTOM: Sección de pago ── -->
                 <div class="payment-container-pos border-0">
-                    <template v-if="show_fast_payment_garage">
+                    <el-alert v-if="posCurrencyUnavailable" type="error" :closable="false" title="La moneda VES no está activa. Actívela para continuar con la venta." />
+                    <template v-if="show_fast_payment_garage && paymentPanelActivated">
                         <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
                         <fast-payment
-            :stock-blocked="posStockBlocked || !!posBarcodePending"
+                            v-show="!posCurrencyUnavailable"
+                            :stock-blocked="posStockBlocked || !!posBarcodePending"
+                            :currency-blocked="posPaymentBlocked"
+                            :currency-blocked-check="isPaymentCurrencyBlocked"
+                            :payment-state="getCurrentPaymentState"
                             :is_payment.sync="is_payment"
                             :form="form"
                             :currency-type-id-active="form.currency_type_id"
@@ -1092,12 +1097,16 @@ export default {
             user: {},
             form: {items: []},
             exchangeRateError: "",
+            posRatePending: false,
+            posCurrencyRepriceRequired: false,
             categories: [],
             colors: ["#1cb973", "#bf7ae6", "#fc6304", "#9b4db4", "#77c1f3"],
             pagination: {},
             category_selected: "",
             focusClienteSelect: false,
             show_fast_payment_garage: false,
+            paymentPanelActivated: false,
+            draftRestored: false,
             itemUnitTypes: [],
             affectations_exonerated_igv: ["10", "20"],
             searchFromBarcode: false,
@@ -1111,20 +1120,34 @@ export default {
             customerError: false,
         };
     },
+    beforeDestroy() {
+        this._posDisposed = true;
+        this._posTablesRequest = (this._posTablesRequest || 0) + 1;
+        this._posRateRequest = (this._posRateRequest || 0) + 1;
+    },
     async created() {
         this.loadConfiguration();
 
         this.show_fast_payment_garage = false;
         await this.initForm();
+        if (this._posDisposed) return;
         await this.getTables();
+        if (this._posDisposed) return;
         await this.getPercentageIgv();
+        if (this._posDisposed) return;
         this.events();
 
         await this.getFormPosLocalStorage();
+        if (this._posDisposed) return;
         await this.initCurrencyType();
+        if (this._posDisposed) return;
+        this.draftRestored = true;
+        if (!this.posPaymentBlocked) this.paymentPanelActivated = true;
         this.customer = await this.getLocalStorageIndex("customer");
+        if (this._posDisposed) return;
 
         await this.selectDefaultCustomer();
+        if (this._posDisposed) return;
 
         this.show_fast_payment_garage = true;
 
@@ -1134,6 +1157,9 @@ export default {
     },
 
     watch: {
+        posPaymentBlocked(blocked) {
+            if (this.draftRestored && !blocked) this.paymentPanelActivated = true;
+        },
         'form.document_type_id'(type, previous) {
             if (!type || !previous || !this.posCatalogReload) return;
             this.all_items = [];
@@ -1142,13 +1168,23 @@ export default {
         },
     },
     computed: {
+        posCurrencyUnavailable() {
+            return typeof window !== 'undefined' && !!window.salesDocumentsVes && !this.currency_types.some(option => option.id === 'VES');
+        },
+        posPaymentBlocked() {
+            const onlyVes = typeof window !== 'undefined' && !!window.salesDocumentsVes;
+            return this.posCurrencyRepriceRequired || this.posCurrencyUnavailable || this.posRateUnavailable ||
+                !this.currency_types.some(option => option.id === this.form.currency_type_id) ||
+                (onlyVes && this.form.currency_type_id !== 'VES') ||
+                this.form.items.some(row => row.currency_type_id !== this.form.currency_type_id);
+        },
         // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
         canChangeDocumentCurrency() {
             return (typeof window === 'undefined' || !window.salesDocumentsVes) && this.currency_types.length > 1;
         },
         // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         posRateUnavailable() {
-            return !isValidPosRate(this.form.exchange_rate_sale);
+            return this.posRatePending || !isValidPosRate(this.form.exchange_rate_sale);
         },
         layout_mode() {
             const cols = parseInt(this.configuration.colums_grid_item, 10);
@@ -1227,6 +1263,8 @@ export default {
         }
     },
     methods: {
+        isPaymentCurrencyBlocked() { return this.posPaymentBlocked; },
+        getCurrentPaymentState() { return this.draftRestored ? this.form : null; },
         changeRowTotalGarage(index) {
             if (!ensurePosRate(this)) return;
             const item = this.form.items[index];
@@ -1475,14 +1513,15 @@ export default {
         },
         initCurrencyType() {
             // ######## INICIO MONEDA DOCUMENTAL GARAGE ########
-            const currency = typeof window !== 'undefined' && window.salesDocumentsVes
+            const onlyVes = typeof window !== 'undefined' && window.salesDocumentsVes;
+            const currency = onlyVes
                 ? 'VES' : this.form.currency_type_id;
-            const target = this.currency_types.find(option => option.id === currency) || this.currency_types[0];
-            this.currency_type = this.currency_types.find(option => option.id === this.form.currency_type_id);
+            const target = this.currency_types.find(option => option.id === currency) || (onlyVes ? null : this.currency_types[0]);
+            this.currency_type = this.currency_types.find(option => option.id === this.form.currency_type_id) || {};
             if (!target) return;
-            const hasMismatchedLines = this.form.items.some(row => row.currency_type_id && row.currency_type_id !== target.id);
-            if (target.id !== this.form.currency_type_id || hasMismatchedLines) {
-                if (isValidPosRate(this.form.exchange_rate_sale)) this.changeCurrencyType(target.id);
+            const hasMismatchedLines = this.form.items.some(row => row.currency_type_id !== target.id);
+            if (target.id !== this.form.currency_type_id || hasMismatchedLines || this.posCurrencyRepriceRequired) {
+                if (!this.posRatePending && isValidPosRate(this.form.exchange_rate_sale)) this.changeCurrencyType(target.id, this.posCurrencyRepriceRequired);
                 return;
             }
             this.currency_type = target;
@@ -1493,8 +1532,17 @@ export default {
             form_pos = JSON.parse(form_pos);
             if (form_pos) {
                 const currentRate = this.form.exchange_rate_sale;
+                this._posRateRequest = (this._posRateRequest || 0) + 1;
+                this.posRatePending = false;
+                this.posCurrencyRepriceRequired = form_pos._pos_currency_reprice_required === true || ((form_pos.items || []).length > 0 && !isValidPosRate(form_pos.exchange_rate_sale));
                 this.form = restorePosDraftRate(withoutDraftRetentions(form_pos), currentRate);
+                const previousDate = this.form.date_of_issue;
                 this.initDateTimeIssue();
+                if (previousDate !== this.form.date_of_issue) {
+                    this.form.exchange_rate_sale = null;
+                    if ((this.form.items || []).length) this.posCurrencyRepriceRequired = true;
+                }
+                if (this.posCurrencyRepriceRequired) this.form._pos_currency_reprice_required = true;
                 if (isValidPosRate(this.form.exchange_rate_sale)) {
                     this.exchangeRateError = "";
                 } else {
@@ -1806,7 +1854,8 @@ export default {
                 }
             );
 
-            await this.$eventHub.$on("cancelSaleGarage", () => {
+            await this.$eventHub.$on("cancelSaleGarage", cancelledDraft => {
+                if (cancelledDraft && cancelledDraft !== this.form) return;
                 this.is_payment = false;
                 this.initForm();
                 this.changeExchangeRate();
@@ -1838,13 +1887,16 @@ export default {
                 this.reloadDataItems(item_id);
             });
 
-            await this.$eventHub.$on("saleSuccess", async () => {
+            await this.$eventHub.$on("saleSuccess", async submittedDraft => {
+                if (submittedDraft && submittedDraft !== this.form) return;
                 // this.is_payment = false
                 this.initForm();
-                await this.getTables();
+                const applied = await this.getTables(() => {
+                    this.selectDefaultCustomer();
+                    this.setFormPosLocalStorage();
+                });
+                if (!applied) return;
                 if (["prod", "cat2", "cat3"].includes(this.place)) await this.getRecords();
-                this.selectDefaultCustomer();
-                this.setFormPosLocalStorage();
                 this.setOriginalAffectationToItems();
             });
 
@@ -1865,6 +1917,9 @@ export default {
             this.posCartGeneration++;
             this.posBarcodePending = 0;
             this.loading = false;
+            this._posRateRequest = (this._posRateRequest || 0) + 1;
+            this.posRatePending = false;
+            this.posCurrencyRepriceRequired = false;
             this.form = {
                 establishment_id: null,
                 // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -1946,6 +2001,7 @@ export default {
             };
         },
         async clickPayment() {
+            if (this.posPaymentBlocked) return this.$message.error('Verifique la moneda y la tasa de cambio antes de cobrar.');
             if (this.posBarcodePending || !ensurePosRate(this)) return;
             if (!this.form.subtotal) {
                 //fix para agregar subtotal si no existe prop en json almacenado en local storage
@@ -2034,12 +2090,27 @@ export default {
         },
         async changeExchangeRate() {
             const draft = this.form;
-            const rate = await refreshPosRate(this);
-            if (rate && this.form === draft) this.initCurrencyType();
+            const previousRate = draft.exchange_rate_sale;
+            const pending = refreshPosRate(this);
+            const request = this._posRateRequest;
+            const rate = await pending;
+            if (this._posRateRequest === request && !this.posRatePending && this.form === draft && isValidPosRate(this.form.exchange_rate_sale)) {
+                if ((draft.items || []).length && (!isValidPosRate(previousRate) || exactAmount(previousRate).compare(draft.exchange_rate_sale) !== 0)) {
+                    this.posCurrencyRepriceRequired = true;
+                    draft._pos_currency_reprice_required = true;
+                }
+                if (this.draftRestored) this.initCurrencyType();
+            }
             return rate;
         },
-        async getTables() {
+        async getTables(onDraftReady = null) {
+            const draft = this.form;
+            const snapshot = JSON.stringify(draft);
+            const initial = JSON.parse(snapshot);
+            const request = this._posTablesRequest = (this._posTablesRequest || 0) + 1;
+            let applied = false;
             await this.$http.get(`/${this.resource}/tables`).then(response => {
+                if (request !== this._posTablesRequest) return;
                 response.data.items?.forEach(item => this.rememberPosStock(item));
                 this.affectation_igv_types =
                     response.data.affectation_igv_types;
@@ -2047,18 +2118,27 @@ export default {
                 this.establishment = response.data.establishment;
                 this.currency_types = response.data.currency_types;
                 this.user = response.data.user;
+                this.renderCategories(response.data.categories);
+                if (this.form !== draft) return;
+                if (JSON.stringify(draft) !== snapshot) {
+                    if (initial.establishment_id == null && draft.establishment_id == null) draft.establishment_id = this.establishment.id;
+                    if (initial.date_of_issue && draft.date_of_issue === initial.date_of_issue && initial.exchange_rate_sale == null && draft.exchange_rate_sale == null) this.changeExchangeRate();
+                    return;
+                }
                 this.form.establishment_id = this.establishment.id;
                 this.form.currency_type_id =
                     typeof window !== 'undefined' && window.salesDocumentsVes ? 'VES' : this.currency_types.length > 0
                         ? this.currency_types[0].id
                         : null;
-                this.renderCategories(response.data.categories);
+                applied = true;
+                if (typeof onDraftReady === 'function') onDraftReady();
                 // this.currency_type = _.find(this.currency_types, {'id': this.form.currency_type_id})
                 // this.changeCurrencyType();
                 //this.filterItems();
                 this.changeDateOfIssue();
                 this.changeExchangeRate();
             });
+            return applied && request === this._posTablesRequest && this.form === draft;
         },
         selectDefaultCustomer() {
             if (this.establishment.customer_id && !this.form.customer_id) {
@@ -2228,7 +2308,8 @@ export default {
             const target = this.form.currency_type_id === 'VES' ? 'USD' : 'VES';
             return this.changeCurrencyType(target);
         },
-        changeCurrencyType(target = this.form.currency_type_id) {
+        changeCurrencyType(target = this.form.currency_type_id, forceReprice = false) {
+            forceReprice = forceReprice || this.posCurrencyRepriceRequired;
             if (!ensurePosRate(this)) return false;
             const currency = this.currency_types.find(option => option.id === target);
             if (!currency) return false;
@@ -2236,7 +2317,36 @@ export default {
             const rate = this.form.exchange_rate_sale;
             let items;
             let payments = this.form.payments;
+            let totals;
             try {
+                const needsConversion = forceReprice || target !== previous || this.form.items.some(row => row.currency_type_id !== target);
+                if (forceReprice && target === previous) {
+                    for (const receipt of this.form.payments || []) {
+                        if (receipt.currency_type_id && receipt.currency_type_id !== target) {
+                            if (receipt.original_amount == null || receipt.exchange_rate == null) throw new Error('El cobro no conserva el importe y la tasa de recepción.');
+                            const expected = convertExact(receipt.original_amount, receipt.currency_type_id, target, receipt.exchange_rate).final(2);
+                            if (exactAmount(receipt.payment).compare(expected) !== 0 || exactValue(receipt, 'payment').compare(expected) !== 0) throw new Error('El cobro no coincide con su importe y tasa de recepción.');
+                        }
+                    }
+                }
+                if (needsConversion && this.form.calculation_snapshot != null &&
+                    (this.form.calculation_snapshot.version !== 1 || this.form.calculation_snapshot.values?.total_prepayment == null)) {
+                    throw new Error('El anticipo no conserva su valor exacto.');
+                }
+                if (this.form.items.some(row => {
+                    const input = row.price_input ?? row.calculation_snapshot?.inputs?.price_input;
+                    if (forceReprice && row.calculation_snapshot && input == null) return true;
+                    const source = input != null ? input.currency_type_id
+                        : row.calculation_snapshot ? row.currency_type_id : (row.item?.currency_type_id || row.currency_type_id);
+                    return !['VES', 'USD'].includes(source);
+                })) throw new Error('Una partida no conserva la moneda de su precio original.');
+                if (needsConversion && (
+                    (this.form.discounts || []).length || (this.form.charges || []).length ||
+                    (this.form.prepayments && Object.keys(this.form.prepayments).length) ||
+                    exactAmount(this.form.total_prepayment || '0').compare('0') !== 0 || exactValue(this.form, 'total_prepayment').compare('0') !== 0 ||
+                    this.form.items.some(row => [...(row.discounts || []), ...(row.charges || [])]
+                        .some(adjustment => adjustment.is_amount || adjustment.from_global_distribution))
+                )) throw new Error('Retire los ajustes o anticipos antes de cambiar la moneda del documento.');
                 items = this.form.items.map(row => ({
                     ...calculateRowItem(row, target, rate, this.percentage_igv),
                     unit_type_id: row.unit_type_id,
@@ -2244,22 +2354,38 @@ export default {
                 if (target !== previous) {
                     payments = (payments || []).map(row => {
                         if (isRecordedReceipt(row)) throw new Error('El cobro registrado conserva la moneda del comprobante.');
+                        if (row.calculation_snapshot != null) throw new Error('El cobro conserva un cálculo previo y no puede cambiarse automáticamente de moneda.');
                         const receivedCurrency = row.currency_type_id || previous;
+                        if (receivedCurrency !== previous) {
+                            if (row.original_amount == null || row.exchange_rate == null) throw new Error('El cobro no conserva el importe y la tasa de recepción.');
+                            const applied = convertExact(row.original_amount, receivedCurrency, previous, row.exchange_rate).final(2);
+                            if (exactAmount(row.payment).compare(applied) !== 0) throw new Error('El cobro no coincide con su importe y tasa de recepción.');
+                        }
                         const receiptRate = row.exchange_rate ?? rate;
                         const original = row.original_amount ?? row.tendered_amount ?? row.payment ?? '0';
+                        if (receivedCurrency === previous && exactAmount(original).compare(row.payment) !== 0) throw new Error('El importe recibido y el aplicado no coinciden; revise el cobro antes de cambiar la moneda.');
                         return {...row, currency_type_id: receivedCurrency, exchange_rate: receiptRate,
                             original_amount: original, payment: convertExact(original, receivedCurrency, target, receiptRate).final(2)};
                     });
                 }
+                totals = documentTotals(items, this.form.discounts, this.form.charges, this.form.total_prepayment, this.form.prepayments);
+                const persisted = {...this.form, ...totals, currency_type_id: target, items, payments};
+                delete persisted._pos_currency_reprice_required;
+                this.setFormPosLocalStorage(persisted);
             } catch (error) {
+                if (forceReprice) {
+                    this.posCurrencyRepriceRequired = true;
+                    this.form._pos_currency_reprice_required = true;
+                }
                 this.$message.error(error.message);
                 return false;
             }
             // Commit the rows and their currency together, then refresh the payment panel.
-            Object.assign(this.form, {currency_type_id: target, items, payments});
+            Object.assign(this.form, {currency_type_id: target, items, payments}, totals);
+            delete this.form._pos_currency_reprice_required;
             this.currency_type = currency;
-            this.calculateTotal();
-            this.setFormPosLocalStorage();
+            this.posCurrencyRepriceRequired = false;
+            if (this.$refs?.componentFastPaymentGarage) this.$refs.componentFastPaymentGarage.checkPaymentGarage(this.form.total_payable);
             return true;
         },
         // ######## FIN MONEDA DOCUMENTAL GARAGE ########

@@ -432,6 +432,7 @@ class Document extends ModelTenant
             }
 
             return [
+                'id'             => (string) $row->getKey(),
                 'quantity'       => D::represent($row->exactValue('quantity')),
                 'unit_type_id'   => optional($row->item)->unit_type_id,
                 'description'    => $row->name_product_pdf ?: optional($row->item)->description,

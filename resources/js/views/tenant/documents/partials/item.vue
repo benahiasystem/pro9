@@ -389,6 +389,7 @@
                                             form.item.currency_type_id
                                         "
                                         class="el-select-currency"
+                                        @change="markManualPrice"
                                     >
                                         <el-option
                                             v-for="option in currencyTypes"
@@ -409,7 +410,7 @@
                                                 permissionEditItemPrices
                                             )
                                         "
-                                        @input="calculateQuantity"
+                                        @input="onManualPriceInput"
                                     >
                                     </el-input>
                                 </template>
@@ -426,7 +427,7 @@
                                             permissionEditItemPrices
                                         )
                                     "
-                                    @input="calculateQuantity"
+                                    @input="onManualPriceInput"
                                 >
                                     <template
                                         v-if="form.item.currency_type_symbol"
@@ -643,7 +644,7 @@
                                                         :key="p.id"
                                                         size="small"
                                                         :type="isSelectedUnitPrice(row, p) ? 'primary' : 'default'"
-                                                        @click.prevent="selectedPrice(row, p)"
+                                                        @click.prevent="selectManualPrice(row, p)"
                                                     >{{ p.label }} - {{ p.price }}</el-button>
                                                 </div>
                                                 <div v-else class="text-muted">
@@ -1176,6 +1177,8 @@ export default {
             activePanel: 0,
             total_item: 0,
             editedOriginalPriceInput: null,
+            priceDirty: false,
+            priceTextDirty: false,
             catalogItemCurrencyTypeId: null,
             item_unit_types: [],
             item_unit_type: {},
@@ -1736,6 +1739,8 @@ export default {
             this.errors = {};
             this.readonly_total = 0;
             this.editedOriginalPriceInput = null;
+            this.priceDirty = false;
+            this.priceTextDirty = false;
             this.catalogItemCurrencyTypeId = null;
 
             this.form = {
@@ -2266,10 +2271,13 @@ export default {
             this.form.unit_price_value = amount.decimal();
             this.form.has_igv = saved.includes_iva !== false;
         },
+        markManualPrice() { if (this.isFromInvoice) { this.priceDirty = true; this.priceTextDirty = true; } },
+        onManualPriceInput() { this.markManualPrice(); this.calculateQuantity(); },
+        selectManualPrice(row, price) { if (this.isFromInvoice) { this.priceDirty = true; this.priceTextDirty = false; } return this.selectedPrice(row, price); },
         currentPriceInputAmount() {
             const original = this.editedOriginalPriceInput;
             const displayed = String(this.form.unit_price_value || '0');
-            if (original && exactAmount(displayed).compare(original.display) === 0
+            if (!this.priceTextDirty && original && exactAmount(displayed).compare(original.display) === 0
                 && this.form.item.currency_type_id === original.currency_type_id
                 && (this.form.has_igv !== false) === (original.includes_iva !== false)) {
                 return original.amount;
@@ -2280,6 +2288,9 @@ export default {
             const row = this.recordItem;
             this.form.record_id = row.record_id || row.id || null;
             this.form.source_sale_note_items = (row.source_sale_note_items || []).map(source => ({...source}));
+            this.form.source_item_id = row.source_item_id || null;
+            this.form._from_delivery_order = !!row._from_delivery_order;
+            this.form.source_price_mode = row.source_price_mode || null;
             this.form.quantity = this.normalizeDecimal(row.quantity);
             this.form.calculation_snapshot = row.calculation_snapshot || null;
             this.form.quantity_input = row.quantity_input || row.calculation_snapshot?.inputs?.quantity_input || null;
@@ -2426,6 +2437,7 @@ export default {
             this.form.input_unit_price_value = this.form.unit_price_value;
 
             this.form.price_input = {amount: priceInputAmount, currency_type_id: this.form.item.currency_type_id || this.currencyTypeIdActive, includes_iva: this.form.has_igv !== false};
+            if (this.isFromInvoice && this.priceDirty) this.form.source_price_mode = 'manual';
             this.form.unit_price = unit_price;
             this.form.item.unit_price = unit_price;
             this.form.item.presentation = this.item_unit_type;

@@ -89,6 +89,14 @@ class DocumentController extends Controller
 
     public function __construct()
     {
+        $this->middleware(function ($request, $next) {
+            if ($request->input('document_type_id') !== '01') {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'type' => 'La vista previa está disponible para facturas.',
+                ]);
+            }
+            return $next($request);
+        })->only('preview');
         $this->middleware('input.request:document,web', ['only' => ['store','preview']]);
         $this->middleware('input.request:documentUpdate,web', ['only' => ['update']]);
     }
@@ -1567,7 +1575,7 @@ class DocumentController extends Controller
             'payments.*' => 'array',
         ]);
         $input += $request->only(['quotation_id', 'sale_note_id', 'sale_notes_relateds',
-            'order_note_id', 'technical_service_id', 'operation_type_id', 'discounts',
+            'order_note_id', 'dispatch_id', 'dispatches_relateds', 'technical_service_id', 'operation_type_id', 'discounts',
             'charges', 'total_prepayment', 'prepayments', 'invoice', 'taxes']);
         $user = $request->user();
         abort_unless($user && ($user->type === 'admin' || (string) $user->establishment_id === (string) $input['establishment_id']), 403);
@@ -1577,6 +1585,11 @@ class DocumentController extends Controller
 
     public function preview(DocumentRequest $request)
     {
+        if ($request->input('document_type_id') !== '01' || $request->input('type') !== 'invoice') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'type' => 'La vista previa está disponible para facturas.',
+            ]);
+        }
         \App\Services\SalesDocumentCurrency::validate($request->input('currency_type_id'));
         $validate = $this->validateDocument($request);
         if (!$validate['success']) return $validate;

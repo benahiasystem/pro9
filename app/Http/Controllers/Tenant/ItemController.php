@@ -409,6 +409,7 @@ class ItemController extends Controller
         /** Informacion adicional */
         $configuration = $configuration->getCollectionData();
         $inventory_configuration = InventoryConfiguration::firstOrFail();
+        $exact_tax_percentage = \App\Support\Venezuela\Localization::exactTaxPercentage();
         $next_internal_id = str_pad((Item::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
         $product_variables = ProductVariable::whereActive()
             ->with(['values' => function ($query) {
@@ -444,6 +445,7 @@ class ItemController extends Controller
             'CatItemProductFamily',
             'CatItemUnitsPerPackage',
             'inventory_configuration',
+            'exact_tax_percentage',
             'next_internal_id',
             'product_variables'
         );
@@ -451,6 +453,8 @@ class ItemController extends Controller
 
     public function record($id)
     {
+        // Editors that compare exact price snapshots must not use a stale detail cache.
+        if (request()->boolean('fresh')) return new ItemResource(Item::findOrFail($id));
 
         // $record = new ItemResource(Item::findOrFail($id));
         // return $record;
@@ -469,7 +473,8 @@ class ItemController extends Controller
     }
 
     public function store(ItemRequest $request) {
-        DB::beginTransaction();
+        $connection = (new Item())->getConnection();
+        $connection->beginTransaction();
 
         try {
         $id = $request->input('id');
@@ -478,7 +483,8 @@ class ItemController extends Controller
                 $request->merge(['barcode' => $request->internal_id]);
             }
         }
-        $item = Item::firstOrNew(['id' => $id]);
+        $item = $id ? Item::whereKey($id)->lockForUpdate()->first() : null;
+        $item ??= Item::firstOrNew(['id' => $id]);
         $item->item_type_id = '01';
         if ($request->has('date_of_due')) {
             $time = $request->date_of_due;
@@ -498,7 +504,21 @@ class ItemController extends Controller
             ])->first();
         }
 
+        $profitValues = null;
+        if ($request->has('exact_profit_sequence')) {
+            $profitValues = \App\Support\Exact\ItemProfitEdits::resolve($item,
+                (array) $request->input('exact_profit_base', []), (array) $request->input('exact_profit_sequence'), $request->all());
+        }
         $item->fill($request->all());
+        // A scalar explicitly entered or derived by the POS supersedes an old fractional snapshot.
+        $explicit = array_intersect((array) $request->input('exact_edited_fields', []), ['sale_unit_price', 'purchase_unit_price', 'percentage_of_profit']);
+        if ($profitValues !== null) {
+            $item->setExactValues($profitValues);
+        } elseif ($explicit) {
+            $values = [];
+            foreach ($explicit as $field) $values[$field] = \App\Support\Exact\Decimal::of(\App\Support\Exact\Decimal::input($request->input($field), $field));
+            $item->setExactValues($values);
+        }
 
         $temp_path = $request->input('temp_path');
         if($temp_path) {
@@ -867,15 +887,18 @@ class ItemController extends Controller
         // Invalidar caché de listas cuando se crea/edita un item
         CacheHelper::flush(['items_list']);
 
-        DB::commit();
+        $connection->commit();
 
         return [
             'success' => true,
             'message' => ($id)?'Producto editado con éxito':'Producto registrado con éxito',
             'id' => $item->id
         ];
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $connection->rollBack();
+            throw $e;
         } catch (Throwable $e) {
-            DB::rollBack();
+            $connection->rollBack();
             report($e);
 
             return [

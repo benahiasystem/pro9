@@ -16,6 +16,55 @@ use Tests\Support\PostgresTestEnvironment;
 /** @group postgres-integration */
 final class InvoicePaymentBalancePostgresTest extends TestCase
 {
+    public function test_pos_cash_link_requires_the_original_cash_session(): void
+    {
+        $fixture = new FiscalEmissionSchemaTest();
+        (new ReflectionMethod($fixture, 'setUp'))->invoke($fixture);
+        try {
+            [$db, $app, $input] = (new ReflectionMethod($fixture, 'bootHkaFixture'))->invoke($fixture);
+            PostgresTestEnvironment::assertServer($db);
+            config(['view.paths' => [base_path('resources/views')], 'view.compiled' => sys_get_temp_dir()]);
+            $app->register(\Illuminate\View\ViewServiceProvider::class);
+            $db->table('configurations')->update(['auto_send_hka' => false]);
+            $input['payment_condition_id'] = '02';
+            $input['payments'] = [];
+            $invoice = (new Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+            $noteData = array_replace($input, ['id' => null, 'series' => 'NV01', 'document_type_id' => '80', 'prefix' => 'NV']);
+            $note = \App\Models\Tenant\SaleNote::create((new \App\Http\Controllers\Tenant\SaleNoteController())->mergeData($noteData));
+            $cashA = $db->table('cash')->where('user_id', auth()->id())->where('state', true)->value('id');
+            self::assertNotNull($cashA);
+            $controller = new CashController();
+            foreach (['document_id' => $invoice->id, 'sale_note_id' => $note->id] as $field => $id) {
+                $request = Request::create('/cash/cash_document', 'POST', [$field => $id, 'require_existing_cash_link' => true]);
+                self::assertTrue($controller->cash_document($request)->getData(true)['success']);
+                self::assertTrue($controller->cash_document($request)->getData(true)['success']);
+                self::assertSame(1, $db->table('cash_documents')->where('cash_id', $cashA)->where($field, $id)->count());
+                self::assertSame(1, $db->table('cash_document_credits')->where('cash_id', $cashA)->where($field, $id)->count());
+            }
+            $db->table('cash')->where('id', $cashA)->update(['state' => false]);
+            $cashB = \App\Models\Tenant\Cash::create(['user_id' => auth()->id(), 'state' => true, 'date_opening' => '2026-09-10', 'time_opening' => '14:00:00', 'beginning_balance' => '0']);
+            foreach (['document_id' => $invoice->id, 'sale_note_id' => $note->id] as $field => $id) {
+                try {
+                    $controller->cash_document(Request::create('/cash/cash_document', 'POST', [$field => $id, 'require_existing_cash_link' => true]));
+                    self::fail('Debe rechazarse una caja distinta de la original.');
+                } catch (\Illuminate\Validation\ValidationException $exception) {
+                    self::assertArrayHasKey('cash', $exception->errors());
+                }
+            }
+            try {
+                $controller->cash_document(Request::create('/cash/cash_document', 'POST', ['document_id' => $invoice->id, 'sale_note_id' => $note->id, 'require_existing_cash_link' => true]));
+                self::fail('Debe rechazarse un comprobante ambiguo.');
+            } catch (\Illuminate\Validation\ValidationException $exception) {
+                self::assertNotEmpty($exception->errors());
+            }
+            foreach (['cash_documents', 'cash_document_credits', 'cash_document_payments'] as $table) {
+                self::assertSame(0, $db->table($table)->where('cash_id', $cashB->id)->count(), $table);
+            }
+        } finally {
+            (new ReflectionMethod($fixture, 'tearDown'))->invoke($fixture);
+        }
+    }
+
     public function test_cash_link_compares_the_exact_credit_balance_at_its_tolerance(): void
     {
         $fixture = new FiscalEmissionSchemaTest();

@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const root=path.resolve(__dirname,'../..'),load=require(path.join(root,'tests/js/helpers/load-module.cjs'))
 const math=load(path.join(root,'resources/js/helpers/exchange-rate-math.js')),commercial=load(path.join(root,'resources/js/helpers/exact-commercial.js')),document=load(path.join(root,'resources/js/helpers/exact-document.js'))
 const files=['resources/js/views/tenant/documents/invoice.vue','resources/js/views/tenant/documents/invoiceupdate.vue','resources/js/views/tenant/documents/invoice_generate.vue']
-const scope={...math,...commercial,...document,moment:require('moment'),_:require('lodash')}
+const scope={...math,...commercial,...document,moment:require('moment'),_:require('lodash'),window:{salesDocumentsVes:false}}
 
 test('invoice forms display the advance rather than the discount in the advances row', () => {
     const Vue = require('vue')

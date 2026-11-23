@@ -1,6 +1,8 @@
 <?php
 namespace App\CoreFacturalo\Helpers\Number;
 
+use App\Support\Exact\Decimal;
+
 class NumberLetter
 {
     private static $UNIDADES = [
@@ -53,82 +55,59 @@ class NumberLetter
 
     public static function convertToLetter($number, $currency = '', $format = false, $decimals = '')
     {
-        $base_number = $number;
-        $decNumberStr = '00';
-        $converted = '';
-        $decimales = '';
-
-        if (($base_number < 0) || ($base_number > 999999999)) {
+        try {
+            if (Decimal::of($number)->isNegative()) {
+                return 'No es posible convertir el numero en letras';
+            }
+            $rounded = Decimal::represent($number, 2, true);
+        } catch (\Throwable $exception) {
             return 'No es posible convertir el numero en letras';
         }
 
-        $div_decimales = explode('.',$base_number);
-
-        if(count($div_decimales) > 1){
-            $base_number = $div_decimales[0];
-            $decNumberStr = str_pad($div_decimales[1], 2, '0', STR_PAD_RIGHT) ;
-//            dd($decNumberStr);
-            if(strlen($decNumberStr) == 2){
-                $decNumberStrFill = str_pad($decNumberStr, 9, '0', STR_PAD_LEFT);
-                $decCientos = substr($decNumberStrFill, 6);
-                $decimales = self::convertGroup($decCientos);
+        [$base_number, $decNumberStr] = explode('.', $rounded);
+        if (strlen($base_number) > 18) {
+            return 'No es posible convertir el numero en letras';
+        }
+        $converted = '';
+        $groups = str_split(str_pad($base_number, 18, '0', STR_PAD_LEFT), 6);
+        foreach (['billon', 'millon'] as $index => $name) {
+            if ($groups[$index] === '000001') {
+                $converted .= 'un ' . $name . ' ';
+            } elseif ($groups[$index] !== '000000') {
+                $converted .= rtrim(self::convertSixDigits($groups[$index])) . ' ' . $name . 'es ';
             }
         }
+        $converted .= self::convertSixDigits($groups[2]);
 
-        $numberStr = (string) $base_number;
-        $numberStrFill = str_pad($numberStr, 9, '0', STR_PAD_LEFT);
-        $millones = substr($numberStrFill, 0, 3);
-        $miles = substr($numberStrFill, 3, 3);
-        $cientos = substr($numberStrFill, 6);
-
-        if (intval($millones) > 0) {
-            if ($millones == '001') {
-                $converted .= 'un millon ';
-            } else if (intval($millones) > 0) {
-                $converted .= sprintf('%smillones ', self::convertGroup($millones));
-            }
-        }
-
-        if (intval($miles) > 0) {
-            if ($miles == '001') {
-                $converted .= 'mil ';
-            } else if (intval($miles) > 0) {
-                $converted .= sprintf('%smil ', self::convertGroup($miles));
-            }
-        }
-
-        if (intval($cientos) > 0) {
-            if ($cientos == '001') {
-                $converted .= 'un ';
-            } else if (intval($cientos) > 0) {
-                $converted .= sprintf('%s ', self::convertGroup($cientos));
-            }
-        }
-
-        if (intval($base_number) === 0) {
+        if ($base_number === '0') {
             $converted = 'Cero ';
         }
 
         if($format){
-            if(empty($decimales)){
-                $valor_convertido = number_format($number, 2, ',', '.') . ' (' . ucfirst($converted) . '00/100 '.$currency.')';
-            } else {
-                $valor_convertido = number_format($number, 2, ',', '.') . ' (' . ucfirst($converted) . $decNumberStr . '/100 '.$currency.')';
-            }
+            $valor_convertido = Decimal::format($rounded, 2, ',', '.') . ' (' . ucfirst($converted) . $decNumberStr . '/100 '.$currency.')';
         }else{
-//            if(empty($decimales)){
-//                $valor_convertido = ucfirst($converted) . $currency;
-//            } else {
-//                $valor_convertido = ucfirst($converted) . $currency. ' con ' . $decimales . $decimals;
-//            }
-            if(empty($decimales)){
-                $valor_convertido = ucfirst($converted) . 'con ' . '00/100 ' . $currency;
-            } else {
-                $valor_convertido = ucfirst($converted) . 'con ' . $decNumberStr . '/100 ' . $currency;
-            }
+            $valor_convertido = ucfirst($converted) . 'con ' . $decNumberStr . '/100 ' . $currency;
         }
 
         return $valor_convertido;
+    }
+
+    private static function convertSixDigits(string $digits): string
+    {
+        $thousands = substr($digits, 0, 3);
+        $units = substr($digits, 3, 3);
+        $text = '';
+        if ($thousands === '001') {
+            $text .= 'mil ';
+        } elseif ($thousands !== '000') {
+            $text .= self::convertGroup($thousands) . 'mil ';
+        }
+        if ($units === '001') {
+            $text .= 'un ';
+        } elseif ($units !== '000') {
+            $text .= self::convertGroup($units) . ' ';
+        }
+        return $text;
     }
 
     private static function convertGroup($n)

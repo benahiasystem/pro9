@@ -15,10 +15,32 @@ use Modules\Sale\Models\TechnicalService;
 // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
 final class InvoiceSourcePrices
 {
+    public static function resolveOrder(array $input, array $notes): array
+    {
+        $requested = null;
+        if (!empty($input['order_note_id'])) {
+            $requested = IntegerTransport::positiveKey($input['order_note_id']);
+            if ($requested === null) {
+                FiscalAmounts::error('order_note_id', 'Seleccione un identificador de pedido válido.');
+            }
+            $input['order_note_id'] = $requested;
+        }
+        if (count($notes) === 1) {
+            $note = SaleNote::withoutEagerLoads()->findOrFail($notes[0]);
+            if ($requested !== null && (string) $requested !== (string) $note->order_note_id) {
+                FiscalAmounts::error('order_note_id', 'El pedido no coincide con el origen de la nota de venta.');
+            }
+            if ($note->order_note_id) $input['order_note_id'] = $note->order_note_id;
+        } elseif (count($notes) > 1 && $requested !== null) {
+            FiscalAmounts::error('order_note_id', 'Las notas relacionadas no admiten un pedido de origen adicional.');
+        }
+        return $input;
+    }
+
     public static function prepare(array $input, array $saleNotes): array
     {
         if (!$saleNotes && empty($input['quotation_id']) && empty($input['order_note_id'])
-            && empty($input['technical_service_id'])) {
+            && empty($input['technical_service_id']) && empty($input['_validated_dispatch_ids'])) {
             return [$input, null];
         }
         if (!SalesDocumentCurrency::usesBolivars()) return [$input, null];
@@ -47,6 +69,12 @@ final class InvoiceSourcePrices
         $linesByItem = $lines->groupBy('item_id');
         $containsUsd = false;
         foreach ($input['items'] as &$row) {
+            $mode = $row['source_price_mode'] ?? null;
+            if ($mode !== null && !in_array($mode, ['manual', 'source'], true)) {
+                FiscalAmounts::error('items.source_price_mode', 'Indique un modo de precio válido.');
+            }
+            if ($mode === 'manual' && empty($row['price_input'])) FiscalAmounts::error('items.price_input', 'Indique el precio manual de la partida.');
+            $containsUsd = $containsUsd || ($row['price_input']['currency_type_id'] ?? null) === 'USD';
             $matches = $linesByItem->get($row['item_id'] ?? '', collect());
             $ids = array_map('strval', array_column($row['source_sale_note_items'] ?? [], 'sale_note_item_id'));
             if ($ids && $saleNotes) $matches = $matches->filter(fn ($line) => in_array((string) $line->id, $ids, true));
@@ -55,6 +83,9 @@ final class InvoiceSourcePrices
                 if ($matches->isEmpty()) FiscalAmounts::error('items', 'La partida indicada no pertenece al documento de origen.');
             }
             if ($matches->isEmpty()) continue;
+            if ($mode === 'manual') {
+                continue;
+            }
             $manualPrice = $row['price_input'] ?? null;
             if (($manualPrice['currency_type_id'] ?? null) === 'VES') {
                 // An amount entered in Bs. after loading the original price is a new agreement.
@@ -62,7 +93,12 @@ final class InvoiceSourcePrices
                 if (($manualPrice['includes_iva'] ?? true) === false && ($row['affectation_igv_type_id'] ?? '') === '10') {
                     $submittedPrice = $submittedPrice->multipliedBy(D::of(1)->plus(D::of(Localization::exactTaxPercentage())->dividedBy(100)));
                 }
-                if (!$matches->contains(fn ($line) => D::represent(D::readRequired($line, 'unit_price')) === D::represent($submittedPrice))) continue;
+                // A fractional input retains an explicit exact price even when its
+                // twelve-place display happens to match the source price.
+                $fractionalInput = is_array($manualPrice['amount'] ?? null);
+                if (!$matches->contains(fn ($line) => $fractionalInput
+                    ? D::readRequired($line, 'unit_price')->isEqualTo($submittedPrice)
+                    : D::represent(D::readRequired($line, 'unit_price')) === D::represent($submittedPrice))) continue;
             }
             $prices = $matches->map(static function ($line) {
                 return $line->calculation_snapshot['inputs']['price_input'] ?? [
@@ -133,10 +169,11 @@ final class InvoiceSourcePrices
                 return [(string) $id, $line['calculation_snapshot']['values']];
             })->all(),
             'sources' => array_map(fn ($source) => [$source->getTable(), (string) $source->id], $sources),
+            'dispatches' => $input['_validated_dispatch_ids'] ?? [],
         ];
         return [$input, [
             'rate' => $rate,
-            'source_total' => D::format(D::sum(array_map(fn ($source) => D::read($source, 'total'), $sources)), 2),
+            'source_total' => $sources ? D::format(D::sum(array_map(fn ($source) => D::read($source, 'total'), $sources)), 2) : null,
             'total' => D::represent($total, 2),
             'applied' => D::represent($received, 2),
             'balance' => D::represent($balance, 2),
@@ -151,8 +188,12 @@ final class InvoiceSourcePrices
         return (new Document())->getConnection()->transaction(function () use ($input) {
             $input = PrepaymentReference::prepare($input);
             $notes = SaleNoteReceiptsRequired::lockOwners($input);
+            $input = self::resolveOrder($input, $notes);
             QuotationReceiptsRequired::assertPresent($input['quotation_id'] ?? null, $input['payments'] ?? []);
             SaleNoteReceiptsRequired::assertPresent($notes, $input['payments'] ?? []);
+            $input = OrderInvoiceInventory::prepare($input, false, null, count($notes) === 1 ? (int) $notes[0] : null);
+            $input = DeliveryOrderInvoiceInventory::prepare($input);
+            $input = SaleNoteInvoiceInventory::prepare($input, $notes);
             return self::prepare($input, $notes)[1];
         });
     }

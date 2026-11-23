@@ -324,6 +324,46 @@ trait NotePersistenceCases
         self::assertTrue(\Modules\Inventory\Models\ItemWarehouse::where('item_id',$itemId)->where('warehouse_id',$warehouse)->firstOrFail()->exactValue('stock')->isEqualTo($stockBefore));
     }
 
+    public function test_api_credit_return_preserves_exact_original_lot_allocations(): void
+    {
+        [$db, $app, $input] = $this->bootHkaFixture(false);
+        $db->table('companies')->update(['fiscal_emission_mode'=>'free_form']);
+        $db->table('configurations')->update(['auto_send_hka'=>false]);
+        $input['payment_condition_id']='02'; $input['payments']=[];
+        $line=&$input['items'][0]; $line['quantity']='0.333333333333';
+        $line['quantity_input']=['amount'=>'1','unit_price'=>'3']; $line['unit_price']='3'; $line['affectation_igv_type_id']='20';
+        $itemId=$line['item_id']; $warehouse=$line['warehouse_id'];
+        $lotA=$db->table('item_lots_group')->insertGetId(['item_id'=>$itemId,'code'=>'API-PARTIAL-A','quantity'=>'1','date_of_due'=>'2027-11-30']);
+        $lotB=$db->table('item_lots_group')->insertGetId(['item_id'=>$itemId,'code'=>'API-PARTIAL-B','quantity'=>'1','date_of_due'=>'2027-11-30']);
+        $line['item']['IdLoteSelected']=[['id'=>$lotA,'compromise_quantity'=>'0.1'],['id'=>$lotB,'compromise_quantity'=>'0.233333333333']];
+        unset($line);
+        $stockBefore=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$itemId)->where('warehouse_id',$warehouse)->firstOrFail()->exactValue('stock');
+        $invoice=$db->transaction(fn()=>(new Facturalo)->forWebDocuments()->save($input)->getDocument()->fresh());
+        $source=$invoice->items->first();
+        $payload=\App\CoreFacturalo\Requests\Inputs\Transform\DocumentWebTransform::transform(array_replace($input,[
+            'date_of_issue'=>now()->toDateString(),'date_of_due'=>now()->toDateString(),
+            'operation_type_id'=>'0101','payment_condition_id'=>'02','payments'=>[],
+        ]));
+        $payload['datos_del_cliente_o_receptor']['codigo_pais']='VE';
+        $payload['datos_del_cliente_o_receptor']['ubigeo']='000619';
+        $payload['source_module']='VENDEYA'; $payload['codigo_tipo_documento']='07'; $payload['serie_documento']='FC01';
+        $payload['codigo_tipo_nota']='07'; $payload['motivo_o_sustento_de_nota']='Devolución parcial API';
+        $payload['note_creation_key']=(string) \Illuminate\Support\Str::uuid();
+        $payload['documento_afectado']=['external_id'=>$invoice->external_id];
+        $payload['items'][0]['cantidad']='0.2';
+        $payload['items'][0]['affected_document_item_id']=(string) $source->id;
+        $payload['items'][0]['lot_returns']=[['id'=>$lotA,'compromise_quantity'=>'0.1'],['id'=>$lotB,'compromise_quantity'=>'0.1']];
+        $request=\Illuminate\Http\Request::create('/api/documents','POST',$payload);
+        $request->attributes->set('sab.strict_input_exceptions',true);
+        $operation=(new \App\CoreFacturalo\InputRequest())->handle($request,
+            fn (\Illuminate\Http\Request $request)=>(new \App\Services\Sellnow\ApiSaleCreation())->persistDocument($request->all()),'document','api');
+        $note=$operation->getDocument()->fresh();
+        self::assertSame('1/5',(string)$note->items->first()->exactValue('inventory_quantity'));
+        self::assertSame('1',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($lotA)->exactValue('quantity'));
+        self::assertSame('13/15',(string)\Modules\Item\Models\ItemLotsGroup::findOrFail($lotB)->exactValue('quantity'));
+        self::assertTrue(\Modules\Inventory\Models\ItemWarehouse::where('item_id',$itemId)->where('warehouse_id',$warehouse)->firstOrFail()->exactValue('stock')->isEqualTo($stockBefore->minus('2/15')));
+    }
+
     public function test_free_form_note_pdf_formats_show_frozen_lots_and_amounts(): void
     {
         [$db,$app,$input]=$this->bootHkaFixture(false);
@@ -466,6 +506,12 @@ trait NotePersistenceCases
         [$db, , $input] = $this->bootHkaFixture(false);
         $db->table('companies')->update(['fiscal_emission_mode' => 'free_form']);
         $db->table('configurations')->update(['auto_send_hka' => false]);
+        if ($currency === 'USD') {
+            // Los documentos USD solo se admiten en tenants con el esquema anterior.
+            $db->statement('ALTER TABLE documents DROP CONSTRAINT documents_currency_ves_check');
+            $db->statement('ALTER TABLE configurations DROP COLUMN sales_documents_ves');
+            self::assertFalse(\App\Services\SalesDocumentCurrency::usesBolivars());
+        }
         $input['currency_type_id'] = $currency;
         $input['exchange_rate_sale'] = '3';
         $input['payment_condition_id'] = '02';
@@ -514,6 +560,10 @@ trait NotePersistenceCases
             'importe de servicio gravado' => ['VES', '03', '104.4', ['n' => '522', 'd' => '5'], '10', '104.4', '90', '14.4'],
             'el cargo pasa a integrar el importe de la unidad fiscal' => ['VES', '03', '126', ['n' => '126', 'd' => '1'], '10', '126', '3150/29', '504/29'],
             'fracción positiva menor a doce decimales' => ['USD', '01', '0', ['n' => '1', 'd' => '3000000000000'], '20', '1/3000000000000', '1/3000000000000', '0'],
+            'fracción exacta en instalación VES' => ['VES', '01', '0.333333333333', ['n' => '1', 'd' => '3'], '20', '1/3', '1/3', '0'],
+            'edición de fracción desactualizada en VES' => ['VES', '03', '0.50', ['n' => '1', 'd' => '3'], '20', '0.5', '0.5', '0'],
+            'importe manual decimal en VES' => ['VES', '01', '0.333333333333', null, '20', '0.333333333333', '0.333333333333', '0'],
+            'fracción mínima positiva en VES' => ['VES', '01', '0', ['n' => '1', 'd' => '3000000000000'], '20', '1/3000000000000', '1/3000000000000', '0'],
         ];
     }
 
@@ -1234,8 +1284,36 @@ trait NotePersistenceCases
         try {
             if ($dir=getenv('SAB_COMMERCIAL_REPORT_EVIDENCE')) copy($commercialFile->getLocalPath(),$dir.'/analisis-comercial.xlsx');
             $book=(new \PhpOffice\PhpSpreadsheet\Reader\Xlsx())->load($commercialFile->getLocalPath());
-            $values=collect($book->getSheet(0)->toArray(null,true,false,false))->flatten()->map(fn($v)=>(string)$v)->all();
-            self::assertContains($analysisVes,$values); self::assertContains($mixedCurrencies ? '220.40' : '0.00',$values); self::assertContains('2 KG; 1 UND',$values);
+            $sheet=$book->getSheet(0); $matrix=$sheet->toArray(null,true,false,false);
+            $header=null; $headerIndex=null;
+            foreach ($matrix as $index=>$row) {
+                if (in_array('Cliente',$row,true) && in_array('Documento',$row,true) && in_array('Total VES',$row,true)) {
+                    $header=$row; $headerIndex=$index; break;
+                }
+            }
+            self::assertNotNull($header,'Faltan las cabeceras del análisis comercial.');
+            $column=static function (string $name) use ($header): int {
+                $index=array_search($name,$header,true);
+                self::assertNotFalse($index,"Falta la columna {$name}.");
+                return $index;
+            };
+            $documentColumn=$column('Documento'); $customerIndex=null;
+            foreach ($matrix as $index=>$row) {
+                if ($index>$headerIndex && ($row[$documentColumn] ?? null)==='V-12345678') { $customerIndex=$index; break; }
+            }
+            self::assertNotNull($customerIndex,'Falta la fila del cliente.');
+            $cell=static fn (int $index)=>$sheet->getCell(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($index+1).($customerIndex+1));
+            $vesCell=$cell($column('Total VES'));
+            self::assertSame($analysisVes,$vesCell->getValue());
+            self::assertSame(\PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING,$vesCell->getDataType());
+            self::assertSame('2 KG; 1 UND',$cell($column('Repuestos QA'))->getValue());
+            if (\App\Services\SalesDocumentCurrency::usesBolivars()) {
+                self::assertNotContains('Total USD',$header); self::assertNotContains('Otras monedas',$header);
+            } else {
+                $usdCell=$cell($column('Total USD'));
+                self::assertSame($mixedCurrencies ? '220.40' : '0.00',$usdCell->getValue());
+                self::assertSame(\PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING,$usdCell->getDataType());
+            }
             $fractions=$book->getSheetByName('Fracciones exactas')->toArray(null,true,false,false);
             self::assertContains(['customer:'.$customer->id,'category:REPUESTOS QA:KG','2','2','1'],$fractions);
             $book->disconnectWorksheets();

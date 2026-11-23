@@ -268,11 +268,38 @@ class CashController extends Controller
             ['state', true],
         ])->lockForUpdate()->firstOrFail();
 
+        $requireExisting = $request->boolean('require_existing_cash_link');
+        if ($requireExisting) {
+            validator($request->all(), [
+                'document_id' => 'nullable|integer|min:1|required_without:sale_note_id',
+                'sale_note_id' => 'nullable|integer|min:1|required_without:document_id',
+                'quotation_id' => 'prohibited',
+            ])->validate();
+            if ($request->filled('document_id') && $request->filled('sale_note_id')) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'document_id' => 'Indique un solo tipo de comprobante.',
+                ]);
+            }
+        }
+
         $isDocument = $request->document_id !== null;
         $documentModel = $isDocument ? Document::class : SaleNote::class;
         $documentField = $isDocument ? 'document_id' : 'sale_note_id';
 
         $document = $documentModel::findOrFail((int) $request->$documentField);
+
+        $existingCashDocument = null;
+        if ($requireExisting) {
+            $otherField = $isDocument ? 'sale_note_id' : 'document_id';
+            $existingCashDocument = CashDocument::where('cash_id', $cash->id)
+                ->where($documentField, $document->id)->whereNull($otherField)->whereNull('quotation_id')
+                ->lockForUpdate()->first();
+            if (!$existingCashDocument) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'cash' => 'El comprobante no pertenece a la caja abierta. Revise la caja original antes de asociar cobros.',
+                ]);
+            }
+        }
 
         $isCredit = \App\Services\Payments\CreditCondition::isCredit($document);
         // Evitar duplicicdad si ya existe
@@ -285,7 +312,7 @@ class CashController extends Controller
         // NOTA: Se esta colocando dentro de los eventos de los modelos para poder registrarlo en caja
         // Gracias al updateOrCreate la información que primero se creo dentro de evento del modelo, no duplicara la información sino solo
         // lo actualiza
-        $cashDocument = \App\Services\Payments\CashPaymentLink::upsert(CashDocument::query(), [
+        $cashDocument = $existingCashDocument ?? \App\Services\Payments\CashPaymentLink::upsert(CashDocument::query(), [
             'cash_id' => $cash->id,
             'document_id' => $request->document_id,
             'sale_note_id' => $request->sale_note_id,

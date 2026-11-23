@@ -36,7 +36,7 @@ export function recalculateInvoiceRow(row, field, context) {
     if (field === 'unit_price' || field === 'total') {
         const entered = input(row[field],field === 'total' ? 'Total' : 'Precio')
         if (field === 'unit_price' && entered.compare('0.01') < 0) throw new Error('El precio no puede ser inferior a 0,01.')
-        const unchanged = row.calculation_snapshot && exactValue(row,field).decimal() === entered.decimal()
+        const unchanged = !context.explicit_price_edit && row.calculation_snapshot && exactValue(row,field).decimal() === entered.decimal()
         const price = unchanged ? exactValue(row,'unit_price') : field === 'total' ? entered.dividedBy(quantity) : entered
         let cost = exactValue(row.item,'purchase_unit_price')
         const costCurrency = row.item.currency_type_id || currency
@@ -47,6 +47,7 @@ export function recalculateInvoiceRow(row, field, context) {
         }
         if (cost.compare(price) > 0) throw new Error('El precio de compra no puede ser superior al precio de venta.')
         draft.price_input = {amount:price.fraction(), currency_type_id:currency, includes_iva:true}
+        if (context.explicit_price_edit) draft.source_price_mode = 'manual'
         draft.input_unit_price_value = price.decimal()
         draft.input_has_igv = true
     }

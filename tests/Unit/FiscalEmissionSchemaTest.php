@@ -444,6 +444,20 @@ PHP;
         $input['payments'] = [];
         $input['payment_condition_id'] = '02';
         $input['quotation_id'] = $quotationId;
+        $request = new class extends \Illuminate\Http\Request {
+            public function validate(array $rules): array
+            {
+                return app('validator')->make($this->all(), $rules)->validate();
+            }
+        };
+        $request->initialize([], array_replace($input, ['dispatch_id' => '0']), [], [], [], ['REQUEST_METHOD' => 'POST']);
+        $request->setUserResolver(fn () => \App\Models\Tenant\User::findOrFail($input['user_id']));
+        try {
+            (new \App\Http\Controllers\Tenant\DocumentController())->previewSourcePrices($request);
+            self::fail('La vista previa debe validar la orden de entrega recibida.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('dispatch_id', $error->errors(), json_encode($error->errors()));
+        }
         $preview = \App\Services\Fiscal\InvoiceSourcePrices::preview($input);
         self::assertSame('400.00', $preview['source_total']);
         self::assertSame('450', $preview['total']);

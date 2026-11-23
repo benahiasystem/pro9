@@ -242,7 +242,7 @@ function priceEditor(row, catalogCurrency='VES', purchase='0') {
     const tree=parser.parse(component.script.content,{sourceType:'module'})
     const methods=tree.program.body.find(n=>n.type==='ExportDefaultDeclaration').declaration.properties.find(n=>n.key?.name==='methods').value.properties
     const selected=['restoreEditedPrice','restoreEditedQuantity','calculateTotal','currentExactQuantity','normalizeDecimal','initForm','clickAddItem','itemToDocumentConversion',
-        'create','setPresentationEditItem','selectedPrice','isSelectedPrice','getSelectedClass','calculateQuantity','prepareDiscountsForEdit','currentPriceInputAmount']
+        'create','setPresentationEditItem','selectedPrice','isSelectedPrice','getSelectedClass','calculateQuantity','prepareDiscountsForEdit','currentPriceInputAmount','markManualPrice','onManualPriceInput','selectManualPrice']
     const functions=vm.runInNewContext(`({${methods.filter(n=>selected.includes(n.key?.name)).map(n=>generate(n).code).join(',')}})`,{
         exactAmount,exactValue,calculateRowItem,resolveSelectableAffectationType:()=>true,_:require('lodash'),
         ...require('./support/exact-runtime.cjs')('invoice-lots')})
@@ -293,6 +293,23 @@ test('reopening an inline price of one third retains the fraction and a changed 
     assert.equal(emitted[1].total,'1.5');assert.equal(emitted[1].price_input.amount,'0.5')
 })
 
+test('an edited price that returns to its displayed value is sent as a manual decimal', async () => {
+    const row = calculateRowItem({item:{id:1,unit_price:'0.333333333333',currency_type_id:'VES'}, quantity:'3',
+        price_input:{amount:{n:'1',d:'3'},currency_type_id:'VES',includes_iva:true},affectation_igv_type_id:'20'},'VES','40','0.16')
+    const untouched=priceEditor(row)
+    untouched.state.isFromInvoice=true
+    await untouched.state.clickAddItem()
+    assert.equal(untouched.emitted[0].price_input.amount.d,'3')
+    assert.notEqual(untouched.emitted[0].source_price_mode,'manual')
+    const edited=priceEditor(row)
+    edited.state.isFromInvoice=true
+    edited.state.form.unit_price_value='0.4';edited.state.onManualPriceInput()
+    edited.state.form.unit_price_value='0.333333333333';edited.state.onManualPriceInput()
+    await edited.state.clickAddItem()
+    assert.equal(edited.emitted[0].source_price_mode,'manual')
+    assert.equal(edited.emitted[0].price_input.amount,'0.333333333333')
+})
+
 test('selecting an invoice price list sends the original price and derives the quantity from the entered amount', async () => {
     const row = calculateRowItem({item: {id:1, unit_price:'1', currency_type_id:'VES'}, quantity:'1',
         affectation_igv_type_id:'20'}, 'VES', '40', '0.16');
@@ -303,7 +320,7 @@ test('selecting an invoice price list sends the original price and derives the q
     state.total_item = '1';
     const presentation = {id:7, unit_type_id:'UND', quantity_unit:'1'};
     const price = {id:9, price:'0.33', calculation_snapshot: {version:1, values: {price:{n:'1',d:'3'}}}};
-    state.selectedPrice(presentation, price);
+    state.selectManualPrice(presentation, price);
     assert.equal(state.form.unit_price_value, '0.333333333333');
     assert.equal(state.form.quantity, '3');
     assert.equal(state.readonly_total, '1');
@@ -311,6 +328,7 @@ test('selecting an invoice price list sends the original price and derives the q
     await state.clickAddItem();
     assert.equal(emitted[0].total, '1');
     assert.equal(emitted[0].price_input.amount.d, '3');
+    assert.equal(emitted[0].source_price_mode, 'manual');
     assert.equal(emitted[0].quantity_input.unit_price.d, '3');
 
     const legacy = priceEditor(row);

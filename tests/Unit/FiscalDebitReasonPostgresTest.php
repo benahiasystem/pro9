@@ -38,13 +38,23 @@ final class FiscalDebitReasonPostgresTest extends TestCase
                     (new Facturalo())->forWebDocuments()->save($request->all());
                     self::fail('El motivo de penalidad no debe crear una nota de débito.');
                 } catch (ValidationException $error) {
-                    $expected = $headerIva === '0.005' || $lineIva === '0.005'
+                    $expected = $headerIva !== '0' || $lineIva !== '0'
                         ? ['note.note_debit_type_id' => ['Las penalidades son operaciones inafectas del IVA']]
                         : ['note' => ['Seleccione un motivo vigente para este tipo de nota.']];
                     self::assertSame($expected, $error->errors());
                 }
                 self::assertSame($count, $db->table('documents')->count());
                 self::assertSame(0, $db->transactionLevel());
+            }
+
+            foreach ([['abc', '0', 'total_igv'], [[], '0', 'total_igv'], ['0', '0.0000000000001', 'items.total_igv'], ['0', '0.004', 'note.note_debit_type_id']] as [$headerIva,$lineIva,$field]) {
+                $input = $makeNote->invoke($fixture, $invoiceInput, $invoice, '08', '13', $rows);
+                $input['total_igv']=$headerIva; $input['items'][0]['total_igv']=$lineIva;
+                try {
+                    $this->request($app,$input)->validateResolved();
+                    self::fail('El IVA inválido o positivo debe rechazarse.');
+                } catch (ValidationException $error) { self::assertArrayHasKey($field,$error->errors()); }
+                self::assertSame($count,$db->table('documents')->count());
             }
 
             $input = $makeNote->invoke($fixture, $invoiceInput, $invoice, '08', '02', $rows);

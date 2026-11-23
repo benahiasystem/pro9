@@ -183,38 +183,20 @@ class Facturalo
                 break;
             case 'invoice':
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
-                $requestedOrderId = null;
-                if (!empty($inputs['order_note_id'])) {
-                    $requestedOrderId = IntegerTransport::positiveKey($inputs['order_note_id']);
-                    if ($requestedOrderId === null) {
-                        \App\Services\Fiscal\FiscalAmounts::error('order_note_id', 'Seleccione un identificador de pedido válido.');
-                    }
-                    $inputs['order_note_id'] = $requestedOrderId;
-                }
                 $sourceNotes = \App\Services\Payments\SaleNoteReceiptsRequired::lockOwners($inputs);
-                if (count($sourceNotes) === 1) {
-                    $sourceNote=\App\Models\Tenant\SaleNote::withoutEagerLoads()->findOrFail($sourceNotes[0]);
-                    if ($requestedOrderId !== null && (string) $requestedOrderId !== (string) $sourceNote->order_note_id) {
-                        \App\Services\Fiscal\FiscalAmounts::error('order_note_id','El pedido no coincide con el origen de la nota de venta.');
-                    }
-                    if ($sourceNote->order_note_id) {
-                        $inputs['order_note_id']=$sourceNote->order_note_id;
-                    }
-                } elseif (count($sourceNotes)>1 && !empty($inputs['order_note_id'])) {
-                    \App\Services\Fiscal\FiscalAmounts::error('order_note_id','Las notas relacionadas no admiten un pedido de origen adicional.');
-                }
+                $inputs = \App\Services\Fiscal\InvoiceSourcePrices::resolveOrder($inputs, $sourceNotes);
                 \App\Services\Payments\QuotationReceiptsRequired::assertPresent($inputs['quotation_id'] ?? null, $inputs['payments'] ?? []);
                 \App\Services\Payments\SaleNoteReceiptsRequired::assertPresent($sourceNotes, $inputs['payments'] ?? []);
                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
+                $inputs=\App\Services\Fiscal\OrderInvoiceInventory::prepare($inputs,false,null,count($sourceNotes)===1 ? (int)$sourceNotes[0] : null);
+                $inputs=\App\Services\Fiscal\DeliveryOrderInvoiceInventory::prepare($inputs);
+                $inputs=\App\Services\Fiscal\SaleNoteInvoiceInventory::prepare($inputs,$sourceNotes);
                 // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
                 [$inputs, $sourcePrices] = \App\Services\Fiscal\InvoiceSourcePrices::prepare($inputs, $sourceNotes);
                 if ($sourcePrices && !hash_equals($sourcePrices['confirmation'], (string) ($inputs['source_price_confirmation'] ?? ''))) {
                     \App\Services\Fiscal\FiscalAmounts::error('source_price_confirmation', 'Consulte y confirme el nuevo total en bolívares antes de facturar.');
                 }
                 // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
-                $inputs=\App\Services\Fiscal\OrderInvoiceInventory::prepare($inputs,false,null,count($sourceNotes)===1 ? (int)$sourceNotes[0] : null);
-                $inputs=\App\Services\Fiscal\DeliveryOrderInvoiceInventory::prepare($inputs);
-                $inputs=\App\Services\Fiscal\SaleNoteInvoiceInventory::prepare($inputs,$sourceNotes);
                 $document = Document::create($inputs);
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 \App\Services\Payments\SaleNoteReceiptsRequired::attach($sourceNotes, $document->id);

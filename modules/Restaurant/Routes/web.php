@@ -166,7 +166,7 @@ Route::prefix('restaurant')->middleware(['auth','check.email.verified'])->group(
         Route::get('tables', 'CashController@tables');
         Route::get('opening_cash', 'CashController@opening_cash');
         Route::get('opening_cash_check/{user_id}', 'CashController@opening_cash_check');
-        Route::post('cash', 'Tenant\CashController@store');
+        Route::post('cash', 'CashController@store');
         Route::post('cash_document', 'CashController@cash_document');
         Route::get('close/{cash}', 'CashController@close');
         Route::get('report/{cash}', 'CashController@report');

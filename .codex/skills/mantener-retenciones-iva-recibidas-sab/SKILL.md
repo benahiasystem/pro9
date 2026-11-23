@@ -5,6 +5,8 @@ description: Mantener previsión, comprobantes IVA recibidos de clientes, saldos
 
 # Retenciones IVA recibidas en SAB
 
+La validación transaccional rechaza agente o RIF distintos, referencia de número/control ajena, comprobante con formato o período incorrectos y documentos que no son factura. `InvoiceRetentionPrecisionPostgresTest` comprueba cada rechazo, el saldo, los atributos del comprobante existente y el cierre de la transacción; esta prueba no cubre el controlador HTTP.
+
 ## Precisión exacta — contrato del 16/10/2026
 
 Aplicar [cálculos exactos](../mantener-calculos-exactos-sab/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.

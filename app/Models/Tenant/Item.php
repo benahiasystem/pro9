@@ -1196,13 +1196,10 @@ class Item extends ModelTenant
         $brand = ($this->brand) ? "{$this->brand->name}" : '';
         if ($this->unit_type_id != self::SERVICE_UNIT_TYPE) {
             if (isset($this['stock'])) {
-                $warehouse_stock = number_format($this['stock'], 2);
+                $warehouse_stock = D::format(D::readRequired($this, 'stock'), 2);
             } else {
-                $warehouse_stock = ($this->warehouses && $warehouse)
-                    ?
-                    number_format($this->warehouses->where('warehouse_id', $warehouse->id)->first()->stock, 2)
-                    :
-                    0;
+                $warehouseRow = $warehouse ? $this->warehouses->where('warehouse_id', $warehouse->id)->first() : null;
+                $warehouse_stock = $warehouseRow ? D::format(D::readRequired($warehouseRow, 'stock'), 2) : '0.00';
             }
             $stock = ($this->warehouses && $warehouse) ? "{$warehouse_stock}" : '';
         } else {
@@ -1719,7 +1716,7 @@ class Item extends ModelTenant
 
         $affectation_igv_types_exonerated_unaffected = self::AffectationIgvTypesExoneratedUnaffected();
 
-        if (in_array($this->sale_affectation_igv_type_id, $affectation_igv_types_exonerated_unaffected)) {
+        if (in_array($this->sale_affectation_igv_type_id, $affectation_igv_types_exonerated_unaffected) || $this->sale_affectation_igv_type_id === 'EXP') {
             $has_igv_description = 'No';
         } else {
             $has_igv_description = ((bool)$this->has_igv) ? 'Si' : 'No';
@@ -1750,12 +1747,12 @@ class Item extends ModelTenant
         $stockPerCategory = ItemMovement::getStockByCategory($this->id,auth()->user()->establishment_id);
         $has_igv = (bool)$this->has_igv;
         // ########## INICIO CAMBIO AFECTACIÓN IVA
-        $igv = \App\Support\Venezuela\Localization::taxMultiplier();
+        $igv = \App\Support\Venezuela\Localization::exactTaxMultiplier();
         // ######### FIN CAMBIO AFECTACIÓN IVA
         $affectation_igv_types_exonerated_unaffected = self::AffectationIgvTypesExoneratedUnaffected();
-        if (in_array($this->sale_affectation_igv_type_id, $affectation_igv_types_exonerated_unaffected)) {
+        if (in_array($this->sale_affectation_igv_type_id, $affectation_igv_types_exonerated_unaffected) || $this->sale_affectation_igv_type_id === 'EXP') {
             // Exonerado, solo se multiplica por la unidad para que no haga cambio.
-            $igv = 1;
+            $igv = \App\Support\Exact\Decimal::of(1);
         }
         $itemSupply = $this->supplies;
         if(!emptY($itemSupply)){
@@ -1763,8 +1760,11 @@ class Item extends ModelTenant
                 return $row-> getCollectionData();
             });
         }
-        $salePriceWithIgv = ($has_igv == true)?$this->sale_unit_price:($this->sale_unit_price * $igv);
-        $salePriceWithIgv = number_format($salePriceWithIgv, $configuration->decimal_quantity, '.', '');
+        $salePriceWithIgv = \App\Support\Exact\Decimal::readRequired($this, 'sale_unit_price');
+        if (!$has_igv) {
+            $salePriceWithIgv = $salePriceWithIgv->multipliedBy($igv);
+        }
+        $salePriceWithIgv = \App\Support\Exact\Decimal::format($salePriceWithIgv, $decimal_units, '.', '');
         $currency = $this->currency_type;
         if(empty($currency )){
             $currency = new CurrencyType();
@@ -1898,11 +1898,11 @@ class Item extends ModelTenant
     /**
      * Obtener precio unitario entero o con decimales
      *
-     * @return int|float
+     * @return string
      */
     public function getFormatSaleUnitPrice()
     {
-        return ((int)$this->sale_unit_price != $this->sale_unit_price) ? $this->sale_unit_price : round($this->sale_unit_price);
+        return D::represent(D::read($this, 'sale_unit_price'));
     }
 
 

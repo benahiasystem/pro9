@@ -101,6 +101,7 @@ class DocumentTransform
             'sale_note_id' => Functions::valueKeyInArray($inputs, 'codigo_nota_venta'),
             // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
             'source_price_confirmation' => Functions::valueKeyInArray($inputs, 'source_price_confirmation'),
+            'note_creation_key' => Functions::valueKeyInArray($inputs, 'note_creation_key'),
             // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
             'seller_id' => Functions::valueKeyInArray($inputs, 'codigo_vendedor'),
             'terms_condition' => Functions::valueKeyInArray($inputs, 'terminos_condiciones'),
@@ -137,7 +138,13 @@ class DocumentTransform
                     'price_type_id' => Functions::valueKeyInArray($row, 'codigo_tipo_precio'),
                     'unit_price' => Functions::valueKeyInArray($row, 'precio_unitario'),
                     'price_input' => $row['price_input'] ?? null,
+                    'source_price_mode' => $row['source_price_mode'] ?? null,
                     'quantity_input' => $row['quantity_input'] ?? null,
+                    'affected_document_item_id' => $row['affected_document_item_id'] ?? null,
+                    'adjustment_amount' => $row['adjustment_amount'] ?? null,
+                    'adjustment_amount_exact' => $row['adjustment_amount_exact'] ?? null,
+                    'serial_ids' => $row['serial_ids'] ?? null,
+                    'lot_returns' => $row['lot_returns'] ?? null,
 
                     'affectation_igv_type_id' => Functions::valueKeyInArray($row, 'codigo_tipo_afectacion_igv'),
                     'total_base_igv' => Functions::valueKeyInArray($row, 'total_base_igv'),

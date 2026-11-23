@@ -163,12 +163,7 @@ class Functions
     }
 
     public static function findAffectedDocumentByExternalId($external_id) {
-        $document = Document::where('external_id', $external_id)
-            ->first();
-
-        if (!$document) throw new Exception("No se encontró el documento con código externo {$external_id}.");
-
-        return $document;
+        return Document::whereTypeUser()->where('external_id', $external_id)->firstOrFail();
     }
 
     public static function voidedDocuments($inputs) {

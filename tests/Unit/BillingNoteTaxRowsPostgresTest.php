@@ -51,6 +51,27 @@ final class BillingNoteTaxRowsPostgresTest extends TestCase
                 ['affected_document_item_id' => $exempt->id, 'adjustment_amount' => '7.25'],
             ]))->getDocument()->fresh();
 
+            $controller=app(\App\Http\Controllers\Tenant\DownloadController::class);
+            foreach ([[$credit,'TOTAL NOTA DE CRÉDITO'],[$debit,'TOTAL NOTA DE DÉBITO']] as [$note,$label]) {
+                $response=$controller->toTicket('document',$note->id,'a5');
+                self::assertStringContainsString($label,mb_strtoupper($response->getContent(),'UTF-8'));
+                self::assertStringContainsString('no-store',$response->headers->get('Cache-Control'));
+                $ticket=$controller->toTicket('document',$note->id,'ticket');
+                self::assertStringContainsString('NOTA DE',mb_strtoupper($ticket->getContent(),'UTF-8'));
+            }
+            $operator=auth()->user();
+            $same=new \App\Models\Tenant\User(['type'=>'seller','establishment_id'=>$invoice->establishment_id]);
+            auth()->setUser($same);
+            self::assertSame(200,$controller->toTicket('document',$credit->id,'ticket')->getStatusCode());
+            $other=new \App\Models\Tenant\User(['type'=>'seller','establishment_id'=>$invoice->establishment_id+100]);
+            auth()->setUser($other);
+            try {
+                $controller->toTicket('document',$credit->id,'a5');
+                self::fail('Una sucursal distinta no debe imprimir el comprobante.');
+            } catch (\Symfony\Component\HttpKernel\Exception\HttpException $error) {
+                self::assertSame(403,$error->getStatusCode());
+            } finally { auth()->setUser($operator); }
+
             $tiny = $input;
             $tiny['external_id'] = (string) Str::uuid();
             $tiny['items'] = [array_replace($input['items'][1], [

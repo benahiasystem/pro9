@@ -55,6 +55,29 @@ test('una solicitud anterior no reemplaza la tasa de una solicitud más reciente
     assert.equal(ctx.form.exchange_rate_sale, '40.00000000')
 })
 
+test('la respuesta descartada no libera el bloqueo de una tasa aún pendiente', async () => {
+    const ctx=component(),first=deferred(),second=deferred();let calls=0
+    ctx.searchExchangeRateByDate=()=>++calls===1?first.promise:second.promise
+    const old=refreshPosRate(ctx),latest=refreshPosRate(ctx)
+    assert.equal(ctx.posRatePending,true)
+    first.resolve('30');assert.equal(await old,null);assert.equal(ctx.posRatePending,true)
+    second.resolve('40');assert.equal(await latest,'40.00000000');assert.equal(ctx.posRatePending,false)
+    assert.equal(ctx.form.exchange_rate_sale,'40.00000000')
+})
+
+test('la marca de recálculo existe antes de publicar una tasa nueva', async () => {
+    const ctx=component();let stored='2',observed=false
+    ctx.form.items=[{currency_type_id:'VES'}]
+    Object.defineProperty(ctx.form,'exchange_rate_sale',{configurable:true,get:()=>stored,set:value=>{
+        assert.equal(ctx.posCurrencyRepriceRequired,true)
+        assert.equal(ctx.form._pos_currency_reprice_required,true)
+        observed=true;stored=value
+    }})
+    ctx.searchExchangeRateByDate=async()=> '4'
+    await refreshPosRate(ctx)
+    assert.equal(observed,true);assert.equal(ctx.posRatePending,false);assert.equal(stored,'4.00000000')
+})
+
 test('fallo sin tasa bloquea el cálculo y permite recuperar mediante reintento', async () => {
     const ctx = component()
     ctx.$message.error = message => ctx.errors.push(message)
@@ -76,6 +99,7 @@ for (const file of ['index.vue', 'fast.vue', 'garage.vue']) {
     const methods = ast.program.body.find(n => n.type === 'ExportDefaultDeclaration').declaration.properties.find(n => n.key.name === 'methods').value
     test(`${file}: bloquea cambio de moneda y apertura de pago sin tasa`, async () => {
         const ctx = component()
+        ctx.isPaymentCurrencyBlocked = () => false
         ctx.$message.error = message => ctx.errors.push(message)
         ctx.form.currency_type_id = 'VES'
         for (const name of ['selectCurrencyType', 'changeCurrencyType', 'clickPayment']) {
@@ -96,7 +120,7 @@ for (const file of ['index.vue', 'fast.vue', 'garage.vue']) {
     for (const hasDraftRate of [true, false]) {
         test(`${file}: restaura borrador ${hasDraftRate ? 'con tasa' : 'sin tasa'} sin esperar una consulta pendiente`, async () => {
             const initial = deferred(), retry = deferred(), requests = []
-            const draft = {exchange_rate_sale: hasDraftRate ? '25' : null, date_of_issue:'2026-10-30', total:'10',
+            const draft = {exchange_rate_sale: hasDraftRate ? '25' : null, date_of_issue:'2026-10-31', total:'10',
                 items: [{item_id: 17, item: {unit_type_id: 'SERV'}}]}
             const ctx = component()
             Object.assign(ctx, {resource:'pos', currency_types:[],

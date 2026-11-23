@@ -61,10 +61,24 @@ class ItemRequest extends FormRequest
             'sale_unit_price' => [
                 'required',
                 'numeric',
-                'gt:0'
+                'gt:0',
+                ...(in_array('sale_unit_price', (array) $this->input('exact_edited_fields', []), true) ? [new \App\Rules\ExactDecimal()] : []),
             ],
+            'exact_edited_fields' => ['sometimes', 'array'],
+            'exact_edited_fields.*' => ['string', Rule::in(['sale_unit_price', 'purchase_unit_price', 'percentage_of_profit'])],
+            'exact_profit_base' => ['required_with:exact_profit_sequence', 'array'],
+            'exact_profit_sequence' => ['sometimes', 'array', 'max:1024'],
+            'exact_profit_sequence.*.field' => ['required', Rule::in(['sale_unit_price', 'purchase_unit_price', 'percentage_of_profit'])],
+            'exact_profit_sequence.*.value' => ['required', new \App\Rules\ExactDecimal()],
+            'exact_profit_sequence.*.recalculate' => ['sometimes', 'boolean'],
             'purchase_unit_price' => [
-                'required', 'numeric'
+                'required', 'numeric',
+                ...(in_array('purchase_unit_price', (array) $this->input('exact_edited_fields', []), true) ? [new \App\Rules\ExactDecimal()] : []),
+            ],
+            'percentage_of_profit' => [
+                Rule::requiredIf(in_array('percentage_of_profit', (array) $this->input('exact_edited_fields', []), true)),
+                'nullable', 'numeric',
+                ...(in_array('percentage_of_profit', (array) $this->input('exact_edited_fields', []), true) ? [new \App\Rules\ExactDecimal()] : []),
             ],
             'quantity_of_points' => ['sometimes',new \App\Rules\ExactDecimal('0')],
             'stock' => [

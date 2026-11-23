@@ -262,6 +262,15 @@ trait IvaRetentionPersistenceCases
     public function test_iva_net_forecast_idempotence_hka_and_audited_replacement(): void
     {
         [$db,$app,$input] = $this->bootIvaFixture();
+        // Exercise the historical USD document alongside VES on an isolated legacy schema.
+        if ($db->getSchemaBuilder()->hasColumn('configurations', 'sales_documents_ves')) {
+            if ($db->getDriverName() === 'pgsql') {
+                $db->statement('ALTER TABLE documents DROP CONSTRAINT documents_currency_ves_check');
+            }
+            $db->getSchemaBuilder()->table('configurations', function ($table) {
+                $table->dropColumn('sales_documents_ves');
+            });
+        }
         $cashId=$db->table('cash')->where('user_id',auth()->id())->where('state',true)->value('id');
         $bank=$this->enableUsdRetentionBank($db);
         foreach (['WEB','POS','VENDEYA'] as $source) foreach (['VES','USD'] as $currency) {

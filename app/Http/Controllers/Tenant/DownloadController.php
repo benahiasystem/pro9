@@ -217,13 +217,20 @@ class DownloadController extends Controller
     }
 
     public function toTicket($model, $external_id, $format = null) {
-        $model = "App\\Models\\Tenant\\".ucfirst($model);
-        $document = $model::where('id', $external_id)->first();
-
-        if (!$document) throw new Exception("El código {$external_id} es inválido, no se encontro documento relacionado");
-
-        if ($format != null) return $this->reloadTicket($document, 'invoice', $format);
-
+        abort_unless($model === 'document', 404);
+        $document = \App\Models\Tenant\Document::findOrFail($external_id);
+        DocumentFiscalController::authorizeDocument($document);
+        $type = match ($document->document_type_id) {
+            '01' => 'invoice',
+            '07' => 'credit',
+            '08' => 'debit',
+            default => abort(404),
+        };
+        abort_unless(in_array($format, ['a4', 'a5', 'ticket', 'ticket_58'], true), 404);
+        return response($this->reloadTicket($document, $type, $format), 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     /**

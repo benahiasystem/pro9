@@ -94,6 +94,7 @@ for (const file of ['index.vue', 'partials/fast_payment.vue', 'partials/fast_pay
     form: {items: [{aux_quantity: '1', total: '1', ...row}], total: '1', exchange_rate_sale: '1',
      customer_id: 1, series_id: 1, date_of_issue: moment().format('YYYY-MM-DD'), document_type_id: type, currency_type_id: 'VES'},
     establishment: {id: 1}, rowsItems: 1, businessTurns: {}, configuration: {},
+    isPaymentCurrencyBlocked: () => false,
     sleep: async () => { validated = true; }, asignPlateNumberToItems: async () => {},
     ensureFiscalPaymentsReady: async () => { validated = true; return false; },
     $message: {error: value => errors.push(value), warning: value => errors.push(value)},
@@ -406,6 +407,155 @@ for(const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) 
   ctx.form.currency_type_id='EUR';component.methods.initFormPayment.call(ctx);assert.equal(ctx.form_payment.payment_method_type_id,null)
  })
 }
+
+test('POS normal conserva cobros y condición vigentes ante almacenamiento obsoleto', async () => {
+ const receipts=[{id:17,payment:'0.33',calculation_snapshot:{version:1,values:{payment:{n:'1',d:'3'}}}}]
+ const component=load('resources/js/views/tenant/pos/partials/payment.vue',{localStorage:{getItem:()=>{throw Error('no debe leer el borrador otra vez')}}})
+ const initial={form:{currency_type_id:'VES',payments:JSON.parse(JSON.stringify(receipts))}}
+ const initialData=component.data.call(initial)
+ assert.deepEqual(JSON.parse(JSON.stringify(initialData.payments)),receipts)
+ assert.notEqual(initialData.payments,initial.form.payments)
+ for(const condition of ['01','02']) {
+  const form={payment_condition_id:condition,payments:JSON.parse(JSON.stringify(receipts))}
+  const ctx={form,amount:0,enter_amount:0,inputAmount(){},useLocalCalculations:false}
+  component.methods.getFormPosLocalStorage.call(ctx)
+  assert.equal(form.payment_condition_id,condition)
+  assert.deepEqual(JSON.parse(JSON.stringify(form.payments)),receipts)
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.payments)),receipts)
+ }
+ const accepted={form:{payments:[]},payments:[],setAmount(){}}
+ component.methods.addRow.call(accepted,receipts)
+ assert.equal(accepted.form.payments,accepted.payments)
+ const dialog=load('resources/js/views/tenant/pos/partials/multiple_payment.vue')
+ let release, reads=0
+ const ctx={parentOwnsPayments:true,$http:{get:()=>new Promise(resolve=>{release=resolve})},
+  getFormPosLocalStorage(){reads++},events(){}}
+ const pending=dialog.created.call(ctx)
+ release({data:{payment_method_types:[],payment_destinations:[]}})
+ await pending
+ assert.equal(reads,0)
+ for(const scenario of ['actualizado','credito','vacio','sin_pagos','moneda','desmontado','reemplazado','cerrado','dialogo']) {
+  let finish;const events=[]
+  let form={payment_condition_id:'01',payments:[],total:'12',currency_type_id:'VES'}
+  let dialogOpen=false
+  const state={parentOwnsPayments:true,showDialog:false,paymentState:()=>form,paymentTotal:()=>form.total,canSuggestPayment:()=>!dialogOpen,total:'4',
+   $http:{get:()=>new Promise(resolve=>{finish=resolve})},events(){},buildPaymentRow:(total,currency)=>({payment:total,currency}),
+   $emit:(name,value)=>events.push([name,value]),getFormPosLocalStorage:()=>assert.fail('no debe leer almacenamiento')}
+  const request=dialog.created.call(state)
+  if(scenario==='sin_pagos')delete form.payments
+  finish({data:{payment_method_types:[],payment_destinations:[]}})
+  if(scenario==='actualizado')form.payments=[{id:17,payment:'3'}]
+  if(scenario==='credito')form.payment_condition_id='02'
+  if(scenario==='moneda'){form.currency_type_id='USD';form.total='35'}
+  if(scenario==='desmontado')state._paymentDisposed=true
+  if(scenario==='reemplazado')form={payment_condition_id:'01',payments:[]}
+  if(scenario==='cerrado')form=null
+  if(scenario==='dialogo')dialogOpen=true
+  await request
+  assert.equal(events.length,['vacio','sin_pagos','moneda'].includes(scenario)?1:0,scenario)
+  if(scenario==='vacio'){assert.equal(events[0][1][0].payment,'12');assert.equal(events[0][1][0].currency,'VES')}
+  if(scenario==='moneda'){assert.equal(events[0][1][0].payment,'35');assert.equal(events[0][1][0].currency,'USD')}
+ }
+ for(const scenario of ['desmontado','reemplazado']) {
+  let finish;let current={series_id:17,payments:[{id:9,payment:'3'}]};const original=current
+  const state={form:original,paymentState:()=>current,resource:'pos',$http:{get:()=>new Promise(resolve=>{finish=resolve})},
+   filterSeries:()=>assert.fail('no debe alterar la serie'),setConfigGlobalDiscountType:()=>assert.fail('no debe continuar'),setDefaultDocumentType:()=>assert.fail('no debe continuar')}
+  const request=component.methods.getTables.call(state)
+  if(scenario==='desmontado')state._paymentDisposed=true
+  else current={series_id:44,payments:[]}
+  finish({data:{series:[],payment_method_types:[],global_discount_types:[]}})
+  await request
+  assert.equal(original.series_id,17)
+  assert.equal(original.payments[0].payment,'3')
+ }
+})
+
+test('el diálogo no aplica cobros de un borrador sustituido o modificado', () => {
+ const component=load('resources/js/views/tenant/pos/partials/multiple_payment.vue')
+ for (const change of ['reemplazo','cobro','condicion','moneda','total','tasa','cliente','tipo','cierre']) {
+  let form={payments:[{id:9,payment:'3'}],payment_condition_id:'01',currency_type_id:'VES',total:'10'}
+  const events=[],warnings=[]
+  const ctx={...component.methods,parentOwnsPayments:true,paymentState:()=>form,paymentTotal:()=>form.total,
+   payments:[{id:9,payment:'3'}],$emit:(...args)=>events.push(args),$message:{warning:message=>warnings.push(message)}}
+  ctx.create()
+  if(change==='reemplazo')form={payments:[{id:12,payment:'8'}],payment_condition_id:'01',currency_type_id:'VES',total:'10'}
+  if(change==='cobro')form.payments=[{id:12,payment:'8'}]
+  if(change==='condicion')form.payment_condition_id='02'
+  if(change==='moneda')form.currency_type_id='USD'
+  if(change==='total')form.total='20'
+  if(change==='tasa')form.exchange_rate_sale='40'
+  if(change==='cliente')form.customer_id=42
+  if(change==='tipo')form.document_type_id='80'
+  if(change==='cierre')form=null
+  ctx.accept()
+  assert.equal(events.some(([name])=>name==='add'),false,change)
+  assert.equal(warnings.length,1,change)
+  assert.deepEqual(ctx.payments,[{id:9,payment:'3'}],change)
+ }
+ const current={payments:[{id:'nuevo',payment:'20'}],payment_condition_id:'01',currency_type_id:'VES',total:'20'}
+ const events=[]
+ const ctx={...component.methods,parentOwnsPayments:true,paymentState:()=>current,paymentTotal:()=>current.total,
+  payments:[{id:'viejo',payment:'10'}],$emit:(...args)=>events.push(args),$message:{warning:()=>assert.fail('el borrador vigente es válido')}}
+ ctx.create();ctx.accept()
+ assert.deepEqual(JSON.parse(JSON.stringify(events.find(([name])=>name==='add')[1])),current.payments)
+ assert.equal(ctx.payments[0].id,'viejo')
+ current.payments=[];current.payment_condition_id='02';ctx.paymentConditionId='01'
+ ctx.create();assert.equal(ctx.draftPayments.length,0)
+ current.payments={invalid:true};events.length=0
+ ctx.create();assert.equal(events.some(([name])=>name==='add'),false)
+ assert.deepEqual(current.payments,{invalid:true})
+ current.payments=[{id:'nuevo',payment:'20'}];current.payment_condition_id='01';ctx.create()
+ let captured;ctx.showDialog=true;ctx.currencyTypeId='USD';ctx.pushDraftPayment=(amount,currency)=>{captured=[amount,currency]}
+ ctx.clickAddPayment('1');assert.deepEqual(captured,['1','VES'])
+})
+
+test('POS rápido conserva pagos vivos y descarta la respuesta del catálogo de otra venta', async () => {
+ const component=load('resources/js/views/tenant/pos/partials/fast_payment.vue',{localStorage:{getItem:()=>{throw Error('no debe leer otra copia del borrador')}}})
+ const saved=[{id:7,payment:'99',currency_type_id:'VES'}]
+ let current={payment_condition_id:'01',payments:JSON.parse(JSON.stringify(saved))}
+ const state={form:current,payments:[],inputAmount(){},useLocalCalculations:false}
+ component.methods.getFormPosLocalStorage.call(state)
+ assert.deepEqual(JSON.parse(JSON.stringify(state.form.payments)),saved)
+ assert.equal(state.form.payment_condition_id,'01')
+ let resolve, filtered=0
+ const ctx={form:current,paymentState:()=>current,resource:'pos',$http:{get:()=>new Promise(done=>{resolve=done})},filterSeries(){filtered++}}
+ const pending=component.methods.getTables.call(ctx)
+ current={payment_condition_id:'02',payments:[{id:8,payment:'5'}]}
+ resolve({data:{series:[],payment_method_types:[],payment_destinations:[]}})
+ await pending
+ assert.equal(filtered,0);assert.equal(current.payment_condition_id,'02');assert.equal(current.payments[0].payment,'5')
+ assert.equal(component.methods.events,undefined)
+ const view=load('resources/js/views/tenant/pos/fast.vue')
+ const parent={draftRestored:true,is_payment:false,form:current}
+ ctx.form=current;ctx.paymentState=()=>view.methods.getCurrentPaymentState.call(parent)
+ const closing=component.methods.getTables.call(ctx)
+ parent.is_payment=true
+ resolve({data:{series:[],payment_method_types:[],payment_destinations:[]}})
+ await closing
+ assert.equal(filtered,0)
+})
+
+test('POS rápido conserva el diálogo del comprobante al iniciar la venta siguiente', async () => {
+ const view=load('resources/js/views/tenant/pos/fast.vue')
+ const panel=load('resources/js/views/tenant/pos/partials/fast_payment.vue')
+ const handlers={},form={payments:[{payment:'7'}]},result={showDialogOptions:true,documentNewId:42,printTicketUrl:'/ticket/42',payments:[],form,all_series:[]}
+ const ctx={form,establishment:{id:1},paymentPanelGeneration:5,$eventHub:{$on:(name,handler)=>{handlers[name]=handler}},
+  initForm(remount=true){if(remount)this.paymentPanelGeneration++;this.form={payments:[]}},
+  getTables:async()=>{},selectDefaultCustomer(){},setFormPosLocalStorage(){}}
+ await view.methods.events.call(ctx)
+ await handlers.saleSuccess()
+ assert.equal(ctx.paymentPanelGeneration,5)
+ result.form=ctx.form
+ panel.watch.form.call(result)
+ assert.equal(result.showDialogOptions,true);assert.equal(result.documentNewId,42);assert.equal(result.printTicketUrl,'/ticket/42')
+ assert.equal(result.payments.length,0)
+ result.form.currency_type_id='VES';result.enter_amount='3';result.singleAmountLocked=false
+ result.payment_method_types=[{id:'14',is_active:true,collection_kind:'cash',currency_type_id:'VES'}]
+ result.payment_destinations=[{id:'cash'}];result.$message={warning:()=>assert.fail('Debe crear el cobro')};result.inputAmount=()=>{}
+ await panel.methods.enterAmount.call(result)
+ assert.equal(result.form.payments.length,1);assert.equal(result.form.payments[0].payment,'3')
+ assert.equal(result.showDialogOptions,true);assert.equal(result.documentNewId,42)
+})
 for(const file of ['payment.vue','fast_payment.vue']) {
  test(`${file} waits for the payment catalog before initializing`,async()=>{
   const component=load('resources/js/views/tenant/pos/partials/'+file);let resolve
@@ -420,7 +570,7 @@ for(const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) 
  test(`${file} restores credit amounts from actual draft receipts instead of the invoice total`,()=>{
   const draft={payment_condition_id:'02',payments:[{payment:20}]};
   const component=load('resources/js/views/tenant/pos/partials/'+file,{localStorage:{getItem:()=>JSON.stringify(draft)}});
-  const ctx={form:{total:100},amount:100,enter_amount:100,$set:(o,k,v)=>o[k]=v,inputAmount:()=>{}};
+  const ctx={form:file!=='fast_payment_garage.vue'?{total:100,...draft}:{total:100},amount:100,enter_amount:100,$set:(o,k,v)=>o[k]=v,inputAmount:()=>{}};
   component.methods.getFormPosLocalStorage.call(ctx);
   assert.equal(ctx.form.payment_condition_id,'02');assert.equal(ctx.amount,'20');assert.equal(ctx.enter_amount,'20');assert.equal(ctx.form.payments[0].payment,20);
  });
@@ -470,7 +620,7 @@ test('invoice checkout restores the original receipt and guards pending cash quo
  for (const file of ['payment.vue','fast_payment.vue','fast_payment_garage.vue']) {
   const component=load('resources/js/views/tenant/pos/partials/'+file,{localStorage:{getItem:()=>JSON.stringify({payments:[payment]})}})
   const instance=new Vue({mixins:[summary],data:()=>({
-   form:{document_type_id:'01',payment_condition_id:'01',payments:[]},
+   form:{document_type_id:'01',payment_condition_id:'01',payments:file!=='fast_payment_garage.vue'?[payment]:[]},
    useLocalCalculations:true,igtfQuote:null,igtfQuoteError:null,igtfQuoteLoading:false,button_payment:false,
   }),methods:{getFormPosLocalStorage:component.methods.getFormPosLocalStorage,inputAmount(){ this.button_payment=false }}})
   instance.getFormPosLocalStorage()
@@ -582,7 +732,7 @@ for (const [panel, dialogFile, storageKey, eventName] of [
   const localStorage={getItem:key=>{assert.equal(key,storageKey);return JSON.stringify({payment_condition_id:'01',payments:[historical]})}}
   const component=load('resources/js/views/tenant/pos/partials/'+panel,{localStorage})
   let recalculated=0
-  const ctx={form:{payment_condition_id:'01',payments:[]},$set:(obj,key,value)=>obj[key]=value,inputAmount:()=>{recalculated++}}
+  const ctx={form:{payment_condition_id:'01',payments:panel!=='fast_payment_garage.vue'?[historical]:[]},$set:(obj,key,value)=>obj[key]=value,inputAmount:()=>{recalculated++}}
   component.methods.getFormPosLocalStorage.call(ctx)
   assert.deepEqual(JSON.parse(JSON.stringify(ctx.form.payments)),[historical])
   assert.equal(String(ctx.amount),'100');assert.equal(recalculated,1)

@@ -8,7 +8,7 @@ const tree=parser.parse(component.script.content,{sourceType:'module'})
 const methods=tree.program.body.find(n=>n.type==='ExportDefaultDeclaration').declaration.properties.find(n=>n.key?.name==='methods').value.properties
 const inheritedTree=parser.parse(fs.readFileSync('resources/js/mixins/editable-row-items.js','utf8'),{sourceType:'module'})
 const inherited=inheritedTree.program.body.find(n=>n.type==='ExportNamedDeclaration'&&n.declaration?.declarations?.[0]?.id.name==='editableRowItems').declaration.declarations[0].init.properties.find(n=>n.key.name==='methods').value.properties
-const selected=['documentRowUnitPrice','beginEditableInvoiceRow','commitEditableInvoiceRow','changeRowQuantity','changeRowUnitPrice','changeRowTotal','recalculateRowTotals']
+const selected=['documentRowUnitPrice','beginEditableInvoiceRow','markEditableInvoicePrice','finishEditableInvoicePrice','commitEditableInvoiceRow','changeRowQuantity','changeRowUnitPrice','changeRowTotal','recalculateRowTotals']
 function context(quantity='2',price='0.1',currency='VES',rate='1') {
     const helper=fs.existsSync('resources/js/helpers/invoice-row-edit.js')?load(path.resolve('resources/js/helpers/invoice-row-edit.js')):{}
     const globals={...math,...helper,_:require('lodash')}
@@ -22,6 +22,21 @@ function context(quantity='2',price='0.1',currency='VES',rate='1') {
         calculateTotal(){this.header=documentTotals(this.form.items)},$message:{error:value=>errors.push(value)}}
     return {state,errors}
 }
+test('an explicit inline edit back to the displayed price remains a manual decimal',()=>{
+    const {state}=context('3','0.333333333333');const row=state.form.items[0]
+    row.calculation_snapshot.values.unit_price={n:'1',d:'3'}
+    state.beginEditableInvoiceRow(row,'unit_price',{})
+    state.finishEditableInvoicePrice(row,'unit_price')
+    assert.equal(state.form.items[0].source_price_mode,undefined)
+    state.beginEditableInvoiceRow(row,'unit_price',{})
+    row.unit_price='0.4';state.markEditableInvoicePrice(row,'unit_price')
+    row.unit_price='0.333333333333';state.markEditableInvoicePrice(row,'unit_price')
+    assert.equal(state.finishEditableInvoicePrice(row,'unit_price'),true)
+    const edited=state.form.items[0]
+    assert.equal(edited.source_price_mode,'manual')
+    assert.equal(edited.price_input.amount.n,'333333333333')
+    assert.equal(edited.price_input.amount.d,'1000000000000')
+})
 test('actual invoice inline edits renew snapshots and header from exact quantities and prices',()=>{
     const {state,errors}=context();const row=state.form.items[0];row.quantity='3';state.changeRowQuantity(row)
     assert.equal(state.form.items[0].calculation_snapshot.values.quantity.n,'3')

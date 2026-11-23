@@ -152,6 +152,7 @@
                 </div>
             </div>
         </div>
+        <div v-if="draftRestored && posPaymentBlocked" class="alert alert-warning">Verifique la moneda y la tasa de cambio antes de cobrar. <button type="button" class="btn btn-sm btn-default" @click="$eventHub.$emit('cancelSale', form)">Cancelar venta</button></div>
         <div class="pos-toolbar__currency" v-if="currency_types.length && (canChangeDocumentCurrency || posRateUnavailable)">
             <div class="h-100 d-flex align-items-center">
                 <p class="exchange-currency m-0">
@@ -1057,6 +1058,9 @@
     <template v-else>
         <payment-form
             :stock-blocked="posStockBlocked || !!posBarcodePending"
+            :currency-blocked="posPaymentBlocked"
+            :currency-blocked-check="isPaymentCurrencyBlocked"
+            :payment-state="getCurrentPaymentState"
             :is_payment.sync="is_payment"
             :form="form"
             :currency-type-id-active="form.currency_type_id"
@@ -1457,6 +1461,7 @@ import {selectPosCatalogPrice, selectPosOriginalPrice, commitPosManualPrice, pos
 import {withoutDraftRetentions} from "@helpers/document-creation"
 import {documentTotals} from "../../../helpers/exact-document"
 import {isValidPosRate, restorePosDraftRate, refreshPosRate, ensurePosRate} from "../../../helpers/pos-exchange-rate"
+import {preparePosCurrencyConversion} from "../../../helpers/pos-currency-conversion"
 import {exactAmount, exactInput, exactValue, exactSum} from "../../../helpers/exchange-rate-math"
 
 import Keypress from "vue-keypress";
@@ -1555,6 +1560,9 @@ export default {
             user: {},
             form: {items: []},
             exchangeRateError: "",
+            posRatePending: false,
+            posCurrencyRepriceRequired: false,
+            draftRestored: false,
             categories: [],
             colors: ["#1cb973", "#bf7ae6", "#fc6304", "#9b4db4", "#77c1f3"],
             pagination: {},
@@ -1585,6 +1593,9 @@ export default {
         };
     },
     beforeDestroy() {
+        this._posDisposed = true;
+        this._posTablesRequest = (this._posTablesRequest || 0) + 1;
+        this._posRateRequest = (this._posRateRequest || 0) + 1;
         this.cancelCustomerMarquee();
         if (this.customer_search_timer) {
             clearTimeout(this.customer_search_timer);
@@ -1593,16 +1604,21 @@ export default {
     },
     async created() {
         await this.loadPriceOptions();
+        if (this._posDisposed) return;
         this.loadConfiguration();
         this.enabledSearchItemByBarcode();
         this.$store.commit("setConfiguration", this.configuration2);
 
         await this.initForm();
+        if (this._posDisposed) return;
         await this.getTables();
+        if (this._posDisposed) return;
         await this.getPercentageIgv();
+        if (this._posDisposed) return;
         this.events();
 
         await this.getFormPosLocalStorage();
+        if (this._posDisposed) return;
         this.form.created_from_pos = true;
         this.form.show_terms_condition = true;
         const cfg = this.config || this.configuration || {};
@@ -1610,15 +1626,21 @@ export default {
             this.form.terms_condition = cfg.terms_condition_sale;
         }
         await this.initCurrencyType();
+        if (this._posDisposed) return;
+        this.draftRestored = true;
         this.customer = await this.getLocalStorageIndex("customer");
+        if (this._posDisposed) return;
 
         // if (document.querySelector(".sidebar-toggle")) {
         //     document.querySelector(".sidebar-toggle").click();
         // }
 
         await this.selectDefaultCustomer();
+        if (this._posDisposed) return;
         await this.enabledSearchItemByBarcode();
+        if (this._posDisposed) return;
         await this.restoreViewPreference();
+        if (this._posDisposed) return;
     },
     watch: {
         'form.document_type_id'(type, previous) {
@@ -1629,13 +1651,23 @@ export default {
         },
     },
     computed: {
+        posCurrencyUnavailable() {
+            return typeof window !== 'undefined' && !!window.salesDocumentsVes && !this.currency_types.some(option => option.id === 'VES');
+        },
+        posPaymentBlocked() {
+            const onlyVes = typeof window !== 'undefined' && !!window.salesDocumentsVes;
+            return this.posCurrencyRepriceRequired || this.posCurrencyUnavailable || this.posRateUnavailable ||
+                !this.currency_types.some(option => option.id === this.form.currency_type_id) ||
+                (onlyVes && this.form.currency_type_id !== 'VES') ||
+                (this.form.items || []).some(row => row.currency_type_id !== this.form.currency_type_id);
+        },
         // ######## INICIO MONEDA DOCUMENTAL DE VENTAS ########
         canChangeDocumentCurrency() {
             return !window.salesDocumentsVes && this.currency_types.length > 1;
         },
         // ######## FIN MONEDA DOCUMENTAL DE VENTAS ########
         posRateUnavailable() {
-            return !isValidPosRate(this.form.exchange_rate_sale);
+            return this.posRatePending || !isValidPosRate(this.form.exchange_rate_sale);
         },
         layout_mode() {
             const cols = parseInt(this.configuration.colums_grid_item, 10);
@@ -1979,23 +2011,34 @@ export default {
             return this.colors[i % this.colors.length];
         },
         initCurrencyType() {
-            const exists = _.find(this.currency_types, {
-                id: this.form.currency_type_id
-            });
-            if (!exists && this.currency_types.length > 0) {
-                this.form.currency_type_id = this.currency_types[0].id;
-                this.changeCurrencyType();
+            const onlyVes = typeof window !== 'undefined' && !!window.salesDocumentsVes;
+            const desired = onlyVes ? 'VES' : this.form.currency_type_id;
+            const target = this.currency_types.find(option => option.id === desired) || (onlyVes ? null : this.currency_types[0]);
+            this.currency_type = this.currency_types.find(option => option.id === this.form.currency_type_id) || {};
+            if (!target) return;
+            const mismatch = (this.form.items || []).some(row => row.currency_type_id !== target.id);
+            if (target.id !== this.form.currency_type_id || mismatch || this.posCurrencyRepriceRequired) {
+                if (!this.posRatePending && isValidPosRate(this.form.exchange_rate_sale)) this.changeCurrencyType(target.id, this.posCurrencyRepriceRequired);
                 return;
             }
-            this.currency_type = exists;
+            this.currency_type = target;
         },
         getFormPosLocalStorage() {
             let form_pos = localStorage.getItem("form_pos");
             form_pos = JSON.parse(form_pos);
             if (form_pos) {
                 const currentRate = this.form.exchange_rate_sale;
+                this._posRateRequest = (this._posRateRequest || 0) + 1;
+                this.posRatePending = false;
+                this.posCurrencyRepriceRequired = form_pos._pos_currency_reprice_required === true || ((form_pos.items || []).length > 0 && !isValidPosRate(form_pos.exchange_rate_sale));
                 this.form = restorePosDraftRate(withoutDraftRetentions(form_pos), currentRate);
+                const previousDate = this.form.date_of_issue;
                 this.initDateTimeIssue();
+                if (previousDate !== this.form.date_of_issue) {
+                    this.form.exchange_rate_sale = null;
+                    if ((this.form.items || []).length) this.posCurrencyRepriceRequired = true;
+                }
+                if (this.posCurrencyRepriceRequired) this.form._pos_currency_reprice_required = true;
                 if (isValidPosRate(this.form.exchange_rate_sale)) {
                     this.exchangeRateError = "";
                     if (applyPosScalePrices(this.form, this.percentage_igv)) this.calculateTotal();
@@ -2439,7 +2482,8 @@ export default {
                 }
             );
 
-            await this.$eventHub.$on("cancelSale", () => {
+            await this.$eventHub.$on("cancelSale", cancelledDraft => {
+                if (cancelledDraft && cancelledDraft !== this.form) return;
                 this.is_payment = false;
                 this.initForm();
                 this.changeExchangeRate();
@@ -2463,13 +2507,16 @@ export default {
                 this.reloadDataItems(item_id);
             });
 
-            await this.$eventHub.$on("saleSuccess", async () => {
+            await this.$eventHub.$on("saleSuccess", async submittedDraft => {
+                if (submittedDraft && submittedDraft !== this.form) return;
                 // this.is_payment = false
                 this.initForm();
-                await this.getTables();
+                const applied = await this.getTables(() => {
+                    this.selectDefaultCustomer();
+                    this.setFormPosLocalStorage();
+                });
+                if (!applied) return;
                 if (["prod", "cat2", "cat3"].includes(this.place)) await this.getRecords();
-                this.selectDefaultCustomer();
-                this.setFormPosLocalStorage();
             });
 
             await this.$eventHub.$on("enterSelectItemUnitType", unit_type => {
@@ -2487,6 +2534,9 @@ export default {
             this.posCartGeneration++;
             this.posBarcodePending = 0;
             this.loading = false;
+            this._posRateRequest = (this._posRateRequest || 0) + 1;
+            this.posRatePending = false;
+            this.posCurrencyRepriceRequired = false;
             this.form = {
                 establishment_id: null,
                 // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
@@ -2603,7 +2653,11 @@ export default {
 
             };
         },
+        getCurrentPaymentState() { return this.is_payment ? this.form : null },
+        isPaymentCurrencyBlocked() { return !this.draftRestored || this.posPaymentBlocked },
         async clickPayment() {
+            const paymentDraft = this.form;
+            if (this.isPaymentCurrencyBlocked()) return this.$message.warning('Verifique la moneda y la tasa de cambio antes de cobrar.');
             if (this.posBarcodePending || !ensurePosRate(this)) return;
             if (!this.form.subtotal) {
                 //fix para agregar subtotal si no existe prop en json almacenado en local storage
@@ -2661,8 +2715,10 @@ export default {
             this.form.establishment_id = this.establishment.id;
             this.loading = true;
             await this.sleep(800);
-            this.form.payments = []
-            this.payments = []
+            if (this.form !== paymentDraft || this.isPaymentCurrencyBlocked()) {
+                this.loading = false;
+                return;
+            }
             this.is_payment = !this.posBarcodePending;
             this.loading = false;
         },
@@ -2895,11 +2951,29 @@ export default {
             //     this.form.exchange_rate_sale = response
             // })
         },
-        changeExchangeRate() {
-            return refreshPosRate(this);
+        async changeExchangeRate() {
+            const draft = this.form;
+            const previousRate = draft.exchange_rate_sale;
+            const pending = refreshPosRate(this);
+            const request = this._posRateRequest;
+            const rate = await pending;
+            if (this._posRateRequest === request && !this.posRatePending && this.form === draft && isValidPosRate(this.form.exchange_rate_sale)) {
+                if ((draft.items || []).length && (!isValidPosRate(previousRate) || exactAmount(previousRate).compare(draft.exchange_rate_sale) !== 0)) {
+                    this.posCurrencyRepriceRequired = true;
+                    draft._pos_currency_reprice_required = true;
+                }
+                if (this.draftRestored) this.initCurrencyType();
+            }
+            return rate;
         },
-        async getTables() {
+        async getTables(onDraftReady = null) {
+            const draft = this.form;
+            const snapshot = JSON.stringify(draft);
+            const initial = JSON.parse(snapshot);
+            const request = this._posTablesRequest = (this._posTablesRequest || 0) + 1;
+            let applied = false;
             await this.$http.get(`/${this.resource}/tables`).then(response => {
+                if (request !== this._posTablesRequest) return;
                 response.data.items?.forEach(item => this.rememberPosStock(item));
                 this.affectation_igv_types =
                     response.data.affectation_igv_types;
@@ -2918,18 +2992,27 @@ export default {
                 this.customer_seed = this.all_customers.slice();
                 this.currency_types = response.data.currency_types;
                 this.user = response.data.user;
+                this.renderCategories(response.data.categories);
+                if (this.form !== draft) return;
+                if (JSON.stringify(draft) !== snapshot) {
+                    if (initial.establishment_id == null && draft.establishment_id == null) draft.establishment_id = this.establishment.id;
+                    if (initial.date_of_issue && draft.date_of_issue === initial.date_of_issue && initial.exchange_rate_sale == null && draft.exchange_rate_sale == null) this.changeExchangeRate();
+                    return;
+                }
                 this.form.establishment_id = this.establishment.id;
                 this.form.currency_type_id =
                     typeof window !== 'undefined' && window.salesDocumentsVes ? 'VES' : this.currency_types.length > 0
                         ? this.currency_types[0].id
                         : null;
-                this.renderCategories(response.data.categories);
+                applied = true;
+                if (typeof onDraftReady === 'function') onDraftReady();
                 // this.currency_type = _.find(this.currency_types, {'id': this.form.currency_type_id})
                 // this.changeCurrencyType();
                 //this.filterItems();
                 this.changeDateOfIssue();
                 this.changeExchangeRate();
             });
+            return applied && request === this._posTablesRequest && this.form === draft;
         },
         selectDefaultCustomer() {
             // Tras una venta la lista puede contener solo el último resultado
@@ -3272,31 +3355,31 @@ export default {
         selectCurrencyType() {
             if (typeof window !== 'undefined' && window.salesDocumentsVes) return;
             if (!ensurePosRate(this)) return;
-            this.form.currency_type_id =
-                this.form.currency_type_id === "VES" ? "USD" : "VES";
-            this.changeCurrencyType();
+            return this.changeCurrencyType(this.form.currency_type_id === 'VES' ? 'USD' : 'VES');
         },
-        async changeCurrencyType() {
-            if (!ensurePosRate(this)) return;
-            // console.log(this.form.currency_type_id)
-            this.currency_type = await _.find(this.currency_types, {
-                id: this.form.currency_type_id
-            });
-            let items = [];
-            this.form.items.forEach(row => {
-                items.push(
-                    calculateRowItem(
-                        row,
-                        this.form.currency_type_id,
-                        this.form.exchange_rate_sale,
-                        this.percentage_igv
-                    )
-                );
-            });
-            this.form.items = items;
-            this.calculateTotal();
-
-            await this.setFormPosLocalStorage();
+        changeCurrencyType(target = this.form.currency_type_id, forceReprice = false) {
+            forceReprice = forceReprice || this.posCurrencyRepriceRequired;
+            if (!ensurePosRate(this)) return false;
+            const currency = this.currency_types.find(option => option.id === target);
+            if (!currency) return false;
+            try {
+                const prepared = preparePosCurrencyConversion(this.form, target, this.percentage_igv, forceReprice);
+                const persisted = {...this.form, ...prepared};
+                delete persisted._pos_currency_reprice_required;
+                this.setFormPosLocalStorage(persisted);
+                Object.assign(this.form, prepared);
+                delete this.form._pos_currency_reprice_required;
+                this.currency_type = currency;
+                this.posCurrencyRepriceRequired = false;
+                return true;
+            } catch (error) {
+                if (forceReprice) {
+                    this.posCurrencyRepriceRequired = true;
+                    this.form._pos_currency_reprice_required = true;
+                }
+                this.$message.error(error.message);
+                return false;
+            }
         },
         openFullWindow() {
             location.href = `/${this.resource}/pos_full`;

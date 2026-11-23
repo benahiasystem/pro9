@@ -199,14 +199,6 @@ class RestaurantController extends Controller
         return "Disfruta lo mejor de la gastronomía en {$trade_name}. Descubre una amplia variedad de platos deliciosos, ingredientes de calidad y atención excepcional, con pedidos fáciles y servicio rápido y confiable.";
     }
 
-    public function __construct(){
-
-        // Compartir descripción restaurante globalmente usando el modelo Company
-        $companyModel = \App\Models\Tenant\Company::first();
-        $restaurantDescription = self::getRestaurantDescription($companyModel);
-        view()->share('restaurantDescription', $restaurantDescription);
-    }
-
     public function menu($name = null)
     {
         if($name) {
@@ -436,7 +428,10 @@ class RestaurantController extends Controller
             'promotion_id' => $promotion_id,
         ];
 
-        return view('restaurant::items.record', compact('record'));
+        return view('restaurant::items.record', [
+            'record' => $record,
+            'restaurantDescription' => self::getRestaurantDescription(Company::first()),
+        ]);
     }
 
 

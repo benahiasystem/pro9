@@ -103,7 +103,7 @@ import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
     localCalculations: true,
         mixins: [fiscalPaymentSettings],
         components: { IgtfPaymentFields, ReceiptCurrencyFields },
-        props: ['showDialog', 'payments', 'total', 'currencyTypeId', 'exchangeRateSale', 'customerId', 'paymentConditionId', 'documentTypeId'],
+        props: ['showDialog', 'payments', 'total', 'currencyTypeId', 'exchangeRateSale', 'customerId', 'paymentConditionId', 'documentTypeId', 'parentOwnsPayments', 'paymentState', 'paymentTotal', 'canSuggestPayment'],
         data() {
             return {
                 titleDialog: 'Pagos',
@@ -118,6 +118,8 @@ import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
                 enabled_payments: true,
                 draftPayments: [],
                 paymentsSnapshot: [],
+                paymentDraftOrigin: null,
+                paymentDraftBaseline: null,
             }
         },
         computed: {
@@ -125,16 +127,25 @@ import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
                 return this.payment_method_types.filter(method => ['cash', 'account'].includes(method.collection_kind) && [true, 1, '1'].includes(method.is_active))
             },
         },
+        beforeDestroy() { this._paymentDisposed = true },
         async created() {
+            const originalForm = this.parentOwnsPayments && typeof this.paymentState === 'function' ? this.paymentState() : null
 
             await this.$http.get(`/pos/payment_tables`)
                 .then(response => {
+                    if (this._paymentDisposed) return
                     this.payment_method_types = response.data.payment_method_types
                     this.payment_destinations = response.data.payment_destinations
-                    this.getFormPosLocalStorage()
+                    if (!this.parentOwnsPayments) this.getFormPosLocalStorage()
+                    else {
+                        const currentForm = typeof this.paymentState === 'function' ? this.paymentState() : null
+                        if (currentForm && currentForm === originalForm && typeof this.canSuggestPayment === 'function' && this.canSuggestPayment() && currentForm.payment_condition_id !== '02' && (currentForm.payments == null || (Array.isArray(currentForm.payments) && currentForm.payments.length === 0)) && typeof this.paymentTotal === 'function') {
+                            this.$emit('add', [this.buildPaymentRow(this.paymentTotal(), currentForm.currency_type_id)])
+                        }
+                    }
                 })
 
-            this.events()
+            if (!this._paymentDisposed) this.events()
         },
         methods: {
             clonePayments(list) {
@@ -161,12 +172,29 @@ import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
             },
             create(){
                 this.enabled_payments = true
-                this.paymentsSnapshot = this.clonePayments(this.payments)
-                this.draftPayments = this.clonePayments(this.payments)
-
-                if (this.draftPayments.length === 0 && this.paymentConditionId !== '02') {
-                    this.pushDraftPayment(this.total)
+                this.paymentDraftOrigin = this.parentOwnsPayments && typeof this.paymentState === 'function' ? this.paymentState() : null
+                this.paymentDraftBaseline = this.parentOwnsPayments ? this.currentPaymentBaseline() : null
+                if (this.parentOwnsPayments && !this.paymentDraftBaseline) {
+                    this.$emit('update:showDialog', false)
+                    return
                 }
+                const source = this.parentOwnsPayments ? this.paymentDraftOrigin.payments : this.payments
+                this.paymentsSnapshot = this.clonePayments(source)
+                this.draftPayments = this.clonePayments(source)
+
+                const condition = this.parentOwnsPayments ? this.paymentDraftOrigin.payment_condition_id : this.paymentConditionId
+                if (this.draftPayments.length === 0 && condition !== '02') {
+                    this.pushDraftPayment(this.parentOwnsPayments ? this.paymentTotal() : this.total,
+                        this.parentOwnsPayments ? this.paymentDraftOrigin.currency_type_id : this.currencyTypeId)
+                }
+            },
+            currentPaymentBaseline() {
+                const form = typeof this.paymentState === 'function' ? this.paymentState() : null
+                if (!form || (form.payments != null && !Array.isArray(form.payments)) || typeof this.paymentTotal !== 'function') return null
+                return JSON.stringify([form.payments ?? [], form.payment_condition_id, form.currency_type_id, form.exchange_rate_sale, form.customer_id, form.document_type_id, this.paymentTotal()])
+            },
+            isCurrentPaymentDraft() {
+                return !this.parentOwnsPayments || (typeof this.paymentState === 'function' && this.paymentDraftOrigin && this.paymentDraftOrigin === this.paymentState() && this.paymentDraftBaseline !== null && this.paymentDraftBaseline === this.currentPaymentBaseline())
             },
             valueInputSelect(event) {
                 const target = event && event.target
@@ -177,8 +205,8 @@ import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
                 if (!input || typeof input.select !== 'function') return
                 this.$nextTick(() => input.select())
             },
-            buildPaymentRow(total = 0) {
-                const method = defaultCashForCurrency(this.payment_method_types, this.currencyTypeId)
+            buildPaymentRow(total = 0, currency = this.currencyTypeId) {
+                const method = defaultCashForCurrency(this.payment_method_types, currency)
                 return {
                     id: null,
                     document_id: null,
@@ -190,14 +218,15 @@ import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
                     payment: total,
                 }
             },
-            pushDraftPayment(total = 0) {
-                this.draftPayments.push(this.buildPaymentRow(total))
+            pushDraftPayment(total = 0, currency = this.currencyTypeId) {
+                this.draftPayments.push(this.buildPaymentRow(total, currency))
                 this.calculatePayments(this.draftPayments)
             },
             clickAddPayment(total = 0) {
                 // Modal abierto: solo edita el borrador (se confirma con Aceptar).
                 if (this.showDialog) {
-                    this.pushDraftPayment(total)
+                    if (this.parentOwnsPayments && !this.isCurrentPaymentDraft()) return
+                    this.pushDraftPayment(total, this.parentOwnsPayments ? this.paymentDraftOrigin.currency_type_id : this.currencyTypeId)
                     return
                 }
 
@@ -207,21 +236,32 @@ import ReceiptCurrencyFields from '@components/ReceiptCurrencyFields.vue'
                 this.$emit('add', this.payments)
             },
             calculatePayments(list = null) {
-                if (this.paymentConditionId === '02') return;
+                const form = this.parentOwnsPayments ? this.paymentDraftOrigin : null
+                if (this.parentOwnsPayments && !this.isCurrentPaymentDraft()) return
+                if ((form ? form.payment_condition_id : this.paymentConditionId) === '02') return;
                 const payments = list || (this.showDialog ? this.draftPayments : this.payments);
-                suggestRemainingPayment({total: this.total || '0', currency_type_id: this.currencyTypeId}, payments);
+                suggestRemainingPayment({total: form ? this.paymentTotal() : (this.total || '0'), currency_type_id: form ? form.currency_type_id : this.currencyTypeId}, payments);
             },
             accept() {
+                if (!this.isCurrentPaymentDraft()) {
+                    this.$message.warning('La venta cambió. Abra de nuevo los pagos para revisarlos.')
+                    this.$emit('update:showDialog', false)
+                    return
+                }
                 const payments = this.clonePayments(this.draftPayments)
-                this.payments.splice(0, this.payments.length, ...payments)
+                if (!this.parentOwnsPayments) this.payments.splice(0, this.payments.length, ...payments)
                 this.$emit('add', payments)
                 this.$emit('setPaymentMethod', null)
                 this.$emit('update:showDialog', false)
             },
             close() {
+                if (!this.isCurrentPaymentDraft()) {
+                    this.$emit('update:showDialog', false)
+                    return
+                }
                 // Descartar cambios del modal: no emitir add.
                 const snapshot = this.clonePayments(this.paymentsSnapshot)
-                this.payments.splice(0, this.payments.length, ...snapshot)
+                if (!this.parentOwnsPayments) this.payments.splice(0, this.payments.length, ...snapshot)
                 this.draftPayments = snapshot
                 this.$emit('update:showDialog', false)
             },

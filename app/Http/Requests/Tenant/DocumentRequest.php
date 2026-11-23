@@ -199,11 +199,11 @@ class DocumentRequest extends FormRequest
             return;
         }
 
-        $hasIgv = round((float) $this->input('total_igv', 0), 2) > 0;
+        $hasIgv = Decimal::of(Decimal::input($this->input('total_igv') ?? 0, 'total_igv'))->isGreaterThan(0);
 
         if (!$hasIgv) {
             foreach ($this->input('items', []) as $row) {
-                if (is_array($row) && round((float) ($row['total_igv'] ?? 0), 2) > 0) {
+                if (is_array($row) && Decimal::of(Decimal::input($row['total_igv'] ?? 0, 'items.total_igv'))->isGreaterThan(0)) {
                     $hasIgv = true;
                     break;
                 }

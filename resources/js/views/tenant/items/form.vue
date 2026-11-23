@@ -1671,6 +1671,7 @@ import VariationPicker from "./partials/variation_picker.vue";
 import {mapActions, mapState} from "vuex";
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../helpers/modal_item";
 import ItemPricesTable from "@components/items/partials/ItemPricesTable.vue";
+import {exactAmount} from "@helpers/exchange-rate-math";
 
 
 const ALLOWED_VARIANTS = ['standard', 'ecommerce', 'restaurant']
@@ -1823,47 +1824,11 @@ export default {
         },
         saleUnitPriceBreakdown()
         {
-            const price = parseFloat(this.form.sale_unit_price)
-            if (!price || price <= 0) return null
-            const symbol = this.getCurrencySymbol()
-            // ########## INICIO CAMBIO AFECTACIÓN IVA
-            const IGV_RATE = 0.16
-            // ######### FIN CAMBIO AFECTACIÓN IVA
-            let base, igv, total
-            if (this.form.has_igv) {
-                total = price
-                base = price / (1 + IGV_RATE)
-                igv = total - base
-            } else {
-                base = price
-                igv = price * IGV_RATE
-                total = price + igv
-            }
-            // ########## INICIO CAMBIO IGV A IVA
-            return `${base.toFixed(2)} + ${igv.toFixed(2)} IVA = ${symbol} ${total.toFixed(2)}`
-            // ######### FIN CAMBIO IGV A IVA
+            return this.priceBreakdown('sale_unit_price', this.form.has_igv, this.form.sale_affectation_igv_type_id)
         },
         purchaseUnitPriceBreakdown()
         {
-            const price = parseFloat(this.form.purchase_unit_price)
-            if (!price || price <= 0) return null
-            const symbol = this.getCurrencySymbol()
-            // ########## INICIO CAMBIO AFECTACIÓN IVA
-            const IGV_RATE = 0.16
-            // ######### FIN CAMBIO AFECTACIÓN IVA
-            let base, igv, total
-            if (this.form.purchase_has_igv) {
-                total = price
-                base = price / (1 + IGV_RATE)
-                igv = total - base
-            } else {
-                base = price
-                igv = price * IGV_RATE
-                total = price + igv
-            }
-            // ########## INICIO CAMBIO IGV A IVA
-            return `${base.toFixed(2)} + ${igv.toFixed(2)} IVA = ${symbol} ${total.toFixed(2)}`
-            // ######### FIN CAMBIO IGV A IVA
+            return this.priceBreakdown('purchase_unit_price', this.form.purchase_has_igv, this.form.purchase_affectation_igv_type_id)
         }
 
     },
@@ -1899,6 +1864,7 @@ export default {
             // configuration: {},
             unit_types: [],
             currency_types: [],
+            exact_tax_percentage: null,
 
             affectation_igv_types: [],
             categories: [],
@@ -1956,6 +1922,7 @@ export default {
                 this.unit_types = data.unit_types
                 this.accounts = data.accounts
                 this.currency_types = data.currency_types
+                this.exact_tax_percentage = data.exact_tax_percentage
 
                 this.affectation_igv_types = data.affectation_igv_types
                 this.warehouses = data.warehouses
@@ -2044,7 +2011,8 @@ export default {
             }
         },
         getCurrencySymbol() {
-            return this.form.currency_type_id === 'USD' ? '$' : 'Bs.'
+            const currency = this.currency_types.find(row => row.id === this.form.currency_type_id)
+            return currency?.symbol || ({USD: '$', VES: 'Bs.'}[this.form.currency_type_id] || this.form.currency_type_id)
         },
         ...mapActions([
             'loadConfiguration',
@@ -2102,6 +2070,7 @@ export default {
                     this.unit_types = response.data.unit_types
                     this.accounts = response.data.accounts
                     this.currency_types = response.data.currency_types
+                    this.exact_tax_percentage = response.data.exact_tax_percentage
 
                     this.affectation_igv_types = response.data.affectation_igv_types
                     this.warehouses = response.data.warehouses
@@ -2369,6 +2338,8 @@ export default {
                 currency_type_id: 'VES',
                 sale_unit_price: 0,
                 purchase_unit_price: 0,
+                exact_profit_base: {sale_unit_price:{n:'0',d:'1'},purchase_unit_price:{n:'0',d:'1'},percentage_of_profit:{n:'0',d:'1'}},
+                exact_profit_sequence: [],
 
 
 
@@ -2535,16 +2506,17 @@ this.activeName = null
             this.setDialogTitle();
 
             if (this.recordId) {
-                await this.$http.get(`/${this.resource}/record/${this.recordId}`)
+                await this.$http.get(`/${this.resource}/record/${this.recordId}?fresh=1`)
                     .then(response => {
                         console.log(response.data.data)
                         this.form = response.data.data;
+                        this.prepareExactProfitForm();
                         this.form.brand_id = this.form.brand_id
                             ? Number(this.form.brand_id)
                             : null;
                         this.has_percentage_perception = (this.form.percentage_perception) ? true : false;
 
-                        this.enabled_percentage_of_profit = parseFloat(this.form.percentage_of_profit) > 0;
+                        this.enabled_percentage_of_profit = exactAmount(this.form.percentage_of_profit || '0').compare(0) > 0;
 
                         if (this.globalIgvHandling) {
                             this.form.has_igv = true;
@@ -2595,13 +2567,14 @@ this.activeName = null
         },
         loadRecord() {
             if (this.recordId) {
-                this.$http.get(`/${this.resource}/record/${this.recordId}`)
+                this.$http.get(`/${this.resource}/record/${this.recordId}?fresh=1`)
                     .then(response => {
                         this.form = response.data.data
+                        this.prepareExactProfitForm()
                         this.form.brand_id = this.form.brand_id
                             ? Number(this.form.brand_id)
                             : null
-                        this.enabled_percentage_of_profit = parseFloat(this.form.percentage_of_profit) > 0;
+                        this.enabled_percentage_of_profit = exactAmount(this.form.percentage_of_profit || '0').compare(0) > 0;
                         if (this.globalIgvHandling) {
                             this.form.has_igv = true
                             this.form.purchase_has_igv = true
@@ -2612,28 +2585,86 @@ this.activeName = null
                     })
             }
         },
+        prepareExactProfitForm() {
+            if (this.form.exact_profit_base) { this.form.exact_profit_sequence = []; delete this.form.exact_profit_unavailable; }
+            else { delete this.form.exact_profit_sequence; this.form.exact_profit_unavailable = true; }
+        },
+        profitInput(value) {
+            let text = String(value ?? '').trim();
+            if (text.length > 64) return null;
+            if (/^-?\d+\.$/.test(text)) text += '0';
+            if (/^-?\.\d/.test(text)) text = text.replace(/^(-?)\./, (_, sign) => sign + '0.');
+            try {
+                const number = exactAmount(text), limit = '1000000000000000000';
+                if (number.compare(limit) >= 0 || number.compare('-' + limit) <= 0 || number.compare(number.decimal()) !== 0) return null;
+                return number;
+            } catch (_) { return null; }
+        },
+        replayProfitEdits(sequence) {
+            const base = this.form.exact_profit_base;
+            let sale = exactAmount(base.sale_unit_price), cost = exactAmount(base.purchase_unit_price), margin = exactAmount(base.percentage_of_profit);
+            for (const event of sequence) {
+                const entered = exactAmount(event.value);
+                if (event.field === 'sale_unit_price') sale = entered;
+                else if (event.field === 'purchase_unit_price') cost = entered;
+                else margin = entered;
+                if (!event.recalculate) continue;
+                if (event.field === 'sale_unit_price') margin = cost.compare(0) === 0 ? exactAmount(0) : sale.minus(cost).dividedBy(cost).times(100);
+                else sale = cost.times(margin.plus(100)).dividedBy(100);
+            }
+            return {sale_unit_price:sale, purchase_unit_price:cost, percentage_of_profit:margin};
+        },
+        priceBreakdown(field, includesTax, affectation) {
+            const type = String(affectation || ''), exempt = ['20','21','30','31','32','33','34','35','36','37','EXP'].includes(type);
+            if (type !== '10' && !exempt) return null;
+            try {
+                const input = this.profitInput(this.form[field]);
+                if (!input || !this.form.exact_profit_base || this.exact_tax_percentage == null) return null;
+                const price = this.replayProfitEdits(this.form.exact_profit_sequence || [])[field];
+                if (input.decimal() !== price.decimal() || price.compare(0) <= 0) return null;
+                const rate = exempt ? exactAmount(0) : exactAmount(this.exact_tax_percentage).dividedBy(100);
+                const base = includesTax ? price.dividedBy(exactAmount(1).plus(rate)) : price;
+                const total = includesTax ? price : base.times(exactAmount(1).plus(rate));
+                const baseText = base.final(2), totalText = total.final(2);
+                return `${baseText} + ${exactAmount(totalText).minus(baseText).final(2)} IVA = ${this.getCurrencySymbol()} ${totalText}`;
+            } catch (_) { return null; }
+        },
+        recordProfitEdit(field) {
+            if (!this.form.exact_profit_base) { this.form.exact_profit_unavailable = true; return; }
+            const value = this.profitInput(this.form[field]);
+            if (!value) return;
+            const sequence = [...(this.form.exact_profit_sequence || []), {field, value:value.decimal(), recalculate:!!this.enabled_percentage_of_profit}];
+            if (sequence.length > 1024) { this.form.exact_profit_overflow = true; return; }
+            const {sale_unit_price:sale, percentage_of_profit:margin} = this.replayProfitEdits(sequence);
+            this.form.exact_profit_sequence = sequence;
+            if (this.enabled_percentage_of_profit) {
+                if (field === 'sale_unit_price') this.form.percentage_of_profit = margin.decimal();
+                else this.form.sale_unit_price = sale.decimal();
+            }
+        },
         calculatePercentageOfProfitBySale() {
-            let difference = parseFloat(this.form.sale_unit_price) - parseFloat(this.form.purchase_unit_price);
-
-            if (parseFloat(this.form.purchase_unit_price) === 0) {
+            this.recordProfitEdit('sale_unit_price');
+            const cost = this.profitInput(this.form.purchase_unit_price);
+            if (!this.enabled_percentage_of_profit && cost && cost.compare(0) === 0) {
                 this.form.percentage_of_profit = 0;
-            } else {
-                if (this.enabled_percentage_of_profit) this.form.percentage_of_profit = difference / parseFloat(this.form.purchase_unit_price) * 100;
+                this.recordProfitEdit('percentage_of_profit');
             }
         },
         calculatePercentageOfProfitByPurchase() {
             if (this.form.percentage_of_profit === '') {
                 this.form.percentage_of_profit = 0;
+                this.recordProfitEdit('percentage_of_profit');
             }
 
-            if (this.enabled_percentage_of_profit) this.form.sale_unit_price = (this.form.purchase_unit_price * (100 + parseFloat(this.form.percentage_of_profit))) / 100
+            this.recordProfitEdit('purchase_unit_price')
         },
         calculatePercentageOfProfitByPercentage() {
             if (this.form.percentage_of_profit === '') {
                 this.form.percentage_of_profit = 0;
+                this.recordProfitEdit('percentage_of_profit');
             }
 
-            if (this.enabled_percentage_of_profit) this.form.sale_unit_price = (this.form.purchase_unit_price * (100 + parseFloat(this.form.percentage_of_profit))) / 100
+            this.recordProfitEdit('percentage_of_profit')
         },
         isDecimalUnit(unitTypeId) {
             // Solo la unidad UND (Unidad SUNAT) exige cantidades enteras; el resto (incluidas las unidades creadas manualmente) admite decimales
@@ -2663,6 +2694,14 @@ this.activeName = null
 
         },
         async submit() {
+
+            if (this.form.exact_profit_unavailable || this.form.exact_profit_overflow) return this.$message.error('Recargue el producto antes de continuar editando los precios.');
+            for (const field of ['purchase_unit_price', 'sale_unit_price', 'percentage_of_profit']) {
+                if (this.profitInput(this.form[field]) === null) {
+                    this.errors = {...this.errors, [field]: ['Indique un decimal válido de hasta 12 posiciones y 18 dígitos enteros.']};
+                    return;
+                }
+            }
 
             const payload = {
                 ...this.form,

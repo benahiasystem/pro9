@@ -261,6 +261,7 @@ class DocumentInput
                     'quantity' => $row['quantity'],
                     'quantity_input' => $row['quantity_input'] ?? null,
                     'price_input' => $row['price_input'] ?? null,
+                    'source_price_mode' => $row['source_price_mode'] ?? null,
                     'source_item_id' => $row['source_item_id'] ?? null,
                     'unit_value' => $row['unit_value'],
                     'price_type_id' => $row['price_type_id'],
@@ -417,6 +418,10 @@ class DocumentInput
                         'amount_exact' => $row['amount_exact'] ?? null,
                         'base' => $base,
                     ];
+                    // Solo productores internos pueden aportar el porcentaje exacto como objeto PHP.
+                    if (($row['percentage'] ?? null) instanceof \Brick\Math\BigRational) {
+                        $charges[array_key_last($charges)]['percentage'] = \App\Support\Exact\Decimal::represent($row['percentage']);
+                    }
                 }
                 return $charges;
             }

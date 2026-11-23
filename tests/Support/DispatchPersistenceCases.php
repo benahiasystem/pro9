@@ -868,6 +868,14 @@ trait DispatchPersistenceCases
         $invoice['sale_note_id']=$note->id; $invoice['payments']=[]; $invoice['payment_condition_id']='02';
         $invoice['items'][0]['item']['presentation']=['quantity_unit'=>'1','quantity_unit_exact'=>['n'=>'1','d'=>'7'],
             'calculation_snapshot'=>\App\Support\Exact\Decimal::snapshot(['quantity_unit'=>'1/13'])];
+        self::assertNull(\App\Services\Fiscal\InvoiceSourcePrices::preview($invoice));
+        $wrongOrder = array_replace($invoice, ['order_note_id' => '9223372036854775807']);
+        try {
+            \App\Services\Fiscal\InvoiceSourcePrices::preview($wrongOrder);
+            self::fail('La vista previa debe rechazar un pedido distinto del origen.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('order_note_id', $error->errors());
+        }
         $document=(new Facturalo)->forWebDocuments()->save($invoice)->getDocument()->fresh();
         self::assertSame('1',(string)\App\Services\Fiscal\FiscalNoteInventory::presentationQuantity($document->items->first()->item));
         self::assertSame('28/3',(string)$warehouse->fresh()->exactValue('stock'));
@@ -1464,13 +1472,19 @@ trait DispatchPersistenceCases
     }
 
     /** @dataProvider saleNoteInvoicePriceCases */
-    public function test_sale_note_invoice_preserves_unedited_original_unit_prices(bool $group, bool $edit, bool $withOrigins = true, bool $service = false): void
+    public function test_sale_note_invoice_preserves_unedited_original_unit_prices(bool $group, bool $edit, bool $withOrigins = true, bool $service = false, bool $fractionEdit = false, bool $scalarEdit = false, bool $usdEdit = false): void
     {
         [$db, $app, $raw, $invoice] = $this->dispatchFixture();
         Company::first()->forceFill(['fiscal_emission_mode' => 'free_form'])->save();
-        $currency = getenv('SAB_TEST_INVOICES_VES_ONLY') === '1' ? 'VES' : 'USD';
+        $currency = getenv('SAB_TEST_INVOICES_VES_ONLY') === '1' || \App\Services\SalesDocumentCurrency::usesBolivars() ? 'VES' : 'USD';
         $invoice['currency_type_id'] = $currency;
         $invoice['exchange_rate_sale'] = '3';
+        if ($currency === 'VES') {
+            $db->table('exchange_rates')->insert([
+                'date' => $invoice['date_of_issue'], 'date_original' => $invoice['date_of_issue'],
+                'sale' => '3', 'purchase' => '3', 'sale_original' => '3', 'purchase_original' => '3',
+            ]);
+        }
         $invoice['payments'] = [];
         $invoice['payment_condition_id'] = '02';
         $itemId = $invoice['items'][0]['item_id'];
@@ -1522,16 +1536,35 @@ trait DispatchPersistenceCases
             $rows[0]['unit_price'] = '1.25';
             $rows[0]['price_input'] = ['amount' => '1.25', 'currency_type_id' => $currency, 'includes_iva' => true];
         }
+        if ($fractionEdit || $scalarEdit || $usdEdit) {
+            $rows[0]['price_input'] = ['amount' => $usdEdit ? '0.5' : ($scalarEdit ? '0.333333333333' : ['n' => '333333333333', 'd' => '1000000000000']), 'currency_type_id' => $usdEdit ? 'USD' : $currency, 'includes_iva' => true];
+            if ($scalarEdit || $usdEdit) $rows[0]['source_price_mode'] = 'manual';
+            if ($currency === 'VES') {
+                $db->table('exchange_rates')->where('date', $invoice['date_of_issue'])->update(['sale' => '4', 'sale_original' => '4']);
+            }
+        }
         $invoice['items'] = $rows;
         $invoice['items'] = \App\CoreFacturalo\Requests\Inputs\DocumentInput::items($invoice);
         self::assertArrayNotHasKey('calculation_snapshot', $invoice['items'][0]);
+        if ($scalarEdit && $currency === 'VES') {
+            // A new USD line still needs the current rate even when all source lines use manual VES prices.
+            $probe = $invoice;
+            $newLine = $probe['items'][0];
+            $newLine['item_id'] = '99999999';
+            unset($newLine['source_sale_note_items']);
+            $newLine['price_input'] = ['amount' => '0.5', 'currency_type_id' => 'USD', 'includes_iva' => true];
+            $probe['items'][] = $newLine;
+            [$prepared, $confirmation] = \App\Services\Fiscal\InvoiceSourcePrices::prepare($probe, array_column($invoice['sale_notes_relateds'], 'id'));
+            self::assertNotNull($confirmation);
+            self::assertSame('4', \App\Support\Exact\Decimal::represent($prepared['exchange_rate_sale']));
+        }
         if (!$group && !$withOrigins) {
             $before = $db->table('documents')->count();
             try {
                 (new Facturalo)->forWebDocuments()->save($invoice);
                 self::fail('La factura debe identificar las partidas de precios ambiguos.');
             } catch (\Illuminate\Validation\ValidationException $error) {
-                self::assertArrayHasKey('items.unit_price', $error->errors());
+                self::assertTrue(isset($error->errors()['items']) || isset($error->errors()['items.unit_price']));
             }
             self::assertSame($before, $db->table('documents')->count());
             foreach ($notes as $note) {
@@ -1554,18 +1587,37 @@ trait DispatchPersistenceCases
                 self::assertNull($note->fresh()->document_id);
             }
         }
+        if ($currency === 'VES') {
+            $preview = \App\Services\Fiscal\InvoiceSourcePrices::preview($invoice);
+            if ($fractionEdit || $scalarEdit) self::assertNull($preview, 'El precio editado en bolívares no requiere actualizar la tasa del origen.');
+            if ($usdEdit) self::assertNotNull($preview, 'El precio manual en USD requiere actualizar la tasa y confirmar el total.');
+            if ($preview !== null) {
+                $before = $db->table('documents')->count();
+                try {
+                    (new Facturalo)->forWebDocuments()->save($invoice);
+                    self::fail('El precio actualizado requiere confirmación.');
+                } catch (\Illuminate\Validation\ValidationException $error) {
+                    self::assertArrayHasKey('source_price_confirmation', $error->errors());
+                }
+                self::assertSame($before, $db->table('documents')->count());
+                $invoice['source_price_confirmation'] = $preview['confirmation'];
+            }
+        }
         $warehouseMovements = $db->table('inventory_kardex')->where('item_id', $itemId)->count();
         $globalMovements = $db->table('kardex')->where('item_id', $itemId)->count();
         $document = (new Facturalo)->forWebDocuments()->save($invoice)->getDocument()->fresh();
+        if (isset($preview) && $preview !== null) {
+            self::assertTrue($document->exactValue('total')->isEqualTo(\App\Support\Exact\Decimal::of($preview['exact_total'])));
+        }
         self::assertSame($currency, $document->currency_type_id);
         $lines = $document->items()->orderBy('id')->get();
         $prices = $lines->map(fn ($line) => (string) $line->exactValue('unit_price'))->all();
-        self::assertSame($group ? ['1/3'] : [$edit ? '5/4' : '333333333333/1000000000000', '1/3'], $prices);
+        self::assertSame($group ? [$usdEdit ? '2' : (($fractionEdit || $scalarEdit) ? '333333333333/1000000000000' : '1/3')] : [$edit ? '5/4' : '333333333333/1000000000000', '1/3'], $prices);
         $quantities = $lines->map(fn ($line) => (string) $line->exactValue('quantity'))->all();
         self::assertSame($group ? ['2'] : ['333333333333/1000000000000', '1/3'], $quantities);
-        $expected = $edit
+        $expected = $usdEdit ? \App\Support\Exact\Decimal::of('4') : (($fractionEdit || $scalarEdit) ? \App\Support\Exact\Decimal::of('333333333333/1000000000000')->multipliedBy(2) : ($edit
             ? \App\Support\Exact\Decimal::of('5/4')->multipliedBy('333333333333/1000000000000')->plus('1/9')
-            : $notes[0]->fresh()->exactValue('total')->plus($notes[1]->fresh()->exactValue('total'));
+            : $notes[0]->fresh()->exactValue('total')->plus($notes[1]->fresh()->exactValue('total'))));
         self::assertTrue($document->exactValue('total')->isEqualTo($expected));
         if ($service) {
             self::assertSame($warehouseMovements, $db->table('inventory_kardex')->where('item_id', $itemId)->count());
@@ -1579,9 +1631,15 @@ trait DispatchPersistenceCases
         [$db, $app, $raw, $invoice] = $this->dispatchFixture();
         $this->bootGlobalInventory($app);
         Company::first()->forceFill(['fiscal_emission_mode' => 'free_form'])->save();
-        $currency = getenv('SAB_TEST_INVOICES_VES_ONLY') === '1' ? 'VES' : 'USD';
+        $currency = getenv('SAB_TEST_INVOICES_VES_ONLY') === '1' || \App\Services\SalesDocumentCurrency::usesBolivars() ? 'VES' : 'USD';
         $invoice['currency_type_id'] = $currency;
         $invoice['exchange_rate_sale'] = '3';
+        if ($currency === 'VES') {
+            $db->table('exchange_rates')->insert([
+                'date' => $invoice['date_of_issue'], 'date_original' => $invoice['date_of_issue'],
+                'sale' => '3', 'purchase' => '3', 'sale_original' => '3', 'purchase_original' => '3',
+            ]);
+        }
         $invoice['payments'] = [];
         $invoice['payment_condition_id'] = '02';
         $invoice['items'][0]['quantity'] = '3';
@@ -1639,7 +1697,22 @@ trait DispatchPersistenceCases
             }
             self::assertNull($note->fresh()->document_id);
         }
+        if ($currency === 'VES') {
+            $preview = \App\Services\Fiscal\InvoiceSourcePrices::preview($invoice);
+            self::assertNotNull($preview);
+            $before = $db->table('documents')->count();
+            try {
+                (new Facturalo)->forWebDocuments()->save($invoice);
+                self::fail('El precio actualizado requiere confirmación.');
+            } catch (\Illuminate\Validation\ValidationException $error) {
+                self::assertArrayHasKey('source_price_confirmation', $error->errors());
+            }
+            self::assertSame($before, $db->table('documents')->count());
+            self::assertNull($note->fresh()->document_id);
+            $invoice['source_price_confirmation'] = $preview['confirmation'];
+        }
         $document = (new Facturalo)->forWebDocuments()->save($invoice)->getDocument()->fresh();
+        if (isset($preview)) self::assertTrue($document->exactValue('total')->isEqualTo(\App\Support\Exact\Decimal::of($preview['exact_total'])));
         self::assertSame($currency, $document->currency_type_id);
         self::assertSame($order->id, $document->order_note_id);
         $lines = $document->items()->orderBy('id')->get();
@@ -1715,6 +1788,9 @@ trait DispatchPersistenceCases
             'precios ambiguos sin identificadores' => [false, false, false],
             'precio editado' => [false, true],
             'servicio sin inventario' => [false, false, true, true],
+            'fracción editada con igual proyección' => [true, false, true, false, true],
+            'decimal manual con igual proyección' => [true, false, true, false, false, true],
+            'precio manual en dólares con tasa actual' => [true, false, true, false, false, false, true],
         ];
     }
 
@@ -1938,6 +2014,53 @@ trait DispatchPersistenceCases
         self::assertTrue($serials[0]->fresh()->has_sale);
         self::assertSame(0, $db->table('inventory_kardex')->where('inventory_kardexable_type', \App\Models\Tenant\Dispatch::class)->count());
         self::assertSame($order->id, (new Facturalo())->save($resolved)->getDocument()->id);
+    }
+
+    public function test_sale_note_and_delivery_order_invoice_confirms_original_usd_price_without_repeating_stock(): void
+    {
+        [$db,$app,$raw,$invoice]=$this->dispatchFixture();
+        $this->bootGlobalInventory($app);
+        Company::first()->forceFill(['fiscal_emission_mode'=>'free_form'])->save();
+        $db->table('cat_transfer_reason_types')->where('id','24')->update(['discount_stock'=>true]);
+        $item=\App\Models\Tenant\Item::findOrFail($raw['items'][0]['item_id']); $item->stock='10'; $item->save();
+        $warehouse=\Modules\Inventory\Models\ItemWarehouse::where('item_id',$item->id)->where('warehouse_id',1)->firstOrFail();
+        $warehouse->stock='10'; $warehouse->save();
+        $invoice['currency_type_id']='VES'; $invoice['exchange_rate_sale']='3';
+        $invoice['items'][0]['currency_type_id']='VES'; $invoice['items'][0]['exchange_rate_sale']='3';
+        $invoice['items'][0]['unit_price']='0.333333333333';
+        $invoice['items'][0]['price_input']=['amount'=>['n'=>'1','d'=>'9'],'currency_type_id'=>'USD','includes_iva'=>true];
+        $controller=new \App\Http\Controllers\Tenant\SaleNoteController();
+        $input=array_replace($invoice,['id'=>null,'series'=>'NV01','document_type_id'=>'80','prefix'=>'NV','payments'=>[],'payment_condition_id'=>'02']);
+        $note=$db->transaction(function () use ($controller,$input) {
+            $note=\App\Models\Tenant\SaleNote::create($controller->mergeData($input));
+            foreach ($input['items'] as $line) $note->items()->create($line);
+            return $note;
+        });
+        self::assertTrue($note->items()->firstOrFail()->exactValue('unit_price')->isEqualTo('1/3'));
+        $raw['reference_sale_note_id']=$note->id;
+        $order=(new Facturalo)->save(DispatchInput::set($raw))->getDocument();
+        $invoice['sale_note_id']=$note->id; $invoice['dispatch_id']=$order->id;
+        $invoice['payments']=[]; $invoice['payment_condition_id']='02';
+        $conversion=\App\Support\Exact\SaleNoteConversionLines::preview([$note->id],true);
+        $invoice['items']=json_decode(json_encode($conversion['data'],JSON_THROW_ON_ERROR),true,512,JSON_THROW_ON_ERROR);
+        $invoice['items']=\App\CoreFacturalo\Requests\Inputs\DocumentInput::items($invoice);
+        $db->table('exchange_rates')->insert(['date'=>$invoice['date_of_issue'],'date_original'=>$invoice['date_of_issue'],
+            'sale'=>'4','purchase'=>'4','sale_original'=>'4','purchase_original'=>'4']);
+        $preview=\App\Services\Fiscal\InvoiceSourcePrices::preview($invoice);
+        self::assertNotNull($preview); self::assertSame('4',D::represent($preview['rate']));
+        self::assertSame(D::format($note->fresh()->exactValue('total'),2),$preview['source_total']);
+        try {
+            (new Facturalo)->forWebDocuments()->save($invoice);
+            self::fail('La factura debe confirmar la tasa actual.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('source_price_confirmation',$error->errors());
+        }
+        $invoice['source_price_confirmation']=$preview['confirmation'];
+        $document=(new Facturalo)->forWebDocuments()->save($invoice)->getDocument()->fresh();
+        self::assertTrue($document->exactValue('total')->isEqualTo(D::of($preview['exact_total'])));
+        self::assertTrue($document->items()->firstOrFail()->exactValue('unit_price')->isEqualTo('4/9'));
+        self::assertTrue($item->fresh()->exactValue('stock')->isEqualTo('8'));
+        self::assertTrue($warehouse->fresh()->exactValue('stock')->isEqualTo('8'));
     }
 
     public function test_sale_note_delivery_order_invoice_preserves_single_inventory_movement(): void
@@ -2379,7 +2502,7 @@ trait DispatchPersistenceCases
     }
 
     /** @dataProvider dispatchGroupedQuantityModes */
-    public function test_dispatch_invoice_preserves_grouped_fraction_and_moves_only_the_uncovered_quantity(bool $edited, bool $withLot): void
+    public function test_dispatch_invoice_preserves_grouped_fraction_and_moves_only_the_uncovered_quantity(bool $edited, bool $withLot, bool $manualUsd = false, bool $singleDispatch = false): void
     {
         [$db, $app, $raw, $invoice] = $this->dispatchFixture();
         $db->table('companies')->update(['fiscal_emission_mode' => 'free_form']);
@@ -2426,15 +2549,51 @@ trait DispatchPersistenceCases
         self::assertTrue(D::readRequired($preview, 'quantity')->isEqualTo('2/3'));
 
         $invoice['dispatches_relateds'] = array_column($orders, 'number_full');
+        if ($singleDispatch) {
+            $invoice['dispatches_relateds'] = [];
+            $invoice['dispatch_id'] = $orders[0]->id;
+        }
         $invoice['items'][0]['quantity'] = $preview['quantity'];
         if ($edited) {
             $invoice['items'][0]['quantity_input'] = ['amount' => $preview['quantity'], 'unit_price' => '1'];
         }
         $invoice['payments'] = [];
         $invoice['payment_condition_id'] = '02';
+        if ($manualUsd) {
+            $invoice['currency_type_id'] = 'VES';
+            $invoice['exchange_rate_sale'] = '3';
+            $db->table('exchange_rates')->insert([
+                'date' => $invoice['date_of_issue'], 'date_original' => $invoice['date_of_issue'],
+                'sale' => '4', 'purchase' => '4', 'sale_original' => '4', 'purchase_original' => '4',
+            ]);
+            $invoice['items'][0]['price_input'] = ['amount' => '0.5', 'currency_type_id' => 'USD', 'includes_iva' => true];
+            $invoice['items'][0]['source_price_mode'] = 'manual';
+            $pricePreview = \App\Services\Fiscal\InvoiceSourcePrices::preview($invoice);
+            self::assertNotNull($pricePreview);
+            self::assertNull($pricePreview['source_total']);
+            self::assertSame('4', D::represent($pricePreview['rate']));
+            $otherOrders = $invoice;
+            if ($singleDispatch) $otherOrders['dispatch_id'] = $orders[1]->id;
+            else $otherOrders['dispatches_relateds'] = [$orders[0]->number_full];
+            $otherOrders['source_price_confirmation'] = $pricePreview['confirmation'];
+            try {
+                (new Facturalo())->forWebDocuments()->save($otherOrders);
+                self::fail('La confirmación debe vincular las órdenes de entrega seleccionadas.');
+            } catch (\Illuminate\Validation\ValidationException $error) {
+                self::assertArrayHasKey('source_price_confirmation', $error->errors());
+            }
+            try {
+                (new Facturalo())->forWebDocuments()->save($invoice);
+                self::fail('La tasa actual requiere confirmación.');
+            } catch (\Illuminate\Validation\ValidationException $error) {
+                self::assertArrayHasKey('source_price_confirmation', $error->errors());
+            }
+            $invoice['source_price_confirmation'] = $pricePreview['confirmation'];
+        }
         $saved = (new Facturalo())->forWebDocuments()->save($invoice)->getDocument();
+        if ($manualUsd) self::assertTrue($saved->exactValue('total')->isEqualTo(D::of($pricePreview['exact_total'])));
         $line = $saved->items()->firstOrFail();
-        $quantity = D::of($edited ? $preview['quantity'] : '2/3');
+        $quantity = D::of(($edited || $singleDispatch) ? $preview['quantity'] : '2/3');
         $uncovered = $withLot ? $quantity : $quantity->minus('1/3');
         self::assertTrue($line->exactValue('quantity')->isEqualTo($quantity));
         self::assertTrue($line->exactValue('total')->isEqualTo($line->exactValue('unit_price')->multipliedBy($quantity)));
@@ -2449,6 +2608,8 @@ trait DispatchPersistenceCases
     {
         return [
             'origen exacto' => [false, false],
+            'orden con precio manual USD y tasa vigente' => [false, false, true],
+            'orden directa con precio manual USD' => [false, false, true, true],
             'decimal capturado explícitamente' => [true, false],
             'lote fraccionario' => [false, true],
         ];

@@ -9,6 +9,8 @@ description: Mantener y verificar en SAB la creación, listado y selección de p
 
 Aplicar [cálculos exactos](../mantener-calculos-exactos-sab/SKILL.md). Para instalaciones nuevas esta instrucción sustituye las precisiones de dos/cuatro/seis decimales y redondeos intermedios descritos anteriormente: operar con fracciones exactas, conservar snapshots y representar hasta 12 posiciones; tasas con ocho exactas. Dos decimales sólo en liquidación/presentación que lo requiera. Precio unitario PDF configurable de 2 a 12, con dos por defecto. No convertir tenants ni recalcular históricos. Consultar el informe de cálculos para el estado real de adopción por consumidor.
 
+Los formularios de producto principal y del POS calculan costo, margen y precio con racionales, conservan los operandos exactos y envían la secuencia de ediciones. El formulario principal registra `recalculate: false` cuando la ganancia está desactivada para no modificar los demás valores. El servidor bloquea el producto en la conexión tenant, compara la base con sus snapshots, reproduce la secuencia y rechaza datos obsoletos; sin columna de snapshot rechaza resultados cuya fracción no pueda conservar. El detalle entrega el precio como texto decimal, incluso para enteros grandes. Los desgloses de IVA utilizan la tasa configurada, la afectación y la moneda del producto; la compra tiene su propio indicador de IVA. Los clientes anteriores mantienen `exact_edited_fields` como contrato compatible. Verificar `item-editor-profit-exact.test.cjs`, `pos-item-profit-exact.test.cjs`, los casos de `InvoiceCatalogDatesPostgresTest` y la aceptación HTTP; la interfaz necesita compilación.
+
 
 ## Objetivo
 

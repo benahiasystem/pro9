@@ -27,7 +27,7 @@ if ($hostname) {
         Route::get('downloads/{model}/{type}/{external_id}/{format?}', 'Tenant\DownloadController@downloadExternal')->name('tenant.download.external_id');
         Route::get('print/{model}/{external_id}/{format}/{filename?}', 'Tenant\DownloadController@toPrint');
         Route::get('print/{model}/{external_id}/{format?}', 'Tenant\DownloadController@toPrint');
-        Route::get('printticket/{model}/{external_id}/{format?}', 'Tenant\DownloadController@toTicket');
+        Route::get('printticket/{model}/{external_id}/{format?}', 'Tenant\DownloadController@toTicket')->middleware('auth');
         Route::get('/exchange_rate/ecommence/{date}', 'Tenant\Api\ServiceController@exchangeRateTest');
 
         Route::get('sale-notes/print/{external_id}/{format?}', 'Tenant\SaleNoteController@toPrint');

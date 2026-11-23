@@ -226,7 +226,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group" :class="{'has-danger': errors.purchase_unit_price}">
-                                            <label class="control-label">Precio Unitario (Compra) <small v-if="form.has_igv">(con IVA)</small> <small v-else>(sin IVA)</small></label>
+                                            <label class="control-label">Precio Unitario (Compra) <small v-if="purchaseIncludesIgv">(con IVA)</small> <small v-else>(sin IVA)</small></label>
                                             <el-input v-model="form.purchase_unit_price" dusk="purchase_unit_price" @input="calculatePercentageOfProfitByPurchase"></el-input>
                                             <small v-if="purchaseUnitPriceBreakdown" class="text-muted">{{ purchaseUnitPriceBreakdown }}</small>
                                             <small class="form-control-feedback" v-if="errors.purchase_unit_price" v-text="errors.purchase_unit_price[0]"></small>
@@ -239,6 +239,7 @@
                                                 <el-option v-for="option in affectation_igv_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                             </el-select>
                                             <small class="form-control-feedback" v-if="errors.purchase_affectation_igv_type_id" v-text="errors.purchase_affectation_igv_type_id[0]"></small>
+                                            <el-checkbox v-if="!globalIgvHandling" v-model="form.purchase_has_igv">Precio de compra incluye IVA</el-checkbox>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
@@ -275,6 +276,7 @@
 <script>
 
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
+import {exactAmount} from "@helpers/exchange-rate-math";
 
     export default {
         props: ['showDialog', 'recordId', 'external'],
@@ -290,43 +292,15 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                 return true
             },
             saleUnitPriceBreakdown() {
-                const price = parseFloat(this.form.sale_unit_price)
-                if (!price || price <= 0) return null
-                // ########## INICIO CAMBIO AFECTACIÓN IVA
-                const IGV_RATE = 0.16
-                // ######### FIN CAMBIO AFECTACIÓN IVA
-                let base, igv, total
-                if (this.form.has_igv) {
-                    total = price
-                    base = price / (1 + IGV_RATE)
-                    igv = total - base
-                } else {
-                    base = price
-                    igv = price * IGV_RATE
-                    total = price + igv
-                }
-                return `${base.toFixed(2)} + ${igv.toFixed(2)} IVA = Bs. ${total.toFixed(2)}`
+                return this.priceBreakdown('sale_unit_price', this.form.has_igv, this.form.sale_affectation_igv_type_id)
             },
-            purchaseUnitPriceBreakdown() {
-                const price = parseFloat(this.form.purchase_unit_price)
-                if (!price || price <= 0) return null
-                // ########## INICIO CAMBIO AFECTACIÓN IVA
-                const IGV_RATE = 0.16
-                // ######### FIN CAMBIO AFECTACIÓN IVA
-                const hasIgv = (this.form.purchase_has_igv !== undefined && this.form.purchase_has_igv !== null)
+            purchaseIncludesIgv() {
+                return (this.form.purchase_has_igv !== undefined && this.form.purchase_has_igv !== null)
                     ? this.form.purchase_has_igv
                     : this.form.has_igv
-                let base, igv, total
-                if (hasIgv) {
-                    total = price
-                    base = price / (1 + IGV_RATE)
-                    igv = total - base
-                } else {
-                    base = price
-                    igv = price * IGV_RATE
-                    total = price + igv
-                }
-                return `${base.toFixed(2)} + ${igv.toFixed(2)} IVA = Bs. ${total.toFixed(2)}`
+            },
+            purchaseUnitPriceBreakdown() {
+                return this.priceBreakdown('purchase_unit_price', this.purchaseIncludesIgv, this.form.purchase_affectation_igv_type_id)
             },
         },
         data() {
@@ -342,6 +316,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                 form: {},
                 unit_types: [],
                 currency_types: [],
+                exact_tax_percentage: null,
 
                 categories: [],
                 filteredCategories: [],
@@ -371,6 +346,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
                     this.unit_types = response.data.unit_types
                     this.currency_types = response.data.currency_types
+                    this.exact_tax_percentage = response.data.exact_tax_percentage
 
                     this.affectation_igv_types = response.data.affectation_igv_types
                     this.categories = response.data.categories || []
@@ -384,6 +360,25 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
         },
         methods: {
             ...mapActions(['loadConfiguration']),
+            priceBreakdown(field, includesTax, affectation) {
+                const type = String(affectation || '')
+                const exempt = ['20', '21', '30', '31', '32', '33', '34', '35', '36', '37', 'EXP'].includes(type)
+                if (type !== '10' && !exempt) return null
+                try {
+                    const input = this.profitInput(this.form[field])
+                    if (!input || !this.form.exact_profit_base || this.exact_tax_percentage == null) return null
+                    const price = this.replayProfitEdits(this.form.exact_profit_sequence || [])[field]
+                    if (input.decimal() !== price.decimal() || price.compare(0) <= 0) return null
+                    const rate = exempt ? exactAmount(0) : exactAmount(this.exact_tax_percentage).dividedBy('100')
+                    const base = includesTax ? price.dividedBy(exactAmount(1).plus(rate)) : price
+                    const total = includesTax ? price : base.times(exactAmount(1).plus(rate))
+                    const baseText = base.final(2), totalText = total.final(2)
+                    const taxText = exactAmount(totalText).minus(baseText).final(2)
+                    const currency = this.currency_types.find(row => row.id === this.form.currency_type_id)
+                    const symbol = currency?.symbol || ({VES: 'Bs.', USD: '$'}[this.form.currency_type_id] || this.form.currency_type_id)
+                    return `${baseText} + ${taxText} IVA = ${symbol} ${totalText}`
+                } catch (_) { return null }
+            },
             onSuccess(response, file, fileList) {
                 if (response.success) {
                     this.form.image = response.data.filename
@@ -410,6 +405,8 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,
+                    exact_profit_base: {sale_unit_price:{n:'0',d:'1'},purchase_unit_price:{n:'0',d:'1'},percentage_of_profit:{n:'0',d:'1'}},
+                    exact_profit_sequence: [],
 
 
 
@@ -420,6 +417,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     stock: 0,
                     stock_min: 1,
                     has_igv: true,
+                    purchase_has_igv: true,
                     item_unit_types:[],
                     percentage_of_profit: 0,
                     image: null,
@@ -451,9 +449,10 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
             create() {
                 this.titleDialog = (this.recordId)? 'Editar Producto':'Nuevo Producto'
                 if (this.recordId) {
-                    this.$http.get(`/${this.resource}/record/${this.recordId}`)
+                    this.$http.get(`/${this.resource}/record/${this.recordId}?fresh=1`)
                         .then(response => {
                             this.form = response.data.data
+                            this.prepareExactProfitForm()
                             if (this.globalIgvHandling) {
                                 this.form.has_igv = true
                             }
@@ -463,38 +462,99 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
             },
             loadRecord(){
                 if (this.recordId) {
-                    this.$http.get(`/${this.resource}/record/${this.recordId}`)
+                    this.$http.get(`/${this.resource}/record/${this.recordId}?fresh=1`)
                         .then(response => {
                             this.form = response.data.data
+                            this.prepareExactProfitForm()
                             this.changeAffectationIgvType()
                         })
                 }
             },
-            calculatePercentageOfProfitBySale() {
-                let difference = parseFloat(this.form.sale_unit_price) - parseFloat(this.form.purchase_unit_price);
-
-                if(parseFloat(this.form.purchase_unit_price) === 0) {
-                    this.form.percentage_of_profit = 0;
+            prepareExactProfitForm() {
+                if (this.form.exact_profit_base) {
+                    this.form.exact_profit_sequence = [];
+                    delete this.form.exact_profit_unavailable;
                 } else {
-                    this.form.percentage_of_profit = difference / parseFloat(this.form.purchase_unit_price) * 100;
+                    delete this.form.exact_profit_sequence;
+                    this.form.exact_profit_unavailable = true;
                 }
             },
-            calculatePercentageOfProfitByPurchase() {
-                if(this.form.percentage_of_profit === '') {
-                    this.form.percentage_of_profit = 0;
+            profitInput(value) {
+                let text = String(value ?? '').trim();
+                if (text.length > 64) return null;
+                if (/^-?\d+\.$/.test(text)) text += '0';
+                if (/^-?\.\d/.test(text)) text = text.replace(/^(-?)\./, (_, sign) => sign + '0.');
+                try {
+                    const value = exactAmount(text), limit = '1000000000000000000';
+                    if (value.compare(limit) >= 0 || value.compare('-' + limit) <= 0 || value.compare(value.decimal()) !== 0) return null;
+                    return value;
+                } catch (_) { return null; }
+            },
+            markExactEdited(...fields) {
+                this.form.exact_edited_fields = [...new Set([...(this.form.exact_edited_fields || []), ...fields])];
+            },
+            replayProfitEdits(sequence) {
+                const base = this.form.exact_profit_base;
+                let sale = exactAmount(base.sale_unit_price), cost = exactAmount(base.purchase_unit_price), margin = exactAmount(base.percentage_of_profit);
+                for (const event of sequence) {
+                    const entered = exactAmount(event.value);
+                    if (event.field === 'sale_unit_price') {
+                        sale = entered; margin = cost.compare(0) === 0 ? exactAmount(0) : sale.minus(cost).dividedBy(cost).times(100);
+                    } else {
+                        if (event.field === 'purchase_unit_price') cost = entered; else margin = entered;
+                        sale = cost.times(margin.plus(100)).dividedBy(100);
+                    }
                 }
-                this.form.sale_unit_price = (this.form.purchase_unit_price * (100 + parseFloat(this.form.percentage_of_profit))) / 100
+                return {sale_unit_price: sale, purchase_unit_price: cost, percentage_of_profit: margin};
+            },
+            recordProfitEdit(field) {
+                if (!this.form.exact_profit_base) {
+                    this.form.exact_profit_unavailable = true;
+                    this.$message.error('Recargue el producto para editar sus precios con precisión.');
+                    return;
+                }
+                const value = this.profitInput(this.form[field]);
+                if (value === null) return;
+                const sequence = [...(this.form.exact_profit_sequence || []), {field, value:value.decimal()}];
+                if (sequence.length > 1024) { this.form.exact_profit_overflow = true; return; }
+                const {sale_unit_price: sale, percentage_of_profit: margin} = this.replayProfitEdits(sequence);
+                this.form.exact_profit_sequence = sequence;
+                if (field === 'sale_unit_price') {
+                    this.form.percentage_of_profit = margin.decimal();
+                    this.markExactEdited('sale_unit_price', 'percentage_of_profit');
+                } else {
+                    this.form.sale_unit_price = sale.decimal();
+                    this.markExactEdited(field, 'sale_unit_price');
+                }
+            },
+            calculatePercentageOfProfitBySale() { this.recordProfitEdit('sale_unit_price'); },
+            calculatePercentageOfProfitByPurchase() {
+                if (this.form.percentage_of_profit === '') this.form.percentage_of_profit = '0';
+                this.recordProfitEdit('purchase_unit_price');
             },
             calculatePercentageOfProfitByPercentage() {
-                if(this.form.percentage_of_profit === '') {
-                    this.form.percentage_of_profit = 0;
-                }
-                this.form.sale_unit_price = (this.form.purchase_unit_price * (100 + parseFloat(this.form.percentage_of_profit))) / 100
+                if (this.form.percentage_of_profit === '') this.form.percentage_of_profit = '0';
+                this.recordProfitEdit('percentage_of_profit');
             },
             submit() {
+                if (this.form.exact_profit_unavailable) {
+                    this.$message.error('Recargue el producto para editar sus precios con precisión.');
+                    return;
+                }
+                if (this.form.exact_profit_overflow) {
+                    this.$message.error('Recargue el producto antes de continuar editando los precios.');
+                    return;
+                }
+                for (const field of ['purchase_unit_price', 'sale_unit_price', 'percentage_of_profit']) {
+                    if (this.profitInput(this.form[field]) === null) {
+                        this.errors = {...this.errors, [field]: ['Indique un decimal válido de hasta 12 posiciones y 18 dígitos enteros.']};
+                        return;
+                    }
+                }
                 this.loading_submit = true
                 if (this.globalIgvHandling) {
                     this.form.has_igv = true
+                    this.form.purchase_has_igv = true
                 }
                 this.$http.post(`/${this.resource}`, this.form)
                     .then(response => {

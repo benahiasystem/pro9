@@ -95,7 +95,7 @@
                 <span>{{ currencyTypeActive.symbol }} {{ (localTotalPayable === null ? '—' : money(localTotalPayable)) }}</span>
             </div>
 
-            <button :disabled="stockBlocked || singleAmountInvalid || settlementPaymentBlocked"
+            <button :disabled="stockBlocked || currencyBlocked || singleAmountInvalid || settlementPaymentBlocked"
                     class="pos-checkout__confirm"
                     type="button"
                     @click="clickPayment">
@@ -110,6 +110,7 @@
 
             <button class="pos-checkout__cancel"
                     type="button"
+                    :disabled="locked_submit"
                     @click="clickCancel">Cancelar compra
             </button>
         </footer>
@@ -359,6 +360,10 @@
     <div v-if="form.document_type_id === '01'"><label>Condición de pago</label><el-select :value="form.payment_condition_id || '01'" @change="changeFiscalPaymentCondition"><el-option value="01" label="Contado"/><el-option value="02" label="Crédito"/></el-select></div>
         <multiple-payment-form
         :payments="payments"
+        :parent-owns-payments="true"
+        :payment-state="getCurrentPaymentForm"
+        :payment-total="getTotal"
+        :can-suggest-payment="canSuggestInitialPayment"
         :currency-type-id="form.currency_type_id" :exchange-rate-sale="form.exchange_rate_sale" :customer-id="form.customer_id" :payment-condition-id="form.payment_condition_id" :document-type-id="form.document_type_id"
         :showDialog.sync="showDialogMultiplePayment"
         :total="getTotal()"
@@ -412,6 +417,9 @@ export default {
 
     props: [
         'stockBlocked',
+        'currencyBlocked',
+        'currencyBlockedCheck',
+        'paymentState',
         'form',
         'customer',
         'currencyTypeActive',
@@ -462,7 +470,7 @@ export default {
             form_cash_document: {},
             statusDocument: {},
             payment_method_types: [],
-            payments: [],
+            payments: JSON.parse(JSON.stringify(this.form?.payments || [])),
             locked_submit: false,
             global_discount_types: [],
             global_discount_type: {},
@@ -473,21 +481,21 @@ export default {
             totalDiscountPercentage: 0,
         }
     },
+    beforeDestroy() { this._paymentDisposed = true },
     async created() {
 
         await this.initLStoPayment()
+        if (this._paymentDisposed || (typeof this.paymentState === 'function' && this.paymentState() !== this.form)) return
         await this.getTables()
+        if (this._paymentDisposed || (typeof this.paymentState === 'function' && this.paymentState() !== this.form)) return
+        if (this.form.payments == null) this.$set(this.form,'payments',[])
+        else if (!Array.isArray(this.form.payments)) return this.$message.error('El borrador contiene cobros inválidos.')
         this.initFormPayment()
         this.inputAmount()
-        if (!Array.isArray(this.form.payments)) this.$set(this.form,'payments',[])
 
-
-        this.$eventHub.$on('localSPayments', (payments) => {
-            this.payments = payments
-
-        })
 
         await this.setInitialAmount()
+        if (this._paymentDisposed || (typeof this.paymentState === 'function' && this.paymentState() !== this.form)) return
 
         // La conexión directa con BuhoPrinter ya no es necesaria desde el frontend.
         // La impresión se centraliza vía PrintOrder → Redis → BuhoPrinter agent.
@@ -498,10 +506,12 @@ export default {
         if(this.enabledPointSystem)
         {
             await this.setCustomerAccumulatedPoints(this.form.customer_id, true)
+            if (this._paymentDisposed || (typeof this.paymentState === 'function' && this.paymentState() !== this.form)) return
             this.setTotalExchangePoints()
             this.checkUsedPointsByItem()
         }
         await this.getFormPosLocalStorage()
+        if (this._paymentDisposed || (typeof this.paymentState === 'function' && this.paymentState() !== this.form)) return
 
 
         this.setTotalPointsBySale(this.configuration)
@@ -567,6 +577,11 @@ export default {
     },
     methods:
     {
+        getCurrentPaymentForm() {
+            const current = typeof this.paymentState === 'function' ? this.paymentState() : this.form
+            return current === this.form && !this._paymentDisposed ? current : null
+        },
+        canSuggestInitialPayment() { return !!this.getCurrentPaymentForm() && !this.showDialogMultiplePayment },
         changeFiscalPaymentCondition(value) {
             this.$set(this.form, 'payment_condition_id', value)
             if (value === '02' && !this.useLocalCalculations) {
@@ -841,23 +856,14 @@ export default {
             this.difference = await this.getLocalStoragePayment('difference', 0)
         },
         getFormPosLocalStorage() {
-
-            let form_pos = localStorage.getItem('form_pos');
-            form_pos = JSON.parse(form_pos)
-            if (form_pos) {
-                if (Array.isArray(form_pos.payments)) this.form.payments = form_pos.payments
-                if (form_pos.payment_condition_id === '02') {
-                    this.$set(this.form, 'payment_condition_id', '02')
-                }
-                if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
-                    this.amount = this.localInvoiceSettlement
-                        ? this.appliedReceiptTotal(this.form.payments || [])
-                        : exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
-                    this.enter_amount = this.useLocalCalculations ? this.enteredReceiptAmount(this.form.payments || []) : this.amount
-                    this.inputAmount()
-                }
+            this.payments = JSON.parse(JSON.stringify(this.form.payments || []))
+            if ((this.form.payments || []).length || this.form.payment_condition_id === '02') {
+                this.amount = this.localInvoiceSettlement
+                    ? this.appliedReceiptTotal(this.form.payments || [])
+                    : exactSum((this.form.payments || []).map(row=>row.payment || '0')).decimal()
+                this.enter_amount = this.useLocalCalculations ? this.enteredReceiptAmount(this.form.payments || []) : this.amount
+                this.inputAmount()
             }
-
         },
         clickAddPayment() {
             this.payments = JSON.parse(JSON.stringify(this.form.payments || []))
@@ -872,6 +878,7 @@ export default {
 
         addRow(payments) {
             this.form.payments=payments;
+            this.payments=payments;
             this.setAmount(exactSum(payments.map(row=>row.payment || '0')).decimal());
         },
         setPaymentMethod(id){
@@ -987,12 +994,14 @@ export default {
             }
         },
         async clickCancel() {
-
+            const cancelledDraft = this.form
+            if (this._paymentDisposed || this.locked_submit || (typeof this.paymentState === 'function' && this.paymentState() !== cancelledDraft)) return
             this.loading_submit = true
             await this.sleep(800);
             this.loading_submit = false
+            if (this._paymentDisposed || this.locked_submit || this.form !== cancelledDraft || (typeof this.paymentState === 'function' && this.paymentState() !== cancelledDraft)) return
             this.cleanLocalStoragePayment()
-            this.$eventHub.$emit('cancelSale')
+            this.$eventHub.$emit('cancelSale', cancelledDraft)
 
         },
         cleanLocalStoragePayment() {
@@ -1126,6 +1135,11 @@ export default {
         },
         async clickPayment()
         {
+            if (this._paymentDisposed || this.locked_submit) return
+            const submissionForm = this.form
+            this.locked_submit = true
+            try {
+            if (this.currencyBlocked || (typeof this.currencyBlockedCheck === 'function' && this.currencyBlockedCheck())) return this.$message.warning('Verifique la moneda y la tasa de cambio antes de cobrar.')
             if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
             if (!this.refreshScaleTotals()) return
             const isInvoice = this.form.document_type_id === '01'
@@ -1187,35 +1201,38 @@ export default {
                 this.resource_payments = "document_payments";
                 this.resource_options = this.resource_documents;
                 await this.asignPlateNumberToItems()
+                if (this._paymentDisposed || this.form !== submissionForm || (typeof this.paymentState === 'function' && this.paymentState() !== submissionForm)) return
+                if (this.currencyBlocked || (typeof this.currencyBlockedCheck === 'function' && this.currencyBlockedCheck())) return this.$message.warning('Verifique la moneda y la tasa de cambio antes de cobrar.')
             }
 
             ;
 
             if (!await this.ensureFiscalPaymentsReady(this.form.payments)) return
+            if (this._paymentDisposed || this.form !== submissionForm || (typeof this.paymentState === 'function' && this.paymentState() !== submissionForm)) return
+            if (this.currencyBlocked || (typeof this.currencyBlockedCheck === 'function' && this.currencyBlockedCheck())) return this.$message.warning('Verifique la moneda y la tasa de cambio antes de cobrar.')
             if (this.stockBlocked) return this.$message.warning('Verifique la disponibilidad de los productos antes de generar.')
             if (isInvoice && this.settlementPaymentBlocked) return this.$message.warning('El monto a pagar es menor al total')
 
             this.loading_submit = true
-            this.locked_submit = true
 
             const payload = withoutPosScalePrices(withoutDraftRetentions(this.form))
+            const submittedType = payload.document_type_id
+            const submittedSnapshot = JSON.stringify(payload)
+            const isCurrentSubmission = () => !this._paymentDisposed && this.form === submissionForm &&
+                (typeof this.paymentState !== 'function' || this.paymentState() === submissionForm) &&
+                JSON.stringify(withoutPosScalePrices(withoutDraftRetentions(this.form))) === submittedSnapshot
             await this.$http.post(`/${this.resource_documents}`, this.prepareCalculationSubmission(payload)).then(async (response) => {
                 if (response.data.success) {
+                    const cashDocument = submittedType === '80'
+                        ? {document_id: null, sale_note_id: response.data.data.id, require_existing_cash_link: true}
+                        : {document_id: response.data.data.id, sale_note_id: null, require_existing_cash_link: true}
+                    if (!isCurrentSubmission()) {
+                        this.$message.warning(`Venta registrada: ${response.data.data.number_full || response.data.data.id}. Consulte el comprobante y verifique su caja antes de continuar.`)
+                        return
+                    }
                     let response_sent = null
                     this.responseForm = response.data
-
-                    if (this.form.document_type_id === "80") {
-                        // this.form_payment.sale_note_id = response.data.data.id;
-                        this.form_cash_document.sale_note_id = response.data.data.id;
-
-                    } else {
-                        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                        // El alta ya termina registrada localmente; no se ejecuta un segundo envío fiscal.
-                        // ######### FIN CAMBIO SIN XML CDR SUNAT
-                        // this.form_payment.document_id = response.data.data.id;
-                        this.form_cash_document.document_id = response.data.data.id;
-
-                    }
+                    this.form_cash_document = cashDocument
 
 
                     this.documentNewId = response.data.data.id;
@@ -1232,11 +1249,12 @@ export default {
                     //     this.gethtml();
                     // migrado a options
                     // }
-                    this.$eventHub.$emit('saleSuccess');
+                    this.$eventHub.$emit('saleSuccess', submissionForm);
                 } else {
                     this.$message.error(response.data.message);
                 }
             }).catch(error => {
+                if (!isCurrentSubmission()) return this.$message.warning('No se pudo confirmar el resultado de la venta anterior. Consulte el listado antes de crearla nuevamente.')
                 if (this.handleCalculationChanged(error, withoutPosScalePrices(withoutDraftRetentions(this.form)))) return;
                 console.log(error);
 
@@ -1247,10 +1265,11 @@ export default {
                 } else {
                     this.$message.error(error.response && error.response.data && error.response.data.message || 'No se pudo confirmar el guardado. Consulte el listado antes de crear nuevamente la factura.');
                 }
-            }).then(() => {
+            });
+            } finally {
                 this.loading_submit = false;
                 this.locked_submit = false
-            });
+            }
         },
 
         showOptionsDialog(response){
@@ -1278,11 +1297,9 @@ export default {
 
 
                 if (this.isPrint) {
-                    this.clickCancel()
                     this.autoPrint();
-                } else {
-                    this.clickCancel()
                 }
+                this.$emit('update:is_payment', false)
 
             }
             else
@@ -1341,8 +1358,8 @@ export default {
                 console.warn('[BuhoPrinter] print_ticket URL no disponible.');
             }
         },
-        saveCashDocument() {
-            this.$http.post(`/cash/cash_document`, this.form_cash_document)
+        saveCashDocument(payload = this.form_cash_document) {
+            this.$http.post(`/cash/cash_document`, payload)
                 .then(response => {
                     if (response.data.success) {
                         // console.log(response)
@@ -1352,6 +1369,7 @@ export default {
                 })
                 .catch(error => {
                     console.log(error);
+                    this.$message.warning('No se pudo confirmar la asociación del comprobante a caja. Revise la caja antes de continuar.');
                 })
         },
         savePaymentMethod() {
@@ -1374,6 +1392,7 @@ export default {
         async getTables() {
             return this.$http.get(`/${this.resource}/payment_tables`)
                 .then(response => {
+                    if (this._paymentDisposed || (typeof this.paymentState === 'function' && this.paymentState() !== this.form)) return
                     this.all_series = response.data.series
                     this.payment_method_types = response.data.payment_method_types
                     this.global_discount_types = response.data.global_discount_types
