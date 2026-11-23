@@ -736,6 +736,38 @@ class CurrentPdfRenderingTest extends TestCase
         if ($directory) file_put_contents($directory.'/manifest.json',json_encode($manifest,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR).PHP_EOL);
     }
 
+    public function test_default_invoice_ticket_places_identity_totals_and_payment_as_requested(): void
+    {
+        $document = $this->documentFixture();
+        $document->number_full = 'FF01-00000012';
+        $document->items->first()->additional_information = [];
+        $company = new Fluent(['name'=>'Empresa de prueba', 'number'=>'J234534534', 'trade_name'=>'Prueba', 'logo'=>null]);
+        $html = (new Template())->pdf('default', 'invoice', $company, $document, 'ticket', ['is_preview'=>false]);
+        self::assertSame(1, substr_count($html, 'R.I.F. J-23453453-4'));
+        self::assertSame(1, substr_count($html, 'N° de documento:'));
+        self::assertSame(1, substr_count($html, 'N° de control:'));
+        self::assertStringContainsString('N° de documento: <strong>FF01-00000012</strong>', $html);
+        self::assertStringContainsString('N° de control: <strong>No asignado</strong>', $html);
+        self::assertTrue(strpos($html, 'R.I.F. J-23453453-4') < strpos($html, 'FACTURA'));
+        self::assertTrue(strpos($html, 'FACTURA') < strpos($html, 'N° de documento:'));
+        self::assertTrue(strpos($html, 'N° de documento:') < strpos($html, 'N° de control:'));
+        self::assertTrue(strpos($html, 'SUBTOTAL:') < strpos($html, 'TOTAL A PAGAR:'));
+        self::assertTrue(strpos($html, 'TOTAL A PAGAR:') < strpos($html, 'Productos:'));
+        self::assertMatchesRegularExpression('~<td colspan="2" class="text-left align-top">\s*<p class="desc pt-5">\s*<strong>CONDICIÓN DE PAGO:~', $html);
+        self::assertStringContainsString('<!-- HKA_TICKET_QR -->', $html);
+        $withControl = view('pdf.default.invoice_ticket', [
+            'company'=>$company, 'document'=>$document, 'configuration'=>['is_preview'=>false],
+            'ticketInvoice'=>true, 'ticketFiscal'=>['environment'=>'demo', 'number_full'=>'FF01-00000012', 'control_number'=>'00-00000009'],
+        ])->render();
+        self::assertSame(1, substr_count($withControl, 'DEMO — SIN VALIDEZ FISCAL'));
+        self::assertStringContainsString('N° de documento: <strong>FF01-00000012</strong>', $withControl);
+        self::assertStringContainsString('N° de control: <strong>00-00000009</strong>', $withControl);
+        $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>[72, 400], 'margin_left'=>2, 'margin_right'=>2, 'margin_top'=>2, 'margin_bottom'=>2]);
+        $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')), HTMLParserMode::HEADER_CSS);
+        $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
+        self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+    }
+
     public function test_ticket_unit_prices_follow_the_configuration_without_using_catalog_prices(): void
     {
         $document=$this->documentFixture();

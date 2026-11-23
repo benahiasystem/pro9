@@ -46,6 +46,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     {{--<link href="{{ $path_style }}" rel="stylesheet" />--}}
 </head>
 <body class="ticket">
+@if($ticketInvoice && ($ticketFiscal['environment'] ?? null) === 'demo')
+    <div style="border: 1px solid #555; padding: 5px; margin-bottom: 6px; font-size: 9pt; font-weight: bold; text-align: center;">DEMO — SIN VALIDEZ FISCAL</div>
+@endif
 
 @if($company->logo)
     <div class="text-center company_logo_box pt-5">
@@ -88,7 +91,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="text-center"><h5>{{ $company->trade_name }}</h5></td>
     </tr>--}}
     <tr>
-        <td class="text-center"><h5>{{ 'RIF '.$company->number }}</h5></td>
+        <td class="text-center"><h5>{{ $ticketInvoice ? 'R.I.F. '.\App\Services\Fiscal\InvoicePaperPdfData::rif((string) $company->number) : 'RIF '.$company->number }}</h5></td>
     </tr>
     <tr>
         <td class="text-center" style="text-transform: uppercase;">
@@ -121,15 +124,24 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="text-center pb-3">{{ ($establishment->aditional_information !== '-')? $establishment->aditional_information : '' }}</td>
         </tr>
     @endisset
+    @if(!$ticketInvoice)
     <tr>
         <td class="text-center pt-3 border-top"><h3>{{ 'R.I.F. '.$company->number }}</h3></td>
     </tr>
+    @endif
     <tr>
-        <td class="text-center"><h4>{{ \App\Services\ExportInvoicePolicy::isExport($invoice->operation_type_id ?? '') ? 'FACTURA DE EXPORTACIÓN · '.\App\Services\ExportInvoicePolicy::INCOTERMS[$invoice->operation_type_id] : $document->document_type->description }}</h4>
+        <td class="text-center {{ $ticketInvoice ? 'pt-3 border-top' : '' }}"><h4>{{ \App\Services\ExportInvoicePolicy::isExport($invoice->operation_type_id ?? '') ? 'FACTURA DE EXPORTACIÓN · '.\App\Services\ExportInvoicePolicy::INCOTERMS[$invoice->operation_type_id] : $document->document_type->description }}</h4>
         </td>
     </tr>
     <tr>
-        <td class="text-center pb-3 border-bottom"><h3>{{ $document_number }}</h3></td>
+        <td class="text-center pb-3 border-bottom">
+            @if($ticketInvoice)
+                <div>N° de documento: <strong>{{ $ticketFiscal['number_full'] ?? $document_number }}</strong></div>
+                <div>N° de control: <strong>{{ ($ticketFiscal['control_number'] ?? null) ?: 'No asignado' }}</strong></div>
+            @else
+                <h3>{{ $document_number }}</h3>
+            @endif
+        </td>
     </tr>
 </table>
 <table class="full-width">
@@ -666,13 +678,16 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </tr>
     @endif
 
-        <tr>
-            <td colspan="3" class="text-left font-bold desc">Productos: {{ \App\Support\Exact\InvoicePdfSummary::quantities($document->items) }}</td>
-        </tr>
+        @if(!$ticketInvoice)
+        <tr><td colspan="3" class="text-left font-bold desc">Productos: {{ \App\Support\Exact\InvoicePdfSummary::quantities($document->items) }}</td></tr>
+        @endif
         <tr>
             <td colspan="2" class="text-right font-bold desc" style="white-space: nowrap;">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
+        @if($ticketInvoice)
+        <tr><td colspan="3" class="text-left font-bold desc">Productos: {{ \App\Support\Exact\InvoicePdfSummary::quantities($document->items) }}</td></tr>
+        @endif
 
     </tbody>
 </table>
@@ -714,6 +729,11 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             @endif
 
 
+            @if($ticketInvoice)
+        </td>
+    </tr>
+    <tr><td colspan="2" class="text-left align-top">
+            @endif
             @php
                 $paymentCondition = \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentPaymentCondition($document);
             @endphp

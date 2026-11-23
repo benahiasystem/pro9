@@ -25,7 +25,9 @@ class Template
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         $fiscal = \App\Services\Fiscal\FiscalPdfData::forDocument($document);
         $company = \App\Services\Fiscal\FiscalPdfData::issuerForPrint($company, $fiscal);
-        $html = self::render($path_template, $company, $document, $configuration, $isPaperInvoice ? $format_pdf : null);
+        $ticketInvoice = $path_template === 'pdf.default.invoice_ticket' && $template === 'invoice'
+            && $format_pdf === 'ticket' && (string) ($document->document_type_id ?? '') === '01';
+        $html = self::render($path_template, $company, $document, $configuration, $isPaperInvoice ? $format_pdf : null, $ticketInvoice ? $fiscal : null, $ticketInvoice);
         $paperSpecialIdentity = '';
         // ######## FIN PRESENTACION FACTURA A4/A5 ########
         if ($template === 'sale_note' && $document instanceof \App\Models\Tenant\SaleNote
@@ -86,7 +88,7 @@ class Template
                     ? preg_replace_callback('/<body\b[^>]*>/i', fn ($match) => $match[0].$profileHtml, $html, 1)
                     : $profileHtml.$html;
             }
-            $identity = view('pdf.partials.fiscal_identity', compact('fiscal'))->render();
+            $identity = $ticketInvoice ? '' : view('pdf.partials.fiscal_identity', compact('fiscal'))->render();
             if ($document instanceof \App\Models\Tenant\Document && $referenceControl=\App\Services\Fiscal\NoteReferenceControl::forDocument($document)) {
                 $identity .= view('pdf.partials.note_reference_control',compact('referenceControl'))->render();
             }
@@ -141,7 +143,7 @@ class Template
         return $document;
     }
 
-    private function render($view, $company, $document, $configuration = null, ?string $invoiceFormat = null)
+    private function render($view, $company, $document, $configuration = null, ?string $invoiceFormat = null, ?array $ticketFiscal = null, bool $ticketInvoice = false)
     {
         view()->addLocation(__DIR__.'/Templates');
         $isPaperInvoice = $invoiceFormat !== null;
@@ -164,7 +166,7 @@ class Template
             $document->legends = array_reverse(array_values($legends));
         }
         $invoicePdf = $isPaperInvoice ? \App\Services\Fiscal\InvoicePaperPdfData::forDocument($document, $company) : null;
-        $html = view($view, compact('company', 'document', 'configuration', 'invoicePdf', 'invoiceFormat'))->render();
+        $html = view($view, compact('company', 'document', 'configuration', 'invoicePdf', 'invoiceFormat', 'ticketFiscal', 'ticketInvoice'))->render();
         if ($document instanceof \App\Models\Tenant\Document) {
             if (!$isPaperInvoice) {
                 if ($document->exists && \App\Services\Fiscal\IvaRetentionService::available($document)) $document->loadMissing('fiscal_data');
