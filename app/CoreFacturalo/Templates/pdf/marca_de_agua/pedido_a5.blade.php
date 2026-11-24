@@ -42,10 +42,11 @@
 @endif
 <table class="full-width">
     <tr>
-        @if($company->logo)
+        @php $safePrintLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, null); @endphp
+@if($safePrintLogo)
             <td width="20%">
                 <div class="company_logo_box">
-                    <img src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
+                    <img src="{{ $safePrintLogo }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
                 </div>
             </td>
         @else

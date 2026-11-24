@@ -10,10 +10,7 @@
     // $accounts = \App\Models\Tenant\BankAccount::all();
     $accounts = (new TemplatePdf)->getBankAccountsForPdf($document->establishment_id);
 
-    $logo = "storage/uploads/logos/{$company->logo}";
-    if($establishment->logo) {
-        $logo = "{$establishment->logo}";
-    }
+    $ticketLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment);
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
     extract(\App\CoreFacturalo\Helpers\Template\TemplateHelper::getPersonalizableTicketShowColumns(
@@ -31,9 +28,9 @@
 </head>
 <body>
 
-@if($company->logo)
+@if($ticketLogo)
     <div class="text-center company_logo_box pt-5">
-        <img src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo_ticket contain">
+        <img src="{{ $ticketLogo }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo_ticket contain">
     </div>
 {{--@else--}}
     {{--<div class="text-center company_logo_box pt-5">--}}

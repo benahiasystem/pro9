@@ -179,7 +179,7 @@ class RestaurantController extends Controller
                 'qr_api_url_ws' => $configuration->qr_api_url,
                 'qr_api_key_ws' => $configuration->qr_api_apiKey,
                 'url_logo' => ($company->logo)?asset('storage/uploads/logos/'.$company->logo):'',
-                'logo_base64' => $company->logo ? 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('storage/uploads/logos/' . $company->logo))) : '',
+                'logo_base64' => \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, null) ?? '',
                 'is_business_turn_tap' => ($business_turn_tap)?$business_turn_tap->active:0,
             ],
             'app_configuration' => optional(AppConfiguration::first())->getRowResource(),

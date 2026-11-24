@@ -27,10 +27,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     }
     $document->load('reference_guides');
 
-    $logo = "storage/uploads/logos/{$company->logo}";
-    if($establishment->logo) {
-        $logo = "{$establishment->logo}";
-    }
+    $ticketLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment);
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
 @endphp
@@ -41,10 +38,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 </head>
 <body class="ticket">
 
-@if($company->logo)
+@if($ticketLogo)
     <div class="text-center company_logo_box pt-5">
         <img
-            src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}"
+            src="{{ $ticketLogo }}"
             alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo_ticket contain">
     </div>
     {{--@else--}}

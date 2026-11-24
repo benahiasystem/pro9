@@ -25,8 +25,12 @@ class Template
         // ######## INICIO NUMERACIÓN FISCAL VENEZUELA ########
         $fiscal = \App\Services\Fiscal\FiscalPdfData::forDocument($document);
         $company = \App\Services\Fiscal\FiscalPdfData::issuerForPrint($company, $fiscal);
-        $ticketInvoice = $path_template === 'pdf.default.invoice_ticket' && $template === 'invoice'
-            && $format_pdf === 'ticket' && (string) ($document->document_type_id ?? '') === '01';
+        $ticketInvoice = $template === 'invoice' && (string) ($document->document_type_id ?? '') === '01'
+            && (($format_pdf === 'ticket' && $path_template === 'pdf.default.invoice_ticket')
+                || ($format_pdf === 'ticket_58' && in_array($path_template, [
+                    'pdf.default.invoice_ticket_58', 'pdf.modern-2027.invoice_ticket_58',
+                    'pdf.marca_de_agua.invoice_ticket_58', 'pdf.Plantilla_personalizable.invoice_ticket_58',
+                ], true)));
         $html = self::render($path_template, $company, $document, $configuration, $isPaperInvoice ? $format_pdf : null, $ticketInvoice ? $fiscal : null, $ticketInvoice);
         $paperSpecialIdentity = '';
         // ######## FIN PRESENTACION FACTURA A4/A5 ########

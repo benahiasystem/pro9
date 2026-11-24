@@ -1,6 +1,8 @@
 {{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
+    $ticketInvoice = $ticketInvoice ?? false;
+    $ticketFiscal = $ticketFiscal ?? null;
     use Modules\Template\Helpers\TemplatePdf;
 
     $establishment = $document->establishment;
@@ -28,16 +30,14 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
     $document->load('reference_guides');
 
-    $logo = "storage/uploads/logos/{$company->logo}";
-    if($establishment->logo) {
-        $logo = "{$establishment->logo}";
-    }
+    $ticketLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment);
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
 @endphp
 <html>
 <head></head>
 <body>
+@include('pdf.partials.invoice_ticket_58_demo')
     @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
         <img
@@ -63,10 +63,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 <table class="full-width" style="font-family: helvetica">
     <tr>
         <td class="pt-2">
-            @if($company->logo)
+            @if($ticketLogo)
                 <div class="text-center company_logo_box">
                     <img
-                        src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}"
+                        src="{{ $ticketLogo }}"
                         alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 60%; margin-left: 20%;">
                 </div>
             @endif
@@ -75,7 +75,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     <tr>
         <td class="text-center text-uppercase">
             @include('pdf.partials.company_document_header_names_plain')<br>
-            {{ 'RIF '.$company->number }}
+            {{ $ticketInvoice ? 'R.I.F. '.\App\Services\Fiscal\InvoicePaperPdfData::rif((string) $company->number) : 'RIF '.$company->number }}
         </td>
     </tr>
     <tr>
@@ -108,7 +108,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="text-center pt-2 border-top"><h5>{{ $document->document_type->description }}</h5></td>
     </tr>
     <tr>
-        <td class="text-center pb-2 border-bottom"><h5>{{ $document_number }}</h5></td>
+        <td class="text-center pb-2 border-bottom">@if($ticketInvoice) @include('pdf.partials.invoice_ticket_58_identity') @else <h5>{{ $document_number }}</h5> @endif</td>
     </tr>
 </table>
 <table class="full-width" style="font-family: helvetica">
@@ -301,37 +301,37 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     @endforeach
     @if($document->total_exportation > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">OP. EXPORTACIÓN:
+            <td colspan="3" class="desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>OP. EXPORTACIÓN:
                 {{ $document->currency_type->symbol }}</td>
             <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exportation'), 2) }}</td>
+                class="text-right desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exportation'), 2) }}</td>
         </tr>
     @endif
 
 
     @if($document->total_exonerated > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">Total exento:
+            <td colspan="3" class="desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>Total exento:
                 {{ $document->currency_type->symbol }}</td>
             <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
+                class="text-right desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_exonerated'), 2) }}</td>
         </tr>
     @endif
     @if($document->total_taxed > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">Base imponible:
+            <td colspan="3" class="desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>Base imponible:
                 {{ $document->currency_type->symbol }}</td>
             <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
+                class="text-right desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
         </tr>
     @endif
 
     <tr>
         {{-- ########## INICIO CAMBIO IGV A IVA --}}
-        <td colspan="3" class="desc-ticket text-uppercase">IVA:
+        <td colspan="3" class="desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>IVA:
         {{-- ######### FIN CAMBIO IGV A IVA --}}
             {{ $document->currency_type->symbol }}</td>
-        <td colspan="2" class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
+        <td colspan="2" class="text-right desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
     </tr>
 
     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
@@ -346,21 +346,21 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             $subtotal = $invoiceDiscountWithIgv->isPositive() ? \App\Support\Exact\PdfAmounts::read($document, 'subtotal')->plus($invoiceDiscountWithIgv) : \App\Support\Exact\PdfAmounts::read($document, 'subtotal');
         @endphp
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">{{ $labelSubtotal }}:
+            <td colspan="3" class="desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{ $labelSubtotal }}:
                 {{ $document->currency_type->symbol }}</td>
             <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format($subtotal, 2) }}</td>
+                class="text-right desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{ \App\Support\Exact\Decimal::format($subtotal, 2) }}</td>
         </tr>
     @endif
 
     @if($invoiceDiscountWithIgv->isPositive())
         <tr>
             <td colspan="3"
-                class="desc-ticket text-uppercase">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}
+                class="desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}
                 :
                 {{ $document->currency_type->symbol }}</td>
             <td colspan="2"
-                class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format($invoiceDiscountWithIgv, 2) }}</td>
+                class="text-right desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{ \App\Support\Exact\Decimal::format($invoiceDiscountWithIgv, 2) }}</td>
         </tr>
     @endif
 
@@ -374,25 +374,25 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             $total_factor = \App\Support\Exact\Decimal::represent($total_factor);
             @endphp
             <tr>
-                <td colspan="3" class="desc-ticket text-uppercase">CARGOS ({{$total_factor}}%):
+                <td colspan="3" class="desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>CARGOS ({{$total_factor}}%):
                     {{ $document->currency_type->symbol }}</td>
                 <td colspan="2"
-                    class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_charge'), 2) }}</td>
+                    class="text-right desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_charge'), 2) }}</td>
             </tr>
         @else
             <tr>
-                <td colspan="3" class="desc-ticket text-uppercase">CARGOS:
+                <td colspan="3" class="desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>CARGOS:
                     {{ $document->currency_type->symbol }}</td>
                 <td colspan="2"
-                    class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_charge'), 2) }}</td>
+                    class="text-right desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_charge'), 2) }}</td>
             </tr>
         @endif
     @endif
 
     <tr>
-        <td colspan="3" class="desc-ticket text-uppercase">TOTAL A PAGAR:
+        <td colspan="3" class="desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>TOTAL A PAGAR:
             {{ $document->currency_type->symbol }}</td>
-        <td colspan="2" class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
+        <td colspan="2" class="text-right desc-ticket text-uppercase" @if($ticketInvoice) style="font-size: 10px;" @endif>{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>
 
     </tbody>
@@ -414,34 +414,25 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             </tr>
             @endforeach
             </tr>
-            @if(isset($configurationInPdf) && $configurationInPdf->show_seller_in_pdf)
-            <tr>
-                <td class="desc-ticket text-uppercase">
-                    <div style="font-size: 10px;">
-                        Vendedor:
-                        @if ($document->seller)
-                            <span>{{ $document->seller->name }}</span>
-                        @else
-                            <span>{{ $document->user->name }}</span>
-                        @endif
-                    </div>
-                </td>
-            </tr>
+            @if(!$ticketInvoice && isset($configurationInPdf) && $configurationInPdf->show_seller_in_pdf)
+            <tr><td class="desc-ticket text-uppercase"><div style="font-size: 10px;">
+                Vendedor: {{ $document->seller ? $document->seller->name : $document->user->name }}
+            </div></td></tr>
             @endif
-
             {{-- ######## INICIO CLASIFICACION DE COBROS Y CAJA ######## --}}
-            @include('pdf.partials.invoice_ticket_payments', ['document' => $document, 'payments' => $payments])
+            @include('pdf.partials.invoice_ticket_payments', ['document' => $document, 'payments' => $payments, 'showInvoice58Condition' => $ticketInvoice])
             {{-- ######## FIN CLASIFICACION DE COBROS Y CAJA ######## --}}
+            @if($ticketInvoice && isset($configurationInPdf) && $configurationInPdf->show_seller_in_pdf)
+            <tr><td class="desc-ticket text-uppercase"><div style="font-size: 10px;">
+                Vendedor: {{ $document->seller ? $document->seller->name : $document->user->name }}
+            </div></td></tr>
+            @endif
 
             @if ($document->terms_condition)
                 <tr>
                     <td class="desc-ticket text-uppercase">
-                        <div style="font-size: 10px; margin-bottom: 1px;">
-                            Términos y condiciones del servicio
-                        </div>
-                        <div style="font-size: 8px;">
-                            {!! $document->terms_condition !!}
-                        </div>
+                        <div style="font-size: 10px; margin-bottom: 1px;">Términos y condiciones del servicio</div>
+                        <div style="font-size: 8px;">{!! $document->terms_condition !!}</div>
                     </td>
                 </tr>
             @endif

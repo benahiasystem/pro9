@@ -112,7 +112,7 @@ class CompanyController extends Controller
                 if ($isSvg) {
                     // SVG: se guarda tal cual (sin compresión).
                     $stream = fopen($file->getPathname(), 'r');
-                    Storage::put('public/uploads/logos/' . $name, $stream);
+                    $stored = Storage::put('public/uploads/logos/' . $name, $stream);
                     if (is_resource($stream)) fclose($stream);
                 } else {
                     // Optimizar raster para que el base64 del PDF no infle el documento.
@@ -147,7 +147,7 @@ class CompanyController extends Controller
                     }
 
                     $name = $type . '_' . $company->number . '.' . $optimizedExt;
-                    Storage::put('public/uploads/logos/' . $name, $optimizedBytes);
+                    $stored = Storage::put('public/uploads/logos/' . $name, $optimizedBytes);
                 }
             }
 
@@ -160,7 +160,7 @@ class CompanyController extends Controller
 
                 if ($isSvg) {
                     $stream = fopen($file->getPathname(), 'r');
-                    Storage::put('public/uploads/logos/' . $name, $stream);
+                    $stored = Storage::put('public/uploads/logos/' . $name, $stream);
                     if (is_resource($stream)) fclose($stream);
                 } else {
                     $maxWidth = 300;
@@ -193,7 +193,7 @@ class CompanyController extends Controller
                     }
 
                     $name = $type . '_' . $company->number . '.' . $optimizedExt;
-                    Storage::put('public/uploads/logos/' . $name, $optimizedBytes);
+                    $stored = Storage::put('public/uploads/logos/' . $name, $optimizedBytes);
                 }
             }
 
@@ -210,19 +210,36 @@ class CompanyController extends Controller
                 UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true, 'png,webp', ['image/png', 'image/webp']);
 
                 $stream = fopen($file->getPathname(), 'r');
-                Storage::put('public/uploads/favicons/'.$filename, $stream);
+                $stored = Storage::put('public/uploads/favicons/'.$filename, $stream);
                 if (is_resource($stream)) fclose($stream);
             }
 
             if (($type === 'img_firm')) {
-                request()->validate(['file' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048']);
-                UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
-                $stream = fopen($file->getPathname(), 'r');
-                Storage::put('public/uploads/firms/'.$name, $stream);
-                if (is_resource($stream)) fclose($stream);
+                $request->validate(['file' => 'required|image|mimes:jpeg,png,gif,webp|max:2048']);
+                $dimensions = @getimagesize($file->getPathname());
+                if (!$dimensions || $dimensions[0] * $dimensions[1] > 16000000) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['file' => 'La imagen debe tener como máximo 16 megapíxeles.']);
+                }
+                $extension = $file->guessExtension();
+                UploadFileHelper::checkIfValidFile('firm.'.$extension, $file->getPathName(), true, 'jpg,jpeg,png,gif,webp', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+                // Recodificar evita publicar contenido adicional y conserva la transparencia.
+                $name = $type . '_' . $company->number . '.png';
+                $image = \Intervention\Image\ImageManagerStatic::make($file->getPathname());
+                $image->resize(1400, 1400, function ($constraint) {
+                    $constraint->aspectRatio();
+                    $constraint->upsize();
+                });
+                $stored = Storage::put('public/uploads/firms/'.$name, (string) $image->encode('png'));
             }
 
             // $file->storeAs(($type === 'img_firm') ? 'public/uploads/firms' : 'certificates', $name);
+
+            if (isset($stored) && !$stored) {
+                return [
+                    'success' => false,
+                    'message' => __('app.actions.upload.error'),
+                ];
+            }
 
             $company->$type = $name;
 

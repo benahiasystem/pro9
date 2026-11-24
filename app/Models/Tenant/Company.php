@@ -35,7 +35,6 @@ class Company extends ModelTenant
         'ws_api_token',
         'ws_api_phone_number_id',
         'title_web',
-        'mtc_code'
     ];
 
     protected $casts = [
@@ -50,7 +49,7 @@ class Company extends ModelTenant
     ];
 
     // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-    protected $hidden = ['fiscal_credentials'];
+    protected $hidden = ['fiscal_credentials', 'mtc_code'];
     // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
 
     /**

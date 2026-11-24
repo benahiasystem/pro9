@@ -55,6 +55,7 @@ services:
       DB_CONNECTION: system
       DB_HOST: postgres
       DB_PORT: 5432
+      SAB_ARTISAN_USER: www-data
     volumes:
       - ./:/var/www/sab
       - ./docker/custom-php.ini:/usr/local/etc/php/conf.d/custom-php.ini:ro

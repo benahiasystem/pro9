@@ -2990,6 +2990,7 @@ PHP;
             self::assertFalse($db->getSchemaBuilder()->hasColumn('configurations', $column), $column);
         }
         self::assertFalse($db->getSchemaBuilder()->hasColumn('companies', 'operation_amazonia'));
+        self::assertFalse($db->getSchemaBuilder()->hasColumn('companies', 'mtc_code'));
         foreach (['sire_client_id', 'sire_client_secret', 'sire_username', 'sire_password'] as $column) {
             self::assertFalse($db->getSchemaBuilder()->hasColumn('companies', $column), $column);
         }

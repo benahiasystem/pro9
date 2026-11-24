@@ -38,7 +38,8 @@ if($establishment->logo) {
 $logo = "{$establishment->logo}";
 }
 
-$exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
+$safeLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::printLogoDataUri($logo) ?: \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment ?? null);
+    $exists_logo = (bool) $safeLogo;
 
 $configuration_decimal_quantity= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
 $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
@@ -112,7 +113,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                 <td width="20%">
                     <div class="company_logo_box">
                         <img
-                            src="data:{{ mime_content_type(public_path($logo)) }};base64, {{ base64_encode(file_get_contents(public_path($logo))) }}"
+                            src="{{ $safeLogo }}"
                             alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
                     </div>
                 </td>

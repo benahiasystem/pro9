@@ -45,7 +45,8 @@ $configurationEnableGuaranteeFund = App\CoreFacturalo\Helpers\Template\TemplateH
 $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getFiscalEnvironment();
 $total_pending_payment = $document->total_pending_payment;
 
-$exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
+$safeLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::printLogoDataUri($logo) ?: \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment ?? null);
+    $exists_logo = (bool) $safeLogo;
 @endphp
 <html>
 
@@ -91,7 +92,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 <td width="20%">
                     <div class="company_logo_box">
                         <img
-                            src="data:{{ mime_content_type(public_path($logo)) }};base64, {{ base64_encode(file_get_contents(public_path($logo))) }}"
+                            src="{{ $safeLogo }}"
                             alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
                     </div>
                 </td>

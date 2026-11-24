@@ -9,10 +9,7 @@
     $accounts = (new TemplatePdf)->getBankAccountsForPdf($document->establishment_id);
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
-    $logo = "storage/uploads/logos/{$company->logo}";
-    if($establishment->logo) {
-        $logo = "{$establishment->logo}";
-    }
+    $ticketLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment);
 
     /* ------------------------------------------------------------------
      | modern-2027: variables propias del diseño del ticket
@@ -36,11 +33,11 @@
 <body class="ticket-58">
 
 <table class="full-width">
-    @if($company->logo)
+    @if($ticketLogo)
         <tr>
             <td class="text-center pt-2 pb-2">
                 <img
-                    src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}"
+                    src="{{ $ticketLogo }}"
                     alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="m27-logo m27-logo-sm contain">
             </td>
         </tr>

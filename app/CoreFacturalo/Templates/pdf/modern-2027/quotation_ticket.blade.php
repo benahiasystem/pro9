@@ -32,16 +32,17 @@
     $show_lot = $document->items->contains(function ($row) {
         return !empty($row->getSaleLotGroupCodeDescription());
     });
+    $safePrintLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment);
 @endphp
 <html>
 <head></head>
 <body class="ticket">
 
 <table class="full-width">
-    @if($company->logo)
+    @if($safePrintLogo)
         <tr>
             <td class="text-center pt-3 pb-2">
-                <img src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}"
+                <img src="{{ $safePrintLogo }}"
                      alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="m27-logo contain">
             </td>
         </tr>

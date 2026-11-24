@@ -21,6 +21,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         $logo = "{$establishment->logo}";
     }
 
+    $safeLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::printLogoDataUri($logo) ?: \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment ?? null);
 @endphp
 <html>
 <head>
@@ -34,7 +35,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         src="data:{{mime_content_type(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png"))}};base64, {{base64_encode(file_get_contents(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png")))}}"
         alt="anulado" class="" style="opacity: 0.6;">
 </div>
-@elseif(is_file(public_path($logo)))
+@elseif($safeLogo)
     <div class="item_watermark" style="
         position: absolute;
         top: 35%;
@@ -44,7 +45,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         text-align: center;
     ">
         <img
-            src="data:{{ mime_content_type(public_path("{$logo}")) }};base64,{{ base64_encode(file_get_contents(public_path("{$logo}"))) }}"
+            src="{{ $safeLogo }}"
             alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"
             style="width: 100%; height: auto; object-fit: contain; opacity: 0.1;"
         >
@@ -60,10 +61,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
 <table class="full-width">
     <tr>
-        @if(is_file(public_path($logo)))
+        @if($safeLogo)
             <td width="20%">
                 <div class="company_logo_box">
-                    <img src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
+                    <img src="{{ $safeLogo }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
                 </div>
             </td>
             <td width="50%" class="text-center pl-3">

@@ -40,6 +40,21 @@ class CurrentPdfTemplateContractTest extends TestCase
         self::assertGreaterThan(0, $count);
         self::assertSame([], $errors, implode("\n", $errors));
     }
+    public function test_additional_print_views_compile_with_optional_images(): void
+    {
+        $compiler = new BladeCompiler(new Filesystem(), sys_get_temp_dir());
+        $parser = (new ParserFactory())->createForNewestSupportedVersion();
+        foreach ([
+            'app/CoreFacturalo/Templates/preprinted_pdf/custom/invoice_a4.blade.php',
+            'app/CoreFacturalo/Templates/preprinted_pdf/static/dispatch_a4.blade.php',
+            'modules/Inventory/Resources/views/transfers/export/partial/header.blade.php',
+            'modules/ClaimsBook/Resources/views/pdf/claim.blade.php',
+            'modules/DocumentaryProcedure/Resources/views/exports/report_detailed_excel.blade.php',
+        ] as $path) {
+            self::assertNotNull($parser->parse($compiler->compileString(file_get_contents(base_path($path)))), $path);
+        }
+    }
+
     public function test_document_report_templates_compile_after_retiring_old_totals(): void
     {
         $compiler = new BladeCompiler(new Filesystem(), sys_get_temp_dir());

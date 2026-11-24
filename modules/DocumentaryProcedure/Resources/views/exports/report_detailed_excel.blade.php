@@ -28,9 +28,10 @@
 
     <h3 align="center"
         class="title"><strong>
-            @if($company->logo)
+            @php $safePrintLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, null); @endphp
+                @if($safePrintLogo)
                 <div class="company_logo_box">
-                    <img src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}"
+                    <img src="{{ $safePrintLogo }}"
                          alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"
                          class="company_logo"
                          style="max-height: 50px; max-width: 400px;">

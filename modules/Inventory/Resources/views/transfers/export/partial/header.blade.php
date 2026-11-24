@@ -38,8 +38,9 @@
             >
             @if($pdf == true)
                 <!-- Logo aqui -->
-                    @if(!empty($company->logo))
-                        <img src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}"
+                    @php $safePrintLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, null); @endphp
+                @if($safePrintLogo)
+                        <img src="{{ $safePrintLogo }}"
                              alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"
                              class="company_logo_ticket contain"
                              style="max-width: 300px; height: auto;"

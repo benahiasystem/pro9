@@ -186,23 +186,11 @@
         <table>
             <tr>
                 {{-- Logo --}}
-                @if(!empty($company->logo) && file_exists(public_path('storage/uploads/logos/' . $company->logo)))
-                @php
-                    $logoPath = public_path('storage/uploads/logos/' . $company->logo);
-                    $maxW = 200; $maxH = 70;
-                    [$imgW, $imgH] = getimagesize($logoPath);
-                    if (($imgW / $maxW) >= ($imgH / $maxH)) {
-                        $displayW = $maxW;
-                        $displayH = (int) round($maxW * $imgH / $imgW);
-                    } else {
-                        $displayH = $maxH;
-                        $displayW = (int) round($maxH * $imgW / $imgH);
-                    }
-                @endphp
+                @php $safePrintLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, null); @endphp
+                @if($safePrintLogo)
                 <td class="company-logo-cell">
                     <div class="company-logo-box">
-                        <img src="data:{{ mime_content_type($logoPath) }};base64,{{ base64_encode(file_get_contents($logoPath)) }}"
-                             width="{{ $displayW }}" height="{{ $displayH }}" alt="{{ $company->name }}">
+                        <img src="{{ $safePrintLogo }}" style="max-width: 200px; max-height: 70px; width: auto; height: auto;" alt="{{ $company->name }}">
                     </div>
                 </td>
                 @endif

@@ -14,6 +14,7 @@
 
     $configuration_decimal_quantity = App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
+    $safePrintLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment);
 @endphp
 <html>
 <head>
@@ -30,7 +31,7 @@
         $logo = "storage/uploads/logos/{$company->logo}";
     }
 
-    $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
+    $exists_logo = (bool) $safePrintLogo;
 @endphp
 
 @if($exists_logo)
@@ -43,7 +44,7 @@
         text-align: center;
     ">
         <img style="width: 100%; height: auto; object-fit: contain; opacity: 0.1;"
-             src="data:{{ mime_content_type(public_path($logo)) }};base64,{{ base64_encode(file_get_contents(public_path($logo))) }}"
+             src="{{ $safePrintLogo }}"
              alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}">
     </div>
 @endif
@@ -52,7 +53,7 @@
         @if($exists_logo)
             <td width="20%">
                 <div class="company_logo_box">
-                    <img src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
+                    <img src="{{ $safePrintLogo }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
                 </div>
             </td>
             <td width="50%" class="text-left pl-3">

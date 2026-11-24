@@ -39,7 +39,6 @@ use Illuminate\Support\Facades\DB;
  * - cod_digemid: text
  * - digital_certificate_qztray: varchar(255)
  * - private_certificate_qztray: varchar(255)
- * - mtc_code: varchar(255)
  * - qr_api_enable_ws: boolean
  * - qr_api_url_ws: varchar(255)
  * - qr_api_key_ws: varchar(255)
@@ -87,7 +86,6 @@ return new class extends Migration
             $table->text('cod_digemid')->collation('sab_ci_ai')->nullable()->comment('Codigo de establecimiento DIGEMID');
             $table->string('digital_certificate_qztray', 255)->collation('sab_ci_ai')->nullable();
             $table->string('private_certificate_qztray', 255)->collation('sab_ci_ai')->nullable();
-            $table->string('mtc_code', 255)->collation('sab_ci_ai')->nullable();
             $table->boolean('qr_api_enable_ws')->default(false);
             $table->string('qr_api_url_ws', 255)->collation('sab_ci_ai')->nullable();
             $table->string('qr_api_key_ws', 255)->collation('C')->nullable();

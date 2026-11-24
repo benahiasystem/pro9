@@ -1,5 +1,7 @@
 {{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 @php
+    $ticketInvoice = $ticketInvoice ?? false;
+    $ticketFiscal = $ticketFiscal ?? null;
     use Modules\Template\Helpers\TemplatePdf;
 
     $establishment = $document->establishment;
@@ -29,10 +31,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     $total_payment = $document->payments->sum('payment');
     $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
-    $logo = "storage/uploads/logos/{$company->logo}";
-    if($establishment->logo) {
-        $logo = "{$establishment->logo}";
-    }
+    $ticketLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment);
 
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
@@ -54,6 +53,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 <html>
 <head></head>
 <body class="ticket-58">
+@include('pdf.partials.invoice_ticket_58_demo')
     @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
         <img
@@ -77,11 +77,11 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     @endif
 
 <table class="full-width">
-    @if($company->logo)
+    @if($ticketLogo)
         <tr>
             <td class="text-center pt-2 pb-2">
                 <img
-                    src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}"
+                    src="{{ $ticketLogo }}"
                     alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="m27-logo m27-logo-sm contain">
             </td>
         </tr>
@@ -96,7 +96,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         ])</td>
     </tr>
     <tr>
-        <td class="m27-head-line m27-head-line-sm">RIF: {{ $company->number }}</td>
+        <td class="m27-head-line m27-head-line-sm">{{ $ticketInvoice ? 'R.I.F. '.\App\Services\Fiscal\InvoicePaperPdfData::rif((string) $company->number) : 'RIF: '.$company->number }}</td>
     </tr>
     <tr>
         <td class="m27-head-line m27-head-line-sm" style="text-transform: uppercase;">
@@ -141,7 +141,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="m27-gap"></td>
     </tr>
     <tr>
-        <td class="m27-doc-number m27-doc-number-sm">{{ $document_number }}</td>
+        <td class="m27-doc-number m27-doc-number-sm">
+            @if($ticketInvoice)
+                @include('pdf.partials.invoice_ticket_58_identity')
+            @else
+                {{ $document_number }}
+            @endif
+        </td>
     </tr>
     <tr>
         <td class="m27-gap"></td>
@@ -407,6 +413,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             </td>
         </tr>
     @endforeach
+
     </tbody>
 </table>
 @include('pdf.modern-2027.partials.rule')
@@ -440,6 +447,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td colspan="2" class="m27-total-label m27-total-label-sm">Base imponible:</td>
             <td class="m27-total-value m27-total-value-sm">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_taxed'), 2) }}</td>
         </tr>
+    @endif
+
+    @if($ticketInvoice)
+    <tr>
+        <td colspan="2" class="m27-total-label m27-total-label-sm">IVA{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
+        <td class="m27-total-value m27-total-value-sm">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
+    </tr>
     @endif
 
     @php
@@ -489,10 +503,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
 
 
+
+    @if(!$ticketInvoice)
     <tr>
         <td colspan="2" class="m27-total-label m27-total-label-sm">IVA{{ $m27_igv_percentage ? ' ('.$m27_igv_percentage.'%)' : '' }}:</td>
         <td class="m27-total-value m27-total-value-sm">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_igv'), 2) }}</td>
     </tr>
+    @endif
 
     </tbody>
 </table>
@@ -501,10 +518,17 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     <tbody>
     <tr>
         <td class="m27-colspec" width="16%"></td>
-        <td class="m27-colspec" width="56%"></td>
-        <td class="m27-colspec" width="28%"></td>
+        <td class="m27-colspec" width="{{ $ticketInvoice ? 48 : 56 }}%"></td>
+        <td class="m27-colspec" width="{{ $ticketInvoice ? 36 : 28 }}%"></td>
     </tr>
 
+    @if($ticketInvoice)
+    <tr>
+        <td colspan="2" class="m27-grand-label m27-grand-label-sm" style="white-space: nowrap; letter-spacing: 0;">TOTAL A PAGAR:</td>
+        <td class="m27-grand-value m27-grand-value-sm" style="white-space: nowrap; letter-spacing: 0;">{{ $document->currency_type->symbol }}&nbsp;{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
+    </tr>
+    <tr><td colspan="3" class="m27-item-sub m27-item-sub-sm">Productos: {{ $m27_total_products }}</td></tr>
+    @else
     @if(strlen($m27_total_products) > 9)
     <tr><td colspan="3" class="m27-item-sub m27-item-sub-sm">Cantidades: {{ $m27_total_products }}</td></tr>
     @endif
@@ -513,6 +537,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="m27-grand-label m27-grand-label-sm">TOTAL:</td>
         <td class="m27-grand-value m27-grand-value-sm">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
     </tr>
+    @endif
 
 
     </tbody>
@@ -537,6 +562,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
 @php
     $paymentCondition = \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentPaymentCondition($document);
+    if ($ticketInvoice && $paymentCondition === '-') {
+        $paymentCondition = ['01' => 'Contado', '02' => 'Crédito', '03' => 'Crédito'][(string) $document->payment_condition_id] ?? '-';
+    }
 @endphp
 <table class="full-width">
     <tr>
@@ -661,9 +689,11 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 <barcode code="{{ $m27_barcode }}" type="C128B" size="0.7" height="0.7"/>
             </td>
         </tr>
+        @if(!$ticketInvoice)
         <tr>
             <td class="m27-barcode-text m27-barcode-text-sm">{{ $m27_barcode }}</td>
         </tr>
+        @endif
     @endif
 </table>
 </body>

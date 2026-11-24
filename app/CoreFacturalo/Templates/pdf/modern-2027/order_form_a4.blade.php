@@ -14,9 +14,10 @@
 <body>
 <table class="full-width">
     <tr>
-        @if($company->logo)
+        @php $safePrintLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, null); @endphp
+@if($safePrintLogo)
             <td width="10%">
-                <img src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"  class="company_logo" style="max-width: 300px">
+                <img src="{{ $safePrintLogo }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"  class="company_logo" style="max-width: 300px">
             </td>
             <td width="50%" class="text-center">
                 <div class="text-left">
@@ -178,8 +179,9 @@
             @endif
             </td>
             <td width="50%" align="right">
-                @if($company->img_firm)
-                    <img src="data:{{mime_content_type(public_path("storage/uploads/firms/{$company->img_firm}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/firms/{$company->img_firm}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"  class="company_logo" style="max-width: 300px">
+                @php $safeFirmImage = \App\CoreFacturalo\Helpers\Template\TemplateHelper::printLogoDataUri(!empty($company->img_firm) ? 'storage/uploads/firms/'.$company->img_firm : null); @endphp
+                @if($safeFirmImage)
+                    <img src="{{ $safeFirmImage }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"  class="company_logo" style="max-width: 300px">
                 @else
                 @endif
             </td>

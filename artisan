@@ -17,6 +17,10 @@ define('LARAVEL_START', microtime(true));
 
 require __DIR__.'/vendor/autoload.php';
 
+// En Docker, Artisan comparte almacenamiento privado y vistas con PHP-FPM.
+// Un proceso root crearía archivos que el usuario de PHP no puede modificar.
+App\Support\ConsoleRuntimeUser::apply();
+
 $app = require_once __DIR__.'/bootstrap/app.php';
 
 /*

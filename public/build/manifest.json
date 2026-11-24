@@ -186,7 +186,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-9473b1fa.css",
+    "file": "assets/app-3daee5d5.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -196,9 +196,9 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-9473b1fa.css"
+      "assets/app-3daee5d5.css"
     ],
-    "file": "assets/app-3a8e930b.js",
+    "file": "assets/app-4b064a46.js",
     "imports": [
       "_vue-clipboard-9c83a367.js",
       "_vue.esm-340a2d96.js",

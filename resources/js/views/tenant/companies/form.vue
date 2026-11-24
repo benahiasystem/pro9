@@ -71,6 +71,7 @@
                                         <div v-if="form.logo">
                                             <img
                                                 :src="logoLightPreviewUrl"
+                                                @error="onImageError('logo')"
                                                 alt="Vista previa"
                                                 class="img-fluid img-small img-fluid-light img-thumbnail w-100"
                                             />
@@ -102,6 +103,7 @@
                                             @dragover="onDragOver($event, 'logo')"
                                             @dragleave="onDragLeave($event, 'logo')"
                                             @drop="onDrop($event, 'logo')"
+                                            @click="onShowFilePicker('logo')"
                                         >
                                             <div class="p-2 bg-light rounded">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tabler-icon tabler-icon-photo h-8 w-8 text-muted"><path d="M15 8h.01"></path><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"></path><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"></path><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"></path></svg>
@@ -111,7 +113,7 @@
                                                 <p class="text-muted text-center">PNG, JPG, GIF o SVG · Máx. 2 MB</p>
                                             </div>
                                             <el-button
-                                                @click="onShowFilePicker('logo')"
+                                                @click.stop="onShowFilePicker('logo')"
                                                 :loading="loading_logo"
                                                 :disabled="loading_logo"
                                                 class="btn btn-sm"
@@ -146,6 +148,7 @@
                                         <div v-if="form.logo_dark">
                                             <img
                                                 :src="logoDarkPreviewUrl"
+                                                @error="onImageError('logo_dark')"
                                                 alt="Vista previa"
                                                 class="img-fluid img-small img-fluid-dark img-thumbnail w-100"
                                             />
@@ -177,6 +180,7 @@
                                             @dragover="onDragOver($event, 'logo_dark')"
                                             @dragleave="onDragLeave($event, 'logo_dark')"
                                             @drop="onDrop($event, 'logo_dark')"
+                                            @click="onShowFilePicker('logo_dark')"
                                         >
                                             <div class="p-2 bg-light rounded">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tabler-icon tabler-icon-photo h-8 w-8 text-muted"><path d="M15 8h.01"></path><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"></path><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"></path><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"></path></svg>
@@ -186,7 +190,7 @@
                                                 <p class="text-muted text-center">PNG, JPG, GIF o SVG · Máx. 2 MB</p>
                                             </div>
                                             <el-button
-                                                @click="onShowFilePicker('logo_dark')"
+                                                @click.stop="onShowFilePicker('logo_dark')"
                                                 :loading="loading_logo_dark"
                                                 :disabled="loading_logo_dark"
                                                 class="btn btn-sm"
@@ -253,16 +257,17 @@
                                             @dragover="onDragOver($event, 'favicon')"
                                             @dragleave="onDragLeave($event, 'favicon')"
                                             @drop="onDrop($event, 'favicon')"
+                                            @click="onShowFilePicker('favicon')"
                                         >
                                             <div class="p-2 bg-light rounded">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tabler-icon tabler-icon-photo h-8 w-8 text-muted"><path d="M15 8h.01"></path><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"></path><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"></path><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"></path></svg>
                                             </div>
                                             <div class="">
                                                 <p class="text-center">Arrastra una imagen aquí o haz clic para seleccionar</p>
-                                                <p class="text-muted text-center">PNG, JPG, GIF o SVG · Máx. 2 MB</p>
+                                                <p class="text-muted text-center">PNG o WebP · Máx. 1 MB</p>
                                             </div>
                                             <el-button
-                                                @click="onShowFilePicker('favicon')"
+                                                @click.stop="onShowFilePicker('favicon')"
                                                 :loading="loading_favicon"
                                                 :disabled="loading_favicon"
                                                 class="btn btn-sm"
@@ -306,35 +311,33 @@
                             <h4 class="col-12 m-0 fw-medium">Campos adicionales</h4>
                             <!-- ########## INICIO SIN DETRACCIONES E ISC -->
                             <!-- ######### FIN SIN DETRACCIONES E ISC -->
-                            <div class="col-md-6">
-                                <div :class="{'has-danger': errors.mtc_code}"
-                                     class="form-group">
-                                    <label class="control-label">MTC
-                                        <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.mtc_code"></el-input>
-                                    <small v-if="errors.mtc_code"
-                                           class="form-control-feedback"
-                                           v-text="errors.mtc_code[0]"></small>
-                                </div>
+                            <div class="col-12">
+                                <label class="control-label">Rúbrica (Firma digital)</label>
                             </div>
                             <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="control-label">Rúbrica (Firma digital)</label>
-                                    <el-input v-model="form.img_firm"
-                                              :readonly="true">
-                                        <el-upload slot="append"
-                                                   :data="{'type': 'img_firm'}"
-                                                   :headers="headers"
-                                                   :on-success="successUpload"
-                                                   :on-error="errorUpload"
-                                                   :show-file-list="false"
-                                                   action="/companies/uploads">
-                                            <el-button icon="el-icon-upload"
-                                                       type="primary"></el-button>
-                                        </el-upload>
-                                    </el-input>
-                                    <div class="sub-title text-muted"><small>Se recomienda resoluciones 700x300</small>
-                                    </div>
+                                <el-input v-model="form.img_firm"
+                                          :readonly="true">
+                                    <el-upload slot="append"
+                                               :data="{'type': 'img_firm'}"
+                                               accept="image/png,image/jpeg,image/gif,image/webp"
+                                               :headers="headers"
+                                               :on-success="successUpload"
+                                               :on-error="errorUpload"
+                                               :show-file-list="false"
+                                               action="/companies/uploads">
+                                        <el-button icon="el-icon-upload"
+                                                   type="primary"></el-button>
+                                    </el-upload>
+                                </el-input>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-center justify-content-end mt-2 mt-md-0 order-1 order-md-0">
+                                <el-button :loading="loading_submit.company"
+                                           native-type="submit"
+                                           type="primary">Guardar
+                                </el-button>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="sub-title text-muted"><small>PNG, JPG, GIF o WebP, máximo 2 MB. Se recomienda 700 × 300 píxeles.</small>
                                 </div>
                             </div>
                         </div>
@@ -358,12 +361,6 @@
                                 </div>
                             </div>
                         </div> -->
-                    </div>
-                    <div class="form-actions text-end pt-2">
-                         <el-button :loading="loading_submit.company"
-                                   native-type="submit"
-                                   type="primary">Guardar
-                        </el-button>
                     </div>
                 </form>
             </div>
@@ -546,6 +543,12 @@ export default {
             return url + (url.includes('?') ? '&' : '?') + `v=${this.previewCacheBust}`
         },
         onImageError(type) {
+            if (type === 'logo') {
+                this.logoLightPreviewUrl = PLACEHOLDER_IMAGE_DATA_URI
+            }
+            if (type === 'logo_dark') {
+                this.logoDarkPreviewUrl = PLACEHOLDER_IMAGE_DATA_URI
+            }
             if (type === 'favicon') {
                 this.faviconPreviewUrl = PLACEHOLDER_IMAGE_DATA_URI
             }
@@ -688,7 +691,12 @@ export default {
         },
         errorUpload(error)
         {
-            this.$message({message: 'Error al subir el archivo', type: 'error'})
+            let message = 'No se pudo subir el archivo. Verifica su formato y tamaño.'
+            try {
+                const response = JSON.parse(error.message)
+                message = (response.errors && response.errors.file && response.errors.file[0]) || response.message || message
+            } catch (_) {}
+            this.$message({message, type: 'error'})
         },
         deleteLogo(type) {
             const logoNames = {
@@ -772,8 +780,8 @@ export default {
             const file = files[0]
 
             // Validar tipo de archivo
-            if (type === 'favicon' && !file.type.startsWith('image/png')) {
-                this.$message.error('Solo se permiten archivos PNG para el favicon')
+            if (type === 'favicon' && !['image/png', 'image/webp'].includes(file.type)) {
+                this.$message.error('Solo se permiten archivos PNG o WebP para el favicon')
                 return
             }
 
@@ -783,8 +791,9 @@ export default {
             }
 
             // Validar tamaño (2 MB máximo)
-            if (file.size > 2 * 1024 * 1024) {
-                this.$message.error('El archivo no debe superar los 2 MB')
+            const maxSizeMb = type === 'favicon' ? 1 : 2
+            if (file.size > maxSizeMb * 1024 * 1024) {
+                this.$message.error(`El archivo no debe superar ${maxSizeMb} MB`)
                 return
             }
 
@@ -848,20 +857,10 @@ export default {
     height: 65px;
 }
 .overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(255, 255, 255, 0.908);
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-.image-container:hover .overlay {
-    opacity: 1;
+    margin-top: 0.5rem;
 }
 .change-btn:active {
     transform: translateY(0);
@@ -872,6 +871,7 @@ export default {
     object-fit: contain;
 }
 .drop-zone {
+    cursor: pointer;
     transition: all 0.3s ease;
     border: 2px dashed transparent;
     border-radius: 0.5rem;

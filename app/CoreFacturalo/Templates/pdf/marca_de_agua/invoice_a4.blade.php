@@ -82,6 +82,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
     $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getFiscalEnvironment();
     $total_pending_payment = $document->total_pending_payment;
+    $safeLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::printLogoDataUri($logo) ?: \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment ?? null);
 @endphp
 <html>
 <head>
@@ -107,9 +108,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         height: 300px;
         text-align: center;
     ">
-    @if (isset($logo))
+    @if($safeLogo)
         <img
-            src="data:{{ mime_content_type(public_path("{$logo}")) }};base64,{{ base64_encode(file_get_contents(public_path("{$logo}"))) }}"
+            src="{{ $safeLogo }}"
             alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"
             style="width: 100%; height: auto; object-fit: contain; opacity: 0.1;"
         >
@@ -142,10 +143,11 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 <table class="full-width">
 
     <tr>
-        @if($company->logo)
+        @php $safePrintLogo = $safeLogo; @endphp
+@if($safePrintLogo)
             <td width="20%">
                 <div class="company_logo_box">
-                    <img src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 250px;">
+                    <img src="{{ $safePrintLogo }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 250px;">
                 </div>
             </td>
             <td width="40%" class="text-center">

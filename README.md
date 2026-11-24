@@ -139,10 +139,16 @@ docker compose config --quiet
 docker compose build php
 docker compose up -d --wait postgres redis
 docker compose run --rm --no-deps php composer install --no-interaction
-docker compose run --rm --no-deps php php artisan storage:link --relative
+docker compose run --rm --no-deps -e SAB_ARTISAN_USER= php php artisan storage:link --relative
 docker compose run --rm --no-deps php php artisan sab:install-postgres
 docker compose up -d php nginx redis api-bcv
 ```
+
+En el servicio PHP, Artisan se ejecuta como `www-data`, igual que PHP-FPM,
+incluso si `docker compose exec` inicia el comando como root. Así las vistas
+compiladas y los archivos privados de clientes quedan accesibles para ambos.
+La excepción anterior permite crear el enlace público de instalación como root;
+no desactive `SAB_ARTISAN_USER` para comandos que escriban datos de clientes.
 
 La base queda en la red interna. Para un cliente local, añadir
 `-f docker-compose.postgresql.local.yml` al Compose; publica únicamente

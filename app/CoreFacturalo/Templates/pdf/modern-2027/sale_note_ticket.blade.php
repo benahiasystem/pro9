@@ -8,10 +8,7 @@
     $payments = $document->payments;
     $accounts = (new TemplatePdf)->getBankAccountsForPdf($document->establishment_id);
 
-    $logo = "storage/uploads/logos/{$company->logo}";
-    if($establishment->logo) {
-        $logo = "{$establishment->logo}";
-    }
+    $ticketLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment);
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
     /* ------------------------------------------------------------------
@@ -37,10 +34,10 @@
 <body class="ticket">
 
 <table class="full-width">
-    @if($company->logo)
+    @if($ticketLogo)
         <tr>
             <td class="text-center pt-3 pb-2">
-                <img src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}"
+                <img src="{{ $ticketLogo }}"
                      alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="m27-logo contain">
             </td>
         </tr>

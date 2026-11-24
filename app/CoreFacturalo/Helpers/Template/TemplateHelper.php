@@ -467,6 +467,80 @@ use Illuminate\Support\Str;
             return Storage::disk('public')->exists($path) && is_file(public_path('storage/'.$path));
         }
 
+        /** Logo de sucursal primero; omitir archivos ausentes, ilegibles o inválidos. */
+        public static function ticketLogoDataUri($company, $establishment): ?string
+        {
+            $companyLogo = $company->logo ?? null;
+            foreach ([$establishment->logo ?? null, $companyLogo ? 'storage/uploads/logos/'.$companyLogo : null] as $path) {
+                if ($uri = self::printLogoDataUri($path)) return $uri;
+            }
+            return null;
+        }
+
+        /** Obtiene una imagen de logo opcional sin leer rutas inválidas. */
+        public static function printLogoDataUri(?string $path): ?string
+        {
+            if (!$path) return null;
+            try {
+                if (!self::existsFileInUploads($path)) return null;
+            } catch (\League\Flysystem\PathTraversalDetected $exception) {
+                return null;
+            }
+            $absolute = public_path($path);
+            if (!is_readable($absolute)) return null;
+            $content = @file_get_contents($absolute);
+            if ($content === false || trim($content) === '') return null;
+            $image = @getimagesizefromstring($content);
+            $mime = $image['mime'] ?? null;
+            if ($mime) {
+                // Header dimensions alone can accept truncated images that crash mPDF.
+                $decoded = @imagecreatefromstring($content);
+                if ($decoded === false) return null;
+                imagedestroy($decoded);
+            }
+            if (!$mime && strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'svg') {
+                $xml = new \DOMDocument();
+                $previous = libxml_use_internal_errors(true);
+                try {
+                    $valid = $xml->loadXML($content, LIBXML_NONET) && !$xml->doctype
+                        && $xml->documentElement && $xml->documentElement->localName === 'svg'
+                        && in_array($xml->documentElement->namespaceURI, [null, '', 'http://www.w3.org/2000/svg'], true);
+                } finally {
+                    libxml_clear_errors();
+                    libxml_use_internal_errors($previous);
+                }
+                // mPDF can fetch SVG image references; keep only local fragments
+                // and embedded raster data, never paths or network addresses.
+                if ($valid) {
+                    foreach ($xml->getElementsByTagName('*') as $element) {
+                        foreach ($element->attributes as $attribute) {
+                            $value = trim($attribute->value);
+                            if (strtolower($attribute->localName) === 'href'
+                                && !str_starts_with($value, '#')
+                                && !preg_match('~^data:image/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=\s]+$~i', $value)) {
+                                $valid = false;
+                            }
+                            if (preg_match_all('~url\(\s*([\"\']?)(.*?)\1\s*\)~i', $value, $references)) {
+                                foreach ($references[2] as $reference) if (!str_starts_with(trim($reference), '#')) $valid = false;
+                            }
+                        }
+                        if (strtolower($element->localName) === 'style') {
+                            $style = $element->textContent;
+                            if (stripos($style, '@import') !== false) $valid = false;
+                            if (preg_match_all('~url\(\s*([\"\']?)(.*?)\1\s*\)~i', $style, $references)) {
+                                foreach ($references[2] as $reference) if (!str_starts_with(trim($reference), '#')) $valid = false;
+                            }
+                        }
+                        if (!$valid) break;
+                    }
+                }
+                if ($valid) $mime = 'image/svg+xml';
+            }
+            if (!$mime) return null;
+            return 'data:'.$mime.';base64,'.base64_encode($content);
+
+        }
+
         /**
          * Columnas reales (celdas <td>) que puede tener la tabla de items de un ticket.
          * El orden es el mismo en el que se dibujan en todas las plantillas de ticket.

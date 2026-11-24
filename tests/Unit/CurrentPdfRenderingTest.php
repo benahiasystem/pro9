@@ -338,7 +338,7 @@ class CurrentPdfRenderingTest extends TestCase
             $html=(new Template())->pdf('default','invoice',$company,$document,$format,['is_preview'=>false]);
             self::assertStringNotContainsString('data-invoice-'.$format.'-identity',$html);
             self::assertStringNotContainsString('data-invoice-a4-rate',$html);
-            self::assertStringContainsString('J087897598',$html);
+            self::assertStringContainsString('J-08789759-8',$html);
         }
     }
 
@@ -736,6 +736,197 @@ class CurrentPdfRenderingTest extends TestCase
         if ($directory) file_put_contents($directory.'/manifest.json',json_encode($manifest,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR).PHP_EOL);
     }
 
+    public function test_quotations_render_all_designs_without_a_missing_logo(): void
+    {
+        $document = $this->documentFixture();
+        $document->pdf_title = 'COT-00000001';
+        $document->items->first()->additional_information = [];
+        $document->items->first()->percentage_igv = '16';
+        $company = new Fluent(['name'=>'Empresa de prueba', 'trade_name'=>'Prueba', 'number'=>'J234534534', 'logo'=>'no-existe.png']);
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['a4','a5','ticket'] as $format) {
+                $html=(new Template())->pdf($design,'quotation',$company,$document,$format,['is_preview'=>false]);
+                self::assertStringContainsString('COTIZACIÓN', mb_strtoupper($html), $design.' '.$format);
+                self::assertStringNotContainsString('data:image/', $html, $design.' '.$format);
+                $size = $format === 'ticket' ? [56,400] : ($format === 'a5' ? [210,148] : 'A4');
+                $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>$size, 'margin_left'=>2,'margin_right'=>2,'margin_top'=>2,'margin_bottom'=>2]);
+                $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/'.$design.'/style.css')), HTMLParserMode::HEADER_CSS);
+                $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
+                self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+            }
+        }
+    }
+
+    public function test_transfer_and_claim_pdf_render_without_a_configured_logo_file(): void
+    {
+        $company = new Fluent(['name'=>'Empresa de prueba', 'number'=>'J234534534', 'logo'=>'ausente.png']);
+        $warehouse = new class { public function getDescription() { return 'Almacén de prueba'; } };
+        $user = new class { public function getName() { return 'Usuario de prueba'; } };
+        $transfer = view()->file(base_path('modules/Inventory/Resources/views/transfers/export/partial/header.blade.php'), [
+            'pdf'=>true, 'data'=>['company'=>$company,'warehouse_from'=>$warehouse,'warehouse_to'=>$warehouse,'user'=>$user],
+        ])->render();
+        self::assertStringContainsString('NOTA DE TRASLADO', $transfer);
+        self::assertStringNotContainsString('data:image/', $transfer);
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($transfer); $dompdf->render();
+        self::assertStringStartsWith('%PDF-', $dompdf->output());
+        $claim = new Fluent(['code'=>'REC-001', 'claim_type'=>'reclamo', 'created_at'=>Carbon::parse('2026-01-01')]);
+        $claimHtml = view()->file(base_path('modules/ClaimsBook/Resources/views/pdf/claim.blade.php'), [
+            'company'=>$company,'claim'=>$claim,'establishment'=>null,'channelEstablishment'=>null,
+        ])->render();
+        self::assertStringContainsString('REC-001', $claimHtml);
+        self::assertStringNotContainsString('data:image/', $claimHtml);
+        $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir()]); $pdf->WriteHTML($claimHtml, HTMLParserMode::HTML_BODY);
+        self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+    }
+
+    public function test_representative_commercial_pdfs_render_without_a_missing_logo(): void
+    {
+        $document = $this->documentFixture();
+        $document->number_full = 'DOC-00000001';
+        $document->pdf_title = 'DOC-00000001';
+        $document->prefix = 'PR';
+        $document->id = 1;
+        $document->user = new Fluent(['name'=>'Usuario de prueba']);
+        $document->seller = new Fluent(['name'=>'']);
+        $document->supplier = $document->customer;
+        $document->items->first()->additional_information = [];
+        $document->items->first()->percentage_igv = '16';
+        $company = new Fluent(['name'=>'Empresa de prueba', 'trade_name'=>'Prueba', 'number'=>'J234534534', 'logo'=>'no-existe.png']);
+        foreach ([['pedido','ticket'], ['order_note','ticket'], ['purchase','a4'], ['contract','a4']] as [$type,$format]) {
+            foreach (self::invoice58Designs() as [$design]) {
+                $html=(new Template())->pdf($design,$type,$company,$document,$format,['is_preview'=>false]);
+                self::assertStringNotContainsString('data:image/', $html, $design.' '.$type);
+                $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>$format === 'ticket' ? [72,400] : 'A4']);
+                $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/'.$design.'/style.css')), HTMLParserMode::HEADER_CSS);
+                $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
+                self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+            }
+        }
+        $document->customer->address = '';
+        $document->delivery_date = Carbon::parse('2026-12-14');
+        $contract = (new Template())->pdf('marca_de_agua','contract',$company,$document,'a4',['is_preview'=>false]);
+        self::assertStringContainsString('Fecha de entrega', $contract);
+        self::assertStringContainsString('2026-12-14', $contract);
+    }
+
+    public function test_delivery_order_pdfs_render_without_a_missing_logo(): void
+    {
+        Schema::connection('tenant')->create('districts', function ($table): void { $table->string('id')->primary(); });
+        $document = $this->documentFixture();
+        $document->number_full = 'OE-00000001';
+        $document->document_type_id = '09';
+        $document->document_type = new Fluent(['id'=>'09', 'description'=>'ORDEN DE ENTREGA']);
+        $document->date_of_shipping = Carbon::parse('2026-09-10');
+        $document->transport_mode_type_id = '02';
+        $document->transport_mode_type = new Fluent(['description'=>'Transporte privado']);
+        $document->driver = new Fluent(['name'=>'Conductor', 'number'=>'V12345678', 'license'=>'123']);
+        $document->user = new Fluent(['name'=>'Usuario de prueba']);
+        $document->items->first()->additional_information = [];
+        $company = new Fluent(['name'=>'Empresa de prueba', 'trade_name'=>'Prueba', 'number'=>'J234534534', 'logo'=>'no-existe.png']);
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['a4','ticket','ticket_58'] as $format) {
+                $html=(new Template())->pdf($design,'dispatch',$company,$document,$format,['is_preview'=>false,'enabled_price_items_dispatch'=>false]);
+                self::assertStringContainsString('ORDEN DE ENTREGA', mb_strtoupper($html), $design.' '.$format);
+                $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>$format === 'a4' ? 'A4' : [56,400]]);
+                $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/'.$design.'/style.css')), HTMLParserMode::HEADER_CSS);
+                $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
+                self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+            }
+        }
+    }
+
+    public function test_invoice_tickets_handle_missing_and_available_logos(): void
+    {
+        $public = public_path();
+        $disk = config('filesystems.disks.public');
+        $directory = sys_get_temp_dir().'/sab-ticket-logo-'.bin2hex(random_bytes(6));
+        mkdir($directory.'/storage/uploads/logos', 0775, true);
+        $companyImage = file_get_contents($public.'/logo/tulogo.png');
+        $branchImage = $companyImage."\nbranch";
+        file_put_contents($directory.'/storage/uploads/logos/company.png', $companyImage);
+        file_put_contents($directory.'/storage/uploads/logos/branch.png', $branchImage);
+        file_put_contents($directory.'/storage/uploads/logos/broken.png', 'invalid image');
+        file_put_contents($directory.'/storage/uploads/logos/truncated.png', substr($companyImage, 0, 33));
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="60" height="30"><rect width="60" height="30" fill="#123456"/></svg>';
+        file_put_contents($directory.'/storage/uploads/logos/logo.svg', $svg);
+        file_put_contents($directory.'/storage/uploads/logos/external.svg', '<svg xmlns="http://www.w3.org/2000/svg"><image href="file:///etc/passwd"/></svg>');
+        file_put_contents($directory.'/storage/uploads/logos/empty.svg', '');
+        $this->app->usePublicPath($directory);
+        config()->set('filesystems.disks.public', ['driver'=>'local', 'root'=>$directory.'/storage']);
+        \Illuminate\Support\Facades\Storage::forgetDisk('public');
+        try {
+            $document = $this->documentFixture();
+            $document->number_full = 'FF01-00000012';
+            $document->items->first()->additional_information = [];
+            $company = new Fluent(['name'=>'Empresa', 'trade_name'=>'Prueba', 'number'=>'J234534534', 'logo'=>'missing.png']);
+            foreach (self::invoice58Designs() as [$design]) {
+                foreach (['ticket','ticket_58'] as $format) {
+                    $template = new Template();
+                    $html = $template->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                    self::assertStringContainsString('FACTURA', $html, $design.' '.$format);
+                    self::assertStringNotContainsString('data:image/', $html, $design.' '.$format);
+                    $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>[$format === 'ticket' ? 72 : 56,400], 'margin_left'=>2,'margin_right'=>2,'margin_top'=>2,'margin_bottom'=>2]);
+                    $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/'.$design.'/style.css')), HTMLParserMode::HEADER_CSS);
+                    $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
+                    self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+                }
+            }
+            foreach (self::invoice58Designs() as [$design]) {
+                foreach (['ticket','ticket_58'] as $format) {
+                    $html = (new Template())->pdf($design, 'sale_note', $company, $document, $format, ['is_preview'=>false]);
+                    self::assertStringContainsString('NOTA DE VENTA', mb_strtoupper($html), $design.' '.$format);
+                    self::assertStringNotContainsString('data:image/', $html, $design.' '.$format);
+                }
+            }
+            $helper = \App\CoreFacturalo\Helpers\Template\TemplateHelper::class;
+            $company->logo = 'company.png';
+            $document->establishment->logo = 'storage/uploads/logos/branch.png';
+            self::assertSame('data:image/png;base64,'.base64_encode($branchImage), $helper::ticketLogoDataUri($company, $document->establishment));
+            $document->pdf_title = 'COT-00000001';
+            $document->items->first()->percentage_igv = '16';
+            foreach (self::invoice58Designs() as [$design]) {
+                foreach (['a4','a5','ticket'] as $format) {
+                    $expectedLogo = $format === 'a5' && $design !== 'marca_de_agua' ? $companyImage : $branchImage;
+                    $quotation = (new Template())->pdf($design,'quotation',$company,$document,$format,['is_preview'=>false]);
+                    self::assertStringContainsString(base64_encode($expectedLogo), $quotation, $design.' '.$format);
+                }
+            }
+            $document->establishment->logo = 'storage/uploads/logos/missing.png';
+            self::assertSame('data:image/png;base64,'.base64_encode($companyImage), $helper::ticketLogoDataUri($company, $document->establishment));
+            $document->establishment->logo = 'storage/uploads/logos/broken.png';
+            self::assertSame('data:image/png;base64,'.base64_encode($companyImage), $helper::ticketLogoDataUri($company, $document->establishment));
+            $document->establishment->logo = 'storage/uploads/logos/truncated.png';
+            self::assertSame('data:image/png;base64,'.base64_encode($companyImage), $helper::ticketLogoDataUri($company, $document->establishment));
+            $document->establishment->logo = 'storage/uploads/logos/../../../fuera.png';
+            self::assertSame('data:image/png;base64,'.base64_encode($companyImage), $helper::ticketLogoDataUri($company, $document->establishment));
+            $company->logo = null;
+            $document->establishment->logo = 'storage/uploads/logos/branch.png';
+            $html = (new Template())->pdf('default','invoice',$company,$document,'ticket',['is_preview'=>false]);
+            self::assertStringContainsString(base64_encode($branchImage), $html);
+            $document->establishment->logo = 'storage/uploads/logos/broken.png';
+            self::assertNull($helper::ticketLogoDataUri($company, $document->establishment));
+            $company->logo = 'logo.svg';
+            $document->establishment->logo = null;
+            self::assertSame('data:image/svg+xml;base64,'.base64_encode($svg), $helper::ticketLogoDataUri($company, $document->establishment));
+            $document->establishment->logo = 'storage/uploads/logos/external.svg';
+            self::assertSame('data:image/svg+xml;base64,'.base64_encode($svg), $helper::ticketLogoDataUri($company, $document->establishment));
+            $document->establishment->logo = 'storage/uploads/logos/empty.svg';
+            self::assertSame('data:image/svg+xml;base64,'.base64_encode($svg), $helper::ticketLogoDataUri($company, $document->establishment));
+            $document->establishment->logo = null;
+            $svgHtml = (new Template())->pdf('default','invoice',$company,$document,'ticket',['is_preview'=>false]);
+            self::assertStringContainsString(base64_encode($svg), $svgHtml);
+            $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>[72,400], 'margin_left'=>2,'margin_right'=>2,'margin_top'=>2,'margin_bottom'=>2]);
+            $pdf->WriteHTML($svgHtml, HTMLParserMode::HTML_BODY);
+            self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+        } finally {
+            $this->app->usePublicPath($public);
+            config()->set('filesystems.disks.public', $disk);
+            \Illuminate\Support\Facades\Storage::forgetDisk('public');
+            (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($directory);
+        }
+    }
+
     public function test_default_invoice_ticket_places_identity_totals_and_payment_as_requested(): void
     {
         $document = $this->documentFixture();
@@ -766,6 +957,163 @@ class CurrentPdfRenderingTest extends TestCase
         $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')), HTMLParserMode::HEADER_CSS);
         $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
         self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+    }
+
+    /** @dataProvider invoice58Designs */
+    public function test_invoice_58mm_design_has_one_fiscal_identity_and_left_payment(string $design): void
+    {
+        $document = $this->documentFixture();
+        $document->number_full = 'FF01-00000012';
+        $document->items->first()->additional_information = [];
+        $document->payment_condition = new Fluent(['name'=>'Contado']);
+        $company = new Fluent(['name'=>'Empresa de prueba', 'number'=>'J234534534', 'trade_name'=>'Prueba', 'logo'=>null]);
+        $template = new Template();
+        $html = $template->pdf($design, 'invoice', $company, $document, 'ticket_58', ['is_preview'=>false]);
+        self::assertSame(1, substr_count($html, 'R.I.F. J-23453453-4'));
+        self::assertSame(1, substr_count($html, 'N° de documento:'));
+        self::assertSame(1, substr_count($html, 'N° de control:'));
+        self::assertStringContainsString('N° de documento: <strong>FF01-00000012</strong>', $html);
+        self::assertStringContainsString('N° de control: <strong>No asignado</strong>', $html);
+        self::assertLessThan(strpos($html, 'FACTURA'), strpos($html, 'R.I.F. J-23453453-4'));
+        self::assertLessThan(strpos($html, 'N° de documento:'), strpos($html, 'FACTURA'));
+        self::assertLessThan(strpos($html, 'N° de control:'), strpos($html, 'N° de documento:'));
+        self::assertMatchesRegularExpression('/IVA(?:\s|\(|:)/i', $html);
+        self::assertLessThan(stripos($html, 'subtotal'), stripos($html, 'IVA'));
+        self::assertLessThan(stripos($html, 'TOTAL A PAGAR:'), stripos($html, 'subtotal'));
+        self::assertMatchesRegularExpression('/CONDICIÓN DE PAGO:\s*(?:<\/td>\s*<td[^>]*>)?\s*Contado/iu', $html);
+        self::assertStringNotContainsString('DEMO — SIN VALIDEZ FISCAL', $html);
+
+        foreach (['demo','production'] as $environment) {
+            $persisted = view('pdf.'.$design.'.invoice_ticket_58', [
+                'company'=>$company, 'document'=>$document, 'configuration'=>['is_preview'=>false],
+                'ticketInvoice'=>true, 'ticketFiscal'=>['environment'=>$environment, 'number_full'=>'FF01-00000012', 'control_number'=>'00-00000009'],
+            ])->render();
+            self::assertSame($environment === 'demo' ? 1 : 0, substr_count($persisted, 'DEMO — SIN VALIDEZ FISCAL'));
+            self::assertStringContainsString('N° de documento: <strong>FF01-00000012</strong>', $persisted);
+            self::assertStringContainsString('N° de control: <strong>00-00000009</strong>', $persisted);
+        }
+        $document->payment_condition_id = '02';
+        $document->payment_condition = new Fluent(['name'=>'Crédito']);
+        $document->fee = new Collection([new class(['date'=>Carbon::parse('2026-12-14'), 'amount'=>'20.00', 'currency_type'=>$document->currency_type]) extends Fluent {
+            public function getStringPaymentMethodType(): string { return ''; }
+        }]);
+        $document->total_discount_with_igv = '5';
+        $document->total_charge = '2';
+        $credit = $template->pdf($design, 'invoice', $company, $document, 'ticket_58', ['is_preview'=>false]);
+        self::assertMatchesRegularExpression('/CONDICIÓN DE PAGO:\s*(?:<\/td>\s*<td[^>]*>)?\s*Crédito/iu', $credit);
+        self::assertStringContainsString('Cuota #1', $credit);
+        self::assertLessThan(stripos($credit, 'total a pagar:'), stripos($credit, 'descuento'));
+        self::assertLessThan(stripos($credit, 'total a pagar:'), stripos($credit, 'cargos'));
+        $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>[56, 400], 'margin_left'=>2, 'margin_right'=>2, 'margin_top'=>2, 'margin_bottom'=>2]);
+        $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/'.$design.'/style.css')), HTMLParserMode::HEADER_CSS);
+        $pdf->WriteHTML($credit, HTMLParserMode::HTML_BODY);
+        self::assertSame(1, $pdf->page);
+        self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+    }
+
+    public static function invoice58Designs(): array
+    {
+        return array_map(fn ($design) => [$design], ['default', 'modern-2027', 'marca_de_agua', 'Plantilla_personalizable']);
+    }
+
+    public function test_invoice_58mm_persisted_identity_uses_document_snapshot(): void
+    {
+        \Tests\Support\InvoiceA4Ledger::create();
+        $fixture = $this->documentFixture();
+        $fixture->items->first()->additional_information = [];
+        $document = new CurrentFiscalPdfDocumentFixture();
+        $relations = ['person','invoice','note','currency_type','document_type','state_type','items','payments','fee','reference_guides','dispatch','transport','quotation','seller'];
+        foreach ($fixture->getAttributes() as $key=>$value) {
+            if (in_array($key, $relations, true)) $document->setRelation($key, $value);
+            elseif ($key === 'additional_information') $document->forceFill([$key=>'']);
+            else $document->forceFill([$key=>$value]);
+        }
+        $document->forceFill(['series'=>'FF01', 'number'=>12, 'control_number'=>'00-00000009',
+            'fiscal_environment'=>'demo', 'fiscal_emission_mode'=>'free_form',
+            'issuer'=>['name'=>'Emisor conservado', 'trade_name'=>'Prueba', 'number'=>'J234534534', 'logo'=>null],
+            'legends'=>[['code'=>'1000', 'value'=>'CIENTO DIECISÉIS']]]);
+        $document->setRelation('taxes', new Collection());
+        $document->setRelation('received_retentions', new Collection());
+        $document->setRelation('guarantee_fund', null);
+        $document->setRelation('fiscal_data', null);
+        $document->setRelation('currency_totals', null);
+        $document->exists = true;
+        $company = new Fluent(['name'=>'Emisor actual', 'number'=>'J999999999', 'logo'=>null]);
+        foreach (self::invoice58Designs() as [$design]) {
+            $html = (new Template())->pdf($design, 'invoice', $company, $document, 'ticket_58', ['is_preview'=>false]);
+            self::assertSame(1, substr_count($html, 'DEMO — SIN VALIDEZ FISCAL'), $design);
+            self::assertSame(1, substr_count($html, 'N° de documento:'), $design);
+            self::assertSame(1, substr_count($html, 'N° de control:'), $design);
+            self::assertStringContainsString('R.I.F. J-23453453-4', $html, $design);
+            self::assertStringContainsString('N° de documento: <strong>FF01-00000012</strong>', $html, $design);
+            self::assertStringContainsString('N° de control: <strong>00-00000009</strong>', $html, $design);
+        }
+    }
+
+    public function test_invoice_58mm_engine_preserves_width_and_content_for_all_designs(): void
+    {
+        config(['tenant.enabled_template_ticket_80'=>true, 'tenant.enabled_template_ticket_70'=>true]);
+        Schema::connection('tenant')->create('establishments', function ($table): void {
+            $table->increments('id'); $table->string('template_pdf'); $table->string('template_ticket_pdf'); $table->string('logo')->nullable();
+        });
+        foreach (['countries', 'departments', 'provinces', 'districts'] as $table) {
+            Schema::connection('tenant')->create($table, function ($table): void { $table->string('id')->primary(); });
+        }
+        DB::connection('tenant')->table('establishments')->insert(['id'=>1, 'template_pdf'=>'default', 'template_ticket_pdf'=>'default']);
+        $fixture = $this->documentFixture();
+        $fixture->items->first()->additional_information = [];
+        $document = new CurrentFiscalPdfDocumentFixture();
+        $relations = ['person','invoice','note','currency_type','document_type','state_type','items','payments','fee','reference_guides','dispatch','transport','quotation','seller'];
+        foreach ($fixture->getAttributes() as $key=>$value) {
+            if (in_array($key, $relations, true)) $document->setRelation($key, $value);
+            elseif ($key === 'additional_information') $document->forceFill([$key=>'']);
+            else $document->forceFill([$key=>$value]);
+        }
+        $document->forceFill(['fiscal_emission_mode'=>'free_form', 'legends'=>[['code'=>'1000', 'value'=>'CIENTO DIECISÉIS']]]);
+        $document->setRelation('taxes', new Collection());
+        $document->setRelation('received_retentions', new Collection());
+        $document->setRelation('guarantee_fund', null);
+        $document->setRelation('payment_condition', new Fluent(['name'=>'Contado']));
+        $document->setRelation('seller', new Fluent(['name'=>'Vendedor de prueba']));
+        DB::connection('tenant')->table('configurations')->update(['show_seller_in_pdf'=>true]);
+        $company = new Fluent(['name'=>'Empresa Venezolana de Prueba, C.A.', 'trade_name'=>'SAB Prueba', 'number'=>'J234534534', 'logo'=>null, 'fiscal_emission_mode'=>'free_form']);
+        $engine = new class($company) extends \App\CoreFacturalo\Facturalo {
+            public function __construct($company) { $this->company=$company; $this->configuration=\App\Models\Tenant\Configuration::first(); $this->actions=[]; }
+            public function uploadFile($content, $type) { throw new \LogicException('PDF fixture must not write tenant storage'); }
+        };
+        foreach (self::invoice58Designs() as [$design]) {
+            DB::connection('tenant')->table('establishments')->where('id', 1)->update(['template_ticket_pdf'=>$design]);
+            foreach ([1,12] as $rows) {
+                $document->setRelation('items', new Collection(array_fill(0, $rows, $fixture->items->first())));
+                $bytes = $engine->createPdf($document, 'invoice', 'ticket_58', 'string');
+                $reader = new \setasign\Fpdi\Fpdi();
+                $pages = $reader->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($bytes));
+                self::assertSame(1, $pages, $design.' '.$rows.' filas');
+                self::assertEqualsWithDelta(56, $reader->getTemplateSize($reader->importPage(1))['width'], .01, $design);
+                $path=tempnam(sys_get_temp_dir(), 'sab-58-'); file_put_contents($path, $bytes);
+                try {
+                    $process=proc_open(['pdftotext', '-layout', $path, '-'], [0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']], $pipes);
+                    fclose($pipes[0]); $text=stream_get_contents($pipes[1]); $error=stream_get_contents($pipes[2]); fclose($pipes[1]); fclose($pipes[2]);
+                    self::assertSame(0, proc_close($process), $error);
+                    self::assertStringContainsString('J-23453453-4', $text, $design);
+                    self::assertStringContainsString('N° de control:', $text, $design);
+                    self::assertStringContainsString('TOTAL A PAGAR:', $text, $design);
+                    self::assertStringContainsString('CONDICIÓN DE PAGO:', mb_strtoupper($text), $design);
+                    self::assertStringContainsString('CIENTO DIECISÉIS', $text, $design);
+                    if ($design !== 'modern-2027') {
+                        self::assertLessThan(mb_stripos($text, 'VENDEDOR:'), mb_stripos($text, 'CONDICIÓN DE PAGO:'), $design);
+                    }
+                    if (($directory=getenv('SAB_58_TICKET_FIXTURE_DIR')) && $rows===1) {
+                        if (!is_dir($directory)) mkdir($directory, 0775, true);
+                        file_put_contents($directory.'/'.$design.'.pdf', $bytes);
+                    }
+                } finally { unlink($path); }
+            }
+            $preview = $engine->previewPdf($document, 'invoice', 'ticket_58');
+            $reader = new \setasign\Fpdi\Fpdi();
+            $reader->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($preview->getContent()));
+            self::assertEqualsWithDelta(56, $reader->getTemplateSize($reader->importPage(1))['width'], .01, $design.' vista previa');
+        }
     }
 
     public function test_ticket_unit_prices_follow_the_configuration_without_using_catalog_prices(): void
@@ -1131,6 +1479,8 @@ class CurrentPdfRenderingTest extends TestCase
 
 class CurrentPdfDocumentFixture extends Fluent
 {
+    public function items() { return $this->items; }
+
     public function load($relations): self
     {
         return $this;
@@ -1149,6 +1499,13 @@ class CurrentPdfDocumentFixture extends Fluent
 
 class CurrentPdfItemFixture extends Fluent
 {
+    public function getSaleLotGroupCodeDescription() { return ''; }
+    public function getTemplateDescription() { return $this->item->description; }
+    public function exactValue(string $name)
+    {
+        return \App\Support\Exact\Decimal::of($this->$name);
+    }
+
     public function formatPdfUnitPrice($configuration = null): string
     {
         $configuration ??= \App\Models\Tenant\Configuration::getDataDecimalQuantity();

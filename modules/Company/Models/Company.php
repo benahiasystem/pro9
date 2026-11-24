@@ -31,14 +31,13 @@ class Company extends ModelTenant
         'qr_api_enable_ws',
         'title_web',
         'security_code',
-        'mtc_code',
         'name_person_support_contaweb',
         'telephone_support_contaweb',
         'email_support_contaweb',
     ];
 
     // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
-    protected $hidden = ['fiscal_credentials'];
+    protected $hidden = ['fiscal_credentials', 'mtc_code'];
     // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
 
     protected $casts = [

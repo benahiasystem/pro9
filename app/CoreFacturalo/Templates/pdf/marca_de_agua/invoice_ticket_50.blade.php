@@ -56,10 +56,11 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 <table class="full-width" style="font-family: helvetica">
     <tr>
         <td class="pt-2">
-            @if($company->logo)
+            @php $safePrintLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment ?? null); @endphp
+@if($safePrintLogo)
                 <div class="text-center company_logo_box">
                     <img
-                        src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}"
+                        src="{{ $safePrintLogo }}"
                         alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 60%; margin-left: 20%;">
                 </div>
             @endif

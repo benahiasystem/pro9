@@ -50,7 +50,6 @@ class CompanyResource extends JsonResource
             'qr_api_enable_ws' => $configuration->qr_api_enable,
             'qr_api_url_ws' => $configuration->qr_api_url,
             'qr_api_key_ws' => $configuration->qr_api_apiKey,
-            'mtc_code' => $this->mtc_code
         ];
     }
 }

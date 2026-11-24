@@ -30,10 +30,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     $balance = $document instanceof \App\Models\Tenant\Document ? $document->balance : (($document->total - $total_payment) - $document->payments->sum('change'));
 
 
-    $logo = "storage/uploads/logos/{$company->logo}";
-    if($establishment->logo) {
-        $logo = "{$establishment->logo}";
-    }
+    $ticketLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, $establishment);
 
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
@@ -65,12 +62,12 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 </head>
 <body class="ticket">
 
-@if($company->logo)
+@if($ticketLogo)
     <table class="full-width">
         <tr>
             <td class="text-center pt-3 pb-2">
                 <img
-                    src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}"
+                    src="{{ $ticketLogo }}"
                     alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="m27-logo contain">
             </td>
         </tr>
