@@ -65,7 +65,7 @@
 const parameters = {
     fiscal_machine: [['model', 'Modelo'], ['serial', 'Serial'], ['port', 'Puerto'], ['provider', 'Proveedor / controlador']],
     digital: [['provider', 'Imprenta digital / proveedor'], ['authorization', 'Autorización']],
-    free_form: [['printer', 'Imprenta autorizada'], ['control_number', 'Número de control'], ['range_start', 'Inicio del rango', true], ['range_end', 'Final del rango', true]]
+    free_form: [['range_start', 'Inicio del rango', true], ['range_end', 'Final del rango', true]]
 }
 export default {
     props: { form: { type: Object, required: true }, errors: { type: Object, default: () => ({}) }, enableHka: { type: Boolean, default: false } },

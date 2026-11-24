@@ -28,7 +28,7 @@ final class FiscalEmissionSettings
     public const PARAMETERS = [
         'fiscal_machine' => ['model', 'serial', 'port', 'provider'],
         'digital' => ['provider', 'authorization'],
-        'free_form' => ['printer', 'control_number', 'range_start', 'range_end'],
+        'free_form' => ['range_start', 'range_end'],
     ];
 
     public static function rules(bool $required = true): array
@@ -98,7 +98,10 @@ final class FiscalEmissionSettings
         return [
             'fiscal_emission_mode' => $company->fiscal_emission_mode,
             'fiscal_environment' => $company->fiscal_environment,
-            'fiscal_configuration' => (object) ($company->fiscal_configuration ?? []),
+            'fiscal_configuration' => (object) array_intersect_key(
+                $company->fiscal_configuration ?? [],
+                array_flip(self::PARAMETERS[$company->fiscal_emission_mode] ?? [])
+            ),
             'fiscal_credentials_configured' => !empty($company->getRawOriginal('fiscal_credentials')),
             'hka_credentials_configured' => $hkaConfigured,
             'hka_authenticated_at' => $hkaVerified ? $company->hka_authenticated_at->toIso8601String() : null,
@@ -122,6 +125,10 @@ final class FiscalEmissionSettings
             $company->fiscal_environment_locked = $locked;
             if ($modeChanged || array_key_exists('fiscal_configuration', $data)) {
                 $company->fiscal_configuration = $data['fiscal_configuration'] ?? [];
+            } elseif ($data['fiscal_emission_mode'] === 'free_form' && $company->fiscal_configuration !== null) {
+                $company->fiscal_configuration = array_intersect_key(
+                    $company->fiscal_configuration ?? [], array_flip(self::PARAMETERS['free_form'])
+                );
             }
             if ($modeChanged || !empty($data['clear_fiscal_credentials']) || $data['fiscal_environment'] !== $company->getOriginal('fiscal_environment')) {
                 $company->fiscal_credentials = null;

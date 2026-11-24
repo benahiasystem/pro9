@@ -366,53 +366,6 @@
             </div>
         </div>
         <fiscal-profile-editor kind="company" :entity-id="form.id" />
-        <div class="card card-config">
-            <div class="card-header bg-info">
-                <h3 class="my-0">Consulta integrada de CPE - Validador de documentos
-                    <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                    <el-tooltip class="item"
-                                content="Obtener los datos desde el proveedor fiscal configurado"
-                                effect="dark"
-                                placement="top-start">
-                        <i class="fa fa-info-circle"></i>
-                    </el-tooltip>
-                    <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                </h3>
-            </div>
-            <div class="card-body">
-                <form autocomplete="off"
-                      @submit.prevent="submit('cpe')">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div :class="{'has-danger': errors.integrated_query_client_id}"
-                                 class="form-group">
-                                <label class="control-label">Client ID</label>
-                                <el-input v-model="form.integrated_query_client_id"></el-input>
-                                <small v-if="errors.integrated_query_client_id"
-                                       class="form-control-feedback"
-                                       v-text="errors.integrated_query_client_id[0]"></small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div :class="{'has-danger': errors.integrated_query_client_secret}"
-                                 class="form-group">
-                                <label class="control-label">Client Secret (Clave)</label>
-                                <el-input v-model="form.integrated_query_client_secret"></el-input>
-                                <small v-if="errors.integrated_query_client_secret"
-                                       class="form-control-feedback"
-                                       v-text="errors.integrated_query_client_secret[0]"></small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-actions text-end pt-2">
-                        <el-button :loading="loading_submit.cpe"
-                                   native-type="submit"
-                                   type="primary">Guardar
-                        </el-button>
-                    </div>
-                </form>
-            </div>
-        </div>
         <TokenRucDni></TokenRucDni>
     </div>
 </template>

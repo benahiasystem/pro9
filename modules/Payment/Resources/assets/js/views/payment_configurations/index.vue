@@ -10,66 +10,7 @@
         </div>
         <div class="card-body">
 
-            <el-tabs v-model="form.type" @tab-click="handleClick">
-
-                <el-tab-pane label="Yape" name="01">
-                    <div class="row pt-1">
-                        <div class="col-md-6">
-                            <h4 class="control-label">Habilitar</h4>
-                            <div :class="{'has-danger': errors.enabled_yape}"
-                                    class="form-group">
-                                <el-switch v-model="form.enabled_yape"
-                                            active-text="Si"
-                                            inactive-text="No"></el-switch>
-                                <small v-if="errors.enabled_yape"
-                                        class="form-control-feedback"
-                                        v-text="errors.enabled_yape[0]"></small>
-                            </div>
-                        </div>
-                        
-                        <template v-if="form.enabled_yape">
-
-                            <div class="col-md-6 mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.telephone_yape}">
-                                    <label class="control-label">Número de teléfono <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.telephone_yape" placeholder="977523641"></el-input>
-                                    <small class="form-control-feedback" v-if="errors.telephone_yape" v-text="errors.telephone_yape[0]"></small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-12 mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.name_yape}">
-                                    <label class="control-label">Nombres y Apellidos <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.name_yape"></el-input>
-                                    <small class="form-control-feedback" v-if="errors.name_yape" v-text="errors.name_yape[0]"></small>
-                                </div>
-                            </div>
-
-
-                            <div class="col-md-6  mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.qrcode_yape}">
-                                    <label style="width: 210px;" class="control-label">Adjuntar código QR (Imágen) <span class="text-danger">*</span></label>
-                                    
-                                    <el-upload class="uploader"
-                                            :headers="headers"
-                                            :action="`/${resource}/upload-qrcode-yape`"
-                                            :show-file-list="false"
-                                            :on-success="onSuccess">
-                                        <img v-if="form.image_url_yape" :src="form.image_url_yape" class="avatar">
-                                        <i v-else class="el-icon-plus uploader-icon"></i>
-                                    </el-upload>
-                                    <small class="form-control-feedback" v-if="errors.qrcode_yape" v-text="errors.qrcode_yape[0]"></small>
-                                </div>
-                            </div>
-
-                        </template>
-        
-                    </div>
-                    <!-- <div class="form-actions text-right mt-3">
-                        <el-button type="primary" @click="submit" :loading="loading_submit">Guardar</el-button>
-                    </div> -->
-                </el-tab-pane>
-
+            <el-tabs v-model="form.type">
 
                 <el-tab-pane label="Mercado Pago" name="02">
 
@@ -139,109 +80,6 @@
         
                     </div>
                 </el-tab-pane>
-                <el-tab-pane label="Culqi" name="03">
-                    <div class="row pt-1">
-                        <div class="col-md-12">
-                            <h4 class="control-label">Habilitar</h4>
-                            <div :class="{'has-danger': errors.enabled_culqi}"
-                                    class="form-group">
-                                <el-switch v-model="form.enabled_culqi"
-                                            active-text="Si"
-                                            inactive-text="No"></el-switch>
-                                <small v-if="errors.enabled_culqi"
-                                        class="form-control-feedback"
-                                        v-text="errors.enabled_culqi[0]"></small>
-                            </div>
-                        <template v-if="form.enabled_culqi">
-
-                            <div class="col-md-12 mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.telephone_yape}">
-                                    <label class="control-label">Public Key <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.publickey_culqi" placeholder="977523641"></el-input>
-                                    <small class="form-control-feedback" v-if="errors.telephone_yape" v-text="errors.telephone_yape[0]"></small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-12 mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.name_yape}">
-                                    <label class="control-label">Private Key <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.privatekey_culqi"></el-input>
-                                    <small class="form-control-feedback" v-if="errors.name_yape" v-text="errors.name_yape[0]"></small>
-                                </div>
-                            </div>
-                            <div class="col-md-12 mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.name_yape}">
-                                    <label class="control-label">ID RSA <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.idrsa_culqi"></el-input>
-                                    <small class="form-control-feedback" v-if="errors.name_yape" v-text="errors.name_yape[0]"></small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-12 mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.name_yape}">
-                                    <label class="control-label">RSA Key <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.rsa_culqi"></el-input>
-                                    <small class="form-control-feedback" v-if="errors.name_yape" v-text="errors.name_yape[0]"></small>
-                                </div>
-                            </div>
-                        </template>
-
-                        </div>
-                    </div>
-                        
-                </el-tab-pane>
-
-                <el-tab-pane label="Izipay" name="04">
-                    <div class="row pt-1">
-                        <div class="col-md-12">
-                            <h4 class="control-label">Habilitar</h4>
-                            <div :class="{'has-danger': errors.enabled_izipay}"
-                                    class="form-group">
-                                <el-switch v-model="form.enabled_izipay"
-                                            active-text="Si"
-                                            inactive-text="No"></el-switch>
-                                <small v-if="errors.enabled_izipay"
-                                        class="form-control-feedback"
-                                        v-text="errors.enabled_izipay[0]"></small>
-                            </div>
-                        <template v-if="form.enabled_izipay">
-                            <div class="row">
-                            <div class="col-md-12 mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.username_izipay}">
-                                    <label class="control-label">Usuario <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.username_izipay" placeholder="977523641"></el-input>
-                                    <small class="form-control-feedback" v-if="errors.username_izipay" v-text="errors.username_izipay[0]"></small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-12 mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.password_izipay}">
-                                    <label class="control-label">Contraseña <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.password_izipay"></el-input>
-                                    <small class="form-control-feedback" v-if="errors.password_izipay" v-text="errors.password_izipay[0]"></small>
-                                </div>
-                            </div>
-                            <div class="col-md-12 mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.publickey_izipay}">
-                                    <label class="control-label">Public Key <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.publickey_izipay"></el-input>
-                                    <small class="form-control-feedback" v-if="errors.publickey_izipay" v-text="errors.publickey_izipay[0]"></small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-12 mt-3">
-                                <div class="form-group" :class="{'has-danger': errors.sha256key_izipay}">
-                                    <label class="control-label">SHA256 Key <span class="text-danger">*</span></label>
-                                    <el-input v-model="form.sha256key_izipay"></el-input>
-                                    <small class="form-control-feedback" v-if="errors.sha256key_izipay" v-text="errors.sha256key_izipay[0]"></small>
-                                </div>
-                            </div>
-                            </div>
-                        </template>
-                        </div>
-                    </div>
-                        
-                </el-tab-pane>
                 <div class="form-actions text-end mt-3">
                     <el-button type="primary" @click="submit" :loading="loading_submit">Guardar</el-button>
                 </div>
@@ -252,18 +90,6 @@
 </template>
 
 <style>
-.el-upload.el-upload--text{
-    width: 100%;
-}
-    .uploader-icon {
-        font-size: 28px;
-        color: #8c939d;
-        width: 208px;
-        height: 208px;
-        line-height: 208px;
-        text-align: center;
-    }
-
     .access-token-mp-toggle {
         display: inline-flex;
         align-items: center;
@@ -281,7 +107,6 @@
     export default {
         data() {
             return {
-                headers: headers_token,
                 resource: 'payment-configurations',
                 recordId: null,
                 form: {},
@@ -292,12 +117,6 @@
                 accessTokenMpDraft: null,
                 accessTokenMpRevealLoading: false,
                 accessTokenMpUnchangedSinceReveal: false,
-                payments: [
-                    {id: '01', description: 'Yape', enabled: 'enabled_yape'},
-                    {id: '02', description: 'Mercado Pago', enabled: 'enabled_mp'},
-                    {id: '03', description: 'Culqi', enabled: 'enabled_culqi'},
-                    {id: '04', description: 'Izipay', enabled: 'enabled_izipay'},
-                ],
             }
         },
         computed: {
@@ -411,9 +230,6 @@
                 this.accessTokenMpRevealLoading = false
                 this.accessTokenMpUnchangedSinceReveal = false
             },
-            handleClick(){
-
-            },
             submit(){
 
                 this.loading_submit = true
@@ -464,29 +280,11 @@
                     })
 
             },
-            onSuccess(response) { 
-
-                if (response.success) {
-                    this.form.qrcode_yape = response.data.filename
-                    this.form.image_url_yape = response.data.temp_image
-                    this.form.temp_path_yape = response.data.temp_path 
-                } else {
-                    this.$message.error(response.message)
-                }
-            },
             initForm(){
 
                 this.form = {
-                    enabled_yape : false,
-                    name_yape : null,
-                    telephone_yape: null,
-                    type: '01',
+                    type: '02',
 
-                    qrcode_yape : null,
-                    image_url_yape: null,
-                    temp_path_yape: null,
-
-                    
                     enabled_mp : false,
                     access_token_mp: null,
                     public_key_mp: null,
@@ -506,7 +304,7 @@
 
                         this.form = {
                             ...data,
-                            type: '01',
+                            type: '02',
                             access_token_mp: null,
                             has_access_token_mp: !!data.has_access_token_mp,
                             access_token_mp_suffix: data.access_token_mp_suffix || null,

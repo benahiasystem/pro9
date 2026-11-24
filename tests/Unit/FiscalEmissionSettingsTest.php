@@ -154,12 +154,27 @@ class FiscalEmissionSettingsTest extends TestCase
             [['fiscal_emission_mode' => null]], [['fiscal_emission_mode' => 'invalid']],
             [['fiscal_environment' => 'invalid']],
             [['fiscal_configuration' => ['port' => 'COM1']]],
+            [['fiscal_configuration' => ['printer' => 'Imprenta']]],
+            [['fiscal_configuration' => ['control_number' => '123']]],
             [['fiscal_configuration' => ['range_start' => 20, 'range_end' => 10]]],
             [['fiscal_configuration' => ['range_start' => -1]]],
             [['fiscal_credentials' => 'not-for-free-form']],
             [['fiscal_credentials' => '0']],
             [['fiscal_emission_mode' => 'digital', 'fiscal_credentials' => '0', 'clear_fiscal_credentials' => true]],
         ];
+    }
+
+    public function test_free_form_discards_old_printer_and_control_configuration(): void
+    {
+        $company = Company::firstOrFail();
+        $company->fiscal_configuration = ['printer' => 'Anterior', 'control_number' => '123', 'range_start' => 10, 'range_end' => 20];
+        $company->save();
+
+        self::assertSame(['range_start' => 10, 'range_end' => 20], (array) FiscalEmissionSettings::publicData($company)['fiscal_configuration']);
+        $company = FiscalEmissionSettings::update($company, [
+            'fiscal_emission_mode' => 'free_form', 'fiscal_environment' => 'demo',
+        ], 'tenant', 1);
+        self::assertSame(['range_start' => 10, 'range_end' => 20], $company->fresh()->fiscal_configuration);
     }
 
     public function test_credentials_are_encrypted_hidden_preserved_and_cleared_on_mode_change(): void
