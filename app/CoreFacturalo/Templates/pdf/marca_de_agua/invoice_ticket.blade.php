@@ -1,6 +1,8 @@
 {{-- ######## INICIO PERSISTENCIA FISCAL VENEZUELA ######## --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
+    $ticketInvoice = $ticketInvoice ?? false;
+    $ticketFiscal = $ticketFiscal ?? null;
     use Modules\Template\Helpers\TemplatePdf;
 
     $establishment = $document->establishment;
@@ -50,6 +52,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     {{--</div>--}}
 @endif
 
+{{-- ######## INICIO IDENTIDAD DE FACTURA 80 MM ######## --}}
+@include('pdf.partials.invoice_ticket_58_demo')
+{{-- ######## FIN IDENTIDAD DE FACTURA 80 MM ######## --}}
+
 @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top:500px">
         <img
@@ -71,7 +77,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             alt="vista previa" class="" style="opacity: 0.6; width: 50%;">
     </div>
 @endif
-<table class="full-width">
+<table class="full-width invoice-header-80">
     <tr>
         <td class="text-center">@include('pdf.partials.company_document_header_names')</td>
     </tr>
@@ -79,7 +85,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="text-center"><h5>{{ $company->trade_name }}</h5></td>
     </tr>--}}
     <tr>
-        <td class="text-center"><h5>{{ 'RIF '.$company->number }}</h5></td>
+        <td class="text-center"><h5>{{ $ticketInvoice ? 'R.I.F. '.\App\Services\Fiscal\InvoicePaperPdfData::rif((string) $company->number) : 'RIF '.$company->number }}</h5></td>
     </tr>
     <tr>
         <td class="text-center" style="text-transform: uppercase;">
@@ -96,11 +102,15 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </tr>
     @endisset
     <tr>
-        <td class="text-center ">{{ ($establishment->telephone !== '-')? 'Central telefónica: '.$establishment->telephone : '' }}</td>
+        <td class="text-center ">{{ ($establishment->telephone !== '-') ? ($ticketInvoice ? 'Teléfono: ' : 'Central telefónica: ').$establishment->telephone : '' }}</td>
     </tr>
+    {{-- ######## INICIO CORREO EN TICKET DE FACTURA ######## --}}
+    @if(!$ticketInvoice)
     <tr>
         <td class="text-center">{{ ($establishment->email !== '-')? 'Email: '.$establishment->email : '' }}</td>
     </tr>
+    @endif
+    {{-- ######## FIN CORREO EN TICKET DE FACTURA ######## --}}
     @isset($establishment->web_address)
         <tr>
             <td class="text-center">{{ ($establishment->web_address !== '-')? 'Web: '.$establishment->web_address : '' }}</td>
@@ -112,17 +122,45 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             <td class="text-center pb-3">{{ ($establishment->aditional_information !== '-')? $establishment->aditional_information : '' }}</td>
         </tr>
     @endisset
+    @if(!$ticketInvoice)
     <tr>
         <td class="text-center pt-3 border-top"><h3>{{ 'R.I.F. '.$company->number }}</h3></td>
     </tr>
+    @endif
     <tr>
         <td class="text-center"><h4>{{ $document->document_type->description }}</h4></td>
     </tr>
     <tr>
-        <td class="text-center pb-3 border-bottom"><h3>{{ $document_number }}</h3></td>
+        <td class="text-center pb-3 border-bottom">@if($ticketInvoice) @include('pdf.partials.invoice_ticket_58_identity') @else <h3>{{ $document_number }}</h3> @endif</td>
     </tr>
 </table>
-<table class="full-width">
+<table class="full-width invoice-customer-80">
+    {{-- ######## INICIO ORDEN DE DATOS DE FACTURA ######## --}}
+    @if($ticketInvoice)
+    <tr>
+        <td class="align-top"><p class="desc">Cliente:</p></td>
+        <td><p class="desc">{{ $customer->name }}</p></td>
+    </tr>
+    <tr>
+        <td><p class="desc">{{ $customer->identity_document_type->description }}:</p></td>
+        <td><p class="desc">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
+    </tr>
+    <tr>
+        <td width="" class="pt-3"><p class="desc">F. Emisión:</p></td>
+        <td width="" class="pt-3"><p class="desc">{{ $document->date_of_issue->format('Y-m-d') }}</p></td>
+    </tr>
+    <tr>
+        <td width=""><p class="desc">H. Emisión:</p></td>
+        <td width=""><p class="desc">{{ $document->time_of_issue }}</p></td>
+    </tr>
+    @isset($invoice->date_of_due)
+        <tr>
+            <td><p class="desc">F. Vencimiento:</p></td>
+            <td><p class="desc">{{ $invoice->date_of_due->format('Y-m-d') }}</p></td>
+        </tr>
+    @endisset
+
+    @else
     <tr>
         <td width="" class="pt-3"><p class="desc">F. Emisión:</p></td>
         <td width="" class="pt-3"><p class="desc">{{ $document->date_of_issue->format('Y-m-d') }}</p></td>
@@ -146,6 +184,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td><p class="desc">{{ $customer->identity_document_type->description }}:</p></td>
         <td><p class="desc">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
     </tr>
+    @endif
+    {{-- ######## FIN ORDEN DE DATOS DE FACTURA ######## --}}
     @if ($customer->address !== '')
         <tr>
             <td class="align-top"><p class="desc">Dirección:</p></td>
@@ -345,6 +385,11 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     </table>
 @endif
 
+{{-- ######## INICIO DISEÑO DE FACTURA 80 MM ######## --}}
+@if((string) ($document->document_type_id ?? '') === '01')
+    @include('pdf.partials.invoice_ticket_items_80')
+    <table class="full-width mt-10 mb-10"><tbody>
+@else
 <table class="full-width mt-10 mb-10">
     <thead class="">
     <tr>
@@ -478,6 +523,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         @endforeach
     @endif
 
+@endif
+{{-- ######## FIN DISEÑO DE FACTURA 80 MM ######## --}}
     @if($document->total_exportation > 0)
         <tr>
             <td colspan="5" class="text-right font-bold desc">OP.
@@ -520,12 +567,16 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
 
     @php
-        $invoiceDiscountWithIgv = \App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv');
+        // ######## INICIO TOTALES FISCALES DEL TICKET ########
+        $specialTicketTotals = $ticketInvoice && \App\Services\Fiscal\HkaDomesticInvoicePolicy::applies($document)
+            ? \App\Support\Exact\InvoicePdfSummary::ticketTotals($document, true) : null;
+        $invoiceDiscountWithIgv = $specialTicketTotals['discount'] ?? \App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv');
+        // ######## FIN TOTALES FISCALES DEL TICKET ########
     @endphp
     @if($document->subtotal > 0)
         @php
             $labelSubtotal = $invoiceDiscountWithIgv->isPositive() ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
-            $subtotal = $invoiceDiscountWithIgv->isPositive() ? \App\Support\Exact\PdfAmounts::read($document, 'subtotal')->plus($invoiceDiscountWithIgv) : \App\Support\Exact\PdfAmounts::read($document, 'subtotal');
+            $subtotal = $specialTicketTotals['subtotal'] ?? ($invoiceDiscountWithIgv->isPositive() ? \App\Support\Exact\PdfAmounts::read($document, 'subtotal')->plus($invoiceDiscountWithIgv) : \App\Support\Exact\PdfAmounts::read($document, 'subtotal'));
         @endphp
         <tr>
             <td colspan="5" class="text-right font-bold desc">{{ $labelSubtotal }}: {{ $document->currency_type->symbol }}</td>
@@ -562,12 +613,20 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             </tr>
         @endif
     @endif
+    @if($ticketInvoice)
+        @include('pdf.partials.invoice_ticket_igtf', ['labelSpan'=>5, 'amountSpan'=>1, 'labelClass'=>'text-right desc', 'amountClass'=>'text-right desc'])
+    @endif
 
 
         <tr>
             <td colspan="5" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total'), 2) }}</td>
         </tr>
+        {{-- ######## INICIO CANTIDAD DE PRODUCTOS EN FACTURA ######## --}}
+        @if($ticketInvoice)
+        <tr><td colspan="6" class="text-left font-bold desc">Productos: {{ \App\Support\Exact\InvoicePdfSummary::quantities($document->items) }}</td></tr>
+        @endif
+        {{-- ######## FIN CANTIDAD DE PRODUCTOS EN FACTURA ######## --}}
 
     </tbody>
 </table>
@@ -608,6 +667,13 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             @endif
 
 
+            {{-- ######## INICIO PAGOS DE FACTURA 80 MM ######## --}}
+            @if($ticketInvoice)
+        </td>
+    </tr>
+    <tr><td colspan="2" class="text-left align-top">
+            @endif
+            {{-- ######## FIN PAGOS DE FACTURA 80 MM ######## --}}
             @php
                 $paymentCondition = \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentPaymentCondition($document);
             @endphp

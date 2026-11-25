@@ -24,7 +24,12 @@
 @endif
 @if ($hasReceivedAmount && $receiptCurrency !== $document->currency_type_id)
     — Aplicado {{ $document->currency_type_id }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($row, 'payment')) }}
-    @if ($row->exchange_rate) — Tasa del cobro (VES/USD) {{ $row->exchange_rate }} @endif
+    {{-- ######## INICIO TASA ÚNICA EN FACTURA TICKET ######## --}}
+    @if ($row->exchange_rate && !(($ticketInvoice ?? false) && $document instanceof \App\Models\Tenant\Document
+        && $row->receipt_parent_id === null && $row->reversed_at === null))
+        — Tasa del cobro (VES/USD) {{ $row->exchange_rate }}
+    @endif
+    {{-- ######## FIN TASA ÚNICA EN FACTURA TICKET ######## --}}
 @endif
 @if ($hasReceivedAmount && $change->isPositive()) — Vuelto {{ $receiptCurrency }} {{ \App\Support\Exact\Decimal::format($change) }} @endif
 @if ($tax->isPositive()) — IGTF {{ $receiptCurrency }} {{ \App\Support\Exact\Decimal::format($tax) }} @endif

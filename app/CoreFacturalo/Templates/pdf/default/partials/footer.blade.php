@@ -21,9 +21,11 @@
                 Para consultar el comprobante ingresar a {!! url('/buscar') !!}
                 <br>
             @endif          
-            @if(!$digitalInvoice && $document && $document->document_type)
+            {{-- ######## INICIO REPRESENTACIÓN FINAL DE FACTURA TICKET ######## --}}
+            @if(!$digitalInvoice && !($suppressInvoiceTicketRepresentation ?? false) && $document && $document->document_type)
                 Representacion impresa de la <span style="text-transform: capitalize" class="text-capitalize">{{ $document->document_type->description }}</span>
             @endif
+            {{-- ######## FIN REPRESENTACIÓN FINAL DE FACTURA TICKET ######## --}}
         </td>
     </tr>
 </table>

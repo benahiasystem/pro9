@@ -80,7 +80,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             alt="vista previa" class="" style="opacity: 0.6; width: 50%;">
     </div>
 @endif
-<table class="full-width">
+<table class="full-width invoice-header-80">
     <tr>
         <td class="text-center">@include('pdf.partials.company_document_header_names')</td>
     </tr>
@@ -105,11 +105,15 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </tr>
     @endisset
     <tr>
-        <td class="text-center ">{{ ($establishment->telephone !== '-')? 'Central telefónica: '.$establishment->telephone : '' }}</td>
+        <td class="text-center ">{{ ($establishment->telephone !== '-') ? ($ticketInvoice ? 'Teléfono: ' : 'Central telefónica: ').$establishment->telephone : '' }}</td>
     </tr>
+    {{-- ######## INICIO CORREO EN TICKET DE FACTURA ######## --}}
+    @if(!$ticketInvoice)
     <tr>
         <td class="text-center">{{ ($establishment->email !== '-')? 'Email: '.$establishment->email : '' }}</td>
     </tr>
+    @endif
+    {{-- ######## FIN CORREO EN TICKET DE FACTURA ######## --}}
     @isset($establishment->web_address)
         <tr>
             <td class="text-center">{{ ($establishment->web_address !== '-')? 'Web: '.$establishment->web_address : '' }}</td>
@@ -133,7 +137,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     <tr>
         <td class="text-center pb-3 border-bottom">
             @if($ticketInvoice)
-                <div>N° de documento: <strong>{{ $ticketFiscal['number_full'] ?? $document_number }}</strong></div>
+                {{-- ######## INICIO NÚMERO DE FACTURA EN TICKET ######## --}}
+                <div>N° : <strong>{{ $ticketFiscal['number_full'] ?? $document_number }}</strong></div>
+                {{-- ######## FIN NÚMERO DE FACTURA EN TICKET ######## --}}
                 <div>N° de control: <strong>{{ ($ticketFiscal['control_number'] ?? null) ?: 'No asignado' }}</strong></div>
             @else
                 <h3>{{ $document_number }}</h3>
@@ -141,7 +147,33 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </td>
     </tr>
 </table>
-<table class="full-width">
+<table class="full-width invoice-customer-80">
+    {{-- ######## INICIO ORDEN DE DATOS DE FACTURA ######## --}}
+    @if($ticketInvoice)
+    <tr>
+        <td class="align-top"><p class="desc">Cliente:</p></td>
+        <td><p class="desc">{{ $customer->name }}</p></td>
+    </tr>
+    <tr>
+        <td><p class="desc">{{ ($customer->identity_document_type_id ?? '') === 'ND' ? $customer->external_identity_type : $customer->identity_document_type->description }}:</p></td>
+        <td><p class="desc">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
+    </tr>
+    <tr>
+        <td width="" class="pt-3"><p class="desc">F. Emisión:</p></td>
+        <td width="" class="pt-3"><p class="desc">{{ $document->date_of_issue->format('Y-m-d') }}</p></td>
+    </tr>
+    <tr>
+        <td width=""><p class="desc">H. Emisión:</p></td>
+        <td width=""><p class="desc">{{ $document->time_of_issue }}</p></td>
+    </tr>
+    @isset($invoice->date_of_due)
+        <tr>
+            <td><p class="desc">F. Vencimiento:</p></td>
+            <td><p class="desc">{{ $invoice->date_of_due->format('Y-m-d') }}</p></td>
+        </tr>
+    @endisset
+
+    @else
     <tr>
         <td width="" class="pt-3"><p class="desc">F. Emisión:</p></td>
         <td width="" class="pt-3"><p class="desc">{{ $document->date_of_issue->format('Y-m-d') }}</p></td>
@@ -165,6 +197,8 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td><p class="desc">{{ ($customer->identity_document_type_id ?? '') === 'ND' ? $customer->external_identity_type : $customer->identity_document_type->description }}:</p></td>
         <td><p class="desc">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
     </tr>
+    @endif
+    {{-- ######## FIN ORDEN DE DATOS DE FACTURA ######## --}}
     @if ($customer->address !== '')
         <tr>
             <td class="align-top"><p class="desc">Dirección:</p></td>
@@ -668,11 +702,15 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             </tr>
         @endif
     @endif
+    @if($ticketInvoice)
+        @include('pdf.partials.invoice_ticket_igtf', ['labelSpan'=>2, 'amountClass'=>'text-right font-bold desc', 'labelClass'=>'text-right font-bold desc'])
+    @else
     @if($igtf_for_totals->isGreaterThan(0))
-        <tr>
+        <tr data-ticket-inline-igtf>
             <td colspan="2" class="text-right font-bold desc">IGTF: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ \App\Support\Exact\Decimal::format($igtf_for_totals, 2) }}</td>
         </tr>
+    @endif
     @endif
 
         @if(!$ticketInvoice)
@@ -799,7 +837,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     @endif
     </tr>
 </table>
-{!! view()->file(app_path('CoreFacturalo/Templates/pdf/default/partials/footer.blade.php'), ['document' => $document])->render() !!}
+{{-- ######## INICIO REPRESENTACIÓN FINAL DE FACTURA TICKET ######## --}}
+{!! view()->file(app_path('CoreFacturalo/Templates/pdf/default/partials/footer.blade.php'), ['document' => $document, 'suppressInvoiceTicketRepresentation' => $ticketInvoice])->render() !!}
+{{-- ######## FIN REPRESENTACIÓN FINAL DE FACTURA TICKET ######## --}}
 </body>
 </html>
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

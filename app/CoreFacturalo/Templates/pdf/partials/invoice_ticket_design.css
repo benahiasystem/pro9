@@ -1,0 +1,32 @@
+/* ######## INICIO DISEÑO VISUAL DE FACTURA EN TICKET ######## */
+.invoice-header-80, .invoice-header-58,
+.invoice-customer-80, .invoice-customer-58 {
+    font-family: sans-serif;
+    color: #000;
+}
+.invoice-header-80 h4, .invoice-header-80 .m27-doc-type {
+    font-family: sans-serif;
+    font-size: 19px !important;
+    font-weight: bold;
+    letter-spacing: 0;
+}
+.invoice-header-80 h5, .invoice-header-80 .m27-company {
+    font-family: sans-serif;
+    font-size: 14px !important;
+    font-weight: bold;
+    letter-spacing: 0;
+}
+.invoice-header-80 td { font-size: 12px; }
+.invoice-customer-80 td, .invoice-customer-80 p,
+.invoice-customer-80 .desc, .invoice-customer-80 .m27-label,
+.invoice-customer-80 .m27-value { font-family: sans-serif; font-size: 12px !important; }
+.invoice-header-58 h5, .invoice-header-58 .m27-doc-type {
+    font-family: sans-serif;
+    font-size: 14px !important;
+    font-weight: bold;
+    letter-spacing: 0;
+}
+.invoice-header-58 td, .invoice-customer-58 td,
+.invoice-customer-58 .desc, .invoice-customer-58 .m27-label,
+.invoice-customer-58 .m27-value { font-family: sans-serif; font-size: 11px !important; }
+/* ######## FIN DISEÑO VISUAL DE FACTURA EN TICKET ######## */

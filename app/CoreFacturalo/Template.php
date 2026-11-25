@@ -26,12 +26,22 @@ class Template
         $fiscal = \App\Services\Fiscal\FiscalPdfData::forDocument($document);
         $company = \App\Services\Fiscal\FiscalPdfData::issuerForPrint($company, $fiscal);
         $ticketInvoice = $template === 'invoice' && (string) ($document->document_type_id ?? '') === '01'
-            && (($format_pdf === 'ticket' && $path_template === 'pdf.default.invoice_ticket')
+            && (($format_pdf === 'ticket' && in_array($path_template, [
+                    'pdf.default.invoice_ticket', 'pdf.modern-2027.invoice_ticket',
+                    'pdf.marca_de_agua.invoice_ticket', 'pdf.Plantilla_personalizable.invoice_ticket',
+                ], true))
                 || ($format_pdf === 'ticket_58' && in_array($path_template, [
                     'pdf.default.invoice_ticket_58', 'pdf.modern-2027.invoice_ticket_58',
                     'pdf.marca_de_agua.invoice_ticket_58', 'pdf.Plantilla_personalizable.invoice_ticket_58',
                 ], true)));
-        $html = self::render($path_template, $company, $document, $configuration, $isPaperInvoice ? $format_pdf : null, $ticketInvoice ? $fiscal : null, $ticketInvoice);
+        // ######## INICIO AMBIENTE DEMO DE VISTA PREVIA ########
+        $ticketFiscal = $ticketInvoice ? $fiscal : null;
+        if ($ticketInvoice && !$ticketFiscal && $document instanceof \App\Models\Tenant\Document && !$document->exists
+            && !empty($configuration['is_preview']) && in_array($company->fiscal_environment ?? null, ['demo', 'production'], true)) {
+            $ticketFiscal = ['environment' => $company->fiscal_environment];
+        }
+        $html = self::render($path_template, $company, $document, $configuration, $isPaperInvoice ? $format_pdf : null, $ticketFiscal, $ticketInvoice);
+        // ######## FIN AMBIENTE DEMO DE VISTA PREVIA ########
         $paperSpecialIdentity = '';
         // ######## FIN PRESENTACION FACTURA A4/A5 ########
         if ($template === 'sale_note' && $document instanceof \App\Models\Tenant\SaleNote
@@ -174,7 +184,10 @@ class Template
         if ($document instanceof \App\Models\Tenant\Document) {
             if (!$isPaperInvoice) {
                 if ($document->exists && \App\Services\Fiscal\IvaRetentionService::available($document)) $document->loadMissing('fiscal_data');
-                $summary = view('pdf.partials.document_fiscal_totals', compact('document'))->render();
+                // ######## INICIO IGTF EN TOTALES DEL TICKET ########
+                $omitTicketIgtf = $ticketInvoice && str_contains($html, 'data-ticket-inline-igtf');
+                $summary = view('pdf.partials.document_fiscal_totals', compact('document', 'omitTicketIgtf'))->render();
+                // ######## FIN IGTF EN TOTALES DEL TICKET ########
                 // Some ticket footers contain their own body: append the fiscal summary once.
                 $bodyEnd = strripos($html, '</body>');
                 $html = $bodyEnd === false ? $html.$summary : substr_replace($html, $summary, $bodyEnd, 0);
@@ -190,6 +203,13 @@ class Template
                 }
             }
         }
+        // ######## INICIO REPRESENTACIÓN FINAL DE FACTURA TICKET ########
+        if ($ticketInvoice && ($document->fiscal_emission_mode ?? null) !== 'digital') {
+            $footer = '<div data-ticket-representation style="text-align:center; font-size:10px; font-weight:bold; margin-top:6px;">Representacion impresa de la Factura</div>';
+            $bodyEnd = strripos($html, '</body>');
+            $html = $bodyEnd === false ? $html.$footer : substr_replace($html, $footer, $bodyEnd, 0);
+        }
+        // ######## FIN REPRESENTACIÓN FINAL DE FACTURA TICKET ########
         return $html;
         // ######## FIN PERSISTENCIA FISCAL VENEZUELA ########
     }
@@ -218,6 +238,12 @@ class Template
             && in_array($base_template, ['default', 'modern-2027', 'marca_de_agua', 'Plantilla_personalizable'], true)) {
             $stylesheet .= file_get_contents($directory.'partials/invoice_a5.css');
         }
+        // ######## INICIO DISEÑO VISUAL DE FACTURA EN TICKET ########
+        if ($template === 'invoice' && in_array($format_pdf, ['ticket', 'ticket_58'], true)
+            && (string) ($document->document_type_id ?? '') === '01') {
+            $stylesheet .= file_get_contents($directory.'partials/invoice_ticket_design.css');
+        }
+        // ######## FIN DISEÑO VISUAL DE FACTURA EN TICKET ########
         return $stylesheet;
     }
 

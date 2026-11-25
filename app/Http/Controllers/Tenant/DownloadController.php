@@ -213,7 +213,16 @@ class DownloadController extends Controller
         ];
         */
 
-        return response()->file($temp, $this->generalPdfResponseFileHeaders($document->filename));
+        // ######## INICIO CACHÉ DE TICKETS DE FACTURA ########
+        $headers = $this->generalPdfResponseFileHeaders($document->filename);
+        $response = response()->file($temp, $headers);
+        if ($document instanceof \App\Models\Tenant\Document && (string) $document->document_type_id === '01'
+            && in_array($format, ['ticket', 'ticket_58'], true)) {
+            $response->setPrivate();
+            $response->headers->addCacheControlDirective('no-store');
+        }
+        return $response;
+        // ######## FIN CACHÉ DE TICKETS DE FACTURA ########
     }
 
     public function toTicket($model, $external_id, $format = null) {

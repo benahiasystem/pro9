@@ -518,6 +518,17 @@ class Facturalo
             $extra_by_item_description = 0;
             $discount_global = 0;
             foreach ($this->document->items as $it) {
+                // ######## INICIO ALTURA DEL DISEÑO DE FACTURA 58 MM ########
+                if ($this->type === 'invoice' && $format_pdf === 'ticket_58' && (string) $this->document->document_type_id === '01') {
+                    $description = $it->name_product_pdf ?: $it->item->description;
+                    $extra_by_item_description += 4 + 4 * max(0, (int) ceil(mb_strlen(strip_tags((string) $description)) / 28) - 1);
+                }
+                if ($this->type === 'invoice' && $format_pdf === 'ticket' && (string) $this->document->document_type_id === '01'
+                    && in_array($base_pdf_template, ['marca_de_agua', 'Plantilla_personalizable'], true)) {
+                    $description = $it->name_product_pdf ?: $it->item->description;
+                    $extra_by_item_description += 4 + 4 * max(0, (int) ceil(mb_strlen(strip_tags((string) $description)) / 32) - 1);
+                }
+                // ######## FIN ALTURA DEL DISEÑO DE FACTURA 58 MM ########
                 if(strlen($it->item->description)>100){
                     $extra_by_item_description +=24;
                 }
@@ -573,6 +584,18 @@ class Facturalo
                 'format' => [
                     $width,
                     80 +
+                    // ######## INICIO ALTURA DE REPRESENTACIÓN FINAL ########
+                    (($this->type === 'invoice' && (string) $this->document->document_type_id === '01'
+                        && $this->document->fiscal_emission_mode !== 'digital') ? 8 : 0) +
+                    // ######## FIN ALTURA DE REPRESENTACIÓN FINAL ########
+                    // ######## INICIO ALTURA DEL ENCABEZADO DE FACTURA ########
+                    (($this->type === 'invoice' && (string) $this->document->document_type_id === '01')
+                        ? ($format_pdf === 'ticket_58' ? 12 : 18) : 0) +
+                    // ######## FIN ALTURA DEL ENCABEZADO DE FACTURA ########
+                    // ######## INICIO ALTURA DEL DESGLOSE IGTF ########
+                    (($this->type === 'invoice' && (string) $this->document->document_type_id === '01')
+                        ? collect($this->document->taxes ?? [])->where('tax_kind', 'IGTF')->count() * 5 : 0) +
+                    // ######## FIN ALTURA DEL DESGLOSE IGTF ########
                     $height_terms + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + (($format_pdf === 'ticket_58' && in_array($base_pdf_template, ['default'], true)) ? 6 : 0) + (($format_pdf === 'ticket' && in_array($base_pdf_template, ['default','modern-2027'], true) && $this->type === 'invoice') ? 5 : 0) +
                      $heightQr +
                      $height_logo +
@@ -1411,6 +1434,17 @@ class Facturalo
             $extra_by_item_description = 0;
             $discount_global = 0;
             foreach ($this->document->items as $it) {
+                // ######## INICIO ALTURA DEL DISEÑO DE FACTURA 58 MM ########
+                if ($this->type === 'invoice' && $format_pdf === 'ticket_58' && (string) $this->document->document_type_id === '01') {
+                    $description = $it->name_product_pdf ?: $it->item->description;
+                    $extra_by_item_description += 4 + 4 * max(0, (int) ceil(mb_strlen(strip_tags((string) $description)) / 28) - 1);
+                }
+                if ($this->type === 'invoice' && $format_pdf === 'ticket' && (string) $this->document->document_type_id === '01'
+                    && in_array($base_pdf_template, ['marca_de_agua', 'Plantilla_personalizable'], true)) {
+                    $description = $it->name_product_pdf ?: $it->item->description;
+                    $extra_by_item_description += 4 + 4 * max(0, (int) ceil(mb_strlen(strip_tags((string) $description)) / 32) - 1);
+                }
+                // ######## FIN ALTURA DEL DISEÑO DE FACTURA 58 MM ########
                 if(strlen($it->item->description)>100){
                     $extra_by_item_description +=24;
                 }
@@ -1447,6 +1481,18 @@ class Facturalo
                 'format' => [
                     $width,
                     80 +
+                    // ######## INICIO ALTURA DE REPRESENTACIÓN FINAL ########
+                    (($this->type === 'invoice' && (string) $this->document->document_type_id === '01'
+                        && $this->document->fiscal_emission_mode !== 'digital') ? 8 : 0) +
+                    // ######## FIN ALTURA DE REPRESENTACIÓN FINAL ########
+                    // ######## INICIO ALTURA DEL ENCABEZADO DE FACTURA ########
+                    (($this->type === 'invoice' && (string) $this->document->document_type_id === '01')
+                        ? ($format_pdf === 'ticket_58' ? 12 : 18) : 0) +
+                    // ######## FIN ALTURA DEL ENCABEZADO DE FACTURA ########
+                    // ######## INICIO ALTURA DEL DESGLOSE IGTF ########
+                    (($this->type === 'invoice' && (string) $this->document->document_type_id === '01')
+                        ? collect($this->document->taxes ?? [])->where('tax_kind', 'IGTF')->count() * 5 : 0) +
+                    // ######## FIN ALTURA DEL DESGLOSE IGTF ########
                     $height_terms + (str_contains($html,'data-pdf-unit-price-rounding') ? 20 : 0) + (($format_pdf === 'ticket_58' && in_array($base_pdf_template, ['default'], true)) ? 6 : 0) + (($format_pdf === 'ticket' && in_array($base_pdf_template, ['default','modern-2027'], true) && $this->type === 'invoice') ? 5 : 0) +
                     (($quantity_rows * 8) + $extra_by_item_description) +
                     // ######## INICIO ESPACIO PARA LOTES EN VISTA PREVIA ########

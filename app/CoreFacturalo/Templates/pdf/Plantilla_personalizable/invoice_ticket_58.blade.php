@@ -70,7 +70,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         </div>
     @endif
 
-<table class="full-width">
+<table class="full-width invoice-header-58">
     <tr>
         <td class="pt-2">
             @if($ticketLogo)
@@ -109,8 +109,12 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                 {{  ($establishment->trade_address !== '-')? 'D. COMERCIAL: '.$establishment->trade_address : ''  }}
                 <br>
             @endisset
-            {{ ($establishment->telephone !== '-')? 'CENTRAL TELEFÓNICA: '.$establishment->telephone : '' }} <br>
+            {{ ($establishment->telephone !== '-') ? ($ticketInvoice ? 'Teléfono: ' : 'CENTRAL TELEFÓNICA: ').$establishment->telephone : '' }} <br>
+            {{-- ######## INICIO CORREO EN TICKET DE FACTURA ######## --}}
+            @if(!$ticketInvoice)
             {{ ($establishment->email !== '-')? 'EMAIL: '.$establishment->email : '' }} <br>
+            @endif
+            {{-- ######## FIN CORREO EN TICKET DE FACTURA ######## --}}
             @isset($establishment->web_address)
                 {{ ($establishment->web_address !== '-')? 'WEB: '.$establishment->web_address : '' }} <br>
             @endisset
@@ -126,15 +130,26 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         <td class="ticket-58 text-center pb-2 border-bottom">@if($ticketInvoice) @include('pdf.partials.invoice_ticket_58_identity') @else <h5>{{ $document_number }}</h5> @endif</td>
     </tr>
 </table>
-<table class="full-width">
+<table class="full-width invoice-customer-58">
     <tr>
         <td class="desc text-uppercase" colspan="2">
+    {{-- ######## INICIO ORDEN DE DATOS DE FACTURA ######## --}}
+    @if($ticketInvoice)
+            Cliente: {{ $customer->name }} <br>
+            {{ $customer->identity_document_type->description }}: {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }} <br>
+            F.Emisión: {{ $document->date_of_issue->format('Y-m-d') }} {{ $document->time_of_issue }} <br>
+            @isset($invoice->date_of_due)
+                F.Vencimiento: {{ $invoice->date_of_due->format('Y-m-d') }} <br>
+            @endisset
+    @else
             F.Emisión: {{ $document->date_of_issue->format('Y-m-d') }} <br>
             @isset($invoice->date_of_due)
                 F.Vencimiento: {{ $invoice->date_of_due->format('Y-m-d') }} <br>
             @endisset
             Cliente: {{ $customer->name }} <br>
             {{ $customer->identity_document_type->description }}: {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }} <br>
+    @endif
+    {{-- ######## FIN ORDEN DE DATOS DE FACTURA ######## --}}
             Dirección: {{ $customer->address }}
             {{ (!empty($customer->district->description))? ', '.$customer->district->description : '' }}
             {{ (!empty($customer->province->description))? ', '.$customer->province->description : '' }}
@@ -244,6 +259,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 <table class="full-width mt-10 mb-10">
 
     <tbody>
+    {{-- ######## INICIO DISEÑO PERSONALIZABLE DE FACTURA 58 MM ######## --}}
+    @if($ticketInvoice)
+    <tr><th class="ticket-58 border-top-bottom desc text-left">DESCRIPCIÓN</th><th class="ticket-58 border-top-bottom desc text-right">IMPORTE</th></tr>
+    @else
     <tr>
         @if($show_codigo) <td class="ticket-58 border-top-bottom desc text-left">COD.</td> @endif
         @if($show_cantidad) <td class="ticket-58 border-top-bottom desc text-left"></td> @endif
@@ -252,27 +271,31 @@ $affected_document_number = $document_base->affected_document ? $document_base->
         @if($show_precio_unitario) <td class="ticket-58 border-top-bottom desc text-right" style="padding-right:5px;">P.UNIT</td> @endif
         @if($show_total) <td class="ticket-58 border-top-bottom desc text-right">TOTAL</td> @endif
     </tr>
+    @endif
     @foreach($document->items as $row)
         @php $visible_quantity = \App\Support\Exact\InvoicePdfSummary::quantity($row); @endphp
-        @if($show_cantidad && strlen($visible_quantity) > 7)
+        @if(!$ticketInvoice && $show_cantidad && strlen($visible_quantity) > 7)
             <tr><td colspan="{{ $colspan_total }}" class="text-left desc">Cantidad: {{ $visible_quantity }}</td></tr>
         @endif
         <tr>
-            @if($show_codigo) <td class="text-left desc align-top">{{ $row->item->internal_id }}</td> @endif
-            @if($show_cantidad)
+            @if(!$ticketInvoice && $show_codigo) <td class="text-left desc align-top">{{ $row->item->internal_id }}</td> @endif
+            @if(!$ticketInvoice && $show_cantidad)
             <td class="text-left desc align-top">
                 {{ strlen($visible_quantity) > 7 ? '' : $visible_quantity }}
             </td>
             @endif
-            @if($show_unidad) <td class="text-left desc align-top">{{ $row->item->unit_type_id }}</td> @endif
-            @if($show_descripcion)
-            <td class="text-left desc align-top text-uppercase">
-                @if($row->name_product_pdf)
+            @if(!$ticketInvoice && $show_unidad) <td class="text-left desc align-top">{{ $row->item->unit_type_id }}</td> @endif
+            @if($show_descripcion || $ticketInvoice)
+            <td @if($ticketInvoice) colspan="2" @endif class="text-left desc align-top text-uppercase">
+                @if($ticketInvoice && $show_codigo && !empty($row->item->internal_id) && (!$show_descripcion || mb_strpos(strip_tags((string) ($row->name_product_pdf ?: $row->item->description)), (string) $row->item->internal_id) === false)) {{ $row->item->internal_id }} @endif
+                @if(!$show_descripcion)
+                @elseif($row->name_product_pdf)
                     {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
                 @else
                     {!!$row->item->description!!}
                 @endif
 
+                @if($show_descripcion)
                 {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
 
 
@@ -359,18 +382,24 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     @endisset
                 </small>
                 @endif
+                @endif
             </td>
             @endif
-            @if($show_precio_unitario)
+            @if(!$ticketInvoice && $show_precio_unitario)
             <td class="text-right desc align-top"
                 style="padding-right:5px;"><span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span></td>
             @endif
-            @if($show_total) <td class="text-right desc align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td> @endif
+            @if(!$ticketInvoice && $show_total) <td class="text-right desc align-top">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }}</td> @endif
         </tr>
+        @if($ticketInvoice)
+        <tr><td class="text-left desc">@if($show_cantidad) {{ $visible_quantity }} @endif @if($show_unidad) {{ $row->item->unit_type_id }} @endif @if($show_precio_unitario) x <span data-pdf-unit-price>{{ $row->formatPdfUnitPrice() }}</span> @endif</td>
+            <td class="text-right desc">@if($show_total) {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($row, 'total'), 2) }} @endif</td></tr>
+        @endif
         <tr>
             <td colspan="{{ $colspan_total }}" class="ticket-58 border-bottom"></td>
         </tr>
     @endforeach
+    {{-- ######## FIN DISEÑO PERSONALIZABLE DE FACTURA 58 MM ######## --}}
     @if($document->total_exportation > 0)
         <tr>
             <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">OP. EXPORTACIÓN:
@@ -410,12 +439,16 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 
 
     @php
-        $invoiceDiscountWithIgv = \App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv');
+        // ######## INICIO TOTALES FISCALES DEL TICKET ########
+        $specialTicketTotals = $ticketInvoice && \App\Services\Fiscal\HkaDomesticInvoicePolicy::applies($document)
+            ? \App\Support\Exact\InvoicePdfSummary::ticketTotals($document, true) : null;
+        $invoiceDiscountWithIgv = $specialTicketTotals['discount'] ?? \App\Support\Exact\PdfAmounts::read($document, 'total_discount_with_igv');
+        // ######## FIN TOTALES FISCALES DEL TICKET ########
     @endphp
     @if($document->subtotal > 0)
         @php
             $labelSubtotal = $invoiceDiscountWithIgv->isPositive() ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
-            $subtotal = $invoiceDiscountWithIgv->isPositive() ? \App\Support\Exact\PdfAmounts::read($document, 'subtotal')->plus($invoiceDiscountWithIgv) : \App\Support\Exact\PdfAmounts::read($document, 'subtotal');
+            $subtotal = $specialTicketTotals['subtotal'] ?? ($invoiceDiscountWithIgv->isPositive() ? \App\Support\Exact\PdfAmounts::read($document, 'subtotal')->plus($invoiceDiscountWithIgv) : \App\Support\Exact\PdfAmounts::read($document, 'subtotal'));
         @endphp
         <tr>
             <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">{{ $labelSubtotal }}:
@@ -459,6 +492,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     class="text-right desc-ticket text-uppercase">{{ \App\Support\Exact\Decimal::format(\App\Support\Exact\PdfAmounts::read($document, 'total_charge'), 2) }}</td>
             </tr>
         @endif
+    @endif
+    @if($ticketInvoice)
+        @include('pdf.partials.invoice_ticket_igtf', ['labelSpan'=>$colspan_desc, 'amountSpan'=>$colspan_amount, 'labelClass'=>'text-right desc', 'amountClass'=>'text-right desc'])
     @endif
 
     <tr>
@@ -586,7 +622,9 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         Para consultar el comprobante ingresar a {!! url('/buscar') !!}
                         <br>
                     @endif
-                    Representacion impresa de la <span style="text-transform: capitalize" class="text-capitalize">{{ $document->document_type->description }}</span>
+                    {{-- ######## INICIO REPRESENTACIÓN FINAL DE FACTURA TICKET ######## --}}
+                    @if(!$ticketInvoice) Representacion impresa de la <span style="text-transform: capitalize" class="text-capitalize">{{ $document->document_type->description }}</span> @endif
+                    {{-- ######## FIN REPRESENTACIÓN FINAL DE FACTURA TICKET ######## --}}
                 </td>
             </tr>
 @endif

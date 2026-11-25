@@ -6,9 +6,13 @@
     <tr><td colspan="2">@include('pdf.partials.invoice_receipt', ['row'=>$payment,'document'=>$document])</td></tr>
     @endforeach
     @endif
+    {{-- ######## INICIO IGTF EN TOTALES DEL TICKET ######## --}}
+    @if(!($omitTicketIgtf ?? false))
     @foreach($document->taxes->where('tax_kind', 'IGTF') as $tax)
     <tr><td>IGTF {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($tax, 'percentage'), 2) }}%</td><td style="text-align:right">{{ $document->currency_type->symbol }} {{ \App\Support\Exact\Decimal::format(\App\Support\Exact\Decimal::read($tax, 'amount'), 2) }}</td></tr>
     @endforeach
+    @endif
+    {{-- ######## FIN IGTF EN TOTALES DEL TICKET ######## --}}
     @foreach($document->payments->whereNull('receipt_parent_id')->whereNull('reversed_at') as $payment)
     @if($payment->currency_type_id !== $document->currency_type_id || \App\Support\Exact\Decimal::read($payment, 'tax_amount')->isPositive())
     @if($payment->original_amount !== null)

@@ -616,6 +616,70 @@ class CurrentPdfRenderingTest extends TestCase
         $ticket = (new Template())->pdf('default', 'invoice', $company, $document, 'ticket', ['is_preview'=>false]);
         self::assertStringContainsString('Recibido VES 100.00',$ticket);
         self::assertStringContainsString('Aplicado USD 9.88',$ticket);
+        // ######## INICIO TASA Y REPRESENTACIÓN FINAL EN TICKETS ########
+        $document->fiscal_emission_mode = 'free_form';
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['ticket', 'ticket_58'] as $format) {
+                $rendered = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                self::assertSame(0, substr_count($rendered, 'Tasa del cobro (VES/USD)'), $design.' '.$format);
+                self::assertSame(1, substr_count($rendered, 'Tasa del cobro VES/USD'), $design.' '.$format);
+                self::assertLessThan(strpos($rendered, 'Tasa del cobro VES/USD'), strpos($rendered, 'Cobro recibido (VES)'), $design.' '.$format);
+                self::assertSame(1, substr_count($rendered, 'Representacion impresa de la Factura'), $design.' '.$format);
+                $plainText = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($rendered), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+                self::assertStringEndsWith('Representacion impresa de la Factura', $plainText, $design.' '.$format);
+            }
+        }
+        $originalDocumentCurrency = $document->currency_type_id;
+        $originalReceiptCurrency = $receipt->currency_type_id;
+        $originalRate = $receipt->exchange_rate;
+        $document->currency_type_id = 'VES';
+        $receipt->currency_type_id = 'USD';
+        $receipt->exchange_rate = '922.56370000';
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['ticket', 'ticket_58'] as $format) {
+                $rendered = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                self::assertSame(0, substr_count($rendered, 'Tasa del cobro (VES/USD)'), $design.' '.$format);
+                self::assertSame(1, substr_count($rendered, 'Tasa del cobro VES/USD'), $design.' '.$format);
+                self::assertStringContainsString('922,56370000', $rendered, $design.' '.$format);
+                self::assertLessThan(strpos($rendered, 'Tasa del cobro VES/USD'), strpos($rendered, 'Cobro recibido (USD)'), $design.' '.$format);
+            }
+        }
+        $document->currency_type_id = $originalDocumentCurrency;
+        $receipt->currency_type_id = $originalReceiptCurrency;
+        $receipt->exchange_rate = $originalRate;
+        $secondReceipt = clone $receipt;
+        $secondReceipt->id = 2;
+        $secondReceipt->exchange_rate = '20.12345678';
+        $document->setRelation('payments', new Collection([$receipt, $secondReceipt]));
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['ticket', 'ticket_58'] as $format) {
+                $rendered = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                self::assertSame(2, substr_count($rendered, 'Tasa del cobro VES/USD'), $design.' '.$format);
+                self::assertSame(0, substr_count($rendered, 'Tasa del cobro (VES/USD)'), $design.' '.$format);
+                self::assertStringContainsString('20,12345678', $rendered, $design.' '.$format);
+            }
+        }
+        $secondReceipt->receipt_parent_id = 1;
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['ticket', 'ticket_58'] as $format) {
+                $rendered = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                self::assertSame(1, substr_count($rendered, 'Tasa del cobro VES/USD'), $design.' '.$format);
+                self::assertSame(1, substr_count($rendered, 'Tasa del cobro (VES/USD)'), $design.' '.$format);
+            }
+        }
+        $document->setRelation('payments', new Collection([$receipt]));
+        $preview = $this->documentFixture();
+        $preview->currency_type_id = 'USD';
+        $preview->items->first()->additional_information = [];
+        $preview->payments = new Collection([$receipt]);
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['ticket', 'ticket_58'] as $format) {
+                $rendered = (new Template())->pdf($design, 'invoice', $company, $preview, $format, ['is_preview'=>true]);
+                self::assertSame(1, substr_count($rendered, 'Tasa del cobro (VES/USD)'), $design.' '.$format.' sin resumen');
+                self::assertSame(0, substr_count($rendered, 'Tasa del cobro VES/USD'), $design.' '.$format.' sin resumen');
+            }
+        }
+        // ######## FIN TASA Y REPRESENTACIÓN FINAL EN TICKETS ########
         foreach (['ticket_58'] as $format) {
             $otherFormat = (new Template())->pdf('default', 'invoice', $company, $document, $format, ['is_preview'=>false]);
             self::assertStringContainsString('Medio conservado', $otherFormat);
@@ -996,13 +1060,13 @@ class CurrentPdfRenderingTest extends TestCase
         $company = new Fluent(['name'=>'Empresa de prueba', 'number'=>'J234534534', 'trade_name'=>'Prueba', 'logo'=>null]);
         $html = (new Template())->pdf('default', 'invoice', $company, $document, 'ticket', ['is_preview'=>false]);
         self::assertSame(1, substr_count($html, 'R.I.F. J-23453453-4'));
-        self::assertSame(1, substr_count($html, 'N° de documento:'));
+        self::assertSame(1, substr_count($html, 'N° :'));
         self::assertSame(1, substr_count($html, 'N° de control:'));
-        self::assertStringContainsString('N° de documento: <strong>FF01-00000012</strong>', $html);
+        self::assertStringContainsString('N° : <strong>FF01-00000012</strong>', $html);
         self::assertStringContainsString('N° de control: <strong>No asignado</strong>', $html);
         self::assertTrue(strpos($html, 'R.I.F. J-23453453-4') < strpos($html, 'FACTURA'));
-        self::assertTrue(strpos($html, 'FACTURA') < strpos($html, 'N° de documento:'));
-        self::assertTrue(strpos($html, 'N° de documento:') < strpos($html, 'N° de control:'));
+        self::assertTrue(strpos($html, 'FACTURA') < strpos($html, 'N° :'));
+        self::assertTrue(strpos($html, 'N° :') < strpos($html, 'N° de control:'));
         self::assertTrue(strpos($html, 'SUBTOTAL:') < strpos($html, 'TOTAL A PAGAR:'));
         self::assertTrue(strpos($html, 'TOTAL A PAGAR:') < strpos($html, 'Productos:'));
         self::assertMatchesRegularExpression('~<td colspan="2" class="text-left align-top">\s*<p class="desc pt-5">\s*<strong>CONDICIÓN DE PAGO:~', $html);
@@ -1012,7 +1076,7 @@ class CurrentPdfRenderingTest extends TestCase
             'ticketInvoice'=>true, 'ticketFiscal'=>['environment'=>'demo', 'number_full'=>'FF01-00000012', 'control_number'=>'00-00000009'],
         ])->render();
         self::assertSame(1, substr_count($withControl, 'DEMO — SIN VALIDEZ FISCAL'));
-        self::assertStringContainsString('N° de documento: <strong>FF01-00000012</strong>', $withControl);
+        self::assertStringContainsString('N° : <strong>FF01-00000012</strong>', $withControl);
         self::assertStringContainsString('N° de control: <strong>00-00000009</strong>', $withControl);
         $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>[72, 400], 'margin_left'=>2, 'margin_right'=>2, 'margin_top'=>2, 'margin_bottom'=>2]);
         $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/default/style.css')), HTMLParserMode::HEADER_CSS);
@@ -1031,13 +1095,13 @@ class CurrentPdfRenderingTest extends TestCase
         $template = new Template();
         $html = $template->pdf($design, 'invoice', $company, $document, 'ticket_58', ['is_preview'=>false]);
         self::assertSame(1, substr_count($html, 'R.I.F. J-23453453-4'));
-        self::assertSame(1, substr_count($html, 'N° de documento:'));
+        self::assertSame(1, substr_count($html, 'N° :'));
         self::assertSame(1, substr_count($html, 'N° de control:'));
-        self::assertStringContainsString('N° de documento: <strong>FF01-00000012</strong>', $html);
+        self::assertStringContainsString('N° : <strong>FF01-00000012</strong>', $html);
         self::assertStringContainsString('N° de control: <strong>No asignado</strong>', $html);
         self::assertLessThan(strpos($html, 'FACTURA'), strpos($html, 'R.I.F. J-23453453-4'));
-        self::assertLessThan(strpos($html, 'N° de documento:'), strpos($html, 'FACTURA'));
-        self::assertLessThan(strpos($html, 'N° de control:'), strpos($html, 'N° de documento:'));
+        self::assertLessThan(strpos($html, 'N° :'), strpos($html, 'FACTURA'));
+        self::assertLessThan(strpos($html, 'N° de control:'), strpos($html, 'N° :'));
         self::assertMatchesRegularExpression('/IVA(?:\s|\(|:)/i', $html);
         self::assertLessThan(stripos($html, 'subtotal'), stripos($html, 'IVA'));
         self::assertLessThan(stripos($html, 'TOTAL A PAGAR:'), stripos($html, 'subtotal'));
@@ -1050,7 +1114,7 @@ class CurrentPdfRenderingTest extends TestCase
                 'ticketInvoice'=>true, 'ticketFiscal'=>['environment'=>$environment, 'number_full'=>'FF01-00000012', 'control_number'=>'00-00000009'],
             ])->render();
             self::assertSame($environment === 'demo' ? 1 : 0, substr_count($persisted, 'DEMO — SIN VALIDEZ FISCAL'));
-            self::assertStringContainsString('N° de documento: <strong>FF01-00000012</strong>', $persisted);
+            self::assertStringContainsString('N° : <strong>FF01-00000012</strong>', $persisted);
             self::assertStringContainsString('N° de control: <strong>00-00000009</strong>', $persisted);
         }
         $document->payment_condition_id = '02';
@@ -1077,6 +1141,115 @@ class CurrentPdfRenderingTest extends TestCase
         return array_map(fn ($design) => [$design], ['default', 'modern-2027', 'marca_de_agua', 'Plantilla_personalizable']);
     }
 
+    // ######## INICIO DISEÑO DE FACTURAS EN TICKET ########
+    /** @dataProvider invoice58Designs */
+    public function test_invoice_ticket_design_keeps_demo_identity_and_two_column_items(string $design): void
+    {
+        $document = $this->documentFixture();
+        $document->number_full = 'FF01-00000012';
+        $document->items->first()->additional_information = [];
+        $document->payment_condition = new Fluent(['name'=>'Contado']);
+        $company = new Fluent(['name'=>'Empresa de prueba', 'number'=>'J234534534', 'trade_name'=>'Prueba', 'logo'=>null]);
+
+        foreach (['ticket', 'ticket_58'] as $format) {
+            foreach (['demo', 'production'] as $environment) {
+                $html = view('pdf.'.$design.'.invoice_'.$format, [
+                    'company'=>$company, 'document'=>$document, 'configuration'=>['is_preview'=>false],
+                    'ticketInvoice'=>true, 'ticketFiscal'=>['environment'=>$environment, 'number_full'=>'FF01-00000012', 'control_number'=>'00-00000009'],
+                ])->render();
+                self::assertSame($environment === 'demo' ? 1 : 0, substr_count($html, 'DEMO — SIN VALIDEZ FISCAL'), $design.' '.$format);
+                self::assertSame(1, substr_count($html, 'N° :'), $design.' '.$format);
+                self::assertSame(1, substr_count($html, 'N° de control:'), $design.' '.$format);
+                // ######## INICIO DATOS DEL ENCABEZADO DE TICKET ########
+                self::assertStringContainsString('N° : <strong>FF01-00000012</strong>', $html, $design.' '.$format);
+                self::assertStringContainsString('Teléfono:', $html, $design.' '.$format);
+                self::assertStringContainsString('0212-5550000', $html, $design.' '.$format);
+                self::assertStringNotContainsString('facturacion@example.test', $html, $design.' '.$format);
+                self::assertStringNotContainsString('Central telefónica:', $html, $design.' '.$format);
+                self::assertStringNotContainsString('CENTRAL TELEFÓNICA:', $html, $design.' '.$format);
+                // ######## FIN DATOS DEL ENCABEZADO DE TICKET ########
+                self::assertStringContainsString('DESCRIPCIÓN', $html, $design.' '.$format);
+                self::assertStringContainsString('IMPORTE', $html, $design.' '.$format);
+                self::assertStringContainsString('Producto gravado de prueba', $html, $design.' '.$format);
+                self::assertSame(1, preg_match('/(?:F\.?\s*Emisión|Fecha(?: de Emisión)?):/iu', $html, $dateMatch, PREG_OFFSET_CAPTURE), $design.' '.$format);
+                self::assertLessThan($dateMatch[0][1], strpos($html, 'Cliente:'), $design.' '.$format);
+                self::assertSame(1, preg_match_all('/condición de pago:/iu', $html), $design.' '.$format);
+                self::assertLessThan(mb_stripos($html, 'condición de pago:'), mb_stripos($html, 'IMPORTE'), $design.' '.$format);
+                $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>[$format === 'ticket' ? 72 : 56, 400], 'margin_left'=>2,'margin_right'=>2,'margin_top'=>2,'margin_bottom'=>2]);
+                $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/'.$design.'/style.css')), HTMLParserMode::HEADER_CSS);
+                $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
+                self::assertSame(1, $pdf->page, $design.' '.$format);
+                self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+            }
+        }
+    }
+    // ######## FIN DISEÑO DE FACTURAS EN TICKET ########
+
+    // ######## INICIO ESTILO VISUAL DE FACTURA EN TICKET ########
+    /** @dataProvider invoice58Designs */
+    public function test_invoice_ticket_visual_style_is_applied_only_to_invoice_tickets(string $design): void
+    {
+        $document = $this->documentFixture();
+        $document->items->first()->additional_information = [];
+        $company = new Fluent(['name'=>'Empresa', 'number'=>'J234534534', 'trade_name'=>'Prueba', 'logo'=>null]);
+        $template = new Template();
+        foreach (['ticket'=>80, 'ticket_58'=>58] as $format=>$width) {
+            $css = $template->pdfStylesheet($design, 'invoice', $document, $format);
+            $html = $template->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+            self::assertStringContainsString('INICIO DISEÑO VISUAL DE FACTURA EN TICKET', $css, $design.' '.$format);
+            self::assertStringContainsString('invoice-header-'.$width, $html, $design.' '.$format);
+            self::assertStringContainsString('invoice-customer-'.$width, $html, $design.' '.$format);
+            $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>[$width === 80 ? 72 : 56, 400], 'margin_left'=>2,'margin_right'=>2,'margin_top'=>2,'margin_bottom'=>2]);
+            $pdf->WriteHTML($css, HTMLParserMode::HEADER_CSS);
+            $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
+            self::assertSame(1, $pdf->page, $design.' '.$format);
+        }
+        self::assertStringNotContainsString('INICIO DISEÑO VISUAL DE FACTURA EN TICKET', $template->pdfStylesheet($design, 'invoice', $document, 'a4'));
+        self::assertStringNotContainsString('INICIO DISEÑO VISUAL DE FACTURA EN TICKET', $template->pdfStylesheet($design, 'sale_note', $document, 'ticket'));
+    }
+    // ######## FIN ESTILO VISUAL DE FACTURA EN TICKET ########
+
+    // ######## INICIO ENCABEZADO DE OTROS DOCUMENTOS ########
+    /** @dataProvider invoice58Designs */
+    public function test_other_ticket_documents_keep_existing_contact_header(string $design): void
+    {
+        $document = $this->documentFixture();
+        $document->document_type_id = '03';
+        $document->items->first()->additional_information = [];
+        $company = new Fluent(['name'=>'Empresa', 'number'=>'J234534534', 'trade_name'=>'Prueba', 'logo'=>null]);
+        foreach (['ticket', 'ticket_58'] as $format) {
+            $html = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+            self::assertStringContainsString('facturacion@example.test', $html, $design.' '.$format);
+            self::assertStringContainsString('0212-5550000', $html, $design.' '.$format);
+            self::assertStringNotContainsString('Teléfono:', $html, $design.' '.$format);
+        }
+    }
+    // ######## FIN ENCABEZADO DE OTROS DOCUMENTOS ########
+
+    // ######## INICIO COLUMNAS DE FACTURA PERSONALIZABLE ########
+    public function test_personalized_ticket_keeps_visible_code_when_description_is_hidden(): void
+    {
+        Schema::connection('tenant')->table('template_columns_config', function ($table): void {
+            $table->text('columns_config')->nullable();
+        });
+        DB::connection('tenant')->table('template_columns_config')->insert([
+            'establishment_id'=>1, 'template_name'=>'Plantilla_personalizable_ticket',
+            'columns_config'=>json_encode(['codigo'=>true, 'descripcion'=>false]),
+        ]);
+        $document = $this->documentFixture();
+        $document->items->first()->additional_information = [];
+        $document->items->first()->name_product_pdf = null;
+        $document->items->first()->item->internal_id = 'P001';
+        $document->items->first()->item->description = 'P001 Café de prueba';
+        $company = new Fluent(['name'=>'Empresa', 'number'=>'J234534534', 'trade_name'=>'Prueba', 'logo'=>null]);
+        foreach (['ticket', 'ticket_58'] as $format) {
+            $html = (new Template())->pdf('Plantilla_personalizable', 'invoice', $company, $document, $format, ['is_preview'=>false]);
+            self::assertStringContainsString('P001', $html, $format);
+            self::assertStringNotContainsString('Café de prueba', $html, $format);
+        }
+    }
+    // ######## FIN COLUMNAS DE FACTURA PERSONALIZABLE ########
+
     public function test_invoice_58mm_persisted_identity_uses_document_snapshot(): void
     {
         \Tests\Support\InvoiceA4Ledger::create();
@@ -1101,14 +1274,59 @@ class CurrentPdfRenderingTest extends TestCase
         $document->exists = true;
         $company = new Fluent(['name'=>'Emisor actual', 'number'=>'J999999999', 'logo'=>null]);
         foreach (self::invoice58Designs() as [$design]) {
-            $html = (new Template())->pdf($design, 'invoice', $company, $document, 'ticket_58', ['is_preview'=>false]);
-            self::assertSame(1, substr_count($html, 'DEMO — SIN VALIDEZ FISCAL'), $design);
-            self::assertSame(1, substr_count($html, 'N° de documento:'), $design);
-            self::assertSame(1, substr_count($html, 'N° de control:'), $design);
-            self::assertStringContainsString('R.I.F. J-23453453-4', $html, $design);
-            self::assertStringContainsString('N° de documento: <strong>FF01-00000012</strong>', $html, $design);
-            self::assertStringContainsString('N° de control: <strong>00-00000009</strong>', $html, $design);
+            foreach (['ticket', 'ticket_58'] as $format) {
+                $html = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                self::assertSame(1, substr_count($html, 'DEMO — SIN VALIDEZ FISCAL'), $design);
+                self::assertSame(1, substr_count($html, 'N° :'), $design);
+                self::assertSame(1, substr_count($html, 'N° de control:'), $design);
+                self::assertStringContainsString('R.I.F. J-23453453-4', $html, $design);
+                self::assertStringContainsString('N° : <strong>FF01-00000012</strong>', $html, $design);
+                self::assertStringContainsString('N° de control: <strong>00-00000009</strong>', $html, $design);
+            }
         }
+        // ######## INICIO IGTF ÚNICO EN FACTURA PERSISTIDA ########
+        $document->setRelation('fiscal_data', new Fluent(['transaction_type_id'=>'99', 'third_party'=>[
+            'rif'=>'V234567891', 'name'=>'TITULAR CONSERVADO', 'address'=>'DOMICILIO CONSERVADO',
+        ]]));
+        $document->setRelation('taxes', new \Illuminate\Database\Eloquent\Collection([
+            new \App\Models\Tenant\DocumentTax(['tax_kind'=>'IGTF', 'percentage'=>'3', 'amount'=>'7.12']),
+        ]));
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['ticket', 'ticket_58'] as $format) {
+                $html = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                self::assertSame(1, substr_count($html, 'data-ticket-inline-igtf'), $design.' '.$format);
+                self::assertSame(1, substr_count($html, '7.12'), $design.' '.$format);
+                self::assertSame(1, substr_count($html, 'IGTF 3.00%'), $design.' '.$format);
+            }
+        }
+        $document->setRelation('fiscal_data', null);
+        $document->setRelation('taxes', new \Illuminate\Database\Eloquent\Collection([
+            new \App\Models\Tenant\DocumentTax(['tax_kind'=>'IGTF', 'percentage'=>'3', 'amount'=>'7.12']),
+            new \App\Models\Tenant\DocumentTax(['tax_kind'=>'IGTF', 'percentage'=>'2', 'amount'=>'1.25']),
+        ]));
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['ticket', 'ticket_58'] as $format) {
+                $html = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                self::assertSame(2, substr_count($html, 'data-ticket-inline-igtf'), $design.' '.$format);
+                self::assertSame(1, substr_count($html, 'IGTF 3.00%'), $design.' '.$format);
+                self::assertSame(1, substr_count($html, 'IGTF 2.00%'), $design.' '.$format);
+            }
+        }
+        $document->setRelation('fiscal_data', null);
+        $document->setRelation('taxes', new Collection());
+        // ######## FIN IGTF ÚNICO EN FACTURA PERSISTIDA ########
+        // ######## INICIO DEMO EN VISTA PREVIA DE FACTURA ########
+        $document->exists = false;
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['ticket', 'ticket_58'] as $format) {
+                foreach (['demo', 'production'] as $environment) {
+                    $company->fiscal_environment = $environment;
+                    $html = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>true]);
+                    self::assertSame($environment === 'demo' ? 1 : 0, substr_count($html, 'DEMO — SIN VALIDEZ FISCAL'), $design.' '.$format);
+                }
+            }
+        }
+        // ######## FIN DEMO EN VISTA PREVIA DE FACTURA ########
     }
 
     public function test_invoice_58mm_engine_preserves_width_and_content_for_all_designs(): void
@@ -1161,6 +1379,10 @@ class CurrentPdfRenderingTest extends TestCase
                     self::assertStringContainsString('TOTAL A PAGAR:', $text, $design);
                     self::assertStringContainsString('CONDICIÓN DE PAGO:', mb_strtoupper($text), $design);
                     self::assertStringContainsString('CIENTO DIECISÉIS', $text, $design);
+                    // ######## INICIO REPRESENTACIÓN FINAL EN PDF 58 MM ########
+                    $plainText = trim(preg_replace('/\s+/u', ' ', $text));
+                    self::assertStringEndsWith('Representacion impresa de la Factura', $plainText, $design.' '.$rows.' filas');
+                    // ######## FIN REPRESENTACIÓN FINAL EN PDF 58 MM ########
                     if ($design !== 'modern-2027') {
                         self::assertLessThan(mb_stripos($text, 'VENDEDOR:'), mb_stripos($text, 'CONDICIÓN DE PAGO:'), $design);
                     }
@@ -1170,6 +1392,21 @@ class CurrentPdfRenderingTest extends TestCase
                     }
                 } finally { unlink($path); }
             }
+            // ######## INICIO REPRESENTACIÓN FINAL EN PDF 80 MM ########
+            $document->setRelation('items', new Collection([$fixture->items->first()]));
+            $bytes = $engine->createPdf($document, 'invoice', 'ticket', 'string');
+            $reader = new \setasign\Fpdi\Fpdi();
+            self::assertSame(1, $reader->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($bytes)), $design.' 80 mm');
+            self::assertEqualsWithDelta(70, $reader->getTemplateSize($reader->importPage(1))['width'], .01, $design.' 80 mm');
+            $path = tempnam(sys_get_temp_dir(), 'sab-80-');
+            file_put_contents($path, $bytes);
+            try {
+                $process = proc_open(['pdftotext', '-layout', $path, '-'], [0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']], $pipes);
+                fclose($pipes[0]); $text = stream_get_contents($pipes[1]); $error = stream_get_contents($pipes[2]); fclose($pipes[1]); fclose($pipes[2]);
+                self::assertSame(0, proc_close($process), $error);
+                self::assertStringEndsWith('Representacion impresa de la Factura', trim(preg_replace('/\s+/u', ' ', $text)), $design.' 80 mm');
+            } finally { unlink($path); }
+            // ######## FIN REPRESENTACIÓN FINAL EN PDF 80 MM ########
             $preview = $engine->previewPdf($document, 'invoice', 'ticket_58');
             $reader = new \setasign\Fpdi\Fpdi();
             $reader->setSourceFile(\setasign\Fpdi\PdfParser\StreamReader::createByString($preview->getContent()));
@@ -1375,6 +1612,35 @@ class CurrentPdfRenderingTest extends TestCase
         }
     }
 
+    // ######## INICIO REPRESENTACIÓN FINAL DE FACTURA EN TICKET ########
+    /** @dataProvider invoice58Designs */
+    public function test_invoice_ticket_representation_is_last_only_for_local_mode(string $design): void
+    {
+        $document = $this->documentFixture();
+        $document->items->first()->additional_information = [];
+        $document->number_full = 'FF01-00000012';
+        $company = new Fluent(['name'=>'Empresa', 'number'=>'J234534534', 'trade_name'=>'Prueba', 'logo'=>null]);
+        foreach (['ticket', 'ticket_58'] as $format) {
+            foreach ([true, false] as $searchEnabled) {
+                config(['tenant.public_document_search_enabled'=>$searchEnabled]);
+                $document->fiscal_emission_mode = 'free_form';
+                $html = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                self::assertSame(1, substr_count($html, 'Representacion impresa de la Factura'), $design.' '.$format);
+                $text = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+                self::assertStringEndsWith('Representacion impresa de la Factura', $text, $design.' '.$format);
+                if ($design === 'modern-2027') {
+                    self::assertLessThan(strpos($html, 'data-ticket-representation'), strpos($html, 'm27-thanks'), $design.' '.$format);
+                    self::assertLessThan(strpos($html, 'data-ticket-representation'), strpos($html, '<barcode'), $design.' '.$format);
+                }
+                $document->fiscal_emission_mode = 'digital';
+                $html = (new Template())->pdf($design, 'invoice', $company, $document, $format, ['is_preview'=>false]);
+                self::assertStringNotContainsString('Representacion impresa de la Factura', $html, $design.' '.$format);
+                self::assertStringNotContainsString('data-ticket-representation', $html, $design.' '.$format);
+            }
+        }
+    }
+    // ######## FIN REPRESENTACIÓN FINAL DE FACTURA EN TICKET ########
+
     public function ticketWidths(): array
     {
         return [[false, false, 72], [true, false, 76], [false, true, 70]];
@@ -1399,6 +1665,19 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertStringContainsString('7.12</td>',$html);
         self::assertStringContainsString('244.57</td>',$html);
         self::assertStringNotContainsString('260.65</td>',$html);
+        // ######## INICIO TOTALES DE FACTURAS EN TICKET ########
+        foreach (self::invoice58Designs() as [$design]) {
+            foreach (['ticket', 'ticket_58'] as $format) {
+                $html = (new Template())->pdf($design, 'invoice', $company, $document, $format);
+                self::assertStringContainsString('252.45</td>', $html, $design.' '.$format);
+                self::assertStringContainsString('30.00</td>', $html, $design.' '.$format);
+                self::assertStringContainsString('7.12</td>', $html, $design.' '.$format);
+                self::assertStringContainsString('244.57</td>', $html, $design.' '.$format);
+                self::assertSame(1, substr_count($html, 'data-ticket-inline-igtf'), $design.' '.$format);
+                self::assertLessThan(strpos($html, 'TOTAL A PAGAR'), strpos($html, 'data-ticket-inline-igtf'), $design.' '.$format);
+            }
+        }
+        // ######## FIN TOTALES DE FACTURAS EN TICKET ########
     }
 
     public function test_invoice_layouts_render_large_discounts_and_exact_package_totals(): void
