@@ -346,7 +346,8 @@ test('document payment submission keeps wrapped currency errors on the payment r
     const row={payment_method_type_id:'10',payment:'10',original_amount:'1',currency_type_id:'USD',exchange_rate:'10',errors:{}}
     const response={status:422,data:{message:'Error de validación',errors:{currency_type_id:['La moneda del método cambió']}}}
     const ctx={records:[row],documentId:4,showDialog:true,document:{currency_type_id:'VES',total_difference:'100'},resource:'document_payments',
-        ensureFiscalPaymentsReady:async()=>true,$http:{post:()=>Promise.reject({response})},$message:{error:()=>{}},getRequestErrorMessage:()=> 'error'}
+        validateDraft:()=>true,draftQuote:{tendered:'1',rate:'10',status:'not_applicable',tax:'0.00'},paymentContext:{rate:'3'},
+        retryPaymentContext:async()=>{},$http:{post:()=>Promise.reject({response})},$message:{error:()=>{}},getRequestErrorMessage:()=> 'error'}
     await view.default.methods.clickSubmit.call(ctx,0)
     assert.deepEqual(Array.from(row.errors.currency_type_id),['La moneda del método cambió'])
 })
@@ -357,20 +358,6 @@ test('same-currency settlement keeps the amount entered and displays the applied
     component.methods.proposeReceived.call(ctx)
     assert.equal(payment.original_amount,'10.006')
     assert.equal(payment.payment,'10.01')
-})
-
-test('same-currency submission sends the received amount before rounding',async()=>{
-    const parsed=compiler.parseComponent(fs.readFileSync('resources/js/views/tenant/documents/partials/payments.vue','utf8'))
-    const view={}
-    vm.runInNewContext(babel.transformSync(parsed.script.content,{configFile:false,babelrc:false,plugins:['@babel/plugin-transform-modules-commonjs']}).code,
-        {exports:view,require:()=>mathExports})
-    const row={payment_method_type_id:'14',payment:'10.01',original_amount:'10.006',currency_type_id:'VES',exchange_rate:'1',errors:{}}
-    let payload
-    const ctx={records:[row],documentId:4,showDialog:true,document:{currency_type_id:'VES',total_difference:'100'},resource:'document_payments',
-        ensureFiscalPaymentsReady:async()=>true,$http:{post:(_url,body)=>{payload=body;return Promise.resolve({data:{success:false}})}},$message:{error:()=>{}}}
-    await view.default.methods.clickSubmit.call(ctx,0)
-    assert.equal(payload.original_amount,'10.006')
-    assert.equal(payload.payment,'10.01')
 })
 
 test('remounting a fiscal draft keeps its manual rate and recalculates applied settlement',()=>{

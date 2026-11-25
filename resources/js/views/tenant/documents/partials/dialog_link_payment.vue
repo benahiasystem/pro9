@@ -406,7 +406,7 @@ import {exactAmount} from "@helpers/exchange-rate-math";
                             this.$message.success(data.message)
                             this.form.payment_id = data.data.document_payment_id
                             this.getData()
-                            this.$eventHub.$emit('reloadDataPayments')
+                            this.$eventHub.$emit('reloadDataPayments', this.documentPayment.document_id, data.data.document_payment_id)
 
                         } else {
                             this.$message.error(data.message)

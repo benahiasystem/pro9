@@ -270,9 +270,7 @@ final class FiscalDocumentPersistence
             if (!Str::isUuid($key)) FiscalAmounts::error('operation_key', 'Use un UUID válido.');
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             $existing = DocumentPayment::where('operation_key', $key)->lockForUpdate()->first();
-            if (!$initial && !$existing && array_key_exists('tendered_amount', $input)) {
-                FiscalAmounts::error('tendered_amount', 'El total entregado se utiliza al crear el comprobante.');
-            }
+            $laterTendered = !$initial && !$existing && array_key_exists('tendered_amount', $input);
             $receiptOrigin = !$existing && $initial ? \App\Services\Payments\ConvertedReceipt::resolve($document, $input) : null;
             if ($receiptOrigin) {
                 $input['reference'] = $receiptOrigin['reference'];
@@ -281,7 +279,8 @@ final class FiscalDocumentPersistence
             }
             $lockedMethod = null;
             if (!$existing && !$receiptOrigin) {
-                $lockedMethod = \App\Services\Payments\MethodCurrency::validateNew($input['payment_method_type_id'] ?? null, (string)$document->currency_type_id, $input, $document->getConnection());
+                $lockedMethod = \App\Services\Payments\MethodCurrency::validateNew($input['payment_method_type_id'] ?? null,
+                    (string)$document->currency_type_id, $input, $document->getConnection(), acceptTendered: $laterTendered);
                 // ######## INICIO INTERMEDIACION AUTOMATICA DEL COBRO ########
                 $input = \App\Services\Payments\Classification::withFinancialIntermediation($input, $lockedMethod);
                 // ######## FIN INTERMEDIACION AUTOMATICA DEL COBRO ########
@@ -310,6 +309,12 @@ final class FiscalDocumentPersistence
                 $decision = SpecialTaxpayerPolicy::payment($issuer, $input, $input['currency_type_id'] ?? $document->currency_type_id, $date);
             }
             $input['igtf_status'] = $input['igtf_status'] ?? ($decision['igtf_status'] ?? 'not_applicable');
+            if ($laterTendered) {
+                if (isset($input['quoted_igtf_rate']) && !D::of(D::input($input['quoted_igtf_rate'], 'quoted_igtf_rate'))->isEqualTo(D::of($company->igtf_rate ?? 0))) {
+                    FiscalAmounts::error('quoted_igtf_rate', 'La tasa de IGTF cambió. Revise el cobro y vuelva a confirmarlo.');
+                }
+                $input = \App\Services\Payments\TenderedReceipt::prepare($input, (bool)$company->igtf_enabled, $company->igtf_rate);
+            }
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             // ######## INICIO RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
@@ -324,6 +329,29 @@ final class FiscalDocumentPersistence
             // ######## FIN NETO CERO TRAS VUELTO ########
             if ($initial && !$existing && !$receiptOrigin && $initialAmounts !== null) {
                 $values = \App\Services\Payments\TenderedReceipt::withAllocation($values, $initialAmounts['inclusive_input'] ?? null);
+            }
+            if ($laterTendered) {
+                $balance = $document->exactBalance(true);
+                if (isset($input['quoted_balance']) && !$balance->isEqualTo(D::of($input['quoted_balance']))) {
+                    FiscalAmounts::error('quoted_balance', 'El saldo cambió. Revise el cobro y vuelva a confirmarlo.');
+                }
+                $values = ReceiptChange::settleClosingBalance($values, $balance);
+                $allocation = $input['_tendered_input'];
+                $applied = D::readRequired($values, 'payment');
+                if (!$applied->isPositive()) {
+                    FiscalAmounts::error('tendered_amount', 'El total entregado no cubre un importe aplicable al saldo.');
+                }
+                // The initial-invoice split can leave actual change when it caps the tax on a full payment.
+                $taxComparison = D::readRequired($values, 'tax_amount')->compareTo(D::of($allocation['tax']));
+                if ($applied->isGreaterThan($balance) || ($applied->isEqualTo($balance) && $taxComparison < 0)) {
+                    FiscalAmounts::error('tendered_amount', 'El total entregado supera lo necesario para liquidar el saldo sin vuelto.');
+                }
+                if ($applied->isEqualTo($balance) && $taxComparison === 0) {
+                    $allocation['tax_capped'] = true;
+                }
+                $values = \App\Services\Payments\TenderedReceipt::withAllocation($values, $allocation);
+                $values['calculation_snapshot']['values']['requested_total_tendered'] = $allocation['requested'];
+                $values['calculation_snapshot']['values']['total_tendered'] = $allocation['total'];
             }
             // ######## FIN RETIRADA DE EXCEPCION ADMINISTRATIVA IGTF ########
             if (isset($input['quoted_tax_amount']) && !D::of(D::input($input['quoted_tax_amount'], 'quoted_tax_amount'))->isEqualTo(D::of($values['tax_amount']))) {
@@ -374,7 +402,7 @@ final class FiscalDocumentPersistence
             $method = $lockedMethod ?? PaymentMethodType::findOrFail($input['payment_method_type_id']);
             if ($document->document_type_id === '07') FiscalAmounts::error('document','Las NC no reciben cobros; utilice Registrar devolución.');
             // ######## INICIO MONEDA DEL MEDIO DE COBRO ########
-            $balance=$document->exactBalance(true);
+            $balance = $balance ?? $document->exactBalance(true);
             // ######## FIN MONEDA DEL MEDIO DE COBRO ########
             $values=ReceiptChange::settleClosingBalance($values,$balance);
             if (!$initial && D::readRequired($values, 'payment')->isGreaterThan($balance)) FiscalAmounts::error('payment', 'El pago supera el saldo disponible.');

@@ -7,12 +7,12 @@ namespace App\Services\Payments;
 final class MethodCurrency
 {
     /** Resolve an active method before tax decisions or currency conversion. */
-    public static function validateNew($id, string $documentCurrency, array $input, $connection): \App\Models\Tenant\PaymentMethodType
+    public static function validateNew($id, string $documentCurrency, array $input, $connection, bool $acceptTendered = false): \App\Models\Tenant\PaymentMethodType
     {
         $method = \App\Models\Tenant\PaymentMethodType::query()->lockForUpdate()->find($id);
         if (!$method || !$method->is_active) Classification::error('payment_method_type_id', 'La forma de pago seleccionada no está disponible.');
         self::assertActiveCurrencies($connection, [$method->currency_type_id]);
-        self::resolve((string)$method->currency_type_id, $documentCurrency, $input);
+        self::resolve((string)$method->currency_type_id, $documentCurrency, $input, $acceptTendered);
         return $method;
     }
 
@@ -29,14 +29,15 @@ final class MethodCurrency
         }
     }
 
-    public static function resolve(string $methodCurrency, string $documentCurrency, array $input): string
+    public static function resolve(string $methodCurrency, string $documentCurrency, array $input, bool $acceptTendered = false): string
     {
         $received = $input['currency_type_id'] ?? $documentCurrency;
         if (!is_string($received) || !in_array($received, ['VES', 'USD'], true)) {
             Classification::error('currency_type_id', 'Seleccione una moneda recibida válida.');
         }
         self::assertMatches($methodCurrency, $received);
-        if ($received !== $documentCurrency && (!isset($input['original_amount']) || !isset($input['exchange_rate']))) {
+        $hasReceivedAmount = isset($input['original_amount']) || ($acceptTendered && isset($input['tendered_amount']));
+        if ($received !== $documentCurrency && (!$hasReceivedAmount || !isset($input['exchange_rate']))) {
             Classification::error('original_amount', 'Indique el importe recibido y la tasa para un cobro en otra moneda.');
         }
         return $received;

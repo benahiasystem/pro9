@@ -10,6 +10,67 @@ use Modules\Expense\Models\ExpensePayment;
 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
 trait PaymentClassificationPersistenceCases
 {
+    public function test_later_tendered_receipt_recalculates_igtf_and_replays_without_another_charge(): void
+    {
+        [$db, , $input] = $this->bootHkaFixture();
+        $db->table('configurations')->update(['auto_send_hka' => false]);
+        $company = \App\Models\Tenant\Company::firstOrFail();
+        $company->forceFill(['fiscal_emission_mode' => 'free_form', 'igtf_enabled' => true, 'igtf_rate' => 3])->save();
+        \App\Services\Fiscal\FiscalProfileService::store($company, SpeProfiles::profile());
+        $input = array_replace($input, ['payment_condition_id' => '02', 'payments' => [], 'exchange_rate_sale' => '10']);
+        $document = (new \App\CoreFacturalo\Facturalo())->forWebDocuments()->save($input)->getDocument()->fresh();
+        $balance = \App\Support\Exact\Decimal::fraction($document->exactBalance());
+        $row = [
+            'date_of_payment' => '2026-09-10',
+            'payment_method_type_id' => '10',
+            'payment_destination_id' => 'cash',
+            'operation_key' => (string) \Illuminate\Support\Str::uuid(),
+            'currency_type_id' => 'USD',
+            'exchange_rate' => '10',
+            'tendered_amount' => '10.299',
+            'igtf_status' => 'subject',
+            'quoted_tax_amount' => '0.30',
+            'quoted_igtf_rate' => '3',
+            'quoted_balance' => $balance,
+        ];
+        $request = new \App\Http\Requests\Tenant\DocumentPaymentRequest($row + ['document_id' => $document->id]);
+        self::assertSame('10.299', validator($request->all(), $request->rules())->validate()['tendered_amount']);
+        $save = fn (array $data) => \App\Services\Fiscal\FiscalDocumentPersistence::payment($document, $data);
+        $counts = fn () => [$db->table('document_payments')->count(), $db->table('documents')->count(),
+            $db->table('document_taxes')->count(), $db->table('global_payments')->count()];
+        $before = $counts();
+        foreach ([
+            'quoted_balance' => ['quoted_balance' => ['n' => '1', 'd' => '1']],
+            'quoted_igtf_rate' => ['quoted_igtf_rate' => '4'],
+            'quoted_tax_amount' => ['quoted_tax_amount' => '1'],
+            'tendered_amount' => ['tendered_amount' => '50'],
+        ] as $field => $changes) {
+            try {
+                $save(array_replace($row, $changes));
+                self::fail("Se aceptó un cobro con $field inválido.");
+            } catch (\Illuminate\Validation\ValidationException $error) {
+                self::assertArrayHasKey($field, $error->errors(), json_encode($error->errors()));
+            }
+            self::assertSame($before, $counts());
+        }
+        $receipt = $save($row);
+        self::assertTrue($receipt->exactValue('original_amount')->isEqualTo('10'));
+        self::assertTrue($receipt->exactValue('payment')->isEqualTo('100'));
+        self::assertTrue($receipt->exactValue('tax_amount')->isEqualTo('0.30'));
+        self::assertTrue($document->fresh()->exactBalance()->isEqualTo('132'));
+        self::assertSame($before[1] + 1, $counts()[1], 'Se registra una sola nota de débito.');
+
+        $after = $counts();
+        self::assertSame($receipt->id, $save($row)->id, 'Un reintento usa el snapshot aunque el saldo haya cambiado.');
+        try {
+            $save(array_replace($row, ['tendered_amount' => '10.30']));
+            self::fail('El reintento cambió el importe original.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            self::assertArrayHasKey('operation_key', $error->errors());
+        }
+        self::assertSame($after, $counts());
+    }
+
     // ######## INICIO ACEPTACION DE CALCULOS LOCALES ########
     public function test_local_calculation_mismatch_rolls_back_invoice_and_reconfirmation_saves(): void
     {

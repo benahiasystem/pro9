@@ -24,7 +24,7 @@ function runtime() {
             if (name.includes('exchange-rate-math')) return load('resources/js/helpers/exchange-rate-math.js');
             if (name.includes('payment-classification')) return load('resources/js/helpers/payment-classification.js');
             if (name.includes('tendered-receipt')) return load('resources/js/helpers/tendered-receipt.js');
-            if (name.startsWith('.') && /igtf-settings|IgtfSettingsStatus/.test(name)) {
+            if (name.startsWith('.') && /igtf-settings|IgtfSettingsStatus|document-payment-draft|local-payment-quote|calculation-context/.test(name)) {
                 return load(path.resolve(path.dirname(file), /\.(vue|js)$/.test(name) ? name : name + '.js'));
             }
             return {};
@@ -58,7 +58,7 @@ test('document payment without a method prompts for selection without sending a 
     const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/payments.vue').default;
     const row={payment_method_type_id:null,payment:'250',errors:{},loading:false};
     const ctx={records:[row],documentId:31,$set:(o,k,v)=>o[k]=v,
-        ensureFiscalPaymentsReady:()=>assert.fail('must not evaluate without a method')};
+        validateDraft:component.methods.validateDraft, $http:{post:()=>assert.fail('must not submit without a method')}};
     await component.methods.clickSubmit.call(ctx,0);
     assert.equal(row.errors.payment_method_type_id[0],'Seleccione un método de pago.');
     assert.equal(row.loading,false);
@@ -373,25 +373,110 @@ test('a preflight completing after closing or replacing the checkout cannot subm
     }
 });
 
-test('later collections submit the entered fiscal context and preserve their draft on preflight failure', async () => {
+test('editing a later collection updates the inclusive quote locally and submits the raw total once', async () => {
     const {load}=runtime(), component=load('resources/js/views/tenant/documents/partials/payments.vue').default;
-    const row={payment_method_type_id:'10',payment:'100',currency_type_id:'USD',original_amount:'10',exchange_rate:'10.00000000',exchange_rate_source:'manual',
-        operation_key:'00000000-0000-4000-8000-000000000001',igtf_status:'subject',financial_intermediation:'none'};
-    let sent,allow=false;
-    const ctx={records:[row],document:{amount_payable:'100'},documentId:44,resource:'document_payments',
-        ensureFiscalPaymentsReady:async()=>allow,$http:{post:async(url,form)=>{sent={url,form};return {data:{success:false,message:'Conservar borrador'}}}},
-        $message:{error(){}},getRequestErrorMessage:()=>''};
-    await component.methods.clickSubmit.call(ctx,0); assert.equal(sent,undefined);assert.equal(ctx.records[0],row);
-    allow=true; await component.methods.clickSubmit.call(ctx,0);
-    assert.equal(sent.url,'/document_payments');
-    for(const key of Object.keys(row).filter(key=>key!=='loading'))assert.equal(sent.form[key],row[key],key);
+    const date = '2026-11-25';
+    const row = {date_of_payment:date, payment_method_type_id:'10', payment_destination_id:'cash', currency_type_id:'USD',
+        tendered_amount:'10.30', exchange_rate:'10', operation_key:'00000000-0000-4000-8000-000000000001', errors:{}};
+    const calls = [];
+    const pending = deferred();
+    const view = new Vue({...component, created:undefined, beforeDestroy:undefined, mixins:[],
+        propsData:{showDialog:true, documentId:44},
+        data:()=>({...component.data(), records:[row], document:{currency_type_id:'VES', exchange_rate_sale:'10',
+            total_paid:'25',total_difference:'100'}, paymentContext:{enabled:true,rate:'3.00',dates:{[date]:{issuer_spe:true}}},
+            payment_method_types:[{id:'10',is_active:true,collection_kind:'cash',currency_type_id:'USD'}]})
+    });
+    view.$http = {post:(url,form)=>{calls.push({url,form}); return pending.promise}};
+    view.$message = {error(){}};
+    assert.equal(view.paymentProgress.paid,'Bs. 128.00');
+    assert.equal(view.paymentProgress.missing,'Bs. 0.00');
+    view.changeTenderedAmount(row,'5.15');
+    assert.equal(view.paymentProgress.paid,'Bs. 76.50');
+    assert.equal(view.paymentProgress.missing,'Bs. 50.00');
+    view.changeTenderedAmount(row,'5.');
+    assert.equal(view.paymentProgress.paid,'Bs. 25.00');
+    assert.equal(view.paymentProgress.missing,'Bs. 100.00');
+    view.changeTenderedAmount(row,'');
+    await view.clickSubmit(0);
+    assert.equal(calls.length,0);
+    view.changeTenderedAmount(row,'10.299');
+    const save = view.clickSubmit(0);
+    await view.clickSubmit(0);
+    assert.equal(calls.length,1);
+    const {url,form}=calls[0];
+    assert.equal(url,'/document_payments');
+    assert.equal(form.tendered_amount,'10.299');
+    assert.equal(form.quoted_tax_amount,'0.30');
+    assert.equal(form.igtf_status,'subject');
+    assert.equal(form.quoted_balance.n,'100');
+    assert.equal(form.operation_key,row.operation_key);
+    pending.resolve({data:{success:false,message:'Conservar borrador'}});
+    await save;
+    assert.equal(row.tendered_amount,'10.299');
+    view.$destroy();
+});
+
+test('the delivered amount popover renders the exact receipt breakdown for VES and USD', () => {
+    const {load} = runtime();
+    const file = 'resources/js/views/tenant/documents/partials/payments.vue';
+    const component = load(file).default;
+    const render = compiler.compileToFunctions(compiler.parseComponent(fs.readFileSync(file, 'utf8')).template.content);
+    const date = '2026-11-25';
+    const row = {date_of_payment:date, payment_method_type_id:'cash', currency_type_id:'USD',
+        tendered_amount:'1.03', exchange_rate:'6.12345678', errors:{}};
+    const method = {id:'cash', is_active:true, collection_kind:'cash', currency_type_id:'USD'};
+    const view = new Vue({...component, ...render, created:undefined, beforeDestroy:undefined, mixins:[],
+        propsData:{showDialog:true, documentId:44},
+        methods:{...component.methods, classifiedPaymentDestinations:()=>[], classifiedPaymentDestinationDisabled:()=>false},
+        data:()=>({...component.data(), records:[row], document:{currency_type_id:'VES', total_difference:'100'},
+            payment_method_types:[method], paymentContext:{enabled:true,rate:'3',dates:{[date]:{issuer_spe:true}}}})
+    });
+    const flatten = node => [node, ...(node.children || []).flatMap(flatten)];
+    const visibleText = node => flatten(node).map(child => child.text || '').join('');
+    const verify = (expected, rateVisible) => {
+        const tree = view._render();
+        const popover = flatten(tree).find(node => node.tag === 'el-popover');
+        assert.equal(popover.data.attrs.trigger, 'hover');
+        assert.equal(popover.data.attrs.disabled, false);
+        assert.ok(popover.children.some(node => node.tag === 'el-input' && node.data.slot === 'reference'));
+        const popup = visibleText(popover);
+        for (const value of expected) assert.ok(popup.includes(value), popup);
+        assert.equal(popup.includes('Tasa de cambio:'), rateVisible);
+        assert.equal((visibleText(tree).match(/IGTF:/g) || []).length, 1);
+        assert.match(visibleText(tree), /Pagado Bs\..*Falta Bs\./);
+    };
+    verify(['Tasa de cambio: Bs. 6.12345678 por USD', 'Principal recibido: 1.00 USD',
+        'IGTF: 0.03 USD', 'Total cobrado: 1.03 USD ⇄ Bs. 6.31'], true);
+    method.currency_type_id = row.currency_type_id = 'VES';
+    view.changeTenderedAmount(row, '6.31');
+    verify(['Principal recibido: 6.31 VES', 'IGTF: 0.00 VES', 'Total cobrado: 6.31 VES ⇄ $ 1.03'], false);
+    view.$destroy();
+});
+
+test('a later collection settles the exact closing balance and rejects excess without offering change', () => {
+    const {load} = runtime();
+    const {quoteDocumentTender, documentPaymentProgress} = load('resources/js/helpers/document-payment-draft.js');
+    const date = '2026-11-25';
+    const context = {enabled:true, rate:'3', dates:{[date]:{issuer_spe:true}}};
+    const methods = [{id:'14', is_active:true, collection_kind:'account', currency_type_id:'VES'}];
+    const document = {currency_type_id:'USD', exchange_rate_sale:'10', total_paid:'1.00',
+        calculation_snapshot:{values:{total_difference:{n:'499',d:'1000'}}}};
+    const row = {date_of_payment:date, payment_method_type_id:'14', currency_type_id:'VES',
+        exchange_rate:'10', tendered_amount:'5'};
+    const quote = quoteDocumentTender(row, document, context, methods);
+    assert.equal(quote.status,'not_applicable');
+    assert.equal(quote.tax,'0.00');
+    assert.equal(quote.applied.decimal(),'0.499');
+    assert.equal(documentPaymentProgress(document, quote).paid,'14.99');
+    assert.equal(documentPaymentProgress(document, quote).missing,'0.00');
+    assert.throws(() => quoteDocumentTender({...row,tendered_amount:'5.10'}, document, context, methods), /sin vuelto/);
 });
 
 test('historical receipt tax and derived receipts remain visible with IGTF disabled', () => {
     const {load}=runtime(), file='resources/js/views/tenant/documents/partials/payments.vue',component=load(file).default;
     const render=compiler.compileToFunctions(compiler.parseComponent(fs.readFileSync(file,'utf8')).template.content);
     // Render the read-only branch without running the dialog's HTTP lifecycle.
-    const instance=new Vue({...component,...render,created:undefined,mixins:[],propsData:{showDialog:true,documentId:44},
+    const instance=new Vue({...component,...render,created:undefined,beforeDestroy:undefined,mixins:[],propsData:{showDialog:true,documentId:44},
         data:()=>({...component.data(),records:[{id:12,payment:'100',original_amount:'100',tax_amount:'3.00',currency_type_id:'USD'},
             {id:13,payment:'3.00',receipt_parent_id:12}],permissions:{},document:{},igtfEnabled:false})});
     function texts(node){return (node.text||'')+(node.children||[]).map(texts).join('')}
@@ -401,7 +486,7 @@ test('historical receipt tax and derived receipts remain visible with IGTF disab
 });
 
 test('all supported entrypoints pass the shared flag and real payment context', () => {
-    for(const name of ['documents/invoice','documents/invoiceupdate','documents/invoice_generate','documents/partials/payments',
+    for(const name of ['documents/invoice','documents/invoiceupdate','documents/invoice_generate',
         'pos/partials/payment','pos/partials/fast_payment','pos/partials/fast_payment_garage','pos/partials/multiple_payment','pos/partials/multiple_payment_garage']) {
         const source=compiler.parseComponent(fs.readFileSync(`resources/js/views/tenant/${name}.vue`,'utf8'));
         const result=compiler.compile(source.template.content);assert.deepEqual(result.errors,[],name);

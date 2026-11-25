@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tenant\{Company, Person, PaymentMethodType};
+use App\Database\IntegerTransport;
+use App\Models\Tenant\{Company, Document, Person, PaymentMethodType};
+use App\Rules\PositiveBigint;
 use App\Services\Fiscal\{FiscalProfileService, SpecialTaxpayerPolicy};
 use Modules\Finance\Traits\FinanceTrait;
 
@@ -14,10 +16,18 @@ final class CalculationContextController extends Controller
 
     public function __invoke(\Illuminate\Http\Request $request)
     {
-        $input = $request->validate(['customer_id'=>'nullable|integer', 'dates'=>'required|array|min:1|max:101',
+        $input = $request->validate(['document_id'=>['sometimes', 'required', new PositiveBigint()],
+            'customer_id'=>'nullable|integer', 'dates'=>'required|array|min:1|max:101',
             'dates.*'=>'required|date_format:Y-m-d', 'establishment_id'=>'nullable|integer']);
+        $customerId = $input['customer_id'] ?? null;
+        if (isset($input['document_id'])) {
+            $document = Document::withoutEagerLoads()->findOrFail(IntegerTransport::positiveKey($input['document_id']));
+            DocumentFiscalController::authorizeDocument($document);
+            abort_unless(auth()->user()->type === 'admin' || auth()->user()->create_payment, 403);
+            $customerId = $document->customer_id;
+        }
         $company = Company::firstOrFail();
-        $customer = empty($input['customer_id']) ? null : Person::whereType('customers')->findOrFail($input['customer_id']);
+        $customer = $customerId ? Person::whereType('customers')->findOrFail($customerId) : null;
         $dates = [];
         foreach (array_unique($input['dates']) as $date) {
             $issuer = FiscalProfileService::at($company, $date);
