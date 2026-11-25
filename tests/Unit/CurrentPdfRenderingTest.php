@@ -930,6 +930,20 @@ class CurrentPdfRenderingTest extends TestCase
             $company->logo = 'company.png';
             $document->establishment->logo = 'storage/uploads/logos/branch.png';
             self::assertSame('data:image/png;base64,'.base64_encode($branchImage), $helper::ticketLogoDataUri($company, $document->establishment));
+            foreach (array_merge([['default', 'ticket']], array_map(fn ($entry) => [$entry[0], 'ticket_58'], self::invoice58Designs())) as [$design, $format]) {
+                $html = view('pdf.'.$design.'.invoice_'.$format, [
+                    'company'=>$company, 'document'=>$document, 'configuration'=>['is_preview'=>false],
+                    'ticketInvoice'=>true, 'ticketFiscal'=>['environment'=>'demo', 'number_full'=>'FF01-00000012', 'control_number'=>'00-00000009'],
+                ])->render();
+                self::assertStringContainsString(base64_encode($branchImage), $html);
+                self::assertSame(1, substr_count($html, 'DEMO — SIN VALIDEZ FISCAL'));
+                self::assertLessThan(strpos($html, 'DEMO — SIN VALIDEZ FISCAL'), strpos($html, base64_encode($branchImage)), $design.' '.$format);
+                self::assertLessThan(strpos($html, 'Empresa'), strpos($html, 'DEMO — SIN VALIDEZ FISCAL'), $design.' '.$format);
+                $pdf = new Mpdf(['tempDir'=>sys_get_temp_dir(), 'format'=>[$format === 'ticket' ? 72 : 56,400], 'margin_left'=>2,'margin_right'=>2,'margin_top'=>2,'margin_bottom'=>2]);
+                $pdf->WriteHTML(file_get_contents(app_path('CoreFacturalo/Templates/pdf/'.$design.'/style.css')), HTMLParserMode::HEADER_CSS);
+                $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
+                self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+            }
             $document->pdf_title = 'COT-00000001';
             $document->items->first()->percentage_igv = '16';
             foreach (self::invoice58Designs() as [$design]) {

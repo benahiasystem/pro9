@@ -37,7 +37,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 <html>
 <head></head>
 <body>
-@include('pdf.partials.invoice_ticket_58_demo')
     @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
         <img
@@ -72,6 +71,11 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             @endif
         </td>
     </tr>
+    @if($ticketInvoice && ($ticketFiscal['environment'] ?? null) === 'demo')
+        <tr>
+            <td>@include('pdf.partials.invoice_ticket_58_demo')</td>
+        </tr>
+    @endif
     <tr>
         <td class="text-center text-uppercase">
             @include('pdf.partials.company_document_header_names_plain')<br>

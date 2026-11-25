@@ -53,7 +53,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
 <html>
 <head></head>
 <body class="ticket-58">
-@include('pdf.partials.invoice_ticket_58_demo')
     @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
         <img
@@ -84,6 +83,11 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     src="{{ $ticketLogo }}"
                     alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="m27-logo m27-logo-sm contain">
             </td>
+        </tr>
+    @endif
+    @if($ticketInvoice && ($ticketFiscal['environment'] ?? null) === 'demo')
+        <tr>
+            <td>@include('pdf.partials.invoice_ticket_58_demo')</td>
         </tr>
     @endif
     <tr>

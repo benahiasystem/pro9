@@ -43,10 +43,6 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     {{--<link href="{{ $path_style }}" rel="stylesheet" />--}}
 </head>
 <body class="ticket">
-@if($ticketInvoice && ($ticketFiscal['environment'] ?? null) === 'demo')
-    <div style="border: 1px solid #555; padding: 5px; margin-bottom: 6px; font-size: 9pt; font-weight: bold; text-align: center;">DEMO — SIN VALIDEZ FISCAL</div>
-@endif
-
 @if($ticketLogo)
     <div class="text-center company_logo_box pt-5">
         <img
@@ -57,6 +53,10 @@ $affected_document_number = $document_base->affected_document ? $document_base->
     {{--<div class="text-center company_logo_box pt-5">--}}
     {{--<img src="{{ asset('logo/logo.jpg') }}" class="company_logo_ticket contain">--}}
     {{--</div>--}}
+@endif
+
+@if($ticketInvoice && ($ticketFiscal['environment'] ?? null) === 'demo')
+    <div style="border: 1px solid #555; padding: 5px; margin-bottom: 6px; font-size: 9pt; font-weight: bold; text-align: center;">DEMO — SIN VALIDEZ FISCAL</div>
 @endif
 
 @if($document->state_type->id == '11')
