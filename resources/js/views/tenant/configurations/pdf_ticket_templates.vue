@@ -78,7 +78,7 @@
                             <i class="fas fa-search-plus icon-overlay" @click="viewImage(template)"></i>
                     
                             <a class="image-direccion" @click="viewImage(template)">
-                                <img :src="path.origin+'/templates/pdf/'+template.name+'/ticket.png'"
+                                <img :src="ticketImageUrl(template.name)"
                                      class="image"
                                      style="width: 100%">
                             </a>
@@ -98,7 +98,7 @@
                 <div class="block">
                     <el-carousel arrow="always" :interval="10000" height="550px">
                         <div style="overflow: auto;" class="img-scroll bg-light text-center">
-                            <img :src="path.origin+'/templates/pdf/'+template.name+'/ticket.png'"
+                            <img :src="ticketImageUrl(template.name)"
                                  class="image"
                                  style="width: 50%; height: auto;">
                         </div>
@@ -320,7 +320,8 @@ export default {
         'path_image',
         'typeUser',
         'establishmentId',
-        'establishments'
+        'establishments',
+        'ticketImageVersions'
     ],
 
     data() {
@@ -371,6 +372,12 @@ export default {
         this.selectCurrentEstablishment();
     },
     methods: {
+        // ######## INICIO VERSIONES DE IMÁGENES DE TICKETS ########
+        ticketImageUrl(name) {
+            const version = (this.ticketImageVersions || {})[name] || 0;
+            return `${this.path.origin}/templates/pdf/${name}/ticket.png?v=${version}`;
+        },
+        // ######## FIN VERSIONES DE IMÁGENES DE TICKETS ########
         getRecords() {
             return this.$http.get(`/${this.resource}/templates/ticket/records`).then(response => {
                 if (response.data !== '') this.formatos = response.data.formats

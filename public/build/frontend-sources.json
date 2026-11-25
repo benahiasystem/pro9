@@ -711,7 +711,7 @@
     "resources/js/views/tenant/configurations/pdf_guide_templates.vue": "1e9a874ddfafc6f52b39ef842d565a40fcd06de240cf4043bc9039bbf2593797",
     "resources/js/views/tenant/configurations/pdf_preprinted_templates.vue": "2c17ec761d84962635b60ba65a48f58cddb0c3352a0f0eed5fb6486856f6ec20",
     "resources/js/views/tenant/configurations/pdf_templates.vue": "f37d8b3f433f0f9447896eb85206c257b9c5a03fca27a2036b4a68041321ced7",
-    "resources/js/views/tenant/configurations/pdf_ticket_templates.vue": "e6c26e75cba8cbcd8b339b6a9b2329c22660b96a8aa8857f92426b40e1e7b431",
+    "resources/js/views/tenant/configurations/pdf_ticket_templates.vue": "ccb36a873a676c695e912ff039ee0fc175e7762da443970edf48803e2de6086c",
     "resources/js/views/tenant/configurations/visual.vue": "cd3641fadf1d464661ecc545a94744ee46cab0395bc8bf0a69ab9cd31eb061a1",
     "resources/js/views/tenant/contingencies/index.vue": "441dd7d73f7c05472afb81ac16f5086b94e292faf57e7c9e14604e3b0f508165",
     "resources/js/views/tenant/currency_types/form.vue": "82cb5747c38e4a33be6c677ec543900f8cd17514ed1fb53a0fbfe98933a258c3",
