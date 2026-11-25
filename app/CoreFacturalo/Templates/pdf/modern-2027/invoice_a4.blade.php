@@ -95,7 +95,7 @@ $safeLogo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::printLogoDataUri
                             alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
                     </div>
                 </td>
-                <td width="40%" class="pl-3 text-center">
+                <td width="40%" class="pl-3 text-left">
                     <div>
                         @include('pdf.partials.company_document_header_names')
                         <h5>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>

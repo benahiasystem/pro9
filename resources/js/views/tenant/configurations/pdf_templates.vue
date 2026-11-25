@@ -87,23 +87,13 @@
         </div>
         <el-dialog
             :visible.sync="modalImage"
-            width="100">
-            <div class="d-flex align-items-center justify-content-start" style="margin-top: -30px !important;">
-                <h4 class="text-bold">Plantilla:</h4>
-                <span style="font-size: 16px;" class="text-center ms-2">{{ template.name }}</span>
+            :title="'Plantilla: ' + template.name"
+            width="min(95vw, 960px)">
+            <div class="pdf-preview bg-light">
+                <img :src="path.origin+'/'+template.urls.invoice"
+                     :alt="'Vista previa de la plantilla ' + template.name"
+                     class="pdf-preview-image">
             </div>
-            <span>
-                <div class="block">
-                    <el-carousel arrow="always" :interval="10000" height="550px">
-                        <div style="overflow: auto;" class="bg-light img-scroll text-center">
-                                <img  
-                                    :src="path.origin+'/'+template.urls.invoice"
-                                    class="image zoomable-image w-90 h-auto"
-                                >
-                        </div>
-                    </el-carousel>
-                </div>
-            </span>
             <span slot="footer"
                   class="dialog-footer">
                 <el-button class="second-buton" @click="modalImage = false">Cerrar</el-button>
@@ -193,11 +183,17 @@
 </template>
 
 <style scoped>
-.el-carousel__item:nth-child(2n) {
-background-color: #99a9bf;
+.pdf-preview {
+    max-height: 60vh;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
-.el-carousel__item:nth-child(2n+1) {
-background-color: #d3dce6;
+.pdf-preview-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 800px;
+    margin: 0 auto;
 }
 .pdf-template-border {
     border: 2px solid #bad6f1;
@@ -280,24 +276,6 @@ background-color: #d3dce6;
 }
 .pdf-template-content:hover .icon-overlay {
     opacity: 1;
-}
-.img-scroll{
-    overlay: auto;
-    height: 550px;
-}
-.img-scroll::-webkit-scrollbar {
-    width: 8px;
-}
-.img-scroll::-webkit-scrollbar-track {
-    background: #f0f9ff;
-    border-radius: 8px;
-}
-.img-scroll::-webkit-scrollbar-thumb {
-    background: #5fa7fe;
-    border-radius: 8px;
-}
-.img-scroll::-webkit-scrollbar-thumb:hover {
-    background: #0074ff;
 }
 .pdf-template-content:hover {
     transform: scale(1.02);

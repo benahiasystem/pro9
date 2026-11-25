@@ -103,7 +103,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                         alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px; {{ $invoicePdf ? 'max-height: 64px;' : '' }}">
                 </div>
             </td>
-            <td width="{{ $invoicePdf ? '40%' : '50%' }}" class="pl-3 {{ $invoicePdf ? 'text-left' : 'text-center' }}">
+            <td width="{{ $invoicePdf ? '40%' : '50%' }}" class="pl-3 text-left">
                 <div>
                     @include('pdf.partials.company_document_header_names', ['primaryStyle'=>$invoicePdf ? 'margin: 0; line-height: 1.2;' : null])
                     <h5 @if($invoicePdf) style="margin: 0; line-height: 1.2;" @endif>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>

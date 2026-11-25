@@ -92,7 +92,7 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertStringContainsString('FACTURA', $html);
         self::assertStringNotContainsStringIgnoringCase('Sin serie', $html);
         self::assertStringNotContainsString('SIN_SERIE', $html);
-        self::assertStringContainsString('N° de documento: <strong>'.($series === '' ? '00000457' : $series.'-00000457').'</strong>', $html);
+        self::assertStringContainsString('N° de documento: <strong>00000457</strong>', $html);
         if ($series === '') self::assertStringNotContainsString('-457', $html);
         self::assertStringContainsString('J-12345678-9', $html);
         self::assertStringContainsString('IVA:', $html);
@@ -185,7 +185,7 @@ class CurrentPdfRenderingTest extends TestCase
         $D=\App\Support\Exact\Decimal::class;
         $company=new Fluent(['name'=>'Empresa de prueba, C.A.','trade_name'=>'bbc','number'=>'J087897598','logo'=>null]);
         $document=$this->documentFixture();
-        $document->series=''; $document->number=34; $document->number_full='00000034';
+        $document->series='FF01'; $document->number=34; $document->number_full='FF01-00000034';
         $document->exchange_rate_sale='40.12345678';
         $document->payment_condition=new Fluent(['name'=>'Contado']);
         $document->total=$document->subtotal='5000'; $document->total_taxed='4310.34'; $document->total_igv='689.66';
@@ -258,7 +258,7 @@ class CurrentPdfRenderingTest extends TestCase
         self::assertStringNotContainsString('DEMO — SIN VALIDEZ FISCAL',$html);
         self::assertStringNotContainsString('Rif fiscal',$html);
         self::assertDoesNotMatchRegularExpression('/<td[^>]*>\s*(?:<strong>)?MONEDA/i',$html);
-        self::assertStringContainsString('N° de documento: <strong>00000034</strong>',$html);
+        self::assertStringContainsString('N° de documento: <strong>'.($format === 'a4' ? '00000034' : 'FF01-00000034').'</strong>',$html);
         self::assertStringContainsString('N° de control: <strong>'.($fiscal ? '00-00000034' : 'No asignado').'</strong>',$html);
         self::assertTrue(strpos($html,'Esta factura es solo de prueba') < strpos($html,'data-invoice-'.$format.'-identity'));
         if ($fiscal) {
@@ -294,11 +294,42 @@ class CurrentPdfRenderingTest extends TestCase
 
     }
 
+    public function test_watermark_invoice_expands_short_items_without_padding_complex_or_long_documents(): void
+    {
+        $company = new Fluent(['name'=>'Empresa de prueba', 'number'=>'J-12345678-9', 'logo'=>null]);
+        foreach (['short' => 1, 'several' => 5, 'long_description' => 1, 'many' => 45] as $case => $count) {
+            $document = $this->documentFixture();
+            $prototype = $document->items->first();
+            $document->items = collect(range(1, $count))->map(function ($index) use ($prototype, $case) {
+                $row = clone $prototype;
+                $row->item = clone $prototype->item;
+                $row->item->description = $case === 'long_description' ? str_repeat('Descripción extensa ', 15) : 'Producto '.$index;
+                $row->item->internal_id = 'ITEM-'.$index;
+                return $row;
+            });
+            $html = (new Template())->pdf('marca_de_agua', 'invoice', $company, $document, 'a4', ['is_preview'=>false]);
+            $padding = substr_count($html, 'data-item-padding');
+            self::assertSame(in_array($case, ['short', 'several'], true) ? 19 - $count : 0, $padding, $case);
+            self::assertStringContainsString('ITEM-'.$count, $html);
+            self::assertStringContainsString('TOTAL A PAGAR', $html);
+            $pdf = new Mpdf(['format'=>'A4', 'tempDir'=>sys_get_temp_dir(), 'default_font'=>'arial',
+                'margin_top'=>15, 'margin_bottom'=>15, 'margin_left'=>15, 'margin_right'=>15]);
+            $pdf->WriteHTML((new Template())->pdfStylesheet('marca_de_agua', 'invoice', $document, 'a4'), HTMLParserMode::HEADER_CSS);
+            $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
+            self::assertStringStartsWith('%PDF-', $pdf->Output('', 'S'));
+            if ($case !== 'many') self::assertSame(1, $pdf->page, $case);
+            else self::assertGreaterThan(1, $pdf->page);
+        }
+    }
+
     public function test_a4_logo_header_and_production_notice_are_isolated_from_other_formats(): void
     {
         $public=public_path(); $disk=config('filesystems.disks.public');
         $logoDirectory=sys_get_temp_dir().'/sab-a4-logo-'.bin2hex(random_bytes(6));
         mkdir($logoDirectory.'/storage/uploads/logos',0775,true);
+        mkdir($logoDirectory.'/views');
+        config()->set('view.compiled',$logoDirectory.'/views');
+        $this->app->forgetInstance('blade.compiler');
         copy($public.'/logo/tulogo.png',$logoDirectory.'/storage/uploads/logos/a4-test.png');
         $this->app->usePublicPath($logoDirectory);
         config()->set('filesystems.disks.public',['driver'=>'local','root'=>$logoDirectory.'/storage']);
@@ -320,6 +351,22 @@ class CurrentPdfRenderingTest extends TestCase
                 $pdf->WriteHTML((new Template())->pdfStylesheet($design,'invoice',$document,$format),HTMLParserMode::HEADER_CSS);
                 $pdf->WriteHTML($html,HTMLParserMode::HTML_BODY);
                 self::assertSame(1,$pdf->page);
+                $path=tempnam(sys_get_temp_dir(),'sab-company-alignment-');
+                try {
+                    file_put_contents($path,$pdf->Output('','S'));
+                    $process=new \Symfony\Component\Process\Process(['pdftotext','-bbox',$path,'-']);
+                    $process->mustRun();
+                    $xml=simplexml_load_string($process->getOutput(),\SimpleXMLElement::class,LIBXML_NONET);
+                    $positions=[];
+                    foreach (['Prueba','Emisor','R.I.F.','AVENIDA','Email:'] as $word) {
+                        $matches=$xml->xpath('//*[local-name()="word" and text()="'.$word.'"]');
+                        self::assertNotEmpty($matches,$design.' '.$format.' '.$word);
+                        $positions[$word]=(float) $matches[0]['xMin'];
+                    }
+                    foreach ($positions as $word=>$position) {
+                        self::assertEqualsWithDelta($positions['Prueba'],$position,0.5,$design.' '.$format.' '.$word);
+                    }
+                } finally { unlink($path); }
                 if ($fixtureDirectory=getenv($format === 'a5' ? 'SAB_A5_FIXTURE_DIR' : 'SAB_A4_FIXTURE_DIR')) {
                     if (!is_dir($fixtureDirectory)) mkdir($fixtureDirectory,0775,true);
                     file_put_contents($fixtureDirectory.'/'.$design.'-logo.pdf',$pdf->Output('','S'));
@@ -504,7 +551,7 @@ class CurrentPdfRenderingTest extends TestCase
         $company=new Fluent(['name'=>'Emisor actual','number'=>'J999999999','logo'=>null]);
         foreach (['a4','a5'] as $format) {
             $html=(new Template())->pdf('default','invoice',$company,$draft,$format);
-            self::assertStringContainsString('N° de documento: <strong>AUT-00000099</strong>',$html);
+            self::assertStringContainsString('N° de documento: <strong>'.($format === 'a4' ? '00000099' : 'AUT-00000099').'</strong>',$html);
             self::assertStringContainsString('N° de control: <strong>00-00000099</strong>',$html);
             self::assertStringContainsString('Emisor autorizado',$html);
             self::assertStringContainsString('RET-AUTORIZADA',$html);

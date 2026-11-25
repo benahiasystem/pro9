@@ -91,18 +91,18 @@
                                 <hr>
                                 <div v-if="!linkMode" class="text-center">
                                     <el-button type="text" size="small" @click="linkMode = true">
-                                        ¿Ya tienes un canal conectado en ChatBuho? Vincúlalo aquí
+                                        ¿Ya tienes un canal conectado en BenahiaChat? Vincúlalo aquí
                                     </el-button>
                                 </div>
                                 <div v-else>
                                     <p class="text-muted small">
-                                        Vincula un canal que ya está conectado y escaneado en ChatBuho, sin volver a
+                                        Vincula un canal que ya está conectado y escaneado en BenahiaChat, sin volver a
                                         escanear el QR.
                                     </p>
                                     <div class="row">
                                         <div class="col-md-12 form-modern">
                                             <label class="control-label">Nombre de canal/instancia</label>
-                                            <el-input v-model="linkInstanceName" placeholder="ej. 51987654321"></el-input>
+                                            <el-input v-model="linkInstanceName" placeholder="ej. 584121234567"></el-input>
                                         </div>
                                         <div class="col-md-12 mt-3 form-modern">
                                             <label class="control-label">Número de WhatsApp conectado a ese canal</label>
@@ -117,7 +117,7 @@
                                                 </el-select>
                                                 <el-input
                                                     v-model="linkLocalNumber"
-                                                    placeholder="987654321"
+                                                    placeholder="4121234567"
                                                     @input="linkLocalNumber = linkLocalNumber.replace(/\D/g, '')">
                                                 </el-input>
                                             </div>
@@ -140,7 +140,7 @@
                                             :loading="loading_link"
                                             :disabled="!canLink"
                                             @click="linkExisting">
-                                            Conectar con ChatBuho
+                                            Conectar con BenahiaChat
                                         </el-button>
                                     </div>
                                 </div>
@@ -239,7 +239,7 @@
                             <div v-if="form.instance_token" class="col-md-12 mt-3 form-modern">
                                 <label class="control-label">Token de la instancia</label>
                                 <small class="text-muted d-block mb-1">
-                                    Cópialo si quieres vincular esta misma instancia desde ChatBuho.
+                                    Cópialo si quieres vincular esta misma instancia desde BenahiaChat.
                                 </small>
                                 <div class="d-flex phone-input-group">
                                     <el-input
@@ -351,25 +351,14 @@ export default {
             tokenVisible: false,
             linkMode: false,
             linkInstanceName: '',
-            linkCountryCode: '51',
+            linkCountryCode: '58',
             linkLocalNumber: '',
             linkToken: '',
+            // ########### INICIO PREFIJO VENEZUELA
             countryCodes: [
-                { code: '51', flag: '🇵🇪', name: 'Perú' },
-                { code: '57', flag: '🇨🇴', name: 'Colombia' },
-                { code: '52', flag: '🇲🇽', name: 'México' },
-                { code: '56', flag: '🇨🇱', name: 'Chile' },
-                { code: '593', flag: '🇪🇨', name: 'Ecuador' },
-                { code: '591', flag: '🇧🇴', name: 'Bolivia' },
-                { code: '54', flag: '🇦🇷', name: 'Argentina' },
                 { code: '58', flag: '🇻🇪', name: 'Venezuela' },
-                { code: '507', flag: '🇵🇦', name: 'Panamá' },
-                { code: '595', flag: '🇵🇾', name: 'Paraguay' },
-                { code: '598', flag: '🇺🇾', name: 'Uruguay' },
-                { code: '506', flag: '🇨🇷', name: 'Costa Rica' },
-                { code: '1', flag: '🇩🇴', name: 'Rep. Dominicana' },
-                { code: '34', flag: '🇪🇸', name: 'España' },
             ],
+            // ########### FIN PREFIJO VENEZUELA
             pollTimer: null,
         };
     },
@@ -464,7 +453,7 @@ export default {
             if (value && this.form.evolution_instance) {
                 const message = this.form.instance_adopted
                     ? `Tu número actual (${this.form.evolution_instance}) se desvinculará del bot, pero seguirá conectado en ` +
-                      `ChatBuho (no se elimina en Evolution). ¿Continuar?`
+                      `BenahiaChat (no se elimina en Evolution). ¿Continuar?`
                     : `Tu número actual (${this.form.evolution_instance}) se desconectará y se eliminará. ` +
                       `Si quieres volver a usarlo, tendrás que escanear un QR nuevo. ¿Continuar?`;
                 try {
@@ -718,7 +707,7 @@ export default {
         },
         confirmDisconnect() {
             const message = this.form.instance_adopted
-                ? 'Esto desvinculará el bot de esta instancia, pero seguirá conectada en ChatBuho (no se elimina en Evolution). ¿Continuar?'
+                ? 'Esto desvinculará el bot de esta instancia, pero seguirá conectada en BenahiaChat (no se elimina en Evolution). ¿Continuar?'
                 : 'Esto desconectará el WhatsApp actual y eliminará la instancia en Evolution. Tendrás que escanear un nuevo QR para reconectar. ¿Continuar?';
             const title = this.form.instance_adopted ? 'Desvincular' : 'Conectar nuevo número';
             this.$confirm(

@@ -52,7 +52,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     <img src="{{ $safePrintLogo }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
                 </div>
             </td>
-            <td width="50%" class="text-center pl-3">
+            <td width="50%" class="text-left pl-3">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
                     <h5>{{ 'RIF '.$company->number }}</h5>

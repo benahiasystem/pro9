@@ -105,6 +105,7 @@ final class InvoicePaperPdfData
         return [
             'rif' => self::rif((string) $company->number),
             'number' => FiscalIdentity::numberFull($document->series ?? '', $document->number ?? 0),
+            'number_without_series' => FiscalIdentity::displayNumber($document->number ?? 0),
             'control' => $document->control_number ?: 'No asignado',
             'rate' => ExchangeRateMath::optionalRate($document->exchange_rate_sale),
             'environment' => $document->fiscal_environment ?? null,

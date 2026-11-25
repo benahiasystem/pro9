@@ -832,7 +832,7 @@ use Illuminate\Support\Facades\Mail;
                 'quantity_documents' => 0,
                 'login' => json_encode([
                     'type' => 'image',
-                    'image' => $http.$fqdn.'/images/fondo-5.svg',
+                    'image' => $http.$fqdn.'/images/fondo-sab.svg',
                     'position_form' => 'right',
                     'show_logo_in_form' => false,
                     'position_logo' => 'top-left',

@@ -377,7 +377,7 @@ class QrApiController extends Controller
         return [
             'success' => true,
             'message' => $wasAdopted
-                ? 'Instancia desvinculada de QrApi. Sigue conectada en ChatBuho.'
+                ? 'Instancia desvinculada de QrApi. Sigue conectada en BenahiaChat.'
                 : 'Número desconectado.',
         ];
     }
@@ -420,7 +420,7 @@ class QrApiController extends Controller
         if ($config->qr_api_instance_adopted) {
             return [
                 'success' => false,
-                'message' => 'Esta instancia está vinculada desde ChatBuho — renovarla la eliminaría también ahí. Desvincúlala primero o renuévala desde ChatBuho.',
+                'message' => 'Esta instancia está vinculada desde BenahiaChat — renovarla la eliminaría también ahí. Desvincúlala primero o renuévala desde BenahiaChat.',
             ];
         }
 

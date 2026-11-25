@@ -97,7 +97,7 @@
                     <img src="{{ $safeLogo }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
                 </div>
             </td>
-            <td width="50%" class="text-center">
+            <td width="50%" class="text-left">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
                     <h5>{{ 'RIF '.$company->number }}</h5>

@@ -51,6 +51,7 @@ class LoginConfigurationController extends Controller
     {
         request()->validate([
             'position_form' => 'required|in:left,right',
+            'show_background_image' => 'sometimes|boolean',
             'show_logo_in_form' => 'boolean',
             'position_logo' => 'required|in:on-form,top-left,top-right,bottom-left,bottom-right,none',
             'padding_in_form' => 'boolean',

@@ -150,7 +150,7 @@ $affected_document_number = $document_base->affected_document ? $document_base->
                     <img src="{{ $safePrintLogo }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 250px;">
                 </div>
             </td>
-            <td width="40%" class="text-center">
+            <td width="40%" class="text-left">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
                     <h5>{{ 'R.I.F. '.($invoicePdf['rif'] ?? $company->number) }}</h5>
@@ -598,6 +598,33 @@ $affected_document_number = $document_base->affected_document ? $document_base->
             </tr>
 
         @endforeach
+
+        {{-- Mantener un área de ítems amplia en facturas cortas; no añadir espacio a contenido extenso. --}}
+        @php
+            $itemCount = $document->items->count();
+            $simpleItems = $document->items->every(function ($line) {
+                $description = strip_tags((string) ($line->name_product_pdf ?: $line->item->description));
+                return mb_strlen($description) <= 100 && substr_count($description, "\n") < 2
+                    && empty($line->attributes) && empty($line->item->presentation)
+                    && empty($line->item->is_set) && empty($line->item->IdLoteSelected)
+                    && empty($line->item->lots);
+            });
+            $extraFiscal = !empty($invoicePdf['igtf']) || !empty($invoicePdf['retentions'])
+                || !empty($invoicePdf['forecasts']) || !empty($invoicePdf['guarantee'])
+                || !empty($invoicePdf['ves_totals']) || !empty($invoicePdf['later_igtf'])
+                || ($invoicePdf['balance'] ?? null) !== null;
+            $paddingRows = $invoicePdf && $itemCount > 0 && $itemCount <= 8 && $simpleItems
+                && !$extraFiscal && $payments->count() <= 1 && collect($document->fee)->isEmpty()
+                && empty($document->terms_condition)
+                ? max(0, 19 - $itemCount) : 0;
+        @endphp
+        @for($i = 0; $i < $paddingRows; $i++)
+            <tr data-item-padding>
+                @for($column = 0; $column < 7 + (int) $showSerieColumn + (int) $showModelColumn + (int) $showBrandColumn + 2 * (int) $showLoteColumn; $column++)
+                    <td class="cell-solid-rl" style="height:5mm">&nbsp;</td>
+                @endfor
+            </tr>
+        @endfor
 
         @for($i = 0; $i < $cycle_items; $i++)
         <tr>

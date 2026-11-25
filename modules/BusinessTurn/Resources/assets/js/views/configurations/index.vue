@@ -27,8 +27,6 @@
                                 <label class="ms-2 mb-0">{{ getDescriptionById(option.id, option.name) }}</label>
                             </div>
                             
-                            <TapConfiguration v-if="option.id === 4" :records="records"></TapConfiguration>
-                            <PharmacyConfiguration v-if="option.id === 5" :records="records"></PharmacyConfiguration>
                         </div>
                     </div>
                 </el-tab-pane>
@@ -40,9 +38,6 @@
 
 <script> 
 
-    import TapConfiguration from './partials/tap.vue'
-    import PharmacyConfiguration from './partials/pharmacy.vue'
-
     export default {
         data() {
             return {
@@ -52,25 +47,17 @@
                 records: [],
                 loading_submit: false,
                 errors: {},
-                activeName: 'tab_1',
-                form: {
-                    is_pharmacy: false,
-                }
+                activeName: 'tab_1'
             }
-        },
-        components: {
-            TapConfiguration,
-            PharmacyConfiguration
         },
         computed: {
             filteredRecords() {
-                return this.records.filter(record => record.id !== 2);
+                return this.records.filter(record => ![2, 4, 5].includes(record.id));
             },
         },
         async created() {
             
             this.title = 'Giros de negocio'
-            this.initForm()
             await this.getRecords()
         },
         methods: {
@@ -80,17 +67,8 @@
                             
                     3: 'Activa el giro de Restaurante. Permite gestionar consumos por mesas o pedidos y habilita configuraciones y campos específicos para operaciones de restaurante.',
                             
-                    4: 'Activa el giro de Grifo. Habilita configuraciones para la venta de combustibles, gestión de productos de combustible y reportes relacionados con operaciones de grifos.',
-                            
-                    5: 'Activa el giro de Farmacia. Habilita una tabla especial para medicamentos y campos adicionales en Configuración de Empresa, como el código DIGEMID del establecimiento farmacéutico.',
                 }
                 return descriptions[id] || `Activar ${name}`
-            },
-            initForm() {
-                this.errors = {}
-                this.form = {
-                    is_pharmacy: false,
-                }
             },
             submit(id) {
                 this.loading_submit = true;
@@ -119,18 +97,13 @@
                 this.$http.get(`/${this.resource}/records`)
                     .then(response => { 
                         this.records = response.data
-                        // Verificar si farmacia está activa
-                        const pharmacyRecord = this.records.find(r => r.name === 'Farmacia')
-                        if (pharmacyRecord) {
-                            this.form.is_pharmacy = pharmacyRecord.active
-                        }
                         if (activeTab) {
                             this.activeName = activeTab
                             return
                         }
 
                         // Inicializar el tab activo con el primer registro filtrado
-                        const firstRecord = this.records.find(record => record.id !== 2)
+                        const firstRecord = this.filteredRecords[0]
                         if (firstRecord) {
                             this.activeName = 'tab_' + firstRecord.id
                         }

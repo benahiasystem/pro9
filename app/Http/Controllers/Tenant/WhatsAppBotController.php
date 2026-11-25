@@ -371,7 +371,7 @@ class WhatsAppBotController extends Controller
         return [
             'success' => true,
             'message' => $wasAdopted
-                ? 'Instancia desvinculada del bot. Sigue conectada en ChatBuho.'
+                ? 'Instancia desvinculada del bot. Sigue conectada en BenahiaChat.'
                 : 'Número desconectado.',
         ];
     }
@@ -415,7 +415,7 @@ class WhatsAppBotController extends Controller
         if ($config->evolution_instance_adopted) {
             return [
                 'success' => false,
-                'message' => 'Esta instancia está vinculada desde ChatBuho — renovarla la eliminaría también ahí. Desvincúlala primero o renuévala desde ChatBuho.',
+                'message' => 'Esta instancia está vinculada desde BenahiaChat — renovarla la eliminaría también ahí. Desvincúlala primero o renuévala desde BenahiaChat.',
             ];
         }
 

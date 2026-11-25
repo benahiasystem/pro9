@@ -18,7 +18,7 @@ class TenantMigrationDataSeederTest extends TestCase
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         self::assertCount(80, $tables);
-        self::assertSame(945, $totalRows);
+        self::assertSame(942, $totalRows);
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         foreach ($tables as $table => $definition) {
@@ -30,6 +30,16 @@ class TenantMigrationDataSeederTest extends TestCase
                 "Debe existir una migración consolidada para {$table}."
             );
         }
+    }
+
+    /** @test */
+    public function mercado_libre_is_the_only_initial_web_platform(): void
+    {
+        $rows = $this->tables()['web_platforms']['rows'];
+
+        self::assertCount(1, $rows);
+        self::assertSame(2, $rows[0]['id']);
+        self::assertSame('Mercado Libre', $rows[0]['name']);
     }
 
     /** @test */

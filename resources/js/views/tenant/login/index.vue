@@ -36,7 +36,11 @@
                 </el-select>
                 <small class="form-control-feedback" v-if="errors.position_form" v-text="errors.position_form[0]"></small>
               </div>
-              <div class="form-group">
+              <div class="form-group login-visibility-option">
+                <label>Mostrar imagen de fondo</label>
+                <el-switch v-model="form.show_background_image"></el-switch>
+              </div>
+              <div class="form-group login-visibility-option">
                 <label>Mostrar logo en el formulario</label>
                 <el-switch v-model="form.show_logo_in_form"></el-switch>
               </div>
@@ -133,7 +137,8 @@ export default {
     };
   },
   mounted() {
-      this.form = Object.assign({}, this.configuration.login);
+      this.form = Object.assign({ show_background_image: true }, this.configuration.login);
+      if (this.form.show_background_image == null) this.form.show_background_image = true;
       this.form.padding_in_form = Boolean(this.form.padding_in_form);
   },
   methods: {
@@ -159,3 +164,17 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.login-visibility-option {
+  display: grid;
+  grid-template-columns: minmax(0, 190px) auto;
+  align-items: center;
+  column-gap: 8px;
+  justify-content: start;
+}
+
+.login-visibility-option label {
+  margin-bottom: 0;
+}
+</style>

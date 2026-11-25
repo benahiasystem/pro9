@@ -143,7 +143,7 @@
                             </el-select>
                             <el-input
                                 v-model="sendForm.localNumber"
-                                placeholder="987654321"
+                                placeholder="4121234567"
                                 @input="sendForm.localNumber = sendForm.localNumber.replace(/\D/g, '')">
                             </el-input>
                         </div>
@@ -286,28 +286,17 @@ export default {
             activeExample: 'text',
             sendDialogVisible: false,
             sendForm: {
-                countryCode: '51',
+                countryCode: '58',
                 localNumber: '',
                 message: '',
                 file: null,
                 filename: null,
             },
+            // ########### INICIO PREFIJO VENEZUELA
             countryCodes: [
-                { code: '51', flag: '🇵🇪', name: 'Perú' },
-                { code: '57', flag: '🇨🇴', name: 'Colombia' },
-                { code: '52', flag: '🇲🇽', name: 'México' },
-                { code: '56', flag: '🇨🇱', name: 'Chile' },
-                { code: '593', flag: '🇪🇨', name: 'Ecuador' },
-                { code: '591', flag: '🇧🇴', name: 'Bolivia' },
-                { code: '54', flag: '🇦🇷', name: 'Argentina' },
                 { code: '58', flag: '🇻🇪', name: 'Venezuela' },
-                { code: '507', flag: '🇵🇦', name: 'Panamá' },
-                { code: '595', flag: '🇵🇾', name: 'Paraguay' },
-                { code: '598', flag: '🇺🇾', name: 'Uruguay' },
-                { code: '506', flag: '🇨🇷', name: 'Costa Rica' },
-                { code: '1', flag: '🇩🇴', name: 'Rep. Dominicana' },
-                { code: '34', flag: '🇪🇸', name: 'España' },
             ],
+            // ########### FIN PREFIJO VENEZUELA
             pollTimer: null,
         };
     },
@@ -343,13 +332,13 @@ export default {
                     'Authorization': `Bearer ${this.maskedApiToken}`,
                 },
                 body: {
-                    number: '51999999999',
+                    number: '584121234567',
                     message: 'Hola, este es un mensaje de prueba',
                 },
                 response: {
                     success: true,
                     data: {
-                        key: { remoteJid: '51999999999@s.whatsapp.net', fromMe: true, id: '3EB0C767D26A1D712F1A' },
+                        key: { remoteJid: '584121234567@s.whatsapp.net', fromMe: true, id: '3EB0C767D26A1D712F1A' },
                         message: { conversation: 'Hola, este es un mensaje de prueba' },
                         messageTimestamp: '1733950893',
                         status: 'PENDING',
@@ -366,7 +355,7 @@ export default {
                     'Authorization': `Bearer ${this.maskedApiToken}`,
                 },
                 body: {
-                    number: '51999999999',
+                    number: '584121234567',
                     media: 'https://midominio.com/imagenes/promo.jpg',
                     media_type: 'image',
                     caption: 'Mira nuestra promoción de este mes',
@@ -374,7 +363,7 @@ export default {
                 response: {
                     success: true,
                     data: {
-                        key: { remoteJid: '51999999999@s.whatsapp.net', fromMe: true, id: '3EB0C767D26A1D712F1B' },
+                        key: { remoteJid: '584121234567@s.whatsapp.net', fromMe: true, id: '3EB0C767D26A1D712F1B' },
                         messageTimestamp: '1733950893',
                         status: 'PENDING',
                     },
@@ -390,7 +379,7 @@ export default {
                     'Authorization': `Bearer ${this.maskedApiToken}`,
                 },
                 body: {
-                    number: '51999999999',
+                    number: '584121234567',
                     file: 'JVBERi0xLjQKJcOkw7zDtsO...(base64 del PDF)',
                     filename: 'factura-001.pdf',
                     message: 'Aquí tienes tu comprobante',
@@ -398,7 +387,7 @@ export default {
                 response: {
                     success: true,
                     data: {
-                        key: { remoteJid: '51999999999@s.whatsapp.net', fromMe: true, id: '3EB0C767D26A1D712F1C' },
+                        key: { remoteJid: '584121234567@s.whatsapp.net', fromMe: true, id: '3EB0C767D26A1D712F1C' },
                         messageTimestamp: '1733950893',
                         status: 'PENDING',
                     },
@@ -666,7 +655,7 @@ export default {
         },
         resetSendForm() {
             this.sendForm = {
-                countryCode: this.sendForm?.countryCode || '51',
+                countryCode: '58',
                 localNumber: '',
                 message: '',
                 file: null,

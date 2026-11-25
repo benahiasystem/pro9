@@ -1,9 +1,9 @@
 @extends('tenant.layouts.auth')
 
 @section('content')
-<section class="auth auth__form-{{ $login->position_form }} {{ !$useLoginGlobal ? ' d-flex align-items-center justify-content-center' : '' }}">
+<section class="auth auth__form-{{ $login->position_form }}">
     @include('tenant.auth.partials.side_left')
-    <article class="auth__form {{ !$useLoginGlobal ? 'h-auto login-container px-5 py-4' : '' }}">
+    <article class="auth__form">
         <form method="POST" action="{{ route('login', [], false) }}">
             @csrf
             @if ($useLoginGlobal)
