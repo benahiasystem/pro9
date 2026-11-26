@@ -213,7 +213,6 @@
         <style id="black-theme-styles">:root{ {!! $blackThemeInlineCss !!} }</style>
     @endif
 
-    <script async src="https://social.buho.la/pixel/y9nonmie9j8dkwha20ct2ua7nwsywi2m"></script>
 </head>
 
 <body class="pr-0"

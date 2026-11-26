@@ -506,7 +506,7 @@
     "resources/js/components/EmptyState.vue": "80bd92fd5a34f31b5578d6ac366bbd6abe27d46d11f53c883e764f02d7848fdc",
     "resources/js/components/FiscalEmissionFields.vue": "1bd01446bbaa84cb2ecf381a9af75af1cde2694602fe8bde746155ef1e511287",
     "resources/js/components/GlobalHelpButton.vue": "7ac57a2ca9ab539e9b54bac97ab950d0fe2e125e072b3cbef3efb00645759858",
-    "resources/js/components/HeaderCloseCash.vue": "6a836c41fff95d8c3cec45a895fbb7404b2d6aa5ffbe556bf90645c5fa4f32c6",
+    "resources/js/components/HeaderCloseCash.vue": "5fa72caa03c8f781944664f1c456acfa25960ce10b3fcb2b230b9c601adc4f4d",
     "resources/js/components/HelpDrawer.vue": "cd9e0ef83edc4f388e91440cef1971a01781bf6aeac9744d38a82a1b4b7e52df",
     "resources/js/components/HelpTooltip.vue": "e7f2d6a0bf483d6fa8389fe04fc6f5deb68b58300366cbdbebce59b14e8d0505",
     "resources/js/components/IgtfQuoteSummary.vue": "8b9a2c02e379ea3b6dd771c51588fcef9933c94fb93b58942018be708d837a98",

@@ -66,6 +66,32 @@
 </template>
 
 <script>
+// ######## INICIO: compartir la consulta entre las dos variantes del encabezado.
+let openingCashRequest = null;
+let openingCashRefresh = null;
+
+function requestOpeningCash(http, refresh = false) {
+    if (refresh) {
+        if (!openingCashRefresh) {
+            openingCashRefresh = Promise.resolve().then(() => openingCashRequest).then(() => {
+                openingCashRefresh = null;
+                return requestOpeningCash(http);
+            });
+        }
+        return openingCashRefresh;
+    }
+    if (openingCashRequest) return openingCashRequest;
+
+    openingCashRequest = http.get('/cash/opening_cash')
+        .then(response => response.data.cash || null, () => null)
+        .then(cash => {
+            openingCashRequest = null;
+            return cash;
+        });
+    return openingCashRequest;
+}
+// ######## FIN
+
 export default {
     props: {
         variant: {
@@ -81,6 +107,7 @@ export default {
             resource: "cash",
             cash: null,
             loading: false,
+            cashRequestVersion: 0,
         };
     },
     computed: {
@@ -90,29 +117,31 @@ export default {
     },
     created() {
         this.fetchOpeningCash();
-        this.$eventHub.$on("openCash", this.fetchOpeningCash);
+        this.$eventHub.$on("openCash", this.refreshOpeningCash);
         this.$eventHub.$on("closeCash", this.onCashClosed);
-        this.$eventHub.$on("reloadData", this.fetchOpeningCash);
+        this.$eventHub.$on("reloadData", this.refreshOpeningCash);
     },
     beforeDestroy() {
-        this.$eventHub.$off("openCash", this.fetchOpeningCash);
+        this.$eventHub.$off("openCash", this.refreshOpeningCash);
         this.$eventHub.$off("closeCash", this.onCashClosed);
-        this.$eventHub.$off("reloadData", this.fetchOpeningCash);
+        this.$eventHub.$off("reloadData", this.refreshOpeningCash);
     },
     methods: {
-        fetchOpeningCash() {
-            return this.$http
-                .get(`/${this.resource}/opening_cash`)
-                .then((response) => {
-                    this.cash = response.data.cash || null;
-                })
-                .catch(() => {
-                    this.cash = null;
-                });
+        // ######## INICIO: evitar respuestas anteriores a una apertura o cierre.
+        fetchOpeningCash(refresh = false) {
+            const version = ++this.cashRequestVersion;
+            return requestOpeningCash(this.$http, refresh).then(cash => {
+                if (version === this.cashRequestVersion) this.cash = cash;
+            });
+        },
+        refreshOpeningCash() {
+            return this.fetchOpeningCash(true);
         },
         onCashClosed() {
+            this.cashRequestVersion++;
             this.cash = null;
         },
+        // ######## FIN
         clickCloseCash() {
             if (!this.cash || this.loading) {
                 return;
