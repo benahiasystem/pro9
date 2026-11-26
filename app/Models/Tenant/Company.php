@@ -76,79 +76,12 @@ class Company extends ModelTenant
         return $this->belongsTo(IdentityDocumentType::class, 'identity_document_type_id');
     }
 
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     public static function active()
     {
-        $company = Company::first();
-
-        // Optimiza logos pesados para que al incrustarlos en el PDF (base64) no inflen el tamaño/memoria.
-        // Se hace de forma "lazy" para que logos antiguos también queden protegidos.
-        if ($company) {
-            self::optimizeLogoFieldIfNeeded($company, 'logo');
-            self::optimizeLogoFieldIfNeeded($company, 'logo_dark');
-            self::optimizeLogoFieldIfNeeded($company, 'app_logo');
-        }
-
-        return $company;
+        return Company::first();
     }
-
-    protected static function optimizeLogoFieldIfNeeded(Company $company, string $field): void
-    {
-        $filename = $company->$field ?? null;
-        if (!$filename) return;
-
-        $absolutePath = public_path('storage/uploads/logos/' . $filename);
-        if (!is_file($absolutePath)) return;
-
-        $triggerBytes = 1024 * 1024; // ~1MB (cuando el logo ya pesa mucho)
-        $currentSize = @filesize($absolutePath);
-        if ($currentSize === false || $currentSize <= $triggerBytes) return;
-
-        $mime = mime_content_type($absolutePath) ?: '';
-        if (str_contains($mime, 'svg')) {
-            // SVG: no lo convertimos/optimiza aquí para evitar problemas de compatibilidad.
-            return;
-        }
-
-        try {
-            $maxWidth = 300;
-            $targetBytes = 100 * 1024; // ~100KB
-
-            $optimized = UploadFileHelper::optimizeRasterImageToTargetJpg(
-                $absolutePath,
-                $maxWidth,
-                $targetBytes,
-                60,
-                10
-            );
-
-            if (!$optimized || empty($optimized['bytes'])) return;
-
-            $optimizedBytes = (string) $optimized['bytes'];
-            $ext = $optimized['extension'] ?? 'jpg';
-
-            // Si la extensión resultante coincide con la actual, sobreescribimos en el mismo archivo;
-            // si cambia (p. ej. png->jpg), creamos uno nuevo con la extensión correcta.
-            $pathInfo = pathinfo($absolutePath);
-            $currentExt = strtolower($pathInfo['extension'] ?? '');
-            $newFilename = $pathInfo['filename'] . '.' . $ext;
-
-            if ($currentExt === $ext || ($currentExt === 'jpeg' && $ext === 'jpg')) {
-                file_put_contents($absolutePath, $optimizedBytes);
-                return;
-            }
-
-            $newAbsolutePath = $pathInfo['dirname'] . DIRECTORY_SEPARATOR . $newFilename;
-            file_put_contents($newAbsolutePath, $optimizedBytes);
-
-            if (is_file($newAbsolutePath)) {
-                $company->$field = $newFilename;
-                $company->save();
-            }
-        } catch (\Throwable $e) {
-            // No rompemos el flujo si la optimización falla; el PDF igual se generará con el logo original.
-            return;
-        }
-    }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
     /**
      * @return string|null
@@ -226,7 +159,9 @@ class Company extends ModelTenant
         $logo = self::select('logo')->firstOrFail()->logo;
 
         if ($logo) {
-            $logo = asset('storage/uploads/logos/' . $logo);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $logo = tenant_asset('storage/uploads/logos/' . $logo);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         }
 
         return $logo;
@@ -244,7 +179,9 @@ class Company extends ModelTenant
         $logo_dark = self::select('logo_dark')->firstOrFail()->logo_dark;
 
         if ($logo_dark) {
-            $logo_dark = asset('storage/uploads/logos/' . $logo_dark);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $logo_dark = tenant_asset('storage/uploads/logos/' . $logo_dark);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         }
 
         return $logo_dark;

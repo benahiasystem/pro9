@@ -202,33 +202,15 @@ JS;
             ->header('Cache-Control', 'public, max-age=3600');
     }
 
-    /**
-     * Serve a file stored on the tenant disk for claims.
-     * The path is passed base64-encoded to preserve slashes.
-     * Public route under /claims/file/{encoded}.
-     */
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     public function file($folder, $filename)
     {
-        // Sanitize filename to avoid directory traversal
-        $filename = ltrim($filename, '/');
-        $filename = basename($filename);
-
-        $path = "claims/{$folder}/{$filename}";
-
-        if (empty($path) || ! Storage::disk('tenant')->exists($path)) {
-            abort(404, 'File not found');
-        }
-
-        try {
-            $mime = Storage::disk('tenant')->mimeType($path);
-        } catch (\Exception $e) {
-            $mime = 'application/octet-stream';
-        }
-
-        $content = Storage::disk('tenant')->get($path);
-
-        return response($content, 200)->header('Content-Type', $mime);
+        abort_unless(in_array($folder,['attachments','responses','pdf'],true) && basename($filename) === $filename,404);
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download("claims/{$folder}/{$filename}",$filename,[
+            'Content-Security-Policy'=>"default-src 'none'",
+        ],'inline');
     }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
     /**
      * Endpoint público para que el widget obtenga sus datos de referencia
@@ -606,7 +588,7 @@ JS;
                 $orig = $request->file('attachment')->getClientOriginalName();
                 $safe = $this->makeSafeFilename($orig);
                 $filename = "{$code}_{$safe}";
-                $stored = $request->file('attachment')->storeAs('claims/attachments', $filename, 'tenant');
+                $stored = app(\App\Services\Storage\TenantStorage::class)->disk()->putFileAs('claims/attachments', $request->file('attachment'), $filename);
                 if ($stored) $attachments[] = $stored;
             }
 
@@ -792,6 +774,8 @@ JS;
      */
     public function updateRecord(Request $request, $id)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request, $id) {
         $request->validate([
             'status_claim_id'          => 'nullable|integer',
             'resolution'               => 'nullable|string',
@@ -858,7 +842,7 @@ JS;
                     $orig = $file->getClientOriginalName();
                     $safe = $this->makeSafeFilename($orig);
                     $filename = "{$claim->code}_{$safe}";
-                    $stored = $file->storeAs('claims/responses', $filename, 'tenant');
+                    $stored = app(\App\Services\Storage\TenantStorage::class)->disk()->putFileAs('claims/responses', $file, $filename);
                     $existing[] = $stored;
                 }
             }
@@ -894,6 +878,9 @@ JS;
                 ->load('statusClaim', 'district', 'identityDocumentType', 'assignedUser')
                 ->getDetailData(),
         ]);
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     /**
@@ -1071,7 +1058,9 @@ JS;
             'name'       => $company->name,
             'trade_name' => $company->trade_name,
             'ruc'        => $company->number,
-            'logo'       => $company->logo ? asset('storage/uploads/logos/' . $company->logo) : null,
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            'logo'       => $company->logo ? tenant_asset('storage/uploads/logos/' . $company->logo) : null,
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             'address'    => $establishment ? $establishment->address : null,
         ];
     }

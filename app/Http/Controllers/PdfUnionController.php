@@ -19,23 +19,16 @@
          */
         public static function addFpi(Fpdi &$fpdi, Mpdf &$pdf)
         {
-            $path = storage_path('app/public/temp_pdf/' . microtime() . ".pdf");
-            if (!is_dir(storage_path('app/public/temp_pdf/'))) mkdir(storage_path('app/public/temp_pdf/'));
-            if (ob_get_level() > 0 ) { 
-                ob_clean();
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $source = \setasign\Fpdi\PdfParser\StreamReader::createByString($pdf->output('', 'S'));
+            $pageCount = $fpdi->setSourceFile($source);
+            for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                $pageId = $fpdi->ImportPage($pageNo);
+                $size = $fpdi->getTemplateSize($pageId);
+                $fpdi->AddPage($size['orientation'], $size);
+                $fpdi->useImportedPage($pageId);
             }
-            $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
-            $pdf->output($path, 'F');
-            if (is_file($path)) {
-                $pageCount = $fpdi->setSourceFile($path);
-                for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
-                    $pageId = $fpdi->ImportPage($pageNo);
-                    $s = $fpdi->getTemplatesize($pageId);
-                    $fpdi->AddPage($s['orientation'], $s);
-                    $fpdi->useImportedPage($pageId);
-                }
-                unlink($path);
-            }
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         }
 
@@ -56,7 +49,7 @@
                 'Content-Disposition' => 'inline; filename="file.pdf"'
             ];
 
-            return response()->file($temp, $headers);
+            return response()->file($temp, $headers)->deleteFileAfterSend(true);
         }
 
         //

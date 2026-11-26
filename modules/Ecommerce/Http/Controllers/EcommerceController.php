@@ -159,7 +159,9 @@ class EcommerceController extends Controller
         $default_product_image = optional($tenant_configuration)->product_default_image ?: 'imagen-no-disponible.jpg';
         $default_image_path = $default_product_image === 'imagen-no-disponible.jpg'
             ? asset('logo/imagen-no-disponible.jpg')
-            : asset('storage/defaults/' . $default_product_image);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            : tenant_asset('storage/defaults/' . $default_product_image);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $variationSelectors = [];
 
         foreach ($dataPaginate as $item) {
@@ -458,7 +460,9 @@ class EcommerceController extends Controller
             $has_discount = $pricing['has_social_proof_price'] || $pricing['has_real_discount'];
             $symbol = optional($variation->currency_type)->symbol ?: 'Bs.';
             $image_url = ($variation->image && $variation->image !== 'imagen-no-disponible.jpg')
-                ? asset('storage/uploads/items/' . $variation->image)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                ? tenant_asset('storage/uploads/items/' . $variation->image)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 : $default_image_path;
 
             $combinations[] = [
@@ -507,7 +511,9 @@ class EcommerceController extends Controller
         }
 
         $parent_image_url = ($parent->image && $parent->image !== 'imagen-no-disponible.jpg')
-            ? asset('storage/uploads/items/' . $parent->image)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            ? tenant_asset('storage/uploads/items/' . $parent->image)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             : $default_image_path;
 
         return [
@@ -2931,7 +2937,9 @@ class EcommerceController extends Controller
                 $price = (float) ($row['sale_unit_price'] ?? $row['unit_price'] ?? $row['price'] ?? 0);
                 $image = $row['image'] ?? $row['image_url'] ?? null;
                 if (is_string($image) && $image !== '' && $image !== 'imagen-no-disponible.jpg' && ! preg_match('#^https?://#i', $image)) {
-                    $image = asset('storage/uploads/items/'.$image);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                    $image = tenant_asset('storage/uploads/items/'.$image);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 }
                 if (! is_string($image) || $image === '' || $image === 'imagen-no-disponible.jpg') {
                     $image = asset('logo/imagen-no-disponible.jpg');

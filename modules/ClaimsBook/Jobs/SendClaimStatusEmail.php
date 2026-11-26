@@ -31,11 +31,14 @@ class SendClaimStatusEmail implements ShouldQueue
     public $tries = 2;
 
     protected int $claimId;
+    protected string $tenantUuid;
     protected int $statusClaimId;
     protected string $routeList;
 
     public function __construct(int $claimId, int $statusClaimId, string $routeList)
     {
+        $this->tenantUuid=app(\App\Services\Storage\TenantStorage::class)->uuid();
+        $this->afterCommit();
         $this->claimId       = $claimId;
         $this->statusClaimId = $statusClaimId;
         $this->routeList     = $routeList;
@@ -47,6 +50,8 @@ class SendClaimStatusEmail implements ShouldQueue
      */
     public function handle(): void
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantContext::class)->run($this->tenantUuid,function(){
         // Aplicar configuración SMTP del tenant activo
         Configuration::setConfigSmtpMail();
 
@@ -88,17 +93,18 @@ class SendClaimStatusEmail implements ShouldQueue
 
         // Adjuntar el PDF de constancia si está disponible en el disco del tenant
         if ($claim->pdf_path) {
-            $absolutePath = Storage::disk('tenant')->path($claim->pdf_path);
-            if (file_exists($absolutePath)) {
-                $mailable->attach($absolutePath, [
-                    'as'   => $claim->public_code . '.pdf',
-                    'mime' => 'application/pdf',
-                ]);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $disk=app(\App\Services\Storage\TenantStorage::class)->disk();
+            if($disk->exists($claim->pdf_path)) {
+                $mailable->attachData($disk->get($claim->pdf_path),$claim->public_code.'.pdf',['mime'=>'application/pdf']);
             }
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         }
 
         Mail::to($claim->email)->send($mailable);
 
         Log::info("SendClaimStatusEmail: Email enviado para reclamo {$claim->code} → estado {$status?->description}");
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 }

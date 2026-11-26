@@ -19,6 +19,7 @@ final class HkaAuthentication
 
     public function authenticate(string $environment, string $usuario, string $clave): array
     {
+        if (app()->isProduction()) throw new \RuntimeException('HKA está deshabilitado en esta instalación.');
         if (!isset(self::URLS[$environment])) {
             throw ValidationException::withMessages(['fiscal_environment' => 'El ambiente fiscal de HKA no es válido.']);
         }
@@ -81,6 +82,7 @@ final class HkaAuthentication
     /** Entrega el JWT únicamente a futuros adaptadores internos de HKA. */
     public function tokenFor(Company $company): string
     {
+        if (app()->isProduction()) throw new \RuntimeException('HKA está deshabilitado en esta instalación.');
         if ($company->fiscal_emission_mode !== 'digital' || !isset(self::URLS[$company->fiscal_environment])
             || !($credentials = self::credentials($company))) {
             throw ValidationException::withMessages(['fiscal_emission_mode' => 'La conexión HKA no está configurada.']);

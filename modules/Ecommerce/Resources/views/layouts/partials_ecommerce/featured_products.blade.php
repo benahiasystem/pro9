@@ -9,7 +9,9 @@
      <div class="product">
           <figure class="product-image-container">
               <a  href="/ecommerce/item/{{ $item->id }}/{{ \Illuminate\Support\Str::slug($item->description) }}" class="product-image">
-                  <img src="{{ asset('storage/uploads/items/'.$item->image) }}" alt="product">
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                  <img src="{{ tenant_asset('storage/uploads/items/'.$item->image) }}" alt="product">
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
               </a>
               <a  href="{{route('item_partial', ['id' => $item->id])}}" class="btn-quickview">Quick View</a>
           </figure>

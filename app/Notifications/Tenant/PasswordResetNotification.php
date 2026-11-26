@@ -85,7 +85,9 @@ class PasswordResetNotification extends Notification
     protected function resolveLogoPath(?Company $company): ?string
     {
         if ($company && !empty($company->logo)) {
-            $logoPath = storage_path('app/public/uploads/logos/' . $company->logo);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $logoPath = tenant_public_path('uploads/logos/' . $company->logo);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             if (file_exists($logoPath)) {
                 return $logoPath;
             }

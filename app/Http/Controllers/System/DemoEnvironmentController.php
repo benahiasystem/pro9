@@ -24,6 +24,10 @@ class DemoEnvironmentController extends Controller
 
     public function create(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        abort_if(config('tenant_storage.connection.bucket'),409,'El flujo demo local no está disponible con Storage privado. Usa Respaldos.');
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
         $request->validate([
             'client_id' => 'required',
             'name' => 'required',
@@ -96,6 +100,10 @@ class DemoEnvironmentController extends Controller
 
     public function restore(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        abort_if(config('tenant_storage.connection.bucket'),409,'El flujo demo local no está disponible con Storage privado. Usa Respaldos.');
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
         $request->validate([
             'client_id' => 'required',
             'restore_dbname_bkdemo' => 'required',
@@ -129,6 +137,10 @@ class DemoEnvironmentController extends Controller
 
     public function enableCron(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        abort_if(config('tenant_storage.connection.bucket'),409,'El flujo demo local no está disponible con Storage privado. Usa Respaldos.');
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
         $request->validate([
             'client_id' => 'required',
             'enabled_cron_restore_bkdemo' => 'required'

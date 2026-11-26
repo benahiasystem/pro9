@@ -216,7 +216,9 @@ trait JobReportTrait
         // $type = $request['type'];
         // $type_prefix = ($type == 'sale') ? 'ventas_' : 'compras_';
         $path = $this->getReportPath('zip');
-        $disk = Storage::disk('tenant');
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $disk = app(\App\Services\Storage\TenantStorage::class)->disk();
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $tray = $this->findDownloadTray($trayId);
 
 
@@ -224,26 +226,35 @@ trait JobReportTrait
 
         $files = JobBatchingTray::where('job_batch_id', $batch->id);
 
-        $diskPath = $disk->path('') . $path;
-
-        if (!$disk->exists($path)) {
-            $disk->makeDirectory($path);
-        }
-
-        $pathZip = $diskPath  . DIRECTORY_SEPARATOR . $filename. '.zip';
-        $zip = new ZipArchive;
-        Log::info('Creating final zip at path: ' . $pathZip);
-
-        if ($zip->open($pathZip, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-            $entryNames = [];
-            foreach ($files->get() as $file) {
-                $ouput = $disk->get(DIRECTORY_SEPARATOR.$this->getReportPath($format).DIRECTORY_SEPARATOR.$file->generated_filename);
-                $entry = \App\Services\Fiscal\DocumentFileName::archiveEntry($file->generated_filename, $entryNames);
-                $zip->addFromString($entry, $ouput);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $temporary=tempnam(sys_get_temp_dir(),'sab-report-');
+        if($temporary===false)throw new \RuntimeException('No se pudo preparar el ZIP.');
+        $localFiles=[];$zip=new ZipArchive();$stream=null;
+        try {
+            if($zip->open($temporary,ZipArchive::CREATE|ZipArchive::OVERWRITE)!==true)throw new \RuntimeException('No se pudo abrir el ZIP.');
+            $entryNames=[];
+            foreach($files->get() as $file){
+                $source=$this->getReportPath($format).'/'.$file->generated_filename;
+                $local=tempnam(sys_get_temp_dir(),'sab-entry-');
+                if($local===false)throw new \RuntimeException('No se pudo preparar una entrada del ZIP.');
+                $localFiles[]=$local;
+                $input=$disk->readStream($source);$output=fopen($local,'wb');
+                try {
+                    if(!is_resource($input)||!$output||stream_copy_to_stream($input,$output)===false)throw new \RuntimeException('No se pudo leer una entrada del ZIP.');
+                } finally {if(is_resource($input))fclose($input);if(is_resource($output))fclose($output);}
+                $entry=\App\Services\Fiscal\DocumentFileName::archiveEntry($file->generated_filename,$entryNames);
+                if(!$zip->addFile($local,$entry))throw new \RuntimeException('No se pudo agregar una entrada al ZIP.');
             }
-            $zip->close();
+            if(!$zip->close())throw new \RuntimeException('No se pudo cerrar el ZIP.');
+            $stream=fopen($temporary,'rb');
+            if(!$stream)throw new \RuntimeException('No se pudo leer el ZIP.');
+            $disk->put($path.'/'.$filename.'.zip',$stream);
+        } finally {
+            if(is_resource($stream))fclose($stream);
+            foreach($localFiles as $local)if(is_file($local))unlink($local);
+            if(is_file($temporary))unlink($temporary);
         }
-
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         $tray->file_name = $filename;
         $tray->date_end = date('Y-m-d H:i:s');

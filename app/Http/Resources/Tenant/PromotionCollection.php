@@ -21,7 +21,9 @@ class PromotionCollection extends ResourceCollection
                 'name' => $row->name,
                 'status' => $row->status,
                 'type'=> $row->type,
-                'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? ($row->apply_restaurant ? asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'promotions'.DIRECTORY_SEPARATOR.'restaurant'.DIRECTORY_SEPARATOR.$row->image) : asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'promotions'.DIRECTORY_SEPARATOR.$row->image)) : asset("/logo/{$row->image}"),
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? ($row->apply_restaurant ? tenant_asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'promotions'.DIRECTORY_SEPARATOR.'restaurant'.DIRECTORY_SEPARATOR.$row->image) : tenant_asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'promotions'.DIRECTORY_SEPARATOR.$row->image)) : tenant_asset("/logo/{$row->image}"),
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             ];
         });
     }

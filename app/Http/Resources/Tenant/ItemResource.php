@@ -145,7 +145,9 @@
                 'category_id' => $this->category_id,
                 'brand_id' => $this->brand_id,
                 'date_of_due' => !empty($this->date_of_due) ? $this->date_of_due->format('Y-m-d H:i:s') : null,
-                'image_url' => ($this->image !== 'imagen-no-disponible.jpg') ? asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $this->image) : asset("/logo/{$this->image}"),
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                'image_url' => ($this->image !== 'imagen-no-disponible.jpg') ? tenant_asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $this->image) : tenant_asset("/logo/{$this->image}"),
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 'apply_store' => (bool)$this->apply_store,
                 'tags' => $this->tags,
                 'tags_id' => $this->tags->pluck('tag_id'),

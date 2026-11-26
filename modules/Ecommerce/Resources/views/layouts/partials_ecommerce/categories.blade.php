@@ -20,8 +20,12 @@
                     @php $categorySlug = \Illuminate\Support\Str::slug($category->name, '-'); @endphp
                     <li class="menu-item ecommerce {{ $currentCategorySlug == $categorySlug ? 'selected-category' : '' }}" style="cursor:pointer;" onclick="window.location='{{ route('tenant.ecommerce.category', $categorySlug) }}'">
                         <a href="{{ route('tenant.ecommerce.category', $categorySlug) }}">
-                            @if($category->image && file_exists(public_path('storage/uploads/categories/'. $category->image)))
-                                <img class="category-logo" src="{{ asset('storage/uploads/categories/'. $category->image) }}" alt="{{$category->name}}" draggable="false">
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                            @if($category->image && file_exists(tenant_public_path('storage/uploads/categories/'. $category->image)))
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                                <img class="category-logo" src="{{ tenant_asset('storage/uploads/categories/'. $category->image) }}" alt="{{$category->name}}" draggable="false">
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
                             @else
                                 <img class="category-logo" src="{{ asset('logo/Image_not_available.png') }}" alt="{{$category->name}}" draggable="false">
                             @endif

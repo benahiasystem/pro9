@@ -27,13 +27,21 @@ class DatabaseSeeder extends Seeder
     }
     private function seedInitialData(): void
     {
-        User::firstOrCreate(['email'=>'admin@gmail.com'], [
+        $email = 'admin@gmail.com';
+        $password = '123456';
+        if (app()->isProduction()) {
+            $email = config('production.admin_email');
+            $file = config('production.admin_password_file');
+            $password = $file && is_readable($file) ? rtrim(file_get_contents($file), "\r\n") : '';
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 20) {
+                throw new \RuntimeException('La instalación requiere un correo de administrador y un secreto de al menos 20 caracteres.');
+            }
+        }
+        User::firstOrCreate(['email' => $email], [
             'name' => 'Administrador',
-            'email' => 'admin@gmail.com',
-            'password' => bcrypt('123456'),
+            'password' => bcrypt($password),
             'api_token' => Str::random(60),
         ]);
-
 
         $documents = [
             // ########## INICIO CAMBIO QUITAR BOLETA

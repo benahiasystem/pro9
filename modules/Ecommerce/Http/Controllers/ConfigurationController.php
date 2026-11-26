@@ -262,6 +262,8 @@ class ConfigurationController extends Controller
 
     public function uploadFile(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         if ($request->hasFile('file')) {
 
             $config = ConfigurationEcommerce::first();
@@ -286,7 +288,9 @@ class ConfigurationController extends Controller
             UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
 
             $stream = fopen($file->getPathname(), 'r');
-            Storage::put('public/uploads/logos/'.$name, $stream);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            app(\App\Services\Storage\TenantStorage::class)->disk()->put('public/uploads/logos/'.$name, $stream);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             if (is_resource($stream)) fclose($stream);
 
             $config->logo = $name;
@@ -304,6 +308,9 @@ class ConfigurationController extends Controller
             'success' => false,
             'message' =>  __('app.actions.upload.error'),
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function store_configuration_links(Request $request)

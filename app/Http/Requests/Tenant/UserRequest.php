@@ -8,7 +8,7 @@ class UserRequest extends FormRequest
 {
     public function authorize()
     {
-        return true;
+        return $this->user()?->isAdmin() ?? false;
     }
 
     public function rules()

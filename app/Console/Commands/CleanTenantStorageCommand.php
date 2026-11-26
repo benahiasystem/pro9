@@ -71,29 +71,18 @@ class CleanTenantStorageCommand extends Command
             $total_files += $result['deleted_files'];
             $total_space += $result['freed_space'];
 
-            $this->info(sprintf(
-                '[%s] %d archivo(s), %s',
-                $uuid,
-                $result['deleted_files'],
-                $this->formatBytes($result['freed_space'])
-            ));
-
-            // la marca solo avanza si realmente se borro, asi un dry-run no
-            // saltea la corrida real
-            if (!$dry_run) {
-                $configuration->update(['last_run_at' => $now]);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            if ($dry_run) {
+                $this->info(sprintf('[%s] %d archivo(s), %s',$uuid,$result['deleted_files'],$this->formatBytes($result['freed_space'])));
             }
-
         }
 
-        $this->line(sprintf(
-            '%s: %d programación(es) ejecutada(s) de %d activa(s), %d archivo(s), %s',
-            $dry_run ? 'Simulacion' : 'Limpieza',
-            $executed,
-            $configurations->count(),
-            $total_files,
-            $this->formatBytes($total_space)
-        ));
+        if ($dry_run) {
+            $this->line(sprintf('Simulación: %d programación(es), %d archivo(s), %s',$executed,$total_files,$this->formatBytes($total_space)));
+        } else {
+            $this->line(sprintf('Programaciones procesadas: %d de %d. Consulta los identificadores de las operaciones.',$executed,$configurations->count()));
+        }
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         return self::SUCCESS;
     }
@@ -142,38 +131,22 @@ class CleanTenantStorageCommand extends Command
      */
     private function runConfiguration(StorageCleanupConfiguration $configuration, string $uuid, bool $dry_run): array
     {
-        $tenant_path = $this->getTenantPath($uuid);
-
-        // el listado se filtra de nuevo contra la lista blanca: una fila vieja
-        // podria tener una carpeta que ya no se considera borrable
-        $packages = array_intersect(
-            $configuration->packages ?: [],
-            StorageManagementController::PACKAGE_DELETE
-        );
-
-        $deleted_files = 0;
-        $freed_space = 0;
-
-        foreach ($packages as $package) {
-
-            $path = $this->getPackagePath($tenant_path, $package);
-
-            if ($dry_run) {
-                $deleted_files += $this->countFiles($path);
-                $freed_space += $this->getDirectorySize($path);
-                continue;
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $packages=array_values(array_intersect($configuration->packages?:[],StorageManagementController::PACKAGE_DELETE));
+        $result=['deleted_files'=>0,'freed_space'=>0];
+        $administration=app(\App\Services\Storage\StorageAdministration::class);
+        if($dry_run){
+            foreach($packages as $package){
+                $usage=$administration->usage($uuid,$package);
+                $result['deleted_files']+=$usage['files'];$result['freed_space']+=$usage['space'];
             }
-
-            $result = $this->deleteFilesFromPath($path);
-
-            $deleted_files += $result['deleted_files'];
-            $freed_space += $result['freed_space'];
-
+        }elseif($packages){
+            $due=$this->resolveDueAt($configuration,Carbon::now())??Carbon::now();
+            $key=$this->option('force')?null:'scheduled:'.$configuration->id.':'.$due->toIso8601String();
+            $operation=$administration->start($uuid,'clean_packages',['packages'=>$packages,'configuration_id'=>$configuration->id,'due_at'=>$due->toDateTimeString()],$key);
+            $this->line('Operación en cola: '.$operation->id);
         }
-
-        return [
-            'deleted_files' => $deleted_files,
-            'freed_space' => $freed_space,
-        ];
+        return $result;
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 }

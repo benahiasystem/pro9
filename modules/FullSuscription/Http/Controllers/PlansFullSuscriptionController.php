@@ -207,7 +207,9 @@ use Modules\Payment\Models\PaymentConfiguration;
                     'company'    => [
                         'name' => $company->trade_name ?: $company->name,
                         'ruc'  => $company->number,
-                        'logo' => $company->logo ? asset('storage/uploads/logos/' . $company->logo) : null,
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                        'logo' => $company->logo ? tenant_asset('storage/uploads/logos/' . $company->logo) : null,
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                     ],
                 ]);
             } else {

@@ -49,6 +49,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('marketplace:purge')->dailyAt('03:30')->timezone('America/Caracas')->appendOutputTo(storage_path('logs/marketplace_purge.log'));
         // Limpieza de archivos por empresa segun lo programado en storage_cleanup_configurations.
         // Corre cada 30 min porque la hora la define cada configuracion, no el schedule
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $schedule->command('storage:recover')->everyFiveMinutes()->withoutOverlapping()->appendOutputTo(storage_path('logs/storage_recover.log'));
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $schedule->command('storage:clean')->everyMinute()->timezone('America/Caracas')->appendOutputTo(storage_path('logs/storage_clean.log'));
         $schedule->command('mozo:sync')->everyThirtyMinutes()->sendOutputTo(storage_path('logs/mozo_sync.log'));
         $schedule->command('vendeya:sync')->everyThirtyMinutes()->sendOutputTo(storage_path('logs/vendeya_sync.log'));

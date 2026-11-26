@@ -486,7 +486,9 @@ export default {
             if (value.startsWith('storage/')) return this.withCacheBust(`/${value}`)
 
             if (type === 'logo' || type === 'logo_dark') {
-                return this.withCacheBust(`/storage/uploads/logos/${value}`)
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                return this.withCacheBust(`/media/images/logos/${value}`)
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             }
 
             return this.withCacheBust(value)

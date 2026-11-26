@@ -48,8 +48,9 @@ if ($current_hostname) {
         // Ruta pública relacionada a `claims` y manejada por `ClaimController::file`
         // Ej: /claims/file/responses/imagen.png
         Route::get('/claims/file/{folder}/{filename}', 'ClaimController@file')
-            ->name('tenant.claims.file')
-            ->where('filename', '.*');
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            ->name('tenant.claims.file')->middleware(['signed','throttle:60,1']);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         // ──────────────────────────────────────────────────────────────────────────
         // Rutas PRIVADAS — requieren auth y tenant activo

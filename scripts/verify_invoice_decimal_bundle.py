@@ -727,7 +727,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     ]){
       const messages=[];
       const checkout={form:{document_type_id:'01',customer_id:1,exchange_rate_sale:'1',total:'1',items:[row]},
-        rowsItems:1,businessTurns:{},$message:{error:message=>messages.push(message)},
+        rowsItems:1,businessTurns:{},isPaymentCurrencyBlocked:()=>false,$message:{error:message=>messages.push(message)},
         sleep(){throw new Error('Invalid POS quantity opened payment')},
         asignPlateNumberToItems(){throw new Error('Invalid Garage quantity reached submission')}};
       await clickPayment.call(checkout);

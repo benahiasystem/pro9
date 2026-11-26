@@ -47,8 +47,10 @@
     @endif
 
     @if(isset($vc_compact_sidebar) && $vc_compact_sidebar->skin)
-      @if (file_exists(storage_path('app/public/skins/' . $vc_compact_sidebar->skin->filename)))
-        <link rel="stylesheet" href="{{ asset('storage/skins/' . $vc_compact_sidebar->skin->filename) }}" />
+      @if ((!$vc_compact_sidebar->skin->is_system || file_exists(storage_path('app/public/skins/' . $vc_compact_sidebar->skin->filename))))
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+        <link rel="stylesheet" href="{{ tenant_skin_url($vc_compact_sidebar->skin) }}" />
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
       @endif
     @endif
 

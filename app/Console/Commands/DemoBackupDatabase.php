@@ -56,6 +56,13 @@ class DemoBackupDatabase extends Command
      */
     public function handle()
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        if (config('tenant_storage.connection.bucket')) {
+            $this->error('El flujo demo local no está disponible con Storage privado. Usa Respaldos para conservar MySQL y sus archivos.');
+            return self::FAILURE;
+        }
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
         try {
             $database = $this->argument('database');
             $new_database = $this->argument('new_database');

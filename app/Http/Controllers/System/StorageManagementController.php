@@ -76,45 +76,21 @@ class StorageManagementController extends Controller
         return view('system.storage-management.index');
     }
 
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     public function records()
     {
-        // se mide la partición donde viven los archivos, no la raíz del sistema
-        $base_path = storage_path();
-
-        $total_space = disk_total_space($base_path);
-        $free_space = disk_free_space($base_path);
-
-        // ambas devuelven false si la ruta no es accesible (open_basedir, permisos)
-        $measured = ($total_space !== false && $free_space !== false && $total_space > 0);
-
-        $storages = DB::table('websites')
-            ->leftJoin('hostnames', 'hostnames.website_id', '=', 'websites.id')
-            ->leftJoin('clients', 'clients.hostname_id', '=', 'hostnames.id')
-            ->select('websites.uuid', 'clients.name', 'clients.number', 'hostnames.fqdn')
-            ->get()
-            ->map(function ($website) {
-                return [
-                    'uuid' => $website->uuid,
-                    // un website sin cliente asociado se identifica por su uuid
-                    'description' => $website->name ?: $website->uuid,
-                    'number' => $website->number,
-                    'fqdn' => $website->fqdn,
-                    'space' => $this->getDirectorySize($this->getTenantPath($website->uuid)),
-                ];
-            })
-            ->sortByDesc('space')
-            ->values();
-
-        return [
-            'measured' => $measured,
-            'total_space' => $measured ? $total_space : null,
-            'free_space' => $measured ? $free_space : null,
-            // en apfs los volúmenes comparten espacio, restar es la única forma confiable
-            'used_space' => $measured ? $total_space - $free_space : null,
-            'tenants_space' => $storages->sum('space'),
-            'storages' => $storages,
-        ];
+        $storages=DB::connection(config('tenancy.db.system-connection-name','system'))->table('websites')
+            ->leftJoin('hostnames','hostnames.website_id','=','websites.id')
+            ->leftJoin('clients','clients.hostname_id','=','hostnames.id')
+            ->select('websites.uuid','clients.name','clients.number','hostnames.fqdn')->get()->map(function($website){
+                $row=['uuid'=>$website->uuid,'description'=>$website->name?:$website->uuid,'number'=>$website->number,'fqdn'=>$website->fqdn];
+                try{return $row+app(\App\Services\Storage\StorageAdministration::class)->usage($website->uuid)+['measured'=>true];}
+                catch(\Throwable $error){return $row+['space'=>null,'files'=>null,'measured_at'=>null,'measured'=>false];}
+            })->sortByDesc('space')->values();
+        return ['measured'=>false,'capacity_available'=>false,'total_space'=>null,'free_space'=>null,'used_space'=>null,
+            'tenants_space'=>$storages->contains('measured',false)?null:$storages->sum('space'),'storages'=>$storages];
     }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
     /**
      * Empresas disponibles para programar, con el nombre que ve el admin
@@ -327,59 +303,31 @@ class StorageManagementController extends Controller
      * Alimenta el dialogo: el admin necesita ver cuanto ocupa cada paquete
      * antes de decidir que borra
      */
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     public function packages(string $uuid)
     {
-        $tenant_path = $this->getValidatedTenantPath($uuid);
-
-        $packages = $this->getPackageOptions()
-            ->map(function ($package) use ($tenant_path) {
-
-                $path = $this->getPackagePath($tenant_path, $package['package']);
-
-                return $package + [
-                    'files' => $this->countFiles($path),
-                    'space' => $this->getDirectorySize($path),
-                ];
-
-            })
-            ->values();
-
-        return [
-            'packages' => $packages,
-            'total_space' => $packages->sum('space'),
-        ];
+        \App\Tenancy\Models\Website::where('uuid',$uuid)->firstOrFail();
+        $packages=$this->getPackageOptions()->map(fn($package)=>$package+app(\App\Services\Storage\StorageAdministration::class)->usage($uuid,$package['package']));
+        return ['packages'=>$packages,'total_space'=>$packages->sum('space')];
     }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
     /**
      * Elimina los archivos de los paquetes indicados
      */
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     public function clean(string $uuid, Request $request)
     {
-        $request->validate([
-            'packages' => 'required|array|min:1',
-            // la lista blanca es lo unico que decide que rutas son borrables
-            'packages.*' => ['required', 'string', Rule::in(self::PACKAGE_DELETE)],
-        ]);
-
-        $tenant_path = $this->getValidatedTenantPath($uuid);
-
-        $deleted_files = 0;
-        $freed_space = 0;
-
-        foreach ($request->input('packages') as $package) {
-
-            $result = $this->deleteFilesFromPath($this->getPackagePath($tenant_path, $package));
-
-            $deleted_files += $result['deleted_files'];
-            $freed_space += $result['freed_space'];
-
-        }
-
-        return [
-            'success' => true,
-            'message' => "Se eliminaron {$deleted_files} archivo(s), " . $this->formatBytes($freed_space) . ' liberados',
-            'deleted_files' => $deleted_files,
-            'freed_space' => $freed_space,
-        ];
+        $request->validate(['packages'=>'required|array|min:1','packages.*'=>['required','string',Rule::in(self::PACKAGE_DELETE)]]);
+        \App\Tenancy\Models\Website::where('uuid',$uuid)->firstOrFail();
+        $operation=app(\App\Services\Storage\StorageAdministration::class)->start($uuid,'clean_packages',['packages'=>$request->input('packages')]);
+        return response()->json(['success'=>true,'operation_id'=>$operation->id,'status_url'=>url('storage-management/operations/'.$operation->id)],202);
     }
+
+    public function operation(string $id)
+    {
+        $operation=\App\Models\Storage\StorageOperation::where('action','!=','candidate')->findOrFail($id);
+        return ['id'=>$operation->id,'status'=>$operation->status,'result'=>$operation->result,'diagnostic'=>$operation->diagnostic];
+    }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 }

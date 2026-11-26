@@ -12,7 +12,11 @@ class TrustProxies extends Middleware
      *
      * @var array|string|null
      */
-    protected $proxies = '*';
+    protected function proxies()
+    {
+        // The production FastCGI listener supplies the scheme and strips forwarded headers.
+        return app()->isProduction() ? null : '*';
+    }
 
     /**
      * The headers that should be used to detect proxies.

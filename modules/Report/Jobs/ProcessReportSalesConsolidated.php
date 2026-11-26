@@ -56,6 +56,10 @@ class ProcessReportSalesConsolidated implements ShouldQueue
         $this->report_source = $report_source;
     }
 
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    public function middleware(): array { return [new \App\Jobs\TenantStorageJobMiddleware()]; }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
     public function handle()
     {
         ini_set('memory_limit', '1024M');
@@ -81,7 +85,7 @@ class ProcessReportSalesConsolidated implements ShouldQueue
 
             if ($storageFormat === 'xlsx') {
                 $export = $this->buildExcelExport($company, $establishment, $params);
-                $export->store(DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR.$filename.'.xlsx', 'tenant');
+                app(\App\Services\Storage\TenantStorage::class)->storeExcel($export,DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR.$filename.'.xlsx');
                 unset($export);
             } else {
                 $pdf = $this->buildPdf($company, $establishment, $params);

@@ -140,7 +140,9 @@ div.cart-dropdown {
                  <a href="{{ route("tenant.restaurant.menu") }}" class="logo" style="max-width: 180px">
                     @php($headerLogo = data_get($company ?? null, 'logo') ?: data_get($information ?? null, 'logo'))
                     @if($headerLogo)
-                        <img src="{{ asset('storage/uploads/logos/'.$headerLogo) }}" alt="Logo" />
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                        <img src="{{ tenant_asset('storage/uploads/logos/'.$headerLogo) }}" alt="Logo" />
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                     @else
                         <img src="{{asset('logo/tulogo.png')}}" alt="Logo" />
                     @endif

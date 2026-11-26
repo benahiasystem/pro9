@@ -70,6 +70,7 @@ final class HkaTransport
 
     private function request(string $token, int $timeout)
     {
+        if (app()->isProduction()) throw new \RuntimeException('HKA está deshabilitado en esta instalación.');
         return Http::acceptJson()->asJson()->withToken($token)->timeout($timeout)->connectTimeout(5)
             ->withOptions(['allow_redirects' => false, 'verify' => true]);
     }

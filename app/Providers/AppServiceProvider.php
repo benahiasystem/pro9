@@ -83,6 +83,24 @@ class AppServiceProvider extends ServiceProvider
 	public function register()
 	{
 		$this->app->singleton(\App\Services\CentrifugoService::class);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $this->app->singleton(\App\Services\Storage\TenantMedia::class);
+        $this->app->scoped(\App\Services\Storage\TenantUploads::class);
+        $cleanup = function () {
+            try {app(\App\Services\Storage\TenantMedia::class)->cleanup();}
+            finally {
+                app(\App\Services\Storage\TenantUploads::class)->cleanup();
+                \App\Services\Storage\StorageLock::releaseFinished();
+            }
+        };
+        $this->app->terminating($cleanup);
+        $this->app->make('events')->listen([
+            \Illuminate\Queue\Events\JobProcessed::class,
+            \Illuminate\Queue\Events\JobExceptionOccurred::class,
+            \Illuminate\Console\Events\CommandFinished::class,
+        ], $cleanup);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
 	}
 
     /**

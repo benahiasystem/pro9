@@ -35,14 +35,18 @@
         <div class="logo-container-mobile">
             <a href="{{route('tenant.dashboard.index')}}" class="logo pt-2 pt-md-0">
                 @if($vc_company->logo)
-                    <img src="{{ asset('storage/uploads/logos/' . $vc_company->logo) }}" alt="Logo" class="logo-light"
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                    <img src="{{ tenant_asset('storage/uploads/logos/' . $vc_company->logo) }}" alt="Logo" class="logo-light"
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
                         style="{{ $vc_company->logo_dark ? '' : '--show-light-logo: block;' }}" />
                 @else
                     <img src="{{ asset('logo/tulogo.png') }}" alt="Logo" />
                 @endif
 
                 @if($vc_company->logo_dark)
-                    <img src="{{ asset('storage/uploads/logos/' . $vc_company->logo_dark) }}" alt="Logo" class="logo-dark" />
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                    <img src="{{ tenant_asset('storage/uploads/logos/' . $vc_company->logo_dark) }}" alt="Logo" class="logo-dark" />
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
                 @endif
             </a>
         </div>

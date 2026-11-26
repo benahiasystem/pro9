@@ -54,6 +54,10 @@ class ProcessReportMassiveDocuments implements ShouldQueue
      *
      * @return void
      */
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    public function middleware(): array { return [new \App\Jobs\TenantStorageJobMiddleware()]; }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
     public function handle()
     {
         ini_set('memory_limit', '1024M');
@@ -103,7 +107,9 @@ class ProcessReportMassiveDocuments implements ShouldQueue
             $view = $this->createPdf($data, $height, (array) $this->params);
 
             $path = 'download_tray_pdf';
-            Storage::disk('tenant')->makeDirectory($path);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            app(\App\Services\Storage\TenantStorage::class)->disk()->makeDirectory($path);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             $this->uploadStorage($filename, $view, $path);
 
             if ($this->is_batching) {

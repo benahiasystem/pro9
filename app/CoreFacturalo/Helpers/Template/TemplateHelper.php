@@ -464,7 +464,7 @@ use Illuminate\Support\Str;
 
             if ( !Str::startsWith($path, 'uploads/')) $path = 'uploads/'.$path;
 
-            return Storage::disk('public')->exists($path) && is_file(public_path('storage/'.$path));
+            return app(\App\Services\Storage\TenantStorage::class)->disk()->exists($path);
         }
 
         /** Logo de sucursal primero; omitir archivos ausentes, ilegibles o inválidos. */
@@ -483,10 +483,10 @@ use Illuminate\Support\Str;
             if (!$path) return null;
             try {
                 if (!self::existsFileInUploads($path)) return null;
-            } catch (\League\Flysystem\PathTraversalDetected $exception) {
+            } catch (\League\Flysystem\PathTraversalDetected | \InvalidArgumentException $exception) {
                 return null;
             }
-            $absolute = public_path($path);
+            $absolute = tenant_public_path($path);
             if (!is_readable($absolute)) return null;
             $content = @file_get_contents($absolute);
             if ($content === false || trim($content) === '') return null;

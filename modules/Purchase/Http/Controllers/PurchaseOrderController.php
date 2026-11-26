@@ -212,7 +212,9 @@ class PurchaseOrderController extends Controller
                 UploadFileHelper::checkIfValidFile($file_name, $temp_path, $is_image, 'jpg,jpeg,png,gif,svg,webp,pdf', $allowed_file_types);
                 // validaciones archivos
 
-                Storage::disk('tenant')->put('purchase_order_attached'.DIRECTORY_SEPARATOR.$file_name, $file_content);
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                app(\App\Services\Storage\TenantStorage::class)->disk()->put('purchase_order_attached'.DIRECTORY_SEPARATOR.$file_name, $file_content);
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 $this->purchase_order->upload_filename = $file_name;
                 $this->purchase_order->save();
 
@@ -353,7 +355,12 @@ class PurchaseOrderController extends Controller
 
         if (!$purchase_order) throw new Exception("El código {$external_id} es inválido, no se encontro la orden de compra relacionada");
 
-        return Storage::disk('tenant')->download('purchase_order_attached'.DIRECTORY_SEPARATOR.$purchase_order->upload_filename);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $owner = $purchase_order;
+        $user = auth()->user();
+        abort_unless($owner && $user && ($user->isAdmin() || (int) $owner->establishment_id === (int) $user->establishment_id), 404);
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download('purchase_order_attached'.DIRECTORY_SEPARATOR.$purchase_order->upload_filename);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
     }
 
@@ -505,23 +512,10 @@ class PurchaseOrderController extends Controller
 
     function upload_attached($request)
     {
-        $file = $request['file'];
-        $type = $request['type'];
-
-        $temp = tempnam(sys_get_temp_dir(), $type);
-        file_put_contents($temp, file_get_contents($file));
-
-        $mime = mime_content_type($temp);
-        $data = file_get_contents($temp);
-
-        return [
-            'success' => true,
-            'data' => [
-                'filename' => $file->getClientOriginalName(),
-                'temp_path' => $temp,
-                'temp_image' => 'data:' . $mime . ';base64,' . base64_encode($data)
-            ]
-        ];
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $result = app(\App\Services\Storage\TenantUploads::class)->create($request['file']);
+        return $result;
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function anular($id)

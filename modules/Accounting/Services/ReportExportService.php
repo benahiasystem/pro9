@@ -3,11 +3,12 @@
 namespace Modules\Accounting\Services;
 
 use App\Models\Tenant\User;
+use App\Services\Storage\{StorageLock,TenantStorage};
 use Brick\Math\BigDecimal;
 use Illuminate\Support\Str;
 use Modules\Accounting\Domain\{ApiProblem, CompanyContext, Permissions};
 use Modules\Accounting\Models\{ReportJob, ReportArtifact, Account, ThirdParty, CostCenter};
-use Modules\Accounting\Support\{ReportInput, ReportSchema, TenantDB as DB};
+use Modules\Accounting\Support\{PrivateStorage, ReportInput, ReportSchema, TenantDB as DB};
 
 /** Capture once under a consistent read; render and serve only immutable files. */
 final class ReportExportService
@@ -24,11 +25,12 @@ final class ReportExportService
         return $user;
     }
 
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     private function directory(string $id): string
     {
-        $c = app(CompanyContext::class);
-        return rtrim(config('accounting.private_storage', storage_path('app/accounting/private')), '/') . '/reports/' . $c->organizationId() . '/' . $c->id() . '/' . $id;
+        return 'reports/'.$id;
     }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
     private function encoded(array $value): string
     {
@@ -70,17 +72,14 @@ final class ReportExportService
                 }
                 $reports->assertBookPrecision($kind, $f);
                 $id = (string) Str::uuid();
-                $directory = $this->directory($id);
-                if (!mkdir($directory, 0700, true) && !is_dir($directory)) {
-                    throw new \RuntimeException('No se puede preparar el archivo privado del informe.');
-                }
-                $path = $directory . '/data.jsonl';
-                $handle = fopen($path, 'xb');
-                if (!$handle) {
-                    throw new \RuntimeException('No se puede conservar el informe.');
-                }
-                $written = $path;
-                chmod($path, 0600);
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                $storage = app(PrivateStorage::class);
+                $path = $this->directory($id).'/data.jsonl';
+                $written = $storage->workspace().'/'.$id.'.pending';
+                $handle = fopen($written,'xb');
+                if (!$handle) throw new \RuntimeException('No se puede conservar el informe.');
+                chmod($written,0600);
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 $header = $report;
                 unset($header['rows'], $header['page'], $header['per_page'], $header['last_page']);
                 $header['export_id'] = $id;
@@ -131,7 +130,9 @@ final class ReportExportService
                 } finally {
                     fclose($handle);
                 }
-                chmod($path, 0400);
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                $storage->putFile($path,$written);
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 $digest = hash_final($hash);
                 $meta = $header;
                 unset($meta['presentation'], $meta['opening_groups']);
@@ -142,24 +143,27 @@ final class ReportExportService
                 app(AuditService::class)->record($user, 'report.captured', 'report_job', $id, ['kind' => $kind, 'filters' => $f, 'data_version' => $report['data_version'], 'snapshot_sha256' => $digest, 'rows' => $count, 'totals' => $report['totals']]);
                 return $this->resource($job);
             });
-        } catch (\Throwable $error) {
-            if ($written && is_file($written)) {
-                unlink($written);
-            }
-            throw $error;
+        } finally {
+            if ($written && is_file($written)) unlink($written);
         }
     }
 
     private function readable(ReportJob $job): string
     {
-        $path = $this->directory($job->id) . '/data.jsonl';
-        if ($job->status !== 'ready' || $job->schema_version !== 2 || $job->path !== $path || !is_file($path) || is_link($path) || filesize($path) > self::MAX_BYTES) {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $relative = $this->directory($job->id).'/data.jsonl';
+        $path = $job->status === 'ready' && $job->schema_version === 2 && $job->path === $relative
+            ? app(PrivateStorage::class)->materialize($relative,self::MAX_BYTES)
+            : null;
+        if (!$path) {
             throw new ApiProblem('REPORT_SNAPSHOT_MISSING', 'La copia conservada no está disponible. Revisa o restaura su respaldo antes de continuar.', 409);
         }
-        if (!hash_equals($job->sha256, hash_file('sha256', $path))) {
+        if (!hash_equals($job->sha256,hash_file('sha256',$path))) {
+            unlink($path);
             throw new ApiProblem('REPORT_SNAPSHOT_CHANGED', 'La huella del informe conservado no coincide. No se genera otra descarga con datos alterados.', 409);
         }
         return $path;
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     /** Reads only the sealed snapshot. No report query is run while rendering. */
@@ -197,6 +201,7 @@ final class ReportExportService
             }
         } finally {
             fclose($handle);
+            unlink($path);
         }
     }
 
@@ -212,56 +217,50 @@ final class ReportExportService
         }
         $this->authorize($user);
         $job = ReportJob::findOrFail($id);
-        $this->readable($job);
-        $directory = $this->directory($id);
-        $lock = fopen($directory . '/' . $format . '.lock', 'c');
-        if (!$lock || !flock($lock, LOCK_EX)) {
-            throw new \RuntimeException('No se puede preparar la descarga.');
-        }
-        $temporary = null;
-        try {
-            $artifact = ReportArtifact::where('report_job_id', $id)->where('format', $format)->first();
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $scope = 'accounting-report:'.app(TenantStorage::class)->uuid().':'.$id.':'.$format;
+        return app(StorageLock::class)->run($scope,function () use ($job,$id,$format,$user) {
+            $storage = app(PrivateStorage::class);
+            $relative = $this->directory($id).'/'.$format.'.bin';
+            $artifact = ReportArtifact::where('report_job_id',$id)->where('format',$format)->first();
             if (!$artifact) {
-                $temporary = $directory . '/' . (string) Str::uuid() . '.pending';
-                $renderer = app(ReportRenderer::class);
-                $renderer->write($job, $format, $temporary);
-                $bytes = filesize($temporary);
-                if (!$bytes || $bytes > self::MAX_BYTES) {
-                    throw new ApiProblem('REPORT_ARTIFACT_SIZE', 'El archivo supera el tamaño permitido. Selecciona un intervalo menor; no se entrega una copia parcial.', 413);
+                $temporary = $storage->workspace().'/'.Str::uuid().'.pending';
+                try {
+                    $renderer = app(ReportRenderer::class);
+                    $renderer->write($job,$format,$temporary);
+                    $bytes = filesize($temporary);
+                    if (!$bytes || $bytes > self::MAX_BYTES) {
+                        throw new ApiProblem('REPORT_ARTIFACT_SIZE', 'El archivo supera el tamaño permitido. Selecciona un intervalo menor; no se entrega una copia parcial.', 413);
+                    }
+                    $digest = hash_file('sha256',$temporary);
+                    $artifact = DB::transaction(function () use ($job,$format,$relative,$digest,$bytes,$renderer,$user,$storage,$temporary) {
+                        DB::table('accounting_companies')->where('id',app(CompanyContext::class)->id())->lockForUpdate()->first();
+                        $this->authorize($user);
+                        $storage->putFile($relative,$temporary);
+                        return ReportArtifact::create(['report_job_id'=>$job->id,'format'=>$format,'path'=>$relative,'sha256'=>$digest,
+                            'bytes'=>$bytes,'renderer_revision'=>$renderer->revision(),'created_by'=>$user]);
+                    });
+                } finally {
+                    if (is_file($temporary)) unlink($temporary);
                 }
-                $digest = hash_file('sha256', $temporary);
-                $target = $directory . '/' . $format . '.bin';
-                if (is_file($target)) {
-                    throw new ApiProblem('REPORT_ARTIFACT_CONFLICT', 'Existe un archivo sin su registro de integridad. Revisa el respaldo antes de reemplazarlo.', 409);
-                }
-                if (!rename($temporary, $target)) {
-                    throw new \RuntimeException('No se pudo conservar la descarga completa.');
-                }
-                $temporary = $target;
-                chmod($target, 0400);
-                $artifact = DB::transaction(function () use ($job, $format, $target, $digest, $bytes, $renderer, $user) {
-                    DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
-                    $this->authorize($user);
-                    return ReportArtifact::create(['report_job_id' => $job->id, 'format' => $format, 'path' => $target, 'sha256' => $digest, 'bytes' => $bytes, 'renderer_revision' => $renderer->revision(), 'created_by' => $user]);
-                });
-                $temporary = null;
+            } else {
+                unlink($this->readable($job));
             }
-            $path = $directory . '/' . $format . '.bin';
-            if ($artifact->path !== $path || !is_file($path) || is_link($path) || filesize($path) !== $artifact->bytes || !hash_equals($artifact->sha256, hash_file('sha256', $path))) {
+
+            $path = $artifact->path === $relative ? $storage->materialize($relative,self::MAX_BYTES) : null;
+            if (!$path || filesize($path) !== $artifact->bytes || !hash_equals($artifact->sha256,hash_file('sha256',$path))) {
                 throw new ApiProblem('REPORT_ARTIFACT_CHANGED', 'La descarga conservada falta o no coincide con su huella. Restaura su respaldo; no se sustituye silenciosamente.', 409);
             }
-            DB::transaction(function () use ($job, $artifact, $user) {
-                DB::table('accounting_companies')->where('id', app(CompanyContext::class)->id())->lockForUpdate()->first();
+            DB::transaction(function () use ($job,$artifact,$user) {
+                DB::table('accounting_companies')->where('id',app(CompanyContext::class)->id())->lockForUpdate()->first();
                 $this->authorize($user);
-                app(AuditService::class)->record($user, 'report.downloaded', 'report_job', $job->id, ['format' => $artifact->format, 'snapshot_sha256' => $job->sha256, 'artifact_sha256' => $artifact->sha256, 'data_version' => $job->snapshot['data_version']]);
+                app(AuditService::class)->record($user,'report.downloaded','report_job',$job->id,[
+                    'format'=>$artifact->format,'snapshot_sha256'=>$job->sha256,'artifact_sha256'=>$artifact->sha256,'data_version'=>$job->snapshot['data_version'],
+                ]);
             });
-            return ['path' => $path, 'sha256' => $artifact->sha256, 'snapshot_sha256' => $job->sha256, 'filename' => 'contabilidad-' . $job->kind . '-' . $job->snapshot['to'] . '-' . substr($job->id, 0, 8) . '.' . $format];
-        } finally {
-            if ($temporary && is_file($temporary)) {
-                unlink($temporary);
-            }
-            flock($lock, LOCK_UN);
-            fclose($lock);
-        }
+            return ['path'=>$path,'sha256'=>$artifact->sha256,'snapshot_sha256'=>$job->sha256,
+                'filename'=>'contabilidad-'.$job->kind.'-'.$job->snapshot['to'].'-'.substr($job->id,0,8).'.'.$format];
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 }

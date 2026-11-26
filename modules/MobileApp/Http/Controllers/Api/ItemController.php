@@ -129,6 +129,8 @@ class ItemController extends Controller
      */
     public function update(ItemRequest $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
 
         $item = Item::findOrFail($request->id);
         $item->fill($request->all());
@@ -159,6 +161,9 @@ class ItemController extends Controller
                 'barcode' => $item->barcode,
             ]
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 
@@ -227,31 +232,15 @@ class ItemController extends Controller
      */
     public function saveImage(&$item, $request)
     {
-        $temp_path = $request->temp_path;
-
-        if($temp_path)
-        {
-            $old_filename = $request->image;
-            $folder = 'items';
-
-            $item->image = UploadFileHelper:: uploadImageFromTempFile($folder, $old_filename, $temp_path, "{$item->description}-{$item->id}", true);
-
-            //size medium
-            $image_medium = $item->getImageResize($temp_path, 512);
-            $item->image_medium = UploadFileHelper:: uploadImageFromTempFile($folder, $old_filename, (string) $image_medium->encode('jpg', 30), "{$item->description}-{$item->id}", false, 'medium');
-
-              //size small
-            $image_small = $item->getImageResize($temp_path, 256);
-            $item->image_small = UploadFileHelper:: uploadImageFromTempFile($folder, $old_filename, (string) $image_small->encode('jpg', 20), "{$item->description}-{$item->id}", false, 'small');
-        }
-        else if(!$request->image && !$request->temp_path && !$request->image_url)
-        {
-            $description = 'imagen-no-disponible.jpg';
-            $item->image = $description;
-            $item->image_medium = $description;
-            $item->image_small = $description;
-        }
-
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($item, $request) {
+            if ($request->temp_path) {
+                app(\App\Services\Storage\ItemImageWriter::class)->replace($item, $request->temp_path);
+            } elseif (!$item->image) {
+                $item->image = $item->image_medium = $item->image_small = 'imagen-no-disponible.jpg';
+            }
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 
@@ -330,54 +319,12 @@ class ItemController extends Controller
             return false;
         }
 
-        $file = $request->file('file');
-        $temp_path = $file->getRealPath();
-        $old_filename = $file->getClientOriginalName();
-        $folder = 'items';
-        $name = "{$item->description}-{$item->id}";
-
-        $this->deleteOldImages($item);
-
-        $item->image = UploadFileHelper::uploadImageFromTempFile(
-            $folder, $old_filename, $temp_path, $name, true
-        );
-
-        $image_medium = $item->getImageResize($temp_path, 512);
-        $item->image_medium = UploadFileHelper::uploadImageFromTempFile(
-            $folder, $old_filename, (string) $image_medium->encode('jpg', 30), $name, false, 'medium'
-        );
-
-        $image_small = $item->getImageResize($temp_path, 256);
-        $item->image_small = UploadFileHelper::uploadImageFromTempFile(
-            $folder, $old_filename, (string) $image_small->encode('jpg', 20), $name, false, 'small'
-        );
-
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\ItemImageWriter::class)->replace($item, $request->file('file')->getRealPath());
         return true;
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
-
-    /**
-     *
-     * Elimina del storage las imágenes anteriores del item (si no son el placeholder).
-     */
-    protected function deleteOldImages(Item $item): void
-    {
-        $placeholder = 'imagen-no-disponible.jpg';
-        $directory = 'public'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR;
-
-        foreach (['image', 'image_medium', 'image_small'] as $column) {
-            $filename = $item->{$column};
-            if ($filename && $filename !== $placeholder) {
-                Storage::delete($directory.$filename);
-            }
-        }
-    }
-
-
-    /**
-     *
-     * Estructura de respuesta unificada para save().
-     */
     protected function buildSavedResponse(Item $item): array
     {
         $full_description = $item->internal_id

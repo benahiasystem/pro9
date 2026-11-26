@@ -819,6 +819,8 @@ class PaymentLinkController extends Controller
      */
     public function uploadedFile(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
 
         $validate_upload = UploadFileHelper::validateUploadFile($request, 'file', 'jpg,jpeg,png,svg,webp');
         if(!$validate_upload['success']) return $validate_upload;
@@ -837,7 +839,7 @@ class PaymentLinkController extends Controller
 
             if($temp_file['success'])
             {
-                $filename = UploadFileHelper::uploadFileFromTempFile('payment_links', $temp_file['data']['filename'], $temp_file['data']['temp_path'], $payment_link->id);
+                $filename = UploadFileHelper::uploadFileFromTempFile('payment_links', $temp_file['data']['filename'], app(\App\Services\Storage\TenantUploads::class)->materialize($temp_file['data']['temp_path'],'image'), $payment_link->id);
                 $payment_link->uploaded_filename = $filename;
                 $payment_link->save();
 
@@ -853,6 +855,9 @@ class PaymentLinkController extends Controller
             'success' => false,
             'message' =>  __('app.actions.upload.error'),
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 }

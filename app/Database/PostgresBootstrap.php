@@ -9,9 +9,9 @@ final class PostgresBootstrap
 {
     public static function install(Connection $db): void
     {
-        if ($db->getDriverName() !== 'pgsql') throw new \LogicException('Esta instalación requiere PostgreSQL 17.11.');
-        if ((int) $db->selectOne('SHOW server_version_num')->server_version_num !== 170011) {
-            throw new \RuntimeException('La versión requerida es PostgreSQL 17.11.');
+        if ($db->getDriverName() !== 'pgsql') throw new \LogicException('Esta instalación requiere PostgreSQL 17.');
+        if (intdiv((int) $db->selectOne('SHOW server_version_num')->server_version_num, 10000) !== 17) {
+            throw new \RuntimeException('La versión requerida es PostgreSQL 17.');
         }
         $db->statement('CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public');
         $schema = $db->selectOne("SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid=e.extnamespace WHERE e.extname='unaccent'")->nspname;

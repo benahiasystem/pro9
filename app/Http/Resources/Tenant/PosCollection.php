@@ -43,7 +43,7 @@ class PosCollection extends ResourceCollection
         $defaultImage = $configuration->product_default_image ?? 'imagen-no-disponible.jpg';
         $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
             ? asset('logo/imagen-no-disponible.jpg')
-            : asset('storage/defaults/' . $defaultImage);
+            : tenant_asset('storage/defaults/' . $defaultImage);
 
         return [
             'stock' => $row->getStockByWarehouse(),
@@ -68,7 +68,7 @@ class PosCollection extends ResourceCollection
                         'calculation_snapshot' => PosCatalogPrice::values($variation)['calculation_snapshot'],
                         'sale_item' => $this->formatItem($variation, $configuration, $allPricesLabel, $stock, false),
                         'image_url' => ($variation->image && $variation->image !== 'imagen-no-disponible.jpg')
-                            ? asset('storage/uploads/items/' . $variation->image)
+                            ? tenant_asset('storage/uploads/items/' . $variation->image)
                             : $defaultImagePath,
                     ];
                 })->values()
@@ -96,7 +96,7 @@ class PosCollection extends ResourceCollection
             'edit_sale_unit_price' => $sale_unit_price,
             'aux_sale_unit_price' => $sale_unit_price,
             'image_url' => ($row->image && $row->image !== 'imagen-no-disponible.jpg')
-                ? asset('storage/uploads/items/' . $row->image)
+                ? tenant_asset('storage/uploads/items/' . $row->image)
                 : $defaultImagePath,
             'warehouses' => collect($row->warehouses)->transform(function ($row) {
                 return [

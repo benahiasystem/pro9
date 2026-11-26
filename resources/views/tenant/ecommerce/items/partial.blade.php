@@ -4,13 +4,21 @@
             <div class="product-slider-container product-item">
                 <div class="product-single-carousel owl-carousel owl-theme">
                     <div class="product-item">
-                        <img class="product-single-image" src="{{ asset('storage/uploads/items/'.$record->image) }}"
-                            data-zoom-image="{{ asset('storage/uploads/items/'.$record->image) }}" />
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                        <img class="product-single-image" src="{{ tenant_asset('storage/uploads/items/'.$record->image) }}"
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                            data-zoom-image="{{ tenant_asset('storage/uploads/items/'.$record->image) }}" />
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
                     </div>
                     <div class="product-item">
                         <img class="product-single-image"
-                            src="{{ asset('storage/uploads/items/'.$record->image_medium) }}"
-                            data-zoom-image="{{ asset('storage/uploads/items/'.$record->image_medium) }}" />
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                            src="{{ tenant_asset('storage/uploads/items/'.$record->image_medium) }}"
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                            data-zoom-image="{{ tenant_asset('storage/uploads/items/'.$record->image_medium) }}" />
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
                     </div>
 
                 </div>
@@ -18,10 +26,14 @@
             </div>
             <div class="prod-thumbnail row owl-dots" id='carousel-custom-dots'>
                 <div class="col-3 owl-dot">
-                    <img src="{{ asset('storage/uploads/items/'.$record->image) }}" />
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                    <img src="{{ tenant_asset('storage/uploads/items/'.$record->image) }}" />
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
                 </div>
                 <div class="col-3 owl-dot">
-                    <img src="{{ asset('storage/uploads/items/'.$record->image_medium) }}" />
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                    <img src="{{ tenant_asset('storage/uploads/items/'.$record->image_medium) }}" />
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
                 </div>
                 <!--<div class="col-3 owl-dot">
                     <img src="{{ asset('porto_ecommerce/ajax/assets/images/products/zoom/product-2.html') }}" />

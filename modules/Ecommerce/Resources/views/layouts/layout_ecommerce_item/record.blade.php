@@ -10,7 +10,9 @@
     @php($pageTitle = data_get($pageCompany, 'title_web') ?: data_get($pageCompany, 'trade_name'))
     @php($productName = data_get($product, 'description') ?: 'Producto')
     @php($productDescription = data_get($product, 'name') ?: ($ecommerceDescription) ?: 'Descripción no disponible')
-    @php($productImage = data_get($product, 'image') ? asset('storage/uploads/items/'.data_get($product, 'image')) : asset('logo/tulogo.png'))
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    @php($productImage = data_get($product, 'image') ? tenant_asset('storage/uploads/items/'.data_get($product, 'image')) : tenant_asset('logo/tulogo.png'))
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     @php($productPrice = number_format(data_get($product, 'sale_unit_price', 0), 2, '.', ''))
     @php($productCurrency = data_get($product, 'currency_type_symbol', 'Bs.'))
     @php($productUrl = url()->current())

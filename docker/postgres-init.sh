@@ -12,7 +12,15 @@ if [[ "$DB_USERNAME" == "$DB_MIGRATOR_USERNAME" || "$DB_USERNAME" == "$DB_PROVIS
     echo 'Los roles de operación, propiedad y aprovisionamiento deben ser distintos.' >&2
     exit 1
 fi
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres <<'SQL'
+if [[ "${SAB_MANAGED_BOOTSTRAP:-}" == 1 ]]; then
+    : "${PGHOST:?}" "${PGUSER:?}" "${PGSSLROOTCERT:?}"
+    [[ "$PGHOST" =~ ^db\.[a-z0-9]+\.supabase\.co$ && "${PGSSLMODE:-}" == verify-full ]]
+    [[ "$DB_DATABASE" != postgres && "$DB_DATABASE" != template0 && "$DB_DATABASE" != template1 ]]
+    POSTGRES_USER=$PGUSER
+else
+    : "${PGDATA:?}" "${POSTGRES_USER:?}"
+fi
+psql -X -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres <<'SQL'
 \getenv db DB_DATABASE
 \getenv runtime DB_USERNAME
 \getenv runtime_password DB_PASSWORD
@@ -23,6 +31,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres <<'SQL'
 SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD %L', :'owner', :'owner_password') \gexec
 SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD %L', :'runtime', :'runtime_password') \gexec
 SELECT format('CREATE ROLE %I LOGIN NOSUPERUSER CREATEDB CREATEROLE NOREPLICATION PASSWORD %L', :'provisioner', :'provisioner_password') \gexec
+SELECT format('GRANT %I TO %I WITH SET TRUE', :'owner', current_user) \gexec
 SELECT format('CREATE DATABASE %I OWNER %I TEMPLATE template0 ENCODING %L', :'db', :'owner', 'UTF8') \gexec
 SELECT format('REVOKE ALL ON DATABASE %I FROM PUBLIC', :'db') \gexec
 SELECT format('GRANT CONNECT ON DATABASE %I TO %I', :'db', :'runtime') \gexec
@@ -32,5 +41,7 @@ SELECT format('GRANT USAGE ON SCHEMA public TO %I', :'runtime') \gexec
 SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I', :'owner', :'runtime') \gexec
 SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO %I', :'owner', :'runtime') \gexec
 SQL
-touch "${PGDATA}/sab-bootstrap-complete"
+if [[ "${SAB_MANAGED_BOOTSTRAP:-}" != 1 ]]; then
+    touch "${PGDATA}/sab-bootstrap-complete"
+fi
 # ######### FIN CAMBIO POSTGRESQL 17

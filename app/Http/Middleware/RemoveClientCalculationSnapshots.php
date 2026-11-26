@@ -19,6 +19,9 @@ final class RemoveClientCalculationSnapshots
     private function clean(array $values): array
     {
         unset($values['calculation_snapshot']);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        unset($values['image_url'],$values['image_url_medium'],$values['image_url_small'],$values['image_urls_expires_at'],$values['image_media_id']);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         foreach ($values as $key=>$value) {
             if (is_array($value)) $values[$key]=$this->clean($value);
         }

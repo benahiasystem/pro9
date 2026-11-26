@@ -42,13 +42,15 @@ final class PostgresBackupManager
             foreach (array_unique($databases) as $database) {
                 $config = $this->configuration($database);
                 if ($quiesced) {
-                    $pdo = new \PDO('pgsql:host='.$config['host'].';port='.$config['port'].';dbname='.$database, $config['username'], $config['password']);
+                    $pdo = $backup->connect($config);
                     $query = $pdo->query("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND pid<>pg_backend_pid() AND state IS DISTINCT FROM 'idle'");
                     if ($query->fetchColumn() > 0) throw new \LogicException('Existen operaciones activas durante el corte integral.');
                 }
                 $dumps[$database] = $directory.'/'.$database.'.dump';
                 $backup->dump($config, $dumps[$database]);
-                $files += $this->files($database);
+                if (config('tenant_storage.disk') !== 'supabase-private') {
+                    $files += $this->files($database);
+                }
             }
             if (!is_dir(dirname($destination))) mkdir(dirname($destination), 0700, true);
             return $backup->pack($dumps, $files, $destination, ['application_revision' => config('app.revision', 'unknown'), 'global_coherent' => $quiesced, 'consistency' => $quiesced ? 'quiesced' : 'per-database']);

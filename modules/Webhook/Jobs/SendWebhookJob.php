@@ -38,6 +38,8 @@ class SendWebhookJob implements ShouldQueue
 
     public function handle()
     {
+        if (app()->isProduction()) return;
+
         $this->switchTenant();
 
         $delivery = WebhookDelivery::with('subscription')->find($this->delivery_id);

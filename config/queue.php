@@ -30,6 +30,17 @@ return [
 
     'connections' => [
 
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        'storage-admin' => [
+            'driver' => 'database',
+            'connection' => env('TENANCY_SYSTEM_CONNECTION_NAME', 'system'),
+            'table' => 'jobs',
+            'queue' => 'storage-admin',
+            'retry_after' => 2000,
+            'after_commit' => true,
+        ],
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
         'sync' => [
             'driver' => 'sync',
         ],

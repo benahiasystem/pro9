@@ -171,12 +171,14 @@ class ItemVariationService
         $extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
         $extension = $extension ? $extension : 'jpg';
 
-        $datenow = date('YmdHis');
+        $datenow = (string) \Illuminate\Support\Str::uuid();
 
         UploadFileHelper::checkIfValidFile($prefix_name.'.'.$extension, $real_path, true);
 
         $file_name = $prefix_name.'-'.$datenow.'.'.$extension;
-        Storage::put($directory.$file_name, file_get_contents($real_path));
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put($directory.$file_name, file_get_contents($real_path));
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $item->image = $file_name;
 
         //--- IMAGE SIZE MEDIUM
@@ -185,8 +187,10 @@ class ItemVariationService
             $constraint->aspectRatio();
             $constraint->upsize();
         });
-        $file_name = $prefix_name.'-'.$datenow.'_medium.'.$extension;
-        Storage::put($directory.$file_name, (string) $image->encode('jpg', 30));
+        $file_name = $prefix_name.'-'.$datenow.'_medium.jpg';
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put($directory.$file_name, (string) $image->encode('jpg', 30));
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $item->image_medium = $file_name;
 
         //--- IMAGE SIZE SMALL
@@ -195,8 +199,10 @@ class ItemVariationService
             $constraint->aspectRatio();
             $constraint->upsize();
         });
-        $file_name = $prefix_name.'-'.$datenow.'_small.'.$extension;
-        Storage::put($directory.$file_name, (string) $image->encode('jpg', 20));
+        $file_name = $prefix_name.'-'.$datenow.'_small.jpg';
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put($directory.$file_name, (string) $image->encode('jpg', 20));
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $item->image_small = $file_name;
 
         return true;

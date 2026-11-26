@@ -13,6 +13,10 @@ final class AccountingServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../Config/config.php', 'accounting');
         $this->app->scoped(CompanyContext::class, fn() => new CompanyContext());
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $this->app->scoped(\Modules\Accounting\Support\PrivateStorage::class);
+        $this->app->terminating(fn()=>app(\Modules\Accounting\Support\PrivateStorage::class)->cleanup());
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $this->app->singleton('accounting.errors', \Modules\Accounting\Http\Middleware\ApiErrors::class);
     }
     public function boot(): void

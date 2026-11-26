@@ -1,3 +1,4 @@
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 
 <!DOCTYPE html>
@@ -43,7 +44,7 @@
             </div>
             @elseif ($field->column === 'image' && isset($field->image))
                 @php
-                    $url = public_path('storage'.DIRECTORY_SEPARATOR.'tag_images'. DIRECTORY_SEPARATOR . rawurlencode($field->image));
+                    $url = tenant_public_path('uploads/tag_images/'.$field->image);
                 @endphp
                 <div style='display: block ; margin-top:20px;margin-bottom:20px; height:auto; position: absolute; top: {{ $y }}mm; left: {{ $x }}mm;'  >
                     <img src="{{ $url }}" width="{{ $width }}mm" height="{{ $height }}mm"  />
@@ -104,3 +105,4 @@
 </body>
 </html>
 {{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}

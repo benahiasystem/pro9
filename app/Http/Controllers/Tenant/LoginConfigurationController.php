@@ -14,11 +14,20 @@ class LoginConfigurationController extends Controller
         $user = auth()->user();
         $config = Configuration::first();
 
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $login = $config->login;
+        if (is_string($login->image ?? null) && str_starts_with($login->image,'uploads/login/')) {
+            $login->image = tenant_asset($login->image);
+            $config->login = $login;
+        }
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         return view('tenant.login_page.index', compact('user', 'config'));
     }
 
     public function uploadBgImage()
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () {
         request()->validate([
             'image' => 'required|mimes:jpeg,png,jpg,gif,svg,webp|max:2048'
         ]);
@@ -26,30 +35,41 @@ class LoginConfigurationController extends Controller
         $config = Configuration::first();
         if (request()->hasFile('image') && request()->file('image')->isValid()) {
             $file = request()->file('image');
-            $ext = $file->getClientOriginalExtension();
-            $name = time() . '.' . $ext;
-            $path = 'public/uploads/login';
+            $name = (string)\Illuminate\Support\Str::uuid().'.'.$file->guessExtension();
 
             UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
 
-            $file->storeAs($path, $name);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            app(\App\Services\Storage\TenantStorage::class)->disk()->putFileAs('uploads/login',$file,$name);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
             $loginConfig = $config->login;
             $loginConfig->type = 'image';
-            $loginConfig->image = asset('storage/uploads/login/' . $name);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $old = $loginConfig->image ?? null;
+            $loginConfig->image = 'uploads/login/'.$name;
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             $config->login = $loginConfig;
             $config->save();
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            if (is_string($old) && str_starts_with($old,'uploads/login/')) {
+                app(\App\Services\Storage\TenantStorage::class)->disk()->delete($old);
+            }
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         }
 
         return response()->json([
             'success' => true,
             'message' => 'Información actualizada.',
         ], 200);
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function update()
     {
-        request()->validate([
+        $settings = request()->validate([
             'position_form' => 'required|in:left,right',
             'show_background_image' => 'sometimes|boolean',
             'show_logo_in_form' => 'boolean',
@@ -65,7 +85,7 @@ class LoginConfigurationController extends Controller
 
         $config = Configuration::first();
         $loginConfig = $config->login;
-        foreach(request()->all() as $key => $option) {
+        foreach($settings as $key => $option) {
             $loginConfig->$key = $option;
         }
         $config->login = $loginConfig;

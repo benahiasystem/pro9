@@ -122,6 +122,10 @@ Fallos de API o guardado no inventan una tasa (`503`). No hay tareas programadas
 actualizaciones masivas ni cambios en snapshots de documentos.
 <!-- ######## FIN API BCV EN DOCKER ######## -->
 
+### Producción con Supabase gestionado
+
+Consulta la [guía de producción](docker/production/README.md) para configurar el proyecto Supabase, Storage privado y Cloudflare Tunnel.
+
 ### Instalación PostgreSQL 17.11
 
 SAB usa PostgreSQL 17.11 de Supabase (`17.11.0.019`, digest fijado en Compose),

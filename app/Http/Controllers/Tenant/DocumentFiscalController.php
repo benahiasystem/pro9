@@ -54,11 +54,16 @@ class DocumentFiscalController extends Controller
     }
     public function upload(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $request->validate(['document_id'=>'required|integer','file'=>'required|file|mimes:pdf,jpg,jpeg,png|max:5120']);
         $document=Document::findOrFail($request->document_id);self::authorizeDocument($document);
         abort_unless(auth()->user()->type==='admin' || auth()->user()->create_payment,403);
-        $path=$request->file('file')->store('received_retentions/'.$document->id,'tenant');
+        $path=app(\App\Services\Storage\TenantStorage::class)->disk()->putFileAs('received_retentions/'.$document->id,$request->file('file'),\Illuminate\Support\Str::uuid().'.'.$request->file('file')->extension());
         return ['success'=>true,'attachment'=>$path];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
     public function prepare($id)
     {

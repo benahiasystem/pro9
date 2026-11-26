@@ -25,7 +25,7 @@ trait FilePaymentTrait
             $allowed_mimes = 'jpg,jpeg,png,gif,svg,webp,pdf';
             $extension = UploadFileHelper::resolveExtensionFromFile($file_name_old, $temp_path, $allowed_mimes);
             $base_name = pathinfo($file_name_old, PATHINFO_FILENAME);
-            $file_name = Str::slug($base_name)."-{$type}-".$record->id.'.'.$extension;
+            $file_name = Str::slug($base_name).'-'.Str::uuid().'.'.$extension;
 
             // validaciones archivos
             $allowed_file_types_images = ['image/jpg', 'image/jpeg', 'image/png', 'image/gif', 'image/svg', 'image/webp'];
@@ -35,11 +35,14 @@ trait FilePaymentTrait
             UploadFileHelper::checkIfValidFile($file_name, $temp_path, $is_image, 'jpg,jpeg,png,gif,svg,webp,pdf', $allowed_file_types);
             // validaciones archivos
 
+
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            app(\App\Services\Storage\TenantStorage::class)->disk()->put('payment_files'.DIRECTORY_SEPARATOR.$type.DIRECTORY_SEPARATOR.$file_name, $file_content);
             $record->payment_file()->create([
                 'filename' => $file_name
             ]);
 
-            Storage::disk('tenant')->put('payment_files'.DIRECTORY_SEPARATOR.$type.DIRECTORY_SEPARATOR.$file_name, $file_content);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
 
         }

@@ -101,6 +101,12 @@ class UploadFileHelper
      */
     public static function getTempFile($request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        if (app(\App\Tenancy\Environment::class)->tenant()) {
+            return app(\App\Services\Storage\TenantUploads::class)->create($request['file'], 'image');
+        }
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
         $file = $request['file'];
         $type = $request['type'];
 
@@ -141,13 +147,15 @@ class UploadFileHelper
 
         $directory = 'public'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$folder.DIRECTORY_SEPARATOR;
         $old_filename_array = explode('.', $old_filename);
-        $now = date('YmdHis');
+        $now = (string) \Illuminate\Support\Str::uuid();
 
         $filename =  ($prefix ? "{$prefix}_" : "")."{$id}_{$now}".'.'.end($old_filename_array);
 
         self::checkIfValidFile($filename, $temp_path, true, $mimes, $allowed_file_types);
 
-        Storage::put($directory.$filename, file_get_contents($temp_path));
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put($directory.$filename, file_get_contents($temp_path));
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         return $filename;
     }
@@ -172,7 +180,7 @@ class UploadFileHelper
         
         $directory = 'public'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.$folder.DIRECTORY_SEPARATOR;
         $old_filename_array = explode('.', $old_filename);
-        $now = date('YmdHis');
+        $now = (string) \Illuminate\Support\Str::uuid();
 
         $suffix = ($suffix ? "-{$suffix}" : "");
         $filename =  Str::slug($name)."-{$now}{$suffix}".'.'.end($old_filename_array);
@@ -188,7 +196,9 @@ class UploadFileHelper
             self::checkIfImageCanBeProcessed($temp_path);
         }
 
-        Storage::put($directory.$filename, $file);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put($directory.$filename, $file);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         return $filename;
     }
@@ -220,6 +230,10 @@ class UploadFileHelper
      */
     public static function checkIfValidFile($filename, $temp_path, $is_image = true, $mimes = null, $allowed_file_types = null)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantUploads::class)->activateFile($temp_path);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
         $error_message = 'Tipo de archivo no permitido';
         $mimes = $mimes ?? self::getGeneralMimes();
         $allowed_file_types = $allowed_file_types ?? self::getGeneralAllowedFileTypes();

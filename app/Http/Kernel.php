@@ -38,6 +38,7 @@ class Kernel extends HttpKernel
      */
     protected $middlewareGroups = [
         'web' => [
+            \App\Http\Middleware\ProductionSurface::class,
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
@@ -45,13 +46,22 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            \App\Http\Middleware\ResolveTenantUploads::class,
+            \App\Http\Middleware\RefreshPrivateMedia::class,
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             \App\Http\Middleware\LockedAdmin::class,
         ],
 
         'api' => [
+            \App\Http\Middleware\ProductionSurface::class,
             'throttle:60,1',
             'bindings',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            \App\Http\Middleware\ResolveTenantUploads::class,
+            \App\Http\Middleware\RefreshPrivateMedia::class,
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         ],
     ];
 

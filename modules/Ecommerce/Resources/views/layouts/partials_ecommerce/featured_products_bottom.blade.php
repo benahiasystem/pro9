@@ -14,7 +14,9 @@ $configuration = \App\Models\Tenant\Configuration::first();
 $defaultImage = $configuration->product_default_image ?? 'imagen-no-disponible.jpg';
 $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
     ? asset('logo/imagen-no-disponible.jpg')
-    : asset('storage/defaults/' . $defaultImage);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    : tenant_asset('storage/defaults/' . $defaultImage);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
 @endphp
 @if($relatedItems->isNotEmpty())
@@ -29,7 +31,9 @@ $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
                             <a href="/ecommerce/item/{{ $item->id }}/{{ \Illuminate\Support\Str::slug($item->description) }}" class="product-image">
                                 @php
                                     $itemImagePath = ($item->image && $item->image !== 'imagen-no-disponible.jpg')
-                                        ? asset('storage/uploads/items/'.$item->image)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                                        ? tenant_asset('storage/uploads/items/'.$item->image)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                                         : $defaultImagePath;
                                 @endphp
                                 <img src="{{ $itemImagePath }}" alt="{{ $item->description }}">

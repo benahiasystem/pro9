@@ -221,9 +221,13 @@ abstract class ReceivedRetentionService
         if (!$upload || (int)$upload->user_id !== (int)auth()->id() || $upload->expires_at->isPast()
             || $upload->document_id) FiscalAmounts::error('upload_id', 'El adjunto venció o pertenece a otra solicitud.');
         $target = 'received_retentions/'.$document->id.'/'.basename($upload->path);
-        if (!Storage::disk('tenant')->exists($upload->path)) FiscalAmounts::error('upload_id','El adjunto no está disponible.');
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        if (!app(\App\Services\Storage\TenantStorage::class)->disk()->exists($upload->path)) FiscalAmounts::error('upload_id','El adjunto no está disponible.');
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         // Copy preserves the temporary source if the outer commercial transaction rolls back.
-        if (!Storage::disk('tenant')->copy($upload->path, $target)) FiscalAmounts::error('upload_id','No se pudo vincular el adjunto.');
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        if (!app(\App\Services\Storage\TenantStorage::class)->disk()->copy($upload->path, $target)) FiscalAmounts::error('upload_id','No se pudo vincular el adjunto.');
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $upload->update(['document_id'=>$document->id]);
         return $target;
     }
@@ -259,6 +263,8 @@ abstract class ReceivedRetentionService
     protected static function validateSupport(Document $document, array $input): void
     {
         $path = $input['attachment'] ?? '';
-        if (!$path || !str_starts_with($path, 'received_retentions/'.$document->id.'/') || str_contains($path, '..') || !Storage::disk('tenant')->exists($path)) FiscalAmounts::error('attachment', 'Adjunte un comprobante privado válido para esta factura.');
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        if (!$path || !str_starts_with($path, 'received_retentions/'.$document->id.'/') || str_contains($path, '..') || !app(\App\Services\Storage\TenantStorage::class)->disk()->exists($path)) FiscalAmounts::error('attachment', 'Adjunte un comprobante privado válido para esta factura.');
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 }

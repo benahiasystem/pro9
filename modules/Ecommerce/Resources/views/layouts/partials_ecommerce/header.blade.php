@@ -279,7 +279,9 @@ div.cart-dropdown {
                             : (data_get($company ?? null, 'logo') ?: data_get($information ?? null, 'logo'));
                     @endphp
                     @if($headerLogo)
-                        <img src="{{ asset('storage/uploads/logos/'.$headerLogo) }}" alt="Logo" />
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                        <img src="{{ tenant_asset('storage/uploads/logos/'.$headerLogo) }}" alt="Logo" />
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
                     @else
                         <img src="{{asset('logo/tulogo.png')}}" alt="Logo" />
                     @endif
@@ -306,8 +308,12 @@ div.cart-dropdown {
                         @foreach ($categories as $category)
                         <a href="{{ route('tenant.ecommerce.category', \Illuminate\Support\Str::slug($category->name, '-')) }}" class="category-item">
                             <div class="category-item-icon">
-                                @if($category->image && file_exists(public_path('storage/uploads/categories/'. $category->image)))
-                                    <img src="{{ asset('storage/uploads/categories/'. $category->image) }}"
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                                @if($category->image && file_exists(tenant_public_path('storage/uploads/categories/'. $category->image)))
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+                                    <img src="{{ tenant_asset('storage/uploads/categories/'. $category->image) }}"
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
                                          alt="{{ $category->name }}"
                                          style="width:40px; height:40px; object-fit:cover; border-radius:8px;">
                                 @else

@@ -9,6 +9,14 @@ $hostname = app(App\Tenancy\Contracts\CurrentHostname::class);
 
 if ($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        Route::get('media/skin/{id}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'skin'])->middleware('throttle:120,1');
+        Route::get('media/brand/{slot}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'brand'])->middleware('throttle:120,1');
+        Route::get('media/restaurant/{folder}/{filename}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'restaurantImage'])->middleware(['locked.tenant','throttle:240,1']);
+        Route::get('media/images/{folder}/{filename}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'image'])->middleware('throttle:240,1');
+        Route::get('media/items/urls', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'items'])->middleware('throttle:60,1');
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
         Auth::routes([
             'register' => false,
             'verify'   => false
@@ -24,17 +32,17 @@ if ($hostname) {
 
 
 
-        Route::get('downloads/{model}/{type}/{external_id}/{format?}', 'Tenant\DownloadController@downloadExternal')->name('tenant.download.external_id');
-        Route::get('print/{model}/{external_id}/{format}/{filename?}', 'Tenant\DownloadController@toPrint');
-        Route::get('print/{model}/{external_id}/{format?}', 'Tenant\DownloadController@toPrint');
+        Route::get('downloads/{model}/{type}/{external_id}/{format?}', 'Tenant\DownloadController@downloadExternal')->name('tenant.download.external_id')->middleware(app()->isProduction() ? ['auth', 'locked.tenant'] : []);
+        Route::get('print/{model}/{external_id}/{format}/{filename?}', 'Tenant\DownloadController@toPrint')->middleware(app()->isProduction() ? ['auth', 'locked.tenant'] : []);
+        Route::get('print/{model}/{external_id}/{format?}', 'Tenant\DownloadController@toPrint')->middleware(app()->isProduction() ? ['auth', 'locked.tenant'] : []);
         Route::get('printticket/{model}/{external_id}/{format?}', 'Tenant\DownloadController@toTicket')->middleware('auth');
         Route::get('/exchange_rate/ecommence/{date}', 'Tenant\Api\ServiceController@exchangeRateTest');
 
-        Route::get('sale-notes/print/{external_id}/{format?}', 'Tenant\SaleNoteController@toPrint');
-        Route::get('sale-notes/ticket/{id}/{format?}', 'Tenant\SaleNoteController@toTicket');
-        Route::get('purchases/print/{external_id}/{format?}', 'Tenant\PurchaseController@toPrint');
+        Route::get('sale-notes/print/{external_id}/{format?}', 'Tenant\SaleNoteController@toPrint')->middleware(app()->isProduction() ? ['auth', 'locked.tenant'] : []);
+        Route::get('sale-notes/ticket/{id}/{format?}', 'Tenant\SaleNoteController@toTicket')->middleware(app()->isProduction() ? ['auth', 'locked.tenant'] : []);
+        Route::get('purchases/print/{external_id}/{format?}', 'Tenant\PurchaseController@toPrint')->middleware(app()->isProduction() ? ['auth', 'locked.tenant'] : []);
 
-        Route::get('quotations/print/{external_id}/{format?}', 'Tenant\QuotationController@toPrint');
+        Route::get('quotations/print/{external_id}/{format?}', 'Tenant\QuotationController@toPrint')->middleware(app()->isProduction() ? ['auth', 'locked.tenant'] : []);
         // Route::get('/ecommerce/color-ecommerce', [\App\Http\Controllers\Tenant\ConfigurationController::class, 'getColorEcommerce']);
 
         Route::middleware(['auth', 'redirect.module', 'locked.tenant','check.email.verified'])->group(function () {
@@ -649,7 +657,7 @@ if ($hostname) {
             Route::post('purchases/save_guide/{purchase}', 'Tenant\PurchaseController@processGuides');
             Route::get('purchases/delete/{id}', 'Tenant\PurchaseController@delete');
             Route::post('purchases/import', 'Tenant\PurchaseController@import');
-            // Route::get('purchases/print/{external_id}/{format?}', 'Tenant\PurchaseController@toPrint');
+            // Route::get('purchases/print/{external_id}/{format?}', 'Tenant\PurchaseController@toPrint')->middleware(['auth', 'locked.tenant']);
             Route::get('purchases/search-items', 'Tenant\PurchaseController@searchItems');
             Route::get('purchases/search/item/{item}', 'Tenant\PurchaseController@searchItemById');
             Route::post('purchases/search/purchase_order','Tenant\PurchaseController@searchPurchaseOrder');
@@ -687,7 +695,7 @@ if ($hostname) {
             Route::get('quotations/search/customers', 'Tenant\QuotationController@searchCustomers');
             Route::get('quotations/search/customer/{id}', 'Tenant\QuotationController@searchCustomerById');
             Route::get('quotations/download/{external_id}/{format?}', 'Tenant\QuotationController@download');
-            // Route::get('quotations/print/{external_id}/{format?}', 'Tenant\QuotationController@toPrint');
+            // Route::get('quotations/print/{external_id}/{format?}', 'Tenant\QuotationController@toPrint')->middleware(['auth', 'locked.tenant']);
             Route::post('quotations/email', 'Tenant\QuotationController@email');
             Route::post('quotations/duplicate', 'Tenant\QuotationController@duplicate');
             Route::get('quotations/record2/{quotation}', 'Tenant\QuotationController@record2');
@@ -716,7 +724,7 @@ if ($hostname) {
             Route::get('sale-notes/item/tables', 'Tenant\SaleNoteController@item_tables');
             Route::get('sale-notes/search/customers', 'Tenant\SaleNoteController@searchCustomers');
             Route::get('sale-notes/search/customer/{id}', 'Tenant\SaleNoteController@searchCustomerById');
-            // Route::get('sale-notes/print/{external_id}/{format?}', 'Tenant\SaleNoteController@toPrint');
+            // Route::get('sale-notes/print/{external_id}/{format?}', 'Tenant\SaleNoteController@toPrint')->middleware(['auth', 'locked.tenant']);
             Route::get('sale-notes/record2/{salenote}', 'Tenant\SaleNoteController@record2');
             Route::get('sale-notes/option/tables', 'Tenant\SaleNoteController@option_tables');
             Route::get('sale-notes/changed/{salenote}', 'Tenant\SaleNoteController@changed');
@@ -1090,6 +1098,9 @@ if ($hostname) {
             Route::get('storage-management/records', 'System\StorageManagementController@records');
             Route::get('storage-management/packages/{uuid}', 'System\StorageManagementController@packages');
             Route::post('storage-management/clean/{uuid}', 'System\StorageManagementController@clean');
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            Route::get('storage-management/operations/{id}', 'System\StorageManagementController@operation');
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             Route::get('storage-management/configurations', 'System\StorageManagementController@configurations');
             Route::get('storage-management/configurations/tables', 'System\StorageManagementController@configurationTables');
             Route::post('storage-management/configurations', 'System\StorageManagementController@storeConfiguration');

@@ -58,6 +58,10 @@
          *
          * @return void
          */
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        public function middleware(): array { return [new \App\Jobs\TenantStorageJobMiddleware()]; }
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
         public function handle()
         {
             Log::debug("ProcessInventoryReport Start WebsiteId => " . $this->website_id);
@@ -179,7 +183,7 @@
 
                         Log::debug("Upload excel init");
 
-                        $inventoryExport->store(DIRECTORY_SEPARATOR . "download_tray_xlsx" . DIRECTORY_SEPARATOR . $filename . '.xlsx', 'tenant');
+                        app(\App\Services\Storage\TenantStorage::class)->storeExcel($inventoryExport,DIRECTORY_SEPARATOR . "download_tray_xlsx" . DIRECTORY_SEPARATOR . $filename . '.xlsx');
 
                         Log::debug("Upload excel finish");
                         $tray->file_name = $filename;

@@ -12,6 +12,7 @@ $image=$name.'-php:17.11';
 $source=postgresqlSourceManifest($root);
 function prepareInfraProject(string $root,string $name,string $directory,string $image,string $database): array {
     foreach (['data','storage/framework/views','storage/framework/cache/data','storage/framework/sessions','storage/logs','storage/app','bootstrap-cache','bcv','php-build/docker','transfer'] as $path) mkdir($directory.'/'.$path,0700,true);
+    chmod($directory.'/transfer', 0755);
     file_put_contents($directory.'/bcv/.env',"API_TOKEN=fictional-test-only\n");
     $buildInputs=[];
     foreach (['docker/php.Dockerfile','docker/php-entrypoint.sh'] as $file) {
@@ -31,7 +32,7 @@ function prepareInfraProject(string $root,string $name,string $directory,string 
         'postgres'=>['command'=>['postgres','-D','/etc/postgresql','-c','sab.test_run='.$name],'mem_limit'=>'768m','cpus'=>2,'volumes'=>[$directory.'/data:/var/lib/postgresql/data']],
         'php'=>['image'=>$environment['SAB_INFRA_PHP_IMAGE'],'build'=>['context'=>$directory.'/php-build','dockerfile'=>'docker/php.Dockerfile'],'mem_limit'=>'1536m','cpus'=>2,'volumes'=>[
             $root.':/var/www/sab:ro',$directory.'/storage:/var/www/sab/storage',
-            $directory.'/bootstrap-cache:/var/www/sab/bootstrap/cache',$directory.'/app.env:/var/www/sab/.env:ro',
+            $directory.'/bootstrap-cache:/var/www/sab/bootstrap/cache',
             $directory.'/transfer:/sab-transfer:ro']],
         'nginx'=>['mem_limit'=>'128m','cpus'=>1],'redis'=>['mem_limit'=>'128m','cpus'=>1]],
         'networks'=>['default'=>['internal'=>true],'bcv'=>['internal'=>true]]],JSON_UNESCAPED_SLASHES));
@@ -44,8 +45,11 @@ function runInfra(array $command,array $environment): string {
     if ($code!==0) throw new RuntimeException('Falló la verificación de infraestructura (salida '.$code.'): '.implode(' ',$command).' '.substr($out,0,1200).'. Consulte el diagnóstico privado del sondeo.');return trim($out);
 }
 function recoverInfra(array $source,array $sourceEnv,array $destination,array $destinationEnv,string $directory,string $sourceName,string $destinationName): array {
-    $cli=static fn($project,$env,$args)=>runInfra(array_merge($project,['run','--rm','--no-deps','php','php'],$args),$env);
     $fixture='tests/Infrastructure/postgres_recovery_fixture.php';
+    $cli=static function ($project, $env, $args) use ($fixture) {
+        $command = $args[0] === $fixture ? ['runuser','-u','www-data','--','php'] : ['php'];
+        return runInfra(array_merge($project,['run','--rm','--no-deps','php'],$command,$args),$env);
+    };
     $probe=static fn($project,$env,$mode)=>json_decode($cli($project,$env,[$fixture,$mode]),true,512,JSON_THROW_ON_ERROR);
     $cluster=static fn($project,$env)=>runInfra(array_merge($project,['exec','-T','postgres','psql','--no-psqlrc','-U','supabase_admin','-d','postgres','-Atc',
         "SELECT system_identifier::text || ':' || current_setting('sab.test_run') FROM pg_control_system()"]),$env);
@@ -107,7 +111,7 @@ try {
     $sql('DROP TABLE persistence_probe');
     runInfra(array_merge($compose,['run','--rm','--no-deps','php','php','artisan','sab:install-postgres']),$environment);
     runInfra(array_merge($compose,['run','--rm','--no-deps','php','php','artisan','sab:install-postgres','--resume']),$environment);
-    if ($sql('SELECT count(*) FROM users')!=='1' || $sql('SELECT count(*) FROM plans')!=='2') throw new RuntimeException('Semillas incompletas o duplicadas.');
+    if ($sql('SELECT count(*) FROM users')!=='1' || $sql('SELECT count(*) FROM plans')!=='1') throw new RuntimeException('Semillas incompletas o duplicadas.');
     runInfra(array_merge($compose,['up','-d','--no-deps','--wait','--wait-timeout','90','php','redis','centrifugo']),$environment);
     runInfra(array_merge($compose,['run','-d','--rm','--no-deps','--name',$name.'-http','nginx']),$environment);$httpStarted=true;
     $status=runInfra(array_merge($compose,['exec','-T','php','php','-r',

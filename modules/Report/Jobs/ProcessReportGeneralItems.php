@@ -50,6 +50,10 @@ class ProcessReportGeneralItems implements ShouldQueue
      *
      * @return void
      */
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    public function middleware(): array { return [new \App\Jobs\TenantStorageJobMiddleware()]; }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
     public function handle()
     {
         ini_set("pcre.backtrack_limit", "5000000");
@@ -92,13 +96,15 @@ class ProcessReportGeneralItems implements ShouldQueue
 
         if ($format == 'pdf') {
             $pdf = PDF::loadHTML($html)->setPaper('a4', 'landscape');
-            if (!\Illuminate\Support\Facades\Storage::disk('tenant')->put($path.DIRECTORY_SEPARATOR.$filename.'.pdf', $pdf->output())) {
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            if (!app(\App\Services\Storage\TenantStorage::class)->disk()->put($path.DIRECTORY_SEPARATOR.$filename.'.pdf', $pdf->output())) {
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 throw new \RuntimeException('No se pudo guardar el PDF del reporte de artículos.');
             }
 
             unset($pdf);
         } else if ($format== 'xlsx') {
-            if (!$generalItemExport->store(DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR.$filename.'.'.$format, 'tenant')) {
+            if (!app(\App\Services\Storage\TenantStorage::class)->storeExcel($generalItemExport,DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR.$filename.'.'.$format)) {
                 throw new \RuntimeException('No se pudo guardar el Excel del reporte de artículos.');
             }
             

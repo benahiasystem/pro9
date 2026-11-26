@@ -23,7 +23,9 @@ class CategoryCollection extends ResourceCollection
                 'id' => $row->id,
                 'name' => $row->name,
                 'image' => $row->image,
-                'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'categories' . DIRECTORY_SEPARATOR . $row->image) : asset("/logo/{$row->image}"),
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? tenant_asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'categories' . DIRECTORY_SEPARATOR . $row->image) : tenant_asset("/logo/{$row->image}"),
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 'created_at' => ($row->created_at) ? $row->created_at->format('d-m-Y h:iA') : null,
                 'updated_at' => ($row->updated_at) ? $row->updated_at->format('Y-m-d H:i:s') : null,
             ];

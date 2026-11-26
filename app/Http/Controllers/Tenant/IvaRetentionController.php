@@ -46,16 +46,23 @@ class IvaRetentionController extends Controller
 
     public function upload(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $user = auth()->user();
         abort_unless($user instanceof User && ($user->type === 'admin' || $user->create_payment),403);
         if (!IvaRetentionService::available()) FiscalAmounts::error('file','Esta instalación no tiene habilitado el flujo IVA.');
         $request->validate(['file'=>'required|file|mimes:pdf,jpg,jpeg,png|max:5120']);
         $token = (string)Str::uuid();
-        $path = $request->file('file')->storeAs('received_retentions/drafts',$token.'.'.$request->file('file')->extension(),'tenant');
+        $path = app(\App\Services\Storage\TenantStorage::class)->disk()->putFileAs('received_retentions/drafts',$request->file('file'),$token.'.'.$request->file('file')->extension());
         try {
             ReceivedRetentionUpload::create(['token'=>$token,'user_id'=>$user->id,'path'=>$path,'expires_at'=>now()->addDay()]);
-        } catch (\Throwable $error) { Storage::disk('tenant')->delete($path); throw $error; }
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        } catch (\Throwable $error) { app(\App\Services\Storage\TenantStorage::class)->disk()->delete($path); throw $error; }
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         return ['success'=>true,'upload_id'=>$token,'expires_at'=>now()->addDay()->toIso8601String()];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     private function retention(int $id): DocumentReceivedRetention
@@ -101,8 +108,12 @@ class IvaRetentionController extends Controller
         $row = $this->retention($id);
         $path = $row->attachment;
         abort_unless($path && str_starts_with($path,'received_retentions/'.$row->document_id.'/')
-            && !str_contains($path,'..') && Storage::disk('tenant')->exists($path),404);
-        return Storage::disk('tenant')->download($path,'Retencion-'.$row->tax_kind.'-'.preg_replace('/[^A-Za-z0-9_-]/','_',$row->voucher_number).'.'.pathinfo($path,PATHINFO_EXTENSION),
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            && !str_contains($path,'..') && app(\App\Services\Storage\TenantStorage::class)->disk()->exists($path),404);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download($path,'Retencion-'.$row->tax_kind.'-'.preg_replace('/[^A-Za-z0-9_-]/','_',$row->voucher_number).'.'.pathinfo($path,PATHINFO_EXTENSION),
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             ['Cache-Control'=>'private, no-store','X-Content-Type-Options'=>'nosniff']);
     }
 }

@@ -14,6 +14,7 @@ final class PostgresBackup
             'PGHOST' => (string) $config['host'], 'PGPORT' => (string) ($config['port'] ?? 5432),
             'PGDATABASE' => $config['database'], 'PGUSER' => $config['username'],
             'PGPASSWORD' => $config['password'], 'PGSSLMODE' => $config['sslmode'] ?? 'prefer',
+            'PGSSLROOTCERT' => $config['sslrootcert'] ?? false,
             'PGCLIENTENCODING' => 'UTF8', 'PGOPTIONS' => '-c timezone=America/Caracas',
         ]);
         $process->setTimeout(3600);
@@ -24,13 +25,13 @@ final class PostgresBackup
         $process->run();
         if (!$process->isSuccessful()) throw new \RuntimeException('Falló la herramienta PostgreSQL: '.trim($process->getErrorOutput()));
     }
-    public function dump(array $config, string $path): void
+    public function dump(array $config, string $path, ?string $snapshot = null): void
     {
         $this->assertVersion($config);
         if (!is_dir(dirname($path))) mkdir(dirname($path), 0700, true);
         $partial = $path.'.partial-'.bin2hex(random_bytes(6));
         try {
-            $this->execute($this->process('pg_dump', $config, ['--format=custom', '--no-owner', '--no-acl', '--file='.$partial]));
+            $this->execute($this->process('pg_dump', $config, array_merge(['--format=custom', '--no-owner', '--no-acl', '--file='.$partial], $snapshot ? ['--snapshot='.$snapshot] : [])));
             chmod($partial, 0600);
             if (!rename($partial, $path)) throw new \RuntimeException('No se pudo publicar el respaldo.');
         } finally { if (is_file($partial)) unlink($partial); }
@@ -40,7 +41,7 @@ final class PostgresBackup
     {
         if (!is_file($path) || file_get_contents($path, false, null, 0, 5) !== 'PGDMP') throw new \InvalidArgumentException('Respaldo PostgreSQL incompleto o incompatible.');
         $this->assertVersion($config);
-        $pdo = new \PDO('pgsql:host='.$config['host'].';port='.($config['port'] ?? 5432).';dbname='.$config['database'], $config['username'], $config['password'], [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+        $pdo = $this->connect($config);
         if ($pdo->query("SELECT count(*) FROM pg_tables WHERE schemaname='public'")->fetchColumn() != 0) throw new \LogicException('La restauración requiere una base independiente vacía.');
         $pdo = null;
         // Supabase owns managed extensions even when a tenant may install them.
@@ -64,8 +65,15 @@ final class PostgresBackup
     }
     private function assertVersion(array $config): void
     {
-        $pdo = new \PDO('pgsql:host='.$config['host'].';port='.($config['port'] ?? 5432).';dbname='.$config['database'], $config['username'], $config['password'], [\PDO::ATTR_ERRMODE=>\PDO::ERRMODE_EXCEPTION]);
-        if ((int)$pdo->query('SHOW server_version_num')->fetchColumn() !== 170011) throw new \RuntimeException('El respaldo requiere servidor PostgreSQL 17.11.');
+        $version = (int) $this->connect($config)->query('SHOW server_version_num')->fetchColumn();
+        if (intdiv($version, 10000) !== 17) throw new \RuntimeException('El respaldo requiere servidor PostgreSQL 17.');
+    }
+    public function connect(array $config): \PDO
+    {
+        $dsn = 'pgsql:host='.$config['host'].';port='.($config['port'] ?? 5432).';dbname='.$config['database']
+            .';sslmode='.($config['sslmode'] ?? 'prefer');
+        if (!empty($config['sslrootcert'])) $dsn .= ';sslrootcert='.$config['sslrootcert'];
+        return new \PDO($dsn, $config['username'], $config['password'], [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
     }
     /** Extract only manifest-verified entries to a new private directory. */
     public function extract(string $package, string $prefix, string $directory): void
@@ -93,7 +101,7 @@ final class PostgresBackup
     {
         if (!$dumps) throw new \InvalidArgumentException('El respaldo debe contener al menos una base.');
         if (!is_dir(dirname($destination))) mkdir(dirname($destination),0700,true);
-        $manifest = array_merge($metadata, ['format_version' => 1, 'engine' => 'postgresql', 'server_version' => '17.11', 'created_at' => gmdate('c'), 'databases' => array_keys($dumps), 'files' => []]);
+        $manifest = array_merge($metadata, ['format_version' => 1, 'engine' => 'postgresql', 'server_version' => '17', 'created_at' => gmdate('c'), 'databases' => array_keys($dumps), 'files' => []]);
         $partial = $destination.'.partial-'.bin2hex(random_bytes(6));
         $zip = new \ZipArchive();
         try {
@@ -121,7 +129,7 @@ final class PostgresBackup
         if ($zip->open($path, \ZipArchive::RDONLY) !== true) throw new \InvalidArgumentException('ZIP de respaldo inválido.');
         try {
             $manifest = json_decode($zip->getFromName('manifest.json') ?: '', true, 512, JSON_THROW_ON_ERROR);
-            if (($manifest['format_version'] ?? null) !== 1 || ($manifest['engine'] ?? null) !== 'postgresql' || ($manifest['server_version'] ?? null) !== '17.11') throw new \InvalidArgumentException('Formato o versión incompatible.');
+            if (($manifest['format_version'] ?? null) !== 1 || ($manifest['engine'] ?? null) !== 'postgresql' || !preg_match('/\A17(?:\.\d+)?\z/', (string) ($manifest['server_version'] ?? ''))) throw new \InvalidArgumentException('Formato o versión incompatible.');
             if (empty($manifest['databases']) || !is_array($manifest['files'] ?? null)) throw new \InvalidArgumentException('Manifiesto incompleto.');
             foreach ($manifest['databases'] as $database) {
                 PostgresBootstrap::identifier($database);

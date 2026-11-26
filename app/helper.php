@@ -224,3 +224,76 @@ if (!function_exists('func_get_templates')) {
 
     }
 }
+
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+/** Local application assets stay local; tenant uploads are materialized only for processing. */
+function tenant_public_path($path = '') {
+    $relative = str_replace(DIRECTORY_SEPARATOR, '/', (string) $path);
+    if (str_starts_with($relative, 'storage/uploads/') || str_starts_with($relative, 'public/uploads/') || str_starts_with($relative, 'uploads/')) {
+        try {
+            return app(\App\Services\Storage\TenantMedia::class)->localPath($relative);
+        } catch (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+            return '';
+        }
+    }
+    return public_path($path);
+}
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+/** Stable SAB URL; the controller validates the current DB reference and audience. */
+function tenant_asset($path, $secure = null) {
+    $reference = (string) $path;
+    if (!app(\App\Tenancy\Environment::class)->tenant()) return asset($path, $secure);
+    foreach(['storage/defaults/'=>'uploads/defaults/','storage/tag_images/'=>'uploads/tag_images/'] as $legacy=>$canonical){
+        if(str_starts_with($reference,$legacy))$reference=$canonical.substr($reference,strlen($legacy));
+    }
+    if(in_array($reference,['storage/uploads/items','uploads/items'],true))return url('media/images/items');
+    if(str_starts_with($reference,'storage/uploads/promotions/restaurant/') || str_starts_with($reference,'uploads/promotions/restaurant/')){
+        $name=basename($reference);\App\Services\Storage\TenantDisk::relative($reference);
+        return url('media/restaurant/promotions/'.rawurlencode($name));
+    }
+    foreach (['storage/uploads/','public/uploads/','uploads/'] as $prefix) {
+        if (str_starts_with($reference,$prefix)) {
+            $relative=substr($reference,strlen($prefix));
+            $parts=explode('/',$relative);
+            if (count($parts)!==2) throw new \InvalidArgumentException('Referencia de imagen inválida.');
+            if ($parts[0] === 'items' && $parts[1] === 'imagen-no-disponible.jpg') return asset('logo/imagen-no-disponible.jpg',$secure);
+            \App\Services\Storage\TenantDisk::relative('uploads/'.$relative);
+            return url('media/images/'.rawurlencode($parts[0]).'/'.rawurlencode($parts[1]));
+        }
+    }
+    return asset($path,$secure);
+}
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+function tenant_skin_url($skin) {
+    return $skin->is_system?asset('storage/skins/'.$skin->filename):url('media/skin/'.$skin->id);
+}
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+function tenant_storage_transaction(callable $callback) {
+    try {
+        return \Illuminate\Support\Facades\DB::connection('tenant')->transaction(function()use($callback){
+            $result=$callback();
+            $data=$result instanceof \Illuminate\Http\JsonResponse?$result->getData(true):$result;
+            if($result===false || (is_array($data) && ($data['success'] ?? null)===false) || ($result instanceof \Symfony\Component\HttpFoundation\Response && $result->getStatusCode()>=400)) {
+                throw new \App\Services\Storage\StorageResponseRollback($result);
+            }
+            return $result;
+        });
+    } catch(\App\Services\Storage\StorageResponseRollback $rollback) { return $rollback->result; }
+}
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
+function authorize_tenant_print(\Illuminate\Database\Eloquent\Model $document): void
+{
+    if (!app()->isProduction()) return;
+
+    $user = auth()->user();
+    abort_unless($user instanceof \App\Models\Tenant\User, 403);
+    $branch = $document->getAttribute('establishment_id');
+    abort_if(!$user->isAdmin() && $branch !== null && (string) $branch !== (string) $user->establishment_id, 403);
+}

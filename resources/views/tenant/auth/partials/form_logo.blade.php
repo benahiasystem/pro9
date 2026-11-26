@@ -7,7 +7,9 @@
 @else
     @if ($login->show_logo_in_form)
         @if($company->logo)
-        <img class="auth__logo-form" src="{{ asset('storage/uploads/logos/' . $company->logo) }}" alt="Logo formulario" width="250" />
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+        <img class="auth__logo-form" src="{{ tenant_asset('storage/uploads/logos/' . $company->logo) }}" alt="Logo formulario" width="250" />
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
         @else
         <img class="auth__logo-form" src="{{asset('logo/tulogo.png')}}" alt="Logo formulario" width="250" />
         @endif

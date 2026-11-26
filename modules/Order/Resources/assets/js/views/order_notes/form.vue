@@ -1812,7 +1812,9 @@ export default {
         computedLogo: function() {
             let picture = "";
             if (this.company.logo != null) {
-                picture`/storage/uploads/logos/${this.company.logo}`;
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                picture`/media/images/logos/${this.company.logo}`;
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             }
             return picture;
         },
@@ -1820,10 +1822,14 @@ export default {
             const isDarkMode = document.documentElement.classList.contains('dark');
 
             if (isDarkMode && this.company.logo_dark) {
-                return `/storage/uploads/logos/${this.company.logo_dark}`;
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                return `/media/images/logos/${this.company.logo_dark}`;
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             }
             if (this.company.logo) {
-                return `/storage/uploads/logos/${this.company.logo}`;
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                return `/media/images/logos/${this.company.logo}`;
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             }
             return '';
         },

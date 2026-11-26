@@ -1,4 +1,5 @@
 <template>
+    <!-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE -->
     <div>
         <header class="page-header">
             <h2 class="text-white"><a href="/dashboard">
@@ -11,13 +12,12 @@
 
         <div class="card" v-loading="loading">
             <div class="card-header bg-teal">
-                <h3 class="my-0">Uso del disco</h3>
+                <h3 class="my-0">Almacenamiento privado</h3>
             </div>
             <div class="card-body">
 
                 <div class="sm-alert" v-if="!loading && !measured">
-                    No se pudo leer el espacio del disco. Es posible que el servidor
-                    restrinja el acceso a esa información.
+                    El uso se mide por objetos privados. La capacidad disponible depende del plan de Supabase.
                 </div>
 
                 <template v-if="measured">
@@ -89,7 +89,7 @@
                                     <span class="sm-table__sub">{{ row.number || '—' }}</span>
                                 </td>
                                 <td class="sm-table__muted">{{ row.fqdn || '—' }}</td>
-                                <td class="text-end sm-table__size">{{ formatBytes(row.space) }}</td>
+                                <td class="text-end sm-table__size">{{ row.measured ? formatBytes(row.space) : 'Medición no disponible' }}<small v-if="row.measured_at" class="d-block">{{ row.measured_at }}</small></td>
                                 <td>
                                     <div class="sm-share" :title="`${formatBytes(row.space)} de ${formatBytes(tenants_space)}`">
                                         <div class="sm-bar">
@@ -200,6 +200,7 @@
         <clean-storage :showDialog.sync="showCleanStorageDialog" :record="cleanStorageRecord"></clean-storage>
         <cleanup-configuration :showDialog.sync="showConfigurationDialog" :record="configurationRecord"></cleanup-configuration>
     </div>
+    <!-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE -->
 </template>
 
 <script>

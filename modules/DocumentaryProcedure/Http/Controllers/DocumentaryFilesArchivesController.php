@@ -14,9 +14,11 @@
          * @return \Symfony\Component\HttpFoundation\StreamedResponse
          */
         public function download(DocumentaryFilesArchives $id) {
-            $e = Storage::exists($id->getAttachedFile());
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $e = app(\App\Services\Storage\TenantStorage::class)->disk()->exists($id->getAttachedFile());
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             if ($e) {
-                return Storage::download($id->getAttachedFile(), $id->getPublicName());
+                return app(\App\Services\Storage\TenantStorage::class)->disk()->download($id->getAttachedFile(), $id->getPublicName());
 
             }
             abort(404);
@@ -35,9 +37,13 @@
                 'success' => false,
                 'file' => $file,
             ];
-            $e = Storage::exists($file);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $e = app(\App\Services\Storage\TenantStorage::class)->disk()->exists($file);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             if ($e) {
-                Storage::delete($file);
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                app(\App\Services\Storage\TenantStorage::class)->disk()->delete($file);
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 $id->delete();
                 $data['success'] = true;
                 $data['message'] = 'El registro se ha borrado';

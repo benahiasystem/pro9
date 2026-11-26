@@ -31,12 +31,18 @@ class RecoverIvaRetentions extends Command
                 $upload = ReceivedRetentionUpload::query()->lockForUpdate()->find($candidate->id);
                 if (!$upload || !$upload->expires_at->isPast()) return;
                 if (!$upload->document_id) {
-                    foreach (Storage::disk('tenant')->allFiles('received_retentions') as $copy) {
+                    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                    foreach (app(\App\Services\Storage\TenantStorage::class)->disk()->allFiles('received_retentions') as $copy) {
+                    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                         if ($copy !== $upload->path && basename($copy) === basename($upload->path)
-                            && !\App\Models\Tenant\DocumentReceivedRetention::where('attachment',$copy)->exists()) Storage::disk('tenant')->delete($copy);
+                            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                            && !\App\Models\Tenant\DocumentReceivedRetention::where('attachment',$copy)->exists()) app(\App\Services\Storage\TenantStorage::class)->disk()->delete($copy);
+                            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                     }
                 }
-                Storage::disk('tenant')->delete($upload->path);
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                app(\App\Services\Storage\TenantStorage::class)->disk()->delete($upload->path);
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 $upload->delete();
             });
         }

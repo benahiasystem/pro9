@@ -229,7 +229,9 @@
 
             $file_content = file_get_contents($temp_path);
 
-            Storage::disk('tenant')->put('guide_files' . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $id . DIRECTORY_SEPARATOR . $this->filename, $file_content);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            app(\App\Services\Storage\TenantStorage::class)->disk()->put('guide_files' . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $id . DIRECTORY_SEPARATOR . $this->filename, $file_content);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             return $this->filename;
 
         }
@@ -271,17 +273,19 @@
 
         public function checkFile($data = [])
         {
-            Storage::disk('tenant');
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            app(\App\Services\Storage\TenantStorage::class)->disk();
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             $base = 'guide_files';
 
-            if (!Storage::exists($base)) {
-                Storage::makeDirectory($base);
+            if (!app(\App\Services\Storage\TenantStorage::class)->disk()->exists($base)) {
+                app(\App\Services\Storage\TenantStorage::class)->disk()->makeDirectory($base);
             }
-            if (!Storage::exists($base . DIRECTORY_SEPARATOR . $data['type'])) {
-                Storage::makeDirectory($base . DIRECTORY_SEPARATOR . $data['type']);
+            if (!app(\App\Services\Storage\TenantStorage::class)->disk()->exists($base . DIRECTORY_SEPARATOR . $data['type'])) {
+                app(\App\Services\Storage\TenantStorage::class)->disk()->makeDirectory($base . DIRECTORY_SEPARATOR . $data['type']);
             }
-            if (!Storage::exists($base . DIRECTORY_SEPARATOR . $data['id'])) {
-                Storage::makeDirectory($base . DIRECTORY_SEPARATOR . $data['id']);
+            if (!app(\App\Services\Storage\TenantStorage::class)->disk()->exists($base . DIRECTORY_SEPARATOR . $data['id'])) {
+                app(\App\Services\Storage\TenantStorage::class)->disk()->makeDirectory($base . DIRECTORY_SEPARATOR . $data['id']);
             }
 
         }
@@ -296,7 +300,9 @@
             $data = self::getTypeOperation($this);
             $this->checkFile($data);
 
-            return Storage::disk('tenant')->download('guide_files' . DIRECTORY_SEPARATOR . $data['type'] . DIRECTORY_SEPARATOR . $data['id'] . DIRECTORY_SEPARATOR . $this->filename);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            return app(\App\Services\Storage\TenantStorage::class)->disk()->download('guide_files' . DIRECTORY_SEPARATOR . $data['type'] . DIRECTORY_SEPARATOR . $data['id'] . DIRECTORY_SEPARATOR . $this->filename);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         }
 
 

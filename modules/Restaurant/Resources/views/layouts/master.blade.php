@@ -21,14 +21,18 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="{{ url()->current() }}" />
     @php($headerLogo = data_get($company ?? null, 'logo') ?: data_get($information ?? null, 'logo'))
-    <meta property="og:image" content="{{ $headerLogo ? asset('storage/uploads/logos/'.$headerLogo) : asset('logo/tulogo.png') }}" />
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    <meta property="og:image" content="{{ $headerLogo ? tenant_asset('storage/uploads/logos/'.$headerLogo) : tenant_asset('logo/tulogo.png') }}" />
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     <meta property="og:site_name" content="{{ data_get($pageCompany, 'title_web') ?: data_get($pageCompany, 'trade_name') }}" />
 
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="{{ data_get($pageCompany, 'title_web') ?: data_get($pageCompany, 'trade_name') }}" />
     <meta name="twitter:description" content="{{ $restaurantDescription ?? 'Restaurante' }}" />
-    <meta name="twitter:image" content="{{ $headerLogo ? asset('storage/uploads/logos/'.$headerLogo) : asset('logo/tulogo.png') }}" />
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    <meta name="twitter:image" content="{{ $headerLogo ? tenant_asset('storage/uploads/logos/'.$headerLogo) : tenant_asset('logo/tulogo.png') }}" />
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
     <!-- Schema.org JSON-LD (ItemList para listado de productos) -->
     @if(isset($products) && count($products))
@@ -43,7 +47,9 @@
                 "@type": "Product",
                 "position": {{ $index + 1 }},
                 "name": "{{ addslashes($product->name) }}",
-                "image": "{{ $product->image_url ?? ($headerLogo ? asset('storage/uploads/logos/'.$headerLogo) : asset('logo/tulogo.png')) }}",
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                "image": "{{ $product->image_url ?? ($headerLogo ? tenant_asset('storage/uploads/logos/'.$headerLogo) : tenant_asset('logo/tulogo.png')) }}",
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 "url": "{{ route('ecommerce.product.show', $product->slug) }}"
             }@if(!$loop->last),@endif
             @endforeach

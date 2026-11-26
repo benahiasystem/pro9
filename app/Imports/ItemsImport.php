@@ -9,7 +9,6 @@ use App\Models\Tenant\Warehouse;
 use App\Traits\SunatItemCodeTrait;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Modules\Item\Models\Category;
@@ -19,7 +18,6 @@ use Modules\Inventory\Models\InventoryTransaction;
 use Modules\Inventory\Models\Inventory;
 use Exception;
 use Modules\Item\Models\ItemLotsGroup;
-use Modules\Finance\Helpers\UploadFileHelper;
 
 
 class ItemsImport implements ToCollection
@@ -90,60 +88,6 @@ class ItemsImport implements ToCollection
                 $barcode = $row[19] ?? null;
                 $image_url = $row[20] ?? null;
 
-                // image names
-                $file_name = 'imagen-no-disponible.jpg';
-                $file_name_medium = 'imagen-no-disponible.jpg';
-                $file_name_small = 'imagen-no-disponible.jpg';
-
-
-
-                // verifica el campo url y valida si es una url correcta
-                if($image_url && filter_var($image_url, FILTER_VALIDATE_URL)) {
-                    // verifica si la url no obtiene errores
-                    if(strpos(get_headers($image_url, 1)[0],'200') != false){
-                        // dd(stripos(getimagesize($image_url)['mime'], 'image') === 0? 'no':'si');
-                        $image_type = exif_imagetype($image_url);
-                        // verifica si lo que obtiene de la url es una imagen
-                        if($image_type > 0 || $image_type < 19) {
-                            $directory = 'public'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR;
-                            $dateNow = date('YmdHis');
-                            $content = file_get_contents($image_url);
-
-                            UploadFileHelper::checkIfImageCanBeProcessed($content);
-
-                            $slugs = explode ("/", $image_url);
-                            $latestSlug = $slugs [(count ($slugs) - 1)];
-                            $image_name = strtok($latestSlug, '?');
-
-                            $file_name = Str::slug($description).'-'.$dateNow.'.'.$image_name;
-                            $file_name_medium = Str::slug($description).'-'.$dateNow.'_medium.'.$image_name;
-                            $file_name_small = Str::slug($description).'-'.$dateNow.'_small.'.$image_name;
-
-                            Storage::put($directory.$file_name, $content);
-
-                            $getImage = Storage::get($directory.$file_name);
-
-                            $image_medium = \Image::make($getImage)
-                                            ->resize(512, null, function ($constraint) {
-                                                $constraint->aspectRatio();
-                                                $constraint->upsize();
-                                            })
-                                            ->stream();
-
-                            Storage::put($directory.$file_name_medium, $image_medium);
-
-                            $image_small = \Image::make($getImage)
-                                            ->resize(256, null, function ($constraint) {
-                                                $constraint->aspectRatio();
-                                                $constraint->upsize();
-                                            })
-                                            ->stream();
-
-                            Storage::put($directory.$file_name_small, $image_small);
-                        }
-                    }
-                }
-
                 $warehouse_id = request('warehouse_id');
 
 
@@ -155,6 +99,12 @@ class ItemsImport implements ToCollection
                 // $establishment_id = auth()->user()->establishment->id;
 
                 if(!$item) {
+                    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                    $images = app(\App\Support\ItemImport\ImportedItemImage::class)->load($image_url, $description, $internal_id);
+                    $file_name = $images['image'];
+                    $file_name_medium = $images['image_medium'];
+                    $file_name_small = $images['image_small'];
+                    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                     $category = $category_name ? Category::updateOrCreate(['name' => $category_name]):null;
                     $brand = $brand_name ? Brand::updateOrCreate(['name' => $brand_name]):null;
                     // dd($row, $lot_code ,$date_of_due, $category, $brand);

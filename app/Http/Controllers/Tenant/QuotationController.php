@@ -626,6 +626,7 @@ class QuotationController extends Controller
     public function toPrint($external_id, $format)
     {
         $quotation = $this->quotationForPdf($external_id);
+        if ($quotation) authorize_tenant_print($quotation);
         $headers = $this->generalPdfResponseFileHeaders($quotation->filename);
         $headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0';
         $headers['Pragma'] = 'no-cache';

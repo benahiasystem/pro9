@@ -139,7 +139,7 @@ class PosController extends Controller
                 'aux_quantity' => 1,
                 'aux_sale_unit_price' => D::represent(D::readRequired($row, 'sale_unit_price')),
                 'edit_sale_unit_price' => D::represent(D::readRequired($row, 'sale_unit_price')),
-                'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $row->image) : asset("/logo/{$row->image}"),
+                'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? tenant_asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $row->image) : asset("/logo/{$row->image}"),
                 'sets' => collect($row->sets)->transform(function ($r) {
                     return [
                         $r->individual_item->description
@@ -365,7 +365,7 @@ class PosController extends Controller
                         'aux_quantity' => 1,
                         'edit_sale_unit_price' => $price['sale_unit_price'],
                         'aux_sale_unit_price' => $price['sale_unit_price'],
-                        'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $row->image) : asset("/logo/{$row->image}"),
+                        'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? tenant_asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $row->image) : asset("/logo/{$row->image}"),
                         'warehouses' => collect($row->warehouses)->transform(function ($row) {
                             return [
                                 'warehouse_description' => $row->warehouse->description,

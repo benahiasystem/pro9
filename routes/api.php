@@ -21,10 +21,14 @@ Route::prefix('whatsapp-notify')->middleware('throttle:30,1')->group(function ()
 $hostname = app(App\Tenancy\Contracts\CurrentHostname::class);
 if ($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
-        Route::post('configurations/default-image', [ConfigurationImageController::class, 'upload']);
+        Route::post('configurations/default-image', [ConfigurationImageController::class, 'upload'])->middleware(['auth:api', 'locked.tenant']);
         Route::post('login', 'Tenant\Api\MobileController@login');
 
         Route::middleware(['auth:api', 'locked.tenant'])->group(function () {
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            Route::post('media/items/urls', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'items']);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
             // ######## INICIO PERSISTENCIA FISCAL VENEZUELA ########
             Route::post('document_payments', 'Tenant\DocumentPaymentController@store');
             Route::get('document_payments/records/{document}', 'Tenant\DocumentPaymentController@records');

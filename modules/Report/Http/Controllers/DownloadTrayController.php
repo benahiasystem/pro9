@@ -27,15 +27,28 @@ class DownloadTrayController extends Controller
 
     public function records(Request $request)
     {
-        $records = DownloadTray::latest();
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $records = $this->authorizedTrays()->latest();
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         return new DownloadTrayCollecion($records->paginate(config('tenant.items_per_page')));
     }
 
     public function download($id)
     {
-        $record = DownloadTray::find($id);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $record = $this->authorizedTrays()->where('status','FINISHED')->findOrFail($id);
         return $this->downloadStorage($record->file_name, $record->path);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
+
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    private function authorizedTrays()
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof \App\Models\Tenant\User,403);
+        return DownloadTray::query()->when(!$user->isAdmin(),fn($query)=>$query->where('user_id',$user->id));
+    }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
 }

@@ -21,12 +21,16 @@ class StorageHelper
      */
     public function uploadPayment($filename, $file_content)
     {
-        Storage::disk('tenant')->put('payments' . DIRECTORY_SEPARATOR . $filename, $file_content);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put('payments' . DIRECTORY_SEPARATOR . $filename, $file_content);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function downloadPayment($filename)
     {
-        return Storage::disk('tenant')->download('payments' . DIRECTORY_SEPARATOR . $filename);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download('payments' . DIRECTORY_SEPARATOR . $filename);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     /*
@@ -34,12 +38,16 @@ class StorageHelper
      */
     public function uploadCertificate($filename, $file_content)
     {
-        Storage::disk('tenant')->put('certificates' . DIRECTORY_SEPARATOR . $filename, $file_content);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put('certificates' . DIRECTORY_SEPARATOR . $filename, $file_content);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function getCertificate($filename)
     {
-        return Storage::disk('tenant')->get('certificates' . DIRECTORY_SEPARATOR . $filename);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->get('certificates' . DIRECTORY_SEPARATOR . $filename);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     /**
@@ -72,25 +80,33 @@ class StorageHelper
     public function uploadPdf($filename, $file_content, $format = 'a4')
     {
         $folder = $this->getFolder('pdf_' . $format, $filename . '.pdf');
-        Storage::disk('tenant')->put($folder, $file_content);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put($folder, $file_content);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function downloadPdf($filename, $format = 'a4')
     {
         $folder = $this->getFolder('pdf_' . $format, $filename . '.pdf');
-        return Storage::disk('tenant')->download($folder);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download($folder);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function getPdf($filename, $format = 'a4')
     {
         $folder = $this->getFolder('pdf_' . $format, $filename . '.pdf');
-        return Storage::disk('tenant')->get($folder);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->get($folder);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function existPdf($filename, $format = 'a4')
     {
         $folder = $this->getFolder('pdf_' . $format, $filename . '.pdf');
-        return Storage::disk('tenant')->exists($folder);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->exists($folder);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function printer($filename, $format = 'a4')
@@ -107,19 +123,25 @@ class StorageHelper
     public function uploadCdr($filename, $file_content)
     {
         $folder = $this->getFolder('cdr', 'R-' . $filename . '.xml');
-        Storage::disk('tenant')->put($folder, $file_content);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put($folder, $file_content);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function downloadCdr($filename)
     {
         $folder = $this->getFolder('cdr', 'R-' . $filename . '.xml');
-        return Storage::disk('tenant')->download($folder);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download($folder);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function getCdr($filename)
     {
         $folder = $this->getFolder('cdr', 'R-' . $filename . '.xml');
-        return Storage::disk('tenant')->get($folder);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->get($folder);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     /*
@@ -137,25 +159,33 @@ class StorageHelper
     public function uploadHtml($filename, $file_content)
     {
         $folder = $this->getFolder('html', $filename . '.html');
-        Storage::disk('tenant')->put($folder, $file_content);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put($folder, $file_content);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function downloadHtml($filename)
     {
         $folder = $this->getFolder('html', $filename . '.html');
-        return Storage::disk('tenant')->download($folder);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download($folder);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function getHtml($filename)
     {
         $folder = $this->getFolder('html', $filename . '.html');
-        return Storage::disk('tenant')->get($folder);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->get($folder);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function existHtml($filename)
     {
         $folder = $this->getFolder('html', $filename . '.html');
-        return Storage::disk('tenant')->exists($folder);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->exists($folder);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 }
 // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

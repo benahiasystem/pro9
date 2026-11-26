@@ -784,7 +784,8 @@ export default {
             const row = rows[0]
             const currency = row.currency_type_id || this.form.currency_type_id
             const rate = row.exchange_rate ?? this.form.exchange_rate_sale
-            const received = exactAmount(entered).final(2)
+            const sameCurrencySaleNote = this.form.document_type_id === '80' && currency === this.form.currency_type_id
+            const received = sameCurrencySaleNote ? entered : exactAmount(entered).final(2)
             let applied = exactAmount(received).decimal()
             if (currency !== this.form.currency_type_id && applied !== '0') {
                 try {

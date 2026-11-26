@@ -587,7 +587,9 @@ final class FiscalDocumentPersistence
             if ($data['tax_kind'] === 'ISLR' && D::convert($data['base'],$data['currency_type_id'],'VES',$data['exchange_rate'])->isGreaterThan(D::convert($document->exactValue('total_value'),$document->currency_type_id,'VES',$document->exchange_rate_sale)->plus('0.01'))) FiscalAmounts::error('base', 'La base ISLR supera el valor neto facturado.');
             if (!empty($data['attachment'])) {
                 $prefix = 'received_retentions/'.$document->id.'/';
-                if (!str_starts_with($data['attachment'], $prefix) || str_contains($data['attachment'],'..') || !Storage::disk('tenant')->exists($data['attachment'])) FiscalAmounts::error('attachment','Adjunto inválido para esta factura y tenant.');
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                if (!str_starts_with($data['attachment'], $prefix) || str_contains($data['attachment'],'..') || !app(\App\Services\Storage\TenantStorage::class)->disk()->exists($data['attachment'])) FiscalAmounts::error('attachment','Adjunto inválido para esta factura y tenant.');
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             }
             unset($data['agent_rif'], $data['invoice_control'], $data['invoice_number'], $data['fiscal_context']);
             $data['fiscal_context'] = ['issuer'=>$issuer,'buyer'=>$buyer,'proposal'=>$proposal,'operation'=>$context,

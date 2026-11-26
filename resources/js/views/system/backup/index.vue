@@ -140,55 +140,33 @@ export default {
             this.files.content = ''
             this.files.status = false
         },
-        backupDb() {
-            this.$http.post(`/${this.resource}/db`, this.formBackups)
-            .then(response => {
-                if (response.data !== '') {
-                    this.db.content = response.data
-                    this.errors = {};
-                    if (response.status === 200) {
-                        this.db.status = 'success'
-                    }
-                    this.backupFiles()
-                }
-            }).catch(error => {
-                const status = error.response.status;
-                if (status === 422) {
-                    this.errors = error.response.data;
-                } else if (status !== 200) {
-                    this.db.error = error.response.data.message
-                    this.db.status = 'false'
-                }
-            }).finally(() => this.loading_submit = false);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        async backupDb() {
+            // Complete file backups already include their matching MySQL snapshot.
+            return this.backupFiles()
         },
         async backupFiles() {
-            await this.$http.post(`/${this.resource}/files`, this.formBackups)
-                .then(async (response) => {
-                    if (response.data !== '') {
-                        this.files.content = response.data
-                        this.errors = {};
-                        if (response.status === 200) {
-                            this.files.status = 'success'
-                            this.$message.success('Backup generado correctamente, se esta cargando la información del último backup.');
-                            this.newLastZip = ''
-                            await this.sleep(4500)
-                            this.mostRecent()
-                            this.$message.success('Se cargo los datos generados');
-
-                        }
-                        this.loading_submit = false
+            try {
+                const { data } = await this.$http.post(`/${this.resource}/files`, this.formBackups)
+                this.files.content = 'Operación: ' + data.operation_id
+                this.$message.info('Respaldo en proceso: ' + data.operation_id)
+                for (let attempt = 0; attempt < 180; attempt++) {
+                    await this.sleep(2000)
+                    const { data: operation } = await this.$http.get(`/storage-management/operations/${data.operation_id}`)
+                    if (operation.status === 'failed') throw new Error(operation.diagnostic)
+                    if (operation.status === 'completed') {
+                        this.db.status = 'success'; this.files.status = 'success'
+                        this.mostRecent(); this.$message.success('Respaldo verificado y guardado'); return
                     }
-                }).catch(error => {
-                    const status = error.response.status;
-                    if (status === 422) {
-                        this.errors = error.response.data;
-                    } else if (status !== 200) {
-                        this.db.error = error.response.data.message
-                        this.db.status = 'false'
-                    }
-                })
-
+                }
+                this.$message.info('El respaldo continúa en segundo plano: ' + data.operation_id)
+            } catch (error) {
+                this.files.error = error.response?.data?.message || error.message
+                this.files.status = 'false'
+                this.$message.error(this.files.error)
+            } finally { this.loading_submit = false }
         },
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         mostRecent(){
             this.$http.get(`/${this.resource}/last-backup`)
                 .then(response => {

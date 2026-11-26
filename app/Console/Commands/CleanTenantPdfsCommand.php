@@ -1,110 +1,34 @@
 <?php
-
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 namespace App\Console\Commands;
 
+use App\Services\Storage\{StorageAdministration,TenantStorage};
+use App\Tenancy\Models\Website;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
 
 class CleanTenantPdfsCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'tenants:clean-pdfs
-                            {--dry-run : Solo muestra qué se eliminaría, sin borrar}
-                            {--tenant= : Limpiar solo un tenant (nombre de carpeta / uuid)}';
+    protected $signature='tenants:clean-pdfs {--dry-run : Solo muestra qué se eliminaría, sin borrar} {--tenant= : Limpiar solo un tenant (uuid)}';
+    protected $description='Elimina únicamente PDF inmediatos de la carpeta pdf de cada tenant en Storage privado';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Elimina los archivos .pdf de storage/app/tenancy/tenants/*/pdf/';
-
-    /**
-     * Execute the console command.
-     *
-     * @return int
-     */
     public function handle()
     {
-        $tenantsDir = storage_path('app/tenancy/tenants');
-        $dryRun = (bool) $this->option('dry-run');
-        $onlyTenant = $this->option('tenant');
-
-        if (! File::isDirectory($tenantsDir)) {
-            $this->error("No existe el directorio de tenants: {$tenantsDir}");
-
-            return self::FAILURE;
+        $query=Website::query();
+        if($uuid=$this->option('tenant'))$query->where('uuid',TenantStorage::validateUuid($uuid));
+        if(!$query->exists()){$this->error('No se encontraron empresas.');return self::FAILURE;}
+        $count=0;
+        foreach($query->cursor() as $website){
+            if($this->option('dry-run')){
+                foreach(app(TenantStorage::class)->physicalForUuid($website->uuid)->listing('pdf',false) as $file){
+                    if(strtolower(pathinfo($file['path'],PATHINFO_EXTENSION))==='pdf'){$count++;$this->line($website->uuid.'/'.$file['path']);}
+                }
+            }else{
+                $operation=app(StorageAdministration::class)->start($website->uuid,'clean_pdfs');
+                $this->line('Operación en cola: '.$operation->id);
+            }
         }
-
-        if ($dryRun) {
-            $this->warn('[DRY-RUN] No se eliminará ningún archivo.');
-            $this->newLine();
-        }
-
-        $tenants = $onlyTenant
-            ? [rtrim($tenantsDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $onlyTenant]
-            : File::directories($tenantsDir);
-
-        $totalTenants = 0;
-        $tenantsWithPdfs = 0;
-        $totalPdfs = 0;
-
-        foreach ($tenants as $tenantPath) {
-            if (! File::isDirectory($tenantPath)) {
-                $this->warn("Tenant no encontrado: {$onlyTenant}");
-
-                return self::FAILURE;
-            }
-
-            $tenantName = basename($tenantPath);
-            $pdfDir = $tenantPath . DIRECTORY_SEPARATOR . 'pdf';
-            $totalTenants++;
-
-            if (! File::isDirectory($pdfDir)) {
-                $this->line("[{$tenantName}] Sin carpeta pdf — omitido");
-                continue;
-            }
-
-            $pdfs = collect(File::files($pdfDir))
-                ->filter(function ($file) {
-                    return strtolower($file->getExtension()) === 'pdf';
-                })
-                ->values();
-
-            $count = $pdfs->count();
-
-            if ($count === 0) {
-                $this->line("[{$tenantName}] 0 PDFs");
-                continue;
-            }
-
-            $tenantsWithPdfs++;
-            $totalPdfs += $count;
-
-            if ($dryRun) {
-                $this->info("[{$tenantName}] Se eliminarían {$count} PDF(s)");
-                continue;
-            }
-
-            foreach ($pdfs as $pdf) {
-                File::delete($pdf->getPathname());
-            }
-
-            $this->info("[{$tenantName}] Eliminados {$count} PDF(s)");
-        }
-
-        $this->newLine();
-        $this->line("Tenants revisados: {$totalTenants}");
-        $this->line("Tenants con PDFs:  {$tenantsWithPdfs}");
-        $this->line($dryRun
-            ? "PDFs a eliminar:   {$totalPdfs}"
-            : "PDFs eliminados:   {$totalPdfs}"
-        );
-
+        if($this->option('dry-run'))$this->info('[DRY-RUN] PDF a eliminar: '.$count);
         return self::SUCCESS;
     }
 }
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE

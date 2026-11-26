@@ -11,11 +11,15 @@ class SaleOpportunityFileService
     {
         $path = 'sale_opportunity_files' . DIRECTORY_SEPARATOR . $filename;
     
-        if (!Storage::disk('tenant')->exists($path)) {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        if (!app(\App\Services\Storage\TenantStorage::class)->disk()->exists($path)) {
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             return null;
         }
     
-        $file = Storage::disk('tenant')->get($path);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $file = app(\App\Services\Storage\TenantStorage::class)->disk()->get($path);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $temp = tempnam(sys_get_temp_dir(), 'tmp_sale_opportunity_files');
         file_put_contents($temp, $file);
         $mime = mime_content_type($temp);

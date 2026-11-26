@@ -45,6 +45,8 @@ class ConfigurationController extends Controller
 
     public function generateDispatch(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $template = new Template();
         $pdf = new Mpdf();
         $pdf_margin_top = 15;
@@ -105,9 +107,14 @@ class ConfigurationController extends Controller
         $pdf->WriteHTML($stylesheet, HTMLParserMode::HEADER_CSS);
         $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
 
-        Storage::put('preprintedpdf' . DIRECTORY_SEPARATOR . $request->base_pdf_template . '.pdf', $pdf->output('', 'S'));
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put('preprintedpdf' . DIRECTORY_SEPARATOR . $request->base_pdf_template . '.pdf', $pdf->output('', 'S'));
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         return $request->base_pdf_template;
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function show($template)
@@ -117,7 +124,9 @@ class ConfigurationController extends Controller
             'Content-Disposition' => 'inline; filename="file.pdf"'
         ];
 
-        return response()->file(storage_path('app' . DIRECTORY_SEPARATOR . 'preprintedpdf' . DIRECTORY_SEPARATOR . $template . '.pdf'), $headers);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download('preprintedpdf/'.$template.'.pdf','file.pdf',$headers,'inline');
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     // public function dispatch(Request $request) {
@@ -583,13 +592,17 @@ class ConfigurationController extends Controller
             'success' => true,
             'background_color' => $configuration->public_search_bg_color ?? null,
             'background_image_url' => !empty($configuration->public_search_bg_image_path)
-                ? asset('storage/' . ltrim($configuration->public_search_bg_image_path, '/'))
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                ? tenant_asset('storage/' . ltrim($configuration->public_search_bg_image_path, '/'))
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 : null,
         ]);
     }
 
     public function storePublicSearchBackground(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $validated = $request->validate([
             'background_color' => ['nullable', 'regex:/^#([A-Fa-f0-9]{6})$/'],
             'background_image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
@@ -602,17 +615,16 @@ class ConfigurationController extends Controller
             : null;
 
         if ($request->boolean('remove_background_image') && !empty($configuration->public_search_bg_image_path)) {
-            Storage::disk('public')->delete($configuration->public_search_bg_image_path);
+            app(\App\Services\Storage\TenantStorage::class)->disk()->delete($configuration->public_search_bg_image_path);
             $configuration->public_search_bg_image_path = null;
         }
 
         if ($request->hasFile('background_image')) {
             if (!empty($configuration->public_search_bg_image_path)) {
-                Storage::disk('public')->delete($configuration->public_search_bg_image_path);
+                app(\App\Services\Storage\TenantStorage::class)->disk()->delete($configuration->public_search_bg_image_path);
             }
 
-            $configuration->public_search_bg_image_path = $request->file('background_image')
-                ->store('uploads/public-search-backgrounds', 'public');
+            $configuration->public_search_bg_image_path = app(\App\Services\Storage\TenantStorage::class)->disk()->putFileAs('uploads/public-search-backgrounds',$request->file('background_image'),(string)\Illuminate\Support\Str::uuid().'.'.$request->file('background_image')->guessExtension());
         }
 
         $configuration->save();
@@ -621,9 +633,14 @@ class ConfigurationController extends Controller
             'success' => true,
             'background_color' => $configuration->public_search_bg_color,
             'background_image_url' => !empty($configuration->public_search_bg_image_path)
-                ? asset('storage/' . ltrim($configuration->public_search_bg_image_path, '/'))
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                ? tenant_asset('storage/' . ltrim($configuration->public_search_bg_image_path, '/'))
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 : null,
         ]);
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function tables()
@@ -774,6 +791,8 @@ class ConfigurationController extends Controller
 
     public function uploadFile(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         if ($request->hasFile('file')) {
             $configuration = Configuration::first();
 
@@ -785,7 +804,10 @@ class ConfigurationController extends Controller
 
             UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
 
-            $file->storeAs('public/uploads/header_images', $name);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $name=(string)\Illuminate\Support\Str::uuid().'.'.$file->guessExtension();
+            app(\App\Services\Storage\TenantStorage::class)->disk()->putFileAs('uploads/header_images',$file,$name);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
             $configuration->header_image = $name;
 
@@ -802,6 +824,9 @@ class ConfigurationController extends Controller
             'success' => false,
             'message' => __('app.actions.upload.error'),
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function changeMode()
@@ -877,13 +902,15 @@ class ConfigurationController extends Controller
 
     public function visualUploadSkin(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         if (strtolower($request->file->getClientOriginalExtension()) !== 'css') {
             return [
                 'success' => false,
                 'message' =>  'Tipo de archivo no permitido',
             ];
         }
-        if (Storage::disk('public')->exists('skins'.DIRECTORY_SEPARATOR.$request->file->getClientOriginalName())) {
+        if (app(\App\Services\Storage\TenantStorage::class)->disk()->exists('uploads/skins'.DIRECTORY_SEPARATOR.$request->file->getClientOriginalName())) {
             return [
                 'success' => false,
                 'message' =>  'Archivo ya existe',
@@ -898,7 +925,7 @@ class ConfigurationController extends Controller
             $name = pathinfo($file->getClientOriginalName());
 
 
-            Storage::disk('public')->put('skins'.DIRECTORY_SEPARATOR.$filename, $file_content);
+            app(\App\Services\Storage\TenantStorage::class)->disk()->put('uploads/skins'.DIRECTORY_SEPARATOR.$filename, $file_content);
 
             $skin = new Skin;
             $skin->filename = $filename;
@@ -915,10 +942,15 @@ class ConfigurationController extends Controller
             'success' => false,
             'message' =>  __('app.actions.upload.error'),
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function visualDeleteSkin(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $skin = Skin::find($request->id);
 
         if (!$skin) {
@@ -938,7 +970,7 @@ class ConfigurationController extends Controller
             // Si falla la consulta de configuración, continuamos con el delete
         }
 
-        Storage::disk('public')->delete('skins'.DIRECTORY_SEPARATOR.$skin->filename);
+        app(\App\Services\Storage\TenantStorage::class)->disk()->delete('uploads/skins'.DIRECTORY_SEPARATOR.$skin->filename);
         $skin->delete();
 
         return [
@@ -946,6 +978,9 @@ class ConfigurationController extends Controller
             'message' => 'Tema eliminado correctamente',
             'skins'   => Skin::all()->map(function($s) { return $s->getCollectionData(); }),
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 
@@ -970,6 +1005,8 @@ class ConfigurationController extends Controller
      */
     public function pdfFooterImages(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $images = $request->images;
         $data = [];
         $configuration = Configuration::first();
@@ -1001,6 +1038,9 @@ class ConfigurationController extends Controller
         $configuration->update();
 
         return $this->generalResponse(true, 'Proceso realizado correctamente.');
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 

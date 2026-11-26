@@ -28,13 +28,17 @@ use Illuminate\Support\Facades\Storage;
     
     {{-- Incluir CSS del tema seleccionado --}}
     @if(isset($selectedSkin) && $selectedSkin)
-        @if(Storage::disk('public')->exists('skins/' . $selectedSkin->filename))
-            <link rel="stylesheet" href="{{ asset('storage/skins/' . $selectedSkin->filename) }}" />
+        @if((!$selectedSkin->is_system || Storage::disk('public')->exists('skins/' . $selectedSkin->filename)))
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+            <link rel="stylesheet" href="{{ tenant_skin_url($selectedSkin) }}" />
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
         @endif
     @else
         {{-- CSS por defecto si no hay tema seleccionado --}}
         @if(Storage::disk('public')->exists('skins/default.css'))
-            <link rel="stylesheet" href="{{ asset('storage/skins/default.css') }}" />
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+            <link rel="stylesheet" href="{{ tenant_asset('storage/skins/default.css') }}" />
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
         @endif
     @endif
     

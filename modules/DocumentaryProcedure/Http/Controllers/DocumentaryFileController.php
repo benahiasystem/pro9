@@ -542,7 +542,7 @@
                         'documentary_file_id' => $file_id,
                         'documentary_office_id' => $file_documentary_office_id,
                         'observation' => '',
-                        'attached_file' => FilesFolder::saveFile($attachment),
+                        'attached_file' => $this->storeFile($attachment),
                     ];
                     $files = new FilesFolder($data);
                     $files->push();
@@ -570,7 +570,10 @@
             UploadFileHelper::checkIfValidFile($name, $file->getPathName(), $is_image, 'jpg,jpeg,png,gif,svg,webp,docx,pdf,xlsx', $allowed_file_types);
 
             $path = 'storage/uploads/files/';
-            $fullpath = $file->storeAs($path, $name);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $name=(string)\Illuminate\Support\Str::uuid().'.'.$file->guessExtension();
+            $fullpath=app(\App\Services\Storage\TenantStorage::class)->disk()->putFileAs('uploads/files',$file,$name);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
             return $fullpath;
         }

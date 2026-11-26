@@ -299,7 +299,9 @@
 <div class="mobile-menu-wrapper">
     <header class="mobile-app-menu-header">
         <span class="mobile-app-menu-logo">
-            <img src="{{ $mobileMenuLogo ? asset('storage/uploads/logos/'.$mobileMenuLogo) : asset('logo/tulogo.png') }}" alt="{{ $mobileMenuStoreName }}">
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+            <img src="{{ $mobileMenuLogo ? tenant_asset('storage/uploads/logos/'.$mobileMenuLogo) : tenant_asset('logo/tulogo.png') }}" alt="{{ $mobileMenuStoreName }}">
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
         </span>
         <span class="mobile-app-menu-welcome">
             <small>Bienvenido</small>

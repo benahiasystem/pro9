@@ -27,9 +27,12 @@ class SendClaimAssignedEmail implements ShouldQueue
     public $tries = 2;
 
     protected int $claimId;
+    protected string $tenantUuid;
 
     public function __construct(int $claimId)
     {
+        $this->tenantUuid=app(\App\Services\Storage\TenantStorage::class)->uuid();
+        $this->afterCommit();
         $this->claimId = $claimId;
     }
 
@@ -38,6 +41,8 @@ class SendClaimAssignedEmail implements ShouldQueue
      */
     public function handle(): void
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantContext::class)->run($this->tenantUuid,function(){
         // Aplicar configuración SMTP del tenant activo
         Configuration::setConfigSmtpMail();
 
@@ -77,17 +82,18 @@ class SendClaimAssignedEmail implements ShouldQueue
 
         // Adjuntar el PDF de constancia si está disponible
         if ($claim->pdf_path) {
-            $absolutePath = Storage::disk('tenant')->path($claim->pdf_path);
-            if (file_exists($absolutePath)) {
-                $mailable->attach($absolutePath, [
-                    'as'   => $claim->public_code . '.pdf',
-                    'mime' => 'application/pdf',
-                ]);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $disk=app(\App\Services\Storage\TenantStorage::class)->disk();
+            if($disk->exists($claim->pdf_path)) {
+                $mailable->attachData($disk->get($claim->pdf_path),$claim->public_code.'.pdf',['mime'=>'application/pdf']);
             }
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         }
 
         Mail::to($assignedUser->email)->send($mailable);
 
         Log::info("SendClaimAssignedEmail: Email enviado a {$assignedUser->email} para reclamo {$claim->code}");
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 }

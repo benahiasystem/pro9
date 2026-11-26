@@ -66,6 +66,8 @@ class PaymentConfigurationController extends Controller
      */
     public function store(PaymentConfigurationRequest $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         try {
             $type = $request->type;
             $record = PaymentConfiguration::firstOrFail();
@@ -125,6 +127,9 @@ class PaymentConfigurationController extends Controller
                 'message' => 'Error al guardar la configuración de pagos: '.$e->getMessage(),
             ], 500);
         }
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 
@@ -233,6 +238,8 @@ class PaymentConfigurationController extends Controller
      */
     public function setDataYape(PaymentConfiguration &$record, $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($record, $request) {
         $record->enabled_yape = $request->enabled_yape;
         $record->name_yape = $request->name_yape;
         $record->telephone_yape = $request->telephone_yape;
@@ -252,6 +259,9 @@ class PaymentConfigurationController extends Controller
             'success' => true,
             'message' => 'Configuración actualizada',
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 

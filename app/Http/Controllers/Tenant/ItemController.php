@@ -521,52 +521,13 @@ class ItemController extends Controller
         }
 
         $temp_path = $request->input('temp_path');
-        if($temp_path) {
-
-            $directory = 'public'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR;
-
-            $slug_name = Str::slug($item->description);
-            if($item->internal_id){
-                $slug_name = Str::slug($item->internal_id);
-            }
-            $prefix_name = Str::limit($slug_name, 20, '');
-
-            $file_name_old = $request->input('image');
-            $file_name_old_array = explode('.', $file_name_old);
-            $file_content = file_get_contents($temp_path);
-            $datenow = date('YmdHis');
-            $file_name = $prefix_name.'-'.$datenow.'.'. end($file_name_old_array);
-
-            UploadFileHelper::checkIfValidFile($file_name, $temp_path, true);
-
-            Storage::put($directory.$file_name, $file_content);
-            $item->image = $file_name;
-
-            //--- IMAGE SIZE MEDIUM
-            $image = \Image::make($temp_path);
-            $file_name = $prefix_name.'-'.$datenow.'_medium'.'.'.$file_name_old_array[1];
-            $image->resize(512, null, function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            });
-            Storage::put($directory.$file_name,  (string) $image->encode('jpg', 30));
-            $item->image_medium = $file_name;
-
-              //--- IMAGE SIZE SMALL
-            $image = \Image::make($temp_path);
-            $file_name = $prefix_name.'-'.$datenow.'_small'.'.'.$file_name_old_array[1];
-            $image->resize(256, null, function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            });
-            Storage::put($directory.$file_name,  (string) $image->encode('jpg', 20));
-            $item->image_small = $file_name;
-
-
-
-        }else if(!$request->input('image') && !$request->input('temp_path') && !$request->input('image_url')){
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        if ($temp_path) {
+            app(\App\Services\Storage\ItemImageWriter::class)->replace($item, $temp_path);
+        } elseif (!$item->image) {
             $item->image = 'imagen-no-disponible.jpg';
         }
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         $item->save();
 
@@ -805,12 +766,9 @@ class ItemController extends Controller
 
         foreach ($multi_images as $im) {
 
-            $file_name = $im['filename'];
-            UploadFileHelper::checkIfValidFile($file_name, $im['temp_path'], true);
-
-            $file_content = file_get_contents($im['temp_path']);
-            Storage::put($directory.$file_name, $file_content);
-
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $file_name = app(\App\Services\Storage\ItemImageWriter::class)->additional($im['temp_path']);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             ItemImage::create(['item_id'=> $item->id, 'image' => $file_name]);
         }
 
@@ -1154,15 +1112,11 @@ class ItemController extends Controller
         abort_unless(Str::isUuid($token), 404);
 
         $path = ItemImportValidationWorkbook::pathFor((int) $request->user()->id, $token);
-        $disk = Storage::disk('local');
-        abort_unless($disk->exists($path), 404);
-
-        return response()
-            ->download(
-                $disk->path($path),
-                sprintf('VALIDACION_ITEMS_%s.xlsx', $token)
-            )
-            ->deleteFileAfterSend(true);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $disk=app(\App\Services\Storage\TenantStorage::class)->disk();
+        abort_unless($disk->exists($path),404);
+        return $disk->download($path,sprintf('VALIDACION_ITEMS_%s.xlsx',$token));
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
     // ########### FIN CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
 
@@ -1174,8 +1128,12 @@ class ItemController extends Controller
         if ($request->hasFile('file')) {
             try {
                 $import = new ItemsImportRestaurant();
-                $import->import($request->file('file'), null, Excel::XLSX);
-                $data = $import->getData();
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                $data = DB::connection('tenant')->transaction(function () use ($import,$request) {
+                    $import->import($request->file('file'), null, Excel::XLSX);
+                    return $import->getData();
+                });
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 return [
                     'success' => true,
                     'message' =>  __('app.actions.upload.success'),
@@ -1294,23 +1252,10 @@ class ItemController extends Controller
 
     function upload_image($request)
     {
-        $file = $request['file'];
-        $type = $request['type'];
-
-        $temp = tempnam(sys_get_temp_dir(), $type);
-        file_put_contents($temp, file_get_contents($file));
-
-        $mime = mime_content_type($temp);
-        $data = file_get_contents($temp);
-
-        return [
-            'success' => true,
-            'data' => [
-                'filename' => $file->getClientOriginalName(),
-                'temp_path' => $temp,
-                'temp_image' => 'data:' . $mime . ';base64,' . base64_encode($data)
-            ]
-        ];
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $result = app(\App\Services\Storage\TenantUploads::class)->create($request['file'], 'image');
+        return $result;
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     private function deleteRecordInitialKardex($item){
@@ -1533,7 +1478,9 @@ class ItemController extends Controller
                 'item_id' => $row->item_id,
                 'image' => $row->image,
                 'name' => $row->image,
-                'url'=> asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                'url'=> tenant_asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             ];
         });
         return [

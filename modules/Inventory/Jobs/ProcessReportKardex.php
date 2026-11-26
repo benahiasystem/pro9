@@ -64,6 +64,10 @@ class ProcessReportKardex implements ShouldQueue
      *
      * @return void
      */
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    public function middleware(): array { return [new \App\Jobs\TenantStorageJobMiddleware()]; }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
     public function handle()
     {
         Log::info(" WEBSITE ID $this->website_id");

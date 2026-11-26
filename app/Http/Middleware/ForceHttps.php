@@ -37,6 +37,8 @@ class ForceHttps
             return true;
         }
 
+        if (app()->isProduction()) return false;
+
         $forwarded = strtolower((string) $request->header('X-Forwarded-Proto', ''));
 
         return $forwarded === 'https';

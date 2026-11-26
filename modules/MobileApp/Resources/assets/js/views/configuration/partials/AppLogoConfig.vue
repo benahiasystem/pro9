@@ -113,7 +113,9 @@
                 if (value.startsWith('http://') || value.startsWith('https://')) return value
                 if (value.startsWith('/')) return value
                 if (value.startsWith('storage/')) return `/${value}`
-                return `/storage/uploads/logos/${value}`
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                return `/media/images/logos/${value}`
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             },
             openFilePicker() {
                 this.$refs.fileInput && this.$refs.fileInput.click()

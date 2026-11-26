@@ -28,7 +28,9 @@ $banners = $items;
 
                 @php
                 $bannerVersion = optional($item->updated_at)->timestamp ?: time();
-                $bannerSrc = asset('storage/uploads/promotions/'.$item->image).'?v='.$bannerVersion;
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                $bannerSrc = tenant_asset('storage/uploads/promotions/'.$item->image).'?v='.$bannerVersion;
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 @endphp
                 <div class="owl-lazy slide-bg" data-src="{{ $bannerSrc }}"></div>
                 <div class="home-slide-content text-white">

@@ -20,7 +20,9 @@ class SubscriptionSaleNoteController extends SaleNoteController
     {
         if ($file_type === 'sale_note') {
             $path = 'sale_note/'.$filename.'.pdf';
-            $disk = Storage::disk('tenant');
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $disk = app(\App\Services\Storage\TenantStorage::class)->disk();
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             if (!array_key_exists($path, $this->previousFiles)) {
                 $this->previousFiles[$path] = $disk->exists($path) ? $disk->get($path) : null;
             }
@@ -34,7 +36,9 @@ class SubscriptionSaleNoteController extends SaleNoteController
 
     public function restoreFiles(): void
     {
-        $disk = Storage::disk('tenant');
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $disk = app(\App\Services\Storage\TenantStorage::class)->disk();
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         foreach ($this->previousFiles as $path => $previous) {
             $restored = $previous === null ? $disk->delete($path) : $disk->put($path, $previous);
             if (!$restored) throw new \RuntimeException('No se pudo restaurar el PDF de la nota de suscripción.');

@@ -82,6 +82,8 @@ class PromotionController extends Controller
 
     public function store(PromotionRequest $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
 
 
         $id = $request->input('id');
@@ -113,9 +115,11 @@ class PromotionController extends Controller
             $file_name_old = $request->input('image');
             $file_name_old_array = explode('.', $file_name_old);
             $file_content = file_get_contents($temp_path);
-            $datenow = date('YmdHis');
+            $datenow = (string) \Illuminate\Support\Str::uuid();
             $file_name = Str::slug($item->description) . '-' . $datenow . '.' . $file_name_old_array[1];
-            Storage::put($directory . $file_name, $file_content);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            app(\App\Services\Storage\TenantStorage::class)->disk()->put($directory . $file_name, $file_content);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             $item->image = $file_name;
         } else if (!$request->input('image') && !$request->input('temp_path') && !$request->input('image_url')) {
             $item->image = 'imagen-no-disponible.jpg';
@@ -128,10 +132,15 @@ class PromotionController extends Controller
             'message' => ($id) ? 'Banner editado con éxito' : 'Banner registrado con éxito',
             'id' => $item->id
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function storePromotionList(PromotionRequest $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
 
 
         $id = $request->input('id');
@@ -158,9 +167,11 @@ class PromotionController extends Controller
             $file_name_old = $request->input('image');
             $file_name_old_array = explode('.', $file_name_old);
             $file_content = file_get_contents($temp_path);
-            $datenow = date('YmdHis');
+            $datenow = (string) \Illuminate\Support\Str::uuid();
             $file_name = Str::slug($item->description) . '-' . $datenow . '.' . $file_name_old_array[1];
-            Storage::put($directory . $file_name, $file_content);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            app(\App\Services\Storage\TenantStorage::class)->disk()->put($directory . $file_name, $file_content);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             $item->image = $file_name;
         } else if (!$request->input('image') && !$request->input('temp_path') && !$request->input('image_url')) {
             $item->image = 'imagen-no-disponible.jpg';
@@ -173,10 +184,15 @@ class PromotionController extends Controller
             'message' => ($id) ? 'Promocion editada con éxito' : 'Promocion registrada con éxito',
             'id' => $item->id
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function storeSpotList(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $id = $request->input('id');
 
         // Validar la URL solo si se proporciona
@@ -221,9 +237,11 @@ class PromotionController extends Controller
             $file_name_old = $request->input('image');
             $file_name_old_array = explode('.', $file_name_old);
             $file_content = file_get_contents($temp_path);
-            $datenow = date('YmdHis');
+            $datenow = (string) \Illuminate\Support\Str::uuid();
             $file_name = 'spot-' . $datenow . '.' . $file_name_old_array[1];
-            Storage::put($directory . $file_name, $file_content);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            app(\App\Services\Storage\TenantStorage::class)->disk()->put($directory . $file_name, $file_content);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             $item->image = $file_name;
         } else if (!$request->input('image') && !$request->input('temp_path') && !$request->input('image_url')) {
             $item->image = 'imagen-no-disponible.jpg';
@@ -236,6 +254,9 @@ class PromotionController extends Controller
             'message' => ($id) ? 'Anuncio editado con éxito' : 'Anuncio registrado con éxito',
             'id' => $item->id
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function destroy($id)
@@ -256,8 +277,12 @@ class PromotionController extends Controller
 
                 if (!$inUse) {
                     $path = 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'promotions' . DIRECTORY_SEPARATOR . $image;
-                    if (Storage::exists($path)) {
-                        Storage::delete($path);
+                    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                    if (app(\App\Services\Storage\TenantStorage::class)->disk()->exists($path)) {
+                    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                        app(\App\Services\Storage\TenantStorage::class)->disk()->delete($path);
+                        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                     }
                 }
             }
@@ -295,22 +320,9 @@ class PromotionController extends Controller
 
     function upload_image($request)
     {
-        $file = $request['file'];
-        $type = $request['type'];
-
-        $temp = tempnam(sys_get_temp_dir(), $type);
-        file_put_contents($temp, file_get_contents($file));
-
-        $mime = mime_content_type($temp);
-        $data = file_get_contents($temp);
-
-        return [
-            'success' => true,
-            'data' => [
-                'filename' => $file->getClientOriginalName(),
-                'temp_path' => $temp,
-                'temp_image' => 'data:' . $mime . ';base64,' . base64_encode($data)
-            ]
-        ];
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $result = app(\App\Services\Storage\TenantUploads::class)->create($request['file'], 'image');
+        return $result;
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 }

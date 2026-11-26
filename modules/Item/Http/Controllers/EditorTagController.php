@@ -96,6 +96,8 @@ class EditorTagController extends Controller
 
     public function saveImage(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $template_field = TagTemplateField::findOrFail($request->input('id'));  
         $template = TagTemplate::findOrFail($template_field->tag_template_id);
 
@@ -105,7 +107,11 @@ class EditorTagController extends Controller
             $extension = $file->getClientOriginalExtension();
             $name = "tag_image_field-". $request->input('id') ."_{$template->name}-" . date('YmdHis') . ".".$extension;
 
-            $file->storeAs("tag_images", $name, 'public');
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $request->validate(['image'=>'required|image|mimes:jpg,jpeg,png,webp,gif|max:10240']);
+            $name=(string)\Illuminate\Support\Str::uuid().'.'.$file->guessExtension();
+            app(\App\Services\Storage\TenantStorage::class)->disk()->putFileAs('uploads/tag_images',$file,$name);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
             $template_field->image = $name;
             $template_field->save();
@@ -113,7 +119,9 @@ class EditorTagController extends Controller
             return [
                 'success' => true,
                 'message' => 'Imagen guardada correctamente',
-                'image_url' => urlencode(asset('storage'.DIRECTORY_SEPARATOR.'tag_images'. DIRECTORY_SEPARATOR . $name)),
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                'image_url' => urlencode(tenant_asset('storage'.DIRECTORY_SEPARATOR.'tag_images'. DIRECTORY_SEPARATOR . $name)),
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             ];
         }
 
@@ -121,6 +129,9 @@ class EditorTagController extends Controller
             'success' => false,
             'message' => 'No se ha subido ninguna imagen',
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 
@@ -152,7 +163,9 @@ class EditorTagController extends Controller
                             'path' => $field->image,
                             'content' => $field->style,
                             'barcode' => $field->barcode,
-                            'image' => $field->image ? asset('storage'.DIRECTORY_SEPARATOR.'tag_images'.DIRECTORY_SEPARATOR .rawurlencode($field->image)) : null,
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                            'image' => $field->image ? tenant_asset('storage'.DIRECTORY_SEPARATOR.'tag_images'.DIRECTORY_SEPARATOR .$field->image) : null,
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                         ];
                     }),
                     'is_default' => $item->is_default,

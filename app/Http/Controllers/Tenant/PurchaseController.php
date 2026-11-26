@@ -1,4 +1,5 @@
 <?php
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
     namespace App\Http\Controllers\Tenant;
 
@@ -630,6 +631,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
         public function toPrint($external_id, $format)
         {
             $purchase = Purchase::where('external_id', $external_id)->first();
+        if ($purchase) authorize_tenant_print($purchase);
 
             if (!$purchase) throw new Exception("El código {$external_id} es inválido, no se encontro el pedido relacionado");
 
@@ -879,6 +881,9 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
          */
         public function downloadGuide(Purchase $purchase, $filename)
         {
+            $owner = $purchase;
+            $user = auth()->user();
+            abort_unless($owner && $user && ($user->isAdmin() || (int) $owner->establishment_id === (int) $user->establishment_id), 404);
             $guideFile = GuideFile::where([
                 'purchase_id' => $purchase->id,
                 'filename' => $filename
@@ -1443,3 +1448,4 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
             return $purchaseOrder;
         }
     }
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE

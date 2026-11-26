@@ -69,7 +69,9 @@
                             <tr v-for="item in record.items">
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img :src="'/storage/uploads/items/' + item.image" class="product-thumb mr-3">
+                                        <!-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE -->
+                                        <img :src="'/media/images/items/' + item.image" class="product-thumb mr-3">
+                                        <!-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE -->
                                         <span class="product-name">{{ item.description }}</span>
                                     </div>
                                 </td>

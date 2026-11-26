@@ -14,7 +14,22 @@ class PaymentFileController extends Controller
 { 
 
     public function download($filename, $type) { 
-        return Storage::disk('tenant')->download('payment_files'.DIRECTORY_SEPARATOR.$type.DIRECTORY_SEPARATOR.$filename);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $paymentTypes = [
+            'documents' => \App\Models\Tenant\DocumentPayment::class,
+            'sale_notes' => \App\Models\Tenant\SaleNotePayment::class,
+            'purchases' => \App\Models\Tenant\PurchasePayment::class,
+            'quotations' => \Modules\Sale\Models\QuotationPayment::class,
+            'expenses' => \Modules\Expense\Models\ExpensePayment::class,
+        ];
+        abort_unless(isset($paymentTypes[$type]) && basename($filename) === $filename, 404);
+        $file = PaymentFile::where('filename', $filename)->where('payment_type', $paymentTypes[$type])->firstOrFail();
+        $record = $file->payment?->associated_record_payment;
+        $user = auth()->user();
+        abort_unless($record && $user && ($user->isAdmin() ||
+            ($record->establishment_id && (int) $record->establishment_id === (int) $user->establishment_id)), 404);
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download('payment_files'.DIRECTORY_SEPARATOR.$type.DIRECTORY_SEPARATOR.$filename);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function uploadAttached(Request $request)
@@ -44,25 +59,11 @@ class PaymentFileController extends Controller
 
     function upload_attached($request)
     {
-        $file = $request['file'];
-        $type = $request['type'];
-        $index = $request['index'];
-
-        $temp = tempnam(sys_get_temp_dir(), $type);
-        file_put_contents($temp, file_get_contents($file));
-
-        $mime = mime_content_type($temp);
-        $data = file_get_contents($temp);
-
-        return [
-            'success' => true,
-            'data' => [
-                'filename' => $file->getClientOriginalName(),
-                'temp_path' => $temp,
-                'index' => (int) $index,
-                // 'temp_image' => 'data:' . $mime . ';base64,' . base64_encode($data)
-            ]
-        ];
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $result = app(\App\Services\Storage\TenantUploads::class)->create($request['file']);
+        $result['data']['index'] = (int) ($request['index'] ?? 0);
+        return $result;
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 

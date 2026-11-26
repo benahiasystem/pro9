@@ -17,6 +17,20 @@ class DownloadController extends Controller
 {
     use StorageDocument;
 
+    private function printableModel(string $name): string
+    {
+        return match ($name) {
+            'document' => \App\Models\Tenant\Document::class,
+            'salenote', 'saleNote' => \App\Models\Tenant\SaleNote::class,
+            'dispatch' => \App\Models\Tenant\Dispatch::class,
+            'purchase' => \App\Models\Tenant\Purchase::class,
+            'purchaseSettlement' => \App\Models\Tenant\PurchaseSettlement::class,
+            'quotation' => \App\Models\Tenant\Quotation::class,
+            'retention' => \App\Models\Tenant\Retention::class,
+            default => abort(404),
+        };
+    }
+
     private function digitalPdf($document, string $format, bool $attachment)
     {
         $service = app(\App\Services\Fiscal\HkaPdf::class);
@@ -34,11 +48,12 @@ class DownloadController extends Controller
         }
         // ######### FIN CAMBIO SIN XML CDR SUNAT
         $document_type = $model;
-        $model = "App\\Models\\Tenant\\".ucfirst($model);
+        $model = $this->printableModel($document_type);
         $document = $model::where('external_id', $external_id)->first();
 
         if (!$document) throw new Exception("El código {$external_id} es inválido, no se encontró documento relacionado");
 
+        authorize_tenant_print($document);
         if ($document instanceof \App\Models\Tenant\Document && \App\Services\Fiscal\HkaPdf::applies($document)
             && $type === 'pdf' && in_array($format ?? 'a4', ['a4', 'a5', 'ticket'], true)) {
             return $this->digitalPdf($document, $format ?? 'a4', true);
@@ -157,7 +172,7 @@ class DownloadController extends Controller
             return app(\Modules\Expense\Http\Controllers\ExpenseController::class)->toPrint($external_id, $format ?? 'a4');
         }
 
-        $model = "App\\Models\\Tenant\\".ucfirst($model);
+        $model = $this->printableModel($document_type);
 
         $document = $model::where('external_id', $external_id)->first();
 
@@ -173,6 +188,7 @@ class DownloadController extends Controller
             $saleNote = new SaleNoteController();
             return $saleNote->toPrint($external_id,$format);
         }
+        authorize_tenant_print($document);
         if ($document instanceof \App\Models\Tenant\Document && \App\Services\Fiscal\HkaPdf::applies($document)
             && in_array($format ?? 'a4', ['a4', 'a5'], true)) {
             return $this->digitalPdf($document, $format ?? 'a4', false);

@@ -20,31 +20,42 @@ trait StorageDocument
         // ######### FIN CAMBIO SIN XML CDR SUNAT
 
         $this->setData($filename, $file_type, $root);
-        if($file_type == 'cdr_b64') {
-            $cdr_xml = base64_decode($file_content);
-            Storage::disk('tenant')->makeDirectory($this->_folder);
-
-            $zip = new ZipArchive();
-            if($zip->open(Storage::disk('tenant')->path($this->_folder.DIRECTORY_SEPARATOR.$this->_filename), ZipArchive::CREATE) === true){
-                $zip->addFromString($filename.'.xml', $cdr_xml);
-                $zip->close();
-            }
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $path = $this->_folder.'/'.$this->_filename;
+        if ($file_type === 'cdr_b64') {
+            $temporary = tempnam(sys_get_temp_dir(), 'sab-cdr-');
+            if ($temporary === false) throw new \RuntimeException('No se pudo preparar el ZIP.');
+            try {
+                $zip = new ZipArchive();
+                if ($zip->open($temporary, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true
+                    || !$zip->addFromString($filename.'.xml', base64_decode($file_content, true)) || !$zip->close()) {
+                    throw new \RuntimeException('No se pudo generar el ZIP.');
+                }
+                $stream = fopen($temporary, 'rb');
+                try { app(\App\Services\Storage\TransactionalFiles::class)->put($path, $stream); }
+                finally { if (is_resource($stream)) fclose($stream); }
+            } finally { if (is_file($temporary)) unlink($temporary); }
             return;
         }
-        Storage::disk('tenant')->put($this->_folder.DIRECTORY_SEPARATOR.$this->_filename, $file_content);
+        app(\App\Services\Storage\TransactionalFiles::class)->put($path, $file_content);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function downloadStorage($filename, $file_type, $root = null)
     {
         $this->setData($filename, $file_type, $root);
-        return Storage::disk('tenant')->download($this->_folder.DIRECTORY_SEPARATOR.$this->_filename,
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download($this->_folder.DIRECTORY_SEPARATOR.$this->_filename,
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             str_ends_with($this->_filename, '.pdf') ? \App\Services\Fiscal\DocumentFileName::visible($this->_filename) : $this->_filename);
     }
 
     public function getStorage($filename, $file_type, $root = null)
     {
         $this->setData($filename, $file_type, $root);
-        return Storage::disk('tenant')->get($this->_folder.DIRECTORY_SEPARATOR.$this->_filename);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TransactionalFiles::class)->read($this->_folder.'/'.$this->_filename);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     private function setData($filename, $file_type, $root)
@@ -129,7 +140,7 @@ trait StorageDocument
         }
 
         $this->_filename = $filename.'.'.$extension;
-        $this->_folder = ($root)?$root.DIRECTORY_SEPARATOR.$file_type:$file_type;
+        $this->_folder = ($root)?$root.'/'.$file_type:$file_type;
     }
 
 
@@ -145,7 +156,9 @@ trait StorageDocument
     public function existFileInStorage($filename, $file_type, $root = null)
     {
         $this->setData($filename, $file_type, $root);
-        return Storage::disk('tenant')->exists($this->_folder.DIRECTORY_SEPARATOR.$this->_filename);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->exists($this->_folder.DIRECTORY_SEPARATOR.$this->_filename);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     // ########## INICIO CAMBIO SIN XML CDR SUNAT

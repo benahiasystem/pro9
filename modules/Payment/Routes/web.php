@@ -6,7 +6,7 @@ if($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
 
         
-        Route::prefix('pagos')->group(function () {
+        Route::prefix('pagos')->middleware(\App\Http\Middleware\ProductionSurface::class)->group(function () {
             Route::get('{uuid}/{payment_link_type_id}/{total}', 'PaymentLinkController@publicPaymentLink');
             // confirmación del pago desde la pasarela, sin sesión
             Route::post('{uuid}/confirmar', 'PaymentLinkController@publicConfirmPayment');
@@ -50,7 +50,7 @@ if($hostname) {
 
             });
 
-            Route::prefix('payment-gateway')->group(function() {
+            Route::prefix('payment-gateway')->middleware(\App\Http\Middleware\ProductionSurface::class)->group(function() {
 
                 Route::get('enabled-checkout', 'PaymentGatewayController@enabledCheckouts')->name('system.enabled.checkouts')->withoutMiddleware(['locked.tenant', 'auth', 'web', 'redirect.level']);
 
@@ -78,7 +78,7 @@ if($hostname) {
     });
 } else {
         Route::prefix('')->group(function () {
-            Route::prefix('payment-gateway')->group(function() {
+            Route::prefix('payment-gateway')->middleware(\App\Http\Middleware\ProductionSurface::class)->group(function() {
 
                 Route::get('enabled-checkout', 'PaymentGatewayController@enabledCheckouts')->name('system.enabled.checkouts')->withoutMiddleware(['locked.tenant', 'web', 'redirect.level', 'auth:admin']);
 

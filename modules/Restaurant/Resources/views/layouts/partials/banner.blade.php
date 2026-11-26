@@ -25,7 +25,9 @@
                 <a href="{{ $bannerHref }}" class="banner-slide-link" aria-label="Ver producto">
             @endif
 
-            <div class="owl-lazy slide-bg" data-src="{{ asset('storage/uploads/promotions/restaurant/'.$item->image) }}"></div>
+{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
+            <div class="owl-lazy slide-bg" data-src="{{ tenant_asset('storage/uploads/promotions/restaurant/'.$item->image) }}"></div>
+{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
             <div class="home-slide-content text-white">
 
                 {{-- <h1>{{$item->name}}</h1> --}}

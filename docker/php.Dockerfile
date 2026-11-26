@@ -30,5 +30,31 @@ FROM runtime AS testing
 COPY --from=test-node /usr/local/bin/node /usr/local/bin/node
 RUN node --version && node -e "if (process.versions.node.split('.')[0] !== '22' || typeof BigInt(1) !== 'bigint') process.exit(1)"
 
-FROM runtime AS production
+# Targets used by the immutable production release.
 # ######### FIN CAMBIO POSTGRESQL 17
+
+FROM test-node AS release-assets
+WORKDIR /build
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+COPY . .
+RUN npm run build
+
+FROM runtime AS release-php
+COPY --chown=root:root . .
+COPY --from=release-assets /build/public/build ./public/build
+RUN ln -s ../storage/app/public public/storage
+COPY docker/custom-php.ini /usr/local/etc/php/conf.d/custom-php.ini
+RUN composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader --no-scripts \
+    && mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions storage/logs storage/app \
+    && chown -R www-data:www-data storage bootstrap/cache vendor/mpdf/mpdf/tmp
+USER www-data
+ENTRYPOINT ["docker-php-entrypoint"]
+CMD ["php-fpm"]
+
+FROM nginx:stable-alpine AS release-nginx
+COPY docker/production/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=release-php /var/www/sab/public /var/www/sab/public
+COPY --from=release-php /var/www/sab/storage/app/public/skins /var/www/sab/storage/app/public/skins
+
+FROM runtime AS production

@@ -81,6 +81,8 @@ class CompanyController extends Controller
 
     public function uploadFile(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         if ($request->hasFile('file')) {
 
             $company = Company::active();
@@ -97,7 +99,10 @@ class CompanyController extends Controller
             }
 
             $ext = $file->getClientOriginalExtension();
-            $name = $type . '_' . $company->number . '.' . $ext;
+            abort_unless(auth()->user() instanceof \App\Models\Tenant\User && auth()->user()->type==='admin',403);
+            abort_unless(in_array($type,['logo','logo_dark','app_logo','favicon','img_firm'],true),422);
+            $uploadVersion=(string) \Illuminate\Support\Str::uuid();
+            $name = $type . '_' . $uploadVersion . '.' . $ext;
 
 
             if (($type === 'logo')) {
@@ -112,7 +117,7 @@ class CompanyController extends Controller
                 if ($isSvg) {
                     // SVG: se guarda tal cual (sin compresión).
                     $stream = fopen($file->getPathname(), 'r');
-                    $stored = Storage::put('public/uploads/logos/' . $name, $stream);
+                    $stored = app(\App\Services\Storage\TenantStorage::class)->disk()->put('public/uploads/logos/' . $name, $stream);
                     if (is_resource($stream)) fclose($stream);
                 } else {
                     // Optimizar raster para que el base64 del PDF no infle el documento.
@@ -146,8 +151,8 @@ class CompanyController extends Controller
                         $optimizedExt = $optimized['extension'] ?? 'jpg';
                     }
 
-                    $name = $type . '_' . $company->number . '.' . $optimizedExt;
-                    $stored = Storage::put('public/uploads/logos/' . $name, $optimizedBytes);
+                    $name = $type . '_' . $uploadVersion . '.' . $optimizedExt;
+                    $stored = app(\App\Services\Storage\TenantStorage::class)->disk()->put('public/uploads/logos/' . $name, $optimizedBytes);
                 }
             }
 
@@ -160,7 +165,7 @@ class CompanyController extends Controller
 
                 if ($isSvg) {
                     $stream = fopen($file->getPathname(), 'r');
-                    $stored = Storage::put('public/uploads/logos/' . $name, $stream);
+                    $stored = app(\App\Services\Storage\TenantStorage::class)->disk()->put('public/uploads/logos/' . $name, $stream);
                     if (is_resource($stream)) fclose($stream);
                 } else {
                     $maxWidth = 300;
@@ -192,8 +197,8 @@ class CompanyController extends Controller
                         $optimizedExt = $optimized['extension'] ?? 'jpg';
                     }
 
-                    $name = $type . '_' . $company->number . '.' . $optimizedExt;
-                    $stored = Storage::put('public/uploads/logos/' . $name, $optimizedBytes);
+                    $name = $type . '_' . $uploadVersion . '.' . $optimizedExt;
+                    $stored = app(\App\Services\Storage\TenantStorage::class)->disk()->put('public/uploads/logos/' . $name, $optimizedBytes);
                 }
             }
 
@@ -204,13 +209,13 @@ class CompanyController extends Controller
 
             if (($type === 'favicon')) {
                 request()->validate(['file' => 'required|image|mimes:png,webp|max:1024']);
-                $filename = time() . '.' . $ext;
+                $filename = $uploadVersion . '.' . $ext;
                 $name = 'storage/uploads/favicons/' . $filename;
 
                 UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true, 'png,webp', ['image/png', 'image/webp']);
 
                 $stream = fopen($file->getPathname(), 'r');
-                $stored = Storage::put('public/uploads/favicons/'.$filename, $stream);
+                $stored = app(\App\Services\Storage\TenantStorage::class)->disk()->put('public/uploads/favicons/'.$filename, $stream);
                 if (is_resource($stream)) fclose($stream);
             }
 
@@ -223,13 +228,13 @@ class CompanyController extends Controller
                 $extension = $file->guessExtension();
                 UploadFileHelper::checkIfValidFile('firm.'.$extension, $file->getPathName(), true, 'jpg,jpeg,png,gif,webp', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
                 // Recodificar evita publicar contenido adicional y conserva la transparencia.
-                $name = $type . '_' . $company->number . '.png';
+                $name = $type . '_' . $uploadVersion . '.png';
                 $image = \Intervention\Image\ImageManagerStatic::make($file->getPathname());
                 $image->resize(1400, 1400, function ($constraint) {
                     $constraint->aspectRatio();
                     $constraint->upsize();
                 });
-                $stored = Storage::put('public/uploads/firms/'.$name, (string) $image->encode('png'));
+                $stored = app(\App\Services\Storage\TenantStorage::class)->disk()->put('public/uploads/firms/'.$name, (string) $image->encode('png'));
             }
 
             // $file->storeAs(($type === 'img_firm') ? 'public/uploads/firms' : 'certificates', $name);
@@ -258,10 +263,14 @@ class CompanyController extends Controller
                     if (!$esCopiaPropia) {
                         $sourcePath = 'public/uploads/logos/' . $name;
 
-                        if (Storage::exists($sourcePath)) {
+                        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                        if (app(\App\Services\Storage\TenantStorage::class)->disk()->exists($sourcePath)) {
+                        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                             $newName = 'establishment_0000_' . time() . '_' . $name;
 
-                            Storage::copy($sourcePath, 'public/uploads/logos/' . $newName);
+                            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                            app(\App\Services\Storage\TenantStorage::class)->disk()->copy($sourcePath, 'public/uploads/logos/' . $newName);
+                            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
                             $establishment->logo = 'storage/uploads/logos/' . $newName;
                             $establishment->save();
@@ -282,6 +291,9 @@ class CompanyController extends Controller
             'success' => false,
             'message' => __('app.actions.upload.error'),
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 
@@ -368,8 +380,12 @@ class CompanyController extends Controller
             $filePath = $baseDir . basename($currentLogo);
 
             // Eliminar el archivo físico si existe
-            if (Storage::exists($filePath)) {
-                Storage::delete($filePath);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            if (app(\App\Services\Storage\TenantStorage::class)->disk()->exists($filePath)) {
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                app(\App\Services\Storage\TenantStorage::class)->disk()->delete($filePath);
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             }
 
             // Limpiar el campo en la base de datos

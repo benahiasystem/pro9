@@ -178,8 +178,10 @@ class RestaurantController extends Controller
                 'qr_api_enable_ws' => $configuration->qr_api_enable,
                 'qr_api_url_ws' => $configuration->qr_api_url,
                 'qr_api_key_ws' => $configuration->qr_api_apiKey,
-                'url_logo' => ($company->logo)?asset('storage/uploads/logos/'.$company->logo):'',
-                'logo_base64' => \App\CoreFacturalo\Helpers\Template\TemplateHelper::ticketLogoDataUri($company, null) ?? '',
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                'url_logo' => ($company->logo)?tenant_asset('storage/uploads/logos/'.$company->logo):'',
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                'logo_base64' => $company->logo ? 'data:image/png;base64,' . base64_encode(file_get_contents(tenant_public_path('uploads/logos/' . $company->logo))) : '',
                 'is_business_turn_tap' => ($business_turn_tap)?$business_turn_tap->active:0,
             ],
             'app_configuration' => optional(AppConfiguration::first())->getRowResource(),

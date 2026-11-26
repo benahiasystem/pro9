@@ -37,6 +37,8 @@ class ConfigurationController extends Controller
 
     public function generateDispatch(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $template = new Template();
         $pdf = new Mpdf();
         $pdf_margin_top = 15;
@@ -97,9 +99,14 @@ class ConfigurationController extends Controller
         $pdf->WriteHTML($stylesheet, HTMLParserMode::HEADER_CSS);
         $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
 
-        Storage::put('preprintedpdf' . DIRECTORY_SEPARATOR . $request->base_pdf_template . '.pdf', $pdf->output('', 'S'));
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put('preprintedpdf' . DIRECTORY_SEPARATOR . $request->base_pdf_template . '.pdf', $pdf->output('', 'S'));
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         return $request->base_pdf_template;
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function show($template)
@@ -487,6 +494,8 @@ class ConfigurationController extends Controller
 
     public function uploadFile(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         if ($request->hasFile('file')) {
             $configuration = Configuration::first();
 
@@ -498,7 +507,10 @@ class ConfigurationController extends Controller
 
             UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
 
-            $file->storeAs('public/uploads/header_images', $name);
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $name=(string)\Illuminate\Support\Str::uuid().'.'.$file->guessExtension();
+            app(\App\Services\Storage\TenantStorage::class)->disk()->putFileAs('uploads/header_images',$file,$name);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
             $configuration->header_image = $name;
 
@@ -515,6 +527,9 @@ class ConfigurationController extends Controller
             'success' => false,
             'message' => __('app.actions.upload.error'),
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function changeMode()
@@ -578,13 +593,15 @@ class ConfigurationController extends Controller
 
     public function visualUploadSkin(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         if ($request->file->getClientMimeType() != 'text/css') {
             return [
                 'success' => false,
                 'message' =>  'Tipo de archivo no permitido',
             ];
         }
-        if (Storage::disk('public')->exists('skins'.DIRECTORY_SEPARATOR.$request->file->getClientOriginalName())) {
+        if (app(\App\Services\Storage\TenantStorage::class)->disk()->exists('uploads/skins'.DIRECTORY_SEPARATOR.$request->file->getClientOriginalName())) {
             return [
                 'success' => false,
                 'message' =>  'Archivo ya existe',
@@ -600,7 +617,7 @@ class ConfigurationController extends Controller
 
             UploadFileHelper::checkIfValidCssFile($filename, $file->getPathName(), 'css', ['text/css', 'text/plain']);
 
-            Storage::disk('public')->put('skins'.DIRECTORY_SEPARATOR.$filename, $file_content);
+            app(\App\Services\Storage\TenantStorage::class)->disk()->put('uploads/skins'.DIRECTORY_SEPARATOR.$filename, $file_content);
 
             $skin = new Skin;
             $skin->filename = $filename;
@@ -618,10 +635,15 @@ class ConfigurationController extends Controller
             'success' => false,
             'message' =>  __('app.actions.upload.error'),
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function visualDeleteSkin(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $config = Configuration::first();
         if($config->skin_id == $request->id) {
             return [
@@ -632,7 +654,7 @@ class ConfigurationController extends Controller
 
 
         $skin = Skin::find($request->id);
-        Storage::disk('public')->delete('skins'.DIRECTORY_SEPARATOR.$skin->filename);
+        app(\App\Services\Storage\TenantStorage::class)->disk()->delete('uploads/skins'.DIRECTORY_SEPARATOR.$skin->filename);
         $skin->delete();
 
         $skins = Skin::all();
@@ -642,6 +664,9 @@ class ConfigurationController extends Controller
             'message' =>  'Tema eliminado correctamente',
             'skins' => $skins
         ];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 
@@ -666,6 +691,8 @@ class ConfigurationController extends Controller
      */
     public function pdfFooterImages(Request $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         $images = $request->images;
         $data = [];
         $configuration = Configuration::first();
@@ -697,6 +724,9 @@ class ConfigurationController extends Controller
         $configuration->update();
 
         return $this->generalResponse(true, 'Proceso realizado correctamente.');
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 }

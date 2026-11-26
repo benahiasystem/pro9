@@ -1,14 +1,20 @@
 <?php
-
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 namespace Modules\Accounting\Support;
 
-use Modules\Accounting\Domain\CompanyContext;
+use App\Services\Storage\{TenantDisk,TenantStorage};
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use LogicException;
+use Modules\Accounting\Domain\CompanyContext;
+use RuntimeException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-/** Physical tenant boundary plus owned organization/company. API paths are never accepted. */
 final class PrivateStorage
 {
-    public function root(): string
+    private ?string $temporary = null;
+
+    public function key(string $relative): string
     {
         $connection = DB::connection('tenant');
         $database = $connection->getDatabaseName();
@@ -16,27 +22,74 @@ final class PrivateStorage
         if (!$database || $database !== $selected) { throw new \LogicException('La conexión no acredita el tenant de almacenamiento.'); }
         $key = hash('sha256', 'accounting-storage-v1:' . $database);
         $context = app(CompanyContext::class);
-        if (!\Illuminate\Support\Str::isUuid($context->organizationId()) || !\Illuminate\Support\Str::isUuid($context->id())) { throw new \LogicException('La empresa no acredita un identificador de almacenamiento válido.'); }
-        $path = rtrim(config('accounting.private_storage', storage_path('app/accounting/private')), '/\\');
-        foreach (['tenants', $key, $context->organizationId(), $context->id()] as $part) {
-            $path .= '/' . $part;
-            if (is_link($path)) { throw new \RuntimeException('El almacenamiento del tenant no admite enlaces entre directorios.'); }
+        if (!Str::isUuid($context->organizationId()) || !Str::isUuid($context->id())) {
+            throw new LogicException('La empresa no acredita un identificador de almacenamiento válido.');
         }
-        return $path;
+        return 'accounting/'.$context->organizationId().'/'.$context->id().'/'.TenantDisk::relative($relative);
     }
 
-    public function directory(string $relative): string
+    public function put(string $relative, string $bytes): void
     {
-        if (!preg_match('/^[a-zA-Z0-9_\/-]+$/D', $relative) || str_contains($relative, '..') || str_starts_with($relative, '/')) { throw new \LogicException('Directorio privado inválido.'); }
-        $path = $this->root() . '/' . $relative;
-        if (!is_dir($path) && !@mkdir($path, 0700, true) && !is_dir($path)) { throw new \RuntimeException('No se pudo preparar el directorio privado.'); }
-        if (is_link($path)) { throw new \RuntimeException('El directorio privado no admite enlaces.'); }
-        return $path;
+        app(TenantStorage::class)->disk()->put($this->key($relative), $bytes);
     }
 
-    public function resolve(string $relative): string
+    public function putFile(string $relative, string $local): void
     {
-        if (!preg_match('/^[a-zA-Z0-9_.\/-]+$/D', $relative) || str_contains($relative, '..') || str_starts_with($relative, '/')) { throw new \LogicException('Referencia de archivo inválida.'); }
-        return $this->root() . '/' . $relative;
+        $stream = fopen($local, 'rb');
+        if (!$stream) throw new RuntimeException('No se pudo abrir el archivo contable.');
+        try {
+            app(TenantStorage::class)->disk()->put($this->key($relative), $stream);
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    public function workspace(): string
+    {
+        if ($this->temporary === null) {
+            $path = sys_get_temp_dir().'/sab-accounting-'.bin2hex(random_bytes(12));
+            if (!mkdir($path, 0700)) throw new RuntimeException('No se pudo preparar el directorio privado de trabajo.');
+            $this->temporary = $path;
+        }
+        return $this->temporary;
+    }
+
+    /** Copies a bounded immutable object for a consumer which requires a filesystem path. */
+    public function materialize(string $relative, int $maxBytes): ?string
+    {
+        $disk = app(TenantStorage::class)->disk();
+        $key = $this->key($relative);
+        try {
+            $input = $disk->readStream($key);
+        } catch (NotFoundHttpException $missing) {
+            return null;
+        }
+        $path = $this->workspace().'/'.Str::uuid();
+        $output = null;
+        $valid = false;
+        try {
+            $output = fopen($path, 'xb');
+            if (!is_resource($input) || !$output) throw new RuntimeException('No se pudo leer el archivo contable.');
+            chmod($path, 0600);
+            $bytes = stream_copy_to_stream($input, $output, $maxBytes + 1);
+            if ($bytes === false || $bytes > $maxBytes) return null;
+            $valid = true;
+            return $path;
+        } finally {
+            if (is_resource($input)) fclose($input);
+            if (is_resource($output)) fclose($output);
+            if (!$valid && is_file($path)) unlink($path);
+        }
+    }
+
+    public function cleanup(): void
+    {
+        if ($this->temporary === null) return;
+        foreach (glob($this->temporary.'/*') as $file) {
+            if (is_file($file)) unlink($file);
+        }
+        rmdir($this->temporary);
+        $this->temporary = null;
     }
 }
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE

@@ -18,7 +18,7 @@ class CompanyRifDocumentController extends Controller
         $tenant = app(Environment::class)->tenant();
         $uuid = $tenant->uuid ?? null;
         abort_unless(is_string($uuid) && preg_match('/\A[a-zA-Z0-9_-]+\z/', $uuid), 404);
-        return $uuid.'/rif_impresa';
+        return 'rif_impresa';
     }
 
     private function company(int $id): Company
@@ -31,19 +31,21 @@ class CompanyRifDocumentController extends Controller
         $document = $this->company($id)->rif_document;
         if (!$document) return ['data' => null];
         $path = $this->documentPath($document);
-        return ['data' => $path && Storage::disk('tenancy-default')->exists($path)
+        return ['data' => $path && app(\App\Services\Storage\TenantStorage::class)->disk()->exists($path)
             ? ['name' => $document['name']] : null];
     }
 
     public function store(Request $request, int $id)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function()use($request,$id){
         if (!(auth()->user() instanceof User) || auth()->user()->type !== 'admin') throw new AuthorizationException();
         $this->company($id);
         $request->validate(['file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240']);
         $file = $request->file('file');
         $extension = ['application/pdf' => 'pdf', 'image/jpeg' => 'jpg', 'image/png' => 'png'][$file->getMimeType()] ?? null;
         if ($extension === null) throw ValidationException::withMessages(['file' => 'Seleccione un PDF, JPG o PNG válido.']);
-        $disk = Storage::disk('tenancy-default');
+        $disk = app(\App\Services\Storage\TenantStorage::class)->disk();
         $directory = $this->directory();
         $filename = Str::random(40).'.'.$extension;
         $path = $directory.'/'.$filename;
@@ -75,13 +77,16 @@ class CompanyRifDocumentController extends Controller
         $oldPath = $this->documentPath($old);
         if ($oldPath && $oldPath !== $path) $disk->delete($oldPath);
         return ['success' => true, 'data' => ['name' => $document['name']]];
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function download(int $id)
     {
         $document = $this->company($id)->rif_document;
         $path = $this->documentPath($document);
-        $disk = Storage::disk('tenancy-default');
+        $disk = app(\App\Services\Storage\TenantStorage::class)->disk();
         abort_unless($path && $disk->exists($path), 404);
         return $disk->download($path, $document['name'], ['X-Content-Type-Options' => 'nosniff']);
     }

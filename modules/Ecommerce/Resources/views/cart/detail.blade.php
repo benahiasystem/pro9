@@ -2128,8 +2128,12 @@
     $defaultImage = $configurationModel->product_default_image ?? 'imagen-no-disponible.jpg';
     $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
         ? asset('logo/imagen-no-disponible.jpg')
-        : asset('storage/defaults/' . $defaultImage);
-    $itemsBasePath = asset('storage/uploads/items');
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        : tenant_asset('storage/defaults/' . $defaultImage);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    $itemsBasePath = tenant_asset('storage/uploads/items');
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     $googleMapsApiKey = app(Modules\Ecommerce\Http\Controllers\EcommerceController::class)->getGoogleMaps();
     $globalDiscountTypeId = $global_discount_type_id ?? null;
 

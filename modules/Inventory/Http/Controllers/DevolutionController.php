@@ -277,8 +277,9 @@ class DevolutionController extends Controller
         // dd($devolution);-
         $this->createPdf($devolution, "a4", $devolution->filename);
 
-        $path = Storage::disk('tenant')->path($this->_folder.DIRECTORY_SEPARATOR.$this->_filename);
-        return response()->download($path, $this->_filename, ['Content-Type' => 'application/pdf'] , 'inline');
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download($this->_folder.'/'.$this->_filename,$this->_filename,['Content-Type'=>'application/pdf'],'inline');
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         // return $this->downloadStorage($devolution->filename, 'devolution');
     }

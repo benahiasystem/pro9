@@ -68,6 +68,8 @@ class EstablishmentController extends Controller
      */
     public function store(EstablishmentRequest $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($request) {
         try
         {
             $id = $request->input('id');
@@ -100,7 +102,9 @@ class EstablishmentController extends Controller
                 $outputFilename = $basename . '.jpg';
                 $binary = (string) $image->encode('jpg', 70);
 
-                Storage::put('public/uploads/logos/' . $outputFilename, $binary);
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                app(\App\Services\Storage\TenantStorage::class)->disk()->put('public/uploads/logos/' . $outputFilename, $binary);
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 $path = 'storage/uploads/logos/' . $outputFilename;
                 $request->merge(['logo' => $path]);
             }
@@ -149,6 +153,9 @@ class EstablishmentController extends Controller
 
             return $this->generalResponse(false, 'Error desconocido: '.$e->getMessage());
         }
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 

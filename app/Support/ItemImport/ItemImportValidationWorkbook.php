@@ -1,4 +1,5 @@
 <?php
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
 // ########### INICIO CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
 namespace App\Support\ItemImport;
@@ -34,7 +35,7 @@ class ItemImportValidationWorkbook
             $token = (string) Str::uuid();
             $path = self::pathFor($userId, $token);
 
-            if (!Storage::disk('local')->put($path, file_get_contents($temporaryPath))) {
+            if (!app(\App\Services\Storage\TenantStorage::class)->disk()->put($path, file_get_contents($temporaryPath))) {
                 throw new RuntimeException('No se pudo guardar el archivo de validación.');
             }
 
@@ -131,3 +132,4 @@ class ItemImportValidationWorkbook
     }
 }
 // ########### FIN CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE

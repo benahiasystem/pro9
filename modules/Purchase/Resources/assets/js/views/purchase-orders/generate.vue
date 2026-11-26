@@ -8,8 +8,10 @@
                 <header class="clearfix">
                     <div class="row">
                         <div class="col-sm-2 text-center mt-3 mb-0">
+                            <!-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE -->
                             <logo url="/"
-                                  :path_logo="(company.logo != null) ? `/storage/uploads/logos/${company.logo}` : ''"></logo>
+                                  :path_logo="(company.logo != null) ? `/media/images/logos/${company.logo}` : ''"></logo>
+                            <!-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE -->
                         </div>
                         <div class="col-sm-10 text-left mt-3 mb-0">
                             <address class="ib mr-2">

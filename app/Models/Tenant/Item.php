@@ -1773,7 +1773,9 @@ class Item extends ModelTenant
         $defaultImage = $configuration->product_default_image ?? 'imagen-no-disponible.jpg';
         $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
             ? asset('logo/imagen-no-disponible.jpg')
-            : asset('storage/defaults/' . $defaultImage);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            : tenant_asset('storage/defaults/' . $defaultImage);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         // Calcular stock de restaurant basado en insumos
         $restaurantStock = 0;
@@ -1849,15 +1851,21 @@ class Item extends ModelTenant
             'is_dish' => $isRestaurant ? $this->is_dish : null,
             'has_sets' => $isRestaurant ? $has_sets : null,
             'image_url' => ($this->image !== 'imagen-no-disponible.jpg')
-                ? asset('storage/uploads/items/' . $this->image)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                ? tenant_asset('storage/uploads/items/' . $this->image)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 : $defaultImagePath,
 
             'image_url_medium' => ($this->image_medium !== 'imagen-no-disponible.jpg')
-                ? asset('storage/uploads/items/' . $this->image_medium)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                ? tenant_asset('storage/uploads/items/' . $this->image_medium)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 : $defaultImagePath,
 
             'image_url_small' => ($this->image_small !== 'imagen-no-disponible.jpg')
-                ? asset('storage/uploads/items/' . $this->image_small)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                ? tenant_asset('storage/uploads/items/' . $this->image_small)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 : $defaultImagePath,
             'tags' => $this->tags,
             'tags_id' => $this->tags->pluck('tag_id'),
@@ -2352,13 +2360,19 @@ class Item extends ModelTenant
     public function getExtraDataToPrint(&$array){
 
         $array['image_url'] = ($this->image !== 'imagen-no-disponible.jpg')
-            ? asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $this->image)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            ? tenant_asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $this->image)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             : asset("/logo/{$this->image}");
         $array['image_url_medium']=($this->image_medium !== 'imagen-no-disponible.jpg')
-            ? asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $this->image_medium)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            ? tenant_asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $this->image_medium)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             : asset("/logo/{$this->image_medium}");
         $array['image_url_small'] =($this->image_small !== 'imagen-no-disponible.jpg')
-            ? asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $this->image_small)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            ? tenant_asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $this->image_small)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             : asset("/logo/{$this->image_small}");
 
     }
@@ -3164,10 +3178,12 @@ class Item extends ModelTenant
      *
      * @return string
      */
-    public function getImageUrl()
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    public function getImageUrl($variant = 'original')
     {
-        return ($this->image !== 'imagen-no-disponible.jpg') ? asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $this->image) : asset("/logo/{$this->image}");
+        return app(\App\Services\Storage\ItemMedia::class)->url($this, $variant);
     }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
 
     /**

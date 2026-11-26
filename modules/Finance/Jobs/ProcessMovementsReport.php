@@ -49,6 +49,10 @@ class ProcessMovementsReport implements ShouldQueue
      *
      * @return void
      */
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    public function middleware(): array { return [new \App\Jobs\TenantStorageJobMiddleware()]; }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
     public function handle()
     {
         Log::debug("ProcessMovementsReport Start WebsiteId => " . $this->website_id);
@@ -87,7 +91,7 @@ class ProcessMovementsReport implements ShouldQueue
 
             $filename = 'FINANCES_Reporte_Movimientos__' . date('YmdHis') . '_' . $tray->id;
 
-            if (!$MovementExport->store(DIRECTORY_SEPARATOR."download_tray_xlsx".DIRECTORY_SEPARATOR . $filename.'.xlsx', 'tenant')) {
+            if (!app(\App\Services\Storage\TenantStorage::class)->storeExcel($MovementExport,DIRECTORY_SEPARATOR."download_tray_xlsx".DIRECTORY_SEPARATOR . $filename.'.xlsx')) {
                 throw new \RuntimeException('No se pudo guardar el reporte de movimientos.');
             }
 

@@ -316,41 +316,15 @@ class Claim extends ModelTenant
         ]);
     }
 
-    /**
-     * Convert a storage path or URL to a public-accessible URL.
-     * - If given an absolute URL or path starting with '/', returns it unchanged.
-     * - If exists in tenant disk, returns the claim file route.
-     * - If exists in public disk, returns Storage::disk('public')->url(...).
-     * - Otherwise returns null.
-     */
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     protected function pathToUrl($path)
     {
-        if (empty($path)) return null;
-
-        if (Str::startsWith($path, ['http://', 'https://', '/'])) return $path;
-
-        // If path is like 'claims/{folder}/{filename}', build friendly route
-        if (preg_match('#^claims/([^/]+)/(.+)$#', $path, $m)) {
-            $folder = $m[1];
-            $filename = basename($m[2]);
-            if (Storage::disk('tenant')->exists($path)) {
-                return route('tenant.claims.file', ['folder' => $folder, 'filename' => $filename]);
-            }
+        if (!is_string($path) || !preg_match('#^claims/(attachments|responses|pdf)/([^/]+)$#D', $path, $parts)) {
+            return null;
         }
-
-        if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->url($path);
-        }
-
-        // As a last resort, if file exists on tenant disk but not matching 'claims/...', try raw existence
-        if (Storage::disk('tenant')->exists($path)) {
-            // try to extract folder and filename
-            $parts = explode('/', $path);
-            $filename = array_pop($parts);
-            $folder = array_pop($parts) ?? '';
-            return route('tenant.claims.file', ['folder' => $folder, 'filename' => $filename]);
-        }
-
-        return null;
+        return \Illuminate\Support\Facades\URL::temporarySignedRoute('tenant.claims.file',now()->addMinutes(5),[
+            'folder'=>$parts[1], 'filename'=>$parts[2],
+        ]);
     }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 }

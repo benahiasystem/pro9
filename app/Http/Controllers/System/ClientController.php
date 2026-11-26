@@ -1166,25 +1166,26 @@ use Illuminate\Support\Facades\Mail;
             $hostname = Hostname::find($client->hostname_id);
             $website = Website::find($hostname->website_id);
 
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             $uuid = $website->uuid;
-            // la ruta se resuelve antes de borrar el website, despues el uuid ya no
-            // esta en la tabla y la validacion fallaria
             $tenant_path = $this->getValidatedTenantPath($uuid);
-
-            app(HostnameRepository::class)->delete($hostname, true);
-            app(WebsiteRepository::class)->delete($website, true);
-
-            // ########## INICIO CORRECCIÓN CACHÉ DE TENANT REUTILIZADO ##########
+            $storageOperation = app(\App\Services\Storage\StorageLock::class)->run('tenant:'.$uuid, function () use ($hostname, $website, $uuid) {
+                $operation = app(\App\Services\Storage\StorageAdministration::class)->start($uuid, 'delete_tenant', [], null, true);
+                try {
+                    app(HostnameRepository::class)->delete($hostname, true);
+                    app(WebsiteRepository::class)->delete($website, true);
+                } catch (\Throwable $error) {
+                    if (Website::where('uuid', $uuid)->exists()) {
+                        $operation->update(['status'=>'cancelled', 'diagnostic'=>'No se completó la baja del website.']);
+                    }
+                    throw $error;
+                }
+                return $operation;
+            });
             $this->forgetTenantResolutionCache($hostname->fqdn, $uuid);
-            // ######### FIN CORRECCIÓN CACHÉ DE TENANT REUTILIZADO ##########
-
-            // recien aca se tocan los archivos: si algo de arriba falla, el cliente
-            // y sus archivos quedan intactos
-            $storage = $this->deleteDirectory($tenant_path);
-
-            if (!$storage['removed']) {
-                Log::warning("No se pudo eliminar la carpeta del tenant {$uuid}", $storage);
-            }
+            \App\Jobs\StorageOperationJob::dispatch($storageOperation->id);
+            $this->deleteDirectory($tenant_path);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
             return [
                 'success' => true,

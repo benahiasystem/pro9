@@ -17,11 +17,10 @@ final class AttachmentStorage
         $expected = $preview ? $this->previewRelative($file->id) : $this->originalRelative($file->id);
         $sha = $preview ? $file->preview_sha256 : $file->sha256;
         if (!$relative || $relative !== $expected || !$sha) { return ['state' => 'unavailable']; }
-        $path = app(PrivateStorage::class)->resolve($relative);
-        clearstatcache(true, $path);
-        if (!is_file($path)) { return ['state' => 'missing']; }
-        if (is_link(dirname($path)) || is_link(dirname(dirname($path))) || is_link($path)) { return ['state' => 'changed']; }
-        if (!is_readable($path)) { return ['state' => 'unavailable']; }
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $path = app(PrivateStorage::class)->materialize($relative,20 * 1024 * 1024);
+        if ($path === null) { return ['state' => 'missing']; }
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $digest = @hash_file('sha256', $path);
         if (!$preview && filesize($path) !== $file->size || filesize($path) > 20 * 1024 * 1024 || !is_string($digest) || !hash_equals($sha, $digest)) { return ['state' => 'changed']; }
         if ($file->scan_status !== 'verified') { return ['state' => 'unverified']; }

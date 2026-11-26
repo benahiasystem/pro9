@@ -113,10 +113,24 @@
                 this.loading_submit = true
 
                 await this.$http.post(`/${this.resource}/clean/${this.record.uuid}`, { packages: this.form.packages })
-                    .then(response => {
+                    .then(async response => {
 
                         if (response.data.success) {
-                            this.$message.success(response.data.message)
+                            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                            const id = response.data.operation_id
+                            if (id) {
+                                this.$message.info('Limpieza en proceso. Identificador: ' + id)
+                                let completed = false
+                                for (let attempt = 0; attempt < 120; attempt++) {
+                                    await new Promise(resolve => setTimeout(resolve, 2000))
+                                    const { data } = await this.$http.get(`/${this.resource}/operations/${id}`)
+                                    if (data.status === 'failed') throw new Error('La limpieza quedó pendiente de reintento: ' + id)
+                                    if (data.status === 'completed') { completed = true; break }
+                                }
+                                if (!completed) { this.$message.info('La operación continúa en segundo plano: ' + id); return }
+                            }
+                            this.$message.success('Limpieza completada')
+                            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                             this.$eventHub.$emit('reloadData')
                             this.close()
                         } else {

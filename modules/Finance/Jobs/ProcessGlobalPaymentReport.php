@@ -56,6 +56,10 @@ class ProcessGlobalPaymentReport implements ShouldQueue
      *
      * @return void
      */
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+    public function middleware(): array { return [new \App\Jobs\TenantStorageJobMiddleware()]; }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
     public function handle()
     {
         $this->showLogInfo("ProcessGlobalPaymentReport Start WebsiteId => {$this->website_id}");
@@ -88,7 +92,9 @@ class ProcessGlobalPaymentReport implements ShouldQueue
             {
                 // ######## INICIO CLASIFICACION DE COBROS Y CAJA ########
                 $pdf = PDF::loadView('finance::global_payments.report_pdf', compact('records', 'company', 'establishment'))->setPaper('a4', 'landscape');
-                if (!Storage::disk('tenant')->put($path.DIRECTORY_SEPARATOR.$filename.'.pdf', $pdf->output())) {
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                if (!app(\App\Services\Storage\TenantStorage::class)->disk()->put($path.DIRECTORY_SEPARATOR.$filename.'.pdf', $pdf->output())) {
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                     throw new \RuntimeException('No se pudo guardar el reporte de pagos.');
                 }
                 // ######## FIN CLASIFICACION DE COBROS Y CAJA ########
@@ -101,7 +107,7 @@ class ProcessGlobalPaymentReport implements ShouldQueue
                 $this->showLogInfo('Render excel finish');
     
                 $this->showLogInfo('Upload excel init');
-                if (!$global_payment_export->store(DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR . $filename.'.'.$format, 'tenant')) {
+                if (!app(\App\Services\Storage\TenantStorage::class)->storeExcel($global_payment_export,DIRECTORY_SEPARATOR.$path.DIRECTORY_SEPARATOR . $filename.'.'.$format)) {
                     throw new \RuntimeException('No se pudo guardar el reporte de pagos.');
                 }
                 $this->showLogInfo('Upload excel finish');

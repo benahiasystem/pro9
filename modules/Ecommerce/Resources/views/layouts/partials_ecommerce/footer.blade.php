@@ -204,7 +204,9 @@
                 @php($footerLogo = data_get($company ?? null, 'logo_dark') ?: data_get($company ?? null, 'logo') ?: data_get($information ?? null, 'logo'))
                 <a href="{{ route('tenant.ecommerce.index') }}" class="d-inline-block mb-1">
                     @if($footerLogo)
-                        <img src="{{ asset('storage/uploads/logos/'.$footerLogo) }}" alt="{{ $company->name ?? 'Logo' }}" style="max-height: 64px;">
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                        <img src="{{ tenant_asset('storage/uploads/logos/'.$footerLogo) }}" alt="{{ $company->name ?? 'Logo' }}" style="max-height: 64px;">
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                     @else
                         <img src="{{ asset('logo/tulogo.png') }}" alt="Logo" style="max-height: 64px;">
                     @endif

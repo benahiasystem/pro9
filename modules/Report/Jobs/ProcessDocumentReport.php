@@ -63,6 +63,10 @@
          *
          * @return void
          */
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        public function middleware(): array { return [new \App\Jobs\TenantStorageJobMiddleware()]; }
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
         public function handle()
         {
             $this->showLogInfo("ProcessDocumentReport Start WebsiteId => {$this->website_id}");

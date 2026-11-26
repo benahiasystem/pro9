@@ -19,7 +19,9 @@ final class HkaDispatchPdf
         if ($e->status!=='confirmed' || !$order->control_number || $order->control_number!==$e->control_number) FiscalAmounts::error('pdf','El PDF HKA requiere una orden confirmada con control coherente.');
         $key=$e->operation_key;$identity=$e->payload['documentoElectronico']['encabezado']['identificacionDocumento'];
         if (HkaDispatchEmission::context($company)!==($e->response['context'] ?? null)) FiscalAmounts::error('pdf','La conexión HKA no corresponde a la operación.');
-        $path='pdf/hka-dispatch/'.$key.'/a4.pdf';$disk=Storage::disk('tenant');
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $path='pdf/hka-dispatch/'.$key.'/a4.pdf';$disk=app(\App\Services\Storage\TenantStorage::class)->disk();
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         if ($disk->exists($path)) { try { return HkaPdf::validatePdf($disk->get($path)); } catch (\Throwable $ignored) {} }
         if (HkaDispatchEmission::context($company)!==($e->response['context'] ?? null)) FiscalAmounts::error('pdf','La conexión HKA no corresponde a la operación.');
         $transport=app(HkaTransport::class);$token=$transport->token($company);
@@ -30,9 +32,9 @@ final class HkaDispatchPdf
         $order->getConnection()->transaction(function() use($order,$key,$bytes,$path,$disk,$authorize) {
             Company::lockForUpdate()->firstOrFail();$d=Dispatch::lockForUpdate()->findOrFail($order->id);if ($authorize) DeliveryOrderInput::authorize((int)$d->establishment_id);app(HkaDispatchEmission::class)->company($d);
             $e=$d->emission()->lockForUpdate()->firstOrFail();if ($e->operation_key!==$key || $e->status!=='confirmed' || HkaDispatchEmission::context(Company::firstOrFail())!==($e->response['context'] ?? null)) FiscalAmounts::error('pdf','La operación cambió durante la descarga.');
-            $disk->makeDirectory(dirname($path));$temporary=$path.'.'.bin2hex(random_bytes(6)).'.tmp';
-            try { $disk->put($temporary,$bytes);if (!rename($disk->path($temporary),$disk->path($path))) throw new \RuntimeException('PDF storage'); }
-            finally { if ($disk->exists($temporary)) $disk->delete($temporary); }
+            // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $disk->put($path,$bytes,['ContentType'=>'application/pdf']);
+            // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             $e->update(['file_path'=>$path]);
         });
         return $bytes;

@@ -105,7 +105,9 @@ class ItemCollection extends ResourceCollection
         $defaultImage = $configuration->product_default_image ?? 'imagen-no-disponible.jpg';
         $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
             ? asset('logo/imagen-no-disponible.jpg')
-            : asset('storage/defaults/' . $defaultImage);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            : tenant_asset('storage/defaults/' . $defaultImage);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
 
         return [
@@ -136,9 +138,15 @@ class ItemCollection extends ResourceCollection
             'apply_store' => (bool)$row->apply_store,
             'apply_restaurant' => (bool)$row->apply_restaurant,
             'restaurant_favorite' => (bool)$row->restaurant_favorite,
-            'image_url' => $row->image && ($row->image === 'imagen-no-disponible.jpg') ? $defaultImagePath : asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image),
-            'image_url_medium' => $row->image && ($row->image_medium === 'imagen-no-disponible.jpg') ? $defaultImagePath : asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image_medium),
-            'image_url_small' => $row->image && ($row->image_small === 'imagen-no-disponible.jpg') ?  $defaultImagePath : asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image_small),
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            'image_url' => $row->image && ($row->image === 'imagen-no-disponible.jpg') ? $defaultImagePath : tenant_asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image),
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            'image_url_medium' => $row->image && ($row->image_medium === 'imagen-no-disponible.jpg') ? $defaultImagePath : tenant_asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image_medium),
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            'image_url_small' => $row->image && ($row->image_small === 'imagen-no-disponible.jpg') ?  $defaultImagePath : tenant_asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image_small),
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             'favorite' => (bool)$row->favorite,
             'area_print' => $row->preparationArea->printer ?? null,
             'has_supplies' => $hasSupplies,

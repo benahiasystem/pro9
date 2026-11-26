@@ -94,19 +94,10 @@ class UserController extends Controller
     }
 
     public function regenerateToken(User $user){
-        $data = [
-            'api_token'=>$user->api_token,
-            'success'=>false,
-            'message' => 'No puedes cambiar el token'
-        ];
-        if(auth()->user()->isAdmin()){
-            $user->updateToken()->push();
-            $data['api_token']=$user->api_token;
-            $data['success']=true;
-            $data['message']='Token cambiado';
+        abort_unless(auth()->user()?->isAdmin(), 403);
+        $user->updateToken()->push();
 
-        }
-        return $data;
+        return ['success' => true, 'message' => 'Token cambiado', 'api_token' => $user->api_token];
     }
 
 
@@ -235,6 +226,8 @@ class UserController extends Controller
      */
     public function savePhoto(&$user, $request)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($user, $request) {
         $temp_path = $request->photo_temp_path;
 
         if($temp_path)
@@ -243,6 +236,9 @@ class UserController extends Controller
             $user->photo_filename = UploadFileHelper:: uploadImageFromTempFile('users', $old_filename, $temp_path, $user->id, true);
             $user->save();
         }
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
 

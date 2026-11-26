@@ -32,11 +32,13 @@ final class HkaPdfStore
 
     public function read(Document $document, string $format): ?string
     {
-        $disk = Storage::disk('tenant');
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $disk = app(\App\Services\Storage\TenantStorage::class)->disk();
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $path = $this->path($document, $format);
         if (!$disk->exists($path)) return null;
+        $bytes = $disk->get($path);
         try {
-            $bytes = $disk->get($path);
             HkaPdf::validatePdf($bytes);
             if ($format === 'a5') {
                 $reader = new \setasign\Fpdi\Fpdi();
@@ -55,17 +57,16 @@ final class HkaPdfStore
     public function write(Document $document, string $format, string $bytes): void
     {
         HkaPdf::validatePdf($bytes);
-        $disk = Storage::disk('tenant');
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $disk = app(\App\Services\Storage\TenantStorage::class)->disk();
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         $path = $this->path($document, $format);
-        $disk->makeDirectory(dirname($path));
-        $destination = $disk->path($path);
-        $temporary = tempnam(dirname($destination), '.hka-');
-        if ($temporary === false) throw new \RuntimeException('PDF storage unavailable');
-        try {
-            if (file_put_contents($temporary, $bytes, LOCK_EX) !== strlen($bytes)
-                || !rename($temporary, $destination)) throw new \RuntimeException('PDF storage failed');
-        } finally {
-            if (is_file($temporary)) unlink($temporary);
-        }
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $uuid = app(\App\Services\Storage\TenantStorage::class)->uuid();
+        \Illuminate\Support\Facades\Cache::lock('hka-pdf:'.$uuid.':'.hash('sha256', $path), 180)->block(5, function () use ($disk, $path, $bytes, $document, $format) {
+            if ($this->read($document,$format)!==null) return;
+            $disk->put($path, $bytes, ['ContentType'=>'application/pdf']);
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 }

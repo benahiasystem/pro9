@@ -130,7 +130,9 @@ export default {
     },
     downloadSkin(skin) {
       const a = document.createElement('a');
-      a.href = '/storage/skins/' + skin.filename;
+      // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+      a.href = skin.is_system ? '/storage/skins/' + skin.filename : '/media/skin/' + skin.id;
+      // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
       a.download = skin.filename;
       a.click();
     },

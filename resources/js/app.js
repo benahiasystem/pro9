@@ -2,6 +2,10 @@ import './bootstrap';
 import './mobile-app-behavior';
 
 import Vue from 'vue'
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+import { installPrivateMedia } from './tenant/private-media.mjs';
+installPrivateMedia(Vue, Vue.prototype.$http);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 import store from './store'
 import ElementUI from 'element-ui'
 

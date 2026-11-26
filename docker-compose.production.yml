@@ -1,0 +1,133 @@
+name: sab-production
+
+x-application: &application
+  image: ${SAB_PHP_IMAGE:?Imagen PHP de la entrega}
+  env_file: ${SAB_RUNTIME_ENV_FILE:?Archivo privado de entorno}
+  environment: &production-environment
+    APP_ENV: production
+    APP_DEBUG: "false"
+    FORCE_HTTPS: "true"
+    SESSION_SECURE_COOKIE: "true"
+    SESSION_DRIVER: redis
+    CACHE_DRIVER: redis
+    DB_SSLMODE: verify-full
+    PGSSLROOTCERT: /run/secrets/supabase_ca
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    BCV_API_URL: http://api-bcv:3000
+    TENANT_STORAGE_DISK: supabase-private
+  secrets: [supabase_ca]
+  networks: [backend]
+  restart: unless-stopped
+  init: true
+  stop_grace_period: 2m
+  security_opt: [no-new-privileges:true]
+
+services:
+  php:
+    <<: *application
+    networks: [backend, frontend]
+    healthcheck:
+      test: [CMD, php, -r, "exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+  install:
+    <<: *application
+    profiles: [install]
+    env_file:
+      - ${SAB_RUNTIME_ENV_FILE:?Archivo privado de entorno}
+      - ${SAB_DB_ADMIN_ENV_FILE:?Archivo privado del rol de migración}
+    restart: "no"
+    environment:
+      <<: *production-environment
+      SAB_ADMIN_PASSWORD_FILE: /run/secrets/admin_password
+    secrets: [supabase_ca, admin_password]
+    command: [php, artisan, "sab:install-postgres"]
+  maintenance:
+    <<: *application
+    profiles: [maintenance]
+    restart: "no"
+    env_file:
+      - ${SAB_RUNTIME_ENV_FILE:?Archivo privado de entorno}
+      - ${SAB_DB_ADMIN_ENV_FILE:?Archivo privado del rol de migración}
+    command: [php, artisan, sab:check-production]
+  worker:
+    <<: *application
+    command: [php, artisan, queue:work, database, "--sleep=3", "--tries=3", "--timeout=90", "--max-time=3600"]
+  storage-worker:
+    <<: *application
+    command: [php, artisan, queue:work, storage-admin, "--tries=3", "--timeout=900", "--max-time=3600"]
+    stop_grace_period: 16m
+  scheduler:
+    <<: *application
+    command: [php, artisan, schedule:work]
+  nginx:
+    image: ${SAB_NGINX_IMAGE:?Imagen Nginx de la entrega}
+    environment:
+      SAB_DOMAIN: ${SAB_DOMAIN:?Dominio base de SAB}
+      SAB_TUNNEL_IP: ${SAB_TUNNEL_IP:-172.29.80.2}
+    networks: [frontend, ingress]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      php:
+        condition: service_healthy
+  redis:
+    image: ${SAB_REDIS_IMAGE:?Imagen Redis fijada por digest}
+    env_file: ${SAB_REDIS_ENV_FILE:?Archivo privado de Redis}
+    command:
+      - sh
+      - -ec
+      - |
+        case "$$REDISCLI_AUTH" in ''|*[!0-9a-f]*) exit 1;; esac
+        test "$${#REDISCLI_AUTH}" -ge 32
+        printf 'save ""\nappendonly no\nprotected-mode yes\nrequirepass %s\n' "$$REDISCLI_AUTH" | exec redis-server -
+    networks: [backend]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+  api-bcv:
+    image: ${SAB_BCV_IMAGE:?Imagen API BCV fijada por digest}
+    env_file: ${SAB_BCV_ENV_FILE:?Archivo privado de API BCV}
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+    networks: [backend]
+    restart: unless-stopped
+  centrifugo:
+    image: ${SAB_CENTRIFUGO_IMAGE:?Imagen Centrifugo fijada por digest}
+    command: [centrifugo, -c, /centrifugo/config.json]
+    env_file: ${SAB_CENTRIFUGO_ENV_FILE:?Archivo privado de tiempo real}
+    volumes:
+      - ./docker/centrifugo/config.json:/centrifugo/config.json:ro
+    networks: [backend, frontend]
+    restart: unless-stopped
+  cloudflared:
+    image: ${SAB_CLOUDFLARED_IMAGE:?Imagen cloudflared fijada por digest}
+    command: [tunnel, --no-autoupdate, run, --token-file, /run/secrets/tunnel_token]
+    secrets: [tunnel_token]
+    networks:
+      ingress:
+        ipv4_address: ${SAB_TUNNEL_IP:-172.29.80.2}
+    restart: unless-stopped
+    depends_on: [nginx]
+
+networks:
+  backend:
+  frontend:
+  ingress:
+    ipam:
+      config:
+        - subnet: ${SAB_TUNNEL_SUBNET:-172.29.80.0/24}
+
+secrets:
+  supabase_ca:
+    file: ${SAB_SUPABASE_CA_FILE:?Certificado CA de Supabase}
+  tunnel_token:
+    file: ${SAB_TUNNEL_TOKEN_FILE:?Archivo con el token Cloudflare}
+  admin_password:
+    file: ${SAB_ADMIN_PASSWORD_FILE:?Archivo con el secreto inicial de administración}

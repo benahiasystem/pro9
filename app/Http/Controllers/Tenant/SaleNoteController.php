@@ -773,6 +773,7 @@ class SaleNoteController extends Controller
 
 
         $sale_note = SaleNote::where('external_id', $external_id)->first();
+        if ($sale_note) authorize_tenant_print($sale_note);
 
         if (!$sale_note) throw new Exception("El código {$external_id} es inválido, no se encontro la nota de venta relacionada");
 
@@ -1121,6 +1122,7 @@ class SaleNoteController extends Controller
     public function toTicket($id, $format = 'ticket')
     {
         $document = SaleNote::find($id);
+        if ($document) authorize_tenant_print($document);
 
         if (!$document) throw new Exception("El código {$id} es inválido, no se encontro documento relacionado");
 

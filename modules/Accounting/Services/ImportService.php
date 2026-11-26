@@ -29,24 +29,30 @@ final class ImportService
         return hash('sha256', json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
     }
 
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     private function filePath(string $id): string
     {
-        $context = app(CompanyContext::class);
-        return rtrim(config('accounting.private_storage', storage_path('app/accounting/private')), '/') . '/imports/' . $context->organizationId() . '/' . $context->id() . '/' . $id . '.json';
+        return 'imports/'.$id.'.json';
     }
 
     private function dataset(ImportJob $job): array
     {
         $path = $this->filePath($job->id);
-        if ($job->path !== $path || !is_file($path) || is_link($path) || filesize($path) > 16777216) {
+        $local = $job->path === $path ? app(\Modules\Accounting\Support\PrivateStorage::class)->materialize($path,16777216) : null;
+        if (!$local) {
             throw new ApiProblem('IMPORT_EVIDENCE_MISSING', 'No se encuentra la copia privada de este archivo. Recupera el respaldo antes de continuar.', 409);
         }
-        $bytes = file_get_contents($path);
-        if (!hash_equals($job->data_hash, hash('sha256', $bytes))) {
-            throw new ApiProblem('IMPORT_EVIDENCE_CHANGED', 'La copia de validación no coincide con su huella original. No se aplicó la importación.', 409);
+        try {
+            $bytes = file_get_contents($local);
+            if ($bytes === false || !hash_equals($job->data_hash,hash('sha256',$bytes))) {
+                throw new ApiProblem('IMPORT_EVIDENCE_CHANGED', 'La copia de validación no coincide con su huella original. No se aplicó la importación.', 409);
+            }
+            return json_decode($bytes,true,64,JSON_THROW_ON_ERROR);
+        } finally {
+            unlink($local);
         }
-        return json_decode($bytes, true, 64, JSON_THROW_ON_ERROR);
     }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
     public function preview(string $kind, array $rows, string $fileHash, string $filename, array $options, int $user): array
     {
@@ -55,9 +61,7 @@ final class ImportService
             throw new \InvalidArgumentException('Dataset de importación inválido.');
         }
         $parameters = $this->hash(['schema' => ImportSchema::VERSION, 'kind' => $kind, 'file_hash' => $fileHash, 'options' => $options]);
-        $written = null;
-        try {
-            return DB::transaction(function () use ($kind, $rows, $fileHash, $filename, $options, $user, $parameters, &$written) {
+        return DB::transaction(function () use ($kind, $rows, $fileHash, $filename, $options, $user, $parameters) {
                 $this->lockBook();
                 $this->authorize($kind, $user);
                 if ($existing = ImportJob::where('parameters_hash', $parameters)->first()) {
@@ -74,23 +78,10 @@ final class ImportService
                 }
                 $id = (string) Str::uuid();
                 $path = $this->filePath($id);
-                if (!is_dir(dirname($path)) && !mkdir(dirname($path), 0700, true) && !is_dir(dirname($path))) {
-                    throw new \RuntimeException('No se puede preparar el almacenamiento privado de importación.');
-                }
-                $bytes = json_encode($groups, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-                $handle = fopen($path, 'xb');
-                if (!$handle) {
-                    throw new \RuntimeException('No se puede conservar la validación de importación.');
-                }
-                $written = $path;
-                try {
-                    if (fwrite($handle, $bytes) !== strlen($bytes)) {
-                        throw new \RuntimeException('No se pudo conservar el archivo completo.');
-                    }
-                } finally {
-                    fclose($handle);
-                }
-                chmod($path, 0400);
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                $bytes = json_encode($groups,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE);
+                app(\Modules\Accounting\Support\PrivateStorage::class)->put($path,$bytes);
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                 $job = ImportJob::create(['id' => $id, 'user_id' => $user, 'kind' => $kind, 'file_hash' => $fileHash, 'filename' => mb_substr(basename(str_replace('\\', '/', $filename)), 0, 180), 'path' => $path, 'parameters_hash' => $parameters, 'data_hash' => hash('sha256', $bytes), 'options' => $options, 'status' => 'validating']);
                 $position = 0;
                 foreach ($groups as $key => $group) {
@@ -109,13 +100,7 @@ final class ImportService
                 $this->validateUnits($job, $groups, $user);
                 app(AuditService::class)->record($user, 'import.previewed', 'import_job', $job->id, ['kind' => $kind, 'file_hash' => $fileHash, 'summary' => $job->result]);
                 return $this->resource($job);
-            });
-        } catch (\Throwable $e) {
-            if ($written && is_file($written)) {
-                unlink($written);
-            }
-            throw $e;
-        }
+        });
     }
 
     private function domainErrors(\Throwable $error, array $rows): array

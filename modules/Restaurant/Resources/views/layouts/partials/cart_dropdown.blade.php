@@ -4,7 +4,9 @@
     $defaultImage = $configurationModel->product_default_image ?? 'imagen-no-disponible.jpg';
     $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
         ? asset('logo/imagen-no-disponible.jpg')
-        : asset('storage/defaults/' . $defaultImage);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        : tenant_asset('storage/defaults/' . $defaultImage);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 @endphp
 
 <div class="dropdown cart-dropdown">

@@ -132,7 +132,9 @@ class Company extends ModelTenant
 
         if($logo)
         {
-            $logo = asset('storage/uploads/logos/'.$logo);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $logo = tenant_asset('storage/uploads/logos/'.$logo);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         }
 
         return $logo;
@@ -144,7 +146,9 @@ class Company extends ModelTenant
 
         if($logo_dark)
         {
-            $logo_dark = asset('storage/uploads/logos/'.$logo_dark);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            $logo_dark = tenant_asset('storage/uploads/logos/'.$logo_dark);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         }
 
         return $logo_dark;

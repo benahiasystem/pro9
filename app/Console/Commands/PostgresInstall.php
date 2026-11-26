@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 class PostgresInstall extends \Illuminate\Console\Command
 {
     protected $signature = 'sab:install-postgres {--resume : Continuar una instalación propia incompleta}';
-    protected $description = 'Instala SAB en una base central nueva PostgreSQL 17.11';
+    protected $description = 'Instala SAB en una base central nueva PostgreSQL 17';
     public function handle(): int
     {
         $db = DB::connection('central_migrator');
@@ -26,7 +26,7 @@ class PostgresInstall extends \Illuminate\Console\Command
         if ($this->call('migrate', ['--database' => 'central_migrator', '--force' => true]) !== 0) return 1;
         if ($this->call('db:seed',['--database'=>'central_migrator','--force'=>true]) !== 0) return 1;
         SequenceSynchronizer::sync($db);
-        $this->info('Esquema y semillas centrales PostgreSQL 17.11 instalados. Las credenciales de operación no cambian.');
+        $this->info('Esquema y semillas centrales PostgreSQL 17 instalados. Las credenciales de operación no cambian.');
         return 0;
     }
 }

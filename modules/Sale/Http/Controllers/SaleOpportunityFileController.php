@@ -17,6 +17,8 @@ class SaleOpportunityFileController extends Controller
 
     public function saveFiles($sale_opportunity, $files)
     {
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        return tenant_storage_transaction(function () use ($sale_opportunity, $files) {
 
         foreach ($files as $row) {
 
@@ -38,8 +40,9 @@ class SaleOpportunityFileController extends Controller
                 UploadFileHelper::checkIfValidFile($file_name, $temp_path, $is_image, 'jpg,jpeg,png,gif,svg,webp,pdf', $allowed_file_types);
                 // validaciones archivos
                 
-                $file_content = file_get_contents($temp_path);
-                Storage::disk('tenant')->put('sale_opportunity_files'.DIRECTORY_SEPARATOR.$file_name, $file_content);
+                // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                app(\App\Services\Storage\TenantStorage::class)->disk()->put('sale_opportunity_files'.DIRECTORY_SEPARATOR.$file_name, $file_content);
+                // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
             }else{
 
@@ -54,6 +57,9 @@ class SaleOpportunityFileController extends Controller
 
         }
 
+
+        });
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     public function uploadFile(Request $request)
@@ -80,29 +86,20 @@ class SaleOpportunityFileController extends Controller
     }
 
 
+    // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     function upload_file($request)
     {
-        $file = $request['file'];
-        $type = $request['type'];
-
-        $temp = tempnam(sys_get_temp_dir(), $type);
-        file_put_contents($temp, file_get_contents($file));
-
-        $mime = mime_content_type($temp);
-        $data = file_get_contents($temp);
-
-        return [
-            'success' => true,
-            'data' => [
-                'filename' => $file->getClientOriginalName(),
-                'temp_path' => $temp,
-            ]
-        ];
-
+        return app(\App\Services\Storage\TenantUploads::class)->create($request['file'],'attachment',false);
     }
+    // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
     public function download($filename) {
-        return Storage::disk('tenant')->download('sale_opportunity_files'.DIRECTORY_SEPARATOR.$filename);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        $owner = SaleOpportunityFile::where('filename', $filename)->with('sale_opportunity')->firstOrFail()->sale_opportunity;
+        $user = auth()->user();
+        abort_unless($owner && $user && ($user->isAdmin() || (int) $owner->establishment_id === (int) $user->establishment_id), 404);
+        return app(\App\Services\Storage\TenantStorage::class)->disk()->download('sale_opportunity_files'.DIRECTORY_SEPARATOR.$filename);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     }
 
     /**

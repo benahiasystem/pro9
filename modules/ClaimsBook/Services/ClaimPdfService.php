@@ -64,7 +64,9 @@ class ClaimPdfService
         $path = 'claims/pdf/' . $claim->public_code . '.pdf';
 
         // Put (create or overwrite) the file on the tenant disk
-        Storage::disk('tenant')->put($path, $pdfContent);
+        // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        app(\App\Services\Storage\TenantStorage::class)->disk()->put($path, $pdfContent);
+        // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 
         // Persist the path on the claim if it changed
         if ($claim->pdf_path !== $path) {

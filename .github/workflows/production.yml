@@ -1,0 +1,26 @@
+name: Entrega SAB
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir el candidato de producción
+        run: |
+          docker build --target release-php -f docker/php.Dockerfile -t sab-php:"$GITHUB_SHA" .
+          docker build --target release-nginx -f docker/php.Dockerfile -t sab-nginx:"$GITHUB_SHA" .
+      - name: Verificar contenido y arranque
+        run: |
+          docker run --rm sab-php:"$GITHUB_SHA" php-fpm -t
+          docker run --rm sab-php:"$GITHUB_SHA" php -r 'require "vendor/autoload.php"; exit(class_exists(League\Flysystem\AwsS3V3\AwsS3V3Adapter::class) && is_file("public/build/manifest.json") && !is_file("public/js/sign-message.js") ? 0 : 1);'
+          docker run --rm -e SAB_DOMAIN=example.test -e SAB_TUNNEL_IP=172.29.80.2 sab-nginx:"$GITHUB_SHA" nginx -t
+      - name: Avisos de dependencias de ejecución
+        run: docker run --rm --entrypoint composer sab-php:"$GITHUB_SHA" audit --locked --no-dev

@@ -1,0 +1,59 @@
+map $http_upgrade $websocket_connection {
+    default upgrade;
+    '' close;
+}
+
+server {
+    listen 80 default_server;
+    server_name _;
+    return 404;
+}
+
+server {
+    listen 80;
+    server_name ws.${SAB_DOMAIN};
+
+    location = /connection/websocket {
+        resolver 127.0.0.11 valid=10s;
+        set $realtime http://centrifugo:8000;
+        proxy_pass $realtime;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $websocket_connection;
+        proxy_set_header Host $host;
+        proxy_read_timeout 75s;
+        proxy_buffering off;
+    }
+
+    location / { return 404; }
+}
+
+server {
+    listen 80;
+    server_name ${SAB_DOMAIN} *.${SAB_DOMAIN};
+    root /var/www/sab/public;
+    set_real_ip_from ${SAB_TUNNEL_IP};
+    real_ip_header CF-Connecting-IP;
+    client_max_body_size 12m;
+    add_header X-Content-Type-Options nosniff always;
+
+    location = /js/sign-message.js { return 404; }
+    location ~ /\. { return 404; }
+    location ~* \.php(?:/|$) { return 404; }
+    location / { try_files $uri @sab; }
+
+    location @sab {
+        resolver 127.0.0.11 valid=10s;
+        set $backend php:9000;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_param SCRIPT_FILENAME /var/www/sab/public/index.php;
+        fastcgi_param HTTPS on;
+        fastcgi_param SERVER_PORT 443;
+        fastcgi_param HTTP_X_FORWARDED_HOST "";
+        fastcgi_param HTTP_X_FORWARDED_PROTO "";
+        fastcgi_param HTTP_X_FORWARDED_FOR "";
+        fastcgi_read_timeout 100s;
+        fastcgi_pass $backend;
+    }
+}

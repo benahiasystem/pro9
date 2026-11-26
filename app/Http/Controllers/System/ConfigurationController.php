@@ -191,6 +191,15 @@ class ConfigurationController extends Controller
         ], 200);
     }
 
+    private function writeSystemImage(string $path, string $contents): bool
+    {
+        if (config('tenant_storage.disk') === 'supabase-private') {
+            return app(\App\Services\Storage\TenantStorage::class)->systemMedia()->put($path, $contents);
+        }
+
+        return Storage::put($path, $contents);
+    }
+
     public function storeBgLogin()
     {
         request()->validate([
@@ -212,17 +221,17 @@ class ConfigurationController extends Controller
 
                 // Los SVG son documentos activos: solo se publica el contenido saneado.
                 $clean = app(LoginSvgSanitizer::class)->sanitize(file_get_contents($file->getPathName()));
-                if (!Storage::put($path . '/' . $name, $clean)) {
+                if (!$this->writeSystemImage($path.'/'.$name, $clean)) {
                     throw new Exception('No se pudo guardar la imagen.');
                 }
             } elseif (in_array($ext, ['webp', 'avif'], true)) {
                 $contents = app(WebImageProcessor::class)->encode($file);
-                if (!Storage::put($path . '/' . $name, $contents)) {
+                if (!$this->writeSystemImage($path.'/'.$name, $contents)) {
                     throw new Exception('No se pudo guardar la imagen.');
                 }
             } else {
                 UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
-                $file->storeAs($path, $name);
+                $this->writeSystemImage($path.'/'.$name, file_get_contents($file->getRealPath()));
             }
 
             $loginConfig = $config->login;
@@ -427,15 +436,15 @@ class ConfigurationController extends Controller
             $ext = strtolower($file->getClientOriginalExtension());
             $name = 'tenant_image_ads_' . Str::random(40) . '.' . $ext;
 
-            request()->validate(['file' => 'required|mimes:jpeg,png,jpg,gif,svg,webp,avif|max:2048']);
+            request()->validate(['file' => 'required|mimes:jpeg,png,jpg,gif,webp,avif|max:2048']);
             if (in_array($ext, ['webp', 'avif'], true)) {
                 $contents = app(WebImageProcessor::class)->encode($file, 'file');
-                if (!Storage::put('public/uploads/system_ads/' . $name, $contents)) {
+                if (!$this->writeSystemImage('public/uploads/system_ads/'.$name, $contents)) {
                     throw new Exception('No se pudo guardar la imagen.');
                 }
             } else {
                 UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
-                $file->storeAs('public/uploads/system_ads', $name);
+                $this->writeSystemImage('public/uploads/system_ads/'.$name, file_get_contents($file->getRealPath()));
             }
 
             $configuration->tenant_image_ads = $name;

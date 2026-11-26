@@ -9,9 +9,13 @@
     $defaultImage = $configurationModel->product_default_image ?? 'imagen-no-disponible.jpg';
     $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
         ? asset('logo/imagen-no-disponible.jpg')
-        : asset('storage/defaults/' . $defaultImage);
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        : tenant_asset('storage/defaults/' . $defaultImage);
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     $mainImagePath = ($record->image && $record->image !== 'imagen-no-disponible.jpg')
-        ? asset('storage/uploads/items/'.$record->image)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+        ? tenant_asset('storage/uploads/items/'.$record->image)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         : $defaultImagePath;
 @endphp
 
@@ -30,7 +34,9 @@
                         <div class="product-item">
                             @php
                                 $loopImagePath = ($row->image && $row->image !== 'imagen-no-disponible.jpg')
-                                    ? asset('storage/uploads/items/'.$row->image)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                                    ? tenant_asset('storage/uploads/items/'.$row->image)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                                     : $defaultImagePath;
                             @endphp
                             <img class="product-single-image" src="{{ $loopImagePath }}"
@@ -65,7 +71,9 @@
                     <div class="col-3 owl-dot">
                         @php
                             $thumbImagePath = ($row->image && $row->image !== 'imagen-no-disponible.jpg')
-                                ? asset('storage/uploads/items/'.$row->image)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                                ? tenant_asset('storage/uploads/items/'.$row->image)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                                 : $defaultImagePath;
                         @endphp
                         <img src="{{ $thumbImagePath }}" alt="{{ $record->description }}" />
@@ -313,7 +321,9 @@
         @foreach($record->components as $component)
             @php
                 $componentImage = ($component->image && $component->image !== 'imagen-no-disponible.jpg')
-                    ? asset('storage/uploads/items/'.$component->image)
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                    ? tenant_asset('storage/uploads/items/'.$component->image)
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                     : $defaultImagePath;
             @endphp
             <article class="col-12 col-sm-6 mb-3">

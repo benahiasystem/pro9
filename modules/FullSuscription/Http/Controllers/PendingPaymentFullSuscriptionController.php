@@ -100,7 +100,9 @@ class PendingPaymentFullSuscriptionController extends Controller
         $company = [
             'name' => $co->trade_name ?: $co->name,
             'ruc'  => $co->number,
-            'logo' => $co->logo ? asset('storage/uploads/logos/' . $co->logo) : null,
+// ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+            'logo' => $co->logo ? tenant_asset('storage/uploads/logos/' . $co->logo) : null,
+// ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         ];
         $public_key = PaymentConfiguration::GetPublicKey();
         $suscription = $order->suscription;
