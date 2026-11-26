@@ -21,6 +21,24 @@ jobs:
         run: |
           docker run --rm sab-php:"$GITHUB_SHA" php-fpm -t
           docker run --rm sab-php:"$GITHUB_SHA" php -r 'require "vendor/autoload.php"; exit(class_exists(League\Flysystem\AwsS3V3\AwsS3V3Adapter::class) && is_file("public/build/manifest.json") && !is_file("public/js/sign-message.js") ? 0 : 1);'
-          docker run --rm -e SAB_DOMAIN=example.test -e SAB_TUNNEL_IP=172.29.80.2 sab-nginx:"$GITHUB_SHA" nginx -t
+          tls_dir=$(mktemp -d)
+          trap 'rm -rf -- "$tls_dir"' EXIT
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj /CN=example.test -addext 'subjectAltName=DNS:example.test,DNS:*.example.test' -keyout "$tls_dir/origin.key" -out "$tls_dir/origin.crt"
+          echo 'set_real_ip_from 192.0.2.0/24;' > "$tls_dir/cloudflare-real-ip.conf"
+          docker run --rm -e SAB_DOMAIN=example.test --mount "type=bind,src=$tls_dir,dst=/run/sab-tls,readonly" sab-nginx:"$GITHUB_SHA" nginx -t
       - name: Avisos de dependencias de ejecución
         run: docker run --rm --entrypoint composer sab-php:"$GITHUB_SHA" audit --locked --no-dev
+      - name: Empaquetar las imágenes verificadas
+        run: |
+          mkdir sab-release
+          docker save "sab-php:$GITHUB_SHA" "sab-nginx:$GITHUB_SHA" | gzip -1 > sab-release/images.tar.gz
+          (
+            cd sab-release
+            sha256sum images.tar.gz > SHA256SUMS
+          )
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sab-production-${{ github.sha }}
+          path: sab-release/
+          if-no-files-found: error
+          compression-level: 0

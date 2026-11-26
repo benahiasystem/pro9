@@ -66,8 +66,31 @@ services:
     image: ${SAB_NGINX_IMAGE:?Imagen Nginx de la entrega}
     environment:
       SAB_DOMAIN: ${SAB_DOMAIN:?Dominio base de SAB}
-      SAB_TUNNEL_IP: ${SAB_TUNNEL_IP:-172.29.80.2}
-    networks: [frontend, ingress]
+    ports:
+      - target: 443
+        published: "443"
+        host_ip: ${SAB_ORIGIN_BIND_IP:?Dirección IPv4 del origen SAB}
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: ${SAB_ORIGIN_CERT_FILE:?Certificado TLS del origen SAB}
+        target: /run/sab-tls/origin.crt
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${SAB_ORIGIN_KEY_FILE:?Clave TLS del origen SAB}
+        target: /run/sab-tls/origin.key
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${SAB_CLOUDFLARE_REAL_IP_FILE:?Rangos de proxy de Cloudflare}
+        target: /run/sab-tls/cloudflare-real-ip.conf
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [frontend]
     restart: unless-stopped
     security_opt: [no-new-privileges:true]
     depends_on:
@@ -106,28 +129,12 @@ services:
       - ./docker/centrifugo/config.json:/centrifugo/config.json:ro
     networks: [backend, frontend]
     restart: unless-stopped
-  cloudflared:
-    image: ${SAB_CLOUDFLARED_IMAGE:?Imagen cloudflared fijada por digest}
-    command: [tunnel, --no-autoupdate, run, --token-file, /run/secrets/tunnel_token]
-    secrets: [tunnel_token]
-    networks:
-      ingress:
-        ipv4_address: ${SAB_TUNNEL_IP:-172.29.80.2}
-    restart: unless-stopped
-    depends_on: [nginx]
-
 networks:
   backend:
   frontend:
-  ingress:
-    ipam:
-      config:
-        - subnet: ${SAB_TUNNEL_SUBNET:-172.29.80.0/24}
 
 secrets:
   supabase_ca:
     file: ${SAB_SUPABASE_CA_FILE:?Certificado CA de Supabase}
-  tunnel_token:
-    file: ${SAB_TUNNEL_TOKEN_FILE:?Archivo con el token Cloudflare}
   admin_password:
     file: ${SAB_ADMIN_PASSWORD_FILE:?Archivo con el secreto inicial de administración}
