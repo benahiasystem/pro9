@@ -65,6 +65,16 @@ class Handler extends ExceptionHandler
     */
     public function render($request, Throwable $exception)
     {
+        if ($request->routeIs('tenant.pos.garage.image')) {
+            $status = match (true) {
+                $exception instanceof AuthenticationException => 401,
+                $exception instanceof AuthorizationException => 403,
+                $exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException => 404,
+                $exception instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface => $exception->getStatusCode(),
+                default => 500,
+            };
+            return response('', $status, ['Cache-Control' => 'private, no-store', 'CDN-Cache-Control' => 'no-store']);
+        }
         if ($exception instanceof \App\Services\Payments\CalculationChanged) return $exception->response();
         if ($this->container->bound('accounting.errors') && $request->is('api/accounting/v1', 'api/accounting/v1/*')) {
             return $this->container->make('accounting.errors')->render($request, $exception);

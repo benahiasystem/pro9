@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\PriceLabel;
 use App\Services\PosCatalogStock;
+use App\Services\Storage\GarageItemImages;
 use App\Support\Exact\Decimal as D;
 use App\Support\Exact\PosCatalogPrice;
 
@@ -27,7 +28,9 @@ class PosCollection extends ResourceCollection
         $variations = $items->flatMap(fn ($item) => $item->relationLoaded('variations') ? $item->variations : []);
         $stock = PosCatalogStock::forItems(new \Illuminate\Database\Eloquent\Collection($items->concat($variations)->all()));
 
-        return $items->map(fn ($item) => $this->formatItem($item, $configuration, $allPricesLabel, $stock));
+        $garageImages = app(GarageItemImages::class)->urls($request, $items);
+        return $items->map(fn ($item) => $this->formatItem($item, $configuration, $allPricesLabel, $stock)
+            + ($garageImages[$item->id] ?? []));
     }
 
     private function formatItem($row, $configuration, $allPricesLabel, array $stock, bool $includeVariations = true): array

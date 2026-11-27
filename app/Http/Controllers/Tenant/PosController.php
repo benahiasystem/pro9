@@ -13,6 +13,8 @@ use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
 use App\Services\PosCatalogStock;
+use App\Services\Storage\GarageItemImages;
+use App\Services\Storage\ItemMedia;
 use App\Models\Tenant\PaymentMethodType;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\User;
@@ -103,7 +105,8 @@ class PosController extends Controller
 
         $items = $items_query->get();
         $stock = PosCatalogStock::forItems($items);
-        $items->transform(function ($row) use ($configuration, $search_item_by_barcode_presentation, $request, $all_prices_label, $stock) {
+        $garageImages = app(GarageItemImages::class)->urls($request, $items);
+        $items->transform(function ($row) use ($configuration, $search_item_by_barcode_presentation, $request, $all_prices_label, $stock, $garageImages) {
 
             $full_description = ($row->internal_id) ? $row->internal_id . ' - ' . $row->description : $row->description;
 
@@ -140,6 +143,7 @@ class PosController extends Controller
                 'aux_sale_unit_price' => D::represent(D::readRequired($row, 'sale_unit_price')),
                 'edit_sale_unit_price' => D::represent(D::readRequired($row, 'sale_unit_price')),
                 'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? tenant_asset('storage' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'items' . DIRECTORY_SEPARATOR . $row->image) : asset("/logo/{$row->image}"),
+                ...($garageImages[$row->id] ?? []),
                 'sets' => collect($row->sets)->transform(function ($r) {
                     return [
                         $r->individual_item->description
@@ -631,6 +635,14 @@ class PosController extends Controller
             ->where(fn (Builder $query) => $query->whereWarehouse())
             ->whereNotService()
             ->whereIsActive();
+    }
+
+    public function garageImage(Request $request, GarageItemImages $images, string $itemId, string $variant, string $token)
+    {
+        abort_unless(ItemMedia::employee(), 403);
+        $item = $this->catalogItems()->withoutEagerLoads()->findOrFail($itemId, ['id', 'image', 'image_small']);
+
+        return $images->response($request, $item, $variant, $token);
     }
 
     /**

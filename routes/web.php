@@ -9,6 +9,12 @@ $hostname = app(App\Tenancy\Contracts\CurrentHostname::class);
 
 if ($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
+        Route::get('pos/garage/image/{itemId}/{variant}/{token}', 'Tenant\\PosController@garageImage')
+            ->where(['itemId' => '[0-9]+', 'variant' => 'small|original', 'token' => '[a-f0-9]{64}'])
+            ->middleware(['auth', 'redirect.module', 'locked.tenant', 'check.email.verified'])
+            ->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class)
+            ->name('tenant.pos.garage.image');
+
         // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         Route::get('media/skin/{id}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'skin'])->middleware('throttle:120,1');
         Route::get('media/brand/{slot}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'brand'])->middleware('throttle:120,1');

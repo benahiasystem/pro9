@@ -216,14 +216,21 @@
                     :class="layout_mode"
                 >
                     <template v-for="(item, index) in items">
-                        <div :key="index" class="px-0">
+                        <div :key="`${item.id}:${item.garage_thumbnail_url || item.image_url}`" class="px-0">
                             <section class="card product-item mb-0 h-100">
                                 <div
                                     class="card-body product pointer px-2 pt-2 m-0 pb-0 bg-transparent"
                                     @click="clickAddItem(item, index)"
                                 >
                                     <img
-                                        :src="item.image_url"
+                                        v-garage-image="{
+                                            src: item.garage_thumbnail_url || item.image_url || '/logo/imagen-no-disponible.jpg',
+                                            eager: index < 4
+                                        }"
+                                        :loading="index < 4 ? 'eager' : 'lazy'"
+                                        :decoding="index < 4 ? 'auto' : 'async'"
+                                        alt=""
+                                        @error="useGarageImageFallback($event, item)"
                                         class="img-thumbail img-custom"
                                     />
                                     <p
@@ -1037,7 +1044,42 @@ import ItemUnitTypes from "./partials/item_unit_types.vue";
 import VariationsModal from "./partials/variations_modal.vue";
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 
+const pendingGarageImages = new WeakMap();
+let garageImageObserver;
+
 export default {
+    directives: {
+        garageImage: {
+            inserted(image, {value}) {
+                if (value.eager || typeof IntersectionObserver === 'undefined') {
+                    image.src = value.src;
+                    return;
+                }
+
+                // Native lazy loading may fetch several rows ahead of the scroll area.
+                garageImageObserver ||= new IntersectionObserver(entries => {
+                    for (const {target, isIntersecting} of entries) {
+                        if (!isIntersecting || !pendingGarageImages.has(target)) continue;
+                        target.src = pendingGarageImages.get(target);
+                        pendingGarageImages.delete(target);
+                        garageImageObserver.unobserve(target);
+                    }
+                });
+                pendingGarageImages.set(image, value.src);
+                garageImageObserver.observe(image);
+            },
+            update(image, {value}) {
+                if (value.eager && pendingGarageImages.has(image)) {
+                    pendingGarageImages.delete(image);
+                    garageImageObserver.unobserve(image);
+                    image.src = value.src;
+                }
+            },
+            unbind(image) {
+                if (pendingGarageImages.delete(image)) garageImageObserver.unobserve(image);
+            }
+        }
+    },
     props: [
         "configuration",
         "companyEnvironment",
@@ -1491,6 +1533,18 @@ export default {
                     this.fixItems();
                 });
         },
+        useGarageImageFallback(event, item) {
+            const image = event.currentTarget;
+            const src = image.getAttribute('src');
+            const thumbnail = item.garage_thumbnail_url;
+            const original = item.garage_original_url;
+            const placeholder = '/logo/imagen-no-disponible.jpg';
+
+            if (src === placeholder) return;
+            image.src = src === thumbnail && original && original !== thumbnail
+                ? original
+                : placeholder;
+        },
         getQueryParameters() {
             let p = {
                 page: this.pagination.current_page
@@ -1499,7 +1553,8 @@ export default {
                 input_item: this.input_item,
                 cat: this.category_selected,
                 limit: this.limit,
-                group_variations: 1
+                group_variations: 1,
+                garage_thumbnails: 1
             };
 
             if (this.businessTurns && [true, 1, "1"].includes(this.businessTurns.active)) {
@@ -2167,7 +2222,7 @@ export default {
                 this.loading = true;
                 let parameters = `input_item=${this.input_item}&cat=${
                     this.category_selected
-                }&group_variations=1`;
+                }&group_variations=1&garage_thumbnails=1`;
 
                 if (this.businessTurns && [true, 1, "1"].includes(this.businessTurns.active)) {
                     parameters += '&garage=1';
@@ -2203,7 +2258,7 @@ export default {
             if (this.input_item.length > 1) {
                 const generation = this.posCartGeneration;
                 this.loading = true;
-                let parameters = `input_item=${this.input_item}`;
+                let parameters = `input_item=${this.input_item}&garage_thumbnails=1`;
 
                 this.posBarcodePending++;
                 await this.$http
