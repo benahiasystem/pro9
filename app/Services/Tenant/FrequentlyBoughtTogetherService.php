@@ -202,6 +202,6 @@ class FrequentlyBoughtTogetherService
             return asset('logo/imagen-no-disponible.jpg');
         }
 
-        return asset('storage/uploads/items/'.$image);
+        return tenant_asset('uploads/items/'.$image);
     }
 }

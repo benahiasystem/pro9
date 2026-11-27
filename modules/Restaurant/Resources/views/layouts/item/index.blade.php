@@ -24,7 +24,7 @@
 
     <link rel="stylesheet" href="{{ asset('porto-ecommerce/assets/css/rating.css') }}">
 </head>
-<body>
+<body data-catalog-channel="restaurant">
     <div class="page-wrapper">
 
         @include('ecommerce::layouts.partials_ecommerce.header')

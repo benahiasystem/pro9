@@ -65,7 +65,7 @@ class Handler extends ExceptionHandler
     */
     public function render($request, Throwable $exception)
     {
-        if ($request->routeIs('tenant.pos.garage.image')) {
+        if ($request->routeIs('tenant.pos.garage.image', 'tenant.media.*')) {
             $status = match (true) {
                 $exception instanceof AuthenticationException => 401,
                 $exception instanceof AuthorizationException => 403,

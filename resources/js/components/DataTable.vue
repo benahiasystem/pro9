@@ -206,6 +206,7 @@
                                 v-for="(row, index) in records"
                                 :row="row"
                                 :index="customIndex(index)"
+                                :pageIndex="index"
                                 :showRestaurantStock="showRestaurantStock"
                             ></slot>
                             <tr v-if="records.length === 0">

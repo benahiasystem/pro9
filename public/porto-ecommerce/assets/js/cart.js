@@ -119,7 +119,7 @@ function cartRefreshHeader() {
 function cartConfirmImagePath(item) {
 	const imageName = item.image_medium || item.image_small || item.image;
 	if (imageName && imageName !== 'imagen-no-disponible.jpg') {
-		return '/storage/uploads/items/' + imageName;
+		return window.SabCatalogImageUrl(imageName);
 	}
 	return '/logo/imagen-no-disponible.jpg';
 }
@@ -364,9 +364,9 @@ function productsCartDropDown() {
 	let array = cartReadCart();
 	count = array.length;
 
-	array.forEach(function (element) {
+	array.forEach(function (element, index) {
 		const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
-			? '/storage/uploads/items/' + element.image_small
+			? window.SabCatalogImageUrl(element.image_small)
 			: '/logo/imagen-no-disponible.jpg';
 		const qty = cartAmounts().quantity(element.quantity ?? '1');
 
@@ -380,7 +380,7 @@ function productsCartDropDown() {
 				'</div>' +
 				'<figure class="product-image-container">' +
 					'<a href="#" class="product-image">' +
-						'<img alt="' + element.description + '" src="' + imagePath + '" />' +
+						'<img alt="' + element.description + '" data-catalog-src="' + imagePath + '" data-catalog-original="' + window.SabCatalogImageUrl(element.image) + '" data-catalog-eager="' + (index < 4 ? 1 : 0) + '" />' +
 					'</a>' +
 					'<a href="#" onclick="remove(' + element.id + ')" class="btn-remove" title="Remove Product">' +
 						'<i class="icon-cancel"></i>' +

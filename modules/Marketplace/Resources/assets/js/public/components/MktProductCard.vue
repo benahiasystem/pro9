@@ -3,7 +3,7 @@
     <article class="mkt-card">
         <div class="mkt-card__media" role="button" tabindex="0" :aria-label="product.name"
              @click="$emit('open', product)" @keydown.enter="$emit('open', product)">
-            <img v-if="product.image_url" :src="product.image_url" :alt="product.name" loading="lazy">
+            <img v-if="product.image_url" v-catalog-image="{ original: product.image_url, eager }" :alt="product.name">
             <span v-else class="mkt-card__placeholder">
                 <span class="mkt-card__initial">{{ product.initial }}</span>
                 <span class="mkt-card__store-name">{{ product.store.name }}</span>
@@ -50,6 +50,7 @@ export default {
     name: 'MktProductCard',
     components: { MktIcon, MktRecommend, MktCartButton },
     props: {
+        eager: Boolean,
         product: { type: Object, required: true },
         prefix: { type: String, default: 'marketplace' },
         currency: { type: String, default: 'Bs.' },

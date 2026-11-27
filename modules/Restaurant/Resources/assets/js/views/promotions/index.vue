@@ -38,12 +38,12 @@
             <th class="text-end">Acciones</th>
           </tr>
           <tr></tr>
-          <tr slot-scope="{ index, row }">
+          <tr slot-scope="{ pageIndex, index, row }">
             <!-- <td>{{ index }}</td> -->
             <td>{{ row.name }}</td>
             <!-- <td>{{ row.description }}</td> -->
             <td class="text-center">
-              <img :src="row.image_url" alt width="170" height="130" />
+              <img v-catalog-image="{ small: row.image_url_small, original: row.image_url, eager: pageIndex < 4 }" alt width="170" height="130" />
             </td>
             <td class="text-end">
               <template>
@@ -94,10 +94,10 @@
             <th class="text-end">Acciones</th>
           </tr>
           <tr></tr>
-          <tr slot-scope="{ index, row }">
+          <tr slot-scope="{ pageIndex, index, row }">
             <td>{{ row.name }}</td>
             <td class="text-center">
-              <img :src="row.image_url" alt width="170" height="130" />
+              <img v-catalog-image="{ small: row.image_url_small, original: row.image_url, eager: pageIndex < 4 }" alt width="170" height="130" />
             </td>
             <td class="text-end">
               <template>

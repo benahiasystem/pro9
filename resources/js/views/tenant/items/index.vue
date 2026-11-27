@@ -272,7 +272,7 @@
                     </tr>
 
                     <tr></tr>
-                    <template slot-scope="{ index, row }">
+                    <template slot-scope="{ pageIndex, index, row }">
                     <tr valign="middle"
                         :class="{ disable_color: !row.active, 'text-warning': row.hidden_search }"
                     >
@@ -283,7 +283,7 @@
                             <td v-if="col.visible && col.key === 'id'" :key="col.key" class="text-end">{{ row.id }}</td>
                             <!-- <td v-if="col.visible && col.key === 'internal_id'" :key="col.key" class="text-end">{{ row.internal_id }}</td> -->
                             <td v-if="col.visible && col.key === 'unit_type'" :key="col.key">{{ row.unit_type_id }}</td>
-                            <td v-if="col.visible && col.key === 'image'" :key="col.key"><img :src="row.image_url_small" style="object-fit: contain; border-radius: 50%;" alt width="48px" height="48px" /></td>
+                            <td v-if="col.visible && col.key === 'image'" :key="col.key"><img v-catalog-image="{ small: row.image_url_small, original: row.image_url, eager: pageIndex < 4 }" style="object-fit: contain; border-radius: 50%;" alt width="48px" height="48px" /></td>
                             <td class="fw-semibold" v-if="col.visible && col.key === 'name'" :key="col.key">
                                 <template v-if="hasVariationAttributes(row)">
                                     {{ row.base_description || row.description }}

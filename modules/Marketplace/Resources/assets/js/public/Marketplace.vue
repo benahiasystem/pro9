@@ -127,7 +127,7 @@
                     <template v-else>
                         <!-- Productos -->
                         <div v-if="showProducts" role="list" class="mkt-grid">
-                            <mkt-product-card v-for="p in products" :key="p.id" :product="p" :prefix="prefix"
+                            <mkt-product-card v-for="(p, index) in products" :eager="index < 4" :key="p.id" :product="p" :prefix="prefix"
                                               :currency="settings.currency_symbol"
                                               @open="openProduct" @open-store="goStore"
                                               @added="onAddedToCart" @contact="contactProduct"/>
@@ -150,10 +150,10 @@
 
                         <!-- Tiendas -->
                         <div v-if="showStores" role="list" class="mkt-grid mkt-grid--stores">
-                            <button v-for="s in stores" :key="s.slug" type="button"
+                            <button v-for="(s, index) in stores" :key="s.slug" type="button"
                                     class="mkt-store-card" @click="goStore(s)">
                                 <span class="mkt-store-card__logo">
-                                    <img v-if="s.logo_url" :src="s.logo_url" :alt="s.name">
+                                    <img v-if="s.logo_url" v-catalog-image="{ original: s.logo_url, eager: index < 4 }" :alt="s.name">
                                     <span v-else class="avatar avatar--lg avatar--navy">{{ s.initials }}</span>
                                 </span>
                                 <span class="mkt-store-card__body">

@@ -33,7 +33,7 @@
                         <td class="product-col">
                             <figure class="product-image-container">
                                 <a href="#" class="product-image">
-                                    <img class="image-product" :src="(row.image && row.image !== 'imagen-no-disponible.jpg') ? '{{ $itemsBasePath }}' + '/' + row.image : '{{ $defaultImagePath }}'" :alt="row.description || 'Producto sin imagen'">
+                                    <img class="image-product" :data-catalog-src="row.image_small && row.image_small !== 'imagen-no-disponible.jpg' ? '/media/restaurant/items/' + encodeURIComponent(row.image_small) : null" :data-catalog-original="(row.image && row.image !== 'imagen-no-disponible.jpg') ? '{{ $itemsBasePath }}' + '/' + row.image : '{{ $defaultImagePath }}'" :data-catalog-eager="index < 4 ? 1 : 0" :alt="row.description || 'Producto sin imagen'">
                                 </a>
                             </figure>
                             <h2 class="product-title">

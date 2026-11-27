@@ -7,6 +7,8 @@ import 'bootstrap/dist/js/bootstrap.bundle.js'; // Incluye Popper
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import Vue from 'vue'
+import { catalogImage } from './tenant/catalog-images';
+Vue.directive('catalog-image', catalogImage);
 import store from './store'
 import ElementUI from 'element-ui'
 

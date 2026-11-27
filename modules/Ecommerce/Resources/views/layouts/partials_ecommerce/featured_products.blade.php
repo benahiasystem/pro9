@@ -4,13 +4,16 @@
 
   <div class="home-featured-products owl-carousel owl-theme owl-dots-top">
 
+    @php
+        $catalogUrls = app(\App\Services\Storage\VersionedImage::class)->catalogUrls($items);
+    @endphp
     @foreach ($items as $item)
 
      <div class="product">
           <figure class="product-image-container">
               <a  href="/ecommerce/item/{{ $item->id }}/{{ \Illuminate\Support\Str::slug($item->description) }}" class="product-image">
 {{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-                  <img src="{{ tenant_asset('storage/uploads/items/'.$item->image) }}" alt="product">
+                  <x-catalog-image :small="$catalogUrls[$item->image_small] ?? null" :original="$catalogUrls[$item->image] ?? asset('logo/imagen-no-disponible.jpg')" :eager="$loop->index < 4" alt="product" />
 {{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
               </a>
               <a  href="{{route('item_partial', ['id' => $item->id])}}" class="btn-quickview">Quick View</a>

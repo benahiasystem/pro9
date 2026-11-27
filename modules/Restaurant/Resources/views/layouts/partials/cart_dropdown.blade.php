@@ -78,9 +78,9 @@
 
 			const defaultImagePath = '{{ $defaultImagePath }}';
 
-			array.forEach(element => {
+			array.forEach((element, index) => {
 				const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
-					? `/storage/uploads/items/${element.image_small}`
+					? `/media/restaurant/items/${encodeURIComponent(element.image_small)}`
 					: defaultImagePath;
 
 				$(".dropdown-cart-products").append( `
@@ -95,7 +95,7 @@
 							</div>
 							<figure class="product-image-container">
 								<a href="#" class="product-image">
-									<img alt="${element.description}" src="${imagePath}" />
+									<img alt="${element.description}" data-catalog-src="${imagePath}" data-catalog-original="${window.SabCatalogImageUrl(element.image)}" data-catalog-eager="${index < 4 ? 1 : 0}" />
 								</a>
 								<a href="#" onclick="remove(${element.id})" class="btn-remove" title="Remove Product">
 									<i class="icon-cancel"></i>

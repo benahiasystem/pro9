@@ -76,7 +76,7 @@
     <link rel="stylesheet" href="{{ asset('porto-light/css/styles_orders.css') }}" />
 </head>
 
-<body data-company-title="{{ data_get($pageCompany, 'title_web') ?: data_get($pageCompany, 'trade_name') }}">
+<body data-catalog-channel="restaurant" data-company-title="{{ data_get($pageCompany, 'title_web') ?: data_get($pageCompany, 'trade_name') }}">
 
     <div class="page-wrapper">
 

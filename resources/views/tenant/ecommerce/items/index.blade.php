@@ -2,13 +2,16 @@
 @extends('tenant.layouts.layout_ecommerce_item.index')
 @section('content')
 
+@php
+    $catalogUrls = app(\App\Services\Storage\VersionedImage::class)->catalogUrls($records);
+@endphp
 @foreach ($records as $item)
 <div class="col-6 col-md-4">
     <div class="product">
         <figure class="product-image-container">
             <a href="/ecommerce/item/{{ $item->id }}" class="product-image">
 {{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-                <img src="{{ tenant_asset('storage/uploads/items/'.$item->image) }}" alt="product">
+                <x-catalog-image :small="$catalogUrls[$item->image_small] ?? null" :original="$catalogUrls[$item->image] ?? asset('logo/imagen-no-disponible.jpg')" :eager="$loop->index < 4" alt="product" />
 {{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
             </a>
             <a href="{{route('item_partial', ['id' => $item->id])}}" class="btn-quickview">Quick View</a>

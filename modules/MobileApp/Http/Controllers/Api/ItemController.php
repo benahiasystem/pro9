@@ -331,9 +331,9 @@ class ItemController extends Controller
             ? $item->internal_id.' - '.$item->description
             : $item->description;
 
-        $image_url = $item->image !== 'imagen-no-disponible.jpg'
-            ? url('/storage/uploads/items/'.$item->image)
-            : url('/logo/'.$item->image);
+        $image_url = $item->image && $item->image !== 'imagen-no-disponible.jpg'
+            ? tenant_asset('uploads/items/'.$item->image)
+            : asset('logo/imagen-no-disponible.jpg');
 
         return [
             'id' => $item->id,

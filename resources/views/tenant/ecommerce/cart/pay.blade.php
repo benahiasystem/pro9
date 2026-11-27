@@ -128,7 +128,7 @@
                                 <td class="product-col">
                                     <figure class="product-image-container">
                                         <a href="#" class="product-image">
-                                            <img :src=" '/storage/uploads/items/' + row.image" alt="product">
+                                            <img :data-catalog-src="row.image_small && row.image_small !== 'imagen-no-disponible.jpg' ? '/media/images/items/' + encodeURIComponent(row.image_small) : null" :data-catalog-original="row.image ? '/media/images/items/' + encodeURIComponent(row.image) : '/logo/imagen-no-disponible.jpg'" :data-catalog-eager="index < 4 ? 1 : 0" alt="product">
                                         </a>
                                     </figure>
                                     <div>

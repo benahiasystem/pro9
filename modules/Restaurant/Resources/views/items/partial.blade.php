@@ -8,7 +8,7 @@
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     $mainImagePath = ($record->image && $record->image !== 'imagen-no-disponible.jpg')
 // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
-        ? tenant_asset('storage/uploads/items/'.$record->image)
+        ? url('media/restaurant/items/'.rawurlencode($record->image))
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         : $defaultImagePath;
 @endphp
@@ -29,7 +29,7 @@
                         @php
                             $loopImagePath = ($row->image && $row->image !== 'imagen-no-disponible.jpg')
 // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
-                                ? tenant_asset('storage/uploads/items/'.$row->image)
+                                ? url('media/restaurant/items/'.rawurlencode($row->image))
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                                 : $defaultImagePath;
                         @endphp
@@ -43,10 +43,10 @@
                     <!--<div class="product-item">
                         <img class="product-single-image"
 {{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-                            src="{{ tenant_asset('storage/uploads/items/'.$record->image_medium) }}"
+                            src="{{ url('media/restaurant/items/'.rawurlencode($record->image_medium)) }}"
 {{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
 {{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-                            data-zoom-image="{{ tenant_asset('storage/uploads/items/'.$record->image_medium) }}" />
+                            data-zoom-image="{{ url('media/restaurant/items/'.rawurlencode($record->image_medium)) }}" />
 {{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
                     </div> -->
 
@@ -64,7 +64,7 @@
                         @php
                             $thumbImagePath = ($row->image && $row->image !== 'imagen-no-disponible.jpg')
 // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
-                                ? tenant_asset('storage/uploads/items/'.$row->image)
+                                ? url('media/restaurant/items/'.rawurlencode($row->image))
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                                 : $defaultImagePath;
                         @endphp

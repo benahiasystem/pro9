@@ -15,11 +15,17 @@ if ($hostname) {
             ->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class)
             ->name('tenant.pos.garage.image');
 
+        Route::get('media/item/{itemId}/{variant}/{token}', [\App\Http\Controllers\Tenant\PrivateMediaController::class, 'item'])
+            ->where(['itemId' => '[0-9]+', 'variant' => 'small|medium|original', 'token' => '[a-f0-9]{64}'])
+            ->middleware(['auth', 'locked.tenant'])
+            ->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class)
+            ->name('tenant.media.item');
+
         // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
         Route::get('media/skin/{id}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'skin'])->middleware('throttle:120,1');
-        Route::get('media/brand/{slot}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'brand'])->middleware('throttle:120,1');
-        Route::get('media/restaurant/{folder}/{filename}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'restaurantImage'])->middleware(['locked.tenant','throttle:240,1']);
-        Route::get('media/images/{folder}/{filename}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'image'])->middleware('throttle:240,1');
+        Route::get('media/brand/{slot}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'brand'])->middleware('throttle:120,1')->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class)->name('tenant.media.brand');
+        Route::get('media/restaurant/{folder}/{filename}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'restaurantImage'])->middleware(['locked.tenant','throttle:240,1'])->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class)->name('tenant.media.restaurantImage');
+        Route::get('media/images/{folder}/{filename}', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'image'])->middleware('throttle:240,1')->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class)->name('tenant.media.image');
         Route::get('media/items/urls', [\App\Http\Controllers\Tenant\PrivateMediaController::class,'items'])->middleware('throttle:60,1');
         // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 

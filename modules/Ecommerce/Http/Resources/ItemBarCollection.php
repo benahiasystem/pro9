@@ -80,6 +80,8 @@ class ItemBarCollection extends ResourceCollection
                 }),
                 'apply_store' => (bool)$row->apply_store,
 // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+                'image' => $row->image,
+                'image_small' => $row->image_small,
                 'image_url' => ($row->image !== 'imagen-no-disponible.jpg') ? tenant_asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image) : tenant_asset("/logo/{$row->image}"),
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE

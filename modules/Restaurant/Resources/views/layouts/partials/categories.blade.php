@@ -34,14 +34,9 @@
                         <li class="menu-item p-3 {{ $isSelected ? 'selected-category' : '' }}"> 
                             <a href="{{ route('tenant.restaurant.menu', ['name' => $categorySlug]) }}">
 {{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-                                @if($category->image && file_exists(tenant_public_path('storage/uploads/categories/'. $category->image)))
-{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-                                    <img class="category-logo" src="{{ tenant_asset('storage/uploads/categories/'. $category->image) }}" alt="{{$category->name}}" draggable="false">
-{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-                                @else
-                                    <img class="category-logo" src="{{ asset('logo/Image_not_available.png') }}" alt="{{$category->name}}" draggable="false">
-                                @endif                                
+                                <x-catalog-image :original="$category->image ? tenant_asset('uploads/categories/'.$category->image) : asset('logo/Image_not_available.png')"
+                                    :missing="asset('logo/Image_not_available.png')" :eager="$loop->index < 4"
+                                    alt="{{ $category->name }}" class="category-logo" draggable="false" />
                             </a>
                             <span class="mt-auto category-name">
                                 {{$category->name}}

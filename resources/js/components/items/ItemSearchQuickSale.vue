@@ -14,7 +14,7 @@
             :disabled="!is_mounted"
             popper-class="list-result"
             :reserve-keyword="false">
-            <template v-for="row in items">
+            <template v-for="(row, index) in items">
                 <el-option
                     class="item-result"
                     :key="row.id"
@@ -24,7 +24,7 @@
                         <div class="col-1 p-1 align-self-center">
                             <img
                                 class="custom-image"
-                                :src="row.image_url"
+                                v-catalog-image="{ small: row.image_url_small, original: row.image_url, eager: index < 4 }"
                                 :alt="row.description"
                             >
                         </div>

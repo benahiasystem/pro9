@@ -229,10 +229,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in record.items">
+                        <tr v-for="(item, index) in record.items">
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <img :src="'/storage/uploads/items/' + item.image" class="product-thumb mr-3">
+                                    <img :data-catalog-src="item.image_small ? '/media/images/items/' + encodeURIComponent(item.image_small) : null" :data-catalog-original="item.image ? '/media/images/items/' + encodeURIComponent(item.image) : '/logo/imagen-no-disponible.jpg'" :data-catalog-eager="index < 4 ? 1 : 0" class="product-thumb mr-3">
                                     <span class="product-name">@{{ item.description }}</span>
                                 </div>
                             </td>

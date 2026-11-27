@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\{Company, Item, Promotion};
-use App\Services\Storage\{ItemMedia,TenantDisk,TenantStorage};
+use App\Services\Storage\{ItemImageDelivery,ItemMedia,TenantDisk,VersionedImage};
 use Illuminate\Http\Request;
 
 final class PrivateMediaController extends Controller
@@ -88,6 +88,13 @@ final class PrivateMediaController extends Controller
         return in_array($reference,['storage/uploads/'.$folder.'/'.$filename,'uploads/'.$folder.'/'.$filename,'media/images/'.$folder.'/'.$filename],true);
     }
 
+    public function item(Request $request, ItemImageDelivery $images, int $itemId, string $variant, string $token)
+    {
+        abort_unless(ItemMedia::employee(), 403);
+        $item = Item::withoutEagerLoads()->findOrFail($itemId, ['id', 'image_small', 'image_medium', 'image']);
+        return $images->response($request, $item, $variant, $token);
+    }
+
     public function items(Request $request)
     {
         $data=$request->validate(['ids'=>'required|array|max:100','ids.*'=>'required|integer|min:1']);
@@ -97,14 +104,19 @@ final class PrivateMediaController extends Controller
     private function imageResponse(string $path)
     {
         try {
-            $disk=app(TenantStorage::class)->disk();
-            abort_unless($disk->exists($path),404);
-            $mime=$disk->mimeType($path);
-            abort_unless(in_array($mime,['image/jpeg','image/png','image/gif','image/webp','image/avif','image/svg+xml','image/x-icon','image/vnd.microsoft.icon'],true),404);
-            return $disk->download($path,basename($path),[
-                'Content-Type'=>$mime,
-                'Content-Security-Policy'=>"default-src 'none'; style-src 'unsafe-inline'",
-            ],'inline');
+            $object = \App\Models\Storage\StorageObject::find($path);
+            abort_unless($object, 404);
+            abort_unless(in_array($object->mime, ['image/jpeg','image/png','image/gif','image/webp','image/avif','image/svg+xml','image/x-icon','image/vnd.microsoft.icon'], true), 404);
+            $request = request();
+            $images = app(VersionedImage::class);
+            $token = $images->token($request, $request->route()->getName(), $object);
+            if (!$request->query->has('v')) {
+                return redirect()->to($request->url().'?v='.$token, 302, [
+                    'Cache-Control' => 'private, no-store', 'CDN-Cache-Control' => 'no-store',
+                ]);
+            }
+            abort_unless(is_string($request->query('v')) && hash_equals($token, $request->query('v')), 404);
+            return $images->response($request, $object);
         } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $error) { throw $error; }
         catch (\Throwable $error) { abort(503,'La imagen no está disponible temporalmente.'); }
     }

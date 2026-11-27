@@ -324,16 +324,27 @@ class CurrentPdfRenderingTest extends TestCase
 
     public function test_a4_logo_header_and_production_notice_are_isolated_from_other_formats(): void
     {
-        $public=public_path(); $disk=config('filesystems.disks.public');
         $logoDirectory=sys_get_temp_dir().'/sab-a4-logo-'.bin2hex(random_bytes(6));
-        mkdir($logoDirectory.'/storage/uploads/logos',0775,true);
-        mkdir($logoDirectory.'/views');
-        config()->set('view.compiled',$logoDirectory.'/views');
+        mkdir($logoDirectory.'/views', 0775, true);
+        config()->set('view.compiled', $logoDirectory.'/views');
         $this->app->forgetInstance('blade.compiler');
-        copy($public.'/logo/tulogo.png',$logoDirectory.'/storage/uploads/logos/a4-test.png');
-        $this->app->usePublicPath($logoDirectory);
-        config()->set('filesystems.disks.public',['driver'=>'local','root'=>$logoDirectory.'/storage']);
-        \Illuminate\Support\Facades\Storage::forgetDisk('public');
+        $tenant = new \App\Tenancy\Models\Website();
+        $tenant->uuid = 'pdf_logo_fixture';
+        $this->app->instance(\App\Tenancy\Contracts\Tenant::class, $tenant);
+        config([
+            'tenant_storage.disk'=>'pdf-logo-test',
+            'filesystems.disks.pdf-logo-test'=>['driver'=>'local', 'root'=>$logoDirectory],
+        ]);
+        Schema::connection('tenant')->create('storage_objects', function ($table) {
+            $table->string('path')->primary();
+            $table->string('object_key');
+        });
+        DB::connection('tenant')->table('storage_objects')->insert([
+            'path'=>'uploads/logos/a4-test.png', 'object_key'=>'uploads/logos/a4-test-v1.png',
+        ]);
+        \Illuminate\Support\Facades\Storage::disk('pdf-logo-test')->put(
+            $tenant->uuid.'/uploads/logos/a4-test-v1.png', file_get_contents(public_path('logo/tulogo.png'))
+        );
         try {
             $company=new Fluent(['name'=>'Emisor','trade_name'=>'Prueba','number'=>'J087897598','logo'=>'a4-test.png']);
             $document=$this->documentFixture();
@@ -374,9 +385,8 @@ class CurrentPdfRenderingTest extends TestCase
             }
             }
         } finally {
-            $this->app->usePublicPath($public);
-            config()->set('filesystems.disks.public',$disk);
-            \Illuminate\Support\Facades\Storage::forgetDisk('public');
+            app(\App\Services\Storage\TenantMedia::class)->cleanup();
+            \Illuminate\Support\Facades\Storage::forgetDisk('pdf-logo-test');
             (new \Illuminate\Filesystem\Filesystem())->deleteDirectory($logoDirectory);
         }
         $document->fiscal_environment='demo'; $company->logo=null;

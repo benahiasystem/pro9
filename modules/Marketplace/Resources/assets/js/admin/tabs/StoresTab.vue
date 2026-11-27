@@ -47,7 +47,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <template v-for="row in records">
+                <template v-for="(row, storeIndex) in records">
                     <tr :key="row.id">
                         <td>
                             <button type="button" class="mkt-expand"
@@ -59,7 +59,7 @@
                         </td>
                         <td>
                             <div class="d-flex align-items-center">
-                                <img v-if="row.logo_url" :src="row.logo_url" class="mkt-logo" :alt="row.name">
+                                <img v-if="row.logo_url" v-catalog-image="{ original: row.logo_url, eager: storeIndex < 4 }" class="mkt-logo" :alt="row.name">
                                 <span v-else class="mkt-logo mkt-logo--placeholder">{{ row.name.charAt(0) }}</span>
                                 <div>
                                     <strong>{{ row.name }}</strong><br>
@@ -192,7 +192,7 @@
                         <td colspan="9">
                             <div class="mkt-catalog" v-loading="catalogs[row.id] === 'loading'">
                                 <div v-if="preview(row.id).length" class="mkt-catalog__grid">
-                                    <item-card v-for="item in preview(row.id)" :key="item.id" :item="item"
+                                    <item-card v-for="(item, index) in preview(row.id)" :eager="index < 4" :key="item.id" :item="item"
                                                @block="askBlock($event, row.id)"
                                                @unblock="unblock($event, row.id)"/>
                                 </div>
@@ -260,7 +260,7 @@
 
                 <div class="mkt-drawer__body" v-loading="drawer.loading">
                     <div v-if="drawer.items.length" class="mkt-drawer__list">
-                        <item-card v-for="item in drawer.items" :key="item.id" :item="item"
+                        <item-card v-for="(item, index) in drawer.items" :eager="index < 4" :key="item.id" :item="item"
                                    @block="askBlock($event, drawer.store.id)"
                                    @unblock="unblock($event, drawer.store.id)"/>
                     </div>

@@ -215,10 +215,10 @@ div.cart-dropdown {
         <ul class="p-4">
             <span class="">Productos sugeridos</span>
             <div class="suggestions-list">
-                <li class="mt-2 py-2" v-for="result in results">
+                <li class="mt-2 py-2" v-for="(result, index) in results">
                     <div class="row mx-0">
                         <a :href="'/ecommerce/item/' + result.slug" class="d-flex col-7 px-0" @click="suggestionClick(result)">
-                            <img style="max-width: 80px" class="img-product-results" :src="result.image_url_small" alt="">
+                            <img style="max-width: 80px" class="img-product-results" :data-catalog-src="result.image_url_small || result.image_url" :data-catalog-original="result.image_url" :data-catalog-eager="index < 4 ? 1 : 0" alt="">
                             <span class="search_title d-flex align-items-end ml-3" style="font-size: 1.0em;"> @{{ result.description }} </span>
                         </a>
                         <div class="col-5 px-0 d-flex justify-content-between align-items-center">
@@ -309,18 +309,9 @@ div.cart-dropdown {
                         <a href="{{ route('tenant.ecommerce.category', \Illuminate\Support\Str::slug($category->name, '-')) }}" class="category-item">
                             <div class="category-item-icon">
 {{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-                                @if($category->image && file_exists(tenant_public_path('storage/uploads/categories/'. $category->image)))
-{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-{{-- ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-                                    <img src="{{ tenant_asset('storage/uploads/categories/'. $category->image) }}"
-{{-- ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE --}}
-                                         alt="{{ $category->name }}"
-                                         style="width:40px; height:40px; object-fit:cover; border-radius:8px;">
-                                @else
-                                    <img src="{{ asset('logo/Image_not_available.png') }}"
-                                         alt="{{ $category->name }}"
-                                         style="width:40px; height:40px; object-fit:cover; border-radius:8px;">
-                                @endif
+                                <x-catalog-image :original="$category->image ? tenant_asset('uploads/categories/'.$category->image) : asset('logo/Image_not_available.png')"
+                                    :missing="asset('logo/Image_not_available.png')" :eager="$loop->index < 4"
+                                    alt="{{ $category->name }}" style="width:40px; height:40px; object-fit:cover; border-radius:8px;" />
                             </div>
                             <div class="category-item-content">
                                 <span class="category-item-title">{{ $category->name }}</span>
@@ -494,11 +485,6 @@ div.cart-dropdown {
                         this.value = item.description;
                     },
                     addToCart(item) {
-                        var imageSmall = 'imagen-no-disponible.jpg';
-                        if (item.image_url_small) {
-                            imageSmall = item.image_url_small.split(/[\\/]/).pop();
-                        }
-
                         const priceClean = item.amount_sale_unit_price == null ? null
                             : window.SabStorefrontAmounts.input(String(item.amount_sale_unit_price));
 
@@ -514,8 +500,8 @@ div.cart-dropdown {
                             campaign_discount_percent: item.campaign_discount_percent,
                             campaign_discount_embedded: item.campaign_discount_embedded,
                             sale_unit_price_display: item.sale_unit_price,
-                            image_small: imageSmall,
-                            image: imageSmall,
+                            image_small: item.image_small || item.image,
+                            image: item.image || 'imagen-no-disponible.jpg',
                             sale_affectation_igv_type_id: item.sale_affectation_igv_type_id || '10',
                             currency_type_id: item.currency_type_id || 'VES',
                             currency_type_symbol: item.currency_type_symbol || 'Bs.',

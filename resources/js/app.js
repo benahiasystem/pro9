@@ -2,6 +2,8 @@ import './bootstrap';
 import './mobile-app-behavior';
 
 import Vue from 'vue'
+import { catalogImage } from './tenant/catalog-images';
+Vue.directive('catalog-image', catalogImage);
 // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
 import { installPrivateMedia } from './tenant/private-media.mjs';
 installPrivateMedia(Vue, Vue.prototype.$http);

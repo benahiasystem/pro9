@@ -1,21 +1,25 @@
 {
   "FrequentlyBoughtTogether.css": {
-    "file": "assets/FrequentlyBoughtTogether-c45394f2.css",
+    "file": "assets/FrequentlyBoughtTogether-6e452c15.css",
     "src": "FrequentlyBoughtTogether.css"
   },
-  "_FrequentlyBoughtTogether-d4d8f717.js": {
+  "_FrequentlyBoughtTogether-ab3b7a58.js": {
     "css": [
-      "assets/FrequentlyBoughtTogether-c45394f2.css"
+      "assets/FrequentlyBoughtTogether-6e452c15.css"
     ],
-    "file": "assets/FrequentlyBoughtTogether-d4d8f717.js",
+    "file": "assets/FrequentlyBoughtTogether-ab3b7a58.js",
     "imports": [
       "__plugin-vue2_normalizer-2bbd088e.js",
+      "_catalog-images-1c26b549.js",
       "_storefront-cart-amounts-8effdbd3.js",
       "_exchange-rate-math-d526ac5f.js"
     ]
   },
   "__plugin-vue2_normalizer-2bbd088e.js": {
     "file": "assets/_plugin-vue2_normalizer-2bbd088e.js"
+  },
+  "_catalog-images-1c26b549.js": {
+    "file": "assets/catalog-images-1c26b549.js"
   },
   "_claim_form-e14cd897.js": {
     "css": [
@@ -52,11 +56,11 @@
       "_exchange-rate-math-d526ac5f.js"
     ]
   },
-  "_vue-clipboard-1b8df39c.js": {
+  "_vue-clipboard-fc5458a4.js": {
     "css": [
       "assets/vue-clipboard-a067d18e.css"
     ],
-    "file": "assets/vue-clipboard-1b8df39c.js",
+    "file": "assets/vue-clipboard-fc5458a4.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
@@ -89,22 +93,24 @@
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
-    "file": "assets/cart-app-63375b68.js",
+    "file": "assets/cart-app-3547b8eb.js",
     "imports": [
       "_exchange-rate-math-d526ac5f.js",
       "_storefront-cart-amounts-8effdbd3.js",
-      "_FrequentlyBoughtTogether-d4d8f717.js",
-      "__plugin-vue2_normalizer-2bbd088e.js"
+      "_FrequentlyBoughtTogether-ab3b7a58.js",
+      "__plugin-vue2_normalizer-2bbd088e.js",
+      "_catalog-images-1c26b549.js"
     ],
     "isEntry": true,
     "src": "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/product-social-app.js": {
-    "file": "assets/product-social-app-eb8ca25f.js",
+    "file": "assets/product-social-app-5ce91ce5.js",
     "imports": [
       "_vue.esm-340a2d96.js",
-      "_FrequentlyBoughtTogether-d4d8f717.js",
+      "_FrequentlyBoughtTogether-ab3b7a58.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
+      "_catalog-images-1c26b549.js",
       "_storefront-cart-amounts-8effdbd3.js",
       "_exchange-rate-math-d526ac5f.js"
     ],
@@ -140,7 +146,7 @@
     "src": "modules/Marketplace/Resources/assets/img/buho-logo.svg"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.css": {
-    "file": "assets/marketplace-682d0488.css",
+    "file": "assets/marketplace-d7d66276.css",
     "src": "modules/Marketplace/Resources/assets/js/marketplace.css"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.js": {
@@ -154,11 +160,12 @@
       "assets/jetbrains-mono-latin-ext-db5ff4db.woff2"
     ],
     "css": [
-      "assets/marketplace-682d0488.css"
+      "assets/marketplace-d7d66276.css"
     ],
-    "file": "assets/marketplace-67648573.js",
+    "file": "assets/marketplace-19c34d79.js",
     "imports": [
       "_vue.esm-340a2d96.js",
+      "_catalog-images-1c26b549.js",
       "_index-e849b4f5.js",
       "__plugin-vue2_normalizer-2bbd088e.js"
     ],
@@ -186,7 +193,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-9bc71b61.css",
+    "file": "assets/app-463db2df.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -196,12 +203,13 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-9bc71b61.css"
+      "assets/app-463db2df.css"
     ],
-    "file": "assets/app-8dc861a7.js",
+    "file": "assets/app-3b6dca25.js",
     "imports": [
-      "_vue-clipboard-1b8df39c.js",
+      "_vue-clipboard-fc5458a4.js",
       "_vue.esm-340a2d96.js",
+      "_catalog-images-1c26b549.js",
       "_index-3744837a.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
       "_exchange-rate-math-d526ac5f.js",
@@ -212,8 +220,9 @@
     "src": "resources/js/app.js"
   },
   "resources/js/storefront-amounts.js": {
-    "file": "assets/storefront-amounts-088a459a.js",
+    "file": "assets/storefront-amounts-d85ed9a0.js",
     "imports": [
+      "_catalog-images-1c26b549.js",
       "_exchange-rate-math-d526ac5f.js",
       "_storefront-cart-amounts-8effdbd3.js"
     ],
@@ -221,17 +230,18 @@
     "src": "resources/js/storefront-amounts.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-acf68d1e.css",
+    "file": "assets/system-96c49934.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-acf68d1e.css"
+      "assets/system-96c49934.css"
     ],
-    "file": "assets/system-d7e5b84e.js",
+    "file": "assets/system-b69ec719.js",
     "imports": [
-      "_vue-clipboard-1b8df39c.js",
+      "_vue-clipboard-fc5458a4.js",
       "_vue.esm-340a2d96.js",
+      "_catalog-images-1c26b549.js",
       "_index-3744837a.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
       "_exchange-rate-math-d526ac5f.js",

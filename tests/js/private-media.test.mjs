@@ -44,3 +44,12 @@ test('renews every signed alias of the same product and replaces revoked product
     replaceMediaUrls(row, updates[0]); assert.equal(row.image_urls_expires_at, new Date(1000000).toISOString());
 });
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
+
+test('renewal preserves the field when small and original previously shared a URL', () => {
+    const updates = new Map([['shared', 'new-original']]);
+    updates.rows = new Map([[1, {image_url: 'new-original', image_url_small: 'new-small'}]]);
+    const row = {image_media_id: 1, image_url: 'shared', image_url_small: 'shared'};
+    replaceMediaUrls(row, updates);
+    assert.equal(row.image_url, 'new-original');
+    assert.equal(row.image_url_small, 'new-small');
+});

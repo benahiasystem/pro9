@@ -508,9 +508,9 @@ function(e) {
 			if (!Array.isArray(array)) array = [];
 			count = array.length;
 
-			array.forEach(element => {
+			array.forEach((element, index) => {
 				const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
-					? `/storage/uploads/items/${element.image_small}`
+					? window.SabCatalogImageUrl(element.image_small)
 					: `/logo/imagen-no-disponible.jpg`;
 				const qty = window.SabStorefrontAmounts.quantity(element.quantity ?? '1');
 				jQuery(".dropdown-cart-products").append( `
@@ -525,7 +525,7 @@ function(e) {
 							</div>
 							<figure class="product-image-container">
 								<a href="#" class="product-image">
-									<img alt="${element.description}" src="${imagePath}" />
+									<img alt="${element.description}" data-catalog-src="${imagePath}" data-catalog-original="${window.SabCatalogImageUrl(element.image)}" data-catalog-eager="${index < 4 ? 1 : 0}" />
 								</a>
 								<a href="#" onclick="remove(${element.id}); return false;" class="btn-remove" title="Remove Product">
 									<i class="icon-cancel"></i>
@@ -576,11 +576,11 @@ function(e) {
 			const compareAt = item.compare_at_price == null ? null : window.SabStorefrontAmounts.amount(item.compare_at_price);
 			const showPrices = !(window.__storefront_show_prices === false || window.__storefront_show_prices === 0);
 			const thumb = (item.image_medium && item.image_medium !== 'imagen-no-disponible.jpg')
-				? `/storage/uploads/items/${item.image_medium}`
+				? window.SabCatalogImageUrl(item.image_medium)
 				: ((item.image_small && item.image_small !== 'imagen-no-disponible.jpg')
-					? `/storage/uploads/items/${item.image_small}`
+					? window.SabCatalogImageUrl(item.image_small)
 					: ((item.image && item.image !== 'imagen-no-disponible.jpg')
-						? `/storage/uploads/items/${item.image}`
+						? window.SabCatalogImageUrl(item.image)
 						: `/logo/imagen-no-disponible.jpg`));
 
 			jQuery('#cart_added_product_row').attr('data-product-id', item.id);

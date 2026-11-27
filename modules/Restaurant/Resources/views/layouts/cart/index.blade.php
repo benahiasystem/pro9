@@ -75,7 +75,7 @@
 
     <link rel="stylesheet" href="{{ asset('porto-light/css/styles_orders.css') }}" />
 </head>
-<body>
+<body data-catalog-channel="restaurant">
     <div class="page-wrapper">
         @include('restaurant::layouts.partials.header')
         @include('ecommerce::layouts.partials_ecommerce.header_bottom_sticky')

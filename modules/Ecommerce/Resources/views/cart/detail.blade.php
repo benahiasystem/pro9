@@ -2262,7 +2262,7 @@
                             <div class="thumb">
                                 <figure class="product-image-container m-0">
                                     <a href="#" class="product-image">
-                                        <img class="image-product w-100" :src="(row.image && row.image !== 'imagen-no-disponible.jpg') ? '{{ $itemsBasePath }}' + '/' + row.image : '{{ $defaultImagePath }}'" :alt="row.description || 'Producto sin imagen'">
+                                        <img class="image-product w-100" :data-catalog-src="row.image_small && row.image_small !== 'imagen-no-disponible.jpg' ? '/media/images/items/' + encodeURIComponent(row.image_small) : null" :data-catalog-original="(row.image && row.image !== 'imagen-no-disponible.jpg') ? '{{ $itemsBasePath }}' + '/' + row.image : '{{ $defaultImagePath }}'" :data-catalog-eager="index < 4 ? 1 : 0" :alt="row.description || 'Producto sin imagen'">
                                     </a>
                                 </figure>
                             </div>

@@ -26,11 +26,11 @@
                         <th>Fecha creación</th>
                         <th class="text-end">Acciones</th>
                     </tr>
-                    <tr slot-scope="{ index, row }">
+                    <tr slot-scope="{ pageIndex, index, row }">
                         <!-- <td>{{ index }}</td> -->
                         <td>{{ row.id }}</td>
                         <td class="text-center">
-                            <img v-if="row.image" :src="row.image_url" alt width="32" height="32" style="object-fit: contain;" />
+                            <img v-if="row.image" v-catalog-image="{ small: row.image_url_small, original: row.image_url, eager: pageIndex < 4 }" alt width="32" height="32" style="object-fit: contain;" />
                         </td>
                         <td>{{ row.name }}</td>
                         <td>{{ row.created_at }}</td>

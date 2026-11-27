@@ -82,14 +82,14 @@
                         <th class="text-end">Acciones</th>
                     </tr>
                     <tr></tr>
-                    <tr slot-scope="{ index, row }">
+                    <tr slot-scope="{ pageIndex, index, row }">
                         <!-- <td>{{ index }}</td> -->
                         <td>{{ row.internal_id }}</td>
                         <td>{{ row.unit_type_id }}</td>
                         <td class="text-center">
                             <a @click="viewImages(row)" href="#">
                                 <img
-                                    :src="row.image_url_small"
+                                    v-catalog-image="{ small: row.image_url_small, original: row.image_url, eager: pageIndex < 4 }"
                                     tyle="object-fit: contain;"
                                     alt
                                     width="32px"

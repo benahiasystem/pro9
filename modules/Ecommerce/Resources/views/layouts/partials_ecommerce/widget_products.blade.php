@@ -18,6 +18,9 @@
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                         @endphp
 
+                        @php
+                            $catalogUrls = app(\App\Services\Storage\VersionedImage::class)->catalogUrls($row3);
+                        @endphp
                         @foreach ($row3 as $item)
                         <div class="product product-sm">
                             <figure class="product-image-container">
@@ -29,7 +32,7 @@
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                                             : $defaultImagePath;
                                     @endphp
-                                    <img src="{{ $itemImagePath }}" alt="{{ $item->description }}">
+                                    <x-catalog-image :small="$catalogUrls[$item->image_small] ?? null" :original="$catalogUrls[$item->image] ?? $itemImagePath" :eager="$loop->index < 4" alt="{{ $item->description }}" />
                                 </a>
                             </figure>
                             <div class="product-details">
@@ -57,6 +60,9 @@
 
                     <div class="featured-col">
 
+                        @php
+                            $catalogUrls = app(\App\Services\Storage\VersionedImage::class)->catalogUrls($row3inverse);
+                        @endphp
                         @foreach ($row3inverse as $item)
                         <div class="product product-sm">
                             <figure class="product-image-container">
@@ -68,7 +74,7 @@
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                                             : $defaultImagePath;
                                     @endphp
-                                    <img src="{{ $itemImagePath }}" alt="{{ $item->description }}">
+                                    <x-catalog-image :small="$catalogUrls[$item->image_small] ?? null" :original="$catalogUrls[$item->image] ?? $itemImagePath" :eager="$loop->index < 4" alt="{{ $item->description }}" />
                                 </a>
                             </figure>
                             <div class="product-details">

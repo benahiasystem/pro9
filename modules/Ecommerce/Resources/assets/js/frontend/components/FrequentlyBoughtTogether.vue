@@ -18,13 +18,13 @@
 
       <div ref="track" class="sp-fbt__track">
         <a
-          v-for="item in items"
+          v-for="(item, index) in items"
           :key="item.id"
           class="sp-fbt__card"
           :href="item.url"
         >
           <div class="sp-fbt__image-wrap">
-            <img :src="item.image_url" :alt="item.description" loading="lazy" />
+            <img v-catalog-image="{ small: item.image_url_small, original: item.image_url, eager: index < 4 }" :alt="item.description" />
           </div>
           <div class="sp-fbt__body">
             <div class="sp-fbt__name" :title="item.description">{{ item.description }}</div>
@@ -50,10 +50,13 @@
 </template>
 
 <script>
+import {catalogImage} from '../../../../../../../resources/js/tenant/catalog-images'
+
 import {cartRequestIdentifier} from '../../../../../../../resources/js/helpers/storefront-cart-amounts'
 import {exactAmount} from '../../../../../../../resources/js/helpers/exchange-rate-math'
 
 export default {
+  directives: { catalogImage },
   name: 'FrequentlyBoughtTogether',
   props: {
     itemId: {

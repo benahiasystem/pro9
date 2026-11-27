@@ -18,7 +18,7 @@
 
         <div v-if="isGallery" class="variation-gallery">
             <div class="variation-gallery__image">
-                <img :src="currentImage" alt="">
+                <img v-catalog-image="{ original: currentImage, eager: true }" alt="">
             </div>
             <div class="variation-gallery__info">
                 <h4 class="variation-gallery__name">

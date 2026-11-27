@@ -1,3 +1,4 @@
+import {installCatalogImages} from './tenant/catalog-images'
 import {exactAmount, exactInput, exactSum} from './helpers/exchange-rate-math'
 import {cartQuantity, cartLineAmount} from './helpers/storefront-cart-amounts'
 
@@ -27,3 +28,12 @@ window.SabStorefrontAmounts = Object.freeze({
         return [...totals].map(([currency, total]) => (currency === 'USD' ? 'USD ' : 'Bs. ') + total.final(2)).join(' + ') || 'Bs. 0.00'
     },
 })
+
+if (typeof document !== 'undefined') installCatalogImages(document)
+
+window.SabCatalogImageUrl = name => {
+    if (!name || name === 'imagen-no-disponible.jpg') return '/logo/imagen-no-disponible.jpg'
+    const channel = typeof document !== 'undefined' && document.body?.dataset.catalogChannel === 'restaurant'
+        ? 'restaurant' : 'images'
+    return '/media/' + channel + '/items/' + encodeURIComponent(name)
+}

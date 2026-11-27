@@ -1,6 +1,6 @@
 <template>
     <div class="mkt-item" :class="{ 'is-blocked': item.status === 'blocked' }">
-        <img v-if="item.image_url" :src="item.image_url" :alt="item.name" class="mkt-item__img" loading="lazy">
+        <img v-if="item.image_url" v-catalog-image="{ original: item.image_url, eager }" :alt="item.name" class="mkt-item__img">
         <span v-else class="mkt-item__img mkt-item__img--placeholder">{{ item.name.charAt(0) }}</span>
 
         <div class="mkt-item__body">
@@ -39,6 +39,7 @@
 <script>
 export default {
     props: {
+        eager: Boolean,
         item: { type: Object, required: true },
     },
 }

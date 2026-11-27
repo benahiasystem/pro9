@@ -158,10 +158,10 @@
             $('#cart-dd-count-badge').hide();
         } else {
             $('#cart-dd-count-badge').text(totalUnits + (totalUnits === '1' ? ' artículo' : ' artículos')).show();
-            array.forEach(element => {
+            array.forEach((element, index) => {
                 const qty = window.SabStorefrontAmounts.quantity(element.quantity ?? '1');
                 const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
-                    ? `/storage/uploads/items/${element.image_small}`
+                    ? `/media/images/items/${encodeURIComponent(element.image_small)}`
                     : defaultImagePath;
                 const priceHtml = showPrices
                     ? `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> × ${element.currency_type_symbol || (element.currency_type_id === 'USD' ? 'USD' : 'Bs.')} ${window.SabStorefrontAmounts.line({...element,cantidad:'1'}, {convert:false}).total.final(2)}</span>`
@@ -176,7 +176,7 @@
                                 </svg>
                             </a>
                             <a href="#" class="product-image">
-                                <img alt="${element.description}" src="${imagePath}" />
+                                <img alt="${element.description}" data-catalog-src="${imagePath}" data-catalog-original="${window.SabCatalogImageUrl(element.image)}" data-catalog-eager="${index < 4 ? 1 : 0}" />
                             </a>
                         </figure>
                         <div class="product-details">

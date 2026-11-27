@@ -78,6 +78,7 @@
                                 v-for="(row, index) in records"
                                 :row="row"
                                 :index="customIndex(index)"
+                                :pageIndex="index"
                             ></slot>
                         </tbody>
                     </table>

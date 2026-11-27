@@ -77,7 +77,7 @@ export function replaceMediaUrls(value, changes, seen = new WeakSet()) {
     if (row) value.image_urls_expires_at = row.image_urls_expires_at;
     for (const key of Object.keys(value)) {
         if (key === '__ob__') continue;
-        if (imageFields.includes(key) && changes.has(value[key])) value[key] = changes.get(value[key]);
+        if (imageFields.includes(key) && changes.has(value[key])) value[key] = row?.[key] || changes.get(value[key]);
         else if (value[key] && typeof value[key] === 'object') replaceMediaUrls(value[key], changes, seen);
     }
 }

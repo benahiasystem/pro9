@@ -209,7 +209,7 @@
                                         {{ item.description }}
                                     </p>
                                     <img
-                                        :src="item.image_url"
+                                        v-catalog-image="{ small: item.image_url_small, original: item.image_url, eager: index < 4 }"
                                         class="img-thumbail img-custom"
                                     />
                                     <p

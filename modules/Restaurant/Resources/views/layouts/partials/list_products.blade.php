@@ -1,4 +1,7 @@
 {{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
+@php
+    $catalogUrls = app(\App\Services\Storage\VersionedImage::class)->catalogUrls($dataPaginate, true);
+@endphp
 @foreach ($dataPaginate as $item)
     @php
         $configuration = \App\Models\Tenant\Configuration::first();
@@ -11,16 +14,16 @@
 
         $imagePath = $item->image !== 'imagen-no-disponible.jpg'
 // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
-            ? tenant_asset('storage/uploads/items/' . $item->image)
+            ? url('media/restaurant/items/'.rawurlencode($item->image))
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
             : $defaultImagePath;
     @endphp
     <div>
         <div class="product product-style {{ stock($item, $configuration) ? 'productdisabled' : '' }}">
             <div class="position-relative">
-                <img src="{{ $imagePath }}" class="image-product" alt="{{ $item->description }}">
+                <x-catalog-image :small="$catalogUrls[$item->image_small] ?? null" :original="$catalogUrls[$item->image] ?? $imagePath" :eager="$loop->index < 4" class="image-product" alt="{{ $item->description }}" />
                 {{-- <a href="/restaurant/item/{{ $item->id }}" class="product-image product-image-list-restaurant">
-                    <img src="{{ $imagePath }}" class="image" alt="{{ $item->description }}">
+                    <x-catalog-image :small="$catalogUrls[$item->image_small] ?? null" :original="$catalogUrls[$item->image] ?? $imagePath" :eager="$loop->index < 4" class="image" alt="{{ $item->description }}" />
                 </a> --}}
                 {{-- <a href="{{route('restaurant.item_partial', ['id' => $item->id])}}" class="btn-quickview">Vista Rápida</a> --}}
                 {{-- <span class="product-label label-sale">-20%</span> --}}

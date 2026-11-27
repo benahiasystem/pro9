@@ -39,7 +39,7 @@
 
 
 </style>
-<body>
+<body data-catalog-channel="restaurant">
 
     <div class="page-wrapper">
 

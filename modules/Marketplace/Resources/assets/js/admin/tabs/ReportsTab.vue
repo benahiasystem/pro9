@@ -20,10 +20,10 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr v-for="row in records" :key="row.id">
+                <tr v-for="(row, index) in records" :key="row.id">
                     <td>
                         <div v-if="row.item" class="d-flex align-items-center">
-                            <img v-if="row.item.image_url" :src="row.item.image_url" class="mkt-thumb" alt="">
+                            <img v-if="row.item.image_url" v-catalog-image="{ original: row.item.image_url, eager: index < 4 }" class="mkt-thumb" alt="">
                             <span v-else class="mkt-thumb mkt-thumb--placeholder">{{ row.item.name.charAt(0) }}</span>
                             <div>
                                 <strong>{{ row.item.name }}</strong>

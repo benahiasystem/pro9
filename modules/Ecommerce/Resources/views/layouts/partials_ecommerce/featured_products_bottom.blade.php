@@ -25,6 +25,9 @@ $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
 
     <div class="featured-products owl-carousel owl-theme owl-dots-top">
 
+        @php
+            $catalogUrls = app(\App\Services\Storage\VersionedImage::class)->catalogUrls($relatedItems);
+        @endphp
         @foreach ($relatedItems as $item)
                     <div class="product product-style d-flex align-items-center justify-content-start compact-product">
                         <figure class="product-image-container" style="flex-shrink: 0;">
@@ -36,7 +39,7 @@ $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
                                         : $defaultImagePath;
                                 @endphp
-                                <img src="{{ $itemImagePath }}" alt="{{ $item->description }}">
+                                <x-catalog-image :small="$catalogUrls[$item->image_small] ?? null" :original="$catalogUrls[$item->image] ?? $itemImagePath" :eager="$loop->index < 4" alt="{{ $item->description }}" />
                             </a>
                             {{-- <a href="{{route('item_partial', ['id' => $item->id])}}" class="btn-quickview">Vista Rápida</a> --}}
                         </figure>

@@ -284,7 +284,7 @@ class MobileController extends Controller
                             'item_unit_types' => $this->transformMobileItemUnitTypes($row->item_unit_types, $decimal_units),
                             'stock' => $row->getWarehouseCurrentStock($warehouse),
                             // 'stock' => $row->unit_type_id!='SERV' ? ItemWarehouse::where([['item_id', $row->id],['warehouse_id', $warehouse->id]])->first()->stock : '0',
-                            'image' => $row->image != "imagen-no-disponible.jpg" ? url("/storage/uploads/items/" . $row->image) : url("/logo/" . $row->image),
+                            'image' => $row->image && $row->image !== 'imagen-no-disponible.jpg' ? tenant_asset('uploads/items/'.$row->image) : asset('logo/imagen-no-disponible.jpg'),
                             'warehouses' => Item::transformWarehousesForApi($row->warehouses),
                             'favorite' => (bool) $row->favorite,
                         ];
@@ -611,7 +611,7 @@ class MobileController extends Controller
                             'category' => optional($row->category)->name,
                             'stock' => $row->getWarehouseCurrentStock($warehouse),
                             // 'stock' => $row->unit_type_id!='SERV' ? ItemWarehouse::where([['item_id', $row->id],['warehouse_id', $warehouse->id]])->first()->stock : '0',
-                            'image' => $row->image != "imagen-no-disponible.jpg" ? url("/storage/uploads/items/" . $row->image) : url("/logo/" . $row->image),
+                            'image' => $row->image && $row->image !== 'imagen-no-disponible.jpg' ? tenant_asset('uploads/items/'.$row->image) : asset('logo/imagen-no-disponible.jpg'),
                             'warehouses' => Item::transformWarehousesForApi($row->warehouses),
                             'item_unit_types' => $this->transformMobileItemUnitTypes($row->item_unit_types),
                             'favorite' => (bool) $row->favorite,

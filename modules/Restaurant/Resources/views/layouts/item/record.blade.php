@@ -11,7 +11,7 @@
     @php($productName = data_get($product, 'description') ?: 'Producto')
     @php($productDescription = data_get($product, 'name') ?: ($restaurantDescription) ?: 'Descripción no disponible')
 // ########## INICIO MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
-    @php($productImage = data_get($product, 'image') ? tenant_asset('storage/uploads/items/'.data_get($product, 'image')) : tenant_asset('logo/tulogo.png'))
+    @php($productImage = data_get($product, 'image') ? url('media/restaurant/items/'.rawurlencode(data_get($product, 'image'))) : tenant_asset('logo/tulogo.png'))
 // ######### FIN MIGRACIÓN ALMACENAMIENTO S3 CLOUD-ONPREMISE
     @php($productPrice = number_format(data_get($product, 'sale_unit_price', 0), 2, '.', ''))
     @php($productCurrency = data_get($product, 'currency_type_symbol', 'Bs.'))
@@ -83,7 +83,7 @@
     <link rel="stylesheet" href="{{ asset('porto-light/css/styles_orders.css') }}" />
 </head>
 
-<body>
+<body data-catalog-channel="restaurant">
     <div class="page-wrapper">
 
         @include('restaurant::layouts.partials.header')

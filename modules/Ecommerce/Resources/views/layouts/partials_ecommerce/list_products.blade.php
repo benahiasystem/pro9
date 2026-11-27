@@ -8,6 +8,9 @@
         return !$stock->isPositive() && !optional($item)->variations_stock;
     };
 @endphp
+@php
+    $catalogUrls = app(\App\Services\Storage\VersionedImage::class)->catalogUrls($dataPaginate);
+@endphp
 @foreach ($dataPaginate as $item)
     @php
         $configuration = \App\Models\Tenant\Configuration::first();
@@ -57,11 +60,11 @@
 
                 @if($variationSelector)
                 <a href="javascript:void(0)" role="button" class="product-image product-image-list open-variations" title="Elegir opciones">
-                    <img src="{{ $imagePath }}" class="image" alt="{{ $item->description }}">
+                    <x-catalog-image :small="$catalogUrls[$item->image_small] ?? null" :original="$catalogUrls[$item->image] ?? $imagePath" :eager="$loop->index < 4" class="image" alt="{{ $item->description }}" />
                 </a>
                 @else
                 <a href="/ecommerce/item/{{ $item->id }}/{{ \Illuminate\Support\Str::slug($item->description) }}" class="product-image product-image-list">
-                    <img src="{{ $imagePath }}" class="image" alt="{{ $item->description }}">
+                    <x-catalog-image :small="$catalogUrls[$item->image_small] ?? null" :original="$catalogUrls[$item->image] ?? $imagePath" :eager="$loop->index < 4" class="image" alt="{{ $item->description }}" />
                 </a>
                 @endif
                 <a href="{{route('item_partial', ['id' => $item->id])}}" class="btn-quickview"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-zoom-scan"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 8v-2a2 2 0 0 1 2 -2h2" /><path d="M4 16v2a2 2 0 0 0 2 2h2" /><path d="M16 4h2a2 2 0 0 1 2 2v2" /><path d="M16 20h2a2 2 0 0 0 2 -2v-2" /><path d="M8 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M16 16l-2.5 -2.5" /></svg> Vista Rápida</a>

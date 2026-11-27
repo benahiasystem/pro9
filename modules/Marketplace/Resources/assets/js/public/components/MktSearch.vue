@@ -11,10 +11,10 @@
                @keydown.enter="close">
 
         <div v-if="open" class="mkt-search__panel">
-            <button v-for="p in suggestions.products" :key="'p' + p.id" type="button"
+            <button v-for="(p, index) in suggestions.products" :key="'p' + p.id" type="button"
                     class="mkt-search__row" @mousedown.prevent="$emit('pick-product', p)">
                 <span class="mkt-search__thumb">
-                    <img v-if="p.image_url" :src="p.image_url" :alt="p.name" loading="lazy">
+                    <img v-if="p.image_url" v-catalog-image="{ original: p.image_url, eager: index < 4 }" :alt="p.name">
                     <mkt-icon v-else name="package" :size="18"/>
                 </span>
                 <span class="mkt-search__body">

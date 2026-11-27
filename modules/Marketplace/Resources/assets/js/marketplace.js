@@ -9,6 +9,8 @@
 // (entrypoint standalone del widget público del Libro de Reclamaciones).
 
 import Vue from 'vue'
+import { catalogImage } from '../../../../../resources/js/tenant/catalog-images';
+Vue.directive('catalog-image', catalogImage);
 import axios from 'axios'
 
 import '../sass/marketplace.scss'
